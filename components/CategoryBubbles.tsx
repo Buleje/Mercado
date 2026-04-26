@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/use-in-view";
-import { getCategoryIcon } from "@/lib/category-icons";
 
 export default function CategoryBubbles() {
   const { categories, isLoading } = useStoreProducts();
@@ -15,6 +15,12 @@ export default function CategoryBubbles() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const pathname = usePathname();
+  // Tienda individual: prefijo /t/<slug> para no salir del contexto del
+  // comerciante al filtrar por categoría.
+  const tenantSlug = pathname?.match(/^\/t\/([^/]+)/)?.[1] ?? null;
+  const buildCatHref = (id: string) =>
+    tenantSlug ? `/t/${tenantSlug}/tienda/categoria/${id}` : `/tienda/categoria/${id}`;
 
   const updateScrollState = useCallback(() => {
     const element = scrollRef.current;
@@ -71,32 +77,24 @@ export default function CategoryBubbles() {
 
           <div
             ref={scrollRef}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-10 pb-2 scrollbar-none"
+            className="flex snap-x snap-mandatory gap-2.5 sm:gap-3 overflow-x-auto px-10 pb-2 scrollbar-none"
           >
-            {realCategories.map((cat, i) => {
-              const Icon = getCategoryIcon(cat.id);
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/tienda/categoria/${cat.id}`}
-                  className={cn(
-                    "group flex w-[4.9rem] shrink-0 snap-start flex-col items-center gap-2 transition-transform duration-300 hover:-translate-y-1 sm:w-22",
-                    inView
-                      ? "animate-[fadeUp_0.5s_ease-out_both]"
-                      : "opacity-0"
-                  )}
-                  style={inView ? { animationDelay: `${i * 80}ms` } : undefined}
-                  aria-label={`Ver ${cat.label}`}
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 bg-surface transition-all duration-300 text-[var(--text-secondary)] group-hover:border-primary/30 group-hover:shadow-lg group-hover:text-[var(--accent)] dark:border-card-border dark:bg-card sm:h-20 sm:w-20">
-                    <Icon size={44} className="transition-transform group-hover:scale-110 sm:h-14 sm:w-14" />
-                  </div>
-                  <span className="max-w-21 text-center text-xs font-medium leading-tight text-muted transition-colors group-hover:text-primary sm:max-w-20 sm:text-sm">
-                    {cat.label}
-                  </span>
-                </Link>
-              );
-            })}
+            {/* Pills de categoría en formato chip — sin íconos decorativos.
+                Estilo enterprise: sólo texto, borde sutil, hover-lift. */}
+            {realCategories.map((cat, i) => (
+              <Link
+                key={cat.id}
+                href={buildCatHref(cat.id)}
+                className={cn(
+                  "group inline-flex shrink-0 snap-start items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:-translate-y-0.5 sm:px-5 sm:py-3",
+                  inView ? "animate-[fadeUp_0.4s_ease-out_both]" : "opacity-0",
+                )}
+                style={inView ? { animationDelay: `${i * 50}ms` } : undefined}
+                aria-label={`Ver ${cat.label}`}
+              >
+                {cat.label}
+              </Link>
+            ))}
           </div>
 
           {/* Right scroll button */}

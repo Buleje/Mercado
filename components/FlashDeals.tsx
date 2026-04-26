@@ -4,11 +4,13 @@ import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
 import { Clock, ShoppingCart, Package, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
+import SmartProductImage from "@/components/store/SmartProductImage";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 
 // compute flash deal defaults – daily deals that reset every day at midnight
@@ -84,6 +86,8 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
   const [endTime] = useState(getEndOfDay);
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem, items, updateQty } = useCart();
+  // En la tienda individual: abre el modal centrado para confirmar cantidad.
+  const quickAdd = useQuickAddSafe();
   const { showToast } = useToast();
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
@@ -173,7 +177,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
         <HorizontalCarousel ariaLabel="Ofertas relámpago" itemWidthClass="w-[200px] sm:w-[220px] shrink-0 snap-start">
           {deals.map((deal) => {
             const qty = items.find(i => i.id === deal.id)?.quantity ?? 0;
-            return <DealCard key={deal.id} deal={deal} qty={qty} onAdd={() => { addItem(deal); showToast(deal.name, deal.image); }} onDec={() => updateQty(deal.id, qty - 1)} onInc={() => updateQty(deal.id, qty + 1)} />;
+            return <DealCard key={deal.id} deal={deal} qty={qty} onAdd={() => { if (quickAdd) { quickAdd.openQuickAdd(deal); } else { addItem(deal); showToast(deal.name, deal.image); } }} onDec={() => updateQty(deal.id, qty - 1)} onInc={() => updateQty(deal.id, qty + 1)} />;
           })}
         </HorizontalCarousel>
       </div>
@@ -202,22 +206,19 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
         </div>
       )}
 
-      {/* Image */}
+      {/* Image — fallback al placeholder estándar "Falta agregar imagen"
+          via SmartProductImage (maneja onError automáticamente) */}
       <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
-        {deal.image ? (
-          <Image
-            src={deal.image}
-            alt={deal.name}
-            fill
-            loading="lazy"
-            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
-            <Package className="h-8 w-8" />
-          </div>
-        )}
+        <SmartProductImage
+          src={deal.image}
+          alt={deal.name}
+          fill
+          loading="lazy"
+          className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+          placeholderSize={28}
+          showPlaceholderLabel={false}
+        />
       </div>
 
       {/* Body */}

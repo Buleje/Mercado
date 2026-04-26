@@ -225,7 +225,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
   );
 }
 
-export default function CombosSection({ serverProducts, showEmpty = false, emptyVariant = "admin" }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public" }) {
+export default function CombosSection({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
   const hook = useStoreProducts();
   const liveProducts = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const { categories } = hook;
@@ -244,11 +244,16 @@ export default function CombosSection({ serverProducts, showEmpty = false, empty
       .catch(() => {});
   }, []);
 
-  // Build combos from available products
-  const combos = useMemo(
-    () => buildCombos(liveProducts, settingsTemplates ?? COMBO_TEMPLATES),
-    [liveProducts, settingsTemplates]
-  );
+  // Build combos from available products. En strict mode solo usamos los
+  // templates guardados explícitamente por admin (settingsTemplates), nunca
+  // los defaults — sin templates admin = sección oculta.
+  const combos = useMemo(() => {
+    if (strictAdminOnly) {
+      if (!settingsTemplates || settingsTemplates.length === 0) return [];
+      return buildCombos(liveProducts, settingsTemplates);
+    }
+    return buildCombos(liveProducts, settingsTemplates ?? COMBO_TEMPLATES);
+  }, [liveProducts, settingsTemplates, strictAdminOnly]);
 
   if (isLoading) return <SectionPlaceholder title="Combos" hint="Cargando..." cols={4} />;
   if (liveProducts.length === 0 || combos.length === 0) return showEmpty ? <SectionPlaceholder title="Combos" hint="Crea combos desde Mi Tienda en el panel admin" cols={4} variant={emptyVariant} publicTitle="Combos ahorro" /> : null;

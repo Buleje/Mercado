@@ -10,12 +10,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-vi.mock("lucide-react", () => ({
-  Clock:     () => <span data-testid="icon-clock" />,
-  Truck:     () => <span data-testid="icon-truck" />,
-  Tag:       () => <span data-testid="icon-tag" />,
-  Star:      () => <span data-testid="icon-star" />,
-  Sparkles:  () => <span data-testid="icon-sparkles" />,
+// El componente importa íconos de `@buleje/design-system/icons`, no de
+// `lucide-react`. El mock anterior dejaba undefined → "Element type is
+// invalid". Ahora mockeamos los 8 íconos reales que usa el componente.
+vi.mock("@buleje/design-system/icons", () => ({
+  Clock:      () => <span data-testid="icon-clock" />,
+  Truck:      () => <span data-testid="icon-truck" />,
+  Tag:        () => <span data-testid="icon-tag" />,
+  Star:       () => <span data-testid="icon-star" />,
+  Sparkles:   () => <span data-testid="icon-sparkles" />,
+  Smartphone: () => <span data-testid="icon-smartphone" />,
+  Sun:        () => <span data-testid="icon-sun" />,
+  Coins:      () => <span data-testid="icon-coins" />,
 }));
 
 vi.mock("@/lib/utils", () => ({
@@ -44,17 +50,23 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("QuickFilterChips", () => {
-  it("renderiza los 5 chips predefinidos", () => {
+  it("renderiza los 8 chips predefinidos", () => {
     renderChips();
 
+    // 5 chips originales:
     expect(screen.getByRole("button", { name: "Abierto ahora" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delivery gratis" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Con ofertas" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "4.5 o mas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "4.5 o más" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nuevos" })).toBeInTheDocument();
 
+    // 3 chips agregados (Acepta Yape, Sin mínimo, Abre 24 h):
+    expect(screen.getByRole("button", { name: "Acepta Yape" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sin mínimo" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Abre 24 h" })).toBeInTheDocument();
+
     const chips = screen.getAllByRole("button");
-    expect(chips).toHaveLength(5);
+    expect(chips).toHaveLength(8);
   });
 
   it("chip inactivo: click llama onToggle con su id y aria-pressed es false antes del click", () => {
@@ -83,7 +95,7 @@ describe("QuickFilterChips", () => {
       />,
     );
 
-    const chip = screen.getByRole("button", { name: "4.5 o mas" });
+    const chip = screen.getByRole("button", { name: "4.5 o más" });
     expect(chip).toHaveAttribute("aria-pressed", "true");
 
     // Simular toggle off — el padre actualizaria activeChips; aqui comprobamos

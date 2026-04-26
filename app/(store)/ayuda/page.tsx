@@ -75,19 +75,16 @@ const MotoRuta = dynamic(
   { ssr: true }
 );
 
-export const metadata: Metadata = {
-  title: "Centro de Ayuda — Buleje",
-  description:
-    "Preguntas frecuentes, guías de uso y soporte para compradores y bodegueros de Buleje. Encuentra respuestas rápidas o escríbenos por WhatsApp.",
-  alternates: { canonical: "https://www.buleje.pe/ayuda" },
-  openGraph: {
-    title: "Centro de Ayuda — Buleje",
-    description:
-      "Soporte rápido para compradores y bodegas. Respondemos en 5 minutos por WhatsApp.",
-    type: "website",
-    locale: "es_PE",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { buildTenantTitle } = await import("@/lib/store-metadata");
+  return {
+    ...(await buildTenantTitle(
+      "Centro de Ayuda",
+      "Preguntas frecuentes, guías de uso y soporte directo por WhatsApp.",
+    )),
+    alternates: { canonical: "https://www.buleje.pe/ayuda" },
+  };
+}
 
 // ─── JSON-LD FAQPage ───────────────────────────────────────────────────────────
 const faqJsonLd = {

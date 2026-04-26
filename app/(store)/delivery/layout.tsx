@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 
-export const metadata: Metadata = {
-  title: "Delivery — Seguimiento de Entrega | Buleje",
-  description:
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Delivery — Seguimiento",
     "Rastrea tu pedido en tiempo real. Delivery rápido con seguimiento GPS.",
-  robots: { index: false, follow: false },
-};
+    { index: false, follow: false },
+  );
+}
 
 export default function DeliveryLayout({
   children,

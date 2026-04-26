@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Package, X, Heart, Star, ExternalLink } from "@buleje/design-system/icons";
+import { usePathname } from "next/navigation";
+import { Plus, Minus, ShoppingCart, Package, X, Heart, Star, ExternalLink, Truck, TrendingUp } from "@buleje/design-system/icons";
 import { getProductSlug } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
@@ -16,6 +17,9 @@ import type { Product } from "@/data/products";
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
 export default function QuickViewModal({ product, onClose }: { product: LiveProduct; onClose: () => void }) {
+  const pathname = usePathname() ?? "";
+  const tenantSlug = pathname.match(/^\/t\/([^/]+)/)?.[1];
+  const tienda = tenantSlug ? `/t/${tenantSlug}/tienda` : "/tienda";
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
@@ -291,8 +295,9 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 )}
 
                 <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4 border border-primary/10">
-                  <p className="text-sm text-foreground font-medium">
-                    🚚 <strong>Delivery gratis</strong>. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.
+                  <p className="text-sm text-foreground font-medium flex items-start gap-2">
+                    <Truck className="h-4 w-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
+                    <span><strong>Delivery gratis</strong>. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.</span>
                   </p>
                 </div>
 
@@ -305,7 +310,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   const points = prices.map((p, i) => `${i * 40},${50 - ((p - min) / range) * 42}`).join(" ");
                   return (
                     <div className="bg-surface dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
-                      <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3">📈 Historial de precios</p>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3 flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" aria-hidden="true" /> Historial de precios</p>
                       <div className="relative h-14">
                         <svg viewBox={`0 0 ${W || 1} 55`} className="w-full h-full" preserveAspectRatio="none">
                           <defs>
@@ -459,7 +464,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
             )}
 
             <Link
-              href={`/tienda/${getProductSlug(product)}`}
+              href={`${tienda}/${getProductSlug(product)}`}
               className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-primary text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all active:scale-[0.98]"
               onClick={onClose}
             >

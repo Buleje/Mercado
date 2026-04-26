@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import TrackingForm from "./TrackingForm";
 
-export const metadata: Metadata = {
-  title: "Seguir mi pedido | Buleje",
-  description:
-    "Rastrea el estado de tu pedido en Buleje. Ingresa tu número de pedido y ve en tiempo real donde esta tu delivery.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Seguir mi pedido",
+    "Rastrea el estado de tu pedido. Ingresa tu número de pedido y ve en tiempo real dónde está tu delivery.",
+  );
+}
 
 export default function TrackingPage() {
   return (

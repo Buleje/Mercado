@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Footer from "@/components/Footer";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import { SearchTrigger } from "./SearchTrigger";
 
 const ProductCatalog = dynamic(() => import("@/components/ProductCatalog"));
@@ -12,12 +13,13 @@ const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const UserAccountModal = dynamic(() => import("@/components/UserAccountModal"));
 
-export const metadata: Metadata = {
-  title: "Buscar productos — Buleje",
-  description:
-    "Busca entre todos nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido.",
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Buscar productos",
+    "Busca entre nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido.",
+    { index: false, follow: true },
+  );
+}
 
 export default function BuscarPage() {
   return (

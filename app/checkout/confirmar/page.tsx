@@ -37,6 +37,9 @@ import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsMod
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
+import { setLastOrder } from "@/components/marketplace/RepetirUltimoPedido";
+import { incrementOrderCount } from "@/components/marketplace/ClienteFrecuenteBadge";
+import TierDiscountBanner from "@/components/marketplace/TierDiscountBanner";
 import { useSavedAddresses } from "@/hooks/use-saved-addresses";
 
 const fmt = (n: number) =>
@@ -84,6 +87,7 @@ export default function CheckoutConfirmarPage() {
 
   const storeIds = Object.keys(byStore);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- legacy useCallback, ok hasta refactor a React Compiler-only
   const handleConfirm = useCallback(async () => {
     if (storeIds.length === 0) return;
     setSubmitting(true);
@@ -182,6 +186,31 @@ export default function CheckoutConfirmarPage() {
 
     const failed = next.filter((r) => !r.success);
     const succeeded = next.filter((r) => r.success);
+
+    // ── Activar features de marca: lastOrder + tier counter ──
+    // El primer pedido exitoso queda como "último pedido" para el hero
+    // de /tiendas. Cada pedido exitoso suma al contador de tier.
+    if (succeeded.length > 0) {
+      const firstSuccess = succeeded[0];
+      const sid = storeIds.find(
+        (id) => byStore[id]?.storeSlug === firstSuccess.storeSlug,
+      );
+      const group = sid ? byStore[sid] : null;
+      if (group && firstSuccess.orderId !== undefined) {
+        setLastOrder({
+          orderId: String(firstSuccess.orderId),
+          storeSlug: group.storeSlug,
+          storeName: group.storeName,
+          total: totalByStore[sid!]?.total ?? 0,
+          itemsCount: group.items.reduce((s, i) => s + i.quantity, 0),
+          ts: Date.now(),
+        });
+      }
+      // Sumar 1 por cada tienda exitosa (cada POST /orders es un pedido)
+      for (let i = 0; i < succeeded.length; i++) {
+        incrementOrderCount();
+      }
+    }
 
     if (succeeded.length > 0) {
       const fullProfile: Customer = {
@@ -465,6 +494,14 @@ export default function CheckoutConfirmarPage() {
               </div>
             </aside>
           )}
+
+          {/* Banner de descuento por tier (Cliente Frecuente / VIP / Embajador) */}
+          <div className="mb-4">
+            <TierDiscountBanner
+              customerPhone={customer.phone}
+              total={grandTotal}
+            />
+          </div>
 
           {/* Grid de review cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

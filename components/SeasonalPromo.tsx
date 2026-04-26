@@ -7,57 +7,30 @@ import { useStoreProducts } from "@/hooks/use-store-products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 
 interface Promo {
-  emoji: string;
   title: string;
   subtitle: string;
   cta: string;
   category: string;
 }
 
-const ALL_PROMOS: Promo[] = [
-  {
-    emoji: "🍊",
-    title: "Frutas de Temporada",
-    subtitle: "Las más frescas de la selva directo a tu mesa",
-    cta: "Ver Frutas",
-    category: "frutas-verduras",
-  },
-  {
-    emoji: "🥩",
-    title: "Carnes Premium",
-    subtitle: "Cortes selectos al mejor precio de la zona",
-    cta: "Ver Carnes",
-    category: "carnes",
-  },
-  {
-    emoji: "🧹",
-    title: "Limpieza Total",
-    subtitle: "Todo para tu hogar con hasta 15% de ahorro",
-    cta: "Ver Ofertas",
-    category: "limpieza",
-  },
-  {
-    emoji: "🍼",
-    title: "Lácteos & Frescos",
-    subtitle: "Leche, yogurt y quesos siempre frescos",
-    cta: "Ver Lácteos",
-    category: "lacteos",
-  },
-  {
-    emoji: "🏪",
-    title: "Abarrotes",
-    subtitle: "Arroz, fideos, aceite y todo lo esencial",
-    cta: "Ver Abarrotes",
-    category: "abarrotes",
-  },
-  {
-    emoji: "🥤",
-    title: "Bebidas",
-    subtitle: "Gaseosas, jugos, agua y más para refrescarte",
-    cta: "Ver Bebidas",
-    category: "bebidas",
-  },
-];
+const PROMO_COPY: Record<string, { subtitle: string }> = {
+  "frutas-verduras": { subtitle: "Las mas frescas de la selva directo a tu mesa" },
+  "carnes":          { subtitle: "Cortes selectos al mejor precio de la zona" },
+  "limpieza":        { subtitle: "Todo para tu hogar con hasta 15% de ahorro" },
+  "lacteos":         { subtitle: "Leche, yogurt y quesos siempre frescos" },
+  "abarrotes":       { subtitle: "Arroz, fideos, aceite y todo lo esencial" },
+  "bebidas":         { subtitle: "Gaseosas, jugos, agua y mas para refrescarte" },
+  "promociones":     { subtitle: "Combos y ofertas seleccionadas para esta semana" },
+  "pollo-brasa":     { subtitle: "Pollo a la brasa fresco con cremas y guarnicion" },
+  "broaster":        { subtitle: "Pollo broaster crocante recien hecho" },
+  "salchipapa":      { subtitle: "Papas y salchichas con cremas a eleccion" },
+  "guarniciones":    { subtitle: "Acompanamientos para complementar tu pedido" },
+  "postres":         { subtitle: "Helados y dulces para cerrar bien el dia" },
+};
+
+function humanizeCategory(id: string): string {
+  return id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
 
 const INTERVAL = 5000;
 
@@ -73,13 +46,27 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
 
-  // Only show promos for categories that have at least 1 product
-  const PROMOS = useMemo(() => {
+  // Build promos dynamically from real categories that have at least 1 product
+  const PROMOS = useMemo<Promo[]>(() => {
     if (products.length === 0) return [];
-    const activeCats = new Set(
-      products.map(p => (p.category || "").toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
-    );
-    return ALL_PROMOS.filter(promo => activeCats.has(promo.category));
+    const activeCats: string[] = [];
+    const seen = new Set<string>();
+    for (const p of products) {
+      const cat = (p.category || "").toLowerCase().replace(/\s+/g, "-");
+      if (!cat || seen.has(cat)) continue;
+      seen.add(cat);
+      activeCats.push(cat);
+    }
+    return activeCats.map(cat => {
+      const label = humanizeCategory(cat);
+      const copy = PROMO_COPY[cat];
+      return {
+        title: label,
+        subtitle: copy?.subtitle ?? `Lo mejor de ${label.toLowerCase()} listo para tu pedido`,
+        cta: `Ver ${label}`,
+        category: cat,
+      };
+    });
   }, [products]);
 
   const next = useCallback(() => setIdx((i) => PROMOS.length > 0 ? (i + 1) % PROMOS.length : 0), [PROMOS.length]);
@@ -135,8 +122,8 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
 
         {/* content */}
         <div className="flex-1 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-center sm:text-left">
-          <span className="text-5xl sm:text-6xl" aria-hidden="true">
-            {promo.emoji}
+          <span className="hidden sm:inline-flex shrink-0 h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--accent)_15%,var(--surface-canvas))] text-[var(--accent)]" aria-hidden="true">
+            <Tag className="w-5 h-5" />
           </span>
 
           <div className="flex-1 min-w-0">

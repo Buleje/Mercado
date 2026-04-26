@@ -5,9 +5,11 @@ import Image from "next/image";
 import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
+import SmartProductImage from "@/components/store/SmartProductImage";
 import type { Product } from "@/data/products";
 
 // Tiny 4×4 gray placeholder for blur-up effect while images load
@@ -40,19 +42,17 @@ function getPopularProducts(allProducts: Product[]) {
 
 export default function PopularProducts({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
   const { addItem, items, updateQty } = useCart();
+  const quickAdd = useQuickAddSafe();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
-  // En modo estricto solo consideramos productos con badge "Popular" como
-  // seleccion admin explicita. Sin productos con badge = no render.
+  // En modo estricto NO mostramos productos hasta que el admin los marque
+  // explícitamente desde "Mi Tienda Personal → Productos destacados". Los
+  // badges del seed/fixture no cuentan como asignación admin (todos los
+  // productos los tienen y eso confunde al dueño).
   const popular = useMemo(() => {
-    if (strictAdminOnly) {
-      const explicit = products
-        .filter((p) => p.badge === "Popular" && !(p.stock != null && p.stock <= 0))
-        .slice(0, 6);
-      return explicit;
-    }
+    if (strictAdminOnly) return [];
     return getPopularProducts(products);
   }, [products, strictAdminOnly]);
   const lastClickRef = useRef(0);
@@ -60,8 +60,14 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
     const now = Date.now();
     if (now - lastClickRef.current < 300) return;
     lastClickRef.current = now;
-    addItem(p);
-  }, [addItem]);
+    // En tienda individual abrimos el modal — fallback a addItem directo
+    // si no hay QuickAddProvider montado (e.g. flujos del marketplace).
+    if (quickAdd) {
+      quickAdd.openQuickAdd(p);
+    } else {
+      addItem(p);
+    }
+  }, [addItem, quickAdd]);
 
   // Show skeleton only while loading, hide section if no products after load
   if (isLoading) return <SectionPlaceholder title="Mas Vendidos" hint="Cargando..." cols={6} />;
@@ -110,24 +116,20 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                   #{i + 1}
                 </div>
 
-                {/* Image */}
-                <div className="relative aspect-square bg-gray-50 dark:bg-white/5 overflow-hidden">
-                  {product.image ? (
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
-                      className="object-cover group-hover:scale-108 transition-transform duration-500"
-                      placeholder="blur"
-                      blurDataURL={BLUR_DATA_URL}
-                      {...(i < 2 ? { priority: true } : { loading: "lazy" as const })}
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-300">
-                      <Package className="h-10 w-10" />
-                    </div>
-                  )}
+                {/* Image — SmartProductImage cae al placeholder estándar
+                    cuando src es nulo o la URL falla (404/CORS). */}
+                <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
+                  <SmartProductImage
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
+                    className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                    placeholderSize={28}
+                    {...(i < 2 ? { priority: true } : { loading: "lazy" as const })}
+                  />
                   {/* Badge unificado via DS — bottom right to avoid overlap with rank */}
                   {badgeIntent && (
                     <div className="absolute bottom-2 right-2">

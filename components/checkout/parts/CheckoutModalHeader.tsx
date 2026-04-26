@@ -22,6 +22,16 @@ export function CheckoutModalHeader({
   itemCount,
   onClose,
 }: CheckoutModalHeaderProps) {
+  // Cadena de fallback: el campo real editado por el dueño suele ser
+  // `storeTheme.storeName`. Solo si está vacío caemos a `storeTheme.name`,
+  // luego a `businessName` y finalmente al genérico "Mi Tienda".
+  const themeAny = storeTheme as (StoreTheme & { storeName?: string }) | null;
+  const displayName =
+    themeAny?.storeName?.trim() ||
+    themeAny?.name?.trim() ||
+    businessName?.trim() ||
+    "Mi Tienda";
+
   return (
     <div className="flex items-center justify-between px-6 py-5 shrink-0 bg-linear-to-r from-primary to-primary-dark">
       <div className="flex items-center gap-4">
@@ -29,7 +39,7 @@ export function CheckoutModalHeader({
           {storeTheme?.logo ? (
             <Image
               src={storeTheme.logo}
-              alt={`Logo de ${businessName || "tienda"}`}
+              alt={`Logo de ${displayName}`}
               fill
               sizes="48px"
               className="object-cover"
@@ -43,7 +53,7 @@ export function CheckoutModalHeader({
             Completar pedido
           </h2>
           <p className="text-sm text-white/70">
-            {businessName || "Mi Tienda"} · {itemCount}{" "}
+            {displayName} · {itemCount}{" "}
             {itemCount === 1 ? "producto" : "productos"}
           </p>
         </div>

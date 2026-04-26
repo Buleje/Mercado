@@ -5,10 +5,12 @@ import Image from "next/image";
 import { ShoppingCart, Minus, Plus, Package } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
+import SmartProductImage from "@/components/store/SmartProductImage";
 
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=";
@@ -24,6 +26,7 @@ function getLowStockProducts(allProducts: Product[]): Product[] {
 
 export default function LastUnitsSection({ serverProducts, showEmpty = false, emptyVariant = "admin" }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public" }) {
   const { addItem, items, updateQty } = useCart();
+  const quickAdd = useQuickAddSafe();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
@@ -36,9 +39,13 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
       const now = Date.now();
       if (now - lastClickRef.current < 300) return;
       lastClickRef.current = now;
-      addItem(p);
+      if (quickAdd) {
+        quickAdd.openQuickAdd(p);
+      } else {
+        addItem(p);
+      }
     },
-    [addItem]
+    [addItem, quickAdd]
   );
 
   // Show skeleton only while loading, hide section if no products after load
@@ -88,22 +95,18 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                 </div>
 
                 {/* Image */}
-                <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">
-                  {product.image ? (
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      placeholder="blur"
-                      blurDataURL={BLUR_DATA_URL}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Package className="h-12 w-12 text-gray-300" />
-                    </div>
-                  )}
+                <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
+                  <SmartProductImage
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                    placeholderSize={28}
+                    showPlaceholderLabel={false}
+                  />
 
                   {/* Progress bar — teal accent, sin urgencia rojo alarmista */}
                   <div className="absolute bottom-0 inset-x-0 h-1 bg-[var(--rule-soft)]">

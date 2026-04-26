@@ -6,6 +6,7 @@ import { ShoppingCart, Timer } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
@@ -52,22 +53,26 @@ function useCountdown() {
 }
 
 export default function DailySpecial({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
-  const { addItem, items } = useCart();
+  const { items } = useCart();
+  // En la tienda individual abrimos el QuickAddModal para que el cliente
+  // confirme cantidad. Si no hay provider (e.g. marketplace), fallback a
+  // agregar directo sin el modal.
+  const quickAdd = useQuickAddSafe();
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
   const [ref, inView] = useInView({ threshold: 0.15 });
   const [imgError, setImgError] = useState(false);
   const product = useMemo(() => {
-    // En modo estricto exigimos que el producto destacado sea uno
-    // explicitamente marcado por admin (badge "Oferta" o "Popular").
-    // Sin seleccion explicita: el componente se pinta como placeholder.
-    if (strictAdminOnly) {
-      const adminPicked = products.find(
-        (p) => (p.badge === "Oferta" || p.badge === "Popular") && p.image,
-      );
-      return adminPicked ?? null;
-    }
+    // En modo estricto NO mostramos producto si el admin no lo asignó
+    // explícitamente desde el panel "Mi Tienda Personal → Productos
+    // destacados" (override con featured=true). Los badges que vienen del
+    // seed/fixture de catálogo no cuentan como asignación admin.
+    //
+    // Como hoy no hay UI de "asignar producto a esta sección" granular, en
+    // strict mode siempre devuelve null hasta que se construya la UI o se
+    // pase una lista de featured separada por prop.
+    if (strictAdminOnly) return null;
     return getDailyProduct(products);
   }, [products, strictAdminOnly]);
   const countdown = useCountdown();
@@ -152,7 +157,9 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
               {/* CTA */}
               <button
                 type="button"
-                onClick={() => addItem(product)}
+                onClick={() => {
+                  if (quickAdd) quickAdd.openQuickAdd(product);
+                }}
                 aria-label={qty > 0 ? `${product.name} en el carrito, cantidad ${qty}` : `Agregar ${product.name} al carrito`}
                 className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-6 py-3.5 rounded-xl hover:bg-primary/90 active:scale-[0.97] transition-all shadow-lg shadow-primary/25"
               >

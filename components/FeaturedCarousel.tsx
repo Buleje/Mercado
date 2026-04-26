@@ -6,8 +6,10 @@ import { Star, Package, ShoppingCart, Minus, Plus } from "@buleje/design-system/
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useToast } from "@/contexts/toast-context";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
+import SmartProductImage from "@/components/store/SmartProductImage";
 
 // Map string badges del backend → intent canónico del DS.
 const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
@@ -23,24 +25,25 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
   const { addItem, items, updateQty } = useCart();
+  const quickAdd = useQuickAddSafe();
   const { showToast } = useToast();
   const lastClickRef = useRef(0);
 
   const featured = useMemo(() => {
+    // En modo estricto no mostramos nada hasta que el admin marque productos
+    // explícitamente desde "Mi Tienda Personal → Productos destacados". Los
+    // badges del seed (toda la fixture trae "Popular" / "Oferta") no cuentan
+    // como asignación real del comerciante.
+    if (strictAdminOnly) return [];
+
     const badged = products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6);
-
-    // Regla estricta: solo consideramos productos explicitamente marcados
-    // por admin (badge Popular/Oferta). Sin badge = seccion vacia.
-    if (strictAdminOnly) return badged;
-
     if (badged.length >= 3) return badged;
 
-    // Fallback: auto-select from inventory — prefer in-stock products with images
+    // Fallback solo cuando NO hay regla estricta — útil para preview admin.
     const inStock = products.filter(p => (p.stock ?? 0) > 0);
     const withImage = inStock.filter(p => p.image);
     const pool = withImage.length >= 6 ? withImage : inStock;
 
-    // Deterministic daily shuffle (same products each day so it doesn't feel random)
     const today = new Date();
     const daySeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
     const scored = pool.map((p, i) => ({
@@ -48,7 +51,6 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
       score: ((daySeed * 31 + i * 17) % 997) + (p.image ? 500 : 0) + (p.badge ? 200 : 0),
     }));
     scored.sort((a, b) => b.score - a.score);
-    // Merge badged (keep them first) with auto-selected
     const autoSelected = scored.map(s => s.product).filter(p => !badged.some(b => b.id === p.id));
     return [...badged, ...autoSelected].slice(0, 6);
   }, [products, strictAdminOnly]);
@@ -68,12 +70,16 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
           {featured.map(product => (
             <div key={product.id} className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-              <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">
-                {product.image ? (
-                  <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width:640px) 50vw, (max-width:1024px) 25vw, 16vw" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-8 w-8" /></div>
-                )}
+              <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
+                <SmartProductImage
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width:640px) 50vw, (max-width:1024px) 25vw, 16vw"
+                  placeholderSize={28}
+                  showPlaceholderLabel={false}
+                />
                 {product.badge && BADGE_INTENT[product.badge] && (
                   <div className="absolute top-1.5 left-1.5">
                     <ProductBadge intent={BADGE_INTENT[product.badge]}>{product.badge}</ProductBadge>
@@ -98,7 +104,17 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
                       </div>
                     ) : (
                       <button
-                        onClick={() => { const now = Date.now(); if (now - lastClickRef.current < 300) return; lastClickRef.current = now; addItem(product); showToast(product.name, product.image); }}
+                        onClick={() => {
+                          const now = Date.now();
+                          if (now - lastClickRef.current < 300) return;
+                          lastClickRef.current = now;
+                          if (quickAdd) {
+                            quickAdd.openQuickAdd(product);
+                          } else {
+                            addItem(product);
+                            showToast(product.name, product.image);
+                          }
+                        }}
                         className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white hover:bg-primary-dark active:scale-95 shrink-0"
                         aria-label={`Agregar ${product.name}`}
                       >

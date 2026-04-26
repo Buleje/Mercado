@@ -33,14 +33,25 @@ vi.mock("@/lib/api-error", () => ({
 }));
 
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
-const { mockStoreFindMany } = vi.hoisted(() => ({
+// El route llama también a prisma.settings.findMany + prisma.promotion.groupBy
+// para enriquecer las stores con metadata. Mockeamos ambos vacíos por defecto
+// — los tests pueden override con mockImplementation si necesitan.
+const { mockStoreFindMany, mockSettingsFindMany, mockPromotionGroupBy } = vi.hoisted(() => ({
   mockStoreFindMany: vi.fn(),
+  mockSettingsFindMany: vi.fn().mockResolvedValue([]),
+  mockPromotionGroupBy: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     store: {
       findMany: mockStoreFindMany,
+    },
+    settings: {
+      findMany: mockSettingsFindMany,
+    },
+    promotion: {
+      groupBy: mockPromotionGroupBy,
     },
   },
 }));

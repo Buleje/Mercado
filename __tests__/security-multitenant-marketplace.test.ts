@@ -93,6 +93,14 @@ vi.mock("@/lib/prisma", () => ({
     orderItem: {
       groupBy: vi.fn(async () => []),
     },
+    // Marketplace meta enrichment — el route llama a estas tablas para
+    // mostrar payment methods, free delivery threshold y promos activas.
+    settings: {
+      findMany: vi.fn(async () => []),
+    },
+    promotion: {
+      groupBy: vi.fn(async () => []),
+    },
   },
 }));
 

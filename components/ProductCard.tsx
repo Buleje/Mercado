@@ -1,7 +1,7 @@
 import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows, BellRing } from "lucide-react";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { getProductSlug } from "@/data/products";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { trackAddToCart } from "@/lib/analytics";
 import type { Product } from "@/data/products";
 import { trackView } from "@/components/RecentlyViewedSingleTenant";
+import ProductImagePlaceholder from "@/components/store/ProductImagePlaceholder";
 import { SocioPriceBadge } from "@/components/marketplace/SocioPriceBadge";
 import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
 import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
@@ -93,6 +94,13 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
   const { add: addToCompare, isIn: isInCompare, remove: removeFromCompare } = useCompare();
   const quickAdd = useQuickAddSafe();
   const router = useRouter();
+  const pathname = usePathname();
+  // Tienda individual: prefijo `/t/<slug>` para que el detail no salga del
+  // contexto del comerciante. Detectado del pathname del cliente.
+  const tenantSlug = pathname?.match(/^\/t\/([^/]+)/)?.[1] ?? null;
+  const productHref = tenantSlug
+    ? `/t/${tenantSlug}/tienda/${getProductSlug(product)}`
+    : `/tienda/${getProductSlug(product)}`;
 
   // Mejora 18: Prefetch product page on hover (desktop only)
   const prefetchedRef = useRef(false);
@@ -100,10 +108,10 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     if (prefetchedRef.current) return;
     // Only prefetch on desktop (no touchscreen)
     if (typeof window !== "undefined" && !("ontouchstart" in window)) {
-      router.prefetch(`/tienda/${getProductSlug(product)}`);
+      router.prefetch(productHref);
       prefetchedRef.current = true;
     }
-  }, [router, product]);
+  }, [router, productHref]);
 
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.quantity ?? 0;
@@ -207,9 +215,13 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
   const handleQuickView = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (quickAdd) {
+        quickAdd.openQuickAdd(product);
+        return;
+      }
       onQuickView?.(product);
     },
-    [onQuickView, product]
+    [onQuickView, product, quickAdd]
   );
 
   const handleCompareToggle = useCallback(
@@ -355,7 +367,16 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         <GitCompareArrows className="h-3.5 w-3.5" />
       </button>
 
-      <div className="relative aspect-square bg-gray-50 overflow-hidden shrink-0">
+      <div
+        className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden shrink-0 cursor-pointer"
+        onClick={(e) => {
+          if (isOutOfStock) return;
+          e.stopPropagation();
+          if (quickAdd) {
+            quickAdd.openQuickAdd(product);
+          }
+        }}
+      >
         {product.image && !imgError ? (
           <Image
             src={product.image}
@@ -374,12 +395,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-[var(--surface-sunken)]">
-            <ProductCategoryIllustration
-              category={product.category}
-              className="text-[var(--text-tertiary)] opacity-60 group-hover:opacity-80 transition-opacity"
-            />
-          </div>
+          /* Placeholder estándar — sin ilustraciones decorativas. */
+          <ProductImagePlaceholder size={32} />
         )}
 
         {onQuickView && (
@@ -408,14 +425,25 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             <Eye className="h-3 w-3" strokeWidth={1.75} /> Lo viste hoy
           </span>
         )}
-        <Link href={`/tienda/${getProductSlug(product)}`} className="flex-1" onClick={(e) => { e.stopPropagation(); trackView(product); }}>
+        {/* Click en el título abre el modal de quick-view (no PDP). En la
+            tienda individual no hay página de detalle separada — toda la
+            interacción se resuelve en el drawer lateral. */}
+        <button
+          type="button"
+          className="flex-1 text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            trackView(product);
+            if (quickAdd) quickAdd.openQuickAdd(product);
+          }}
+        >
           <h3 className="font-semibold text-foreground text-xs sm:text-sm leading-tight line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h3>
           <span className="mt-0.5 text-[length:var(--ts-2xs)] font-semibold text-primary/0 group-hover:text-primary/60 transition-colors leading-none inline-flex items-center gap-0.5">
             Ver detalles →
           </span>
-        </Link>
+        </button>
 
         {product.description && (
           <p className="text-[length:var(--ts-2xs)] text-muted leading-snug line-clamp-2 -mt-0.5">
@@ -489,14 +517,17 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 </span>
               )}
               {isOutOfStock && (
-                <Link
-                  href={`/tienda/${getProductSlug(product)}`}
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (quickAdd) quickAdd.openQuickAdd(product);
+                  }}
                   className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] mt-0.5 hover:text-[var(--accent)] transition-colors pointer-events-auto"
                 >
                   <BellRing className="h-3 w-3" />
                   Avisarme cuando vuelva
-                </Link>
+                </button>
               )}
             </div>
 
@@ -517,9 +548,11 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                   "flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
                   justAdded ? "bg-[var(--accent)] scale-95" : "bg-primary hover:bg-primary-dark"
                 )}
-                aria-label={quickAdd ? `Elegir opciones de ${product.name}` : `Agregar ${product.name}`}
+                aria-label={`Agregar ${product.name} al carrito`}
               >
-                {justAdded ? <span className="text-sm font-bold">✓</span> : quickAdd ? <Plus className="h-5 w-5" strokeWidth={2.5} /> : <ShoppingCart className="h-5 w-5" />}
+                {/* Icono unificado: siempre carrito (no `+`). El click abre el
+                    modal de quick-add donde el cliente confirma cantidad. */}
+                {justAdded ? <span className="text-sm font-bold">✓</span> : <ShoppingCart className="h-5 w-5" strokeWidth={2.25} />}
               </button>
             ) : (
               <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-md animate-[scaleIn_0.15s_ease-out] shrink-0">

@@ -4,13 +4,17 @@ import type { Metadata } from "next";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
 import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
+import { buildTenantTitle } from "@/lib/store-metadata";
 
-export const metadata: Metadata = {
-  title: "404 — El paiche se fue por otro río | Buleje",
-  description:
+// `title.absolute` evita el doble "Buleje" en tiendas individuales y mantiene
+// el sufijo del marketplace en resto del sitio.
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "404 — El paiche se fue por otro río",
     "La página que buscas no existe o fue movida. Explora productos, zonas de cobertura o vuelve al inicio.",
-  robots: { index: false, follow: true },
-};
+    { index: false, follow: true },
+  );
+}
 
 const topZones = zones.slice(0, 5);
 const topCategories = categories.filter((c) => c.id !== "todos").slice(0, 4);

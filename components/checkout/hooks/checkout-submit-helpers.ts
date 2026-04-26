@@ -194,12 +194,14 @@ export async function postWithRetry(
   payload: string,
   maxAttempts = 3
 ): Promise<Response | null> {
+  // Lazy require so the helper sigue siendo testable sin DOM.
+  const { csrfHeaders } = await import("@/lib/csrf-client");
   let res: Response | null = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: payload,
       });
       if (res.ok || res.status < 500) break;

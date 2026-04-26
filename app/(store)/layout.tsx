@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
 import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
+import { QuickAddProvider } from "@/contexts/quick-add-context";
+
+// Modal centrado de "agregar al carrito" — reemplaza la página de detalle
+// de producto en la tienda individual. El cliente NO sale del catálogo: el
+// modal aparece centrado, agrega y cierra. Lazy-loaded post-FCP.
+const QuickAddModal = dynamic(() => import("@/components/store/QuickAddModal"));
 // TenantIndicatorBar removed — public pages shouldn't show tenant context
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
@@ -23,30 +30,40 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const hdrs = await headers();
-    const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const settings = await SettingsDB.get(tenantId);
+    const { getCachedSettings, resolveStoreContext } = await import("@/lib/store-metadata");
+    const ctx = await resolveStoreContext();
+    const settings = await getCachedSettings(ctx.tenantId);
 
-    const name   = settings.businessName ?? "Mi Tienda";
-    const slogan = settings.slogan ?? "Delivery rápido y seguro";
-    const desc   = settings.description
+    // resolveStoreContext ya resolvió el nombre con la cadena de fallback
+    // (storeTheme.storeName → businessName → "tu tienda"). Mantenemos el
+    // mismo nombre aquí para consistencia con el resto del template.
+    const name   = ctx.name === "tu tienda" ? "Mi Tienda" : ctx.name;
+    const slogan = settings?.slogan ?? "Delivery rápido y seguro";
+    const desc   = settings?.description
       ?? `${name} — compra online con delivery a domicilio. Paga con Yape o efectivo.`;
-    const logo   = settings.logoUrl;
+    const logo   = settings?.logoUrl;
 
+    // En tienda individual usamos `title.absolute` para que el template
+    // `%s | Buleje` del root layout no se concatene. Para sub-páginas que
+    // usen este layout sin definir su propio title, `default: { absolute }`
+    // hace que muestren solo el nombre del comercio sin sufijo Buleje.
+    const titleStr = `${name} | ${slogan}`;
     return {
-      title:       { default: `${name} | ${slogan}`, template: `%s | ${name}` },
+      title: ctx.isTenant
+        ? { absolute: titleStr }
+        : { default: titleStr, template: `%s | ${name}` },
       description: desc,
       openGraph: {
         type:        "website",
         locale:      "es_PE",
         siteName:    name,
-        title:       `${name} | ${slogan}`,
+        title:       titleStr,
         description: desc,
         ...(logo && { images: [{ url: logo, width: 1200, height: 630, alt: name }] }),
       },
       twitter: {
         card:        "summary_large_image",
-        title:       `${name} | ${slogan}`,
+        title:       titleStr,
         description: desc,
         ...(logo && { images: [logo] }),
       },
@@ -83,13 +100,16 @@ async function StoreLayoutContent({
     if (!exists) notFound();
   }
 
-  // Check maintenance mode para el tenant activo
+  // Check maintenance mode para el tenant activo. Usamos getCachedSettings
+  // para deduplar la lectura con generateMetadata + tienda/page.tsx — todos
+  // comparten la misma promesa per-request via React.cache().
   let maintenanceMode = false;
   let maintenanceMessage: string | undefined;
   try {
-    const settings = await SettingsDB.get(tenantId);
-    maintenanceMode = !!settings.maintenanceMode;
-    maintenanceMessage = settings.maintenanceMessage;
+    const { getCachedSettings } = await import("@/lib/store-metadata");
+    const settings = await getCachedSettings(tenantId);
+    maintenanceMode = !!settings?.maintenanceMode;
+    maintenanceMessage = settings?.maintenanceMessage;
   } catch {
     /* continue normally */
   }
@@ -98,9 +118,14 @@ async function StoreLayoutContent({
   return (
     <StoreProviders tenantSlug={tenantId}>
       <MotionProvider>
-        {children}
-        <StoreClientShell />
-        <StoreFloatingWidgets />
+        {/* QuickAddProvider envuelve toda la tienda — al click en producto
+            se abre el drawer en lugar de navegar a una PDP. */}
+        <QuickAddProvider>
+          {children}
+          <StoreClientShell />
+          <StoreFloatingWidgets />
+          <QuickAddModal />
+        </QuickAddProvider>
       </MotionProvider>
     </StoreProviders>
   );

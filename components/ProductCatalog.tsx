@@ -8,6 +8,7 @@ import {
   startTransition,
   useMemo,
   memo,
+  useContext,
 } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -15,6 +16,7 @@ import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock,
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
+import { SettingsContext } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
 import { onAppEvent } from "@/lib/events";
 import type { Product } from "@/data/products";
@@ -307,6 +309,9 @@ function fuzzyScore(text: string, query: string): number {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
+  const settings = useContext(SettingsContext);
+  const storeName = settings?.storeTheme?.name || settings?.businessName || "tu tienda";
+  const storeSlogan = settings?.storeTheme?.slogan || settings?.storeTheme?.description || "Compra online con delivery a domicilio. Paga con Yape o efectivo.";
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("relevancia");
@@ -554,11 +559,10 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
-            Abarrotes y <span className="text-primary">Productos</span> para ti
+            Catálogo de <span className="text-primary">{storeName}</span>
           </h2>
           <p className="mt-4 text-lg text-muted max-w-2xl mx-auto">
-            Bebidas, golosinas, carne, pollo, productos de limpieza y más. Compra online
-            con delivery a domicilio. Paga con Yape o efectivo.
+            {storeSlogan}
           </p>
         </div>
 
@@ -651,8 +655,8 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-red-400"
               )}
             >
-              <span className="hidden sm:inline">🏷️ Oferta</span>
-              <span className="sm:hidden">🏷️</span>
+              {/* Filtros de catálogo: solo texto, sin emojis. */}
+              <span>Oferta</span>
             </button>
             <button
               onClick={() => { setFilterAvailable(v => !v); if (!filterAvailable) setFilterOutOfStock(false); }}
@@ -663,8 +667,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-emerald-400"
               )}
             >
-              <span className="hidden sm:inline">✅ Disponible</span>
-              <span className="sm:hidden">✅</span>
+              <span>Disponible</span>
             </button>
             <button
               onClick={() => { setFilterOutOfStock(v => !v); if (!filterOutOfStock) setFilterAvailable(false); }}
@@ -675,8 +678,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-gray-400"
               )}
             >
-              <span className="hidden sm:inline">❌ Agotado</span>
-              <span className="sm:hidden">❌</span>
+              <span>Agotado</span>
             </button>
             {/* U1: Grid/List toggle — enhanced with active indicator */}
             <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm relative">
@@ -803,19 +805,19 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             )}
             {filterOnSale && (
               <span className="flex items-center gap-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full">
-                🏷️ Oferta
+                Oferta
                 <button onClick={() => setFilterOnSale(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>
             )}
             {filterAvailable && (
               <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full">
-                ✅ Disponible
+                Disponible
                 <button onClick={() => setFilterAvailable(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>
             )}
             {filterOutOfStock && (
               <span className="flex items-center gap-1 text-xs font-semibold bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-full">
-                ❌ Agotado
+                Agotado
                 <button onClick={() => setFilterOutOfStock(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>
             )}
@@ -1058,10 +1060,8 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     id={`cat-${cat.id}`}
                     className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-4" : "scroll-mt-4"}
                   >
-                    <div className={cn("flex items-center gap-2.5 mb-4 pl-3", theme.sectionBorder)}>
-                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-xl leading-none shrink-0", theme.emojiBg)}>
-                        {cat.emoji}
-                      </span>
+                    <div className={cn("flex items-center gap-3 mb-4 pl-3", theme.sectionBorder)}>
+                      <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", theme.dot)} aria-hidden="true" />
                       <div>
                         <h3 className="text-base font-extrabold text-foreground leading-tight">{cat.label}</h3>
                         <p className="text-xs text-muted">{catProducts.length} producto{catProducts.length !== 1 ? "s" : ""}</p>
