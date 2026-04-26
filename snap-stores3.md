@@ -1,0 +1,142 @@
+- generic [active] [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e19]:
+          - generic [ref=e20]: Buleje
+          - generic [ref=e21]: Platform
+      - navigation [ref=e22]:
+        - link "Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /superadmin/dashboard
+          - img [ref=e25]
+          - generic [ref=e30]: Dashboard
+        - link "Centro Control" [ref=e31] [cursor=pointer]:
+          - /url: /superadmin/control-center
+          - img [ref=e33]
+          - generic [ref=e36]: Centro Control
+        - link "Tiendas" [ref=e37] [cursor=pointer]:
+          - /url: /superadmin/tenants
+          - img [ref=e39]
+          - generic [ref=e43]: Tiendas
+        - link "Aplicaciones" [ref=e44] [cursor=pointer]:
+          - /url: /superadmin/vendor-applications
+          - img [ref=e46]
+          - generic [ref=e50]: Aplicaciones
+        - link "Marketplace" [ref=e51] [cursor=pointer]:
+          - /url: /superadmin/stores
+          - img [ref=e53]
+          - generic [ref=e56]: Marketplace
+        - link "Banners" [ref=e57] [cursor=pointer]:
+          - /url: /superadmin/banners
+          - img [ref=e59]
+          - generic [ref=e63]: Banners
+        - link "Analytics" [ref=e64] [cursor=pointer]:
+          - /url: /superadmin/analytics
+          - img [ref=e66]
+          - generic [ref=e68]: Analytics
+        - link "Salud" [ref=e69] [cursor=pointer]:
+          - /url: /superadmin/health
+          - img [ref=e71]
+          - generic [ref=e74]: Salud
+        - link "Actividad" [ref=e75] [cursor=pointer]:
+          - /url: /superadmin/activity
+          - img [ref=e77]
+          - generic [ref=e79]: Actividad
+        - link "Seguridad" [ref=e80] [cursor=pointer]:
+          - /url: /superadmin/security
+          - img [ref=e82]
+          - generic [ref=e85]: Seguridad
+        - link "Config" [ref=e86] [cursor=pointer]:
+          - /url: /superadmin/settings
+          - img [ref=e88]
+          - generic [ref=e91]: Config
+      - button "Colapsar" [ref=e93]:
+        - img [ref=e94]
+        - generic [ref=e96]: Colapsar
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - heading "Marketplace" [level=1] [ref=e101]
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - img [ref=e104]
+              - generic [ref=e107]: platform
+            - button "Modo oscuro" [ref=e108]:
+              - img [ref=e109]
+            - button "Salir" [ref=e111]:
+              - img [ref=e112]
+              - generic [ref=e115]: Salir
+      - main [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e119]:
+            - heading "Administrar Marketplace" [level=2] [ref=e121]:
+              - img [ref=e122]
+              - text: Administrar Marketplace
+            - paragraph [ref=e125]: Gestión completa de tiendas, pedidos, cupones y métricas del marketplace.
+          - generic [ref=e126]:
+            - button "Tiendas" [ref=e127]:
+              - img [ref=e128]
+              - text: Tiendas
+            - button "Salud" [ref=e131]:
+              - img [ref=e132]
+              - text: Salud
+            - button "Operaciones" [ref=e135]:
+              - img [ref=e136]
+              - text: Operaciones
+            - button "Categorías" [ref=e138]:
+              - img [ref=e139]
+              - text: Categorías
+            - button "Pedidos" [ref=e143]:
+              - img [ref=e144]
+              - text: Pedidos
+            - button "Cupones" [ref=e148]:
+              - img [ref=e149]
+              - text: Cupones
+            - button "Analítica" [ref=e151]:
+              - img [ref=e152]
+              - text: Analítica
+            - button "Personalizar" [ref=e154]:
+              - img [ref=e155]
+              - text: Personalizar
+            - button "Navegación" [ref=e161]:
+              - img [ref=e162]
+              - text: Navegación
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - img [ref=e167]
+                - generic [ref=e170]
+              - generic [ref=e177]:
+                - img [ref=e179]
+                - generic [ref=e183]
+              - generic [ref=e186]:
+                - img [ref=e188]
+                - generic [ref=e190]
+              - generic [ref=e193]:
+                - img [ref=e195]
+                - generic [ref=e197]
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - img [ref=e202]
+                - searchbox "Buscar tienda..." [ref=e205]
+              - generic [ref=e206]:
+                - button "Todas" [ref=e207]
+                - button "Publicadas" [ref=e208]
+                - button "Borradores" [ref=e209]
+              - button "Actualizar" [ref=e210]:
+                - img [ref=e211]
+                - text: Actualizar
+            - table [ref=e266]:
+              - rowgroup [ref=e267]:
+                - row "Tienda (Tenant) Store Plan Estado Categoría Rating Comisión Productos Creado Acción" [ref=e268]
+              - rowgroup [ref=e298]:
+                - row "Mi Pollo mi-pollo Mi Pollo mi-pollo Pro Publicado polleria 4.8 (24) 5% 44 25 abr. 2026 Ocultar" [ref=e299]
+                - row "buleje buleje buleje buleje Enterprise Publicado bodega 0.0 (0) 5% 0 10 abr. 2026 Ocultar" [ref=e330]
+                - row "Tienda 3 Pruebas tienda-3 Tienda 3 Pruebas tienda-3 Enterprise Publicado bodega 0.0 (0) 5% 10 08 abr. 2026 Ocultar" [ref=e361]
+                - row "luis1 luis luis1 luis Enterprise Publicado bodega 0.0 (0) 5% 20 04 abr. 2026 Ocultar" [ref=e392]
+                - row "Buleje main Buleje main Enterprise Publicado bodega 0.0 (0) 5% 112 04 abr. 2026 Ocultar" [ref=e423]
+  - region "Notifications alt+T"
+  - alert [ref=e263]

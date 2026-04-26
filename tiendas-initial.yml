@@ -1,0 +1,511 @@
+- generic [active] [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e673]:
+    - link "Ir al contenido" [ref=e674] [cursor=pointer]:
+      - /url: "#main-content"
+    - region "Promociones del marketplace" [ref=e675]:
+      - generic [ref=e677]:
+        - img [ref=e1410]
+        - generic [ref=e683]: Paga al recibir — efectivo o Yape
+        - link "Como funciona" [ref=e1413] [cursor=pointer]:
+          - /url: /marketplace
+          - text: Como funciona
+          - img [ref=e685]
+      - button "Ocultar barra de promociones" [ref=e687]:
+        - img [ref=e688]
+    - navigation "Navegación del marketplace" [ref=e691]:
+      - generic [ref=e693]:
+        - link "Buleje — Ir al marketplace" [ref=e694] [cursor=pointer]:
+          - /url: /marketplace
+          - generic [ref=e695]:
+            - img [ref=e696]
+            - generic [ref=e708]: Buleje
+        - search "Buscar en el marketplace" [ref=e710]:
+          - generic [ref=e711]:
+            - img
+            - combobox "Busca productos o tiendas en Pucallpa..." [ref=e712]
+            - button "Buscar" [ref=e713]:
+              - img [ref=e714]
+              - text: Buscar
+        - generic [ref=e717]:
+          - link "Explorar" [ref=e718] [cursor=pointer]:
+            - /url: /marketplace/explorar
+            - img [ref=e719]
+            - generic [ref=e722]: Explorar
+          - link "Bodegas" [ref=e723] [cursor=pointer]:
+            - /url: /marketplace
+            - img [ref=e724]
+            - generic [ref=e728]: Bodegas
+          - link "Recetas" [ref=e729] [cursor=pointer]:
+            - /url: /recetas
+            - img [ref=e730]
+            - generic [ref=e732]: Recetas
+        - generic [ref=e733]:
+          - button "Notificaciones — 0 sin leer" [ref=e735]:
+            - img [ref=e736]
+          - button "Carrito — 2 productos" [ref=e741]:
+            - img [ref=e743]
+            - generic [ref=e747]:
+              - generic [ref=e748]: "2"
+              - generic [ref=e750]: S/ 12
+          - button "Cuenta de Brandon Buleje" [ref=e753]:
+            - generic [ref=e754]: BB
+            - generic [ref=e755]: Brandon
+            - img [ref=e756]
+    - generic [ref=e760]:
+      - button "Categoria" [ref=e762]:
+        - text: Categoria
+        - img [ref=e763]
+      - navigation "Accesos rapidos del marketplace" [ref=e766]:
+        - link "Delivery gratis" [ref=e767] [cursor=pointer]:
+          - /url: /marketplace/explorar?delivery=free
+        - link "Ofertas" [ref=e768] [cursor=pointer]:
+          - /url: /marketplace/ofertas
+        - link "Tiendas" [ref=e769] [cursor=pointer]:
+          - /url: /tiendas
+        - link "Nuevos" [ref=e770] [cursor=pointer]:
+          - /url: /marketplace/explorar?sort=newest
+        - link "Más vendidos" [ref=e771] [cursor=pointer]:
+          - /url: /marketplace/explorar?sort=best-sellers
+      - status [ref=e773]:
+        - img [ref=e774]
+        - generic [ref=e779]:
+          - text: Faltan
+          - strong [ref=e780]:
+            - generic [ref=e781]:
+              - generic [ref=e784]: S/
+              - generic [ref=e788]:
+                - generic [ref=e789]:
+                  - generic [ref=e791]: "3"
+                  - generic [ref=e793]: "8"
+                - generic [ref=e794]:
+                  - generic [ref=e796]: .
+                  - generic [ref=e798]: "2"
+                  - generic [ref=e800]: "0"
+          - text: para envio gratis
+        - generic [ref=e803]:
+          - text: "Subtotal actual:"
+          - generic [ref=e804]:
+            - generic [ref=e807]: S/
+            - generic [ref=e811]:
+              - generic [ref=e812]:
+                - generic [ref=e814]: "1"
+                - generic [ref=e816]: "1"
+              - generic [ref=e817]:
+                - generic [ref=e819]: .
+                - generic [ref=e821]: "8"
+                - generic [ref=e823]: "0"
+          - text: de S/50
+    - main [ref=e824]:
+      - generic [ref=e825]:
+        - navigation "Migajas de pan" [ref=e826]:
+          - list [ref=e827]:
+            - listitem [ref=e828]:
+              - link "Inicio" [ref=e829] [cursor=pointer]:
+                - /url: /
+                - img [ref=e830]
+                - text: Inicio
+            - listitem [ref=e833]:
+              - img [ref=e834]
+              - generic [ref=e836]: Tiendas
+        - generic [ref=e838]:
+          - paragraph [ref=e839]:
+            - img [ref=e841]
+            - text: Directorio · Pucallpa
+          - heading "Las bodegas del barrio, al alcance de un clic." [level=1] [ref=e844]:
+            - text: Las bodegas del barrio,
+            - text: al alcance de un clic.
+          - paragraph [ref=e845]: Bodegas, minimarkets, farmacias y más — filtrá por zona, categoría o cercanía, y recibí en 25 min.
+          - generic [ref=e848]:
+            - img
+            - combobox "Buscar productos, tiendas o categorías" [ref=e849]
+            - button "Buscar por voz" [ref=e850]:
+              - img [ref=e851]
+          - group "Filtros rapidos" [ref=e855]:
+            - button "Abierto ahora" [ref=e856]:
+              - img [ref=e857]
+              - text: Abierto ahora
+            - button "Delivery gratis" [ref=e860]:
+              - img [ref=e861]
+              - text: Delivery gratis
+            - button "Con ofertas" [ref=e866]:
+              - img [ref=e867]
+              - text: Con ofertas
+            - button "4.5 o más" [ref=e870]:
+              - img [ref=e871]
+              - text: 4.5 o más
+            - button "Nuevos" [ref=e873]:
+              - img [ref=e874]
+              - text: Nuevos
+            - button "Acepta Yape" [ref=e877]:
+              - img [ref=e878]
+              - text: Acepta Yape
+            - button "Sin mínimo" [ref=e880]:
+              - img [ref=e881]
+              - text: Sin mínimo
+            - button "Abre 24 h" [ref=e886]:
+              - img [ref=e887]
+              - text: Abre 24 h
+        - region "Hay una transmisión activa" [ref=e893]:
+          - generic [ref=e894]:
+            - generic [ref=e895]:
+              - paragraph [ref=e896]:
+                - img [ref=e897]
+                - text: En vivo ahora
+              - heading "Hay una transmisión activa" [level=2] [ref=e900]
+            - link "Ver todas" [ref=e901] [cursor=pointer]:
+              - /url: /marketplace/en-vivo
+              - text: Ver todas
+              - img [ref=e902]
+          - link "Paiche y doncella recién llegados del puerto En vivo 142 Paiche y doncella recién llegados del puerto Buleje" [ref=e905] [cursor=pointer]:
+            - /url: /marketplace/en-vivo/live-001
+            - generic [ref=e906]:
+              - img "Paiche y doncella recién llegados del puerto" [ref=e907]
+              - generic [ref=e908]:
+                - img [ref=e909]
+                - text: En vivo
+              - generic [ref=e912]:
+                - img [ref=e913]
+                - text: "142"
+            - generic [ref=e918]:
+              - heading "Paiche y doncella recién llegados del puerto" [level=3] [ref=e919]
+              - paragraph [ref=e920]: Buleje
+        - generic [ref=e922]:
+          - generic [ref=e923]:
+            - generic [ref=e924]:
+              - paragraph [ref=e925]: Destacadas
+              - heading "Las que más piden tus vecinos" [level=2] [ref=e926]
+            - paragraph [ref=e927]: Curado por volumen de pedidos y cercanía.
+          - region "Tiendas destacadas cerca tuyo" [ref=e928]:
+            - generic [ref=e929]:
+              - generic [ref=e930]:
+                - generic [ref=e931]: Cerca tuyo
+                - heading "Tiendas destacadas cerca tuyo" [level=2] [ref=e932]
+              - link "Ver todas" [ref=e933] [cursor=pointer]:
+                - /url: /marketplace
+                - text: Ver todas
+                - img [ref=e934]
+        - generic [ref=e968]:
+          - generic [ref=e969]:
+            - paragraph [ref=e970]: Todas las tiendas
+            - heading "Filtrá y elegí la que más te convenga" [level=2] [ref=e971]
+          - generic [ref=e973]:
+            - group "Filtrar por categoría de tienda" [ref=e974]:
+              - button "Todos" [pressed] [ref=e975]:
+                - img [ref=e976]
+                - text: Todos
+              - button "Bodegas" [ref=e981]:
+                - img [ref=e982]
+                - text: Bodegas
+              - button "Minimarkets" [ref=e986]:
+                - img [ref=e987]
+                - text: Minimarkets
+              - button "Fruterías" [ref=e991]:
+                - img [ref=e992]
+                - text: Fruterías
+              - button "Carnicerías" [ref=e995]:
+                - img [ref=e996]
+                - text: Carnicerías
+              - button "Panaderías" [ref=e1000]:
+                - img [ref=e1001]
+                - text: Panaderías
+              - button "Licorerías" [ref=e1007]:
+                - img [ref=e1008]
+                - text: Licorerías
+              - button "Farmacias" [ref=e1010]:
+                - img [ref=e1011]
+                - text: Farmacias
+              - button "Restaurantes" [ref=e1014]:
+                - img [ref=e1015]
+                - text: Restaurantes
+            - generic [ref=e1020]:
+              - combobox "Filtrar por zona" [ref=e1021]:
+                - option "Todas las zonas" [selected]
+                - option "Centro"
+                - option "Manantay"
+                - option "Callerìa"
+                - option "Yarinacocha"
+                - option "Campo Verde"
+              - generic [ref=e1022]:
+                - group "Filtrar por categoría de producto" [ref=e1023]:
+                  - button "Todos" [pressed] [ref=e1024]:
+                    - img [ref=e1025]
+                    - text: Todos
+                  - button "Abarrotes" [ref=e1027]:
+                    - img [ref=e1028]
+                    - text: Abarrotes
+                  - button "Bebidas" [ref=e1032]:
+                    - img [ref=e1033]
+                    - text: Bebidas
+                  - button "Limpieza" [ref=e1036]:
+                    - img [ref=e1037]
+                    - text: Limpieza
+                  - button "Frescos" [ref=e1040]:
+                    - img [ref=e1041]
+                    - text: Frescos
+                  - button "Otros" [ref=e1044]:
+                    - img [ref=e1045]
+                    - text: Otros
+                - 'button "Ordenar por: Relevancia" [ref=e1051]':
+                  - img [ref=e1052]
+                  - text: Relevancia
+                  - img [ref=e1053]
+                - button "Filtrar por precio" [ref=e1056]:
+                  - img [ref=e1057]
+                  - text: Precio
+                  - img [ref=e1059]
+                - button "Mostrar tiendas cercanas" [ref=e1061]:
+                  - img [ref=e1062]
+                  - text: Cerca
+              - generic [ref=e1065]:
+                - generic [ref=e1066]: Ordenar por
+                - combobox "Ordenar tiendas por" [ref=e1067] [cursor=pointer]:
+                  - option "Relevancia" [selected]
+                  - option "Delivery + rápido"
+                  - option "Mejor rating"
+                  - option "Más cerca"
+                  - option "Nuevas"
+                - img [ref=e1068]
+              - group "Cambiar entre vista lista y mapa" [ref=e1070]:
+                - button "Vista lista" [pressed] [ref=e1071]:
+                  - img [ref=e1072]
+                  - text: Lista
+                - button "Vista mapa" [ref=e1073]:
+                  - img [ref=e1074]
+                  - text: Mapa
+          - generic "Cargando tiendas..." [ref=e1076]
+        - generic [ref=e1168]:
+          - paragraph [ref=e1169]: Para bodegueros
+          - heading "¿Tienes una tienda? Sumate gratis." [level=2] [ref=e1171]:
+            - text: ¿Tienes una tienda?
+            - text: Sumate gratis.
+          - paragraph [ref=e1172]: Publica tus productos, recibe pedidos y llegá a miles de clientes en Pucallpa. Sin costo de inscripción.
+          - generic [ref=e1173]:
+            - link "Registra tu tienda gratis" [ref=e1174] [cursor=pointer]:
+              - /url: /abrir-tienda
+              - img [ref=e1175]
+              - text: Registra tu tienda gratis
+              - img [ref=e1179]
+            - link "Ver planes" [ref=e1182] [cursor=pointer]:
+              - /url: /abrir-tienda#planes
+    - contentinfo [ref=e1183]:
+      - generic [ref=e1186]:
+        - generic [ref=e1187]:
+          - generic [ref=e1188]:
+            - img [ref=e1189]
+            - text: Atención directa
+          - heading "Chatea con nosotros" [level=3] [ref=e1191]
+          - paragraph [ref=e1192]: Escríbenos por WhatsApp y te atendemos al instante.
+          - generic [ref=e1193]:
+            - generic [ref=e1194]:
+              - img [ref=e1195]
+              - text: "Hoy: 07:00 – 21:00"
+            - generic [ref=e1198]: Cerrado
+        - link "Iniciar chat" [ref=e1200] [cursor=pointer]:
+          - /url: https://wa.me/51916409675?text=Hola%2C%20estoy%20viendo%20la%20tienda%20y%20necesito%20ayuda.
+          - img [ref=e1201]
+          - text: Iniciar chat
+      - generic [ref=e1205]:
+        - generic [ref=e1206]:
+          - img [ref=e1208]
+          - generic [ref=e1213]: Delivery Gratis
+        - generic [ref=e1214]:
+          - img [ref=e1216]
+          - generic [ref=e1218]: Pedidos por WhatsApp
+        - generic [ref=e1219]:
+          - img [ref=e1221]
+          - generic [ref=e1224]: "Hoy: 07:00 – 21:00"
+        - generic [ref=e1225]:
+          - img [ref=e1227]
+          - generic [ref=e1230]: Pago con Yape o Efectivo
+      - generic [ref=e1232]:
+        - navigation "Marketplace" [ref=e1233]:
+          - heading "Marketplace" [level=3] [ref=e1234]
+          - list [ref=e1235]:
+            - listitem [ref=e1236]:
+              - link "Explorar marketplace" [ref=e1237] [cursor=pointer]:
+                - /url: /marketplace
+            - listitem [ref=e1238]:
+              - link "Catálogo completo" [ref=e1239] [cursor=pointer]:
+                - /url: /marketplace/explorar
+            - listitem [ref=e1240]:
+              - link "Comparar productos" [ref=e1241] [cursor=pointer]:
+                - /url: /marketplace/comparar
+            - listitem [ref=e1242]:
+              - link "Gift Cards" [ref=e1243] [cursor=pointer]:
+                - /url: /marketplace/gift-cards
+            - listitem [ref=e1244]:
+              - link "Buleje en Vivo" [ref=e1245] [cursor=pointer]:
+                - /url: /marketplace/en-vivo
+            - listitem [ref=e1246]:
+              - link "Ofertas flash" [ref=e1247] [cursor=pointer]:
+                - /url: /marketplace/ofertas
+            - listitem [ref=e1248]:
+              - link "Recetas" [ref=e1249] [cursor=pointer]:
+                - /url: /recetas
+            - listitem [ref=e1250]:
+              - link "Asistente IA" [ref=e1251] [cursor=pointer]:
+                - /url: /asistente
+          - heading "Categorías" [level=4] [ref=e1252]
+          - list [ref=e1253]:
+            - listitem [ref=e1254]:
+              - link "Abarrotes" [ref=e1255] [cursor=pointer]:
+                - /url: /tienda/categoria/abarrotes
+            - listitem [ref=e1256]:
+              - link "Bebidas" [ref=e1257] [cursor=pointer]:
+                - /url: /tienda/categoria/bebidas
+            - listitem [ref=e1258]:
+              - link "Carne y Pollo" [ref=e1259] [cursor=pointer]:
+                - /url: /tienda/categoria/carnes
+            - listitem [ref=e1260]:
+              - link "Lácteos" [ref=e1261] [cursor=pointer]:
+                - /url: /tienda/categoria/lacteos
+        - navigation "Mi cuenta" [ref=e1262]:
+          - heading "Mi cuenta" [level=3] [ref=e1263]
+          - list [ref=e1264]:
+            - listitem [ref=e1265]:
+              - link "Resumen" [ref=e1266] [cursor=pointer]:
+                - /url: /cuenta
+            - listitem [ref=e1267]:
+              - link "Mis pedidos" [ref=e1268] [cursor=pointer]:
+                - /url: /cuenta/pedidos
+            - listitem [ref=e1269]:
+              - link "Bodega al Mes" [ref=e1270] [cursor=pointer]:
+                - /url: /cuenta/suscripciones
+            - listitem [ref=e1271]:
+              - link "Socio Buleje" [ref=e1272] [cursor=pointer]:
+                - /url: /cuenta/socio-buleje
+            - listitem [ref=e1273]:
+              - link "Cupones" [ref=e1274] [cursor=pointer]:
+                - /url: /cuenta/cupones
+            - listitem [ref=e1275]:
+              - link "Gift Cards" [ref=e1276] [cursor=pointer]:
+                - /url: /cuenta/gift-cards
+            - listitem [ref=e1277]:
+              - link "Favoritos" [ref=e1278] [cursor=pointer]:
+                - /url: /marketplace/favoritos
+            - listitem [ref=e1279]:
+              - link "Notificaciones" [ref=e1280] [cursor=pointer]:
+                - /url: /cuenta/notificaciones
+        - navigation "Vendé en Buleje" [ref=e1281]:
+          - heading "Vendé en Buleje" [level=3] [ref=e1282]
+          - list [ref=e1283]:
+            - listitem [ref=e1284]:
+              - link "Vendé en Buleje" [ref=e1285] [cursor=pointer]:
+                - /url: /vender
+            - listitem [ref=e1286]:
+              - link "Registrá tu tienda" [ref=e1287] [cursor=pointer]:
+                - /url: /vender/registro
+            - listitem [ref=e1288]:
+              - link "Planes y precios" [ref=e1289] [cursor=pointer]:
+                - /url: /planes
+            - listitem [ref=e1290]:
+              - link "Seller Central" [ref=e1291] [cursor=pointer]:
+                - /url: /vender/mi-tienda
+            - listitem [ref=e1292]:
+              - link "Software para bodegas" [ref=e1293] [cursor=pointer]:
+                - /url: /negocios
+            - listitem [ref=e1294]:
+              - link "Soporte vendedor" [ref=e1295] [cursor=pointer]:
+                - /url: /ayuda
+          - link "Abrí tu tienda" [ref=e1296] [cursor=pointer]:
+            - /url: /vender
+            - img [ref=e1297]
+            - text: Abrí tu tienda
+        - navigation "Ayuda" [ref=e1301]:
+          - heading "Ayuda" [level=3] [ref=e1302]
+          - list [ref=e1303]:
+            - listitem [ref=e1304]:
+              - link "Centro de ayuda" [ref=e1305] [cursor=pointer]:
+                - /url: /ayuda
+            - listitem [ref=e1306]:
+              - link "Guías paso a paso" [ref=e1307] [cursor=pointer]:
+                - /url: /ayuda#guias
+            - listitem [ref=e1308]:
+              - link "Preguntas frecuentes" [ref=e1309] [cursor=pointer]:
+                - /url: /ayuda#faq
+            - listitem [ref=e1310]:
+              - link "Seguí tu pedido" [ref=e1311] [cursor=pointer]:
+                - /url: /tracking
+            - listitem [ref=e1312]:
+              - link "Qué hay de nuevo" [ref=e1313] [cursor=pointer]:
+                - /url: /descubri
+            - listitem [ref=e1314]:
+              - link "Acerca de nosotros" [ref=e1315] [cursor=pointer]:
+                - /url: /about
+          - link "WhatsApp" [ref=e1316] [cursor=pointer]:
+            - /url: https://wa.me/51916409675?text=Hola%2C%20quiero%20hacer%20un%20pedido&text=Hola%20Buleje%2C%20necesito%20ayuda
+            - img [ref=e1317]
+            - text: WhatsApp
+        - generic [ref=e1319]:
+          - generic [ref=e1321]:
+            - img [ref=e1322]
+            - generic [ref=e1334]: Buleje
+          - paragraph [ref=e1335]: Tienda virtual de abarrotes en Pucallpa. Delivery rápido, pago con Yape o efectivo.
+          - generic [ref=e1336]:
+            - img [ref=e1337]
+            - text: Pucallpa · Ucayali
+          - generic [ref=e1340]:
+            - img [ref=e1341]
+            - img [ref=e1343]
+            - img [ref=e1345]
+            - img [ref=e1347]
+            - img [ref=e1349]
+            - generic [ref=e1351]: 4.8 / 5 · +800 clientes
+          - generic [ref=e1352]:
+            - link "WhatsApp" [ref=e1353] [cursor=pointer]:
+              - /url: https://wa.me/51916409675?text=Hola%2C%20quiero%20hacer%20un%20pedido&text=Hola%20Buleje%2C%20quiero%20hacer%20un%20pedido
+              - img [ref=e1354]
+              - text: WhatsApp
+            - link "Facebook" [ref=e1356] [cursor=pointer]:
+              - /url: https://facebook.com
+              - img [ref=e1357]
+              - text: Facebook
+            - link "Instagram" [ref=e1359] [cursor=pointer]:
+              - /url: https://instagram.com
+              - img [ref=e1360]
+              - text: Instagram
+          - generic [ref=e1363]:
+            - generic [ref=e1364]:
+              - img [ref=e1365]
+              - link "916 409 675" [ref=e1367] [cursor=pointer]:
+                - /url: tel:+51916409675
+            - generic [ref=e1368]:
+              - img [ref=e1369]
+              - generic [ref=e1372]: "Hoy: 07:00 – 21:00"
+      - generic [ref=e1375]:
+        - generic [ref=e1376]:
+          - heading "Recibe ofertas exclusivas" [level=3] [ref=e1377]:
+            - img [ref=e1378]
+            - text: Recibe ofertas exclusivas
+          - paragraph [ref=e1381]: Promociones, nuevos productos y descuentos directo a tu correo.
+        - generic [ref=e1382]:
+          - textbox "tu@email.com" [ref=e1383]
+          - button "Suscribir" [ref=e1384]:
+            - img [ref=e1385]
+            - text: Suscribir
+      - generic [ref=e1389]:
+        - generic [ref=e1390]:
+          - generic [ref=e1391]:
+            - img [ref=e1392]
+            - text: Sitio Seguro
+          - generic [ref=e1395]:
+            - img [ref=e1396]
+            - text: Yape · Plin
+          - generic [ref=e1398]:
+            - img [ref=e1399]
+            - text: Efectivo OK
+        - generic [ref=e1402]:
+          - paragraph [ref=e1403]:
+            - text: © 2026 Buleje · Hecho en Perú
+            - generic [ref=e1404]: ·
+            - link "Privacidad" [ref=e1405] [cursor=pointer]:
+              - /url: /privacidad
+            - generic [ref=e1406]: ·
+            - link "Términos" [ref=e1407] [cursor=pointer]:
+              - /url: /terminos
+          - link "v1.0 beta" [ref=e1408] [cursor=pointer]:
+            - /url: /about
+  - region "Notifications alt+T"
+  - alert [ref=e1409]

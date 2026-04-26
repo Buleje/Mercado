@@ -1,0 +1,115 @@
+- generic [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e19]:
+          - generic [ref=e20]: Buleje
+          - generic [ref=e21]: Platform
+      - navigation [ref=e22]:
+        - link "Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /superadmin/dashboard
+          - img [ref=e25]
+          - generic [ref=e30]: Dashboard
+        - link "Centro Control" [ref=e31] [cursor=pointer]:
+          - /url: /superadmin/control-center
+          - img [ref=e33]
+          - generic [ref=e36]: Centro Control
+        - link "Tiendas" [ref=e37] [cursor=pointer]:
+          - /url: /superadmin/tenants
+          - img [ref=e39]
+          - generic [ref=e43]: Tiendas
+        - link "Aplicaciones" [ref=e44] [cursor=pointer]:
+          - /url: /superadmin/vendor-applications
+          - img [ref=e46]
+          - generic [ref=e50]: Aplicaciones
+        - link "Marketplace" [ref=e51] [cursor=pointer]:
+          - /url: /superadmin/stores
+          - img [ref=e53]
+          - generic [ref=e56]: Marketplace
+        - link "Banners" [ref=e57] [cursor=pointer]:
+          - /url: /superadmin/banners
+          - img [ref=e59]
+          - generic [ref=e63]: Banners
+        - link "Analytics" [ref=e64] [cursor=pointer]:
+          - /url: /superadmin/analytics
+          - img [ref=e66]
+          - generic [ref=e68]: Analytics
+        - link "Salud" [ref=e69] [cursor=pointer]:
+          - /url: /superadmin/health
+          - img [ref=e71]
+          - generic [ref=e74]: Salud
+        - link "Actividad" [ref=e75] [cursor=pointer]:
+          - /url: /superadmin/activity
+          - img [ref=e77]
+          - generic [ref=e79]: Actividad
+        - link "Seguridad" [ref=e80] [cursor=pointer]:
+          - /url: /superadmin/security
+          - img [ref=e82]
+          - generic [ref=e85]: Seguridad
+        - link "Config" [ref=e86] [cursor=pointer]:
+          - /url: /superadmin/settings
+          - img [ref=e88]
+          - generic [ref=e91]: Config
+      - button "Colapsar" [ref=e93]:
+        - img [ref=e94]
+        - generic [ref=e96]: Colapsar
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - heading "Marketplace" [level=1] [ref=e101]
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - img [ref=e104]
+              - generic [ref=e107]: platform
+            - button "Modo oscuro" [ref=e108]:
+              - img [ref=e109]
+            - button "Salir" [ref=e111]:
+              - img [ref=e112]
+              - generic [ref=e115]: Salir
+      - main [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e119]:
+            - heading "Administrar Marketplace" [level=2] [ref=e121]:
+              - img [ref=e122]
+              - text: Administrar Marketplace
+            - paragraph [ref=e125]: Gestión completa de tiendas, pedidos, cupones y métricas del marketplace.
+          - generic [ref=e126]:
+            - button "Tiendas" [active] [ref=e127]:
+              - img [ref=e128]
+              - text: Tiendas
+            - button "Salud" [ref=e131]:
+              - img [ref=e132]
+              - text: Salud
+            - button "Operaciones" [ref=e135]:
+              - img [ref=e136]
+              - text: Operaciones
+            - button "Categorías" [ref=e138]:
+              - img [ref=e139]
+              - text: Categorías
+            - button "Cupones" [ref=e143]:
+              - img [ref=e144]
+              - text: Cupones
+            - button "Analítica" [ref=e146]:
+              - img [ref=e147]
+              - text: Analítica
+            - button "Navegación" [ref=e149]:
+              - img [ref=e150]
+              - text: Navegación
+          - generic [ref=e456]:
+            - generic [ref=e457]:
+              - generic [ref=e458]
+              - generic [ref=e470]
+              - generic [ref=e479]
+              - generic [ref=e486]
+            - generic [ref=e493]:
+              - generic [ref=e494]
+              - generic [ref=e499]
+              - button "Actualizar" [ref=e503]
+            - table [ref=e511]:
+              - rowgroup [ref=e512]
+              - rowgroup [ref=e543]
+  - region "Notifications alt+T"
+  - alert [ref=e251]

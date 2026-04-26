@@ -1,0 +1,255 @@
+- generic [active] [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e19]:
+          - generic [ref=e20]: Buleje
+          - generic [ref=e21]: Platform
+      - navigation [ref=e22]:
+        - link "Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /superadmin/dashboard
+          - img [ref=e25]
+          - generic [ref=e30]: Dashboard
+        - link "Centro Control" [ref=e31] [cursor=pointer]:
+          - /url: /superadmin/control-center
+          - img [ref=e33]
+          - generic [ref=e36]: Centro Control
+        - link "Tiendas" [ref=e37] [cursor=pointer]:
+          - /url: /superadmin/tenants
+          - img [ref=e39]
+          - generic [ref=e43]: Tiendas
+        - link "Aplicaciones" [ref=e44] [cursor=pointer]:
+          - /url: /superadmin/vendor-applications
+          - img [ref=e46]
+          - generic [ref=e50]: Aplicaciones
+        - link "Marketplace" [ref=e51] [cursor=pointer]:
+          - /url: /superadmin/stores
+          - img [ref=e53]
+          - generic [ref=e56]: Marketplace
+        - link "Banners" [ref=e57] [cursor=pointer]:
+          - /url: /superadmin/banners
+          - img [ref=e59]
+          - generic [ref=e63]: Banners
+        - link "Analytics" [ref=e64] [cursor=pointer]:
+          - /url: /superadmin/analytics
+          - img [ref=e66]
+          - generic [ref=e68]: Analytics
+        - link "Salud" [ref=e69] [cursor=pointer]:
+          - /url: /superadmin/health
+          - img [ref=e71]
+          - generic [ref=e74]: Salud
+        - link "Actividad" [ref=e75] [cursor=pointer]:
+          - /url: /superadmin/activity
+          - img [ref=e77]
+          - generic [ref=e79]: Actividad
+        - link "Seguridad" [ref=e80] [cursor=pointer]:
+          - /url: /superadmin/security
+          - img [ref=e82]
+          - generic [ref=e85]: Seguridad
+        - link "Config" [ref=e86] [cursor=pointer]:
+          - /url: /superadmin/settings
+          - img [ref=e88]
+          - generic [ref=e91]: Config
+      - button "Colapsar" [ref=e93]:
+        - img [ref=e94]
+        - generic [ref=e96]: Colapsar
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - heading "Marketplace" [level=1] [ref=e101]
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - img [ref=e104]
+              - generic [ref=e107]: platform
+            - button "Modo oscuro" [ref=e108]:
+              - img [ref=e109]
+            - button "Salir" [ref=e111]:
+              - img [ref=e112]
+              - generic [ref=e115]: Salir
+      - main [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e119]:
+            - heading "Administrar Marketplace" [level=2] [ref=e121]:
+              - img [ref=e122]
+              - text: Administrar Marketplace
+            - paragraph [ref=e125]: Gestión completa de tiendas, pedidos, cupones y métricas del marketplace.
+          - generic [ref=e126]:
+            - button "Tiendas" [ref=e127]:
+              - img [ref=e128]
+              - text: Tiendas
+            - button "Salud" [ref=e131]:
+              - img [ref=e132]
+              - text: Salud
+            - button "Operaciones" [ref=e135]:
+              - img [ref=e136]
+              - text: Operaciones
+            - button "Pedidos" [ref=e138]:
+              - img [ref=e139]
+              - text: Pedidos
+            - button "Cupones" [ref=e143]:
+              - img [ref=e144]
+              - text: Cupones
+            - button "Analítica" [ref=e146]:
+              - img [ref=e147]
+              - text: Analítica
+            - button "Personalizar" [ref=e149]:
+              - img [ref=e150]
+              - text: Personalizar
+            - button "Navegación" [ref=e156]:
+              - img [ref=e157]
+              - text: Navegación
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - img [ref=e162]
+                - generic [ref=e165]:
+                  - paragraph [ref=e166]: Total tiendas
+                  - paragraph [ref=e167]: "5"
+                  - paragraph [ref=e168]:
+                    - img [ref=e169]
+                    - text: 5 publicadas
+              - generic [ref=e172]:
+                - img [ref=e174]
+                - generic [ref=e178]:
+                  - paragraph [ref=e179]: Productos totales
+                  - paragraph [ref=e180]: "186"
+              - generic [ref=e181]:
+                - img [ref=e183]
+                - generic [ref=e185]:
+                  - paragraph [ref=e186]: Rating promedio
+                  - paragraph [ref=e187]: "1.0"
+              - generic [ref=e188]:
+                - img [ref=e190]
+                - generic [ref=e192]:
+                  - paragraph [ref=e193]: Comisión promedio
+                  - paragraph [ref=e194]: 5.0%
+            - generic [ref=e195]:
+              - generic [ref=e196]:
+                - img [ref=e197]
+                - searchbox "Buscar tienda..." [ref=e200]
+              - generic [ref=e201]:
+                - button "Todas" [ref=e202]
+                - button "Publicadas" [ref=e203]
+                - button "Borradores" [ref=e204]
+              - button "Actualizar" [ref=e205]:
+                - img [ref=e206]
+                - text: Actualizar
+            - table [ref=e260]:
+              - rowgroup [ref=e261]:
+                - row "Tienda (Tenant) Store Plan Estado Categoría Rating Comisión Productos Creado Acción" [ref=e262]:
+                  - columnheader "Tienda (Tenant)" [ref=e263]:
+                    - generic [ref=e264]: Tienda (Tenant)
+                  - columnheader "Store" [ref=e265]:
+                    - generic [ref=e266]: Store
+                  - columnheader "Plan" [ref=e267]:
+                    - generic [ref=e268]: Plan
+                  - columnheader "Estado" [ref=e269]:
+                    - generic [ref=e270]: Estado
+                  - columnheader "Categoría" [ref=e271]:
+                    - generic [ref=e272]: Categoría
+                  - columnheader "Rating" [ref=e273] [cursor=pointer]:
+                    - generic [ref=e274]
+                  - columnheader "Comisión" [ref=e278] [cursor=pointer]:
+                    - generic [ref=e279]
+                  - columnheader "Productos" [ref=e283] [cursor=pointer]:
+                    - generic [ref=e284]
+                  - columnheader "Creado" [ref=e288]:
+                    - generic [ref=e289]: Creado
+                  - columnheader "Acción" [ref=e290]:
+                    - generic [ref=e291]: Acción
+              - rowgroup [ref=e292]:
+                - row "Mi Pollo mi-pollo Mi Pollo mi-pollo Pro Publicado polleria 4.8 (24) 5% 44 25 abr. 2026 Ocultar" [ref=e293]:
+                  - cell "Mi Pollo mi-pollo" [ref=e294]:
+                    - generic [ref=e295]
+                  - cell "Mi Pollo mi-pollo" [ref=e298]:
+                    - generic [ref=e299]
+                  - cell "Pro" [ref=e302]:
+                    - generic [ref=e303]: Pro
+                  - cell "Publicado" [ref=e304]:
+                    - generic [ref=e305]: Publicado
+                  - cell "polleria" [ref=e307]
+                  - cell "4.8 (24)" [ref=e308]:
+                    - generic [ref=e309]
+                  - cell "5%" [ref=e313]:
+                    - generic [ref=e314]: 5%
+                  - cell "44" [ref=e315]
+                  - cell "25 abr. 2026" [ref=e316]
+                  - cell "Ocultar" [ref=e317]:
+                    - button "Ocultar" [ref=e318]
+                - row "buleje buleje buleje buleje Enterprise Publicado bodega 0.0 (0) 5% 0 10 abr. 2026 Ocultar" [ref=e324]:
+                  - cell "buleje buleje" [ref=e325]:
+                    - generic [ref=e326]
+                  - cell "buleje buleje" [ref=e329]:
+                    - generic [ref=e330]
+                  - cell "Enterprise" [ref=e333]:
+                    - generic [ref=e334]: Enterprise
+                  - cell "Publicado" [ref=e335]:
+                    - generic [ref=e336]: Publicado
+                  - cell "bodega" [ref=e338]
+                  - cell "0.0 (0)" [ref=e339]:
+                    - generic [ref=e340]
+                  - cell "5%" [ref=e344]:
+                    - generic [ref=e345]: 5%
+                  - cell "0" [ref=e346]
+                  - cell "10 abr. 2026" [ref=e347]
+                  - cell "Ocultar" [ref=e348]:
+                    - button "Ocultar" [ref=e349]
+                - row "Tienda 3 Pruebas tienda-3 Tienda 3 Pruebas tienda-3 Enterprise Publicado bodega 0.0 (0) 5% 10 08 abr. 2026 Ocultar" [ref=e355]:
+                  - cell "Tienda 3 Pruebas tienda-3" [ref=e356]:
+                    - generic [ref=e357]
+                  - cell "Tienda 3 Pruebas tienda-3" [ref=e360]:
+                    - generic [ref=e361]
+                  - cell "Enterprise" [ref=e364]:
+                    - generic [ref=e365]: Enterprise
+                  - cell "Publicado" [ref=e366]:
+                    - generic [ref=e367]: Publicado
+                  - cell "bodega" [ref=e369]
+                  - cell "0.0 (0)" [ref=e370]:
+                    - generic [ref=e371]
+                  - cell "5%" [ref=e375]:
+                    - generic [ref=e376]: 5%
+                  - cell "10" [ref=e377]
+                  - cell "08 abr. 2026" [ref=e378]
+                  - cell "Ocultar" [ref=e379]:
+                    - button "Ocultar" [ref=e380]
+                - row "luis1 luis luis1 luis Enterprise Publicado bodega 0.0 (0) 5% 20 04 abr. 2026 Ocultar" [ref=e386]:
+                  - cell "luis1 luis" [ref=e387]:
+                    - generic [ref=e388]
+                  - cell "luis1 luis" [ref=e391]:
+                    - generic [ref=e392]
+                  - cell "Enterprise" [ref=e395]:
+                    - generic [ref=e396]: Enterprise
+                  - cell "Publicado" [ref=e397]:
+                    - generic [ref=e398]: Publicado
+                  - cell "bodega" [ref=e400]
+                  - cell "0.0 (0)" [ref=e401]:
+                    - generic [ref=e402]
+                  - cell "5%" [ref=e406]:
+                    - generic [ref=e407]: 5%
+                  - cell "20" [ref=e408]
+                  - cell "04 abr. 2026" [ref=e409]
+                  - cell "Ocultar" [ref=e410]:
+                    - button "Ocultar" [ref=e411]
+                - row "Buleje main Buleje main Enterprise Publicado bodega 0.0 (0) 5% 112 04 abr. 2026 Ocultar" [ref=e417]:
+                  - cell "Buleje main" [ref=e418]:
+                    - generic [ref=e419]
+                  - cell "Buleje main" [ref=e422]:
+                    - generic [ref=e423]
+                  - cell "Enterprise" [ref=e426]:
+                    - generic [ref=e427]: Enterprise
+                  - cell "Publicado" [ref=e428]:
+                    - generic [ref=e429]: Publicado
+                  - cell "bodega" [ref=e431]
+                  - cell "0.0 (0)" [ref=e432]:
+                    - generic [ref=e433]
+                  - cell "5%" [ref=e437]:
+                    - generic [ref=e438]: 5%
+                  - cell "112" [ref=e439]
+                  - cell "04 abr. 2026" [ref=e440]
+                  - cell "Ocultar" [ref=e441]:
+                    - button "Ocultar" [ref=e442]
+  - region "Notifications alt+T"
+  - alert [ref=e448]

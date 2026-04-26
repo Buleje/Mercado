@@ -2411,3 +2411,40 @@ body[data-marketplace-explorar] .tabular-nums {
     animation: none;
   }
 }
+
+/* CartSidebar — override de ancho.
+   El componente original (`components/CartSidebar.tsx`) está marcado como
+   zona de peligro por su sync multi-tab con BroadcastChannel; aplicamos el
+   ajuste visual aquí sin tocar el archivo. Reducimos de 28rem (max-w-md =
+   448px) a 26rem (~416px) para que la barra no monopolice viewports
+   medianos. En mobile sigue 100% gracias al `w-full` original. */
+@media (min-width: 640px) {
+  [data-testid="cart-sidebar"] {
+    max-width: 26rem;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   SuperAdmin typography boost
+   El usuario pidió tipografías más grandes y legibles en todo /superadmin.
+   No tocamos texto-2xs (badges) ni labels técnicos — sólo subimos los
+   text-xs / text-sm / text-base de contenido y de números tabulares.
+   ──────────────────────────────────────────────────────────────────────── */
+.superadmin-shell {
+  font-size: 15px; /* base ~14 → 15 (~+7%) */
+}
+.superadmin-shell .text-xs { font-size: 0.825rem; line-height: 1.15rem; }
+.superadmin-shell .text-sm { font-size: 0.95rem;  line-height: 1.4rem; }
+.superadmin-shell .text-base { font-size: 1.05rem; line-height: 1.55rem; }
+.superadmin-shell h1 { font-size: 1.95rem; line-height: 2.35rem; }
+.superadmin-shell h2 { font-size: 1.55rem; line-height: 1.95rem; }
+.superadmin-shell h3 { font-size: 1.2rem; line-height: 1.65rem; }
+
+/* Recharts axis ticks: subimos a 13px para legibilidad */
+.superadmin-shell .recharts-cartesian-axis-tick-value tspan { font-size: 13px; }
+.superadmin-shell .recharts-tooltip-wrapper { font-size: 14px !important; }
+.superadmin-shell .recharts-legend-item-text { font-size: 14px !important; }
+
+/* Tabular nums siempre en cifras grandes */
+.superadmin-shell .tabular-nums { font-feature-settings: "tnum"; }
+

@@ -87,6 +87,14 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "chart.googleapis.com" },
       { protocol: "https", hostname: "api.qrserver.com" },
+      // Vercel Blob (banners, logos de tienda subidos via /api/uploads)
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      // Cloudflare R2 (alt storage backend)
+      { protocol: "https", hostname: "*.r2.dev" },
+      { protocol: "https", hostname: "*.r2.cloudflarestorage.com" },
+      // Placeholders dev/staging
+      { protocol: "https", hostname: "placehold.co" },
+      { protocol: "https", hostname: "via.placeholder.com" },
     ],
   },
 
