@@ -15,6 +15,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // ── Mock: resolve-tenant — always return "main" ──────────────────────────────
 vi.mock("@/lib/resolve-tenant", () => ({
   resolveTenantSlug: vi.fn(async () => "main"),
+  resolveTenantSlugToId: vi.fn(async (slug: string) => slug),
 }));
 
 // ── Mock: logger — swallow all log output ────────────────────────────────────

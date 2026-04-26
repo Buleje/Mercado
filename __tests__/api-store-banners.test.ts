@@ -21,10 +21,18 @@ const { mockRequireAdmin } = vi.hoisted(() => ({ mockRequireAdmin: vi.fn() }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
 // ── prisma (store resolver) ───────────────────────────────────────────────────
-const { mockStoreFindFirst } = vi.hoisted(() => ({ mockStoreFindFirst: vi.fn() }));
+// findFirst — usado por POST/PUT/DELETE (admin path) que resuelven con tenantId.
+// findUnique — usado por GET (cross-tenant marketplace) que solo resuelve por slug.
+const { mockStoreFindFirst, mockStoreFindUnique } = vi.hoisted(() => ({
+  mockStoreFindFirst: vi.fn(),
+  mockStoreFindUnique: vi.fn(),
+}));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    store: { findFirst: mockStoreFindFirst },
+    store: {
+      findFirst: mockStoreFindFirst,
+      findUnique: mockStoreFindUnique,
+    },
   },
 }));
 
@@ -117,7 +125,9 @@ function makeBannerParams(slug = "mi-tienda", bannerId = "banner-1") {
 describe("GET /api/marketplace/stores/[slug]/banners", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockStoreFindFirst.mockResolvedValue(STORE);
+    // GET es cross-tenant: usa findUnique({ where: { slug } }) y obtiene el
+    // tenantId real del store, ignorando el x-tenant-id del header.
+    mockStoreFindUnique.mockResolvedValue(STORE);
     mockBList.mockResolvedValue([BANNER]);
   });
 
@@ -136,20 +146,26 @@ describe("GET /api/marketplace/stores/[slug]/banners", () => {
     expect(mockBList).toHaveBeenCalledWith("tenant-a", "store-1", "hero");
   });
 
-  // 8. Multi-tenant: usa tenantId del header
-  it("multi-tenant: usa x-tenant-id para resolver la tienda", async () => {
+  // 8. Cross-tenant: el GET resuelve store por slug global, no por header
+  it("cross-tenant: resuelve store solo por slug ignorando x-tenant-id", async () => {
     await GET(makeGetReq("mi-tienda", "tenant-b"), makeSlugParams());
-    expect(mockStoreFindFirst).toHaveBeenCalledWith(
+    expect(mockStoreFindUnique).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ tenantId: "tenant-b" }),
-      })
+        where: expect.objectContaining({ slug: "mi-tienda" }),
+      }),
     );
+    // Despues delega al tenantId REAL del store (tenant-a) no al header (tenant-b)
+    expect(mockBList).toHaveBeenCalledWith("tenant-a", "store-1", undefined);
   });
 
-  it("retorna 404 si la tienda no existe", async () => {
-    mockStoreFindFirst.mockResolvedValue(null);
+  it("devuelve banners vacios resilient cuando la tienda no existe", async () => {
+    // El handler GET es resilient (cross-tenant marketplace): si no encuentra
+    // el store devuelve { banners: [] } con 200, no 404, para no romper la UI.
+    mockStoreFindUnique.mockResolvedValue(null);
     const res = await GET(makeGetReq(), makeSlugParams());
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.banners).toEqual([]);
   });
 
   // 9. Banner con endDate pasado → excluido del list

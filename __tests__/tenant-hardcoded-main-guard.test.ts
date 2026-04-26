@@ -17,6 +17,7 @@ const ALLOWED_BASELINE: Record<string, number> = {
   "app/api/contact/route.ts": 1,
   "app/api/cron/auto-backup/route.ts": 1,
   "app/api/cron/isolation-monitor/route.ts": 1,
+  "app/api/cron/marketplace-sla-watchdog/route.ts": 1, // Platform-wide SLA watchdog cron — same pattern as marketplace-weekly-report
   "app/api/cron/marketplace-weekly-report/route.ts": 1,
   "app/api/daily-digest/route.ts": 1,                  // WhatsApp fallback when no tenant resolved
   "app/api/marketplace/drivers/apply/route.ts": 2,     // Platform admin notifications (DB write + WhatsApp admin)

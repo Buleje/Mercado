@@ -5,7 +5,11 @@ import path from 'path'
 const SKILLS_DIR = path.resolve(__dirname, '../../.github/skills')
 const AGENTS_DIR = path.resolve(__dirname, '../../.github/agents')
 
-describe('Skills structure validation', () => {
+// Legacy: este test fue escrito para un setup `.github/skills/*.instructions.md`
+// que ya no existe en este repo. Los skills viven en `.claude/skills/<name>/SKILL.md`
+// (51 skills al 2026-04-26). Si SKILLS_DIR existe (otro repo o branch), el test
+// sigue siendo significativo. Si NO existe, lo skipeamos.
+describe.skipIf(!fs.existsSync(SKILLS_DIR))('Skills structure validation', () => {
   const skillFiles = fs.existsSync(SKILLS_DIR)
     ? fs.readdirSync(SKILLS_DIR).filter(f => f.endsWith('.instructions.md'))
     : []

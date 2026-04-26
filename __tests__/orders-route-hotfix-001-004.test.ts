@@ -26,6 +26,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/resolve-tenant", () => ({
   // Identity mock: whatever header the client sends becomes the tenantId.
   resolveTenantSlug: vi.fn(async (slug: string) => slug),
+  resolveTenantSlugToId: vi.fn(async (slug: string) => slug),
 }));
 
 vi.mock("@/lib/logger", () => ({
