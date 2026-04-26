@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 /**
- * post-tool-tsc.mjs — PostToolUse hook para Edit/Write/MultiEdit en archivos .ts/.tsx.
+ * post-tool-tsc.mjs — PostToolUse hook para Edit/Write/MultiEdit en .ts/.tsx.
  *
- * Corre `npx tsc --noEmit --incremental` SOBRE TODO EL PROYECTO después de
- * cada edit. Usa caché incremental (`.claude/.tsbuildinfo`) así la segunda
- * corrida es rápida (2-5s). La primera tarda más (~30-60s) pero corre async
- * y no bloquea la respuesta de Claude.
+ * Corre `npx tsc --noEmit --incremental` con DEBOUNCE de 3s: en bursts de
+ * edits rapidos solo la ULTIMA invocacion ejecuta tsc. Cada call escribe
+ * su timestamp en .claude/.tsc-debounce.lock y espera 3s; si el lock
+ * cambio (otra invocacion mas reciente), exit. Asi evitamos N corridas
+ * de tsc pisandose cuando Claude hace 10 edits en serie.
  *
- * Si tsc encuentra errores, los escribe en `.claude/.tsc-errors.log` con
- * timestamp del archivo editado que disparó la corrida. Así quien mire el
- * log sabe exactamente qué edit generó los errores. No bloquea el edit —
- * solo deja una pista para que Claude (o un humano) lo vea en la próxima
- * iteración.
+ * Es ASYNC (settings.json declara async: true) → el sleep no bloquea Claude.
  *
- * Es ASYNC (settings.json lo declara con async: true) → no bloquea.
+ * Usa cache incremental (.claude/.tsbuildinfo) → corridas subsecuentes
+ * son rapidas (2-5s). Primera corrida ~30-60s.
  *
- * Complementa a post-tool-lint.mjs: ESLint pega sintaxis + rules,
- * tsc pega TIPOS (lo que ESLint no ve). Juntos cubren la mayoría de
- * errores que se escapan al edit-time.
+ * Si tsc encuentra errores → escribe en .claude/.tsc-errors.log con
+ * timestamp del archivo que disparo la corrida ganadora.
+ *
+ * Complementa post-tool-lint.mjs: ESLint pega sintaxis + rules,
+ * tsc pega TIPOS. Juntos cubren la mayoria de errores edit-time.
  *
  * Skipea: node_modules, .next, dist, .claude/worktrees, docs, lib/generated.
  */
-import { readFileSync, appendFileSync, mkdirSync } from "node:fs";
+import { readFileSync, appendFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { resolve, relative, extname, dirname } from "node:path";
 
@@ -39,6 +39,7 @@ const SKIP_DIRS = [
   "lib/generated",
   "_debug_",
 ];
+const DEBOUNCE_MS = 3000;
 
 function readInput() {
   try {
@@ -70,6 +71,7 @@ const rel = relative(projectRoot, abs).replace(/\\/g, "/");
 
 if (rel.startsWith("..") || shouldSkip(rel)) process.exit(0);
 
+const lockPath = `${projectRoot}/.claude/.tsc-debounce.lock`;
 const logPath = `${projectRoot}/.claude/.tsc-errors.log`;
 const tsBuildInfo = `${projectRoot}/.claude/.tsbuildinfo`;
 
@@ -77,6 +79,32 @@ try {
   mkdirSync(dirname(tsBuildInfo), { recursive: true });
 } catch {}
 
+// ── Debounce: claim slot, wait, verify still owner ──────────────
+const myTs = String(Date.now());
+try {
+  writeFileSync(lockPath, myTs, "utf8");
+} catch {
+  process.exit(0);
+}
+
+await new Promise((r) => setTimeout(r, DEBOUNCE_MS));
+
+let currentTs = "";
+try {
+  currentTs = existsSync(lockPath) ? readFileSync(lockPath, "utf8").trim() : "";
+} catch {
+  process.exit(0);
+}
+
+if (currentTs !== myTs) {
+  // A newer Edit invocation took over → let it run tsc
+  if (process.env.BSM_HOOKS_DEBUG === "1") {
+    process.stderr.write(`⏭  post-tool-tsc: debounced (newer edit superseded ${rel})\n`);
+  }
+  process.exit(0);
+}
+
+// ── Run tsc ─────────────────────────────────────────────────────
 try {
   execSync(
     `npx --no tsc --noEmit --incremental --tsBuildInfoFile "${tsBuildInfo}"`,
