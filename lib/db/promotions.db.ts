@@ -1,7 +1,9 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { logger } from "@/lib/logger";
 import type {
   Promotion as PPromotion,
   Coupon as PCoupon,
@@ -68,6 +70,12 @@ function mapCoupon(c: PCoupon): DbCoupon {
 
 export const PromotionsDB = {
   async getAll(tenantId: string): Promise<DbPromotion[]> {
+    "use cache";
+    // Promociones storefront — cambian con baja frecuencia (admin las crea
+    // manualmente). 5 min revalidate balance perceived freshness vs DB load.
+    cacheLife({ revalidate: 300, stale: 60, expire: 1800 });
+    cacheTag(`tenant:${tenantId}:promotions`);
+
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.promotion.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapPromotion);
   },
@@ -100,7 +108,9 @@ export const PromotionsDB = {
     return mapPromotion(row);
   },
   async delete(id: string): Promise<void> {
-    await prisma.promotion.delete({ where: { id } }).catch(() => {});
+    await prisma.promotion.delete({ where: { id } }).catch((err) => {
+      logger.error("[promotions.db] delete failed", { id, error: String(err) });
+    });
   },
 };
 
@@ -238,6 +248,8 @@ export const CouponsDB = {
     (tenantId: string, code: string, deductAmount?: number): Promise<DbCoupon | null>;
   },
   async delete(id: string): Promise<void> {
-    await prisma.coupon.delete({ where: { id } }).catch(() => {});
+    await prisma.coupon.delete({ where: { id } }).catch((err) => {
+      logger.error("[coupons.db] delete failed", { id, error: String(err) });
+    });
   },
 };
