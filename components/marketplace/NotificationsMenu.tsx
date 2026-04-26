@@ -167,7 +167,11 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-full mt-3 w-[380px] max-w-[90vw] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-2xl shadow-black/10 overflow-hidden z-50"
+            // Anchoring viewport-safe: en desktop el panel mide 380px y se
+            // ancla al borde derecho del botón. En mobile (≤640px) el panel
+            // se extiende a casi todo el ancho del viewport con margen
+            // lateral de 1rem para no recortarse.
+            className="absolute top-full mt-3 right-0 w-[380px] max-w-[calc(100vw-2rem)] sm:max-w-[380px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-2xl shadow-black/10 overflow-hidden z-50"
           >
             {/* Header editorial */}
             <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-5 py-4">

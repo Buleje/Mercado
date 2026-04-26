@@ -128,23 +128,44 @@ export default function QuickAddDrawer() {
 
             <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
               <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 448px"
-                  className="object-cover"
-                />
+                {product.image ? (
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 448px"
+                    className="object-cover"
+                  />
+                ) : (
+                  /* Sin imagen: placeholder estándar — mismo lenguaje visual
+                     que la tarjeta del catálogo. Indica al dueño qué falta. */
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]">
+                    <svg
+                      className="h-10 w-10 opacity-40"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect width={18} height={18} x={3} y={3} rx={2} />
+                      <circle cx={9} cy={9} r={2} />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                    <span className="text-sm font-semibold">Falta agregar imagen</span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 flex flex-col gap-1">
-                <Link
-                  href={`/producto/${getProductSlug(product)}`}
-                  onClick={close}
-                  className="text-base font-semibold text-gray-900 hover:text-[var(--accent)] dark:text-gray-100"
-                >
+                {/* En la tienda individual no hay PDP — el quick-view
+                    contiene toda la info necesaria. Mostramos el nombre como
+                    heading no enlazable. */}
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   {product.name}
-                </Link>
+                </h3>
                 {product.category && (
                   <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">
                     {product.category}

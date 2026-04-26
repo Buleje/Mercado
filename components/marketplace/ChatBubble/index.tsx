@@ -69,9 +69,13 @@ export default function ChatBubble({
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar chat" : "Abrir chat con la tienda"}
         className={cn(
-          "fixed z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[#00B4A6] text-white shadow-lg transition",
-          "hover:scale-105 hover:bg-[#00B4A6]/90 focus:outline-none focus:ring-4 focus:ring-[#00B4A6]/30",
-          position === "bottom-right" ? "bottom-5 right-5" : "bottom-5 left-5",
+          "fixed z-[60] flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg transition ring-2 ring-white/40",
+          "hover:scale-105 hover:bg-[var(--accent)]/90 focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/30",
+          // Posición mobile sube por encima de BottomNav (60px) + sticky
+          // cart (~76px) + buffer. Desktop esquina inferior clásica.
+          position === "bottom-right"
+            ? "bottom-[156px] right-3 sm:bottom-5 sm:right-5"
+            : "bottom-[156px] left-3 sm:bottom-5 sm:left-5",
           open && "rotate-90",
         )}
       >
@@ -96,8 +100,10 @@ export default function ChatBubble({
       {open && (
         <div
           className={cn(
-            "fixed z-[60] flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900",
-            position === "bottom-right" ? "bottom-24 right-5" : "bottom-24 left-5",
+            "fixed z-[60] flex h-[520px] max-h-[78vh] w-[calc(100vw-1.5rem)] max-w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900",
+            position === "bottom-right"
+              ? "bottom-[220px] right-3 sm:bottom-24 sm:right-5"
+              : "bottom-[220px] left-3 sm:bottom-24 sm:left-5",
           )}
           role="dialog"
           aria-label={`Chat con ${storeName}`}

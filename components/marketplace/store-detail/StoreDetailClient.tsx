@@ -22,6 +22,7 @@ import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
+import StorePromoBannersStrip from "./StorePromoBannersStrip";
 import StoreCategories, { type StoreCategoryChip } from "./StoreCategories";
 import StoreCatalog from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
@@ -66,38 +67,18 @@ export default function StoreDetailClient({
         zone={store.zone}
       />
 
-      {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
+      {/* ── Volver a Tiendas — reemplaza breadcrumb largo ─────────────────── */}
       <nav
-        aria-label="Ruta de navegacion"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6"
+        aria-label="Volver al directorio"
+        className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4"
       >
-        <ol className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-          <li>
-            <Link
-              href="/marketplace"
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Inicio
-            </Link>
-          </li>
-          <li aria-hidden>
-            <ChevronRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
-          </li>
-          <li>
-            <Link
-              href="/marketplace/explorar"
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Bodegas
-            </Link>
-          </li>
-          <li aria-hidden>
-            <ChevronRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
-          </li>
-          <li className="text-gray-900 dark:text-white truncate max-w-[200px]" aria-current="page">
-            {store.name}
-          </li>
-        </ol>
+        <Link
+          href="/tiendas"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+        >
+          <ChevronRight className="h-3.5 w-3.5 rotate-180" strokeWidth={2.5} aria-hidden />
+          Volver a Tiendas
+        </Link>
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
@@ -113,9 +94,12 @@ export default function StoreDetailClient({
         paymentMethods={paymentMethods}
       />
 
+      {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
+      <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
+
       {/* ── Categories sticky + Catalog ───────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
-        <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 bg-[var(--surface-canvas)]/90 backdrop-blur-md border-b border-[var(--rule-soft)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-10">
+        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 mb-6 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-soft)] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]">
           <StoreCategories
             categories={categories}
             activeCategory={activeCategory}

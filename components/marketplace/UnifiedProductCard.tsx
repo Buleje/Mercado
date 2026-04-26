@@ -173,6 +173,14 @@ export default function UnifiedProductCard({
 
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
+    // Vibration haptic feedback en mobile — confirmación táctil rápida
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(30);
+      } catch {
+        /* silent */
+      }
+    }
     if (hasModifiers) {
       // Abre selector — el cliente debe elegir antes de agregar al carrito.
       setModifierModalOpen(true);
@@ -371,9 +379,11 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Precio + CTA circular — precio RESALTADO + ahorro visible */}
-        <div className="mt-auto pt-3 flex items-end justify-between gap-2">
-          <div className="min-w-0">
+        {/* Precio + CTA circular — precio RESALTADO + ahorro visible.
+            En mobile aumentamos el gap para que el botón del carrito
+            no se vea pegado al precio. */}
+        <div className="mt-auto pt-3 flex items-end justify-between gap-3 sm:gap-2">
+          <div className="min-w-0 flex-1">
             {/* Precio tachado + ahorro: si hay descuento, mostrar fila pre-precio */}
             {product.originalPrice && product.originalPrice > product.price && (
               <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -389,7 +399,7 @@ export default function UnifiedProductCard({
             <div className="flex items-baseline gap-1 flex-wrap">
               <span
                 className={cn(
-                  "text-2xl font-black leading-none tabular-nums tracking-[-0.02em]",
+                  "text-xl sm:text-2xl font-black leading-none tabular-nums tracking-[-0.02em]",
                   product.originalPrice && product.originalPrice > product.price
                     ? "text-[var(--accent)]"
                     : "text-[var(--text-primary)]",
@@ -443,7 +453,7 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ring-1",
+                "inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
                 isOutOfStock
                   ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded

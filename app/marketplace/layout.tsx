@@ -1,18 +1,20 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
-import MarketplacePromoBar from "@/components/marketplace/MarketplacePromoBar";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
 // Widgets floating lazy-loaded (dynamic ssr:false) — reducen el bundle
 // initial del layout en ~300-500kb de framer-motion.
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
-import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
+import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
+import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
 import StickyCartBar from "@/components/marketplace/StickyCartBar";
+import BottomNav from "@/components/marketplace/BottomNav";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import NavModeToast from "@/components/marketplace/NavModeToast";
 
 export const metadata: Metadata = {
   title: {
@@ -46,12 +48,12 @@ export default function MarketplaceLayout({
               <SkipLink />
               {/* Chrome persistente — NO se remonta al navegar entre páginas
                   del marketplace. Sólo el `<main>` interior se re-renderiza. */}
-              <MarketplacePromoBar />
+              <ConditionalPromoBar />
               <Suspense fallback={null}>
                 <MarketplaceNavbar />
               </Suspense>
               <Suspense fallback={null}>
-                <MarketplaceSecondaryNav />
+                <ConditionalSecondaryNav />
               </Suspense>
               <Suspense fallback={null}>
                 <main id="main-content">{children}</main>
@@ -63,6 +65,9 @@ export default function MarketplaceLayout({
               <MarketplaceFloatingWidgets />
               {/* Sticky cart bar — solo mobile/tablet, aparece cuando hay items. */}
               <StickyCartBar />
+              <BottomNav />
+              {/* Toast de cambio de modo nav — solo aparece al detectar cambio */}
+              <NavModeToast />
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>

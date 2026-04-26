@@ -10,20 +10,25 @@
  * Los 3 son state-locales acá para que el dock pueda abrirlos.
  */
 
-import { useState, useCallback } from "react";
-import { ArrowUp, Clock, Keyboard } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { Clock } from "@buleje/design-system/icons";
 import QuickActionsDock from "@/components/ui-system/QuickActionsDock";
 import RecentlyViewedDrawer from "@/components/ui-system/RecentlyViewedDrawer";
-import ShortcutHelpModal from "@/components/ui-system/ShortcutHelpModal";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 
+/**
+ * FloatingDockController — Sólo deja la acción "Productos recientes"
+ * cuando hay historial. Removidos por feedback del usuario:
+ *   - "Volver arriba" (scroll-top): poco usado; ocupa espacio en mobile
+ *   - "Atajos de teclado": no aplica a mobile, distraía
+ */
 export default function FloatingDockController() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const { items } = useRecentlyViewed();
 
-  const scrollTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  // Sin historial → no rendear nada (libera la zona derecha del viewport
+  // para el chat flotante y el sticky cart bar).
+  if (items.length === 0) return null;
 
   return (
     <>
@@ -32,36 +37,16 @@ export default function FloatingDockController() {
         scrollThreshold={400}
         actions={[
           {
-            id: "scroll-top",
-            icon: <ArrowUp className="h-4 w-4" strokeWidth={2} aria-hidden />,
-            label: "Volver arriba",
-            onClick: scrollTop,
-          },
-          {
             id: "history",
             icon: <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />,
             label: "Productos recientes",
             onClick: () => setHistoryOpen(true),
-            badge: items.length > 0 ? items.length : undefined,
-            show: items.length > 0,
-          },
-          {
-            id: "help",
-            icon: <Keyboard className="h-4 w-4" strokeWidth={2} aria-hidden />,
-            label: "Atajos (?)",
-            onClick: () => {
-              // disparar el modal via custom event para respetar showFab
-              const evt = new KeyboardEvent("keydown", { key: "?", shiftKey: true });
-              document.dispatchEvent(evt);
-            },
+            badge: items.length,
           },
         ]}
       />
 
       <RecentlyViewedDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} />
-
-      {/* Modal con atajos — ya escucha "?" + Shift via useKeyboardShortcut */}
-      <ShortcutHelpModal showFab={false} />
     </>
   );
 }

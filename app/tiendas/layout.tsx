@@ -1,15 +1,17 @@
 import { Suspense } from "react";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
-import MarketplacePromoBar from "@/components/marketplace/MarketplacePromoBar";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
-import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
+import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
+import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
 import StickyCartBar from "@/components/marketplace/StickyCartBar";
+import BottomNav from "@/components/marketplace/BottomNav";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import NavModeToast from "@/components/marketplace/NavModeToast";
 
 /**
  * Layout de `/tiendas` — alineado con `/marketplace/layout.tsx`.
@@ -31,12 +33,12 @@ export default function TiendasLayout({
           <AddedToCartDrawerProvider>
             <div className="relative min-h-screen bg-[var(--surface-canvas)]">
               <SkipLink />
-              <MarketplacePromoBar />
+              <ConditionalPromoBar />
               <Suspense fallback={null}>
                 <MarketplaceNavbar />
               </Suspense>
               <Suspense fallback={null}>
-                <MarketplaceSecondaryNav />
+                <ConditionalSecondaryNav />
               </Suspense>
               <Suspense fallback={null}>
                 <main id="main-content">{children}</main>
@@ -46,6 +48,8 @@ export default function TiendasLayout({
                 <QuickAddDrawer />
               </Suspense>
               <StickyCartBar />
+              <BottomNav />
+              <NavModeToast />
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>

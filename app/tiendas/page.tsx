@@ -28,17 +28,11 @@ export const metadata: Metadata = {
 /**
  * /tiendas — Directorio de tiendas del marketplace Buleje.
  *
- * Movido desde /marketplace (ronda A) donde era una vista secundaria
- * toggleada con el modo "Tiendas". Ahora es página independiente con
- * URL canónica, SEO propio y foco 100% en descubrimiento de tiendas.
- *
- * Hereda el layout raíz (app/layout.tsx) — sin MarketplaceNavbar para
- * mantenerlo como ruta top-level. Si se quiere navbar de marketplace,
- * mover a app/marketplace/tiendas/ en ronda B.
+ * Sin "use cache" — el page renderiza fresh cada nav. El client component
+ * trae los datos via fetch (que tiene su propio Cache-Control de 60s
+ * en el endpoint /api/marketplace/stores). Next 16 + cacheComponents
+ * prohíbe `export const revalidate` (ADR-019).
  */
 export default async function TiendasPage() {
-  // Sin "use cache" — el page se renderiza fresh cada nav. El client
-  // component detecta state stuck (loading=true sin stores tras 4s) y
-  // hace window.location.reload como salvavidas. Ver TiendasClient.
   return <TiendasClient />;
 }

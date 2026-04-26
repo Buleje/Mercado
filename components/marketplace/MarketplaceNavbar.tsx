@@ -48,7 +48,9 @@ const NotificationsMenu = dynamic(
   { ssr: false },
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
+import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import { useLocale } from "@/contexts/locale-context";
 
@@ -221,9 +223,16 @@ export default function MarketplaceNavbar() {
   const hasActiveLive = useActiveLivePoll();
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");
+  const navMode = useMarketplaceNavMode();
+  const isTiendasOnly = navMode === "tiendas-only";
   const visibleLinks = PRIMARY_LINKS.filter(
     (l) => navVisibility[l.id] !== false,
   );
+  // En modo tiendas-only el chip "Bodegas" sobra: ya estamos en /tiendas
+  // y el navbar debe priorizar el buscador centrado.
+  const renderedLinks = isTiendasOnly
+    ? visibleLinks.filter((l) => l.id !== "bodegas")
+    : visibleLinks;
 
   const handleOpenCart = useCallback(() => {
     router.push("/marketplace/carrito");
@@ -243,11 +252,17 @@ export default function MarketplaceNavbar() {
       e.preventDefault();
       const q = searchQuery.trim();
       if (q) {
-        router.push(`/marketplace/buscar?q=${encodeURIComponent(q)}`);
+        // En modo "Solo Tiendas" la búsqueda filtra el listado de tiendas en
+        // /tiendas?q=, no abre la página de búsqueda cross-product.
+        if (isTiendasOnly) {
+          router.push(`/tiendas?q=${encodeURIComponent(q)}`);
+        } else {
+          router.push(`/marketplace/buscar?q=${encodeURIComponent(q)}`);
+        }
         setMobileMenuOpen(false);
       }
     },
-    [searchQuery, router],
+    [searchQuery, router, isTiendasOnly],
   );
 
   // Close user menu on outside click
@@ -329,13 +344,17 @@ export default function MarketplaceNavbar() {
             <div data-tour="search" className="hidden md:block flex-1 max-w-[680px]">
               <NavbarSearchAutocomplete
                 className="block"
-                placeholder={t("nav.searchPlaceholder")}
+                placeholder={
+                  isTiendasOnly
+                    ? "Buscar producto o tienda en Pucallpa..."
+                    : t("nav.searchPlaceholder")
+                }
               />
             </div>
 
             {/* ── Nav links transaccionales (lg+) ── */}
             <div className="hidden lg:flex items-center gap-0.5">
-              {visibleLinks.map((link) => {
+              {renderedLinks.map((link) => {
                 if (link.discover) {
                   return <DiscoverMegaMenu key="discover" variant="desktop" />;
                 }
@@ -411,6 +430,9 @@ export default function MarketplaceNavbar() {
                     </span>
                     <span className="hidden sm:inline max-w-[5.5rem] truncate text-sm font-bold text-[var(--text-primary)]">
                       {customer.name?.split(" ")[0] ?? t("nav.account")}
+                    </span>
+                    <span className="hidden md:inline">
+                      <ClienteFrecuenteBadge variant="chip" />
                     </span>
                     <ChevronDown
                       className={cn(
@@ -630,7 +652,7 @@ export default function MarketplaceNavbar() {
             {/* Scrollable: links + mega-menu + switchers */}
             <div className="flex-1 overflow-y-auto px-3 py-3">
               <div className="space-y-0.5">
-                {visibleLinks.map((link) => {
+                {renderedLinks.map((link) => {
                   if (link.discover) return null;
                   const active = isActive(link);
                   const LinkIcon = link.icon;

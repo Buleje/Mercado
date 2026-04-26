@@ -124,6 +124,29 @@ export default function StoreCatalog({
     return list;
   }, [products, activeCategory, search, sort]);
 
+  /**
+   * Cuando NO hay filtro activo (ni categoría ni búsqueda), agrupamos los
+   * productos por categoría para que el cliente navegue por secciones —
+   * mucho más fácil que un grid plano de 40+ items mezclados. Cuando aplica
+   * un filtro o busca, mostramos un grid plano (las secciones vacías
+   * confunden al filtrar).
+   */
+  const grouped = useMemo(() => {
+    if (activeCategory || search.trim()) return null;
+    const map = new Map<string, DbStoreProduct[]>();
+    for (const p of filtered) {
+      const cat = p.productCategory || "Otros";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(p);
+    }
+    // Orden estable: por cantidad descendente (la categoría con más
+    // productos primero suele ser la "estrella" del catálogo).
+    return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
+  }, [filtered, activeCategory, search]);
+
+  const humanizeCategory = (id: string) =>
+    id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <section
       id="catalogo"
@@ -227,7 +250,63 @@ export default function StoreCatalog({
             </button>
           )}
         </div>
-      ) : view === "grid" ? (
+      ) : view === "list" ? (
+        <div className="flex flex-col gap-2">
+          {filtered.map((p) => (
+            <ProductListRow key={p.id} product={p} storeSlug={storeSlug} />
+          ))}
+        </div>
+      ) : grouped ? (
+        // Vista por secciones: agrupada por categoría, cada sección con su header.
+        <div className="space-y-10">
+          {grouped.map(([cat, items]) => (
+            <section
+              key={cat}
+              id={`cat-${cat}`}
+              className="scroll-mt-28"
+              aria-labelledby={`cat-h-${cat}`}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)] shrink-0" aria-hidden="true" />
+                <div>
+                  <h3
+                    id={`cat-h-${cat}`}
+                    className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight"
+                  >
+                    {humanizeCategory(cat)}
+                  </h3>
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    {items.length} producto{items.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {items.map((p, idx) => (
+                  <UnifiedProductCard
+                    key={p.id}
+                    index={idx}
+                    href={`/marketplace/${storeSlug}/producto/${p.id}`}
+                    product={{
+                      id: p.productId,
+                      name: p.productName,
+                      price: p.retailPrice,
+                      image: p.productImage,
+                      unit: p.productUnit,
+                      category: p.productCategory,
+                      storeId,
+                      storeName,
+                      storeSlug,
+                      storeProductId: p.id,
+                      modifierGroups: p.modifierGroups,
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        // Grid plano cuando hay filtro de categoría o búsqueda activa.
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((p, idx) => (
             <UnifiedProductCard
@@ -248,12 +327,6 @@ export default function StoreCatalog({
                 modifierGroups: p.modifierGroups,
               }}
             />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {filtered.map((p) => (
-            <ProductListRow key={p.id} product={p} storeSlug={storeSlug} />
           ))}
         </div>
       )}

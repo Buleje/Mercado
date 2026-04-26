@@ -20,20 +20,19 @@ import { Store, MapPin, ArrowUpRight, List, Map as MapIcon } from "@buleje/desig
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceStoresView, {
-  CATEGORIES,
   ZONES,
 } from "@/components/marketplace/MarketplaceStoresView";
 import {
   useMarketplaceGeo,
   type MarketplaceStore,
 } from "@/components/marketplace/useMarketplaceGeo";
-import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
-import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import MarketplaceFilters, {
+  PRODUCT_CATEGORIES,
   type MarketplaceFiltersState,
 } from "@/components/marketplace/MarketplaceFilters";
+import { Boxes, Package, CupSoda, Sparkles, Leaf, MoreHorizontal } from "lucide-react";
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
@@ -44,6 +43,13 @@ import StoresSortSelector, {
 import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
 import MisTiendasFavoritasStrip from "@/components/marketplace/MisTiendasFavoritasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
+import TiendasPromoCards from "@/components/marketplace/TiendasPromoCards";
+import TiendasMainCategoriesGrid from "@/components/marketplace/TiendasMainCategoriesGrid";
+import TiendasHeroAds from "@/components/marketplace/TiendasHeroAds";
+import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
+import MisPedidosFavoritosStrip from "@/components/marketplace/MisPedidosFavoritosStrip";
+import RepetirUltimoPedido from "@/components/marketplace/RepetirUltimoPedido";
+import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import dynamic from "next/dynamic";
 
 const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
@@ -56,6 +62,16 @@ const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), 
 });
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
+
+// Mapa icono por categoría de producto — coherencia visual con la row de Zona
+const PRODUCT_CATEGORY_ICONS: Record<string, typeof Boxes> = {
+  todos: Boxes,
+  abarrotes: Package,
+  bebidas: CupSoda,
+  limpieza: Sparkles,
+  frescos: Leaf,
+  otros: MoreHorizontal,
+};
 
 const MAX_PRICE_LIMIT = 500;
 
@@ -300,213 +316,339 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
     ? ZONES.find((z) => z.id === zone)?.label
     : undefined;
 
+  const navMode = useMarketplaceNavMode();
+  const isTiendasOnly = navMode === "tiendas-only";
+
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
 
-      {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────── */}
-      <TiendasBreadcrumb zonaLabel={zonaLabel} />
+      {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────────
+           Oculto en modo `tiendas-only` — el link "Inicio" llevaría
+           fuera del contexto de tienda y confundiría al usuario. */}
+      {!isTiendasOnly && <TiendasBreadcrumb zonaLabel={zonaLabel} />}
 
-      {/* ── Hero editorial compacto — reemplaza el banner promocional ─── */}
-      <section className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 -right-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
-        />
-        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-10">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-5">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-            />
-            <MapPin className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            Directorio · Pucallpa
-          </p>
-          <h1 className="text-[clamp(2.25rem,6vw,4.25rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-4xl">
-            Las bodegas del barrio,
-            <br />
-            <span className="italic font-serif text-[var(--accent)]">
-              al alcance de un clic.
-            </span>
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.45] max-w-2xl">
-            Bodegas, minimarkets, farmacias y más — filtrá por zona, categoría o cercanía,
-            y recibí en {" "}
-            <span className="text-[var(--text-primary)] font-bold">25 min</span>.
-          </p>
-
-          {/* Search + chips — parte del hero, no sección aparte */}
-          <div className="mt-8 max-w-2xl">
-            <SearchAutocomplete
-              onSearch={setSearch}
-              placeholder="Buscar bodega, minimarket, farmacia..."
-            />
-          </div>
-          <div className="mt-4">
-            <QuickFilterChips activeChips={activeChips} onToggle={handleChipToggle} />
+      {/* ── Header compacto: ubicación + buscador inline ─────────────────
+           Reemplaza el hero editorial gigante. Estilo PedidosYa: data-density
+           > storytelling. La marca se siente vía paleta + tipografía, no
+           vía H1 magazine. */}
+      <section className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <MapPin className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] leading-none">
+                  Tu ubicación
+                </p>
+                <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5 truncate">
+                  Pucallpa · Ucayali
+                </p>
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <SearchAutocomplete
+                onSearch={setSearch}
+                placeholder="¿Qué buscás hoy? Bodega, farmacia, restaurante…"
+              />
+            </div>
           </div>
         </div>
       </section>
 
+      {/* ── Banner rotante de promos (gestionado desde superadmin) ─────
+           Aparece solo cuando NO hay búsqueda activa para no competir
+           con el hero de resultados. */}
+      {search.trim().length === 0 && <TiendasHeroAds />}
+
+      {/* ── Hero de resultados de búsqueda — solo cuando hay query activa ─
+           Da prioridad visual a la tienda buscada antes de las secciones
+           promocionales. Especialmente útil en modo tiendas-only. */}
+      {search.trim().length > 0 && stores.length > 0 && (
+        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-5 sm:p-6">
+            <div className="flex items-end justify-between gap-4 mb-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+                  Resultados para tu búsqueda
+                </p>
+                <h2 className="text-xl sm:text-2xl font-black tracking-[-0.015em] text-[var(--text-primary)]">
+                  &quot;{search.trim()}&quot;{" "}
+                  <span className="text-[var(--text-tertiary)] font-bold text-base">
+                    · {stores.length} {stores.length === 1 ? "tienda" : "tiendas"}
+                  </span>
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+              >
+                Limpiar
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {stores.slice(0, 3).map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/tienda/${s.slug}`}
+                  className="group flex items-center gap-3 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] p-3 hover:border-[var(--accent)] hover:shadow-md transition-all"
+                >
+                  <div
+                    className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--accent-soft)]"
+                  >
+                    {s.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={s.logo}
+                        alt={s.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <Store
+                        className="h-6 w-6 text-[var(--accent)]"
+                        strokeWidth={1.75}
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                      {s.name}
+                    </p>
+                    <p className="text-xs text-[var(--text-tertiary)] truncate">
+                      {(s as { zone?: string }).zone ?? s.category ?? "Pucallpa"}
+                    </p>
+                  </div>
+                  <ArrowUpRight
+                    className="h-4 w-4 text-[var(--accent)] shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    strokeWidth={2.25}
+                  />
+                </Link>
+              ))}
+            </div>
+            {stores.length > 3 && (
+              <p className="mt-3 text-xs text-[var(--text-tertiary)]">
+                Hay {stores.length - 3} resultados más en el listado de abajo.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── 2 cards promocionales con paleta Buleje ──────────────────── */}
+      {search.trim().length === 0 && <TiendasPromoCards />}
+
       {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ── */}
       <MisTiendasFavoritasStrip />
 
-      {/* ── TS-16 Tus tiendas frecuentes ──────────────────────────────── */}
+      {/* ── Tus tiendas frecuentes ──────────────────────────────────── */}
       <TusTiendasStrip />
 
-      {/* ── Destacadas — solo si hay recomendaciones ──────────────────── */}
-      <RevealOnScroll>
-        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
-          <div className="flex items-end justify-between gap-6 mb-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
-                Destacadas
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-                Las que más piden tus vecinos
-              </h2>
-            </div>
-            <p className="hidden sm:block text-sm text-[var(--text-tertiary)] max-w-xs text-right">
-              Curado por volumen de pedidos y cercanía.
-            </p>
-          </div>
-          <RecommendationsStrip />
-        </section>
-      </RevealOnScroll>
+      {/* ── Hero "Repetir último pedido" — solo si hay historial ───────── */}
+      {search.trim().length === 0 && <RepetirUltimoPedido />}
 
-      {/* ── Filtros + Grid — sin 2do header editorial, directo al browse ── */}
-      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-12">
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
-            Todas las tiendas
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-            Filtrá y elegí la que más te convenga
-          </h2>
+      {/* ── Pedidos favoritos del cliente (localStorage) ──────────────── */}
+      <MisPedidosFavoritosStrip />
+
+      {/* ── Recomendadas / destacadas (carrusel) ─────────────────────── */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
+        <TiendasSectionHeader
+          eyebrow="Más pedidas"
+          title="Las que tus vecinos eligen"
+        />
+        <RecommendationsStrip />
+      </section>
+
+      {/* ── Grid de Categorías principales (cajas grandes con imagen) ─
+           Click filtra el grid de "Todas las tiendas" más abajo. */}
+      <TiendasMainCategoriesGrid selected={category} onSelect={setCategory} />
+
+      {/* ── Filtros + Grid — directo, sin hero pesado ─────────────────── */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12 pb-10">
+        <div className="mb-3">
+          <TiendasSectionHeader
+            eyebrow="Todas las tiendas"
+            title="Filtrá y elegí"
+          />
+          {!isTiendasOnly && (
+            <div className="mt-1">
+              <QuickFilterChips activeChips={activeChips} onToggle={handleChipToggle} />
+            </div>
+          )}
         </div>
 
-        {/* Sticky filter cluster — categoria pills + zona + filtros en 1 fila */}
-        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-[var(--surface-canvas)]/95 backdrop-blur border-y border-[var(--rule-soft)] mb-4">
-          <div className="flex items-center gap-3 flex-wrap">
+        {/* Filtros: Tipo de producto + Zona en cajitas grandes
+             (mismo formato visual). La categoría de tienda ya vive
+             en la grid principal de Categorías arriba. */}
+        <div className="space-y-3 mb-4">
+          {/* Tipo de producto = cajitas grandes con icono */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
+              Tipo de producto
+            </p>
             <div
               role="group"
-              aria-label="Filtrar por categoría de tienda"
-              className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0"
+              aria-label="Filtrar por categoría de producto"
+              className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
             >
-              {CATEGORIES.map((cat) => {
-                const active = category === cat.id;
-                const CatIcon = getStoreCategoryIcon(cat.id);
+              {PRODUCT_CATEGORIES.map((c) => {
+                const active = productFilters.productCategory === c.id;
+                const Icon = PRODUCT_CATEGORY_ICONS[c.key] ?? Boxes;
                 return (
                   <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.id)}
+                    key={String(c.id)}
+                    onClick={() =>
+                      handleFiltersChange({ productCategory: c.id })
+                    }
                     aria-pressed={active}
                     className={cn(
-                      "relative inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors shrink-0",
+                      "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all px-3 py-2.5 min-w-[88px]",
                       active
-                        ? "text-[var(--text-primary)]"
-                        : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
                     )}
                   >
-                    <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                    {cat.label}
-                    {active && (
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"
-                      />
-                    )}
+                    <span
+                      className={cn(
+                        "h-9 w-9 rounded-lg flex items-center justify-center",
+                        active
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[11px] font-bold leading-tight text-center",
+                        active
+                          ? "text-[var(--accent)]"
+                          : "text-[var(--text-primary)]",
+                      )}
+                    >
+                      {c.label}
+                    </span>
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <select
-                value={zone}
-                onChange={(e) => setZone(e.target.value)}
-                aria-label="Filtrar por zona"
+          {/* Zonas = cajitas chicas */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
+              Zona de Pucallpa
+            </p>
+            <div
+              role="group"
+              aria-label="Filtrar por zona"
+              className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+            >
+              {ZONES.map((z) => {
+                const active = zone === z.id;
+                return (
+                  <button
+                    key={z.id || "todas"}
+                    onClick={() => setZone(z.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all px-3 py-2.5 min-w-[88px]",
+                      active
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-black tracking-tight",
+                        active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                      )}
+                    >
+                      <MapPin className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[11px] font-bold leading-tight text-center",
+                        active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                      )}
+                    >
+                      {z.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Acciones inline (sort + lista/mapa + limpiar) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <MarketplaceFilters
+              filters={productFilters}
+              userCoords={userCoords}
+              geoLoading={geoLoading}
+              onChange={handleFiltersChange}
+              onRequestGeo={handleGeoSort}
+              hideProductCategory
+            />
+
+            <StoresSortSelector value={sortKey} onChange={setSortKey} />
+
+            <div
+              role="group"
+              aria-label="Cambiar entre vista lista y mapa"
+              className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5"
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-pressed={viewMode === "list"}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-bold tabular-nums outline-none transition-colors",
-                  zone
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/40"
-                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:border-[var(--accent)]/40",
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
+                  viewMode === "list"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
                 )}
               >
-                {ZONES.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {z.label}
-                  </option>
-                ))}
-              </select>
-
-              <MarketplaceFilters
-                filters={productFilters}
-                userCoords={userCoords}
-                geoLoading={geoLoading}
-                onChange={handleFiltersChange}
-                onRequestGeo={handleGeoSort}
-              />
-
-              <StoresSortSelector value={sortKey} onChange={setSortKey} />
-
-              {/* TS-04 toggle vista lista/mapa */}
-              <div
-                role="group"
-                aria-label="Cambiar entre vista lista y mapa"
-                className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5"
+                <List className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("map")}
+                aria-pressed={viewMode === "map"}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
+                  viewMode === "map"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                )}
               >
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-pressed={viewMode === "list"}
-                  aria-label="Vista lista"
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
-                    viewMode === "list"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <List className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  Lista
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("map")}
-                  aria-pressed={viewMode === "map"}
-                  aria-label="Vista mapa"
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
-                    viewMode === "map"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <MapIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  Mapa
-                </button>
-              </div>
-
-              {hasFilters && (
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setCategory("todos");
-                    setZone("");
-                    setGeoActive(false);
-                    setUserCoords(null);
-                    setProductFilters(DEFAULT_FILTERS);
-                    setActiveChips(new Set());
-                    setSortKey("relevance");
-                  }}
-                  aria-label="Limpiar todos los filtros activos"
-                  className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors px-2"
-                >
-                  Limpiar
-                </button>
-              )}
+                <MapIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                Mapa
+              </button>
             </div>
+
+            {hasFilters && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setCategory("todos");
+                  setZone("");
+                  setGeoActive(false);
+                  setUserCoords(null);
+                  setProductFilters(DEFAULT_FILTERS);
+                  setActiveChips(new Set());
+                  setSortKey("relevance");
+                }}
+                aria-label="Limpiar todos los filtros activos"
+                className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors px-2"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
         </div>
 
@@ -537,49 +679,37 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
         )}
       </section>
 
-      {/* ── CTA editorial para bodegueros ───────────────────────────────── */}
-      <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-        />
-        <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-            />
-            Para bodegueros
-          </p>
-          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-            ¿Tienes una tienda?
-            <br />
-            <span className="italic font-serif text-[var(--accent)]">
-              Sumate gratis.
-            </span>
-          </h2>
-          <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-            Publica tus productos, recibe pedidos y llegá a miles de clientes
-            en Pucallpa. Sin costo de inscripción.
-          </p>
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/abrir-tienda"
-              className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
-            >
-              <Store className="h-4 w-4" strokeWidth={1.75} />
-              Registra tu tienda gratis
-              <ArrowUpRight
-                className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                strokeWidth={2.25}
-              />
-            </Link>
-            <Link
-              href="/abrir-tienda#planes"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-            >
-              Ver planes
-            </Link>
+      {/* ── CTA bodegueros — compacto, banda single-row ───────────────── */}
+      <section className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1.5">
+                Para bodegueros
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                ¿Tenés una tienda? <span className="text-[var(--accent)]">Sumate gratis.</span>
+              </h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Publicá productos, recibí pedidos y llegá a miles de clientes en Pucallpa.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2.5 shrink-0">
+              <Link
+                href="/abrir-tienda"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
+              >
+                <Store className="h-4 w-4" strokeWidth={1.75} />
+                Registrar tienda
+                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+              </Link>
+              <Link
+                href="/abrir-tienda#planes"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              >
+                Ver planes
+              </Link>
+            </div>
           </div>
         </div>
       </section>

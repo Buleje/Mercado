@@ -36,11 +36,14 @@ export interface MarketplaceFiltersProps {
   geoLoading: boolean;
   onChange: (patch: Partial<MarketplaceFiltersState>) => void;
   onRequestGeo: () => void;
+  /** Si true, no renderiza el row horizontal de PRODUCT_CATEGORIES
+      (porque el caller lo está renderizando arriba en formato propio). */
+  hideProductCategory?: boolean;
 }
 
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
 
-const PRODUCT_CATEGORIES = [
+export const PRODUCT_CATEGORIES = [
   { id: null,        label: "Todos", key: "todos" },
   { id: "abarrotes", label: "Abarrotes", key: "abarrotes" },
   { id: "bebidas",   label: "Bebidas", key: "bebidas" },
@@ -345,7 +348,7 @@ function FiltersDrawer({
 /* ── Componente principal: barra horizontal compacta ────────────────────────── */
 
 export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
-  const { filters, onChange, onRequestGeo, geoLoading } = props;
+  const { filters, onChange, onRequestGeo, geoLoading, hideProductCategory } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
@@ -408,32 +411,36 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
 
       {/* ── Desktop: barra horizontal compacta ── */}
       <div className="hidden sm:flex items-center gap-2 flex-wrap">
-        {/* Categorías como pills horizontales */}
-        <div role="group" aria-label="Filtrar por categoría de producto" className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {PRODUCT_CATEGORIES.map((cat) => (
-            <button
-              key={String(cat.id)}
-              type="button"
-              onClick={() => onChange({ productCategory: cat.id })}
-              aria-pressed={filters.productCategory === cat.id}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
-                filters.productCategory === cat.id
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
-              )}
-            >
-              {(() => {
-                const CatIcon = getProductCategoryIcon(cat.key);
-                return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
-              })()}
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        {/* Categorías como pills horizontales — ocultas si el caller las renderiza arriba */}
+        {!hideProductCategory && (
+          <>
+            <div role="group" aria-label="Filtrar por categoría de producto" className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              {PRODUCT_CATEGORIES.map((cat) => (
+                <button
+                  key={String(cat.id)}
+                  type="button"
+                  onClick={() => onChange({ productCategory: cat.id })}
+                  aria-pressed={filters.productCategory === cat.id}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
+                    filters.productCategory === cat.id
+                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
+                  )}
+                >
+                  {(() => {
+                    const CatIcon = getProductCategoryIcon(cat.key);
+                    return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
+                  })()}
+                  {cat.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Separador */}
-        <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 shrink-0" />
+            {/* Separador */}
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 shrink-0" />
+          </>
+        )}
 
         {/* Ordenar — dropdown */}
         <div className="relative">

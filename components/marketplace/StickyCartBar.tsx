@@ -96,7 +96,7 @@ export default function StickyCartBar() {
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
           aria-live="polite"
-          className="fixed bottom-3 left-3 right-3 z-40 lg:hidden"
+          className="fixed bottom-[76px] sm:bottom-3 left-3 right-3 z-40 lg:hidden"
         >
           {/* ── Panel expandido — miniaturas + qty steppers ─────────────────── */}
           <AnimatePresence>

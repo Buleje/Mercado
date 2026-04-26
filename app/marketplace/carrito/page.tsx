@@ -26,6 +26,7 @@ import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart"
 import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
+import CompartirListaWhatsApp from "@/components/marketplace/CompartirListaWhatsApp";
 import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useCustomer } from "@/contexts/customer-context";
@@ -155,13 +156,26 @@ export default function CarritoPage() {
           )}
         </div>
         {!isEmpty && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
-          >
-            Vaciar carrito
-          </button>
+          <div className="flex items-center gap-3">
+            <CompartirListaWhatsApp
+              items={Object.values(byStore).flatMap((s) =>
+                s.items.map((it) => ({
+                  name: it.name,
+                  quantity: it.quantity,
+                  price: it.price,
+                  storeName: s.storeName,
+                })),
+              )}
+              heading="🛒 Mi carrito Buleje"
+            />
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
+            >
+              Vaciar carrito
+            </button>
+          </div>
         )}
       </div>
 

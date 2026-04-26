@@ -88,6 +88,7 @@ export default function ProductModifierModal({
     initialSelection ?? defaultSelectionFor(groups),
   );
   const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
 
   // Resetear seleccion cuando el modal se abre / cambian los grupos.
   // Si hay initialSelection (modo re-edit), usar ese; sino, defaults.
@@ -95,6 +96,7 @@ export default function ProductModifierModal({
     if (open) {
       setSelection(initialSelection ?? defaultSelectionFor(groups));
       setQuantity(1);
+      setNote("");
     }
   }, [open, groups, initialSelection]);
 
@@ -182,9 +184,23 @@ export default function ProductModifierModal({
 
   const handleConfirm = () => {
     if (!isValid) return;
+    // Inyectamos el note como un modifier "virtual" con priceDelta=0 para
+    // que el carrito y el order route lo persistan sin tocar contratos.
+    const withNote: SelectedModifier[] = note.trim()
+      ? [
+          ...flatSelected,
+          {
+            groupId: "__note",
+            groupName: "Nota",
+            optionId: "__note",
+            optionName: note.trim().slice(0, 100),
+            priceDelta: 0,
+          },
+        ]
+      : flatSelected;
     onConfirm({
       quantity,
-      modifiers: flatSelected,
+      modifiers: withNote,
       finalUnitPrice: unitPrice,
     });
   };
@@ -388,6 +404,27 @@ export default function ProductModifierModal({
                   );
                 })
               )}
+            </div>
+
+            {/* Notas para este producto */}
+            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-6 py-3">
+              <label
+                htmlFor="modifier-note"
+                className="text-sm font-bold text-[var(--text-primary)]"
+              >
+                Notas para este producto
+              </label>
+              <textarea
+                id="modifier-note"
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 100))}
+                placeholder="Comentarios sobre tu pedido"
+                rows={2}
+                className="mt-1.5 block w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              />
+              <div className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                {note.length} / 100
+              </div>
             </div>
 
             {/* Footer fijo */}

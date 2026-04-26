@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, useEffect, useRef, memo } from "react";
 import {
   MapPin,
   Star,
@@ -94,6 +94,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   const [preview, setPreview] = useState<ProductPreview[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const loadPreview = useCallback(async () => {
     if (previewLoaded || previewLoading) return;
@@ -110,6 +111,33 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     setPreviewLoading(false);
     setPreviewLoaded(true);
   }, [store.slug, previewLoaded, previewLoading]);
+
+  // Lazy load via IntersectionObserver — solo solicita el preview cuando
+  // la card entra al viewport. Reduce 10× requests en grids con 50 tiendas.
+  // Hover/focus siguen activando el load para usuarios con scroll lento.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      // Fallback: cargar inmediatamente en navegadores antiguos
+      loadPreview();
+      return;
+    }
+    const el = cardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            loadPreview();
+            obs.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: "200px 0px", threshold: 0.05 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loadPreview]);
 
   // ── Slots para StoreCardCanonical ──────────────────────────────────────────
 
@@ -241,6 +269,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
 
   return (
     <m.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}

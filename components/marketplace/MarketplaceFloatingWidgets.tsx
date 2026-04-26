@@ -31,8 +31,11 @@ const ProductCompareDrawer = dynamic(
   { ssr: false },
 );
 
-const QuickAddDrawer = dynamic(
-  () => import("@/components/marketplace/QuickAddDrawer"),
+// Reemplazado por QuickAddModal (centrado, soporta modifiers).
+// El modal usa el mismo QuickAddProvider context que el drawer, así que
+// los call-sites no cambian.
+const QuickAddModal = dynamic(
+  () => import("@/components/store/QuickAddModal"),
   { ssr: false },
 );
 
@@ -62,7 +65,7 @@ export default function MarketplaceFloatingWidgets() {
       <LocalStorageDoctor />
       <CompareFloatingBadge />
       <ProductCompareDrawer />
-      <QuickAddDrawer />
+      <QuickAddModal />
       <FloatingDockController />
       <MarketplaceFirstVisitTour />
       <DockFeatureSpotlight />
