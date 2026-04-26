@@ -1,0 +1,68 @@
+{
+  "restaurante": {
+    "label": "Restaurantes",
+    "description": "Sabor de la casa",
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777179997242-Restaurantes.webp",
+    "active": true
+  },
+  "bodega": {
+    "label": "Bodegas",
+    "description": "Lo de siempre, cerca",
+    "imageUrl": null,
+    "active": true
+  },
+  "fruteria": {
+    "label": "Mercado",
+    "description": "Frescos del día",
+    "imageUrl": null,
+    "active": true
+  },
+  "farmacia": {
+    "label": "Farmacias",
+    "description": "Tu botiquín",
+    "imageUrl": null,
+    "active": true
+  },
+  "ferreteria": {
+    "label": "Ferreterías",
+    "description": "Para reparar y construir",
+    "imageUrl": null,
+    "active": true
+  },
+  "polleria": {
+    "label": "Pollerías",
+    "description": "Brasa de barrio",
+    "imageUrl": null,
+    "active": true
+  },
+  "panaderia": {
+    "label": "Panaderías",
+    "description": "Recién horneado",
+    "imageUrl": null,
+    "active": true
+  },
+  "licoreria": {
+    "label": "Licorerías",
+    "description": "Para la reunión",
+    "imageUrl": null,
+    "active": true
+  },
+  "carniceria": {
+    "label": "Carnicerías",
+    "description": "Cortes frescos",
+    "imageUrl": null,
+    "active": true
+  },
+  "minimarket": {
+    "label": "Minimarkets",
+    "description": "Todo en un lugar",
+    "imageUrl": null,
+    "active": true
+  },
+  "tecnologia": {
+    "label": "Tecnología",
+    "description": "Gadgets & accesorios",
+    "imageUrl": null,
+    "active": true
+  }
+}

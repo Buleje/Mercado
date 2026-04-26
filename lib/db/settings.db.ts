@@ -162,8 +162,21 @@ export const SettingsDB = {
       try {
         const tid = tenantId;
         // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
-        const row = await prisma.settings.findUnique({ where: { tenantId: tid } })
+        let row = await prisma.settings.findUnique({ where: { tenantId: tid } })
           ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
+        // El middleware `slug-routes.ts` envía el SLUG en `x-tenant-id`
+        // (no el cuid). Si no encontramos por id, resolvemos slug → cuid.
+        if (!row) {
+          const tenant = await prisma.tenant
+            .findUnique({ where: { slug: tid }, select: { id: true } })
+            .catch((err) => {
+              logger.warn("[settings.db] tenant slug lookup failed", { error: String(err) });
+              return null;
+            });
+          if (tenant) {
+            row = await prisma.settings.findUnique({ where: { tenantId: tenant.id } });
+          }
+        }
         if (!row) return { mode: "whatsapp", adminBypassLogin: false };
         return mapSettings(row);
       } catch (error) {

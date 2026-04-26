@@ -65,6 +65,10 @@ function buildTenantHeaders(req: NextRequest, tenantId: string, nonce: string, r
   headers.set("x-tenant-id", tenantId);
   headers.set("x-request-id", requestId);
   headers.set("x-nonce", nonce);
+  // Marker leído por server components/layouts que comparten template entre el
+  // marketplace (`/tienda`) y la tienda individual (`/t/<slug>/tienda`).
+  // Permite ocultar branding del marketplace en la tienda del comerciante.
+  headers.set("x-tenant-store-route", "1");
   return headers;
 }
 

@@ -123,6 +123,10 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/cron/",
     "/api/health",
     "/api/admin/log-error", // error boundary, dispara antes del login
+    // Beacon público de pageview de la tienda individual: navigator.sendBeacon
+    // no permite headers custom — no puede enviar X-CSRF-Token. El endpoint
+    // valida slug + ipHash y nunca devuelve datos sensibles.
+    "/api/store-page/visits",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;

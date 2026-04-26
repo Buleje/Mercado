@@ -240,5 +240,55 @@
       "active": true,
       "order": 4
     }
+  ],
+  "tiendas-hero": [
+    {
+      "id": "tiendas-hero-1",
+      "title": "Las mejores bodegas, en un solo lugar",
+      "subtitle": "Pedí ahora y recibí en 25 minutos",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Ver ofertas",
+      "bgFrom": "#0f766e",
+      "bgTo": "#0d9488",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "tiendas-hero-2",
+      "title": "Compra fácil con Yape",
+      "subtitle": "Sin tarjetas, sin complicaciones",
+      "imageUrl": null,
+      "ctaHref": "/como-pagar",
+      "ctaLabel": "Cómo funciona",
+      "bgFrom": "#1e1b4b",
+      "bgTo": "#312e81",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "tiendas-hero-3",
+      "title": "Cupón BIENVENIDO10",
+      "subtitle": "10% off en tu primera compra",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Aplicar cupón",
+      "bgFrom": "#7c2d12",
+      "bgTo": "#9a3412",
+      "active": true,
+      "order": 3
+    },
+    {
+      "id": "tiendas-hero-4",
+      "title": "Sumá tu tienda al marketplace",
+      "subtitle": "Gratis. En menos de 5 minutos.",
+      "imageUrl": null,
+      "ctaHref": "/abrir-tienda",
+      "ctaLabel": "Empezar",
+      "bgFrom": "#1f2937",
+      "bgTo": "#111827",
+      "active": true,
+      "order": 4
+    }
   ]
 }

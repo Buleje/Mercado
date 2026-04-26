@@ -774,7 +774,42 @@ export const MarketplaceOrdersDB = {
       };
     });
 
-    const total      = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const subtotal   = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+    // ── Descuento por tier de cliente (Frecuente/VIP/Embajador) ──
+    // Calculado server-side basado en pedidos entregados reales — no se
+    // confía en el conteo del cliente (localStorage). Helper local
+    // (espejo de tierForCount en /api/marketplace/customer-tier).
+    let tierDiscountPct = 0;
+    let tierLabel: string | null = null;
+    if (params.customerPhone) {
+      try {
+        const deliveredCount = await prisma.order.count({
+          where: {
+            customerPhone: params.customerPhone,
+            source: "marketplace",
+            deletedAt: null,
+            status: "entregado",
+          },
+        });
+        if (deliveredCount >= 25) {
+          tierDiscountPct = 10;
+          tierLabel = "Cliente Embajador";
+        } else if (deliveredCount >= 10) {
+          tierDiscountPct = 7;
+          tierLabel = "Cliente VIP";
+        } else if (deliveredCount >= 5) {
+          tierDiscountPct = 5;
+          tierLabel = "Cliente Frecuente";
+        }
+      } catch {
+        // Si la query falla (DB error), seguimos sin descuento — nunca
+        // bloquear un pedido por la feature de tier.
+      }
+    }
+    const tierDiscount = parseFloat(((subtotal * tierDiscountPct) / 100).toFixed(2));
+    const total = parseFloat((subtotal - tierDiscount).toFixed(2));
+
     // TD-018: store.commission es Decimal → convertir para toFixed()
     const commissionRate = toNumOrZero(store.commission);
     const commission = parseFloat(((total * commissionRate) / 100).toFixed(2));
@@ -812,6 +847,14 @@ export const MarketplaceOrdersDB = {
     // 3. Crear el Order en el tenant del vendedor
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
 
+    // Componer notas con tag de tier para audit
+    const noteParts: string[] = [];
+    if (params.notes) noteParts.push(params.notes);
+    if (tierDiscount > 0 && tierLabel) {
+      noteParts.push(`[${tierLabel}: -${tierDiscountPct}% = -S/${tierDiscount.toFixed(2)}]`);
+    }
+    const composedNotes = noteParts.length > 0 ? noteParts.join(" ") : null;
+
     await prisma.order.create({
       data: {
         id:               `MKT-${orderId}`,
@@ -821,7 +864,8 @@ export const MarketplaceOrdersDB = {
         customerPhone:    params.customerPhone,
         customerLocation: params.customerAddress,
         total,
-        notes:            params.notes ?? null,
+        discountAmount:   tierDiscount > 0 ? tierDiscount : null,
+        notes:            composedNotes,
         paymentMethod:    params.paymentMethod || "marketplace",
         updatedAt:        new Date(),
         items: {

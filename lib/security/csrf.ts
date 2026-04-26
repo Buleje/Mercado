@@ -32,12 +32,16 @@ const CSRF_COOKIE = "csrf_token";
 const CSRF_HEADER = "x-csrf-token";
 const TOKEN_LENGTH = 32; // bytes → 43 chars base64url
 
-/** Paths que NO requieren validación CSRF (webhooks externos y cron). */
+/** Paths que NO requieren validación CSRF (webhooks externos, cron y beacons públicos). */
 export const CSRF_EXEMPT_PREFIXES: readonly string[] = [
   "/api/webhooks/",
   "/api/cron/",
   "/api/mp-webhook",
   "/api/stripe-webhook",
+  // Beacon público de pageview de la tienda individual.
+  // navigator.sendBeacon no permite headers custom — no puede enviar X-CSRF-Token.
+  // El endpoint es fire-and-forget: valida slug + ipHash y nunca devuelve datos.
+  "/api/store-page/visits",
 ];
 
 // ─── Generación ────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import type {
 } from "@/lib/generated/prisma/client";
 import type { DbProduct } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -75,8 +76,29 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 
 export const ProductsDB = {
   async getAll(tenantId: string): Promise<DbProduct[]> {
-    const where: Record<string, unknown> = { deletedAt: null, tenantId };
-    const rows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
+    // El header `x-tenant-id` puede venir como SLUG (desde /t/<slug>/...)
+    // o como cuid. Resolvemos slug→cuid para que la query encuentre los
+    // productos del tenant correcto.
+    let resolvedId = tenantId;
+    let rows = await prisma.product.findMany({
+      where: { deletedAt: null, tenantId: resolvedId },
+      orderBy: { id: "asc" },
+    });
+    if (rows.length === 0) {
+      const tenant = await prisma.tenant
+        .findUnique({ where: { slug: tenantId }, select: { id: true } })
+        .catch((err) => {
+          logger.warn("[products.db] tenant slug lookup failed", { error: String(err) });
+          return null;
+        });
+      if (tenant && tenant.id !== tenantId) {
+        resolvedId = tenant.id;
+        rows = await prisma.product.findMany({
+          where: { deletedAt: null, tenantId: resolvedId },
+          orderBy: { id: "asc" },
+        });
+      }
+    }
     return rows.map(mapProduct);
   },
 
@@ -144,11 +166,15 @@ export const ProductsDB = {
   /** Soft-delete: sets deletedAt instead of physically removing the row. */
   async delete(id: number): Promise<void> {
     // Use raw SQL until `prisma generate` is re-run after migration 20260316
-    await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id}`.catch(() => {});
+    await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id}`.catch((err) => {
+      logger.error("[products.db] soft-delete failed", { id, error: String(err) });
+    });
   },
   /** Hard-delete: permanently removes the row (admin use only). */
   async hardDelete(id: number): Promise<void> {
-    await prisma.product.delete({ where: { id } }).catch(() => {});
+    await prisma.product.delete({ where: { id } }).catch((err) => {
+      logger.error("[products.db] hard-delete failed", { id, error: String(err) });
+    });
   },
 
   /**
@@ -219,10 +245,15 @@ export const BundlesDB = {
     return mapBundle(row);
   },
   async update(id: string, data: { name?: string; description?: string; price?: number; image?: string; active?: boolean }): Promise<DbBundle | null> {
-    const row = await prisma.bundle.update({ where: { id }, data, include: { items: true } }).catch(() => null);
+    const row = await prisma.bundle.update({ where: { id }, data, include: { items: true } }).catch((err) => {
+      logger.warn("[products.db] bundle update failed", { id, error: String(err) });
+      return null;
+    });
     return row ? mapBundle(row) : null;
   },
   async delete(id: string): Promise<void> {
-    await prisma.bundle.delete({ where: { id } }).catch(() => {});
+    await prisma.bundle.delete({ where: { id } }).catch((err) => {
+      logger.error("[products.db] bundle delete failed", { id, error: String(err) });
+    });
   },
 };

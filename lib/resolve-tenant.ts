@@ -54,6 +54,33 @@ export function invalidateCustomDomainCache(hostname: string) {
   cache.delete(hostname.toLowerCase());
 }
 
+/**
+ * In-process cache: tenant_slug → tenant_id (CUID). TTL 5 min.
+ * Resolve a slug to its canonical Tenant.id (CUID).
+ *
+ * - "main" → "main" (legacy: id == slug for the default tenant)
+ * - "mi-pollo" → "cmoevpwfk..." (DB lookup)
+ *
+ * Returns the input as-is when no DB row matches (preserves legacy behavior
+ * for "main" and prevents test fixtures from breaking when they pass a CUID
+ * directly).
+ */
+const slugToIdCache = new Map<string, { id: string; expiresAt: number }>();
+
+export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
+  if (!slugOrId) return slugOrId;
+  // Heuristic: a CUID starts with "c" and is 25+ chars → return as-is.
+  if (slugOrId.length >= 24 && slugOrId.startsWith("c")) return slugOrId;
+  const cached = slugToIdCache.get(slugOrId);
+  if (cached && cached.expiresAt > Date.now()) return cached.id;
+  const tenant = await prisma.tenant
+    .findUnique({ where: { slug: slugOrId }, select: { id: true } })
+    .catch(() => null);
+  const id = tenant?.id ?? slugOrId;
+  slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });
+  return id;
+}
+
 function getCustomDomainHostname(rawTenantId: string): string | null {
   if (rawTenantId.startsWith(CUSTOM_PREFIX)) {
     return rawTenantId.slice(CUSTOM_PREFIX.length).toLowerCase();

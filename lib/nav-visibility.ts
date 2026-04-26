@@ -117,3 +117,25 @@ export function isLinkVisible(scope: NavScope, id: string): boolean {
   const store = readNavVisibility();
   return store[scope]?.[id] ?? true;
 }
+
+/**
+ * Detecta el modo de navegación activo basado en la visibilidad del scope
+ * marketplace. Si solo "bodegas" está visible y todo lo demás oculto, está
+ * en modo "tiendas-only". Si "bodegas + ofertas" → "minimo". Sino → "full".
+ *
+ * Retorna `null` durante SSR para evitar mismatch.
+ */
+export type MarketplaceNavMode = "full" | "tiendas-only" | "minimo" | "custom";
+
+export function detectMarketplaceNavMode(): MarketplaceNavMode | null {
+  if (typeof window === "undefined") return null;
+  const map = readNavVisibility().marketplace;
+  // bodegas siempre debe estar visible (es la home del marketplace)
+  if (!map.bodegas) return "custom";
+  const otherKeys = ["explorar", "recetas", "descubri", "en-vivo", "ofertas"];
+  const otherVisible = otherKeys.filter((k) => map[k]);
+  if (otherVisible.length === 0) return "tiendas-only";
+  if (otherVisible.length === 1 && otherVisible[0] === "ofertas") return "minimo";
+  if (otherVisible.length === otherKeys.length) return "full";
+  return "custom";
+}

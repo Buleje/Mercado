@@ -122,7 +122,7 @@ const DEFAULT_DELIVERY: DeliveryConfig = {
   freeDeliveryMin: 50,
 };
 
-const SettingsContext = createContext<SettingsCtx | null>(null);
+export const SettingsContext = createContext<SettingsCtx | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<StoreMode>("whatsapp");
