@@ -95,8 +95,8 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
           <p className="text-muted mt-2 text-sm sm:text-base">Los favoritos de nuestros clientes</p>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* MK-10: Grid 3x2 desktop, 2x3 mobile */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
           {popular.map((product, i) => {
             const cartItem = items.find((ci) => ci.id === product.id);
             const qty = cartItem?.quantity ?? 0;

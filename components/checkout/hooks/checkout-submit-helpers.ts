@@ -51,6 +51,19 @@ export function sanitizeOrderItems(items: CartItem[]): DbOrderItem[] {
 }
 
 /**
+ * Genera un idempotency key UUID v4 para un intento de checkout.
+ * Debe generarse UNA vez por intento (antes del primer POST) y
+ * reutilizarse en cada retry del mismo envío.
+ */
+export function generateRequestId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback para entornos sin crypto.randomUUID (tests Node <19)
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
  * Construye el payload JSON para `POST /api/orders`.
  * NOTA: el backend recompone el total — este `total` es solo informativo
  * para tracking y antifraude.
@@ -188,20 +201,33 @@ export function saveLastOrder(
   }
 }
 
-/** Retry con backoff lineal hasta `maxAttempts` veces en errores 5xx. */
+/** Retry con backoff lineal hasta `maxAttempts` veces en errores 5xx.
+ *
+ * @param idempotencyKey - UUID v4 generado por `generateRequestId()`.
+ *   Se envía como `x-idempotency-key` en todos los reintentos para que
+ *   el backend devuelva la order ya creada en lugar de crear una nueva.
+ */
 export async function postWithRetry(
   url: string,
   payload: string,
-  maxAttempts = 3
+  maxAttempts = 3,
+  idempotencyKey?: string,
 ): Promise<Response | null> {
   // Lazy require so the helper sigue siendo testable sin DOM.
   const { csrfHeaders } = await import("@/lib/csrf-client");
   let res: Response | null = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
+      const extraHeaders: Record<string, string> = {};
+      if (idempotencyKey) {
+        extraHeaders["x-idempotency-key"] = idempotencyKey;
+      }
       res = await fetch(url, {
         method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        headers: csrfHeaders({
+          "Content-Type": "application/json",
+          ...extraHeaders,
+        }),
         body: payload,
       });
       if (res.ok || res.status < 500) break;

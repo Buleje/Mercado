@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "@buleje/design-system/icons";
+import { BLUR_DATA_URL } from "@/lib/image-placeholders";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -130,8 +131,8 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
 
   return (
     <div className="group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
-      {/* Discount badge */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-red-500 text-white rounded-full px-2.5 py-1 text-xs font-bold shadow-md">
+      {/* Discount badge — accent-soft sin rojo decorativo (DS rule) */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/20 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm">
         <Tag className="h-3 w-3" />
         -{combo.discountPercent}%
       </div>
@@ -151,6 +152,8 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="120px"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-gray-300">
@@ -263,7 +266,7 @@ export default function CombosSection({ serverProducts, showEmpty = false, empty
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 mb-4">
+          <div className="inline-flex items-center gap-2 bg-[var(--accent-soft)] border border-[var(--accent)]/20 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             Combos Ahorro
           </div>

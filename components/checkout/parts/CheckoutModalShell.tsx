@@ -22,6 +22,9 @@ export type CheckoutModalShellProps = {
   onClose: () => void;
   topSlot?: ReactNode;
   footerSlot?: ReactNode;
+  /** CK-2: Footer sticky visible solo en mobile (sm:hidden) para steps
+   *  datos/pago/confirmar. Muestra total + CTA "Confirmar". */
+  mobileFooterSlot?: ReactNode;
   children: ReactNode;
 };
 
@@ -34,6 +37,7 @@ export function CheckoutModalShell({
   onClose,
   topSlot,
   footerSlot,
+  mobileFooterSlot,
   children,
 }: CheckoutModalShellProps) {
   return (
@@ -100,6 +104,13 @@ export function CheckoutModalShell({
               {footerSlot && (
                 <div className="shrink-0 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm">
                   {footerSlot}
+                </div>
+              )}
+
+              {/* CK-2: Footer sticky mobile — solo visible en pantallas < sm */}
+              {mobileFooterSlot && (
+                <div className="sm:hidden shrink-0 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm">
+                  {mobileFooterSlot}
                 </div>
               )}
             </div>

@@ -20,6 +20,7 @@ import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import TiendaSections from "@/components/TiendaSections";
 import TiendaHero from "@/components/store/TiendaHero";
 import TrustBar from "@/components/store/TrustBar";
+import Breadcrumbs from "@/components/store/Breadcrumbs";
 
 /**
  * Metadata dinámica: cuando se entra vía /t/<slug>/tienda el middleware
@@ -216,6 +217,13 @@ export default async function TiendaPage() {
       <Header />
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
+      {/* Breadcrumbs — Inicio > Tienda */}
+      <Breadcrumbs
+        items={[
+          { label: "Inicio", href: "/" },
+          { label: "Tienda" },
+        ]}
+      />
       <main id="main-content">
         {/* Hero 2-column con ilustracion autentica Pucallpa (DoniaElena) +
             CTAs + identidad local. `storeName` se obtiene dinámicamente

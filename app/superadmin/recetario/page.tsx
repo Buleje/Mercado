@@ -7,6 +7,7 @@ import {
   ToggleLeft, ToggleRight, RefreshCw, AlertCircle,
   CheckCircle2, XCircle, X, Clock, Users, Loader2,
 } from "@buleje/design-system/icons";
+import { ADMIN_TOKENS } from "@/app/admin/_components/_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,10 +80,9 @@ const DIFICULTAD_BADGE: Record<string, string> = {
   Dificil: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 
-const inputCls =
-  "w-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 transition-shadow";
-const selectCls = `${inputCls} appearance-none cursor-pointer`;
-const labelCls = "block text-xs font-semibold text-[var(--text-secondary)] mb-1";
+const inputCls = ADMIN_TOKENS.input;
+const selectCls = `${ADMIN_TOKENS.input} appearance-none cursor-pointer`;
+const labelCls = `block ${ADMIN_TOKENS.label} mb-1`;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -407,12 +407,6 @@ export default function SuperAdminRecetarioPage() {
                         <ChefHat className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                       </div>
                     )}
-                    {/* Emoji badge */}
-                    {r.emoji && (
-                      <span className="absolute top-2 right-2 text-2xl select-none drop-shadow">
-                        {r.emoji}
-                      </span>
-                    )}
                     {/* Active/inactive overlay */}
                     {!r.activa && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -647,12 +641,12 @@ export default function SuperAdminRecetarioPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Emoji</label>
+                  <label className={labelCls}>Icono (texto)</label>
                   <input
                     type="text"
                     value={form.emoji}
                     onChange={(e) => setForm({ ...form, emoji: e.target.value })}
-                    placeholder="🍽️"
+                    placeholder="Opcional"
                     maxLength={10}
                     className={inputCls}
                   />

@@ -67,9 +67,10 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
           <h2 className="text-base sm:text-lg font-extrabold text-foreground">Productos Destacados</h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+        {/* MK-10: carousel horizontal con scroll-snap */}
+        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 -mx-1 px-1">
           {featured.map(product => (
-            <div key={product.id} className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div key={product.id} className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 shrink-0 snap-start w-[160px] sm:w-[200px]">
               <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
                 <SmartProductImage
                   src={product.image}

@@ -63,11 +63,11 @@ export default function CategoryBubbles() {
         </h3>
 
         <div className="relative">
-          {/* Left scroll button */}
+          {/* Left scroll button — MK-11: h-10 w-10 (40px tap target) */}
           <button
             onClick={() => scroll("left")}
             className={cn(
-              "absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              "absolute left-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
               canScrollLeft ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la izquierda"
@@ -75,12 +75,30 @@ export default function CategoryBubbles() {
             <ChevronLeft className="h-4 w-4 text-muted" />
           </button>
 
+          {/* MK-11: Mobile <640px → grid 3x2; desktop → scroll horizontal */}
+          <div className="sm:hidden grid grid-cols-3 gap-2">
+            {realCategories.slice(0, 6).map((cat, i) => (
+              <Link
+                key={cat.id}
+                href={buildCatHref(cat.id)}
+                className={cn(
+                  "flex items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3 min-h-[44px] text-sm font-semibold text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] text-center leading-tight",
+                  inView ? "animate-[fadeUp_0.4s_ease-out_both]" : "opacity-0",
+                )}
+                style={inView ? { animationDelay: `${i * 50}ms` } : undefined}
+                aria-label={`Ver ${cat.label}`}
+              >
+                {cat.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: scroll horizontal con snap */}
           <div
             ref={scrollRef}
-            className="flex snap-x snap-mandatory gap-2.5 sm:gap-3 overflow-x-auto px-10 pb-2 scrollbar-none"
+            className="hidden sm:flex snap-x snap-mandatory gap-2.5 sm:gap-3 overflow-x-auto px-12 pb-2 scrollbar-none"
+            onScroll={updateScrollState}
           >
-            {/* Pills de categoría en formato chip — sin íconos decorativos.
-                Estilo enterprise: sólo texto, borde sutil, hover-lift. */}
             {realCategories.map((cat, i) => (
               <Link
                 key={cat.id}
@@ -97,11 +115,11 @@ export default function CategoryBubbles() {
             ))}
           </div>
 
-          {/* Right scroll button */}
+          {/* Right scroll button — MK-11: h-10 w-10 */}
           <button
             onClick={() => scroll("right")}
             className={cn(
-              "absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              "absolute right-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
               canScrollRight ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la derecha"

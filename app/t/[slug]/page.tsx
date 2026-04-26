@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import TenantPageTracker from "./_components/TenantPageTracker";
+import VendorTrustBadges from "@/components/store/VendorTrustBadges";
+import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 
 interface TenantLandingProps {
   params: Promise<{ slug: string }>;
@@ -34,6 +36,7 @@ async function loadPageData(slug: string) {
         customDomain: true,
         logoUrl: true,
         primaryColor: true,
+        createdAt: true,
       },
     })
     .catch(() => null);
@@ -267,6 +270,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </div>
         </div>
       </section>
+
+      {/* Trust badges — verificado, ventas, antigüedad */}
+      <VendorTrustBadges
+        verified={tenant.active}
+        createdYear={tenant.createdAt ? new Date(tenant.createdAt).getFullYear() : 2026}
+      />
 
       {/* Active promotions banner */}
       <section className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
@@ -532,6 +541,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           /{tenant.slug}
         </p>
       </section>
+
+      {/* Cupón flotante — se monta solo si hay cupón activo para este tenant */}
+      <StickyCouponBanner tenantSlug={tenant.slug} />
     </main>
   );
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { ShoppingCart, Timer } from "@buleje/design-system/icons";
+import { BLUR_DATA_URL } from "@/lib/image-placeholders";
 import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
@@ -113,6 +114,8 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
                 fill
                 sizes="256px"
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
                 onError={() => setImgError(true)}
               />
             </div>

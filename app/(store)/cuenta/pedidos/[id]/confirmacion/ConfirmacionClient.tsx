@@ -2,11 +2,13 @@
 
 /**
  * ConfirmacionClient — Monta Celebration + CrossSell post-compra.
+ * CK-4: Incluye ReorderInlineButton para "Comprar de nuevo".
  */
 
 import { useCallback } from "react";
 import PostPurchaseCelebration from "@/components/customer/post-purchase/PostPurchaseCelebration";
 import PostPurchaseCrossSell from "@/components/customer/post-purchase/PostPurchaseCrossSell";
+import ReorderInlineButton from "@/components/customer/post-purchase/ReorderInlineButton";
 
 interface ConfirmacionClientProps {
   orderId: string;
@@ -49,6 +51,12 @@ export default function ConfirmacionClient({
         etaIso={etaIso}
         onShare={handleShare}
       />
+
+      {/* CK-4: Botón "Comprar de nuevo" — carga items del último pedido al carrito */}
+      <div className="flex justify-start">
+        <ReorderInlineButton orderId={orderId} />
+      </div>
+
       <PostPurchaseCrossSell
         orderId={orderId}
         products={[]}

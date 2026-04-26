@@ -8,6 +8,7 @@ import type { Product } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
 import ProductDetailClient from "@/components/ProductDetailClient";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import Breadcrumbs from "@/components/store/Breadcrumbs";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -105,9 +106,17 @@ async function ProductDetailContent({ params }: Props) {
     { name: product.name, url: `https://www.buleje.pe/tienda/${slug}` },
   ];
 
+  const visualBreadcrumbs = [
+    { label: "Inicio", href: "/" },
+    { label: "Tienda", href: "/tienda" },
+    ...(category ? [{ label: category.label, href: `/tienda/categoria/${category.id}` }] : []),
+    { label: product.name },
+  ];
+
   return (
     <>
       <BreadcrumbSchema items={breadcrumbs} />
+      <Breadcrumbs items={visualBreadcrumbs} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import { trackPurchase } from "@/lib/analytics";
@@ -11,6 +11,7 @@ import {
   buildCustomerForRegister,
   saveLastOrder,
   postWithRetry,
+  generateRequestId,
 } from "./checkout-submit-helpers";
 
 /**
@@ -66,10 +67,22 @@ export function useCheckoutSubmit({
   customerActions,
   closeCheckout,
 }: Args): UseCheckoutSubmitResult {
+  // CK-1: Un UUID por intento de checkout. Se genera la primera vez que
+  // se llama a submit y se mantiene estable para todos los reintentos de
+  // red del MISMO intento. Se resetea a null para que el próximo intento
+  // (si el usuario abre el checkout de nuevo) genere uno nuevo.
+  const requestIdRef = useRef<string | null>(null);
+
   const submit = useCallback(async () => {
     // 1. Guard de doble submit — CRÍTICO. Nunca eliminar.
     if (state.ui.submitting) return;
     dispatch({ type: "SET_UI", patch: { submitting: true, submitError: "" } });
+
+    // CK-1: Generar o reusar el idempotency key para este intento.
+    if (!requestIdRef.current) {
+      requestIdRef.current = generateRequestId();
+    }
+    const idempotencyKey = requestIdRef.current;
 
     // 2. Resolver valores efectivos (state o cliente cargado)
     const effective = resolveEffectiveValues(state, effectiveCustomer);
@@ -117,13 +130,17 @@ export function useCheckoutSubmit({
       discount,
     });
 
-    // 5. Retry con backoff
-    const res = await postWithRetry("/api/orders", payload);
+    // 5. Retry con backoff — idempotency key garantiza que reintentos
+    //    de red devuelvan la misma order en lugar de crear duplicados.
+    const res = await postWithRetry("/api/orders", payload, 3, idempotencyKey);
 
     try {
       if (res?.ok) {
         const data = (await res.json()) as { id: string };
         dispatch({ type: "SET_UI", patch: { orderId: data.id } });
+
+        // CK-1: limpiar el key para que el siguiente checkout genere uno nuevo.
+        requestIdRef.current = null;
 
         saveLastOrder(data.id, items, finalTotal, effective.phone);
 

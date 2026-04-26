@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
@@ -13,6 +12,7 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 import CategoryCatalogClient from "@/components/CategoryCatalogClient";
+import Breadcrumbs from "@/components/store/Breadcrumbs";
 import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import { Truck, CreditCard } from "@buleje/design-system/icons";
 
@@ -200,28 +200,13 @@ async function CategoryPageContent({ params }: Props) {
       <Header />
       {/* Spacer for fixed header */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
-      {/* Visible breadcrumbs */}
-      <nav
-        aria-label="Breadcrumb"
-        className="bg-gray-50 dark:bg-card border-b border-gray-100 dark:border-card-border"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-1.5 text-xs text-muted">
-          <Link href="/" className="hover:text-primary transition-colors">
-            Inicio
-          </Link>
-          <span className="text-gray-300">/</span>
-          <Link
-            href="/tienda"
-            className="hover:text-primary transition-colors"
-          >
-            Tienda
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="font-semibold text-foreground">
-            {cat.label}
-          </span>
-        </div>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Inicio", href: "/" },
+          { label: "Tienda", href: "/tienda" },
+          { label: cat.label },
+        ]}
+      />
       <main id="main-content">
         {/* Category hero */}
         <section className="relative bg-gray-900 pt-32 pb-14 sm:pt-36 sm:pb-16 overflow-hidden border-b border-gray-800">

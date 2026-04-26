@@ -42,9 +42,13 @@ const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
   Premium: "premium",
 };
 
-type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre";
+type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre" | "popular" | "newest" | "rating" | "delivery";
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: "relevancia", label: "Relevancia" },
+  { id: "popular", label: "Más vendidos" },
+  { id: "newest", label: "Más nuevos" },
+  { id: "rating", label: "Mejor calificación" },
+  { id: "delivery", label: "Envío más rápido" },
   { id: "precio-asc", label: "Precio: menor a mayor" },
   { id: "precio-desc", label: "Precio: mayor a menor" },
   { id: "nombre", label: "Nombre A-Z" },
@@ -56,6 +60,44 @@ function sortProducts(list: LiveProduct[], key: SortKey): LiveProduct[] {
   if (key === "precio-asc") sorted.sort((a, b) => a.price - b.price);
   else if (key === "precio-desc") sorted.sort((a, b) => b.price - a.price);
   else if (key === "nombre") sorted.sort((a, b) => a.name.localeCompare(b.name));
+  else if (key === "popular") {
+    // Primero los marcados isTopSeller, luego los que tienen badge "Popular", resto por id estable
+    sorted.sort((a, b) => {
+      const aTop = (a as LiveProduct & { isTopSeller?: boolean }).isTopSeller;
+      const bTop = (b as LiveProduct & { isTopSeller?: boolean }).isTopSeller;
+      const aScore = (aTop ? 100 : 0) + (a.badge === "Popular" ? 50 : 0);
+      const bScore = (bTop ? 100 : 0) + (b.badge === "Popular" ? 50 : 0);
+      return bScore !== aScore ? bScore - aScore : a.id - b.id;
+    });
+  }
+  else if (key === "newest") {
+    // Usa createdAt si existe (string ISO), sino fallback a id desc (mayor id = más reciente)
+    sorted.sort((a, b) => {
+      const aTime = (a as LiveProduct & { createdAt?: string }).createdAt
+        ? new Date((a as LiveProduct & { createdAt?: string }).createdAt!).getTime()
+        : a.id;
+      const bTime = (b as LiveProduct & { createdAt?: string }).createdAt
+        ? new Date((b as LiveProduct & { createdAt?: string }).createdAt!).getTime()
+        : b.id;
+      return bTime - aTime;
+    });
+  }
+  else if (key === "rating") {
+    // Productos con rating primero; sin rating van al final
+    sorted.sort((a, b) => {
+      const aR = a.rating ?? -1;
+      const bR = b.rating ?? -1;
+      return bR !== aR ? bR - aR : (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
+    });
+  }
+  else if (key === "delivery") {
+    // avgPrepTime asc si existe; sino orden estable por id
+    sorted.sort((a, b) => {
+      const aT = (a as LiveProduct & { avgPrepTime?: number }).avgPrepTime ?? 9999;
+      const bT = (b as LiveProduct & { avgPrepTime?: number }).avgPrepTime ?? 9999;
+      return aT !== bT ? aT - bT : a.id - b.id;
+    });
+  }
   return sorted;
 }
 
@@ -256,8 +298,17 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
 const ListProductRow = memo(ListProductRowBase);
 
 // ── Search History ────────────────────────────────────────────────────────────
-const SEARCH_HISTORY_KEY = "buleje-search-history";
-const MAX_HISTORY = 5;
+const SEARCH_HISTORY_KEY = "buleje-recent-searches";
+const MAX_HISTORY = 10;
+
+// MK-9: Trending searches (hardcoded por ahora — máx 5 visibles)
+const TRENDING_SEARCHES = [
+  "Pollo a la brasa",
+  "Cerveza",
+  "Pizza",
+  "Hamburguesa",
+  "Helado",
+];
 
 function getSearchHistory(): string[] {
   if (typeof window === "undefined") return [];
@@ -269,6 +320,10 @@ function saveSearchTerm(term: string) {
   const history = getSearchHistory().filter(h => h !== clean);
   history.unshift(clean);
   localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+}
+// MK-9: Show recientes + trending — retorna null si input no está vacío
+function buildSearchDropdown(history: string[]): { recientes: string[]; trending: string[] } | null {
+  return { recientes: history.slice(0, 3), trending: TRENDING_SEARCHES };
 }
 
 // ── Fuzzy search score (0 = no match, higher = better match) ──────────────────
@@ -574,7 +629,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setShowHistory(false); }}
-              onFocus={() => { if (!search && searchHistory.length > 0) setShowHistory(true); }}
+              onFocus={() => { if (!search) setShowHistory(true); }}
               onKeyDown={(e) => {
                 const items = suggestions.length > 0 ? suggestions : [];
                 if (e.key === "ArrowDown") { e.preventDefault(); setSuggestionIdx(i => Math.min(i + 1, items.length - 1)); }
@@ -587,7 +642,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 else if (e.key === "Escape") { setSuggestions([]); setShowHistory(false); }
               }}
               placeholder="Buscar producto…"
-              className="w-full pl-10 pr-9 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
+              className="w-full pl-10 pr-9 py-3 min-h-[48px] rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
               autoComplete="off"
             />
             {search && (
@@ -608,18 +663,34 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 ))}
               </div>
             )}
-            {/* Search History Dropdown */}
-            {showHistory && !search && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg z-20 overflow-hidden">
-                <p className="px-3 pt-2.5 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Búsquedas recientes</p>
-                {searchHistory.map((term) => (
-                  <button key={term} onClick={() => { setSearch(term); setShowHistory(false); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                    <Clock className="h-3.5 w-3.5 text-muted shrink-0" />
-                    {term}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* MK-9: Recientes + Trending Dropdown */}
+            {showHistory && !search && (() => {
+              const dropdown = buildSearchDropdown(searchHistory);
+              if (!dropdown) return null;
+              const { recientes, trending } = dropdown;
+              return (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg z-20 overflow-hidden">
+                  {recientes.length > 0 && (
+                    <>
+                      <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted">Recientes</p>
+                      {recientes.map((term) => (
+                        <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
+                          <Clock className="h-3.5 w-3.5 text-muted shrink-0" />
+                          {term}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted border-t border-gray-100 dark:border-card-border mt-1">Tendencias</p>
+                  {trending.map((term) => (
+                    <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
+                      <svg className="h-3.5 w-3.5 text-muted shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true"><path d="M2 12L6 6l3 4 2-3 3 3"/></svg>
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           <div className="flex items-center gap-2">
             <div className="relative shrink-0">

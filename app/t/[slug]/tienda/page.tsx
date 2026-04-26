@@ -9,6 +9,8 @@ import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import type { Product } from "@/data/products";
 import TenantTiendaClient from "./TenantTiendaClient";
+import Breadcrumbs from "@/components/store/Breadcrumbs";
+import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 
 interface TenantTiendaPageProps {
   params: Promise<{ slug: string }>;
@@ -78,14 +80,24 @@ async function TenantTiendaContent({ slug }: { slug: string }) {
 
   const products = toProductShape(catalogRows);
 
+  const breadcrumbItems = [
+    { label: "Inicio", href: "/" },
+    { label: "Tiendas", href: "/tienda" },
+    { label: storeName },
+  ];
+
   return (
-    <TenantTiendaClient
-      slug={tenant.slug}
-      storeName={storeName}
-      products={products}
-      visibleSections={Array.from(config.visible)}
-      sectionOrder={config.order}
-    />
+    <>
+      <Breadcrumbs items={breadcrumbItems} />
+      <TenantTiendaClient
+        slug={tenant.slug}
+        storeName={storeName}
+        products={products}
+        visibleSections={Array.from(config.visible)}
+        sectionOrder={config.order}
+      />
+      <StickyCouponBanner tenantSlug={tenant.slug} />
+    </>
   );
 }
 

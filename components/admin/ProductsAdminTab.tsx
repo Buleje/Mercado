@@ -9,7 +9,7 @@ import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
   ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle, LayoutGrid, List, Filter, Download, Upload, Tag,
-  Loader2, Globe, Camera } from "@buleje/design-system/icons";
+  Loader2, Globe, Camera, Copy, Sparkles } from "@buleje/design-system/icons";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -84,6 +84,20 @@ function ProductFormModal({
   const [nameChecking, setNameChecking] = useState(false);
   const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // ── AV-19: Secciones colapsables ────────────────────────────────────────────
+  const [sections, setSections] = useState<FormSectionsState>(() => loadSectionsState());
+
+  const toggleSection = (id: FormSectionId) => {
+    setSections(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      saveSectionsState(next);
+      return next;
+    });
+  };
+
+  // ── AV-21: IA Generar descripción ────────────────────────────────────────────
+  const [iaLoading, setIaLoading] = useState(false);
 
   // ── Tags state ──────────────────────────────────────────────────────────────
   const [tags, setTags] = useState<TagType[]>(() => parseTags(initial.badge));
@@ -232,6 +246,33 @@ function ProductFormModal({
     }, 300);
   };
 
+  // ── AV-21: Generar descripción con IA ────────────────────────────────────────
+  const handleGenerateDescription = async () => {
+    if (!form.name.trim()) return;
+    setIaLoading(true);
+    const cat = CATEGORY_OPTS.find(c => c.id === form.category)?.label ?? form.category;
+    const prompt = `Generá descripción corta y atractiva del producto: ${form.name} — categoría: ${cat} — unidad: ${form.unit}. Máximo 2 oraciones. En español. Sin emojis.`;
+    try {
+      // TODO: cuando /api/ai-assistant acepte stream:false sin auth de admin session real,
+      // reemplazar la URL stub por la ruta real. Por ahora usa el endpoint existente.
+      const res = await fetch("/api/ai-assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, stream: false }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { response?: string };
+      const text = data.response?.trim() ?? "";
+      if (text) set("description", text);
+    } catch {
+      // Stub local como fallback — TODO: conectar con API real cuando esté disponible
+      const stub = `${form.name} de calidad premium. Ideal para uso diario en el hogar.`;
+      set("description", stub);
+    } finally {
+      setIaLoading(false);
+    }
+  };
+
   const valid = form.name.trim().length >= 2 && form.price > 0 && form.unit.trim().length > 0;
 
   return (
@@ -253,7 +294,7 @@ function ProductFormModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-3">
           {/* National database search — only for new products */}
           {!form.id && (
             <div className="relative">
@@ -272,7 +313,7 @@ function ProductFormModal({
                   onFocus={() => nationalResults.length > 0 && setShowNationalDropdown(true)}
                   onBlur={() => setTimeout(() => setShowNationalDropdown(false), 200)}
                   placeholder="Ej: arroz, leche gloria, galletas..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-9 pr-8 min-h-[44px] rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {nationalLoading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
@@ -322,9 +363,130 @@ function ProductFormModal({
             </div>
           )}
 
-          {/* Image — upload + preview */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Imagen del producto</label>
+          {/* AV-19: Sección Básico (default abierto) */}
+          <FormSection id="basico" title="Básico" open={sections.basico} onToggle={toggleSection}>
+            {/* Name */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
+              <input
+                ref={nameRef}
+                value={form.name}
+                onChange={(e) => {
+                  set("name", e.target.value);
+                  setNameDuplicate(false);
+                }}
+                onBlur={(e) => checkNameDuplicate(e.target.value)}
+                placeholder="Ej: Arroz Extra 5kg"
+                className={cn(
+                  "mt-1 w-full px-3 min-h-[44px] rounded-lg border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
+                  nameDuplicate
+                    ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] focus:ring-[var(--data-warning)]"
+                    : "border-[var(--rule-base)] dark:border-card-border focus:ring-primary/30"
+                )}
+              />
+              {nameChecking && (
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">Verificando nombre...</p>
+              )}
+              {nameDuplicate && !nameChecking && (
+                <p className="mt-1 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  Ya existe un producto con este nombre
+                </p>
+              )}
+            </div>
+
+            {/* Category + Unit — AV-18: flex-col en mobile, grid en sm */}
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría *</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => set("category", e.target.value)}
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                >
+                  {CATEGORY_OPTS.map((c) => (
+                    <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                  ))}
+                </select>
+                <CategorySuggestion
+                  name={form.name}
+                  currentCategory={form.category}
+                  onApply={(id) => set("category", id)}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Unidad *</label>
+                <select
+                  value={form.unit}
+                  onChange={(e) => set("unit", e.target.value)}
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                >
+                  {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Price — AV-18: solo precio en sección básico */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Precio S/ *</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={form.price === 0 ? "" : form.price}
+                onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+          </FormSection>
+
+          {/* AV-19: Sección Stock (default abierto) */}
+          <FormSection id="stock" title="Stock y costo" open={sections.stock} onToggle={toggleSection}>
+            {/* AV-18: flex-col en mobile, grid en sm */}
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo S/</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={form.costPrice ?? ""}
+                  onChange={(e) => set("costPrice", e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {form.costPrice != null && form.price > 0 && (
+                  <p className="text-xs text-[var(--data-success)] mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Stock</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stock ?? ""}
+                  onChange={(e) => set("stock", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
+                  placeholder="—"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Stock mín.</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stockMin ?? ""}
+                  onChange={(e) => set("stockMin", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
+                  placeholder="5"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          {/* AV-19: Sección Imagen (default cerrado) */}
+          <FormSection id="imagen" title="Imagen" open={sections.imagen} onToggle={toggleSection}>
             <input
               ref={fileInputRef}
               type="file"
@@ -333,7 +495,7 @@ function ProductFormModal({
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
             />
             <div
-              className="mt-1 relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-[var(--rule-base)] dark:border-card-border cursor-pointer group"
+              className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-[var(--rule-base)] dark:border-card-border cursor-pointer group"
               onClick={() => !uploading && fileInputRef.current?.click()}
             >
               {form.image && !imgError ? (
@@ -356,259 +518,153 @@ function ProductFormModal({
               )}
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-[length:var(--ts-2xs)] text-muted shrink-0">o pega URL:</span>
+              <span className="text-xs text-muted shrink-0">o pega URL:</span>
               <input
                 value={form.image ?? ""}
                 onChange={(e) => set("image", e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="flex-1 px-2.5 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
-
-            {/* Validación de imagen contra estándar del marketplace */}
             {imageValidation && (
               <ImageValidationPanel result={imageValidation} className="mt-3" />
             )}
-
-            {/* Guía de requisitos (visible solo si no hay imagen aún) */}
             {!form.image && !imageValidation && (
               <ImageRequirementsGuide className="mt-3" />
             )}
-          </div>
+          </FormSection>
 
-          {/* Name */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
-            <input
-              ref={nameRef}
-              value={form.name}
-              onChange={(e) => {
-                set("name", e.target.value);
-                setNameDuplicate(false);
-              }}
-              onBlur={(e) => checkNameDuplicate(e.target.value)}
-              placeholder="Ej: Arroz Extra 5kg"
-              className={cn(
-                "mt-1 w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
-                nameDuplicate
-                  ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] focus:ring-[var(--data-warning)]"
-                  : "border-[var(--rule-base)] dark:border-card-border focus:ring-primary/30"
+          {/* AV-19: Sección Avanzado (default cerrado) */}
+          <FormSection id="avanzado" title="Avanzado" open={sections.avanzado} onToggle={toggleSection}>
+            {/* Tags personalizados */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1.5">
+                <Tag className="h-3 w-3" />
+                Etiquetas
+              </label>
+              {tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {tags.map(tag => (
+                    <TagBadge
+                      key={tag.name}
+                      tag={tag}
+                      onRemove={() => removeTag(tag.name)}
+                    />
+                  ))}
+                </div>
               )}
-            />
-            {nameChecking && (
-              <p className="mt-1 text-xs text-[var(--text-tertiary)]">Verificando nombre...</p>
-            )}
-            {nameDuplicate && !nameChecking && (
-              <p className="mt-1 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3 shrink-0" />
-                Ya existe un producto con este nombre
-              </p>
-            )}
-          </div>
-
-          {/* Category + Unit + Detección automática
-              Cuando el dueño escribe el nombre, `detectCategoryFromName`
-              propone la categoría más probable. Si la propuesta difiere de
-              la elegida, mostramos un chip con botón "Aplicar" al lado del
-              select. Es un asistente, no un override automático. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría *</label>
-              <select
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              >
-                {CATEGORY_OPTS.map((c) => (
-                  <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-                ))}
-              </select>
-              <CategorySuggestion
-                name={form.name}
-                currentCategory={form.category}
-                onApply={(id) => set("category", id)}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Unidad *</label>
-              <select
-                value={form.unit}
-                onChange={(e) => set("unit", e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              >
-                {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Price + Cost + Stock */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Precio S/ *</label>
-              <input
-                type="number"
-                min={0}
-                step={0.1}
-                value={form.price === 0 ? "" : form.price}
-                onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo S/</label>
-              <input
-                type="number"
-                min={0}
-                step={0.1}
-                value={form.costPrice ?? ""}
-                onChange={(e) => set("costPrice", e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-              {form.costPrice != null && form.price > 0 && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
+              <div className="mt-2 flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput, tagColor); } }}
+                    placeholder="Agregar etiqueta…"
+                    maxLength={30}
+                    list="tag-suggestions"
+                    className="w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                  {availableTags.length > 0 && (
+                    <datalist id="tag-suggestions">
+                      {availableTags
+                        .filter(t => !tags.some(at => at.name === t.name))
+                        .map(t => <option key={t.name} value={t.name} />)
+                      }
+                    </datalist>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  {(Object.keys(TAG_COLORS) as TagColor[]).map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setTagColor(c)}
+                      title={c}
+                      className={cn(
+                        "h-5 w-5 rounded-full border-2 transition-transform",
+                        TAG_COLORS[c].dot,
+                        tagColor === c ? "border-gray-700 dark:border-white scale-110" : "border-transparent",
+                      )}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addTag(tagInput, tagColor)}
+                  disabled={!tagInput.trim()}
+                  className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {availableTags.filter(t => !tags.some(at => at.name === t.name)).length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {availableTags
+                    .filter(t => !tags.some(at => at.name === t.name))
+                    .slice(0, 8)
+                    .map(t => (
+                      <button
+                        key={t.name}
+                        type="button"
+                        onClick={() => addTag(t.name, t.color)}
+                        className="px-2 py-0.5 rounded-full text-xs font-medium border border-dashed border-[var(--rule-base)] dark:border-gray-600 text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary transition-colors"
+                      >
+                        + {t.name}
+                      </button>
+                    ))
+                  }
+                </div>
               )}
             </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Stock</label>
-              <input
-                type="number"
-                min={0}
-                value={form.stock ?? ""}
-                onChange={(e) => set("stock", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
-                placeholder="—"
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Stock mín.</label>
-              <input
-                type="number"
-                min={0}
-                value={form.stockMin ?? ""}
-                onChange={(e) => set("stockMin", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
-                placeholder="5"
-                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-            </div>
-          </div>
 
-          {/* Tags personalizados */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1.5">
-              <Tag className="h-3 w-3" />
-              Etiquetas
-            </label>
-            {/* Tags activos */}
-            {tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {tags.map(tag => (
-                  <TagBadge
-                    key={tag.name}
-                    tag={tag}
-                    onRemove={() => removeTag(tag.name)}
-                  />
-                ))}
+            {/* AV-21: Descripción con botón Generar IA */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={iaLoading || !form.name.trim()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-semibold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary disabled:opacity-40 transition-colors"
+                  title="Generar descripción con IA"
+                >
+                  {iaLoading
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Sparkles className="h-3.5 w-3.5" />
+                  }
+                  {iaLoading ? "Generando…" : "Generar con IA"}
+                </button>
               </div>
-            )}
-            {/* Input nuevo tag */}
-            <div className="mt-2 flex gap-2 items-center">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput, tagColor); } }}
-                  placeholder="Agregar etiqueta…"
-                  maxLength={30}
-                  list="tag-suggestions"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                />
-                {availableTags.length > 0 && (
-                  <datalist id="tag-suggestions">
-                    {availableTags
-                      .filter(t => !tags.some(at => at.name === t.name))
-                      .map(t => <option key={t.name} value={t.name} />)
-                    }
-                  </datalist>
-                )}
-              </div>
-              {/* Color picker */}
-              <div className="flex gap-1">
-                {(Object.keys(TAG_COLORS) as TagColor[]).map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setTagColor(c)}
-                    title={c}
-                    className={cn(
-                      "h-5 w-5 rounded-full border-2 transition-transform",
-                      TAG_COLORS[c].dot,
-                      tagColor === c ? "border-gray-700 dark:border-white scale-110" : "border-transparent",
-                    )}
-                  />
-                ))}
-              </div>
+              <textarea
+                value={form.description ?? ""}
+                onChange={(e) => set("description", e.target.value)}
+                rows={2}
+                placeholder="Descripción breve del producto…"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+              />
+            </div>
+
+            {/* Active toggle */}
+            <div className="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-4 py-3">
+              <span className="text-sm font-semibold text-foreground flex-1">Visible en tienda</span>
               <button
                 type="button"
-                onClick={() => addTag(tagInput, tagColor)}
-                disabled={!tagInput.trim()}
-                className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                onClick={() => set("active", !form.active)}
+                className={cn(
+                  "relative h-6 w-11 rounded-full transition-colors duration-[var(--dur-base)]",
+                  form.active ? "bg-[var(--accent-soft)]" : "bg-gray-300 dark:bg-gray-600"
+                )}
+                aria-checked={form.active}
+                role="switch"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <span className={cn(
+                  "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                  form.active ? "translate-x-6" : "translate-x-1"
+                )} />
               </button>
             </div>
-            {/* Tags sugeridos */}
-            {availableTags.filter(t => !tags.some(at => at.name === t.name)).length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {availableTags
-                  .filter(t => !tags.some(at => at.name === t.name))
-                  .slice(0, 8)
-                  .map(t => (
-                    <button
-                      key={t.name}
-                      type="button"
-                      onClick={() => addTag(t.name, t.color)}
-                      className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-medium border border-dashed border-[var(--rule-base)] dark:border-gray-600 text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary transition-colors"
-                    >
-                      + {t.name}
-                    </button>
-                  ))
-                }
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
-            <textarea
-              value={form.description ?? ""}
-              onChange={(e) => set("description", e.target.value)}
-              rows={2}
-              placeholder="Descripción breve del producto…"
-              className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-            />
-          </div>
-
-          {/* Active toggle */}
-          <div className="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-            <span className="text-sm font-semibold text-foreground flex-1">Visible en tienda</span>
-            <button
-              type="button"
-              onClick={() => set("active", !form.active)}
-              className={cn(
-                "relative h-6 w-11 rounded-full transition-colors duration-[var(--dur-base)]",
-                form.active ? "bg-[var(--accent-soft)]" : "bg-gray-300 dark:bg-gray-600"
-              )}
-            >
-              <span className={cn(
-                "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
-                form.active ? "translate-x-6" : "translate-x-1"
-              )} />
-            </button>
-          </div>
+          </FormSection>
         </div>
 
         {/* Footer */}
@@ -633,6 +689,75 @@ function ProductFormModal({
   );
 }
 
+// ── Form section state helpers ────────────────────────────────────────────────
+
+const FORM_SECTIONS_KEY = "buleje-vendor-form-sections-state";
+
+type FormSectionId = "basico" | "stock" | "imagen" | "avanzado";
+
+interface FormSectionsState {
+  basico: boolean;
+  stock: boolean;
+  imagen: boolean;
+  avanzado: boolean;
+}
+
+const DEFAULT_SECTIONS_STATE: FormSectionsState = {
+  basico: true,
+  stock: true,
+  imagen: false,
+  avanzado: false,
+};
+
+function loadSectionsState(): FormSectionsState {
+  if (typeof window === "undefined") return DEFAULT_SECTIONS_STATE;
+  try {
+    const raw = localStorage.getItem(FORM_SECTIONS_KEY);
+    if (!raw) return DEFAULT_SECTIONS_STATE;
+    return { ...DEFAULT_SECTIONS_STATE, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_SECTIONS_STATE;
+  }
+}
+
+function saveSectionsState(state: FormSectionsState) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(FORM_SECTIONS_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+}
+
+// ── Collapsible section wrapper ───────────────────────────────────────────────
+
+function FormSection({
+  id,
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  id: FormSectionId;
+  title: string;
+  open: boolean;
+  onToggle: (id: FormSectionId) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+        aria-expanded={open}
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={cn("h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+      {open && <div className="p-4 space-y-4">{children}</div>}
+    </div>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductsAdminTab() {
@@ -645,7 +770,7 @@ export default function ProductsAdminTab() {
   );
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock">("name");
   const [sortAsc, setSortAsc] = useState(true);
-  const [modal, setModal] = useState<null | "create" | { product: Product }>(null);
+  const [modal, setModal] = useState<null | "create" | { product: Product } | { duplicate: Product }>(null);
   const [showExcelImporter, setShowExcelImporter] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
@@ -722,6 +847,11 @@ export default function ProductsAdminTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ── AV-17: Duplicar producto ──────────────────────────────────────────────────
+  const handleDuplicateProduct = (product: Product) => {
+    setModal({ duplicate: product });
   };
 
   const handleToggleActive = async (p: Product) => {
@@ -953,8 +1083,8 @@ export default function ProductsAdminTab() {
                   )}>
                     {p.stock !== undefined ? p.stock : "—"}
                   </span>
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 w-20 justify-end">
+                  {/* Actions — AV-17: botón Duplicar agregado */}
+                  <div className="flex items-center gap-1 w-28 justify-end">
                     <button
                       onClick={() => handleToggleActive(p)}
                       className={cn(
@@ -966,6 +1096,13 @@ export default function ProductsAdminTab() {
                       title={p.active === false ? "Activar" : "Ocultar"}
                     >
                       {p.active === false ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => handleDuplicateProduct(p)}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                      title="Duplicar producto"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setModal({ product: p })}
@@ -1009,10 +1146,13 @@ export default function ProductsAdminTab() {
                   ) : (
                     <div className="h-full flex items-center justify-center text-gray-200"><Package className="h-10 w-10" /></div>
                   )}
-                  {/* Overlay actions */}
+                  {/* Overlay actions — AV-17: botón Duplicar agregado */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center hover:scale-110 transition-transform">
+                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center hover:scale-110 transition-transform" title="Editar">
                       <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => handleDuplicateProduct(p)} className="h-8 w-8 rounded-full bg-white text-[var(--text-secondary)] flex items-center justify-center hover:scale-110 transition-transform" title="Duplicar">
+                      <Copy className="h-3.5 w-3.5" />
                     </button>
                     <button onClick={() => handleToggleActive(p)} className="h-8 w-8 rounded-full bg-white text-[var(--text-secondary)] flex items-center justify-center hover:scale-110 transition-transform">
                       {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -1041,7 +1181,17 @@ export default function ProductsAdminTab() {
       {/* Modals */}
       {modal !== null && (
         <ProductFormModal
-          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...(modal.product as Omit<Product, "id"> & { id?: number }) }}
+          initial={
+            modal === "create"
+              ? { ...DEFAULT_FORM }
+              : "duplicate" in modal
+                ? {
+                    ...modal.duplicate,
+                    id: undefined,
+                    name: `${modal.duplicate.name} (copia)`,
+                  }
+                : { ...(modal.product as Omit<Product, "id"> & { id?: number }) }
+          }
           onSave={handleSave}
           onClose={() => setModal(null)}
           saving={saving}

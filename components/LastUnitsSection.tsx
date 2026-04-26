@@ -71,8 +71,8 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
           </p>
         </div>
 
-        {/* Products grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* MK-10: Lista 2-col con info expandida + stock visible */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {lowStock.map((product) => {
             const inCart = items.find((i) => i.id === product.id);
             const qty = inCart?.quantity ?? 0;
