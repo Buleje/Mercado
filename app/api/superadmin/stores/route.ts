@@ -1,17 +1,22 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 
-// GET /api/superadmin/stores
-export async function GET(req: NextRequest) {
-  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const session = await getPlatformSession(token);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+/**
+ * Lógica completa del listado de stores con product counts, cacheada via
+ * Next 16 "use cache". Antes: 1 findMany + 1 groupBy + N+1 mapping (~3s).
+ * 60s revalidate, 30s stale OK, 5 min hard expire. Invalidable con
+ * invalidate("superadmin:stores") tras crear/borrar/publicar store.
+ */
+async function getStoresData() {
+  "use cache";
+  cacheLife({ revalidate: 60, stale: 30, expire: 300 });
+  cacheTag("superadmin:stores");
 
   const storesRaw = await prisma.store.findMany({
     orderBy: { createdAt: "desc" },
@@ -60,6 +65,17 @@ export async function GET(req: NextRequest) {
     return { ...store, _count: { products: count } };
   });
 
+  return stores;
+}
+
+// GET /api/superadmin/stores
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await getPlatformSession(token);
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const stores = await getStoresData();
   return NextResponse.json({ stores });
 }
 

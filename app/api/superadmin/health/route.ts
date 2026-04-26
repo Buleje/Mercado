@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 
@@ -138,22 +139,21 @@ async function checkAdminUsersScoped(): Promise<IsolationCheck> {
 
 // ── GET /api/superadmin/health ────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
-  // Auth: only superadmin (proxy.ts already validates platform session for /api/superadmin/*,
-  // but double-check as defense in depth)
-  const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!platformToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const session = await getPlatformSession(platformToken);
-  if (!session) {
-    return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-  }
+/**
+ * Lógica completa del health-check, cacheada via Next 16 "use cache".
+ * Antes: 5 + 1 + N*5 queries en serie por request (~18s con 10 tenants).
+ * Ahora: 2 min revalidate, 30s stale OK, 10 min hard expire — health
+ * report no cambia en sub-segundos. Invalidable manualmente con
+ * invalidate("superadmin:health") tras un seed/migration grande.
+ */
+async function getHealthData(): Promise<HealthResponse> {
+  "use cache";
+  cacheLife({ revalidate: 120, stale: 30, expire: 600 });
+  cacheTag("superadmin:health");
 
   const checkedAt = new Date().toISOString();
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  // Run all isolation checks in parallel
   const isolationTests = await Promise.all([
     checkOrphanOrders(),
     checkOrphanProducts(),
@@ -162,7 +162,6 @@ export async function GET(req: NextRequest) {
     checkAdminUsersScoped(),
   ]);
 
-  // Get all tenants with stats
   const tenants = await prisma.tenant.findMany({
     select: {
       id: true,
@@ -236,12 +235,26 @@ export async function GET(req: NextRequest) {
 
   const overall = hasCritical ? "critical" : allTenantsHealthy && allIsolationPassed ? "healthy" : "warning";
 
-  const response: HealthResponse = {
+  return {
     overall,
     tenants: tenantHealths,
     isolationTests,
     checkedAt,
   };
+}
 
-  return NextResponse.json(response);
+export async function GET(req: NextRequest) {
+  // Auth: only superadmin (proxy.ts already validates platform session for /api/superadmin/*,
+  // but double-check as defense in depth). Auth corre SIEMPRE — solo la data es cacheada.
+  const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  if (!platformToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const session = await getPlatformSession(platformToken);
+  if (!session) {
+    return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+  }
+
+  const data = await getHealthData();
+  return NextResponse.json(data);
 }

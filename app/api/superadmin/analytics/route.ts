@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -11,24 +12,23 @@ async function requirePlatform(req: NextRequest) {
   return getPlatformSession(token);
 }
 
-// GET /api/superadmin/analytics
-// Returns aggregated platform analytics: revenue, growth, plan distribution, usage
-export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, "GENEROUS", "sa-analytics");
-  if (rateLimited) return rateLimited;
-
-  const session = await requirePlatform(req);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+/**
+ * Lógica completa de analytics platform-wide, cacheada via Next 16 "use cache".
+ * Antes: 9 queries Prisma en paralelo + calculos intensivos por request (~5.5s).
+ * Ahora: 5 min revalidate, 30s stale OK, 30 min hard expire — analytics
+ * platform-wide se renueva con escalas de horas, no minutos. Invalidable
+ * con invalidate("superadmin:analytics") tras eventos relevantes.
+ */
+async function getAnalyticsData() {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 30, expire: 1800 });
+  cacheTag("superadmin:analytics");
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
-  // ── Single source of truth para precios de planes ──────────────────────
-  // Fix MRR fake 2026-04-09: antes había hardcoded {pro:49, business:149, enterprise:399}
-  // desincronizado con lib/superadmin-types.ts (enterprise:499). Ahora leemos
-  // desde PlatformSetting("plan-prices") con fallback a DEFAULT_PLAN_PRICES.
   const PLAN_PRICES = await getAllPlanPrices();
 
   const [
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
     ? Math.round((convertedFromTrial / totalTrials) * 100 * 10) / 10
     : 0;
 
-  return NextResponse.json({
+  return {
     overview: {
       totalTenants,
       activeTenants: activeTenants.length,
@@ -170,5 +170,18 @@ export async function GET(req: NextRequest) {
     monthlySignups,
     monthlyRevenue,
     recentActivity,
-  });
+  };
+}
+
+// GET /api/superadmin/analytics
+// Returns aggregated platform analytics: revenue, growth, plan distribution, usage
+export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, "GENEROUS", "sa-analytics");
+  if (rateLimited) return rateLimited;
+
+  const session = await requirePlatform(req);
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const data = await getAnalyticsData();
+  return NextResponse.json(data);
 }

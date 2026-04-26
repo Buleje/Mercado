@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { hash } from "bcryptjs";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
@@ -15,17 +16,24 @@ async function requirePlatform(req: NextRequest) {
   return getPlatformSession(token);
 }
 
-// GET /api/superadmin/tenants
-// Returns all tenants with plan, billing, usage, store, and financial data
-export async function GET(req: NextRequest) {
-  try {
-    const session = await requirePlatform(req);
-    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+/**
+ * Lógica completa del listado de tenants, cacheada via Next 16 "use cache".
+ * Antes: 5 queries en paralelo + Promise.all de getTenantUsage por tenant
+ * + mapping completo en serie por request (~9s con N tenants).
+ * Ahora: 60s revalidate, 30s stale OK, 5 min hard expire — la lista de
+ * tenants cambia con altas (raras) e impacta KPIs financieros que se
+ * recalculan al inicio de cada mes. Invalidable con
+ * invalidate("superadmin:tenants") tras crear/borrar tenant.
+ */
+async function getTenantsData() {
+  "use cache";
+  cacheLife({ revalidate: 60, stale: 30, expire: 300 });
+  cacheTag("superadmin:tenants");
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses] = await Promise.all([
+  const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses] = await Promise.all([
       prisma.tenant.findMany({
         orderBy: { createdAt: "desc" },
         select: {
@@ -134,6 +142,17 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    return rows;
+}
+
+// GET /api/superadmin/tenants
+// Returns all tenants with plan, billing, usage, store, and financial data
+export async function GET(req: NextRequest) {
+  try {
+    const session = await requirePlatform(req);
+    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const rows = await getTenantsData();
     return NextResponse.json({ tenants: rows });
   } catch (error) {
     logger.error("[superadmin/tenants] Error fetching tenants", {
