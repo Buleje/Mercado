@@ -13,7 +13,7 @@
  *   update patterns.json → compound-learning reads patterns →
  *   generates new skills/hooks → system improves
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 
 const projectRoot =
@@ -21,11 +21,27 @@ const projectRoot =
   process.env.BSM_PROJECT_ROOT ||
   process.cwd();
 
+const errLogPath = join(projectRoot, ".claude/learning/auto-learn.errors.log");
+
+function logErr(scope, err) {
+  try {
+    mkdirSync(dirname(errLogPath), { recursive: true });
+    appendFileSync(
+      errLogPath,
+      `${new Date().toISOString()} [${scope}] ${String(err?.stack ?? err ?? "unknown")}\n`,
+      "utf-8",
+    );
+  } catch {
+    /* last-resort no-op */
+  }
+}
+
 function readJSON(path) {
   try {
     if (!existsSync(path)) return null;
     return JSON.parse(readFileSync(path, "utf8"));
-  } catch {
+  } catch (err) {
+    logErr(`readJSON ${path}`, err);
     return null;
   }
 }
@@ -34,7 +50,9 @@ function writeJSON(path, data) {
   try {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, JSON.stringify(data, null, 2), "utf8");
-  } catch { /* silent */ }
+  } catch (err) {
+    logErr(`writeJSON ${path}`, err);
+  }
 }
 
 try {
@@ -158,8 +176,8 @@ try {
   editLog.lastUpdated = now;
   writeJSON(logPath, editLog);
 
-} catch {
-  // Silent — never break the flow
+} catch (err) {
+  logErr("main", err);
 }
 
 process.exit(0);

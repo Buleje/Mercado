@@ -254,6 +254,11 @@
       "Bash(rm -rf /)",
       "Bash(rm -rf ~*)",
       "Bash(rm -rf $HOME*)",
+      "Bash(rm -fr*)",
+      "Bash(rm -r *)",
+      "Bash(rm -R *)",
+      "Bash(rm -f /*)",
+      "Bash(rm /*)",
       "Bash(sudo *)",
       "Bash(curl * | sh*)",
       "Bash(curl * | bash*)",
@@ -284,6 +289,7 @@
       "Edit(${CLAUDE_PROJECT_DIR}/.env)",
       "Edit(${CLAUDE_PROJECT_DIR}/.env.local)",
       "Edit(${CLAUDE_PROJECT_DIR}/.env.production)"
-    ]
+    ],
+    "_comment_env_deny": "Los Read/Write/Edit a .env* estan en deny como hard guard contra subagentes auto-spawned. El main agent (heredando permisos del usuario) puede sobrepasarlo si Brandon lo aprueba interactivamente, asi se permite editar SUPERADMIN_PASSWORD u otras vars sin abrir un agujero permanente. Ver Sprint C 2026-04-26."
   }
 }
