@@ -25,16 +25,24 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
   const section = req.nextUrl.searchParams.get("section") ?? undefined;
 
-  const store = await resolveStore(slug, tenantId);
-  if (!store) {
-    return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
-  }
+  // El marketplace es cross-tenant: el banner se resuelve por slug
+  // y luego usamos su tenantId real (no `x-tenant-id` que viene de "main").
+  // Resiliente: cualquier error → devolvemos lista vacía para no romper UI.
+  try {
+    const store = await prisma.store.findUnique({
+      where: { slug },
+      select: { id: true, tenantId: true },
+    });
+    if (!store) return NextResponse.json({ banners: [] });
 
-  const banners = await StoreBannersDB.list(tenantId, store.id, section);
-  return NextResponse.json({ banners });
+    const banners = await StoreBannersDB.list(store.tenantId, store.id, section);
+    return NextResponse.json({ banners });
+  } catch (err) {
+    logger.warn("[stores/[slug]/banners GET]", { slug, error: String(err) });
+    return NextResponse.json({ banners: [] });
+  }
 }
 
 export async function POST(

@@ -386,7 +386,16 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ data: safeStores, total: safeStores.length });
+    return NextResponse.json(
+      { data: safeStores, total: safeStores.length },
+      {
+        headers: {
+          // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
+          // populares. Las queries con `search` también se cachean (URL única).
+          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+        },
+      },
+    );
   } catch (err) {
     logger.error("[marketplace/stores GET]", { error: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);

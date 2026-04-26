@@ -16,7 +16,7 @@ import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prismaForTenant } from "@/lib/tenant";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
-import { resolveTenantSlug } from "@/lib/resolve-tenant";
+import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { getOrSet } from "@/lib/cache";
 import { createDefaultDiscountEngine } from "@/lib/pricing/discount-strategies";
@@ -82,7 +82,8 @@ export const GET = withApiHandler("orders-list", async (req) => {
     const rl = applyRateLimit(req, "GENEROUS", "orders-get-public");
     if (rl) return rl;
     const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-    tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+    const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+    tenantId = await resolveTenantSlugToId(slugOrId);
     const publicLimit = limitParam
       ? Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 50)
       : 50;
@@ -182,7 +183,8 @@ export const POST = withApiHandler("orders-create", async (req) => {
   // HOTFIX-004: must run BEFORE the idempotency lookup so the key is scoped
   // by tenant — otherwise tenant B can replay tenant A's key and leak the order.
   const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  const tenantId = await resolveTenantSlugToId(slugOrId);
 
   // ── Idempotency: return existing order if same key is reused ────────────────
   // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.
