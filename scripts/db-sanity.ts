@@ -16,6 +16,7 @@
  * Requiere DIRECT_URL accesible (no usa pgBouncer).
  */
 
+import "dotenv/config";
 import { spawnSync } from "node:child_process";
 
 const DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;

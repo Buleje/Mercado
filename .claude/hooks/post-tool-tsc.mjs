@@ -111,7 +111,11 @@ try {
     {
       cwd: projectRoot,
       stdio: ["ignore", "ignore", "pipe"],
-      timeout: 120_000,
+      timeout: 300_000,
+      env: {
+        ...process.env,
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=12288`.trim(),
+      },
     },
   );
 
