@@ -5,23 +5,23 @@ import dynamic from "next/dynamic";
 import LazyLoad from "@/components/LazyLoad";
 import { SectionSkeleton } from "@/components/LoadingSkeleton";
 
-const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewedSingleTenant"),    { ssr: false });
-const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"),  { ssr: false });
-const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"), { ssr: false });
+const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewedSingleTenant"),    {});
+const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"),  {});
+const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"), {});
 
 
 // Modals/overlays — deferred until after main-thread idle
-const CartSidebar       = dynamic(() => import("@/components/CartSidebar"),       { ssr: false });
-const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),     { ssr: false });
-const ReviewModal       = dynamic(() => import("@/components/ReviewModal"),       { ssr: false });
-const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     { ssr: false });
+const CartSidebar       = dynamic(() => import("@/components/CartSidebar"),       {});
+const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),     {});
+const ReviewModal       = dynamic(() => import("@/components/ReviewModal"),       {});
+const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     {});
 // SocialProofToast removed — fake notifications disabled
-const SpinWheel         = dynamic(() => import("@/components/SpinWheel"),         { ssr: false });
-const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   { ssr: false });
-const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  { ssr: false });
-const StickyCartBar     = dynamic(() => import("@/components/StickyCartBar"),     { ssr: false });
-const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"),    { ssr: false });
-const BackInStock       = dynamic(() => import("@/components/BackInStock"),       { ssr: false });
+const SpinWheel         = dynamic(() => import("@/components/SpinWheel"),         {});
+const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   {});
+const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  {});
+const StickyCartBar     = dynamic(() => import("@/components/StickyCartBar"),     {});
+const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"),    {});
+const BackInStock       = dynamic(() => import("@/components/BackInStock"),       {});
 
 function SectionLoadingSkeleton() {
   return (

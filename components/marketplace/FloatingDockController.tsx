@@ -6,7 +6,7 @@
  *   - RecentlyViewedDrawer: drawer con productos vistos recientemente
  *   - ShortcutHelpModal: modal "?" con atajos de teclado
  *
- * Vive dentro de MarketplaceFloatingWidgets (ssr:false, post-FCP).
+ * Vive dentro de MarketplaceFloatingWidgets (post-FCP).
  * Los 3 son state-locales acá para que el dock pueda abrirlos.
  */
 

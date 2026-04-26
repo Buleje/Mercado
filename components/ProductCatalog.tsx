@@ -27,7 +27,7 @@ import { FixedSizeList, type ListChildComponentProps } from "react-window";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
-const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ssr: false });
+const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), {});
 
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
 

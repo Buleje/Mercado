@@ -10,7 +10,7 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 const MarketplacePromoBar = dynamic(
   () => import("@/components/marketplace/MarketplacePromoBar"),
-  { ssr: false },
+  {},
 );
 
 export default function ConditionalPromoBar() {

@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
-const CheckoutModal = dynamic(() => import("@/components/CheckoutModal"), { ssr: false });
-const CompareBar = dynamic(() => import("@/components/CompareBar"), { ssr: false });
-const NotificationPrompt = dynamic(() => import("@/components/NotificationPrompt"), { ssr: false });
-const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusModalWrapper"), { ssr: false });
-const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"), { ssr: false });
-const LiveChatWidget = dynamic(() => import("@/components/LiveChatWidget"), { ssr: false });
-const WebVitalsReporter = dynamic(() => import("@/components/WebVitalsReporter"), { ssr: false });
-const FirstVisitCouponModal = dynamic(() => import("@/components/store/FirstVisitCouponModal"), { ssr: false });
+const CheckoutModal = dynamic(() => import("@/components/CheckoutModal"), {});
+const CompareBar = dynamic(() => import("@/components/CompareBar"), {});
+const NotificationPrompt = dynamic(() => import("@/components/NotificationPrompt"), {});
+const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusModalWrapper"), {});
+const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"), {});
+const LiveChatWidget = dynamic(() => import("@/components/LiveChatWidget"), {});
+const WebVitalsReporter = dynamic(() => import("@/components/WebVitalsReporter"), {});
+const FirstVisitCouponModal = dynamic(() => import("@/components/store/FirstVisitCouponModal"), {});
 
 /** Defer modal mounting until the browser is idle + delay after hydration */
 function useDeferredMount(delay = 2500) {

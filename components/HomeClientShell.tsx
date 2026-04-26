@@ -2,18 +2,18 @@
 
 import dynamic from "next/dynamic";
 
-const CartSidebar       = dynamic(() => import("@/components/CartSidebar"),       { ssr: false });
-const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),     { ssr: false });
-const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"),  { ssr: false });
-const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     { ssr: false });
-const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   { ssr: false });
-const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  { ssr: false });
-const ExitIntentModal   = dynamic(() => import("@/components/ExitIntentModal"),   { ssr: false });
-const FloatingStoreCTA  = dynamic(() => import("@/components/FloatingStoreCTA"),  { ssr: false });
+const CartSidebar       = dynamic(() => import("@/components/CartSidebar"),       {});
+const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),     {});
+const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"),  {});
+const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     {});
+const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   {});
+const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  {});
+const ExitIntentModal   = dynamic(() => import("@/components/ExitIntentModal"),   {});
+const FloatingStoreCTA  = dynamic(() => import("@/components/FloatingStoreCTA"),  {});
 // #24 Auto-reorder banner — solo si hay cliente autenticado
-const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"),   { ssr: false });
+const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"),   {});
 // #31 Abandoned cart recovery toast
-const CartRecoveryToast = dynamic(() => import("@/components/CartRecoveryToast"), { ssr: false });
+const CartRecoveryToast = dynamic(() => import("@/components/CartRecoveryToast"), {});
 
 /**
  * Client-only shell for the homepage — modals and overlays that need `ssr: false`.

@@ -45,7 +45,7 @@ import DiscoverMegaMenu from "@/components/marketplace/navbar/DiscoverMegaMenu";
 // Ahorra ~50kb del bundle initial del navbar.
 const NotificationsMenu = dynamic(
   () => import("@/components/marketplace/NotificationsMenu"),
-  { ssr: false },
+  {},
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";

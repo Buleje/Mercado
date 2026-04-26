@@ -52,7 +52,7 @@ const CategoryCatalog = dynamic(
         categoryEmoji: string;
       }>;
     }>,
-  { ssr: false, loading: CategoryCatalogLoading }
+  { loading: CategoryCatalogLoading }
 );
 
 export default function CategoryCatalogClient(props: {

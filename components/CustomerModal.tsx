@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { sendOrder } from "@/lib/order-utils";
 import type { SavedLocation } from "@/contexts/customer-context";
 
-const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
+const LeafletMap = dynamic(() => import("./LeafletMap"), {});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function coordsFromLocation(loc: string) {

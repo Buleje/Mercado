@@ -12,7 +12,7 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 const MarketplaceSecondaryNav = dynamic(
   () => import("@/components/marketplace/MarketplaceSecondaryNav"),
-  { ssr: false },
+  {},
 );
 
 export default function ConditionalSecondaryNav() {

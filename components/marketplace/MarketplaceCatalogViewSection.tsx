@@ -29,7 +29,7 @@ function CatalogSkeleton() {
 
 const CatalogView = dynamic(
   () => import("@/components/marketplace/CatalogView"),
-  { ssr: false, loading: () => <CatalogSkeleton /> }
+  { loading: () => <CatalogSkeleton /> }
 );
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */

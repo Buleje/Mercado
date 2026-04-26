@@ -7,8 +7,8 @@ import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, Use
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
-const Confetti  = dynamic(() => import("./Confetti"),   { ssr: false });
+const LeafletMap = dynamic(() => import("./LeafletMap"), {});
+const Confetti  = dynamic(() => import("./Confetti"),   {});
 
 type OrderItem = {
   id: number;

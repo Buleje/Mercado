@@ -18,24 +18,24 @@ import dynamic from "next/dynamic";
 
 const SmoothScrollProvider = dynamic(
   () => import("@/components/SmoothScrollProvider"),
-  { ssr: false },
+  {},
 );
 
 const ClientEffects = dynamic(() => import("@/components/ui/ClientEffects"), {
-  ssr: false,
+  
 });
 
 const ServiceWorkerRegistrar = dynamic(
   () => import("@/components/ServiceWorkerRegistrar"),
-  { ssr: false },
+  {},
 );
 
 const InstallPrompt = dynamic(() => import("@/components/InstallPrompt"), {
-  ssr: false,
+  
 });
 
 const CommandPalette = dynamic(() => import("@/components/CommandPalette"), {
-  ssr: false,
+  
 });
 
 export default function RootDeferredWidgets() {

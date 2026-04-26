@@ -18,14 +18,14 @@ import type { Product } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 
 // Dynamic imports for code-splitting
-const DailySpecial = dynamic(() => import("@/components/DailySpecial"), { ssr: false });
-const SeasonalPromo = dynamic(() => import("@/components/SeasonalPromo"), { ssr: false });
-const FlashDeals = dynamic(() => import("@/components/FlashDeals"), { ssr: false });
-const PopularProducts = dynamic(() => import("@/components/PopularProducts"), { ssr: false });
-const FeaturedCarousel = dynamic(() => import("@/components/FeaturedCarousel"), { ssr: false });
-const CombosSection = dynamic(() => import("@/components/CombosSection"), { ssr: false });
-const LastUnitsSection = dynamic(() => import("@/components/LastUnitsSection"), { ssr: false });
-const CountdownBanner = dynamic(() => import("@/components/CountdownBanner"), { ssr: false });
+const DailySpecial = dynamic(() => import("@/components/DailySpecial"), {});
+const SeasonalPromo = dynamic(() => import("@/components/SeasonalPromo"), {});
+const FlashDeals = dynamic(() => import("@/components/FlashDeals"), {});
+const PopularProducts = dynamic(() => import("@/components/PopularProducts"), {});
+const FeaturedCarousel = dynamic(() => import("@/components/FeaturedCarousel"), {});
+const CombosSection = dynamic(() => import("@/components/CombosSection"), {});
+const LastUnitsSection = dynamic(() => import("@/components/LastUnitsSection"), {});
+const CountdownBanner = dynamic(() => import("@/components/CountdownBanner"), {});
 
 type SectionKey =
   | "daily_special"
