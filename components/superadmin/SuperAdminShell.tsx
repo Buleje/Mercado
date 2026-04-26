@@ -24,8 +24,6 @@ import {
   Gauge,
   HeartPulse,
   Wrench,
-  Map as MapIcon,
-  Cable,
   FileCheck,
   ImageIcon,
 } from "@buleje/design-system/icons";
@@ -50,15 +48,12 @@ interface SuperAdminShellProps {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
-  { label: "Sitemap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/sitemap"         },
-  { label: "Roadmap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"         },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
   { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
-  { label: "Setup Pendiente", icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"           },
   { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
   { label: "Seguridad",       icon: <ShieldCheck     className="w-5 h-5 shrink-0" />, href: "/superadmin/security"        },
   { label: "Config",          icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
@@ -67,19 +62,84 @@ const NAV_ITEMS: NavItem[] = [
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
-  "/superadmin/sitemap":         "Sitemap",
-  "/superadmin/roadmap":         "Roadmap",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",
   "/superadmin/stores":          "Marketplace",
   "/superadmin/banners":         "Banners promocionales",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
-  "/superadmin/setup":           "Setup Pendiente",
   "/superadmin/activity":        "Actividad",
   "/superadmin/settings":        "Config",
   "/superadmin":                 "Dashboard",
 };
+
+const STORAGE_KEY_HIDDEN = "superadmin-nav-hidden";
+const STORAGE_KEY_ORDER = "superadmin-nav-order";
+const STORAGE_KEY_THEME = "superadmin-nav-theme";
+const STORAGE_KEY_ACCENT = "superadmin-nav-accent";
+const STORAGE_KEY_DENSITY = "superadmin-nav-density";
+const STORAGE_KEY_ICON_STYLE = "superadmin-nav-icon-style";
+
+type SidebarVisualPrefs = {
+  theme: "light" | "dark" | "cristal" | "shaded";
+  accent: "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
+  density: "compact" | "normal" | "spacious";
+  iconStyle: "colored" | "monochrome";
+};
+
+const ACCENT_HEX: Record<SidebarVisualPrefs["accent"], string> = {
+  teal: "#00B4A6",
+  emerald: "#10B981",
+  sky: "#0EA5E9",
+  violet: "#8B5CF6",
+  amber: "#F59E0B",
+  rose: "#F43F5E",
+};
+
+const DEFAULT_VISUAL: SidebarVisualPrefs = {
+  theme: "cristal",
+  accent: "teal",
+  density: "normal",
+  iconStyle: "colored",
+};
+
+function loadNavConfig(): { hidden: Set<string>; order: string[]; visual: SidebarVisualPrefs } {
+  if (typeof window === "undefined")
+    return { hidden: new Set(), order: [], visual: DEFAULT_VISUAL };
+  try {
+    const hiddenRaw = localStorage.getItem(STORAGE_KEY_HIDDEN);
+    const orderRaw = localStorage.getItem(STORAGE_KEY_ORDER);
+    const hidden = new Set<string>(hiddenRaw ? JSON.parse(hiddenRaw) : []);
+    const order: string[] = orderRaw ? JSON.parse(orderRaw) : [];
+    const visual: SidebarVisualPrefs = {
+      theme: (localStorage.getItem(STORAGE_KEY_THEME) as SidebarVisualPrefs["theme"]) ?? DEFAULT_VISUAL.theme,
+      accent: (localStorage.getItem(STORAGE_KEY_ACCENT) as SidebarVisualPrefs["accent"]) ?? DEFAULT_VISUAL.accent,
+      density: (localStorage.getItem(STORAGE_KEY_DENSITY) as SidebarVisualPrefs["density"]) ?? DEFAULT_VISUAL.density,
+      iconStyle: (localStorage.getItem(STORAGE_KEY_ICON_STYLE) as SidebarVisualPrefs["iconStyle"]) ?? DEFAULT_VISUAL.iconStyle,
+    };
+    return { hidden, order, visual };
+  } catch {
+    return { hidden: new Set(), order: [], visual: DEFAULT_VISUAL };
+  }
+}
+
+/** Filtra y reordena los items según las prefs guardadas en localStorage. */
+function applyNavConfig(items: NavItem[], hidden: Set<string>, order: string[]): NavItem[] {
+  const visible = items.filter((it) => !hidden.has(it.href));
+  if (order.length === 0) return visible;
+  const byHref = new Map(visible.map((it) => [it.href, it] as const));
+  const ordered: NavItem[] = [];
+  for (const href of order) {
+    const it = byHref.get(href);
+    if (it) {
+      ordered.push(it);
+      byHref.delete(href);
+    }
+  }
+  // Cualquier item nuevo no presente en el orden guardado va al final.
+  for (const it of byHref.values()) ordered.push(it);
+  return ordered;
+}
 
 // ─── Theme hook ───────────────────────────────────────────────────────────────
 
@@ -142,6 +202,52 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const [impersonating, setImpersonating] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS);
+  const [visual, setVisual] = useState<SidebarVisualPrefs>(DEFAULT_VISUAL);
+
+  // Sincroniza nav items + visual prefs con la config guardada. Reacciona
+  // a "storage" (otra pestaña) y a custom event "superadmin-nav-config-changed"
+  // que dispara la página de settings.
+  useEffect(() => {
+    const refresh = () => {
+      const { hidden, order, visual } = loadNavConfig();
+      setNavItems(applyNavConfig(NAV_ITEMS, hidden, order));
+      setVisual(visual);
+    };
+    refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener("superadmin-nav-config-changed", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("superadmin-nav-config-changed", refresh);
+    };
+  }, []);
+
+  // Aplica visual prefs vía CSS variable --accent (afecta highlights, focus
+  // rings, hover backgrounds, etc.) en :root para todo el shell.
+  useEffect(() => {
+    const root = document.documentElement;
+    const hex = ACCENT_HEX[visual.accent] ?? ACCENT_HEX.teal;
+    // eslint-disable-next-line no-console
+    console.log("[SuperAdminShell] applying accent", visual.accent, "→", hex);
+    root.style.setProperty("--accent", hex);
+    root.style.setProperty("--accent-soft", `${hex}26`);
+    root.style.setProperty("--accent-600", hex);
+  }, [visual.accent]);
+
+  // Densidad: padding/altura de los items del sidebar.
+  const navItemPadding =
+    visual.density === "compact" ? "px-2.5 py-1.5" : visual.density === "spacious" ? "px-3 py-3" : "px-3 py-2";
+  const sidebarBgClass =
+    visual.theme === "dark"
+      ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
+      : visual.theme === "shaded"
+        ? "bg-gradient-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)] border-r border-[var(--rule-base)]"
+        : visual.theme === "cristal"
+          ? "bg-[var(--surface-canvas)]/85 backdrop-blur-md border-r border-[var(--rule-base)]"
+          : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
+  const iconClassName =
+    visual.iconStyle === "monochrome" ? "opacity-70 grayscale" : "";
 
   // Rotate session cookie if the layout detected it's past halfway
   useEffect(() => {
@@ -212,7 +318,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     (pathname.startsWith("/superadmin/tenants/") ? "Tienda" : "SuperAdmin");
 
   return (
-    <div className="min-h-screen flex bg-[var(--surface-canvas)]">
+    <div className="superadmin-shell min-h-screen flex bg-[var(--surface-canvas)]">
       {/* Global Command Palette (Ctrl+K / Cmd+K) */}
       <CommandPalette
         onToggleTheme={toggle}
@@ -237,7 +343,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       <aside
         className={[
           "fixed top-0 left-0 h-full z-40 flex flex-col",
-          "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]",
+          sidebarBgClass,
           "transition-all duration-[var(--dur-base)]",
           // Desktop width
           collapsed ? "w-16" : "w-60",
@@ -271,7 +377,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active =
               pathname === item.href ||
               (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
@@ -281,7 +387,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={[
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+                  navItemPadding,
                   collapsed ? "justify-center" : "",
                   active
                     ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -289,7 +396,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 ].join(" ")}
                 title={collapsed ? item.label : undefined}
               >
-                {item.icon}
+                <span className={iconClassName}>{item.icon}</span>
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );

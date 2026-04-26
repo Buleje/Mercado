@@ -1,24 +1,31 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, Package, Ticket, BarChart3, Palette, Menu } from "@buleje/design-system/icons";
+import { ShoppingBag, Package, Ticket, BarChart3, Palette, Menu, ShieldCheck, Activity, Image as ImageIcon } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
-import { OrdersTab } from "@/components/superadmin/stores/OrdersTab";
+// OrdersTab fusionado en OperationsTab
+// import { OrdersTab } from "@/components/superadmin/stores/OrdersTab";
 import { CouponsTab } from "@/components/superadmin/stores/CouponsTab";
 import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
-import { PersonalizarTab } from "@/components/superadmin/stores/PersonalizarTab";
+// PersonalizarTab fusionado en StoresTab
+// import { PersonalizarTab } from "@/components/superadmin/stores/PersonalizarTab";
 import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
+import { HealthTab } from "@/components/superadmin/stores/HealthTab";
+import { OperationsTab } from "@/components/superadmin/stores/OperationsTab";
+import { CategoriesTab } from "@/components/superadmin/stores/CategoriesTab";
 import type { StoreRow, StoreTab } from "@/components/superadmin/stores/types";
 import { AdminTabShell } from "../_components/_shared";
 
 // ─── Tabs config ──────────────────────────────────────────────────────────────
 
+// Tabs unificadas (Pedidos fusionado en Operaciones, Personalizar fusionada en Tiendas)
 const TABS: { key: StoreTab; label: string; icon: React.ReactNode }[] = [
   { key: "stores", label: "Tiendas", icon: <ShoppingBag className="w-4 h-4" /> },
-  { key: "orders", label: "Pedidos", icon: <Package className="w-4 h-4" /> },
+  { key: "health", label: "Salud", icon: <ShieldCheck className="w-4 h-4" /> },
+  { key: "operations", label: "Operaciones", icon: <Activity className="w-4 h-4" /> },
+  { key: "categories", label: "Categorías", icon: <ImageIcon className="w-4 h-4" /> },
   { key: "coupons", label: "Cupones", icon: <Ticket className="w-4 h-4" /> },
   { key: "analytics", label: "Analítica", icon: <BarChart3 className="w-4 h-4" /> },
-  { key: "personalizar", label: "Personalizar", icon: <Palette className="w-4 h-4" /> },
   { key: "navegacion", label: "Navegación", icon: <Menu className="w-4 h-4" /> },
 ];
 
@@ -86,10 +93,13 @@ export default function StoresPage() {
           refreshing={refreshing}
         />
       )}
-      {tab === "orders" && <OrdersTab />}
+      {tab === "health" && <HealthTab />}
+      {tab === "operations" && <OperationsTab />}
+      {tab === "categories" && <CategoriesTab />}
+      {/* Pedidos fusionado en Operaciones — la tab "orders" ya no existe */}
       {tab === "coupons" && <CouponsTab />}
       {tab === "analytics" && <AnalyticsTab stores={stores} />}
-      {tab === "personalizar" && <PersonalizarTab stores={stores} onRefresh={handleRefresh} />}
+      {/* Personalizar fusionado en Tiendas — la tab "personalizar" ya no existe */}
       {tab === "navegacion" && <NavegacionTab />}
     </AdminTabShell>
   );

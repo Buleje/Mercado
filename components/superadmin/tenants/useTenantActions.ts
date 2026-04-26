@@ -105,7 +105,11 @@ export function useTenantActions({
         body: JSON.stringify({ slug }),
       });
       if (!res.ok) { showToast("Error al impersonar", false); return; }
-      window.open(`/t/${slug}/admin`, "_blank");
+      // Cookies (buleje-sess + active-tenant + active-tenant-slug) ya
+      // están seteadas por la respuesta. Vamos directo al panel admin del
+      // tenant — sin pasar por el gateway /t/[slug]/admin que solo
+      // re-hace el dance. Acceso total e inmediato.
+      window.open(`/admin`, "_blank");
     } catch { showToast("Error de red", false); }
   }, [showToast]);
 

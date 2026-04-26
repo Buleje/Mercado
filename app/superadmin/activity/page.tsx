@@ -7,6 +7,8 @@ import {
   AdminTabShell,
   AdminEmptyState,
 } from "../_components/_shared";
+import { useDateRange } from "@/hooks/use-date-range";
+import CustomDateRangePicker from "@/components/superadmin/_shared/CustomDateRangePicker";
 
 interface ActivityLog {
   id: string;
@@ -36,6 +38,9 @@ export default function ActivityPage() {
   const [filterEntity, setFilterEntity] = useState("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Filtro de fecha — useDateRange (compartido) con default "7d" para Activity.
+  const dateRange = useDateRange("activity", "7d");
+
   const loadActivity = useCallback(async (page = 1) => {
     setLoading(true);
     setError("");
@@ -44,6 +49,10 @@ export default function ActivityPage() {
       if (filterTenant) params.set("tenant", filterTenant);
       if (filterAction) params.set("action", filterAction);
       if (filterEntity) params.set("entity", filterEntity);
+      // Date range pasa como ISO timestamps; el endpoint puede ignorarlos
+      // si no soporta filtro temporal (degrada graceful).
+      params.set("from", dateRange.start.toISOString());
+      params.set("to", dateRange.end.toISOString());
 
       const res = await fetch(`/api/superadmin/activity?${params}`, {
         credentials: "include",
@@ -60,7 +69,7 @@ export default function ActivityPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterTenant, filterAction, filterEntity]);
+  }, [filterTenant, filterAction, filterEntity, dateRange.start, dateRange.end]);
 
   useEffect(() => {
     void loadActivity(1);
@@ -89,6 +98,34 @@ export default function ActivityPage() {
       description={`${pagination.total} registros — se actualiza automáticamente cada 30 s.`}
       icon={Activity}
     >
+      {/* Date range picker chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
+          Periodo:
+        </span>
+        {(["1d", "7d", "30d", "90d", "1y"] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => dateRange.setRange(r)}
+            className={[
+              "rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors",
+              dateRange.range === r
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+            ].join(" ")}
+          >
+            {r === "1d" ? "Hoy" : r === "7d" ? "7 días" : r === "30d" ? "30 días" : r === "90d" ? "90 días" : "1 año"}
+          </button>
+        ))}
+        <CustomDateRangePicker
+          active={dateRange.range === "custom"}
+          value={dateRange.customRange}
+          onActivate={() => dateRange.setRange("custom")}
+          onChange={dateRange.setCustomRange}
+        />
+      </div>
+
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -167,7 +204,7 @@ export default function ActivityPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] text-[var(--text-tertiary)] text-xs uppercase tracking-wider">
+                <tr className="border-b border-[var(--rule-soft)] text-[var(--text-tertiary)] text-sm font-bold uppercase tracking-wider">
                   <th className="text-left px-5 py-3">Fecha</th>
                   <th className="text-left px-4 py-3">Usuario</th>
                   <th className="text-left px-4 py-3">Acción</th>
@@ -182,29 +219,29 @@ export default function ActivityPage() {
                     key={log.id}
                     className="hover:bg-[var(--surface-sunken)]/50 transition-colors"
                   >
-                    <td className="px-5 py-3 text-xs text-[var(--text-tertiary)] whitespace-nowrap">
+                    <td className="px-5 py-3 text-sm text-[var(--text-secondary)] whitespace-nowrap tabular-nums">
                       {fmtDate(log.createdAt)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
+                    <td className="px-4 py-3 text-sm text-[var(--text-primary)] font-semibold">
                       {log.user}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-bold bg-[var(--accent-soft)] text-[var(--accent)]">
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
-                      <span>{log.entity}</span>
+                    <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">
+                      <span className="font-medium">{log.entity}</span>
                       {log.entityId && (
-                        <span className="ml-1 font-mono text-[var(--text-tertiary)] truncate max-w-24 inline-block align-bottom">
+                        <span className="ml-1.5 font-mono text-[var(--text-tertiary)] truncate max-w-24 inline-block align-bottom">
                           {log.entityId}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-[var(--text-tertiary)] hidden md:table-cell">
+                    <td className="px-4 py-3 text-sm font-mono text-[var(--text-tertiary)] hidden md:table-cell">
                       {log.tenantId}
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] hidden lg:table-cell max-w-xs truncate">
+                    <td className="px-4 py-3 text-sm text-[var(--text-secondary)] hidden lg:table-cell max-w-xs truncate">
                       {log.detail || "—"}
                     </td>
                   </tr>

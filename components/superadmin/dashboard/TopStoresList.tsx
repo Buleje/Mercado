@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChartWrapper, BadgeStatus, Caption } from "@buleje/design-system";
+import { ChartWrapper, BadgeStatus } from "@buleje/design-system";
 import { ArrowRight } from "@buleje/design-system/icons";
 import { fmtSoles, type TopStore } from "@/lib/mocks/superadmin-dashboard.mock";
 
@@ -32,10 +32,10 @@ export function TopStoresList({ stores }: Props) {
       actions={
         <Link
           href="/superadmin/tenants"
-          className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Ver todas
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       }
     >
@@ -45,11 +45,11 @@ export function TopStoresList({ stores }: Props) {
           return (
             <li key={store.id}>
               <div className="flex items-center justify-between gap-3 mb-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums font-semibold w-5 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] tabular-nums font-extrabold w-6 shrink-0">
                     {i + 1}
                   </span>
-                  <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] truncate">
+                  <span className="text-[length:var(--ts-base)] font-bold text-[var(--text-primary)] truncate">
                     {store.name}
                   </span>
                   <BadgeStatus
@@ -58,13 +58,13 @@ export function TopStoresList({ stores }: Props) {
                     label={store.plan}
                   />
                 </div>
-                <span className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)] shrink-0">
+                <span className="text-[length:var(--ts-base)] font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
                   {fmtSoles(store.gmv)}
                 </span>
               </div>
-              <div className="flex items-center gap-3 pl-7">
+              <div className="flex items-center gap-3 pl-8">
                 <div
-                  className="h-1.5 flex-1 rounded-full bg-[var(--surface-sunken)] overflow-hidden"
+                  className="h-2 flex-1 rounded-full bg-[var(--surface-sunken)] overflow-hidden"
                   aria-hidden
                 >
                   <div
@@ -72,9 +72,9 @@ export function TopStoresList({ stores }: Props) {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <Caption className="shrink-0 tabular-nums">
+                <span className="text-[length:var(--ts-sm)] shrink-0 tabular-nums font-semibold text-[var(--text-tertiary)]">
                   {store.orders} pedidos
-                </Caption>
+                </span>
               </div>
             </li>
           );

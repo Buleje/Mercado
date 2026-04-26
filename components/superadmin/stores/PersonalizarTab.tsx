@@ -286,7 +286,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               El banner grande que se muestra arriba del marketplace
             </p>
-            <p className="text-[length:var(--ts-2xs)] text-primary mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-primary mt-2 font-medium">
               Se configura desde cada tienda individual → pestaña Mi Tienda
             </p>
           </div>
@@ -300,7 +300,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               Las tiendas en posición 1-3 arriba aparecen primero en el marketplace
             </p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-success)] mt-2 font-medium">
               Reordena la lista de arriba para priorizar tiendas
             </p>
           </div>
@@ -312,7 +312,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               Haz clic en el porcentaje de cada tienda para editar su comisión por venta
             </p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] mt-2 font-medium">
               Promedio actual: {avgCommission}%
             </p>
           </div>
@@ -324,7 +324,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               Controla qué tiendas aparecen en el marketplace con los botones Publicar/Ocultar
             </p>
-            <p className="text-[length:var(--ts-2xs)] text-primary mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-primary mt-2 font-medium">
               {published.length} visibles · {hidden.length} ocultas
             </p>
           </div>

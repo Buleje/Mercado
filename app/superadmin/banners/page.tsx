@@ -19,6 +19,7 @@ import { Save, Plus, Trash2, ImageIcon, ChevronDown, Megaphone } from "@buleje/d
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { AdminTabShell } from "../_components/_shared";
+import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
 
 type Banner = {
   id: string;
@@ -166,7 +167,7 @@ export default function SuperadminBannersPage() {
               )}
             >
               {s.label}
-              <span className="ml-2 text-[length:var(--ts-2xs)] opacity-70">
+              <span className="ml-2 text-[length:var(--ts-xs)] opacity-70">
                 ({data[s.id]?.length ?? 0})
               </span>
             </button>
@@ -226,14 +227,25 @@ export default function SuperadminBannersPage() {
                 </div>
                 <div>
                   <label className="block text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] mb-1">
-                    URL de imagen (opcional)
+                    Imagen (subir o URL)
                   </label>
-                  <input
-                    value={b.imageUrl ?? ""}
-                    onChange={(e) => updateBanner(idx, { imageUrl: e.target.value || null })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-sm)]"
-                  />
+                  <div className="flex gap-2 items-start">
+                    <div className="w-20 shrink-0">
+                      <ImageUploader
+                        value={b.imageUrl}
+                        onChange={(url) => updateBanner(idx, { imageUrl: url })}
+                        folder={`banners-${activeSlot}`}
+                        mode="wide"
+                        aspectClass="aspect-[16/7]"
+                      />
+                    </div>
+                    <input
+                      value={b.imageUrl ?? ""}
+                      onChange={(e) => updateBanner(idx, { imageUrl: e.target.value || null })}
+                      placeholder="O pegá una URL: https://..."
+                      className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-sm)]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] mb-1">

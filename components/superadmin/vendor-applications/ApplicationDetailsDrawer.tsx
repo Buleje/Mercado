@@ -184,12 +184,12 @@ export function ApplicationDetailsDrawer({
                 <p className="text-xs text-gray-500">Funcionalidades</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   {application.hasDelivery && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-100)] text-[var(--data-success)]">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-success-100)] text-[var(--data-success)]">
                       Delivery
                     </span>
                   )}
                   {application.hasPos && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-info-100)] text-[var(--data-info)]">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-info-100)] text-[var(--data-info)]">
                       POS
                     </span>
                   )}

@@ -29,7 +29,7 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
         <h2 className="text-sm font-bold text-[var(--text-primary)]">
           Score de Buenas Prácticas
         </h2>
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wide ml-auto">
+        <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] uppercase tracking-wide ml-auto">
           Actualizado 2026-04-06
         </span>
       </div>
@@ -126,7 +126,7 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
               {score.link && (
                 <a
                   href={score.link.url}
-                  className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--accent)] hover:underline mt-3"
+                  className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--accent)] hover:underline mt-3"
                 >
                   {score.link.label}
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -137,7 +137,7 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
         })}
       </div>
 
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 leading-relaxed">
+      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-3 leading-relaxed">
         <strong>Techo realista del Excel 2026:</strong> 87.5% sólido / 77% perfecto (las 3 faltantes y 4 N/A son decisiones conscientes de NO aplicar — Scrum, Service Mesh, Sharding, Monorepo, Factory DI, Hexagonal completa, Terraform).
         <br />
         <strong>Path al máximo Excel Agentes IA:</strong> faltan RAG vectorial, structured output JSON, modelo mixto (router LLM), temperaturas diferenciadas por agente, LangSmith/Helicone, LlamaGuard.

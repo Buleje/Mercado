@@ -43,19 +43,19 @@ export default function SetupStatsCard({ stats, allDone }: SetupStatsCardProps) 
         <div className="grid grid-cols-4 gap-3 mt-4">
           <div className="text-center">
             <div className="text-xl font-extrabold text-[var(--text-primary)]">{stats.total}</div>
-            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Total</div>
+            <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Total</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.pending}</div>
-            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Pendientes</div>
+            <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Pendientes</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-extrabold text-[var(--data-success)]">{stats.done}</div>
-            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Hechos</div>
+            <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Hechos</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.blocked}</div>
-            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Bloqueados</div>
+            <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Bloqueados</div>
           </div>
         </div>
 

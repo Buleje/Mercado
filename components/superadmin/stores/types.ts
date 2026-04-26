@@ -48,4 +48,13 @@ export interface MarketplaceCoupon {
   expiresAt: string | null;
 }
 
-export type StoreTab = "stores" | "orders" | "coupons" | "analytics" | "personalizar" | "navegacion";
+export type StoreTab =
+  | "stores"
+  | "orders"
+  | "coupons"
+  | "analytics"
+  | "personalizar"
+  | "navegacion"
+  | "health"
+  | "operations"
+  | "categories";

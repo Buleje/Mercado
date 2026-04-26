@@ -121,10 +121,10 @@ export function TenantTable({
                   <td className="px-4 py-3">
                     <StatusBadge active={tenant.active} />
                     {tenant.cancelAtPeriodEnd && (
-                      <div className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-1">Cancela pronto</div>
+                      <div className="text-[length:var(--ts-xs)] text-[var(--data-warning)] mt-1">Cancela pronto</div>
                     )}
                     {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                      <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-1">
+                      <div className="text-[length:var(--ts-xs)] text-[var(--data-success)] mt-1">
                         Trial hasta {fmtDate(tenant.trialEndsAt)}
                       </div>
                     )}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
 
-  const commissions = await prisma.commissionLedger.findMany({
+  const rows = await prisma.commissionLedger.findMany({
     orderBy: { createdAt: "desc" },
     take: limit,
     select: {
@@ -38,6 +39,16 @@ export async function GET(req: NextRequest) {
       createdAt: true,
     },
   });
+
+  // Prisma Decimal serializa como string en JSON. Si dejamos los strings,
+  // el cliente hace `total + "0.59"` y termina en NaN. Convertimos acá.
+  const commissions = rows.map((r) => ({
+    ...r,
+    amount: toNumOrZero(r.amount),
+    rate: toNumOrZero(r.rate),
+    settledAt: r.settledAt ? r.settledAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+  }));
 
   return NextResponse.json({ commissions });
 }

@@ -34,10 +34,10 @@ export function LatestActiveTenantsTable({ tenants }: Props) {
       actions={
         <Link
           href="/superadmin/tenants"
-          className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Ver todas
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       }
     >

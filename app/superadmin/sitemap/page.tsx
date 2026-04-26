@@ -1,12 +1,7 @@
-import type { Metadata } from "next";
-import SitemapClient from "./SitemapClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Sitemap · SuperAdmin",
-  description: "Directorio completo de rutas del proyecto Buleje",
-  robots: "noindex, nofollow",
-};
-
+// Modulo eliminado por decisión del producto. La ruta queda como redirect
+// permanente al dashboard para no romper bookmarks viejos.
 export default function SitemapPage() {
-  return <SitemapClient />;
+  redirect("/superadmin/dashboard");
 }

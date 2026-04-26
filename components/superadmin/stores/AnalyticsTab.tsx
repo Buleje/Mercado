@@ -122,7 +122,7 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{s.orders} pedidos</p>
+                    <p className="text-[length:var(--ts-xs)] text-gray-400 mt-0.5">{s.orders} pedidos</p>
                   </div>
                 );
               })}

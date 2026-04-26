@@ -28,10 +28,10 @@ function ARPUTooltip({
   const value = payload[0]?.value ?? 0;
   return (
     <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 shadow-[var(--shadow-sm)]">
-      <div className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
+      <div className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
         {label}
       </div>
-      <div className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]">
+      <div className="text-[length:var(--ts-base)] font-extrabold tabular-nums text-[var(--text-primary)]">
         {fmtSoles(value)}
       </div>
     </div>
@@ -71,13 +71,13 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
           {deltaPct.toFixed(1)}% vs 6 meses atrás
         </Caption>
       </div>
-      <div style={{ height: 90 }}>
+      <div style={{ height: 110 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
             <XAxis
               dataKey="month"
               stroke={tokens.axis}
-              tick={{ fontSize: 10, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis }}
               tickLine={false}
               axisLine={false}
               height={18}
@@ -90,9 +90,9 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
               type="monotone"
               dataKey="arpu"
               stroke={tokens.stroke}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 3, fill: tokens.stroke, strokeWidth: 0 }}
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: tokens.stroke, strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: tokens.stroke, strokeWidth: 2, stroke: "var(--surface-canvas)" }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ShoppingBag, Package, Star, DollarSign, Search, RefreshCw } from "@buleje/design-system/icons";
+import { useCallback, useMemo, useState } from "react";
+import { ShoppingBag, Package, Star, DollarSign, Search, RefreshCw, Eye, EyeOff, Loader2 } from "@buleje/design-system/icons";
 import { SADataTable } from "@/components/superadmin/_shared/SADataTable";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";
 import type { SAColumn } from "@/components/superadmin/_shared/SADataTable";
 import { StatCard } from "./StatCard";
 import type { StoreRow } from "./types";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const STORE_COLUMNS: SAColumn<StoreRow>[] = [
+function buildColumns(
+  togglingId: string | null,
+  onTogglePublish: (row: StoreRow) => void,
+): SAColumn<StoreRow>[] {
+  return [
   {
     key: "tenant",
     label: "Tienda (Tenant)",
@@ -104,7 +109,44 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
       <span className="text-xs text-gray-400 tabular-nums">{fmtDate(row.createdAt)}</span>
     ),
   },
-];
+  {
+    key: "actions",
+    label: "Acción",
+    render: (row) => {
+      const busy = togglingId === row.id;
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!busy) onTogglePublish(row);
+          }}
+          disabled={busy}
+          className={[
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
+            row.isPublished
+              ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+          ].join(" ")}
+          title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
+        >
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : row.isPublished ? (
+            <>
+              <EyeOff className="h-3.5 w-3.5" /> Ocultar
+            </>
+          ) : (
+            <>
+              <Eye className="h-3.5 w-3.5" /> Publicar
+            </>
+          )}
+        </button>
+      );
+    },
+  },
+  ];
+}
 
 interface StoresTabProps {
   stores: StoreRow[] | undefined;
@@ -117,6 +159,32 @@ interface StoresTabProps {
 export function StoresTab({ stores, loading, error, onRefresh, refreshing }: StoresTabProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleTogglePublish = useCallback(async (row: StoreRow) => {
+    setTogglingId(row.id);
+    try {
+      const res = await fetch("/api/superadmin/stores", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ storeId: row.id, isPublished: !row.isPublished }),
+      });
+      if (res.ok) {
+        // Refresh la lista para reflejar el nuevo estado.
+        onRefresh();
+      }
+    } catch {
+      // silent
+    } finally {
+      setTogglingId(null);
+    }
+  }, [onRefresh]);
+
+  const columns = useMemo(
+    () => buildColumns(togglingId, handleTogglePublish),
+    [togglingId, handleTogglePublish],
+  );
 
   const filtered = useMemo(() => {
     if (!stores) return [];
@@ -225,7 +293,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
       )}
       {!loading && filtered.length > 0 && (
         <SADataTable
-          columns={STORE_COLUMNS}
+          columns={columns}
           data={filtered}
           rowKey={(row) => row.id}
           emptyMessage="Sin resultados"

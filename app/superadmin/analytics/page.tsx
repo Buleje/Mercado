@@ -9,6 +9,9 @@ import {
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";
+import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
+import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
+import ExecutiveAnalytics from "@/components/superadmin/analytics/ExecutiveAnalytics";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
 
@@ -107,10 +110,24 @@ export default function AnalyticsPage() {
     }
   }, []);
 
+  // ARPU series — viene del endpoint widgets que ya calcula 6 meses reales.
+  const [arpuSeries, setArpuSeries] = useState<Array<{ month: string; arpu: number }>>([]);
+  const loadArpu = useCallback(async () => {
+    try {
+      const res = await fetch("/api/superadmin/dashboard/widgets", { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json() as { arpuSeries?: Array<{ month: string; arpu: number }> };
+      setArpuSeries(data.arpuSeries ?? []);
+    } catch {
+      // silent
+    }
+  }, []);
+
   useEffect(() => {
     void loadData();
     void loadCommissions();
-  }, [loadData, loadCommissions]);
+    void loadArpu();
+  }, [loadData, loadCommissions, loadArpu]);
 
   const commThisMonth = commissions.filter((c) => c.status !== "paid").reduce((s, c) => s + c.amount, 0);
   const commPaid = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
@@ -173,9 +190,9 @@ export default function AnalyticsPage() {
             key={label}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
           >
-            <div className="text-[var(--text-tertiary)] text-xs mb-2">{label}</div>
-            <div className="text-2xl font-bold text-[var(--text-primary)]">{value}</div>
-            <div className="text-[var(--text-tertiary)] text-xs mt-1">{sub}</div>
+            <div className="text-[var(--text-tertiary)] text-sm font-semibold mb-2">{label}</div>
+            <div className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">{value}</div>
+            <div className="text-[var(--text-tertiary)] text-sm mt-1.5">{sub}</div>
           </div>
         ))}
       </div>
@@ -183,24 +200,13 @@ export default function AnalyticsPage() {
       {/* Revenue charts */}
       <RevenueCharts />
 
-      {/* Plan distribution */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-[var(--text-secondary)]" /> Distribución por plan
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {(["free", "pro", "business", "enterprise"] as PlanId[]).map((plan) => (
-            <div key={plan} className="bg-[var(--surface-sunken)]/50 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {analytics.planDistribution[plan] ?? 0}
-              </div>
-              <div className="mt-1.5">
-                <PlanBadge plan={plan} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ─── Análisis ejecutivo profundo (8 secciones) ───────────────────── */}
+      <ExecutiveAnalytics />
+
+      {/* ARPU sólo — "Tenants por plan" se eliminó: redundante con MRR breakdown del módulo ejecutivo */}
+      {arpuSeries.length > 0 && (
+        <ARPUMiniChart data={arpuSeries} currentARPU={analytics.overview.arpu} />
+      )}
 
       {/* Comisiones */}
       <div className="space-y-4">
@@ -232,17 +238,17 @@ export default function AnalyticsPage() {
               key={label}
               className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
             >
-              <div className="text-[var(--text-tertiary)] text-xs mb-2 flex items-center gap-1.5">
+              <div className="text-[var(--text-tertiary)] text-sm font-semibold mb-2 flex items-center gap-1.5">
                 {icon} {label}
               </div>
               {commLoading ? (
                 <div className="h-8 w-24 bg-[var(--surface-sunken)] animate-pulse rounded" />
               ) : (
-                <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
+                <div className="text-3xl font-extrabold text-[var(--text-primary)] font-mono tabular-nums">
                   {fmtAmount(value)}
                 </div>
               )}
-              <div className="text-[var(--text-tertiary)] text-xs mt-1">{sub}</div>
+              <div className="text-[var(--text-tertiary)] text-sm mt-1.5">{sub}</div>
             </div>
           ))}
         </div>
@@ -250,8 +256,8 @@ export default function AnalyticsPage() {
         {/* Tabla comisiones recientes */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
           <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--text-primary)]">Comisiones recientes</span>
-            <span className="text-xs text-gray-400">Últimas 20</span>
+            <span className="text-base font-bold text-[var(--text-primary)]">Comisiones recientes</span>
+            <span className="text-sm font-semibold text-[var(--text-tertiary)]">Últimas 20</span>
           </div>
           {commLoading ? (
             <div className="flex items-center justify-center gap-3 py-12 text-gray-400">
@@ -263,7 +269,7 @@ export default function AnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
+                  <tr className="border-b border-[var(--rule-base)] text-[var(--text-tertiary)] text-sm font-bold uppercase tracking-wider">
                     <th className="text-left px-5 py-3">Orden</th>
                     <th className="text-left px-4 py-3">Tienda</th>
                     <th className="text-left px-4 py-3">Tipo</th>
@@ -276,7 +282,7 @@ export default function AnalyticsPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
                   {commissions.map((c) => (
                     <tr key={c.id} className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors">
-                      <td className="px-5 py-3 text-xs font-mono text-gray-400 truncate max-w-32">{c.orderId}</td>
+                      <td className="px-5 py-3 text-sm font-mono text-[var(--text-secondary)] truncate max-w-32">{c.orderId}</td>
                       <td className="px-4 py-3 text-xs font-mono text-gray-400">{c.storeId ?? "—"}</td>
                       <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{c.type}</td>
                       <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)] font-mono">
@@ -308,78 +314,8 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Resumen de uso agregado */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <Package className="w-5 h-5 text-[var(--text-secondary)]" /> Resumen de uso agregado
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              value: tenants.reduce((s, t) => s + (t.usage?.products ?? 0), 0),
-              label: "Productos activos total",
-            },
-            {
-              value: tenants.reduce((s, t) => s + (t.usage?.users ?? 0), 0),
-              label: "Usuarios admin total",
-            },
-            {
-              value: tenants.reduce((s, t) => s + (t.usage?.ordersThisMonth ?? 0), 0),
-              label: "Pedidos este mes (total)",
-            },
-          ].map(({ value, label }) => (
-            <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {value.toLocaleString("es-PE")}
-              </div>
-              <div className="text-gray-400 text-xs mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Top tenants por actividad */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-[var(--text-secondary)]" /> Top tiendas por actividad
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
-                <th className="text-left px-4 py-3">#</th>
-                <th className="text-left px-4 py-3">Tienda</th>
-                <th className="text-left px-4 py-3">Plan</th>
-                <th className="text-right px-4 py-3">Pedidos/mes</th>
-                <th className="text-right px-4 py-3">Productos</th>
-                <th className="text-right px-4 py-3">Usuarios</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
-              {[...tenants]
-                .sort((a, b) => (b.usage?.ordersThisMonth ?? 0) - (a.usage?.ordersThisMonth ?? 0))
-                .slice(0, 10)
-                .map((t, i) => (
-                  <tr key={t.id} className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors">
-                    <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-[var(--text-primary)]">{t.name}</div>
-                      <div className="text-gray-400 text-xs font-mono">{t.slug}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <PlanBadge plan={t.plan} />
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
-                      {t.usage?.ordersThisMonth ?? 0}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-400">{t.usage?.products ?? 0}</td>
-                    <td className="px-4 py-3 text-right text-gray-400">{t.usage?.users ?? 0}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* "Resumen de uso agregado" + "Top tiendas por actividad" eliminados — duplicaban
+          KPIs del top y el ranking de la página /superadmin/tenants. */}
 
       {/* Tiendas en riesgo */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">

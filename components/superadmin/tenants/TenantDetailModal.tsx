@@ -108,12 +108,12 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
       return (
         <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-700/40 rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] uppercase tracking-wider">Credenciales guardadas</span>
-            {cred.savedAt && <span className="text-[length:var(--ts-2xs)] text-teal-500">{new Date(cred.savedAt).toLocaleDateString("es-PE")}</span>}
+            <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] uppercase tracking-wider">Credenciales guardadas</span>
+            {cred.savedAt && <span className="text-[length:var(--ts-xs)] text-teal-500">{new Date(cred.savedAt).toLocaleDateString("es-PE")}</span>}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div><span className="text-teal-500 text-[length:var(--ts-2xs)]">Usuario</span><p className="font-mono text-teal-800 dark:text-teal-200">{cred.username}</p></div>
-            <div><span className="text-teal-500 text-[length:var(--ts-2xs)]">Contraseña</span><p className="font-mono text-teal-800 dark:text-teal-200">{showPass ? cred.password : "••••••"}</p></div>
+            <div><span className="text-teal-500 text-[length:var(--ts-xs)]">Usuario</span><p className="font-mono text-teal-800 dark:text-teal-200">{cred.username}</p></div>
+            <div><span className="text-teal-500 text-[length:var(--ts-xs)]">Contraseña</span><p className="font-mono text-teal-800 dark:text-teal-200">{showPass ? cred.password : "••••••"}</p></div>
           </div>
         </div>
       );
@@ -153,7 +153,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
           ].map(({ value, label, color }) => (
             <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center">
               <div className={`text-lg font-bold ${color}`}>{value}</div>
-              <div className="text-gray-500 text-[length:var(--ts-2xs)] mt-0.5">{label}</div>
+              <div className="text-gray-500 text-[length:var(--ts-xs)] mt-0.5">{label}</div>
             </div>
           ))}
         </div>
@@ -164,7 +164,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-[var(--accent)]" />
               <span className="text-sm font-semibold text-[var(--text-secondary)]">Marketplace</span>
-              <span className={`px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}>
                 {storeInfo.isPublished ? "Publicada" : "No publicada"}
               </span>
             </div>
@@ -183,11 +183,11 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
           </h3>
           <div className="bg-[var(--surface-sunken)]/60 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-2xs)]">Email</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerEmail ?? "—"}</p></div>
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-2xs)]">Slug</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono">{t.slug}</p></div>
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-2xs)]">Teléfono</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerPhone ?? "—"}</p></div>
+              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Email</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerEmail ?? "—"}</p></div>
+              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Slug</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono">{t.slug}</p></div>
+              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Teléfono</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerPhone ?? "—"}</p></div>
               <div>
-                <span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-2xs)]">Contraseña</span>
+                <span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Contraseña</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-gray-500">{showPass ? "Encriptada — usar reset o guardar manual" : "••••••••"}</p>
                   <button type="button" onClick={() => setShowPass((v) => !v)} className="text-gray-400 hover:text-teal-500">
@@ -196,7 +196,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
                 </div>
               </div>
               {t.stripeCustomerId && (
-                <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-2xs)]">Stripe ID</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono truncate">{t.stripeCustomerId}</p></div>
+                <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Stripe ID</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono truncate">{t.stripeCustomerId}</p></div>
               )}
             </div>
 

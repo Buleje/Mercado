@@ -12,7 +12,9 @@ import { AdminTabShell } from "../_components/_shared";
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
 import { TenantGrowthTab } from "@/components/superadmin/tenants/TenantGrowthTab";
+import TenantsGrowthRanking from "@/components/superadmin/dashboard/TenantsGrowthRanking";
 import { TenantProductsModal } from "@/components/superadmin/tenants/TenantProductsModal";
+import TenantAddProductModal from "@/components/superadmin/tenants/TenantAddProductModal";
 import { InviteModal } from "@/components/superadmin/tenants/InviteModal";
 import { TenantDetailModal } from "@/components/superadmin/tenants/TenantDetailModal";
 import { DeleteConfirmModal } from "@/components/superadmin/tenants/DeleteConfirmModal";
@@ -40,6 +42,7 @@ export default function TenantsPage() {
   const [inviteTarget, setInviteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [detailTarget, setDetailTarget] = useState<TenantRow | null>(null);
   const [productsTarget, setProductsTarget] = useState<{ slug: string; name: string } | null>(null);
+  const [addProductTarget, setAddProductTarget] = useState<{ slug: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [nuclearResetOpen, setNuclearResetOpen] = useState(false);
   const [nuclearResetLoading, setNuclearResetLoading] = useState(false);
@@ -215,6 +218,7 @@ export default function TenantsPage() {
                     onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
                     onLoginAs={(t) => handleLoginAs(t)}
                     onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
+                    onAddProduct={(t) => setAddProductTarget({ slug: t.slug, name: t.name })}
                     onDelete={(slug, name) => setDeleteTarget({ slug, name })}
                     onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
                   />
@@ -238,9 +242,13 @@ export default function TenantsPage() {
         </>
       )}
 
-      {/* Tab: Crecimiento */}
+      {/* Tab: Crecimiento — ranking + tabla detallada existente */}
       {pageTab === "crecimiento" && (
-        <TenantGrowthTab growthData={growthData} loading={growthLoading} />
+        <div className="space-y-6">
+          {/* Nuevo: ranking ordenado por crecimiento, top 3 podio, sparklines, delta% */}
+          <TenantsGrowthRanking />
+          <TenantGrowthTab growthData={growthData} loading={growthLoading} />
+        </div>
       )}
 
       {/* Toast */}
@@ -259,6 +267,14 @@ export default function TenantsPage() {
           onClose={() => setProductsTarget(null)}
           tenantSlug={productsTarget.slug}
           tenantName={productsTarget.name}
+        />
+      )}
+      {addProductTarget && (
+        <TenantAddProductModal
+          open={Boolean(addProductTarget)}
+          onClose={() => setAddProductTarget(null)}
+          tenantSlug={addProductTarget.slug}
+          tenantName={addProductTarget.name}
         />
       )}
       {deleteTarget && (

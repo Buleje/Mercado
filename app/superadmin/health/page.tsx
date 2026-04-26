@@ -341,7 +341,7 @@ export default function SystemHealthPage() {
                 <div key={inc.id} className="flex items-center gap-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
                   <XCircle className="w-4 h-4 shrink-0" />
                   <span>{inc.message}</span>
-                  <span className="text-xs text-[var(--data-error)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
+                  <span className="text-sm font-semibold text-[var(--data-error)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
                 </div>
               ))}
             </div>
@@ -352,9 +352,9 @@ export default function SystemHealthPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {adminMetrics.map(m => (
                 <div key={m.label} className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-4">
-                  <p className="text-xs text-[var(--text-tertiary)]">{m.label}</p>
-                  <p className={`text-2xl font-bold mt-1 ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
-                    {m.value}{m.unit ? <span className="text-sm font-normal ml-1">{m.unit}</span> : null}
+                  <p className="text-sm font-semibold text-[var(--text-tertiary)]">{m.label}</p>
+                  <p className={`text-3xl font-extrabold mt-1.5 tabular-nums ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
+                    {m.value}{m.unit ? <span className="text-base font-semibold ml-1">{m.unit}</span> : null}
                   </p>
                 </div>
               ))}
@@ -370,15 +370,15 @@ export default function SystemHealthPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{check.name}</span>
+                    <span className="text-base font-bold text-[var(--text-primary)]">{check.name}</span>
                     <StatusBadge status={check.status} />
                   </div>
                   {check.detail && (
-                    <p className="text-xs text-gray-400 dark:text-gray-600 mt-0.5 truncate">{check.detail}</p>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-1 truncate">{check.detail}</p>
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`text-sm font-mono ${check.latency > 1000 ? "text-[var(--data-error)]" : check.latency > 500 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`}>
+                  <span className={`text-base font-mono font-bold tabular-nums ${check.latency > 1000 ? "text-[var(--data-error)]" : check.latency > 500 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]"}`}>
                     {check.latency > 0 ? `${check.latency}ms` : "—"}
                   </span>
                 </div>

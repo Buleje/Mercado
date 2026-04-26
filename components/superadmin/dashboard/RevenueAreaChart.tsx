@@ -35,10 +35,10 @@ function RevenueTooltip({
   const value = payload[0]?.value ?? 0;
   return (
     <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-sm)]">
-      <div className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold mb-0.5">
+      <div className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold mb-1">
         {label}
       </div>
-      <div className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]">
+      <div className="text-[length:var(--ts-base)] font-extrabold tabular-nums text-[var(--text-primary)]">
         {fmtSoles(value)}
       </div>
     </div>
@@ -77,13 +77,13 @@ export function RevenueAreaChart({
             <XAxis
               dataKey="month"
               stroke={tokens.axis}
-              tick={{ fontSize: 11, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis }}
               tickLine={false}
               axisLine={{ stroke: tokens.grid }}
             />
             <YAxis
               stroke={tokens.axis}
-              tick={{ fontSize: 11, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => `S/${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}

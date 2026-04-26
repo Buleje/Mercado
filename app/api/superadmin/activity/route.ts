@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
   const tenantFilter = url.searchParams.get("tenant") || undefined;
   const actionFilter = url.searchParams.get("action") || undefined;
   const entityFilter = url.searchParams.get("entity") || undefined;
+  const fromParam = url.searchParams.get("from");
+  const toParam = url.searchParams.get("to");
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "50", 10)));
   const skip = (page - 1) * limit;
@@ -32,6 +34,21 @@ export async function GET(req: NextRequest) {
   if (tenantFilter) where.tenantId = tenantFilter;
   if (actionFilter) where.action = actionFilter;
   if (entityFilter) where.entity = entityFilter;
+
+  // Date range filter — acepta ISO timestamps (?from=2026-04-01T00:00:00Z&to=...).
+  // Si las fechas son inválidas, ignoramos el filtro silenciosamente.
+  if (fromParam || toParam) {
+    const range: Record<string, Date> = {};
+    if (fromParam) {
+      const f = new Date(fromParam);
+      if (!Number.isNaN(f.getTime())) range.gte = f;
+    }
+    if (toParam) {
+      const t = new Date(toParam);
+      if (!Number.isNaN(t.getTime())) range.lte = t;
+    }
+    if (Object.keys(range).length > 0) where.createdAt = range;
+  }
 
   const [logs, total] = await Promise.all([
     prisma.activityLog.findMany({

@@ -21,6 +21,7 @@ interface TenantCardProps {
   onDelete: (slug: string, name: string) => void;
   onPurge: (slug: string, name: string) => void;
   onViewProducts?: (tenant: TenantRow) => void;
+  onAddProduct?: (tenant: TenantRow) => void;
 }
 
 const PLAN_LABEL: Record<string, string> = {
@@ -52,6 +53,7 @@ export function TenantCard({
   onDelete,
   onPurge,
   onViewProducts,
+  onAddProduct,
 }: TenantCardProps) {
   const t = tenant;
   const initials = t.name.slice(0, 2).toUpperCase();
@@ -87,7 +89,7 @@ export function TenantCard({
       <div className="p-5 space-y-4">
         {/* Kicker: plan label + status pill, sin gradient */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[length:var(--ts-2xs)] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
+          <span className="text-[length:var(--ts-xs)] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
             Plan {planLabel}
           </span>
           <div className="flex items-center gap-1.5">
@@ -122,7 +124,7 @@ export function TenantCard({
             </div>
             <div className="text-[var(--text-tertiary)] text-xs font-mono">{t.slug}</div>
             {t.ownerEmail && (
-              <div className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] truncate mt-0.5">
+              <div className="text-[var(--text-tertiary)] text-[length:var(--ts-xs)] truncate mt-0.5">
                 {t.ownerEmail}
               </div>
             )}
@@ -164,7 +166,7 @@ export function TenantCard({
                 <div className={`text-base font-bold ${isEmpty ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
                   {val}
                 </div>
-                <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                   {canClick ? (isEmpty ? "Sin datos ▸" : `${lbl} ▸`) : isEmpty ? "Sin datos" : lbl}
                 </div>
                 {max !== -1 && !isEmpty && (
@@ -204,7 +206,7 @@ export function TenantCard({
         {/* Plan usage bar */}
         {t.usage && t.limits && (
           <div className="space-y-1">
-            <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <div className="flex justify-between text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
               <span>Uso del plan</span>
               <span
                 className={
@@ -252,6 +254,17 @@ export function TenantCard({
             <ExternalLink className="w-3.5 h-3.5" /> Panel Admin
           </button>
         </div>
+
+        {/* Row CTA: Agregar producto desde superadmin (con modifiers) */}
+        {onAddProduct && (
+          <button
+            type="button"
+            onClick={() => onAddProduct(t)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+          >
+            <Package className="w-4 h-4" /> Agregar producto a esta tienda
+          </button>
+        )}
 
         {/* Row 2: Marketplace + Login — outline neutros */}
         <div className="flex gap-2">

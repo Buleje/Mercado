@@ -130,19 +130,19 @@ export function TenantProductsModal({
               <div className="grid grid-cols-4 gap-2 px-6 py-3 bg-[var(--surface-sunken)]/30">
                 <div className="text-center">
                   <div className="text-sm font-bold text-[var(--data-success)] tabular-nums">{activeCount}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Activos</div>
+                  <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Activos</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-bold text-[var(--text-tertiary)] tabular-nums">{inactiveCount}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Inactivos</div>
+                  <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Inactivos</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-bold text-[var(--data-warning)] tabular-nums">{lowStockCount}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Stock bajo</div>
+                  <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Stock bajo</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-bold text-[var(--data-error)] tabular-nums">{outOfStockCount}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sin stock</div>
+                  <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Sin stock</div>
                 </div>
               </div>
             )}
@@ -218,7 +218,7 @@ export function TenantProductsModal({
                             <XCircle className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                        <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                           {p.barcode && <span>Cód: {p.barcode}</span>}
                           {p.category && <span>• {p.category}</span>}
                           {p.unit && <span>• {p.unit}</span>}
@@ -231,7 +231,7 @@ export function TenantProductsModal({
                           S/{p.price.toFixed(2)}
                         </div>
                         <div
-                          className={`text-[length:var(--ts-2xs)] font-semibold tabular-nums ${
+                          className={`text-[length:var(--ts-xs)] font-semibold tabular-nums ${
                             p.stock <= 0
                               ? "text-[var(--data-error)]"
                               : p.stock <= 5

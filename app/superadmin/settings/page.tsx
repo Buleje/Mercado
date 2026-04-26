@@ -16,6 +16,23 @@ import {
   AdminTabShell,
   AdminButton,
 } from "../_components/_shared";
+import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
+
+// Items canónicos del sidebar — debe matchear lo que renderiza
+// SuperAdminShell.tsx (NAV_ITEMS).
+const SIDEBAR_ITEMS = [
+  { label: "Dashboard",       href: "/superadmin/dashboard" },
+  { label: "Centro Control",  href: "/superadmin/control-center" },
+  { label: "Tiendas",         href: "/superadmin/tenants" },
+  { label: "Aplicaciones",    href: "/superadmin/vendor-applications" },
+  { label: "Marketplace",     href: "/superadmin/stores" },
+  { label: "Banners",         href: "/superadmin/banners" },
+  { label: "Analytics",       href: "/superadmin/analytics" },
+  { label: "Salud",           href: "/superadmin/health" },
+  { label: "Actividad",       href: "/superadmin/activity" },
+  { label: "Seguridad",       href: "/superadmin/security" },
+  { label: "Config",          href: "/superadmin/settings" },
+];
 
 /**
  * /superadmin/settings
@@ -157,6 +174,8 @@ export default function SettingsPage() {
         </p>
       )}
       {error && <div className={ADMIN_TOKENS.errorBanner}>Error: {error}</div>}
+
+      <SidebarConfigPanel items={SIDEBAR_ITEMS} />
 
       {/* Precios de planes */}
       <section className={ADMIN_TOKENS.cardPadded}>

@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, EyeOff, Home, ShoppingBag, Sparkles } from "@buleje/design-system/icons";
+import { Eye, EyeOff, Home, ShoppingBag, Sparkles, Building2, Package, LayoutGrid, CheckCircle2 } from "@buleje/design-system/icons";
 import {
   NAV_LINK_CATALOG,
   readNavVisibility,
@@ -23,12 +23,54 @@ import {
 
 type Store = Record<NavScope, NavVisibilityMap>;
 
+// Modos preset que la dueña puede activar con un click. Cada uno aplica un
+// patrón completo de visibilidad sobre el scope "marketplace".
+type NavMode = {
+  id: "full" | "tiendas-only" | "minimo";
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  marketplace: NavVisibilityMap;
+};
+
+const NAV_MODES: NavMode[] = [
+  {
+    id: "full",
+    label: "Marketplace completo",
+    description: "Todos los enlaces visibles (Explorar, Bodegas, Recetas, etc).",
+    icon: <LayoutGrid className="h-5 w-5" strokeWidth={1.75} />,
+    marketplace: { explorar: true, bodegas: true, recetas: true, descubri: true, "en-vivo": true, ofertas: true },
+  },
+  {
+    id: "tiendas-only",
+    label: "Solo Tiendas (estilo PedidosYa / piwi)",
+    description: "Solo se muestra el listado de tiendas. Se ocultan Explorar, Recetas, En Vivo, Descubrí, Ofertas.",
+    icon: <Building2 className="h-5 w-5" strokeWidth={1.75} />,
+    marketplace: { explorar: false, bodegas: true, recetas: false, descubri: false, "en-vivo": false, ofertas: false },
+  },
+  {
+    id: "minimo",
+    label: "Mínimo (Tiendas + Ofertas)",
+    description: "Tiendas + Ofertas. Para clientes que solo buscan precio y proximidad.",
+    icon: <Package className="h-5 w-5" strokeWidth={1.75} />,
+    marketplace: { explorar: false, bodegas: true, recetas: false, descubri: false, "en-vivo": false, ofertas: true },
+  },
+];
+
 export function NavegacionTab() {
   const [store, setStore] = useState<Store | null>(null);
+  const [toast, setToast] = useState<{ msg: string; modeLabel: string } | null>(null);
 
   useEffect(() => {
     setStore(readNavVisibility());
   }, []);
+
+  // Auto-dismiss del toast 3.5s después de mostrar.
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const toggle = useCallback((scope: NavScope, id: string) => {
     setStore((prev) => {
@@ -54,6 +96,40 @@ export function NavegacionTab() {
     });
   }, []);
 
+  // IMPORTANTE: este `useCallback` debe estar ANTES del `if (!store) return`.
+  // React no permite hooks después de un return condicional — fix del bug
+  // "Rendered more hooks than during the previous render".
+  const applyMode = useCallback((mode: NavMode) => {
+    setStore((prev) => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        marketplace: { ...prev.marketplace, ...mode.marketplace },
+      };
+      writeNavVisibility(next);
+      return next;
+    });
+    setToast({
+      msg: `Modo aplicado: ${mode.label}`,
+      modeLabel: mode.id,
+    });
+    // Redirección automática a la página correspondiente para verlo en vivo.
+    // Abre en nueva tab para no perder el panel admin.
+    if (typeof window !== "undefined") {
+      const target =
+        mode.id === "tiendas-only"
+          ? "/tiendas"
+          : mode.id === "full"
+            ? "/marketplace/explorar"
+            : null;
+      if (target) {
+        setTimeout(() => {
+          window.open(target, "_blank", "noopener");
+        }, 600);
+      }
+    }
+  }, []);
+
   if (!store) {
     return (
       <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 text-center text-sm text-[var(--text-tertiary)]">
@@ -61,6 +137,13 @@ export function NavegacionTab() {
       </div>
     );
   }
+
+  // Detecta el modo activo: el preset cuyas keys matchean al store actual.
+  const activeMode = NAV_MODES.find((m) =>
+    Object.entries(m.marketplace).every(
+      ([k, v]) => store.marketplace[k] === v,
+    ),
+  );
 
   return (
     <div className="space-y-6">
@@ -70,6 +153,59 @@ export function NavegacionTab() {
         <strong className="text-[var(--text-primary)]">al instante</strong> en
         todas las pestañas abiertas (misma sesión).
       </div>
+
+      {/* Modos preset de navegación marketplace */}
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            MODOS DE NAVEGACIÓN
+          </p>
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
+            Activá un preset con un click
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
+            Aplicá un patrón completo de visibilidad para el navbar del marketplace.
+            Podés ajustar links individuales más abajo.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {NAV_MODES.map((mode) => {
+            const isActive = activeMode?.id === mode.id;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => applyMode(mode)}
+                className={[
+                  "text-left rounded-xl border-2 p-4 transition-colors",
+                  isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50",
+                ].join(" ")}
+                aria-pressed={isActive}
+              >
+                <div className={[
+                  "inline-flex h-10 w-10 items-center justify-center rounded-lg",
+                  isActive ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                ].join(" ")}>
+                  {mode.icon}
+                </div>
+                <p className="mt-3 text-base font-extrabold text-[var(--text-primary)]">
+                  {mode.label}
+                </p>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  {mode.description}
+                </p>
+                {isActive && (
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
+                    Activo
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <NavScopeSection
         scope="landing"
@@ -100,6 +236,24 @@ export function NavegacionTab() {
         onToggle={(id) => toggle("marketplace-sections", id)}
         onShowAll={() => showAll("marketplace-sections")}
       />
+
+      {/* Toast de confirmación — visible en superadmin y se replica en
+          marketplace via CustomEvent. */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-2xl animate-[fadeUp_0.3s_ease-out]"
+        >
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <div>
+            <p>{toast.msg}</p>
+            <p className="text-xs font-medium opacity-90 mt-0.5">
+              Cambios visibles al instante en el marketplace público
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

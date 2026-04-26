@@ -12,6 +12,7 @@ const SLOTS = [
   "bodegas",
   "recetas",
   "ofertas",
+  "tiendas-hero",
 ] as const;
 
 const BannerSchema = z.object({

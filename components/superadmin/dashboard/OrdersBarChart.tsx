@@ -34,10 +34,10 @@ function OrdersTooltip({
   const dayLabel = entry?.payload.label ?? "";
   return (
     <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-sm)]">
-      <div className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold mb-0.5">
+      <div className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold mb-1">
         {dayLabel} — {label}
       </div>
-      <div className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]">
+      <div className="text-[length:var(--ts-base)] font-extrabold tabular-nums text-[var(--text-primary)]">
         {value} pedidos
       </div>
     </div>
@@ -72,14 +72,14 @@ export function OrdersBarChart({
             <XAxis
               dataKey="day"
               stroke={tokens.axis}
-              tick={{ fontSize: 10, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis }}
               tickLine={false}
               axisLine={{ stroke: tokens.grid }}
               interval={4}
             />
             <YAxis
               stroke={tokens.axis}
-              tick={{ fontSize: 11, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis }}
               tickLine={false}
               axisLine={false}
               width={30}
@@ -98,7 +98,8 @@ export function OrdersBarChart({
                 value: `Prom. ${avg.toFixed(0)}`,
                 position: "right",
                 fill: tokens.axis,
-                fontSize: 10,
+                fontSize: 13,
+                fontWeight: 600,
               }}
             />
             <Bar

@@ -28,20 +28,20 @@ export function ConversionFunnel({ steps }: Props) {
               : 100;
           return (
             <li key={step.key}>
-              <div className="flex items-center justify-between gap-3 mb-1">
-                <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-[length:var(--ts-base)] font-bold text-[var(--text-primary)]">
                   {step.label}
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]">
+                <div className="flex items-center gap-3">
+                  <span className="text-[length:var(--ts-lg)] font-extrabold tabular-nums text-[var(--text-primary)]">
                     {fmtNumber(step.value)}
                   </span>
-                  <Caption className="tabular-nums w-12 text-right">
+                  <span className="text-[length:var(--ts-sm)] font-bold tabular-nums w-14 text-right text-[var(--text-tertiary)]">
                     {pct.toFixed(1)}%
-                  </Caption>
+                  </span>
                 </div>
               </div>
-              <div className="relative h-7 rounded-md bg-[var(--surface-sunken)] overflow-hidden">
+              <div className="relative h-9 rounded-md bg-[var(--surface-sunken)] overflow-hidden">
                 <div
                   className="absolute inset-y-0 left-0 rounded-md bg-[var(--text-primary)] transition-all"
                   style={{ width: `${pct}%`, opacity: 0.85 - i * 0.15 }}
@@ -49,9 +49,9 @@ export function ConversionFunnel({ steps }: Props) {
                 />
               </div>
               {i > 0 && (
-                <Caption className="mt-1 block text-[var(--text-tertiary)]">
-                  Paso a paso: {vsPrev.toFixed(1)}% vs {steps[i - 1]!.label.toLowerCase()}
-                </Caption>
+                <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                  Paso a paso: <strong className="text-[var(--text-secondary)]">{vsPrev.toFixed(1)}%</strong> vs {steps[i - 1]!.label.toLowerCase()}
+                </p>
               )}
             </li>
           );

@@ -19,7 +19,7 @@ export function MiniUsageBar({ used, max, label }: MiniUsageBarProps) {
 
   return (
     <div className="space-y-0.5">
-      <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+      <div className="flex justify-between text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
         <span>{label}</span>
         <span className={pct >= 100 ? "text-[var(--data-error)]" : pct >= 80 ? "text-[var(--data-warning)]" : ""}>
           {unlimited ? "∞" : `${used}/${max}`}

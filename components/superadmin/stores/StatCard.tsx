@@ -21,7 +21,7 @@ export function StatCard({ icon, label, value, sub, trend }: StatCardProps) {
         <p className="text-lg font-extrabold text-[var(--text-primary)] leading-tight mt-0.5">{value}</p>
         {sub && (
           <p
-            className={`text-[length:var(--ts-2xs)] font-semibold mt-0.5 flex items-center gap-0.5 ${
+            className={`text-[length:var(--ts-xs)] font-semibold mt-0.5 flex items-center gap-0.5 ${
               trend === "up"
                 ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                 : trend === "down"

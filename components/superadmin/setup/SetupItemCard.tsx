@@ -72,15 +72,15 @@ export default function SetupItemCard({
             {/* Badges */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span
-                className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${pCfg.cls}`}
+                className={`text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${pCfg.cls}`}
               >
                 {pCfg.label}
               </span>
-              <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+              <span className="flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                 {CATEGORY_ICON[item.category]}
                 {item.category}
               </span>
-              <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+              <span className="flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                 <Clock className="w-2.5 h-2.5" />
                 {item.estimatedMinutes}m
               </span>
