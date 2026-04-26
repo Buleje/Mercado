@@ -1,7 +1,7 @@
 {
-  "_comment": "Agent performance metrics. Auto-populated by withCronRetry and agent dispatches. Used by /agent-report and /evolve.",
+  "_comment": "Agent performance metrics. Auto-populated by .claude/hooks/subagent-cost-log.mjs on SubagentStop. Consumed by /agent-report and /evolve skills.",
   "version": 1,
-  "startedTracking": "2026-04-11",
+  "startedTracking": "2026-04-26",
   "agents": {},
   "sessions": [],
   "totals": {

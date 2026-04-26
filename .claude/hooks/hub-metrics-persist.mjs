@@ -24,8 +24,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const PROJECT_ROOT = resolve(
-  process.env.CLAUDE_PROJECT_DIR || process.cwd(),
-  "bodega-san-martin"
+  process.env.CLAUDE_PROJECT_DIR || process.cwd()
 );
 const METRICS_DIR = resolve(PROJECT_ROOT, ".claude/hub-metrics");
 const METRICS_FILE = resolve(METRICS_DIR, "metrics.json");
@@ -116,9 +115,9 @@ writeFileSync(METRICS_FILE, JSON.stringify(metrics, null, 2));
 
 // Auto-regenerate dashboard with fresh data
 try {
-  const dashboardGen = resolve(PROJECT, ".claude/hooks/dashboard-gen.mjs");
+  const dashboardGen = resolve(PROJECT_ROOT, ".claude/hooks/dashboard-gen.mjs");
   const { execSync: exec } = await import("node:child_process");
-  exec(`node "${dashboardGen}"`, { cwd: PROJECT, stdio: "pipe" });
+  exec(`node "${dashboardGen}"`, { cwd: PROJECT_ROOT, stdio: "pipe" });
 } catch { /* dashboard regen is best-effort */ }
 
 console.log(`Metrics updated: ${hub}/${agent || "hub-level"} — tokens:${data.tokens || 0} success:${data.success}`);

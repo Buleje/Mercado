@@ -7,7 +7,7 @@ description: >
   initiative-orchestrator, orchestrator.
 model: opus
 tools: Read, Grep, Glob, Bash, Edit, Write, Agent, TeamCreate, SendMessage, TaskCreate, TaskUpdate, TaskGet, TaskList
-maxTurns: 60
+maxTurns: 15
 memory: project
 permissionMode: acceptEdits
 effort: high
