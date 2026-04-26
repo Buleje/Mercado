@@ -20,9 +20,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const tenant = await findTenantByIdOrSlug(slug);
   const name = tenant?.name ?? slug;
+  // Tienda individual: título dueño del negocio. `absolute` impide que el
+  // template `%s | Buleje` del root layout añada branding del marketplace.
   return {
-    title: `${name} — Tienda online`,
+    title: { absolute: `${name} — Tienda online` },
     description: `Compra en ${name}. Delivery con Yape o efectivo contra entrega.`,
+    openGraph: {
+      title: `${name} — Tienda online`,
+      description: `Compra en ${name}. Delivery con Yape o efectivo contra entrega.`,
+      type: "website",
+      locale: "es_PE",
+      siteName: name,
+    },
   };
 }
 

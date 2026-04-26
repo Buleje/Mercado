@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 
-export const metadata: Metadata = {
-  title: "Mi Cuenta — Panel del Cliente | Buleje",
-  description:
+/**
+ * Metadata dinámica: cuando el cliente entra desde `/t/<slug>/cuenta` el
+ * middleware inyecta `x-tenant-id` y `x-tenant-store-route`. Delegamos al
+ * helper compartido `buildTenantTitle`, que también dedupa la lectura de
+ * settings con el resto de páginas via `React.cache()`.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Mi Cuenta",
     "Gestiona tus pedidos, suscripciones, cupones, direcciones y todo en un solo lugar.",
-  robots: { index: false, follow: false },
-};
+    { index: false, follow: false },
+  );
+}
 
 /**
  * Layout del grupo /cuenta/*.

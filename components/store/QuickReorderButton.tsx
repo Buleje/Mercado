@@ -145,7 +145,11 @@ export default function QuickReorderButton() {
   const moreCount = itemCount > 2 ? itemCount - 2 : 0;
 
   return (
-    <div className="fixed bottom-24 right-4 z-40 sm:bottom-6 sm:right-6">
+    // Stack vertical de widgets flotantes: este sube a 7rem (112px) en
+    // mobile y 6.5rem (104px) en desktop, dejando espacio para el botón
+    // de WhatsApp/Chat que vive en `bottom-6`. Mismo `right` que el chat
+    // para alineación visual.
+    <div className="fixed right-4 sm:right-6 z-40 bottom-28 sm:bottom-[6.5rem]">
       {/* Expanded card */}
       {expanded && (
         <div className="mb-3 w-72 rounded-2xl border border-[var(--rule-base)] bg-white shadow-[var(--shadow-xl)] dark:border-card-border dark:bg-card animate-[fadeUp_0.2s_ease-out]">

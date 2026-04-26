@@ -11,17 +11,24 @@
 
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import ConfirmacionClient from "./ConfirmacionClient";
 
-export const metadata: Metadata = {
-  title: "Pedido confirmado | Buleje",
-  description: "Gracias por tu compra — seguimos tu pedido en tiempo real.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Pedido confirmado",
+    "Gracias por tu compra — seguimos tu pedido en tiempo real.",
+    { index: false, follow: false },
+  );
+}
 
 interface ConfirmacionPageProps {
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+function computeStubEtaIso(minutesAhead: number): string {
+  return new Date(Date.now() + minutesAhead * 60 * 1000).toISOString();
 }
 
 export default async function ConfirmacionPage({
@@ -33,7 +40,8 @@ export default async function ConfirmacionPage({
   const customerName = typeof query.name === "string" ? query.name : undefined;
 
   // ETA por defecto: 25 min desde ahora (stub — en prod viene del order real)
-  const etaIso = new Date(Date.now() + 25 * 60 * 1000).toISOString();
+  // Computado fuera de render (helper) para no disparar React Compiler impure-call.
+  const etaIso = computeStubEtaIso(25);
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)] py-8 md:py-12">

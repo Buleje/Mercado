@@ -19,9 +19,12 @@ import { StatCard } from "@buleje/design-system";
 import { useSubscriptions } from "@/contexts/subscription-context";
 import { CalendarioEntrega } from "@/components/ui-system/illustrations";
 
+// Bug original: `minimumFractionDigits: 2` con `maximumFractionDigits: 0`
+// rompe Intl. Para ahorros proyectados redondeamos a entero (sin decimales)
+// — es un monto agregado, no precio unitario.
 const fmtMoney = (n: number) =>
   `S/ ${n.toLocaleString("es-PE", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
 

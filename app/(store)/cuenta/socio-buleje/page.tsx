@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import { SocioDashboardClient } from "./SocioDashboardClient";
 
 /**
@@ -8,12 +9,13 @@ import { SocioDashboardClient } from "./SocioDashboardClient";
  * contexto SocioBuleje persistido en localStorage.
  */
 
-export const metadata: Metadata = {
-  title: "Panel de Socio — Buleje",
-  description:
-    "Gestióná tu membresía Socio Buleje: cashback, envíos gratis, ahorro y ofertas exclusivas.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Panel de Socio",
+    "Gestiona tu membresía: cashback, envíos gratis, ahorro y ofertas exclusivas.",
+    { index: false, follow: false },
+  );
+}
 
 export default function SocioBulejeDashboardPage() {
   return <SocioDashboardClient />;

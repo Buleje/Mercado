@@ -7,8 +7,9 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse, Maximize2, Copy,
+  Warehouse, Maximize2, Copy, Sliders,
 } from "@buleje/design-system/icons";
+import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -17,6 +18,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
+import { detectCategoryFromName } from "@/lib/category-detector";
 import { exportToExcel } from "@/lib/export-excel";
 import KardexModal from "./KardexModal";
 import PriceSparkline from "./inventario/PriceSparkline";
@@ -273,6 +275,7 @@ export default function InventoryTab() {
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
+  const [modifiersProduct, setModifiersProduct] = useState<{ id: number; name: string } | null>(null);
 
   // Context menu state for right-click on product rows
   const [ctxMenu, setCtxMenu] = useState<{ product: DbProduct; x: number; y: number } | null>(null);
@@ -1292,6 +1295,9 @@ export default function InventoryTab() {
                       <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--data-success)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
+                      <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Modificadores (cremas, adicionales, talla)">
+                        <Sliders className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
@@ -1764,6 +1770,14 @@ export default function InventoryTab() {
                   <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm">
                     {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
+                  {/* Sugerencia automática: si el nombre del producto contiene
+                      una palabra clave que mapea a otra categoría distinta a
+                      la elegida, mostramos un chip con botón "Aplicar". */}
+                  <CategorySuggestionInline
+                    name={addForm.name}
+                    currentCategory={addForm.category}
+                    onApply={(id) => setAddForm(f => ({ ...f, category: id }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de venta (S/) *</label>
@@ -1950,6 +1964,13 @@ export default function InventoryTab() {
                   <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm">
                     {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
+                  {/* Sugerencia heurística para edición — mismo flujo que en
+                      el form de creación. */}
+                  <CategorySuggestionInline
+                    name={editForm.name ?? ""}
+                    currentCategory={editForm.category ?? ""}
+                    onApply={(id) => setEditForm(f => ({ ...f, category: id }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de venta (S/)</label>
@@ -2358,6 +2379,15 @@ export default function InventoryTab() {
         />
       )}
 
+      {/* Modifiers Editor */}
+      {modifiersProduct && (
+        <ProductModifiersEditor
+          productId={modifiersProduct.id}
+          productName={modifiersProduct.name}
+          onClose={() => setModifiersProduct(null)}
+        />
+      )}
+
       {/* Mejora 6 nueva: QR Modal */}
       {showQRProduct && (
         <>
@@ -2495,6 +2525,61 @@ export default function InventoryTab() {
           onDelete={(p) => { deleteProduct(p.id); setCtxMenu(null); }}
         />
       )}
+    </div>
+  );
+}
+
+/* ── CategorySuggestionInline ────────────────────────────────────────────────
+   Asistente heurístico de categoría en el form de inventario.
+
+   Dado el nombre del producto, el detector heurístico busca palabras clave
+   y propone la categoría más probable. Si la categoría detectada difiere
+   de la elegida actualmente, mostramos un panel naranja con un botón
+   "Aplicar" que cambia la categoría en un click.
+
+   Si las dos coinciden, mostramos un check verde tenue como confirmación.
+   Si el detector no encuentra nada confiable, no mostramos nada (silencio). */
+function CategorySuggestionInline({
+  name,
+  currentCategory,
+  onApply,
+}: {
+  name: string;
+  currentCategory: string;
+  onApply: (id: string) => void;
+}) {
+  const detection = useMemo(() => detectCategoryFromName(name), [name]);
+  if (!detection) return null;
+
+  if (detection.id === currentCategory) {
+    return (
+      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Categoría coincide con la detección automática.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2">
+      <div className="min-w-0 flex-1">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+          Sugerencia automática
+        </p>
+        <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+          Detectada: <span className="text-[var(--accent)]">{detection.label}</span>
+        </p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
+          Por la palabra &ldquo;{detection.matchedKeyword}&rdquo;
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onApply(detection.id)}
+        className="shrink-0 inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
+      >
+        Aplicar
+      </button>
     </div>
   );
 }

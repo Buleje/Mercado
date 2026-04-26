@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Percent } from "@buleje/design-system/icons";
+import { usePathname } from "next/navigation";
+import { Percent, ShoppingBag } from "@buleje/design-system/icons";
 import { MiniHero } from "@/components/customer/MiniHero";
 import { CorazonLatiendo } from "@/components/ui-system/illustrations";
 
@@ -11,6 +12,15 @@ type Props = {
 };
 
 export default function CuponesHero({ activeCount, totalSavings }: Props) {
+  const pathname = usePathname();
+  // Tienda individual: el CTA debe llevar al catálogo del comerciante,
+  // NO al marketplace cross-vendor.
+  const tenantSlug = pathname?.match(/^\/t\/([^/]+)/)?.[1] ?? null;
+  const isTenantStore = !!tenantSlug;
+  const ctaHref = isTenantStore ? `/t/${tenantSlug}/tienda` : "/marketplace";
+  const ctaLabel = isTenantStore ? "Ir a la tienda" : "Ir al marketplace";
+  const CtaIcon = isTenantStore ? ShoppingBag : Percent;
+
   const stats =
     activeCount > 0
       ? [
@@ -39,11 +49,11 @@ export default function CuponesHero({ activeCount, totalSavings }: Props) {
         stats={stats}
         action={
           <Link
-            href="/marketplace"
+            href={ctaHref}
             className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-[var(--text-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--surface-canvas)] transition-opacity hover:opacity-90"
           >
-            <Percent className="h-4 w-4" aria-hidden="true" />
-            Ir al marketplace
+            <CtaIcon className="h-4 w-4" aria-hidden="true" />
+            {ctaLabel}
           </Link>
         }
       />

@@ -27,6 +27,7 @@ import {
 } from "@buleje/design-system/icons";
 import SectionCard from "./SectionCard";
 import type { CustomerDashboardData } from "@/lib/customer-dashboard.mock";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 
 export interface SectionsGridProps {
   data: CustomerDashboardData;
@@ -37,10 +38,9 @@ function fmtSoles(n: number) {
 }
 
 export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridProps) {
+  const tp = useTenantPath();
   const hasActiveOrder = data.orders.active !== null;
-  const activeOrderHref = hasActiveOrder
-    ? `/cuenta/pedidos`
-    : "/cuenta/pedidos";
+  const activeOrderHref = tp("/cuenta/pedidos");
 
   return (
     <section aria-labelledby="sections-heading">
@@ -60,10 +60,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? "Último entregado hace 2 dias"
               : "Sin historial aun"
           }
-          href="/cuenta/pedidos"
+          href={tp("/cuenta/pedidos")}
           isEmpty={data.orders.recentCount === 0}
           emptyLabel="Aun no hiciste tu primer pedido"
-          emptyHref="/tienda"
+          emptyHref={tp("/tienda")}
         />
         <SectionCard
           icon={Truck}
@@ -81,7 +81,7 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
           href={activeOrderHref}
           isEmpty={!hasActiveOrder}
           emptyLabel="Nada en camino ahora mismo"
-          emptyHref="/tienda"
+          emptyHref={tp("/tienda")}
           accent={hasActiveOrder ? "accent" : null}
         />
         <SectionCard
@@ -97,10 +97,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? `Ahorras ${fmtSoles(data.subscriptions.ahorroMesActual)}/mes`
               : undefined
           }
-          href="/cuenta/suscripciones"
+          href={tp("/cuenta/suscripciones")}
           isEmpty={data.subscriptions.activeCount === 0}
           emptyLabel="Probate una suscripcion y ahorra 5%"
-          emptyHref="/bodega-al-mes"
+          emptyHref={tp("/bodega-al-mes")}
         />
         <SectionCard
           icon={Gift}
@@ -115,10 +115,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? `${fmtSoles(data.giftCards.saldoPendiente)} sin canjear`
               : undefined
           }
-          href="/cuenta/gift-cards"
+          href={tp("/cuenta/gift-cards")}
           isEmpty={data.giftCards.recibidasCount + data.giftCards.enviadasCount === 0}
           emptyLabel="Regalale credito a alguien que quieras"
-          emptyHref="/cuenta/gift-cards"
+          emptyHref={tp("/cuenta/gift-cards")}
           accent={data.giftCards.hasPendingClaim ? "urgent" : null}
         />
         <SectionCard
@@ -134,10 +134,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? `Hasta ${fmtSoles(data.coupons.descuentoTotal)} de descuento`
               : undefined
           }
-          href="/cuenta/cupones"
+          href={tp("/cuenta/cupones")}
           isEmpty={data.coupons.disponiblesCount === 0}
           emptyLabel="No tenes cupones aun - explora ofertas"
-          emptyHref="/ofertas"
+          emptyHref={tp("/ofertas")}
         />
         <SectionCard
           icon={Award}
@@ -152,7 +152,7 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? `${fmtSoles(data.profile.socioCashbackDisponible)} cashback disponible`
               : "Descubri los beneficios"
           }
-          href="/cuenta/socio-buleje"
+          href={tp("/cuenta/socio-buleje")}
         />
         <SectionCard
           icon={Heart}
@@ -167,10 +167,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               ? `${data.favorites.tiendasCount} tiendas guardadas`
               : undefined
           }
-          href="/favoritos"
+          href={tp("/favoritos")}
           isEmpty={data.favorites.productosCount === 0}
           emptyLabel="Marca productos con corazon"
-          emptyHref="/tienda"
+          emptyHref={tp("/tienda")}
         />
         <SectionCard
           icon={Bookmark}
@@ -181,10 +181,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               : "Sin items"
           }
           detail={data.favorites.wishlistCount > 0 ? "Guardados para despues" : undefined}
-          href="/wishlist"
+          href={tp("/wishlist")}
           isEmpty={data.favorites.wishlistCount === 0}
           emptyLabel="Guarda productos para comprar luego"
-          emptyHref="/tienda"
+          emptyHref={tp("/tienda")}
         />
         <SectionCard
           icon={Bell}
@@ -195,7 +195,7 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               : "Todo al dia"
           }
           detail={data.notifications.lastLabel ?? undefined}
-          href="/cuenta/notificaciones"
+          href={tp("/cuenta/notificaciones")}
           accent={data.notifications.unreadCount > 0 ? "accent" : null}
         />
         <SectionCard
@@ -207,10 +207,10 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               : "Sin direcciones"
           }
           detail={data.addresses.defaultLabel ?? undefined}
-          href="/cuenta/direcciones"
+          href={tp("/cuenta/direcciones")}
           isEmpty={data.addresses.guardadasCount === 0}
           emptyLabel="Agrega tu primera direccion"
-          emptyHref="/cuenta/direcciones"
+          emptyHref={tp("/cuenta/direcciones")}
         />
         <SectionCard
           icon={CreditCard}
@@ -221,17 +221,17 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
               : "Sin metodos"
           }
           detail={data.payments.preferredLabel ?? undefined}
-          href="/cuenta/pagos"
+          href={tp("/cuenta/pagos")}
           isEmpty={data.payments.methodsCount === 0}
           emptyLabel="Agrega Yape o efectivo"
-          emptyHref="/cuenta/pagos"
+          emptyHref={tp("/cuenta/pagos")}
         />
         <SectionCard
           icon={Settings}
           title="Preferencias"
           metric="Configurar"
           detail="Notificaciones, idioma, tema"
-          href="/cuenta/preferencias"
+          href={tp("/cuenta/preferencias")}
         />
       </div>
     </section>

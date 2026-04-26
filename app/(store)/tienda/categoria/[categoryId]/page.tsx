@@ -76,34 +76,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Fetch product count/price from DB (cached 5m via use cache helper)
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
+  const isTenantStoreRoute = hdrs.get("x-tenant-store-route") === "1";
   const catProducts = await getCategoryProducts(tenantId, cat.id);
   const productCount = catProducts.length;
   const minPrice = catProducts.length ? Math.min(...catProducts.map((p) => p.price)) : 0;
 
+  // Resuelve el nombre real del comercio para que el título no diga "Buleje"
+  // en una tienda individual.
+  const { resolveStoreContext } = await import("@/lib/store-metadata");
+  const ctx = await resolveStoreContext();
+
   const baseDec =
     categoryDescriptions[cat.id] ??
-    `Compra ${cat.label} online con delivery gratis. Buleje.`;
+    `Compra ${cat.label} online con delivery rápido en ${ctx.name}.`;
   const desc = `${baseDec} ${productCount} productos desde S/${minPrice.toFixed(2)}.`;
 
   const categoryUrl = `https://www.buleje.pe/tienda/categoria/${cat.id}`;
+  const titleStr = `${cat.label} — ${ctx.name}`;
 
   return {
-    title: `${cat.emoji} ${cat.label} — Delivery Gratis | Buleje`,
+    title: isTenantStoreRoute ? { absolute: titleStr } : titleStr,
     description: desc,
     openGraph: {
-      title: `${cat.label} — Compra Online con Delivery`,
+      title: titleStr,
       description: desc,
       type: "website",
       url: categoryUrl,
       locale: "es_PE",
-      siteName: "Buleje",
-      images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: `${cat.label} — Buleje` }],
+      siteName: ctx.name,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${cat.emoji} ${cat.label} — Buleje`,
+      title: titleStr,
       description: desc,
-      images: ["https://www.buleje.pe/api/og"],
     },
     alternates: {
       canonical: categoryUrl,
@@ -307,12 +312,16 @@ function CategoryPageSkeleton() {
 }
 
 function CatIconDisplay({ categoryId }: { categoryId: string }) {
-  const CatIcon = getCatalogCategoryIcon(categoryId);
   return (
     <div className="h-14 w-14 mx-auto mb-5 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white">
-      <CatIcon className="h-6 w-6" strokeWidth={1.5} />
+      {renderCatIcon(categoryId)}
     </div>
   );
+}
+
+function renderCatIcon(categoryId: string) {
+  const CatIcon = getCatalogCategoryIcon(categoryId);
+  return <CatIcon className="h-6 w-6" strokeWidth={1.5} />;
 }
 
 export default function CategoryPage({ params }: Props) {

@@ -3,26 +3,19 @@
 /**
  * TiendaHero — Hero de la tienda publica tenant-scoped.
  *
- * Reemplaza el hero editorial negro "solo texto" por un layout 2-column con
- * ilustracion autentica Pucallpa a la derecha (DoniaElena). Mantiene el
- * fondo negro para no perder identidad editorial Buleje, pero aporta calidez
- * + identidad local + CTAs claros.
- *
  * Estructura:
  *   LEFT (60%): kicker teal + h1 editorial + subtitle + 2 CTAs
  *   RIGHT (40%): ilustracion grande con wash teal sutil de fondo
  *
- * Copy psicologicamente estrategico:
- *   - Kicker: "TU BODEGA EN PUCALLPA" (ancla geografica + posesion)
- *   - H1: "Todo lo que necesitas, en 25 minutos" (abundance + speed)
- *   - Subtitle: "Frescos, calidos, con la confianza de tu barrio" (trust)
- *   - CTA primario: "Ver productos" (verbo accion claro)
- *   - CTA secundario: "Mi carrito" (retencion)
+ * CTAs:
+ *   - Primario: "Ver productos" → scroll a #productos
+ *   - Secundario: "Mi carrito" → abre el cart sidebar via useCart().open()
  */
 
 import Link from "next/link";
 import { ShoppingBag, ShoppingCart } from "@buleje/design-system/icons";
 import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
+import { useCart } from "@/contexts/cart-context";
 
 export interface TiendaHeroProps {
   slug: string;
@@ -31,6 +24,7 @@ export interface TiendaHeroProps {
 }
 
 export default function TiendaHero({ slug, storeName, productCount }: TiendaHeroProps) {
+  const { open: openCart, count } = useCart();
   return (
     <section
       className="relative overflow-hidden border-b border-[var(--rule-soft)]"
@@ -68,13 +62,14 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
                 <ShoppingBag className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
                 <span>Ver productos</span>
               </Link>
-              <Link
-                href={`/t/${slug}/tienda/carrito`}
+              <button
+                type="button"
+                onClick={openCart}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-all w-full sm:w-auto"
               >
                 <ShoppingCart className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-                <span>Mi carrito</span>
-              </Link>
+                <span>Mi carrito{count > 0 ? ` (${count})` : ""}</span>
+              </button>
             </div>
 
             {/* Meta stats — compact */}

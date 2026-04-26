@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -14,37 +15,56 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import TiendaSections from "@/components/TiendaSections";
 import TiendaHero from "@/components/store/TiendaHero";
 import TrustBar from "@/components/store/TrustBar";
 
-export const metadata: Metadata = {
-  title: "Catálogo de Productos — Buleje ERP",
-  description:
-    "Explora el catálogo completo de productos: abarrotes, bebidas, carnes, limpieza y más. Gestionado con Buleje, el software ERP para bodegas del Perú.",
-  alternates: {
-    canonical: "https://www.buleje.pe/tienda",
-  },
-  openGraph: {
-    title: "Catálogo de Productos — Buleje",
-    description: "Abarrotes, bebidas, carnes, limpieza y más. Gestionado con Buleje ERP. Delivery con Yape y efectivo.",
-    url: "https://www.buleje.pe/tienda",
-    type: "website",
-    locale: "es_PE",
-    siteName: "Buleje",
-    images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Perú" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Catálogo — Buleje ERP",
-    description: "Productos gestionados con Buleje. Software para bodegas del Perú.",
-    images: ["https://www.buleje.pe/api/og"],
-  },
-};
+/**
+ * Metadata dinámica: cuando se entra vía /t/<slug>/tienda el middleware
+ * inyecta `x-tenant-store-route` y `x-tenant-id`. Usamos el nombre real
+ * del comercio para que el título no diga "Buleje ERP" en una tienda
+ * individual. Se aplica `title.absolute` para anular el template
+ * `%s | Buleje` del root layout.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const ctx = await resolveStoreContext();
+    const settings = await getCachedSettings(ctx.tenantId);
+    const slogan = settings?.slogan ?? "Delivery rápido y seguro";
+
+    const title = `${ctx.name} — Catálogo`;
+    const description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
+
+    return {
+      title: ctx.isTenant ? { absolute: title } : title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        locale: "es_PE",
+        siteName: ctx.name,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+      },
+    };
+  } catch {
+    return {
+      title: "Catálogo",
+      description: "Catálogo completo. Delivery con Yape y efectivo.",
+    };
+  }
+}
 
 // ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
 const Footer            = dynamic(() => import("@/components/Footer"));
+const TenantFooter      = dynamic(() => import("@/components/store/TenantFooter"));
 
 // ── Tienda section defaults (same order as StorefrontEditor) ────────────────
 const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [
@@ -137,10 +157,15 @@ export default async function TiendaPage() {
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
   let tenantSlug = "main";
+  let storeName = "Tienda";
+  let isTenantStoreRoute = false;
   try {
-    const { headers } = await import("next/headers");
-    const hdrs = await headers();
-    tenantSlug = hdrs.get("x-tenant-id") ?? "main";
+    // resolveStoreContext + getCachedProducts comparten cache per-request
+    // con generateMetadata → 1 sola lectura de settings por render.
+    const ctx = await resolveStoreContext();
+    tenantSlug = ctx.tenantId;
+    isTenantStoreRoute = ctx.isTenant;
+    storeName = ctx.name;
     initialProducts = await getCachedProducts(tenantSlug) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
@@ -193,26 +218,31 @@ export default async function TiendaPage() {
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
         {/* Hero 2-column con ilustracion autentica Pucallpa (DoniaElena) +
-            CTAs + identidad local. Reemplaza el hero editorial frio. */}
+            CTAs + identidad local. `storeName` se obtiene dinámicamente
+            de settings.businessName para evitar hardcodeo del marketplace. */}
         <TiendaHero
           slug={tenantSlug}
-          storeName="Buleje"
+          storeName={storeName}
           productCount={initialProducts.length}
         />
 
         {/* 4 chips de confianza editorial (25 min, pago en casa, fresco, whatsapp). */}
         <TrustBar />
 
-        {/* All dynamic sections — single component handles loading + distribution.
-            showEmptyPlaceholders=true → regla 1: seccion habilitada sin productos
-            muestra placeholder amable ("No hay productos agregados todavia").
-            strictAdminOnly=true → regla anti-magia: si admin no asigno productos,
-            ninguna seccion pickea al azar del catálogo. */}
+        {/* Secciones dinámicas orquestadas desde admin "Mi Tienda Personal".
+            Reglas para la tienda pública:
+              - `showEmptyPlaceholders=false`: las secciones que no tienen
+                productos asignados se OCULTAN (no muestran placeholder).
+                Las siguientes con contenido toman su lugar visualmente.
+              - `strictAdminOnly=true`: ninguna sección pickea productos al
+                azar del catálogo si el admin no asignó nada.
+            Esto asegura que la página individual sea exactamente la
+            configurada en el panel admin → Mi Tienda Personal → Secciones. */}
         <TiendaSections
           serverProducts={initialProducts as any}
           visibleSections={visible}
           sectionOrder={order}
-          showEmptyPlaceholders={true}
+          showEmptyPlaceholders={false}
           strictAdminOnly={true}
         />
 
@@ -225,27 +255,38 @@ export default async function TiendaPage() {
         <TiendaClientShell {...shellVisibility} />
       </main>
 
-      {/* SEO: Internal links to zone pages for crawl discovery */}
-      <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
-            Buleje — Software para bodegas en todo el Perú
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {zones.map((zone) => (
-              <Link
-                key={zone.slug}
-                href={`/zona/${zone.slug}`}
-                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
-              >
-                {zone.name}
-              </Link>
-            ))}
+      {/* SEO: Internal links to zone pages for crawl discovery.
+          Solo visible cuando NO estamos en la tienda individual de un
+          comerciante — esos links son del marketplace y romperían la
+          autonomía de la tienda del cliente. */}
+      {!isTenantStoreRoute && (
+        <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
+              Buleje — Software para bodegas en todo el Perú
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {zones.map((zone) => (
+                <Link
+                  key={zone.slug}
+                  href={`/zona/${zone.slug}`}
+                  className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+                >
+                  {zone.name}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <Footer />
+      {/* Footer condicional: en `/t/<slug>/tienda` usamos un footer dedicado
+          al comercio, sin columnas de marketplace cross-store. */}
+      {isTenantStoreRoute ? (
+        <TenantFooter slug={tenantSlug} storeName={storeName} />
+      ) : (
+        <Footer />
+      )}
     </>
   );
 }

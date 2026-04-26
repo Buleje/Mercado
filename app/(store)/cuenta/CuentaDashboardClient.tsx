@@ -12,9 +12,10 @@
  *   6. CuentaFooter
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCustomerIntelligence } from "@/hooks/use-customer-intelligence";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 import { MOCK_DASHBOARD } from "@/lib/customer-dashboard.mock";
 import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
 import WelcomeHero from "@/components/customer/cuenta-dashboard/WelcomeHero";
@@ -53,10 +54,26 @@ function nextTierInfo(
   };
 }
 
+function prefixHrefs<T>(node: T, prefix: (path: string) => string): T {
+  if (Array.isArray(node)) {
+    return node.map((item) => prefixHrefs(item, prefix)) as unknown as T;
+  }
+  if (node && typeof node === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if (k === "href" && typeof v === "string") out[k] = prefix(v);
+      else out[k] = prefixHrefs(v, prefix);
+    }
+    return out as T;
+  }
+  return node;
+}
+
 export function CuentaDashboardClient() {
   const { customer, clear } = useCustomer();
   const { data: intelligence } = useCustomerIntelligence();
-  const data = MOCK_DASHBOARD;
+  const tenantPath = useTenantPath();
+  const data = useMemo(() => prefixHrefs(MOCK_DASHBOARD, tenantPath), [tenantPath]);
 
   // Si hay customer en contexto, usamos su nombre real. Si no, fallback a mock.
   const firstName =
@@ -92,7 +109,7 @@ export function CuentaDashboardClient() {
           tier={tierForWidget}
           nextTierName={nextTierName}
           pointsToNextTier={pointsToNextTier}
-          href="/cuenta/socio-buleje"
+          href={tenantPath("/cuenta/socio-buleje")}
           variant="full"
         />
       )}

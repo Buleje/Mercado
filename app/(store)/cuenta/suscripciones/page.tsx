@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import SuscripcionesClient from "./SuscripcionesClient";
 
-export const metadata: Metadata = {
-  title: "Bodega al Mes — Mis Suscripciones | Buleje",
-  description:
-    "Gestiona tus suscripciones recurrentes. Ahorra 5% en cada entrega, pausa o cancela cuando quieras.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Mis Suscripciones",
+    "Gestiona tus suscripciones recurrentes. Ahorra en cada entrega, pausa o cancela cuando quieras.",
+    { index: false, follow: false },
+  );
+}
 
 export default function SuscripcionesPage() {
   return <SuscripcionesClient />;

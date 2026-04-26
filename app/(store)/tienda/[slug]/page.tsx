@@ -31,25 +31,35 @@ async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlugFromDB(slug);
-  if (!product) return { title: "Producto no encontrado" };
+  // Tienda individual: nombre del comercio dinámico para títulos.
+  const { resolveStoreContext } = await import("@/lib/store-metadata");
+  const ctx = await resolveStoreContext();
+
+  if (!product) {
+    const notFoundTitle = `Producto no encontrado — ${ctx.name}`;
+    return {
+      title: ctx.isTenant ? { absolute: notFoundTitle } : notFoundTitle,
+    };
+  }
 
   const category = categories.find((c) => c.id === product.category);
   const productUrl = `https://www.buleje.pe/tienda/${slug}`;
+  const titleStr = `${product.name} — S/${product.price.toFixed(2)} · ${ctx.name}`;
 
   return {
-    title: `${product.name} — S/${product.price.toFixed(2)} | Buleje`,
-    description: `Compra ${product.name} a S/${product.price.toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery gratis desde S/50. Paga con Yape o efectivo. Buleje — tu bodega de confianza.`,
+    title: ctx.isTenant ? { absolute: titleStr } : titleStr,
+    description: `Compra ${product.name} a S/${product.price.toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery rápido. Paga con Yape o efectivo en ${ctx.name}.`,
     alternates: {
       canonical: productUrl,
     },
     openGraph: {
-      title: `${product.name} — S/${product.price.toFixed(2)} | Buleje`,
-      description: `${product.name} a S/${product.price.toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery gratis. Paga con Yape o efectivo.`,
+      title: titleStr,
+      description: `${product.name} a S/${product.price.toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery rápido.`,
       url: productUrl,
       images: [{ url: product.image, width: 600, height: 600, alt: `${product.name} — compra online con delivery` }],
       type: "website",
       locale: "es_PE",
-      siteName: "Buleje",
+      siteName: ctx.name,
     },
     twitter: {
       card: "summary_large_image",

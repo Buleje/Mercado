@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { CuponesDB } from "@/lib/db/cupones.db";
 import { getTenantId } from "@/lib/tenant";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import CuponesClient from "@/components/customer/cupones/CuponesClient";
 import Header from "@/components/Header";
 
-export const metadata: Metadata = {
-  title: "Mis cupones — Buleje",
-  description:
-    "Tus cupones y descuentos del marketplace Buleje. Aplica nuevos codigos y revisa tu historial.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Mis cupones",
+    "Tus cupones y descuentos. Aplica nuevos códigos y revisa tu historial.",
+    { index: false, follow: false },
+  );
+}
 
 export default async function CuponesPage() {
   const tenantId = await getTenantId();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, type ReactNode } from "react";
+import { Fragment, useState, useCallback, useEffect, type ReactNode } from "react";
 import { Plus, X, LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "./AdminModal";
@@ -11,6 +11,12 @@ export interface ChartDefinition {
   id: string;
   label: string;
   description?: string;
+  /**
+   * Optional section group — when set, charts with the same `section` render
+   * under a shared header. Charts move with their section preserved.
+   * Useful for organizing dashboard pages into "Crecimiento", "Operación", etc.
+   */
+  section?: string;
   component: ReactNode;
 }
 
@@ -75,20 +81,31 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
   return (
     <>
       {/* Chart grid */}
-      <div className={cn("space-y-4", className)}>
-        {visibleCharts.map(chart => (
-          <div key={chart.id} className="group relative">
-            {/* Remove button on hover */}
-            <button
-              onClick={() => removeChart(chart.id)}
-              className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error)] dark:hover:border-[var(--data-error)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] "
-              title="Quitar gráfico"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            {chart.component}
-          </div>
-        ))}
+      <div className={cn("space-y-6", className)}>
+        {visibleCharts.map((chart, idx) => {
+          const prevSection = idx > 0 ? visibleCharts[idx - 1].section : undefined;
+          const showSectionHeader = chart.section && chart.section !== prevSection;
+          return (
+            <Fragment key={chart.id}>
+              {showSectionHeader && (
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
+                  {chart.section}
+                </h2>
+              )}
+              <div className="group relative">
+                {/* Remove button on hover */}
+                <button
+                  onClick={() => removeChart(chart.id)}
+                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error)] dark:hover:border-[var(--data-error)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] "
+                  title="Quitar gráfico"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                {chart.component}
+              </div>
+            </Fragment>
+          );
+        })}
 
         {/* Add chart button */}
         <button

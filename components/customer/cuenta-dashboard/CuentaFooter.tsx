@@ -11,6 +11,7 @@ import { memo } from "react";
 import { BodyText, Caption } from "@buleje/design-system";
 import { HelpCircle, Settings, LogOut } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 
 export interface CuentaFooterProps {
   onSignOut?: () => void;
@@ -21,6 +22,7 @@ export const CuentaFooter = memo(function CuentaFooter({
   onSignOut,
   className,
 }: CuentaFooterProps) {
+  const tp = useTenantPath();
   return (
     <footer
       className={cn(
@@ -37,14 +39,14 @@ export const CuentaFooter = memo(function CuentaFooter({
         </div>
         <nav className="flex flex-wrap items-center gap-1" aria-label="Acciones de cuenta">
           <Link
-            href="/ayuda"
+            href={tp("/ayuda")}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <HelpCircle className="h-3.5 w-3.5" aria-hidden />
             Ayuda
           </Link>
           <Link
-            href="/cuenta/preferencias"
+            href={tp("/cuenta/preferencias")}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Settings className="h-3.5 w-3.5" aria-hidden />

@@ -31,7 +31,8 @@ import TrustBar from "@/components/store/TrustBar";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 
 const ProductCatalog = dynamic(() => import("@/components/ProductCatalog"));
-const Footer = dynamic(() => import("@/components/Footer"));
+// Footer dedicado al tenant — sin links cross-store al marketplace.
+const TenantFooter = dynamic(() => import("@/components/store/TenantFooter"));
 
 export interface TenantTiendaClientProps {
   slug: string;
@@ -123,7 +124,7 @@ export default function TenantTiendaClient({
         </Suspense>
       </main>
 
-      <Footer />
+      <TenantFooter slug={slug} storeName={storeName} />
 
       <CartBadge slug={slug} />
     </div>

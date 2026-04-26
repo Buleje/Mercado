@@ -122,7 +122,7 @@ export default function TiendaSections({
           case "combos":
             return (
               <Suspense key={key} fallback={null}>
-                <CombosSection serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} />
+                <CombosSection serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} strictAdminOnly={strictAdminOnly} />
               </Suspense>
             );
           case "last_units":

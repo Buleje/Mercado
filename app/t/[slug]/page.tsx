@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag } from "@buleje/design-system/icons";
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import TenantPageTracker from "./_components/TenantPageTracker";
 
 interface TenantLandingProps {
@@ -39,14 +40,26 @@ async function loadPageData(slug: string) {
 
   if (!tenant) return null;
 
-  const [customization, featured, promotions, exclusiveCount] = await Promise.all([
+  const [customization, featured, promotions, exclusiveCount, settings] = await Promise.all([
     StorePageDB.getCustomization(tenant.id),
     StorePageDB.listPublicFeatured(tenant.id, 24),
     StorePageDB.listPromotions(tenant.id, true),
     StorePageDB.countActiveExclusivePrices(tenant.id),
+    SettingsDB.get(tenant.id).catch(() => null),
   ]);
 
-  return { tenant, customization, featured, promotions, exclusiveCount };
+  // Cadena de fallback para el nombre público de la tienda:
+  //   storeTheme.storeName  →  settings.businessName  →  tenant.name  →  slug
+  // El primero suele ser el campo que el dueño edita en el panel admin —
+  // mientras que `tenant.name` puede contener el ID legacy del owner.
+  const themeName = (settings?.storeTheme as Record<string, unknown> | undefined)?.["storeName"];
+  const displayName =
+    (typeof themeName === "string" && themeName.trim()) ||
+    (typeof settings?.businessName === "string" && settings.businessName.trim()) ||
+    tenant.name ||
+    tenant.slug;
+
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName };
 }
 
 export async function generateMetadata({
@@ -56,17 +69,19 @@ export async function generateMetadata({
   const data = await loadPageData(slug);
   if (!data) return { title: "Tienda no encontrada" };
 
-  const { tenant, customization } = data;
-  const title =
-    customization.metaTitle ?? `${tenant.name} — Buleje`;
+  const { customization, displayName } = data;
+  // Tienda individual: el título es solo el nombre del comercio.
+  // `absolute` evita que el template `%s | Buleje` del root layout añada
+  // el sufijo del marketplace a la página propia del negocio.
+  const title = customization.metaTitle ?? displayName;
   const description =
     customization.metaDescription ??
     customization.heroSubtitle ??
-    `Compra en ${tenant.name} con delivery rápido en Pucallpa. Paga con Yape o efectivo.`;
+    `Compra en ${displayName} con delivery rápido. Paga con Yape o efectivo.`;
   const ogImage = customization.ogImageUrl ?? customization.heroImageUrl ?? undefined;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,
@@ -74,7 +89,7 @@ export async function generateMetadata({
       ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
       type: "website",
       locale: "es_PE",
-      siteName: "Buleje",
+      siteName: displayName,
     },
     twitter: {
       card: "summary_large_image",
@@ -128,15 +143,18 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
 
   const primary = customization.primaryColor || tenant.primaryColor || "#00B4A6";
   const accent = customization.accentColor || "#f4a261";
-  const logoText = tenant.name.slice(0, 2).toUpperCase();
-  const heroTitle = customization.heroTitle ?? tenant.name;
+  // El logo y el título usan el nombre público real (storeTheme.storeName) en
+  // lugar de `tenant.name` — para que el comercio nunca vea el nombre raw del
+  // tenant ni la marca del marketplace en su propia página.
+  const logoText = displayName.slice(0, 2).toUpperCase();
+  const heroTitle = customization.heroTitle ?? displayName;
   const heroSubtitle = customization.heroSubtitle;
   const heroImage = customization.heroImageUrl;
 

@@ -17,12 +17,12 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const short = id.slice(-8).toUpperCase();
-  return {
-    title: `Seguimiento #${short} — Buleje`,
-    description:
-      "Revisa en tiempo real dónde está tu pedido. ETA, ruta del repartidor y contacto directo.",
-    robots: { index: false, follow: false },
-  };
+  const { buildTenantTitle } = await import("@/lib/store-metadata");
+  return buildTenantTitle(
+    `Seguimiento #${short}`,
+    "Revisa en tiempo real dónde está tu pedido. ETA, ruta del repartidor y contacto directo.",
+    { index: false, follow: false },
+  );
 }
 
 export default async function SeguimientoPage({ params }: PageProps) {

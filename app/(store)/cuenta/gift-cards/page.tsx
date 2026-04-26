@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { GiftCardsDB } from "@/lib/db/gift-cards.db";
 import { getTenantId } from "@/lib/tenant";
+import { buildTenantTitle } from "@/lib/store-metadata";
 import GiftCardsClient from "@/components/customer/gift-cards/GiftCardsClient";
 import Header from "@/components/Header";
 
-export const metadata: Metadata = {
-  title: "Mis tarjetas de regalo — Buleje",
-  description:
-    "Tus tarjetas de regalo Buleje: recibidas, enviadas y uso. Sin vencimiento.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildTenantTitle(
+    "Mis tarjetas de regalo",
+    "Tus tarjetas de regalo: recibidas, enviadas y uso. Sin vencimiento.",
+    { index: false, follow: false },
+  );
+}
 
 export default async function CuentaGiftCardsPage() {
   const tenantId = await getTenantId();

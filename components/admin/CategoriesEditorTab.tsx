@@ -34,6 +34,30 @@ export default function CategoriesEditorTab() {
   const [originalJson, setOriginalJson] = useState("");
   const [expandedSeo, setExpandedSeo] = useState<Set<string>>(new Set());
 
+  // Nombre real del comercio para plantillas de SEO. Lo leemos desde el
+  // endpoint público /api/settings — `useSettings` no está disponible en
+  // el árbol del admin (otro provider). Fallback "tu tienda" si la
+  // request falla.
+  const [storeName, setStoreName] = useState("tu tienda");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (!res.ok) return;
+        const data = await res.json();
+        const themeName = data?.storeTheme?.storeName || data?.storeTheme?.name;
+        const name = (typeof themeName === "string" && themeName.trim())
+          || (typeof data?.businessName === "string" && data.businessName.trim())
+          || "tu tienda";
+        if (!cancelled) setStoreName(name);
+      } catch {
+        /* keep default */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     Promise.all([
       fetch("/api/settings").then((r) => (r.ok ? r.json() : null)),
@@ -45,17 +69,24 @@ export default function CategoriesEditorTab() {
         .filter((c: { id: string }) => c.id !== "todos")
         .map((c: { id: string; label: string; emoji: string }, i: number) => {
           const found = saved.find((s) => s.id === c.id);
-          return found || { 
-            ...c, 
-            visible: true, 
-            order: i,
-            seo: {
-              metaTitle: `${c.label} - Buleje`,
-              metaDescription: `Compra ${c.label.toLowerCase()} frescos y de calidad en Buleje. Entrega rápida en tu zona.`,
-              keywords: [c.label.toLowerCase()],
-              slug: c.id,
+          return (
+            found || {
+              id: c.id,
+              label: c.label,
+              // Limpia emojis decorativos del catálogo del marketplace.
+              // Las categorías ahora son texto puro — más enterprise, más
+              // accesibles, mejor SEO.
+              emoji: "",
+              visible: true,
+              order: i,
+              seo: {
+                metaTitle: `${c.label} | Compra online con delivery`,
+                metaDescription: `Compra ${c.label.toLowerCase()} frescos y de calidad. Entrega rápida en tu zona. Paga con Yape o efectivo.`,
+                keywords: [c.label.toLowerCase(), "delivery", "pucallpa", "compra online"],
+                slug: c.id,
+              },
             }
-          };
+          );
         });
       // Sort by saved order
       merged.sort((a, b) => a.order - b.order);
@@ -89,7 +120,7 @@ export default function CategoriesEditorTab() {
     setCats((prev) => prev.map((c, i) => (i === idx ? { ...c, visible: !c.visible } : c)));
   }, []);
 
-  const updateField = useCallback((idx: number, field: "label" | "emoji", val: string) => {
+  const updateField = useCallback((idx: number, field: "label", val: string) => {
     setCats((prev) => prev.map((c, i) => (i === idx ? { ...c, [field]: val } : c)));
   }, []);
 
@@ -115,11 +146,20 @@ export default function CategoriesEditorTab() {
   const generateSeoForCategory = useCallback((idx: number) => {
     const cat = cats[idx];
     if (!cat) return;
-    const metaTitle = `${cat.label} - Buleje | Compra Online`;
-    const metaDescription = `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio. Compra ahora en Buleje!`;
-    const keywords = [cat.label.toLowerCase(), "delivery", "buleje", "compra online"];
+    // Plantilla SEO basada en el nombre real del comercio. El comerciante
+    // controla cómo aparece en Google — la marca del marketplace ya no se
+    // mete en el title de cada categoría.
+    const metaTitle = `${cat.label} en ${storeName} | Compra online con delivery`;
+    const metaDescription = `Encuentra ${cat.label.toLowerCase()} frescos y de calidad en ${storeName}. Entrega rápida a domicilio. Paga con Yape, Plin o efectivo.`;
+    const keywords = [
+      cat.label.toLowerCase(),
+      "delivery",
+      storeName.toLowerCase(),
+      "compra online",
+      "pucallpa",
+    ];
     const slug = cat.id;
-    
+
     setCats((prev) => prev.map((c, i) => {
       if (i !== idx) return c;
       return {
@@ -133,20 +173,26 @@ export default function CategoriesEditorTab() {
         }
       };
     }));
-  }, [cats]);
+  }, [cats, storeName]);
 
   const bulkGenerateSeo = useCallback(() => {
     setCats((prev) => prev.map(cat => ({
       ...cat,
       seo: {
         ...cat.seo,
-        metaTitle: `${cat.label} - Buleje | Compra Online`,
-        metaDescription: `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio. Compra ahora en Buleje!`,
-        keywords: [cat.label.toLowerCase(), "delivery", "buleje", "compra online"],
+        metaTitle: `${cat.label} en ${storeName} | Compra online con delivery`,
+        metaDescription: `Encuentra ${cat.label.toLowerCase()} frescos y de calidad en ${storeName}. Entrega rápida a domicilio. Paga con Yape, Plin o efectivo.`,
+        keywords: [
+          cat.label.toLowerCase(),
+          "delivery",
+          storeName.toLowerCase(),
+          "compra online",
+          "pucallpa",
+        ],
         slug: cat.id,
       }
     })));
-  }, []);
+  }, [storeName]);
 
   const getSeoScore = useCallback((cat: CategoryConfig): SeoScore => {
     const seo = cat.seo;
@@ -231,16 +277,12 @@ export default function CategoriesEditorTab() {
                   : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-50"
               )}
             >
-              {/* Main Category Row */}
+              {/* Main Category Row — sin emojis decorativos.
+                  Los emojis se quitaron porque el catálogo enterprise debe
+                  ser sólo texto: mejor accesibilidad, mejor SEO, consistencia
+                  con el resto de la UI admin (Holded-style). */}
               <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3">
                 <GripVertical className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-                <span className="text-lg shrink-0 w-8 text-center">{cat.emoji}</span>
-                <input
-                  value={cat.emoji}
-                  onChange={(e) => updateField(i, "emoji", e.target.value)}
-                  className="w-12 text-center rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-1 py-1 text-sm"
-                  maxLength={4}
-                />
                 <input
                   value={cat.label}
                   onChange={(e) => updateField(i, "label", e.target.value)}

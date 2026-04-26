@@ -45,7 +45,9 @@ export default function WhatsAppFloatingButton() {
   const waUrl = `https://wa.me/51${cleanPhone.startsWith("51") ? cleanPhone.slice(2) : cleanPhone}?text=${encodeURIComponent("Hola! Quiero hacer un pedido")}`;
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 flex items-end gap-2 sm:bottom-6">
+    // Botón abajo del stack flotante. `bottom-6` (24px) consistente en
+    // mobile y desktop. El "Repetir pedido" se posiciona arriba de éste.
+    <div className="fixed right-4 sm:right-6 z-40 flex items-end gap-2 bottom-6">
       {/* Tooltip */}
       <div className="hidden sm:block bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 px-4 py-2 max-w-48 animate-in slide-in-from-right-2">
         <p className="text-xs text-slate-600 dark:text-slate-300">

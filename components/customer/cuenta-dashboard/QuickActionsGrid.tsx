@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { CustomerDashboardData } from "@/lib/customer-dashboard.mock";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 import { cn } from "@/lib/utils";
 
 export interface QuickActionsGridProps {
@@ -37,6 +38,7 @@ type QuickAction = {
 export const QuickActionsGrid = memo(function QuickActionsGrid({
   data,
 }: QuickActionsGridProps) {
+  const tp = useTenantPath();
   const activeOrder = data.orders.active;
   const hasActive = activeOrder !== null;
 
@@ -46,7 +48,7 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
       icon: Repeat,
       title: "Reordenar último pedido",
       description: "Misma canasta en 1 tap",
-      href: "/cuenta/pedidos",
+      href: tp("/cuenta/pedidos"),
     },
     {
       id: "tracking",
@@ -55,7 +57,7 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
       description: hasActive
         ? `${activeOrder?.storeName ?? "En camino"} - ${activeOrder?.deliveryWindow ?? "pronto"}`
         : "Hace tu próximo pedido",
-      href: hasActive ? `/cuenta/pedidos` : "/tienda",
+      href: tp(hasActive ? `/cuenta/pedidos` : "/tienda"),
       accent: hasActive,
     },
     {
@@ -66,14 +68,14 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
         data.coupons.disponiblesCount > 0
           ? `${data.coupons.disponiblesCount} disponibles`
           : "Explora promociones vigentes",
-      href: "/cuenta/cupones",
+      href: tp("/cuenta/cupones"),
     },
     {
       id: "one-click",
       icon: Zap,
       title: "Compra con 1 click",
       description: "Con tu direccion y Yape guardados",
-      href: "/tienda",
+      href: tp("/tienda"),
     },
   ];
 

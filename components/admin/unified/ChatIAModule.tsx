@@ -206,7 +206,7 @@ export default function ChatIAModule() {
   const usageBar = (
     <div className="shrink-0 min-w-[180px]">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           Consultas · {usage.plan}
         </span>
         <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -223,7 +223,7 @@ export default function ChatIAModule() {
           aria-valuemax={usage.limit}
         />
       </div>
-      <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
+      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
         Reinicia el{" "}
         {new Date(usage.resetAt).toLocaleDateString("es-PE", {
           day: "numeric",
@@ -236,7 +236,7 @@ export default function ChatIAModule() {
   const content = (
     <div
       className={cn(
-        "flex flex-col overflow-hidden bg-white dark:bg-card",
+        "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
         maximized
           ? "fixed inset-0 z-[9999]"
           : "rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100vh-220px)]",
@@ -245,14 +245,14 @@ export default function ChatIAModule() {
       {/* Barra superior: progress + toolbar */}
       <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
             <Sparkles className="h-4 w-4 text-[var(--data-success)]" />
           </span>
           <div className="min-w-0">
             <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight truncate">
               Asistente Ejecutivo IA
             </p>
-            <p className="text-[11px] text-[var(--text-tertiary)] leading-tight">
+            <p className="text-xs text-[var(--text-tertiary)] leading-tight">
               Análisis en tiempo real · Feynman simple · {modelLabel(settings.model)}
             </p>
           </div>
@@ -320,7 +320,7 @@ function SettingsPanel({
     <div className="p-5 space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Configuración
           </p>
           <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
@@ -368,7 +368,7 @@ function SettingsPanel({
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-[var(--text-primary)]">{modelLabel(m)}</p>
-                  <p className="text-[11px] text-[var(--text-tertiary)] leading-snug mt-0.5">
+                  <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
                     {m === "fast"
                       ? "Responde en 1-2 seg. Ideal para preguntas simples."
                       : m === "smart"
@@ -408,7 +408,7 @@ function SettingsPanel({
                 <p className="font-bold text-[var(--text-primary)] capitalize">
                   {t === "feynman" ? "Simple (Feynman)" : t === "ejecutivo" ? "Ejecutivo" : "Técnico"}
                 </p>
-                <p className="text-[11px] text-[var(--text-tertiary)] leading-snug mt-0.5">
+                <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
                   {t === "feynman"
                     ? "Explica con ejemplos del día a día. Define cada término técnico."
                     : t === "ejecutivo"
@@ -462,7 +462,7 @@ function SettingsPanel({
           onChange={(e) => onUpdate("maxTokens", Number(e.target.value))}
           className="w-full accent-[var(--text-primary)]"
         />
-        <div className="flex justify-between text-[11px] text-[var(--text-tertiary)] mt-1">
+        <div className="flex justify-between text-xs text-[var(--text-tertiary)] mt-1">
           <span>Corto</span>
           <span className="font-bold text-[var(--text-primary)] tabular-nums">
             {settings.maxTokens} tokens
@@ -474,7 +474,7 @@ function SettingsPanel({
       {/* Info */}
       <section className="rounded-lg bg-[var(--surface-sunken)] p-3 flex items-start gap-2">
         <Info className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
-        <p className="text-[11px] text-[var(--text-secondary)] leading-snug">
+        <p className="text-xs text-[var(--text-secondary)] leading-snug">
           Tu configuración se guarda localmente. Afecta a todas tus conversaciones futuras
           hasta que la cambies.
         </p>
@@ -515,7 +515,7 @@ function ToggleRow({
       </button>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">{label}</p>
-        <p className="text-[11px] text-[var(--text-tertiary)] leading-snug mt-0.5">{description}</p>
+        <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">{description}</p>
       </div>
     </label>
   );

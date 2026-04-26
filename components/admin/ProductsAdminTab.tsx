@@ -3,7 +3,8 @@
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { validateProductImage, type ImageValidationResult } from "@/lib/image-validator";
 import { ImageValidationPanel, ImageRequirementsGuide } from "@/components/admin/shared/ImageValidationPanel";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { detectCategoryFromName } from "@/lib/category-detector";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
@@ -405,7 +406,11 @@ function ProductFormModal({
             )}
           </div>
 
-          {/* Category + Unit */}
+          {/* Category + Unit + Detección automática
+              Cuando el dueño escribe el nombre, `detectCategoryFromName`
+              propone la categoría más probable. Si la propuesta difiere de
+              la elegida, mostramos un chip con botón "Aplicar" al lado del
+              select. Es un asistente, no un override automático. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría *</label>
@@ -418,6 +423,11 @@ function ProductFormModal({
                   <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
                 ))}
               </select>
+              <CategorySuggestion
+                name={form.name}
+                currentCategory={form.category}
+                onApply={(id) => set("category", id)}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Unidad *</label>
@@ -1072,5 +1082,62 @@ export default function ProductsAdminTab() {
         </div>
       )}
     </>
+  );
+}
+
+/* ── CategorySuggestion ──────────────────────────────────────────────────────
+   Sub-componente: panel "junto al select de categoría" que muestra la
+   sugerencia de IA heurística + botón "Aplicar" cuando difiere de la
+   categoría elegida actualmente.
+
+   Sólo se renderiza cuando:
+     - Hay un nombre escrito (≥2 chars).
+     - El detector encuentra una categoría confiable.
+     - La sugerencia difiere de la categoría actual del form.
+
+   Si las dos coinciden, no mostramos nada (silencio = "todo OK"). */
+function CategorySuggestion({
+  name,
+  currentCategory,
+  onApply,
+}: {
+  name: string;
+  currentCategory: string;
+  onApply: (id: string) => void;
+}) {
+  const detection = useMemo(() => detectCategoryFromName(name), [name]);
+
+  if (!detection) return null;
+  if (detection.id === currentCategory) {
+    return (
+      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
+        <CheckCircle className="h-3 w-3 text-emerald-500" />
+        Categoría coincide con la detección automática.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2">
+      <div className="min-w-0 flex-1">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+          Sugerencia
+        </p>
+        <p className="text-xs font-semibold text-foreground truncate">
+          Detectada: <span className="text-[var(--accent)]">{detection.label}</span>
+        </p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
+          Por la palabra &ldquo;{detection.matchedKeyword}&rdquo;
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onApply(detection.id)}
+        className="shrink-0 inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
+      >
+        <Plus className="h-3 w-3" />
+        Aplicar
+      </button>
+    </div>
   );
 }

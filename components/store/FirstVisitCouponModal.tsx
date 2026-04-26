@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Gift, Copy, Check, ShoppingCart } from "@buleje/design-system/icons";
 import Link from "next/link";
+import { useSettings } from "@/contexts/settings-context";
 
 const STORAGE_KEY = "first-visit-coupon-shown";
 const COUPON_CODE = "BIENVENIDO";
@@ -11,6 +12,15 @@ const DELAY_MS = 5000;
 export default function FirstVisitCouponModal() {
   const [show, setShow] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Nombre dinámico del comercio: la modal pertenece a la tienda individual,
+  // no al marketplace. `storeTheme.storeName` o `businessName` deben ganar
+  // sobre cualquier hardcode de marca.
+  const { storeTheme, businessName } = useSettings();
+  const storeName =
+    storeTheme?.name?.trim() ||
+    (storeTheme as { storeName?: string } | null)?.storeName?.trim() ||
+    businessName?.trim() ||
+    "nuestra tienda";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -73,7 +83,7 @@ export default function FirstVisitCouponModal() {
         <div className="p-8 text-center space-y-5">
           <div>
             <h2 className="text-2xl font-extrabold text-foreground mb-2">
-              Bienvenido a Buleje!
+              Bienvenido a {storeName}!
             </h2>
             <p className="text-muted text-sm">
               Usa este codigo para obtener <strong className="text-[#00B4A6]">10% de descuento</strong> en tu primer pedido
