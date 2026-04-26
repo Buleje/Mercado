@@ -1,4 +1,5 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type {
   Product as PProduct,
@@ -76,6 +77,13 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 
 export const ProductsDB = {
   async getAll(tenantId: string): Promise<DbProduct[]> {
+    "use cache";
+    // 5 min revalidate, 1 min stale OK, 30 min hard expire. Productos
+    // cambian (precio, stock, badge) pero no en sub-segundo. Sin cache
+    // /tienda y /api/products tardaban 16-18s por compile + DB roundtrip.
+    cacheLife({ revalidate: 300, stale: 60, expire: 1800 });
+    cacheTag(`tenant:${tenantId}:products`);
+
     // El header `x-tenant-id` puede venir como SLUG (desde /t/<slug>/...)
     // o como cuid. Resolvemos slug→cuid para que la query encuentre los
     // productos del tenant correcto.
