@@ -392,24 +392,9 @@ export default function BannerPreviewStudio({
         />
       )}
 
-      {/* Animations CSS */}
-      <style jsx global>{`
-        @keyframes bs-fade {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes bs-slide {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes bs-zoom {
-          from { opacity: 0; transform: scale(0.94); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-bs-fade { animation: bs-fade ${ANIM_DURATION_MS}ms ease-out both; }
-        .animate-bs-slide { animation: bs-slide ${ANIM_DURATION_MS}ms cubic-bezier(0.2,0.8,0.2,1) both; }
-        .animate-bs-zoom { animation: bs-zoom ${ANIM_DURATION_MS}ms cubic-bezier(0.2,0.8,0.2,1) both; }
-      `}</style>
+      {/* Animations + scoped utility classes — plain CSS para no toparme con
+          styled-jsx en Turbopack (que se quedaba colgado al compilar). */}
+      <style dangerouslySetInnerHTML={{ __html: STUDIO_CSS }} />
     </div>
   );
 }
@@ -922,23 +907,20 @@ function FrameTab({ adj, hasImage, onChange }: { adj: ImageAdjust; hasImage: boo
       </Section>
       <Section title="Atajos">
         <ul className="text-[length:var(--ts-2xs)] text-white/60 space-y-1 leading-snug">
-          <li><kbd className="kbd">←→↑↓</kbd> mover 5% · <kbd className="kbd">Shift</kbd>+arrows mover 20%</li>
-          <li><kbd className="kbd">+</kbd>/<kbd className="kbd">-</kbd> zoom · <kbd className="kbd">0</kbd> reset · <kbd className="kbd">C</kbd> centrar · <kbd className="kbd">F</kbd> fit</li>
-          <li><kbd className="kbd">⌘Z</kbd> deshacer · <kbd className="kbd">⌘⇧Z</kbd> rehacer · scroll = zoom</li>
+          <li><Kbd>←→↑↓</Kbd> mover 5% · <Kbd>Shift</Kbd>+arrows mover 20%</li>
+          <li><Kbd>+</Kbd>/<Kbd>-</Kbd> zoom · <Kbd>0</Kbd> reset · <Kbd>C</Kbd> centrar · <Kbd>F</Kbd> fit</li>
+          <li><Kbd>⌘Z</Kbd> deshacer · <Kbd>⌘⇧Z</Kbd> rehacer · scroll = zoom</li>
         </ul>
       </Section>
-      <style jsx>{`
-        .kbd {
-          display: inline-block;
-          padding: 1px 5px;
-          border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 4px;
-          background: rgba(255,255,255,0.06);
-          font-family: ui-monospace, monospace;
-          font-size: 0.7em;
-        }
-      `}</style>
     </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-block px-1.5 py-px border border-white/20 rounded bg-white/[0.06] font-mono text-[0.7em]">
+      {children}
+    </kbd>
   );
 }
 
@@ -1012,36 +994,23 @@ function TextTab({ banner, onPatch }: { banner: StudioBanner; onPatch: (p: Parti
         </div>
       </Section>
       <Section title="Título">
-        <input value={banner.title} onChange={(e) => onPatch({ title: e.target.value })} maxLength={120} className="studio-input" />
+        <input value={banner.title} onChange={(e) => onPatch({ title: e.target.value })} maxLength={120} className={STUDIO_INPUT_CLS} />
       </Section>
       <Section title="Subtítulo">
-        <input value={banner.subtitle ?? ""} onChange={(e) => onPatch({ subtitle: e.target.value })} maxLength={200} className="studio-input" />
+        <input value={banner.subtitle ?? ""} onChange={(e) => onPatch({ subtitle: e.target.value })} maxLength={200} className={STUDIO_INPUT_CLS} />
       </Section>
       <Section title="Texto del botón (CTA)">
-        <input value={banner.ctaLabel} onChange={(e) => onPatch({ ctaLabel: e.target.value })} maxLength={40} className="studio-input" />
+        <input value={banner.ctaLabel} onChange={(e) => onPatch({ ctaLabel: e.target.value })} maxLength={40} className={STUDIO_INPUT_CLS} />
       </Section>
       <Section title="Destino del botón">
-        <input value={banner.ctaHref} onChange={(e) => onPatch({ ctaHref: e.target.value })} placeholder="/marketplace/ofertas" className="studio-input font-mono text-[length:var(--ts-2xs)]" />
+        <input value={banner.ctaHref} onChange={(e) => onPatch({ ctaHref: e.target.value })} placeholder="/marketplace/ofertas" className={cn(STUDIO_INPUT_CLS, "font-mono text-[length:var(--ts-2xs)]")} />
       </Section>
-      <style jsx>{`
-        :global(.studio-input) {
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.5rem;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          font-size: 0.75rem;
-          font-weight: 700;
-          outline: none;
-        }
-        :global(.studio-input:focus) {
-          border-color: var(--accent);
-        }
-      `}</style>
     </div>
   );
 }
+
+const STUDIO_INPUT_CLS =
+  "w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white outline-none focus:border-[var(--accent)] transition-colors";
 
 function ColorTab({
   banner,
@@ -1117,7 +1086,7 @@ function PromoTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
         </div>
       </Section>
       <Section title="Nombre del producto">
-        <input value={promo.productName} onChange={(e) => setPromo({ productName: e.target.value })} className="studio-input" />
+        <input value={promo.productName} onChange={(e) => setPromo({ productName: e.target.value })} className={STUDIO_INPUT_CLS} />
       </Section>
       <div className="grid grid-cols-2 gap-2">
         <Section title="Precio">
@@ -1126,7 +1095,7 @@ function PromoTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
             step="0.10"
             value={promo.price ?? ""}
             onChange={(e) => setPromo({ price: e.target.value === "" ? null : Number(e.target.value) })}
-            className="studio-input tabular-nums"
+            className={cn(STUDIO_INPUT_CLS, "tabular-nums")}
           />
         </Section>
         <Section title="Antes">
@@ -1135,18 +1104,18 @@ function PromoTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
             step="0.10"
             value={promo.oldPrice ?? ""}
             onChange={(e) => setPromo({ oldPrice: e.target.value === "" ? null : Number(e.target.value) })}
-            className="studio-input tabular-nums"
+            className={cn(STUDIO_INPUT_CLS, "tabular-nums")}
           />
         </Section>
       </div>
       <Section title="Insignia (badge rojo)">
-        <input value={promo.badge} onChange={(e) => setPromo({ badge: e.target.value })} placeholder="-30% · 2x1 · Hasta agotar stock" className="studio-input" />
+        <input value={promo.badge} onChange={(e) => setPromo({ badge: e.target.value })} placeholder="-30% · 2x1 · Hasta agotar stock" className={STUDIO_INPUT_CLS} />
       </Section>
       <Section title="Texto del botón comprar">
-        <input value={promo.buyLabel} onChange={(e) => setPromo({ buyLabel: e.target.value })} className="studio-input" />
+        <input value={promo.buyLabel} onChange={(e) => setPromo({ buyLabel: e.target.value })} className={STUDIO_INPUT_CLS} />
       </Section>
       <Section title="Link del botón comprar">
-        <input value={promo.buyHref} onChange={(e) => setPromo({ buyHref: e.target.value })} placeholder="/producto/123" className="studio-input font-mono text-[length:var(--ts-2xs)]" />
+        <input value={promo.buyHref} onChange={(e) => setPromo({ buyHref: e.target.value })} placeholder="/producto/123" className={cn(STUDIO_INPUT_CLS, "font-mono text-[length:var(--ts-2xs)]")} />
       </Section>
     </div>
   );
@@ -1188,20 +1157,24 @@ function StateTab({
       </Section>
       <Section title={`Orden (${index + 1} de ${total})`}>
         <div className="grid grid-cols-2 gap-1.5">
-          <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="state-btn">
+          <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className={STATE_BTN_CLS}>
             <ArrowUp className="h-3.5 w-3.5" /> Subir
           </button>
-          <button type="button" onClick={() => onMove(1)} disabled={index >= total - 1} className="state-btn">
+          <button type="button" onClick={() => onMove(1)} disabled={index >= total - 1} className={STATE_BTN_CLS}>
             <ArrowDown className="h-3.5 w-3.5" /> Bajar
           </button>
         </div>
       </Section>
       <Section title="Acciones">
         <div className="grid grid-cols-1 gap-1.5">
-          <button type="button" onClick={onDuplicate} className="state-btn">
+          <button type="button" onClick={onDuplicate} className={STATE_BTN_CLS}>
             <Copy className="h-3.5 w-3.5" /> Duplicar este banner
           </button>
-          <button type="button" onClick={onRemove} className="state-btn state-btn-danger">
+          <button
+            type="button"
+            onClick={onRemove}
+            className={cn(STATE_BTN_CLS, "hover:bg-[rgba(239,68,68,0.15)] hover:border-[rgba(239,68,68,0.4)] hover:text-[rgba(252,165,165,1)]")}
+          >
             <Trash2 className="h-3.5 w-3.5" /> Eliminar este banner
           </button>
         </div>
@@ -1215,38 +1188,12 @@ function StateTab({
         <span className="text-white/80 font-extrabold"> Guardar </span>
         en la barra inferior cuando salgas del estudio.
       </p>
-      <style jsx>{`
-        :global(.state-btn) {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          padding: 8px 12px;
-          border-radius: 8px;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.1);
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: rgba(255,255,255,0.85);
-          transition: all 150ms;
-        }
-        :global(.state-btn:hover:not(:disabled)) {
-          background: rgba(255,255,255,0.12);
-          border-color: rgba(255,255,255,0.25);
-        }
-        :global(.state-btn:disabled) {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-        :global(.state-btn-danger:hover:not(:disabled)) {
-          background: rgba(239,68,68,0.15);
-          border-color: rgba(239,68,68,0.4);
-          color: rgba(252,165,165,1);
-        }
-      `}</style>
     </div>
   );
 }
+
+const STATE_BTN_CLS =
+  "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-extrabold text-white/85 transition-all hover:bg-white/[0.12] hover:border-white/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.06] disabled:hover:border-white/10";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-bits
@@ -1352,34 +1299,17 @@ function AnchorGrid({ value, onChange, disabled }: { value: { x: number; y: numb
 function NavCounter({ idx, total, onPrev, onNext }: { idx: number; total: number; onPrev: () => void; onNext: () => void }) {
   return (
     <div className="flex items-center gap-2 text-white">
-      <button type="button" onClick={onPrev} disabled={total <= 1} className="navBtn"><ChevronLeft className="h-4 w-4" /></button>
+      <button type="button" onClick={onPrev} disabled={total <= 1} className={NAV_BTN_CLS}><ChevronLeft className="h-4 w-4" /></button>
       <span className="text-xs font-bold tabular-nums min-w-[44px] text-center">
         {total === 0 ? "—" : `${idx + 1} / ${total}`}
       </span>
-      <button type="button" onClick={onNext} disabled={total <= 1} className="navBtn"><ChevronRight className="h-4 w-4" /></button>
-      <style jsx>{`
-        .navBtn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          height: 32px;
-          width: 32px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          transition: background-color 150ms;
-        }
-        .navBtn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.2);
-        }
-        .navBtn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-      `}</style>
+      <button type="button" onClick={onNext} disabled={total <= 1} className={NAV_BTN_CLS}><ChevronRight className="h-4 w-4" /></button>
     </div>
   );
 }
+
+const NAV_BTN_CLS =
+  "inline-flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/10";
 
 function TabBtn({ icon, active, onClick, title }: { icon: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
   return (
@@ -1477,3 +1407,26 @@ function clamp(v: number, lo: number, hi: number): number {
 function round(v: number): number {
   return Math.round(v * 10) / 10;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS — keyframes en plain string (evitamos styled-jsx que rompía Turbopack
+// al combinarse con muchos sub-componentes anidados en un mismo archivo).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STUDIO_CSS = `
+@keyframes bs-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes bs-slide {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes bs-zoom {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-bs-fade  { animation: bs-fade ${ANIM_DURATION_MS}ms ease-out both; }
+.animate-bs-slide { animation: bs-slide ${ANIM_DURATION_MS}ms cubic-bezier(0.2,0.8,0.2,1) both; }
+.animate-bs-zoom  { animation: bs-zoom ${ANIM_DURATION_MS}ms cubic-bezier(0.2,0.8,0.2,1) both; }
+`;
