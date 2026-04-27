@@ -5,9 +5,19 @@ import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
-const PatchSchema = z.object({
-  isActive: z.boolean(),
-});
+const PatchSchema = z
+  .object({
+    isActive: z.boolean().optional(),
+    retailPrice: z.number().nonnegative().max(99999).optional(),
+    wholesalePrice: z.number().nonnegative().max(99999).optional(),
+  })
+  .refine(
+    (d) =>
+      d.isActive !== undefined ||
+      d.retailPrice !== undefined ||
+      d.wholesalePrice !== undefined,
+    { message: "Al menos un campo es requerido" },
+  );
 
 /**
  * PATCH /api/marketplace/stores/my/products/[id]
@@ -51,14 +61,30 @@ export async function PATCH(
       return NextResponse.json({ error: "Producto no encontrado en tu tienda" }, { status: 404 });
     }
 
-    await prisma.storeProduct.update({
+    const updateData: {
+      isActive?: boolean;
+      retailPrice?: number;
+      wholesalePrice?: number;
+    } = {};
+    if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
+    if (parsed.data.retailPrice !== undefined) updateData.retailPrice = parsed.data.retailPrice;
+    if (parsed.data.wholesalePrice !== undefined) updateData.wholesalePrice = parsed.data.wholesalePrice;
+
+    const updated = await prisma.storeProduct.update({
       where: { id },
-      data: { isActive: parsed.data.isActive },
+      data: updateData,
+      select: { id: true, isActive: true, retailPrice: true, wholesalePrice: true },
     });
 
     invalidateByPrefix(`marketplace:store-products`);
 
-    return NextResponse.json({ ok: true, isActive: parsed.data.isActive });
+    return NextResponse.json({
+      ok: true,
+      id: updated.id,
+      isActive: updated.isActive,
+      retailPrice: Number(updated.retailPrice),
+      wholesalePrice: Number(updated.wholesalePrice ?? 0),
+    });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });

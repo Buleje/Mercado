@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         customerName: true,
+        customerPhone: true,
+        customerLocation: true,
+        customerReference: true,
         total: true,
         status: true,
         createdAt: true,
@@ -38,6 +41,9 @@ export async function GET(req: NextRequest) {
     const result = orders.map((o) => ({
       id: o.id,
       customerName: o.customerName,
+      customerPhone: o.customerPhone ?? null,
+      customerLocation: o.customerLocation ?? "",
+      customerReference: o.customerReference ?? "",
       total: Number(o.total),
       status: o.status,
       createdAt: o.createdAt.toISOString(),

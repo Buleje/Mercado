@@ -27,7 +27,14 @@ export async function GET(req: NextRequest) {
       where: { storeId: store.id },
       include: {
         product: {
-          select: { name: true, stock: true, barcode: true },
+          select: {
+            name: true,
+            stock: true,
+            barcode: true,
+            image: true,
+            description: true,
+            category: true,
+          },
         },
       },
       orderBy: { product: { name: "asc" } },
@@ -41,6 +48,9 @@ export async function GET(req: NextRequest) {
       wholesalePrice: Number(sp.wholesalePrice ?? 0),
       stock: sp.product.stock ?? 0,
       sku: sp.product.barcode ?? "",
+      image: sp.product.image ?? null,
+      description: sp.product.description ?? null,
+      category: sp.product.category ?? null,
     }));
 
     return NextResponse.json(result);

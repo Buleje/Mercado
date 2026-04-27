@@ -101,14 +101,43 @@ export async function GET(req: NextRequest) {
     }
 
     // ── Public mode: listado de tiendas ──
+    // Cargar el archivo de categorías del marketplace para:
+    //   1. Sumar tiendas vinculadas manualmente desde superadmin (linkedStoreSlugs).
+    //   2. Aplicar override de zona manual si la tienda no la fija.
+    let manualCategoryStoreSlugs: string[] = [];
+    let manualStoreZones: Record<string, string> = {};
+    try {
+      const { readFile } = await import("node:fs/promises");
+      const { join } = await import("node:path");
+      const raw = await readFile(
+        join(process.cwd(), "lib", "data", "marketplace-categories.json"),
+        "utf8",
+      );
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const meta = (parsed["_meta"] ?? {}) as { storeZones?: Record<string, string> };
+      manualStoreZones = meta.storeZones ?? {};
+      if (category) {
+        const cat = parsed[category] as { linkedStoreSlugs?: string[] } | undefined;
+        if (cat?.linkedStoreSlugs) manualCategoryStoreSlugs = cat.linkedStoreSlugs;
+      }
+    } catch {
+      // sin archivo → ignorar (modo legacy, sólo store.category aplica)
+    }
+
     let stores: Record<string, unknown>[] = [];
     try {
+      // Si hay categoría con vínculos manuales: OR(category match, slug ∈ linked)
+      const categoryClause = category
+        ? manualCategoryStoreSlugs.length > 0
+          ? { OR: [{ category }, { slug: { in: manualCategoryStoreSlugs } }] }
+          : { category }
+        : {};
       stores = await prisma.store.findMany({
         where: {
           isPublished: true,
-          ...(zone     && { zone }),
-          ...(category && { category }),
-          ...(search   && { name: { contains: search, mode: "insensitive" as const } }),
+          ...(zone   && { zone }),
+          ...categoryClause,
+          ...(search && { name: { contains: search, mode: "insensitive" as const } }),
         },
         select: {
           id:              true,
@@ -356,13 +385,18 @@ export async function GET(req: NextRequest) {
         openHours: null,
         isOpenNow: true,
       };
+      // Override de zona: si store.zone está vacío y superadmin asignó una manual,
+      // usar la manual. La de la tienda (cuando existe) siempre tiene prioridad.
+      const slug = (s as { slug?: string }).slug ?? "";
+      const ownZone = ((s.zone as string | null | undefined) ?? "").trim();
+      const finalZone = ownZone !== "" ? ownZone : (manualStoreZones[slug] ?? "");
       return {
         id: s.id,
         slug: s.slug,
         name: s.name,
         logo: s.logo,
         category: s.category,
-        zone: s.zone,
+        zone: finalZone,
         rating: s.rating,
         reviewCount: s.reviewCount,
         description: s.description,
