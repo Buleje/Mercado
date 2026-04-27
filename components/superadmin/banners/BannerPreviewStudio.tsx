@@ -314,25 +314,25 @@ export default function BannerPreviewStudio({
       data-studio-theme={theme}
       className={cn(
         "studio-root fixed inset-0 z-[100] flex flex-col",
-        theme === "dark" ? "bg-[#0c1015] text-white" : "bg-[#f4f5f7] text-[#0c1015]",
+        theme === "dark" ? "bg-[#0c1015] text-[rgb(var(--st-fg))]" : "bg-[#f4f5f7] text-[#0c1015]",
       )}
     >
       {/* ── Top bar ───────────────────────────────────────────────── */}
       <header
         className={cn(
           "shrink-0 px-4 sm:px-6 py-3 flex items-center gap-3 border-b",
-          theme === "dark" ? "border-white/10 bg-black/60" : "border-black/10 bg-white",
+          theme === "dark" ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-white shrink-0">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] shrink-0">
             <Edit3 className="h-4 w-4" />
           </span>
           <div className="min-w-0">
             <p className="text-sm font-extrabold leading-none truncate">Estudio de banner</p>
             <p className={cn(
               "text-[length:var(--ts-2xs)] leading-tight mt-0.5 truncate",
-              theme === "dark" ? "text-white/60" : "text-black/60",
+              theme === "dark" ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60",
             )}>
               {slotLabel ? `${slotLabel} · ` : ""}
               {banners.length} banner{banners.length === 1 ? "" : "s"} · ESC para cerrar
@@ -346,7 +346,7 @@ export default function BannerPreviewStudio({
           )}
           <ModeBtn active={mode === "solo"} onClick={() => setMode("solo")} icon={<Monitor className="h-3.5 w-3.5" />} label="Solo" hint="2" theme={theme} />
           <ModeBtn active={mode === "show"} onClick={() => setMode("show")} icon={<Layers className="h-3.5 w-3.5" />} label="Presentación" hint="3" theme={theme} />
-          <span aria-hidden className={cn("h-6 w-px mx-1", theme === "dark" ? "bg-white/20" : "bg-black/15")} />
+          <span aria-hidden className={cn("h-6 w-px mx-1", theme === "dark" ? "bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/15")} />
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -355,7 +355,7 @@ export default function BannerPreviewStudio({
             className={cn(
               "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
               theme === "dark"
-                ? "bg-white/10 text-white hover:bg-white/20"
+                ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]"
                 : "bg-black/5 text-[#0c1015] hover:bg-black/10",
             )}
           >
@@ -367,7 +367,7 @@ export default function BannerPreviewStudio({
             className={cn(
               "ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
               theme === "dark"
-                ? "bg-white/10 text-white hover:bg-white/20"
+                ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]"
                 : "bg-black/5 text-[#0c1015] hover:bg-black/10",
             )}
             aria-label="Cerrar"
@@ -496,8 +496,8 @@ function EditMode({
 }) {
   const dark = theme === "dark";
   const panelBg = dark ? "bg-black/40" : "bg-white";
-  const panelBorder = dark ? "border-white/10" : "border-black/10";
-  const subtleText = dark ? "text-white/60" : "text-black/60";
+  const panelBorder = dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10";
+  const subtleText = dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60";
   const canvasBg = dark
     ? "bg-[radial-gradient(circle_at_center,#1f2937_0%,#0c1015_100%)]"
     : "bg-[radial-gradient(circle_at_center,#e5e7eb_0%,#f4f5f7_100%)]";
@@ -552,7 +552,7 @@ function EditMode({
         <button
           type="button"
           onClick={() => setLeftOpen(!leftOpen)}
-          className="shrink-0 h-10 px-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/60 hover:text-white border-b border-white/10 flex items-center gap-1.5"
+          className="shrink-0 h-10 px-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.6)] hover:text-[rgb(var(--st-fg))] border-b border-[rgb(var(--st-fg)/0.1)] flex items-center gap-1.5"
         >
           {leftOpen ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           {leftOpen && <span>Banners ({banners.length})</span>}
@@ -569,14 +569,14 @@ function EditMode({
                   "w-full text-left rounded-lg overflow-hidden border-2 transition-all",
                   i === idx
                     ? "border-[var(--accent)] shadow-md"
-                    : "border-transparent hover:border-white/30",
+                    : "border-transparent hover:border-[rgb(var(--st-fg)/0.3)]",
                 )}
               >
                 <div className="aspect-[4/1]">
                   <PromoBannerRenderer banner={b} asLink={false} className="[&>div]:rounded-none [&>div]:border-0 h-full" />
                 </div>
-                <div className="px-2 py-1.5 bg-white/5 flex items-center justify-between gap-1.5">
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-white/80 truncate">
+                <div className="px-2 py-1.5 bg-[rgb(var(--st-fg)/0.05)] flex items-center justify-between gap-1.5">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.8)] truncate">
                     {b.title || "(sin título)"}
                   </span>
                   {!b.active && (
@@ -592,7 +592,7 @@ function EditMode({
               <button
                 type="button"
                 onClick={onAddBanner}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-white/20 hover:border-[var(--accent)] hover:text-[var(--accent)] text-white/60 py-3 text-xs font-extrabold transition-colors"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[rgb(var(--st-fg)/0.2)] hover:border-[var(--accent)] hover:text-[var(--accent)] text-[rgb(var(--st-fg)/0.6)] py-3 text-xs font-extrabold transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Nuevo banner
@@ -612,7 +612,7 @@ function EditMode({
           <Divider />
           <ToolGroup label="Zoom">
             <ToolBtn icon={<Minimize2 className="h-3.5 w-3.5" />} title="Reducir (-)" disabled={!current?.imageUrl || adj.scale <= ZOOM_MIN} onClick={() => patchAdjust({ ...adj, scale: clamp(adj.scale - 10, ZOOM_MIN, ZOOM_MAX) })} />
-            <span className="px-2 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white/80 min-w-[44px] text-center">
+            <span className="px-2 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[rgb(var(--st-fg)/0.8)] min-w-[44px] text-center">
               {adj.scale}%
             </span>
             <ToolBtn icon={<Maximize2 className="h-3.5 w-3.5" />} title="Ampliar (+)" disabled={!current?.imageUrl || adj.scale >= ZOOM_MAX} onClick={() => patchAdjust({ ...adj, scale: clamp(adj.scale + 10, ZOOM_MIN, ZOOM_MAX) })} />
@@ -672,7 +672,7 @@ function EditMode({
               >
                 <PromoBannerRenderer banner={current} asLink={false} className="[&>div]:rounded-none [&>div]:border-0 h-full" />
                 {dragging && (
-                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
+                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-[rgb(var(--st-fg))] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
                     <Target className="h-3 w-3" />
                     Moviendo
                   </span>
@@ -687,20 +687,20 @@ function EditMode({
               </div>
 
               {/* Bottom info strip */}
-              <div className="mt-3 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-white/50 tabular-nums">
+              <div className="mt-3 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.5)] tabular-nums">
                 <span>X {adj.position.x}% · Y {adj.position.y}%</span>
-                <span className="truncate max-w-[40ch] mx-3 text-white/70">{current.title || "(sin título)"}</span>
+                <span className="truncate max-w-[40ch] mx-3 text-[rgb(var(--st-fg)/0.7)]">{current.title || "(sin título)"}</span>
                 <span>Zoom {adj.scale}% · {adj.fit === "cover" ? "Llenar" : "Contener"}</span>
               </div>
             </div>
           ) : (
-            <div className="text-center text-white/60">
+            <div className="text-center text-[rgb(var(--st-fg)/0.6)]">
               <p className="text-sm font-bold">Sin banners en este slot</p>
               {onAddBanner && (
                 <button
                   type="button"
                   onClick={onAddBanner}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-sm font-extrabold hover:opacity-90"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-[rgb(var(--st-fg))] px-4 py-2 text-sm font-extrabold hover:opacity-90"
                 >
                   <Plus className="h-4 w-4" />
                   Crear primer banner
@@ -716,7 +716,7 @@ function EditMode({
         <button
           type="button"
           onClick={() => setRightOpen(!rightOpen)}
-          className="shrink-0 h-10 px-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/60 hover:text-white border-b border-white/10 flex items-center gap-1.5"
+          className="shrink-0 h-10 px-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.6)] hover:text-[rgb(var(--st-fg))] border-b border-[rgb(var(--st-fg)/0.1)] flex items-center gap-1.5"
         >
           {rightOpen ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           {rightOpen && <span>Herramientas</span>}
@@ -725,7 +725,7 @@ function EditMode({
         {rightOpen && current && (
           <>
             {/* Tabs */}
-            <nav className="shrink-0 grid grid-cols-6 border-b border-white/10">
+            <nav className="shrink-0 grid grid-cols-6 border-b border-[rgb(var(--st-fg)/0.1)]">
               <TabBtn icon={<Maximize2 className="h-3.5 w-3.5" />} active={tab === "frame"} onClick={() => setTab("frame")} title="Encuadre" />
               <TabBtn icon={<ImageIconLucide className="h-3.5 w-3.5" />} active={tab === "image"} onClick={() => setTab("image")} title="Imagen" />
               <TabBtn icon={<TypeIcon className="h-3.5 w-3.5" />} active={tab === "text"} onClick={() => setTab("text")} title="Texto" />
@@ -797,7 +797,7 @@ function SoloMode({
           </div>
           <div className={cn(
             "mt-4 flex items-center justify-center gap-2 text-xs font-bold",
-            dark ? "text-[#0c1015]/60" : "text-white/60",
+            dark ? "text-[#0c1015]/60" : "text-[rgb(var(--st-fg)/0.6)]",
           )}>
             <span>{widthPx ? `${widthPx}px` : "100% del contenedor"}</span>
             <span>·</span>
@@ -807,7 +807,7 @@ function SoloMode({
       </div>
       <footer className={cn(
         "shrink-0 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-t",
-        dark ? "border-white/10 bg-black/60" : "border-black/10 bg-white",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
       )}>
         <div className="flex items-center gap-1.5">
           {(["1200", "1600", "full"] as Width[]).map((w) => (
@@ -818,7 +818,7 @@ function SoloMode({
               aria-pressed={width === w}
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors",
-                width === w ? "bg-white text-[#0c1015]" : "bg-white/10 text-white/80 hover:bg-white/20",
+                width === w ? "bg-white text-[#0c1015]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
               )}
             >
               {w === "full" ? "100%" : `${w}px`}
@@ -889,7 +889,7 @@ function ShowMode({
       </div>
       <footer className={cn(
         "shrink-0 px-4 sm:px-6 py-3 space-y-3 border-t",
-        dark ? "border-white/10 bg-black/60" : "border-black/10 bg-white",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
       )}>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -902,14 +902,14 @@ function ShowMode({
           </button>
           <NavCounter idx={idx} total={banners.length} onPrev={() => setIdx((idx - 1 + banners.length) % banners.length)} onNext={() => setIdx((idx + 1) % banners.length)} />
           <div className="flex items-center gap-2 ml-auto">
-            <Gauge className="h-3.5 w-3.5 text-white/60" />
-            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/60">Velocidad</span>
+            <Gauge className="h-3.5 w-3.5 text-[rgb(var(--st-fg)/0.6)]" />
+            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.6)]">Velocidad</span>
             <input type="range" min={2000} max={15000} step={500} value={speedMs} onChange={(e) => setSpeedMs(Number(e.target.value))} className="w-32 accent-[var(--accent)]" aria-label="Velocidad" />
             <span className="text-xs font-bold tabular-nums min-w-[42px] text-right">{(speedMs / 1000).toFixed(1)}s</span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/60">Animación</span>
+          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.6)]">Animación</span>
           {(["fade", "slide", "zoom", "none"] as Animation[]).map((a) => (
             <button
               key={a}
@@ -918,7 +918,7 @@ function ShowMode({
               aria-pressed={animation === a}
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors capitalize",
-                animation === a ? "bg-white text-[#0c1015]" : "bg-white/10 text-white/80 hover:bg-white/20",
+                animation === a ? "bg-white text-[#0c1015]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
               )}
             >
               {a === "none" ? "Sin animación" : a}
@@ -934,7 +934,7 @@ function ShowMode({
                 aria-current={i === idx}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === idx ? "w-8 bg-white" : "w-2 bg-white/30 hover:bg-white/60",
+                  i === idx ? "w-8 bg-white" : "w-2 bg-white/30 hover:bg-[rgb(var(--st-fg)/0.6)]",
                 )}
               />
             ))}
@@ -952,13 +952,13 @@ function ShowMode({
 function FrameTab({ adj, hasImage, onChange }: { adj: ImageAdjust; hasImage: boolean; onChange: (a: ImageAdjust) => void }) {
   if (!hasImage) {
     return (
-      <p className="text-xs text-white/50 leading-snug">
-        Subí una imagen primero (pestaña <strong className="text-white/80">Imagen</strong>) para poder reencuadrarla acá.
+      <p className="text-xs text-[rgb(var(--st-fg)/0.5)] leading-snug">
+        Subí una imagen primero (pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong>) para poder reencuadrarla acá.
       </p>
     );
   }
   return (
-    <div className="space-y-3 text-white">
+    <div className="space-y-3 text-[rgb(var(--st-fg))]">
       <Section title="Posición precisa">
         <div className="grid grid-cols-2 gap-2">
           <NumField label="X (%)" value={adj.position.x} min={0} max={100} step={1} onChange={(v) => onChange({ ...adj, position: { ...adj.position, x: clamp(v, 0, 100) } })} />
@@ -978,7 +978,7 @@ function FrameTab({ adj, hasImage, onChange }: { adj: ImageAdjust; hasImage: boo
         </div>
       </Section>
       <Section title="Atajos">
-        <ul className="text-[length:var(--ts-2xs)] text-white/60 space-y-1 leading-snug">
+        <ul className="text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.6)] space-y-1 leading-snug">
           <li><Kbd>←→↑↓</Kbd> mover 5% · <Kbd>Shift</Kbd>+arrows mover 20%</li>
           <li><Kbd>+</Kbd>/<Kbd>-</Kbd> zoom · <Kbd>0</Kbd> reset · <Kbd>C</Kbd> centrar · <Kbd>F</Kbd> fit</li>
           <li><Kbd>⌘Z</Kbd> deshacer · <Kbd>⌘⇧Z</Kbd> rehacer · scroll = zoom</li>
@@ -990,7 +990,7 @@ function FrameTab({ adj, hasImage, onChange }: { adj: ImageAdjust; hasImage: boo
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-block px-1.5 py-px border border-white/20 rounded bg-white/[0.06] font-mono text-[0.7em]">
+    <kbd className="inline-block px-1.5 py-px border border-[rgb(var(--st-fg)/0.2)] rounded bg-[rgb(var(--st-fg)/0.06)] font-mono text-[0.7em]">
       {children}
     </kbd>
   );
@@ -1000,7 +1000,7 @@ function ImageTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
   return (
     <div className="space-y-3">
       <Section title="Subir imagen">
-        <div className="bg-white/5 rounded-lg p-2">
+        <div className="bg-[rgb(var(--st-fg)/0.05)] rounded-lg p-2">
           <ImageUploader
             value={banner.imageUrl}
             onChange={(url) => onPatch({ imageUrl: url })}
@@ -1015,17 +1015,17 @@ function ImageTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
           value={banner.imageUrl ?? ""}
           onChange={(e) => onPatch({ imageUrl: e.target.value || null })}
           placeholder="https://…"
-          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-white placeholder-white/30 focus:border-[var(--accent)] outline-none"
+          className="w-full px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.3)] focus:border-[var(--accent)] outline-none"
         />
       </Section>
-      <p className="text-[length:var(--ts-2xs)] text-white/50 leading-snug">
-        Recomendado: <span className="text-white/80 font-mono">1600 × 400 px</span> · 4:1 · &lt;200 KB.
+      <p className="text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] leading-snug">
+        Recomendado: <span className="text-[rgb(var(--st-fg)/0.8)] font-mono">1600 × 400 px</span> · 4:1 · &lt;200 KB.
       </p>
       {banner.imageUrl && (
         <button
           type="button"
           onClick={() => onPatch({ imageUrl: null })}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-white/60 hover:text-[var(--data-error)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--st-fg)/0.6)] hover:text-[var(--data-error)] transition-colors"
         >
           <Trash2 className="h-3 w-3" />
           Quitar imagen
@@ -1055,7 +1055,7 @@ function TextTab({ banner, onPatch }: { banner: StudioBanner; onPatch: (p: Parti
                 aria-pressed={active}
                 className={cn(
                   "rounded-lg border px-2 py-2 text-xs font-extrabold transition-all flex flex-col items-center gap-1",
-                  active ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]" : "border-white/10 bg-white/5 text-white/70 hover:border-white/30",
+                  active ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]" : "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] text-[rgb(var(--st-fg)/0.7)] hover:border-[rgb(var(--st-fg)/0.3)]",
                 )}
               >
                 <I className="h-3.5 w-3.5" />
@@ -1082,7 +1082,7 @@ function TextTab({ banner, onPatch }: { banner: StudioBanner; onPatch: (p: Parti
 }
 
 const STUDIO_INPUT_CLS =
-  "w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white outline-none focus:border-[var(--accent)] transition-colors";
+  "w-full px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-bold text-[rgb(var(--st-fg))] outline-none focus:border-[var(--accent)] transition-colors";
 
 function ColorTab({
   banner,
@@ -1095,13 +1095,13 @@ function ColorTab({
 }) {
   if (banner.imageUrl) {
     return (
-      <p className="text-xs text-white/60 leading-snug">
-        Los colores de fondo se usan solo cuando NO hay imagen. Quitá la imagen desde la pestaña <strong className="text-white/80">Imagen</strong> para personalizar el gradiente.
+      <p className="text-xs text-[rgb(var(--st-fg)/0.6)] leading-snug">
+        Los colores de fondo se usan solo cuando NO hay imagen. Quitá la imagen desde la pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong> para personalizar el gradiente.
       </p>
     );
   }
   return (
-    <div className="space-y-3 text-white">
+    <div className="space-y-3 text-[rgb(var(--st-fg))]">
       <Section title="Presets">
         <div className="grid grid-cols-2 gap-1.5">
           {presets.map((p) => {
@@ -1114,7 +1114,7 @@ function ColorTab({
                 aria-pressed={active}
                 className={cn(
                   "rounded-lg border-2 p-2 transition-all text-left",
-                  active ? "border-[var(--accent)]" : "border-transparent hover:border-white/20",
+                  active ? "border-[var(--accent)]" : "border-transparent hover:border-[rgb(var(--st-fg)/0.2)]",
                 )}
               >
                 <div className="h-8 rounded-md mb-1" style={{ background: `linear-gradient(135deg, ${p.from}, ${p.to})` }} />
@@ -1137,8 +1137,8 @@ function ColorTab({
 function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBanner; onPatch: (p: Partial<StudioBanner>) => void; uploadFolder: string; theme: StudioTheme }) {
   if (banner.type !== "promo") {
     return (
-      <p className="text-xs text-white/60 leading-snug">
-        Cambiá el tipo a <strong className="text-white/80">Promo</strong> en la pestaña Texto para usar producto/combo embebido con compra directa.
+      <p className="text-xs text-[rgb(var(--st-fg)/0.6)] leading-snug">
+        Cambiá el tipo a <strong className="text-[rgb(var(--st-fg)/0.8)]">Promo</strong> en la pestaña Texto para usar producto/combo embebido con compra directa.
       </p>
     );
   }
@@ -1203,9 +1203,9 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
   };
 
   return (
-    <div className={cn("space-y-3", theme === "dark" ? "text-white" : "text-[#0c1015]")}>
+    <div className={cn("space-y-3", theme === "dark" ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
       <div className={cn("rounded-lg p-2.5 border text-[length:var(--ts-2xs)] leading-snug",
-        theme === "dark" ? "bg-white/5 border-white/10 text-white/70" : "bg-black/5 border-black/10 text-black/70")}>
+        theme === "dark" ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "bg-black/5 border-black/10 text-black/70")}>
         Banner con <strong>{items.length}</strong> producto{items.length === 1 ? "" : "s"} · Si agregás más de uno se renderizan en grilla horizontal scrolleable.
       </div>
 
@@ -1227,7 +1227,7 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
         type="button"
         onClick={addItem}
         className={cn("w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed py-2.5 text-xs font-extrabold transition-colors",
-          theme === "dark" ? "border-white/20 text-white/60 hover:border-[var(--accent)] hover:text-[var(--accent)]" : "border-black/20 text-black/60 hover:border-[var(--accent)] hover:text-[var(--accent)]")}
+          theme === "dark" ? "border-[rgb(var(--st-fg)/0.2)] text-[rgb(var(--st-fg)/0.6)] hover:border-[var(--accent)] hover:text-[var(--accent)]" : "border-black/20 text-black/60 hover:border-[var(--accent)] hover:text-[var(--accent)]")}
       >
         <Plus className="h-3.5 w-3.5" />
         Agregar otro producto
@@ -1258,21 +1258,21 @@ function PromoItemEditor({
   const dark = theme === "dark";
   const [open, setOpen] = useState(index === 0);
   const adj = item.imageAdjust ?? DEFAULT_ADJ;
-  const headerCls = dark ? "bg-white/5 border-white/10" : "bg-black/5 border-black/10";
+  const headerCls = dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-black/5 border-black/10";
 
   return (
-    <div className={cn("rounded-lg border", dark ? "border-white/10" : "border-black/10")}>
+    <div className={cn("rounded-lg border", dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10")}>
       <div className={cn("flex items-center gap-2 px-2.5 py-2 border-b rounded-t-lg", headerCls)}>
         <span className={cn(
           "inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-extrabold tabular-nums shrink-0",
-          dark ? "bg-white/10 text-white/80" : "bg-black/10 text-black/70",
+          dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)]" : "bg-black/10 text-black/70",
         )}>
           {index + 1}
         </span>
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className={cn("flex-1 min-w-0 text-left text-xs font-extrabold truncate", dark ? "text-white" : "text-[#0c1015]")}
+          className={cn("flex-1 min-w-0 text-left text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}
           aria-expanded={open}
         >
           {item.productName || "(sin nombre)"}
@@ -1281,14 +1281,14 @@ function PromoItemEditor({
           "inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[10px] font-extrabold uppercase tracking-wider shrink-0",
           item.source === "linked"
             ? "bg-[var(--accent)]/20 text-[var(--accent)]"
-            : dark ? "bg-white/10 text-white/60" : "bg-black/10 text-black/60",
+            : dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.6)]" : "bg-black/10 text-black/60",
         )}>
           {item.source === "linked" ? "tienda" : "manual"}
         </span>
-        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-white/10 disabled:opacity-30" : "hover:bg-black/10 disabled:opacity-30")} title="Subir">
+        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[rgb(var(--st-fg)/0.1)] disabled:opacity-30" : "hover:bg-black/10 disabled:opacity-30")} title="Subir">
           <ArrowUp className="h-3 w-3" />
         </button>
-        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-white/10 disabled:opacity-30" : "hover:bg-black/10 disabled:opacity-30")} title="Bajar">
+        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[rgb(var(--st-fg)/0.1)] disabled:opacity-30" : "hover:bg-black/10 disabled:opacity-30")} title="Bajar">
           <ArrowDown className="h-3 w-3" />
         </button>
         <button type="button" onClick={onRemove} disabled={total === 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)] disabled:opacity-30" : "hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)] disabled:opacity-30")} title="Eliminar">
@@ -1319,9 +1319,11 @@ function PromoItemEditor({
           </div>
 
           {item.source === "linked" && (
-            <ProductPicker
+            <CatalogPickerLauncher
               storeSlug={item.linkedStoreSlug ?? null}
               productId={item.linkedProductId ?? null}
+              productName={item.productName}
+              productImage={item.productImage}
               onPick={(picked) =>
                 onChange({
                   linkedStoreSlug: picked.storeSlug,
@@ -1337,9 +1339,9 @@ function PromoItemEditor({
             />
           )}
 
-          {/* Imagen del producto + drag adjust */}
-          <Section title="Imagen del producto">
-            <div className={cn("rounded-lg p-2", dark ? "bg-white/5" : "bg-black/5")}>
+          {/* Imagen del producto + drag adjust con preview real */}
+          <Section title="Imagen del producto · arrastrá para reposicionar">
+            <div className={cn("rounded-lg p-2", dark ? "bg-[rgb(var(--st-fg)/0.05)]" : "bg-black/5")}>
               <ImageUploader
                 value={item.productImage}
                 onChange={(url) => onChange({ productImage: url })}
@@ -1352,6 +1354,7 @@ function PromoItemEditor({
               <ItemImageAdjustMini
                 value={adj}
                 onChange={(a) => onChange({ imageAdjust: a })}
+                imageUrl={item.productImage}
                 theme={theme}
               />
             )}
@@ -1411,34 +1414,111 @@ function SourceBtn({
         active
           ? "border-[var(--accent)] bg-[var(--accent)]/15"
           : dark
-            ? "border-white/10 bg-white/5 hover:border-white/30"
+            ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[rgb(var(--st-fg)/0.3)]"
             : "border-black/10 bg-black/5 hover:border-black/30",
       )}
     >
       <span className={cn("inline-flex h-5 w-5 items-center justify-center rounded shrink-0 mt-0.5",
-        active ? "bg-[var(--accent)] text-white" : dark ? "bg-white/10 text-white/70" : "bg-black/10 text-black/60")}>
+        active ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]" : dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "bg-black/10 text-black/60")}>
         {icon}
       </span>
       <div className="min-w-0">
-        <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : dark ? "text-white" : "text-[#0c1015]")}>{label}</p>
-        <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-white/50" : "text-black/50")}>{hint}</p>
+        <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>{label}</p>
+        <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>{hint}</p>
       </div>
     </button>
   );
 }
 
-function ItemImageAdjustMini({ value, onChange, theme }: { value: ImageAdjust; onChange: (a: ImageAdjust) => void; theme: StudioTheme }) {
+function ItemImageAdjustMini({
+  value,
+  onChange,
+  imageUrl,
+  theme,
+}: {
+  value: ImageAdjust;
+  onChange: (a: ImageAdjust) => void;
+  imageUrl: string;
+  theme: StudioTheme;
+}) {
   const dark = theme === "dark";
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; start: { x: number; y: number }; rect: DOMRect } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const node = previewRef.current;
+    if (!node) return;
+    node.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      start: { ...value.position },
+      rect: node.getBoundingClientRect(),
+    };
+    setDragging(true);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    const { startX, startY, start, rect } = dragRef.current;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const nextX = clamp(start.x - (dx / rect.width) * 100, 0, 100);
+    const nextY = clamp(start.y - (dy / rect.height) * 100, 0, 100);
+    onChange({ ...value, position: { x: round(nextX), y: round(nextY) } });
+  };
+  const endDrag = () => {
+    dragRef.current = null;
+    setDragging(false);
+  };
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const delta = -Math.sign(e.deltaY) * 5;
+    onChange({ ...value, scale: clamp(value.scale + delta, 50, 250) });
+  };
+
   return (
-    <div className={cn("mt-2 rounded-lg p-2 border space-y-1.5", dark ? "bg-white/5 border-white/10" : "bg-black/5 border-black/10")}>
+    <div className={cn("mt-2 rounded-lg p-2 border space-y-2", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-black/5 border-black/10")}>
       <div className="flex items-center justify-between">
-        <span className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider", dark ? "text-white/60" : "text-black/60")}>
-          Encuadre · X {value.position.x}% · Y {value.position.y}% · Zoom {value.scale}%
+        <span className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
+          X {value.position.x}% · Y {value.position.y}% · Zoom {value.scale}%
         </span>
-        <button type="button" onClick={() => onChange(DEFAULT_ADJ)} className={cn("text-[length:var(--ts-2xs)] font-bold hover:text-[var(--accent)]", dark ? "text-white/50" : "text-black/50")}>
+        <button type="button" onClick={() => onChange(DEFAULT_ADJ)} className={cn("text-[length:var(--ts-2xs)] font-bold hover:text-[var(--accent)]", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
           Reset
         </button>
       </div>
+
+      {/* Preview drag-able real */}
+      <div
+        ref={previewRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={endDrag}
+        onWheel={onWheel}
+        className={cn(
+          "aspect-square w-full rounded-lg overflow-hidden border select-none touch-none",
+          dragging ? "cursor-grabbing ring-2 ring-[var(--accent)]/50" : "cursor-grab",
+          dark ? "bg-white/95 border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10",
+        )}
+        aria-label="Preview del producto — arrastrá para mover, scroll para zoom"
+        style={{
+          backgroundImage: `url(${imageUrl})`,
+          backgroundPosition: `${value.position.x}% ${value.position.y}%`,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: value.fit === "contain" ? `${value.scale}% auto` : `${value.scale}% ${value.scale}%`,
+        }}
+      >
+        {dragging && (
+          <>
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[var(--accent)]/40 pointer-events-none" />
+            <div className="absolute top-1/2 left-0 right-0 h-px bg-[var(--accent)]/40 pointer-events-none" />
+          </>
+        )}
+      </div>
+
+      {/* Anchor grid 3x3 */}
       <div className="grid grid-cols-3 gap-0.5">
         {[
           [0,0],[50,0],[100,0],
@@ -1451,20 +1531,22 @@ function ItemImageAdjustMini({ value, onChange, theme }: { value: ImageAdjust; o
               key={`${x}-${y}`}
               type="button"
               onClick={() => onChange({ ...value, position: { x: x!, y: y! } })}
+              title={`X ${x}% · Y ${y}%`}
               className={cn(
                 "h-5 rounded transition-colors",
-                active ? "bg-[var(--accent)]" : dark ? "bg-white/10 hover:bg-white/25" : "bg-black/10 hover:bg-black/25",
+                active ? "bg-[var(--accent)]" : dark ? "bg-[rgb(var(--st-fg)/0.1)] hover:bg-[rgb(var(--st-fg)/0.25)]" : "bg-black/10 hover:bg-black/25",
               )}
             />
           );
         })}
       </div>
+
       <div className="flex items-center gap-1.5">
-        <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9", dark ? "text-white/60" : "text-black/60")}>Zoom</span>
+        <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>Zoom</span>
         <input type="range" min={50} max={250} step={5} value={value.scale} onChange={(e) => onChange({ ...value, scale: Number(e.target.value) })} className="flex-1 accent-[var(--accent)]" />
         <button type="button" onClick={() => onChange({ ...value, fit: value.fit === "cover" ? "contain" : "cover" })}
-          className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase rounded px-1.5 py-0.5",
-            dark ? "bg-white/10 text-white/80 hover:bg-white/20" : "bg-black/10 text-black/70 hover:bg-black/20")}>
+          className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase rounded px-1.5 py-0.5 transition-colors",
+            dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/10 text-black/70 hover:bg-black/20")}>
           {value.fit === "cover" ? "Llenar" : "Contener"}
         </button>
       </div>
@@ -1472,120 +1554,386 @@ function ItemImageAdjustMini({ value, onChange, theme }: { value: ImageAdjust; o
   );
 }
 
-function ProductPicker({
+type Picked = {
+  storeSlug: string;
+  productId: number | string;
+  name: string;
+  image: string | null;
+  price: number | null;
+  oldPrice: number | null;
+  href: string;
+};
+
+function CatalogPickerLauncher({
   storeSlug,
   productId,
+  productName,
+  productImage,
   onPick,
   theme,
 }: {
   storeSlug: string | null;
   productId: string | number | null;
-  onPick: (p: { storeSlug: string; productId: number | string; name: string; image: string | null; price: number | null; oldPrice: number | null; href: string }) => void;
+  productName: string;
+  productImage: string | null;
+  onPick: (p: Picked) => void;
   theme: StudioTheme;
 }) {
-  type StoreOpt = { slug: string; name: string };
-  type ProdOpt = { id: number | string; name: string; image: string | null; price: number | null; oldPrice: number | null };
   const dark = theme === "dark";
-  const [stores, setStores] = useState<StoreOpt[]>([]);
-  const [products, setProducts] = useState<ProdOpt[]>([]);
+  const [open, setOpen] = useState(false);
+  const linked = !!storeSlug && productId !== null && productId !== "";
+
+  return (
+    <>
+      <div className={cn("rounded-lg p-3 border space-y-2", "bg-[var(--accent)]/[0.08] border-[var(--accent)]/30")}>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] shrink-0">
+            <Search className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-extrabold text-[var(--accent)]">Catálogo de tiendas</p>
+            <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
+              Buscá un producto real con imagen + precio actualizado.
+            </p>
+          </div>
+        </div>
+
+        {linked ? (
+          <div className={cn("rounded-lg p-2 border flex items-center gap-2", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10")}>
+            <div className={cn("h-10 w-10 rounded-md overflow-hidden shrink-0", dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5")}>
+              {productImage ? (
+                <div role="img" aria-label={productName} className="h-full w-full" style={{ background: `url(${productImage}) center/cover` }} />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center">
+                  <ImageIconLucide className={cn("h-4 w-4", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")} />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                {productName || "(sin nombre)"}
+              </p>
+              <p className={cn("text-[length:var(--ts-2xs)] truncate font-mono", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+                {storeSlug} · #{String(productId)}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className={cn("text-[length:var(--ts-2xs)] italic", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+            Sin producto vinculado todavía.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] px-3 py-2 text-xs font-extrabold hover:opacity-90 transition-opacity"
+        >
+          <Search className="h-3.5 w-3.5" />
+          {linked ? "Cambiar producto…" : "Buscar producto…"}
+        </button>
+      </div>
+
+      {open && (
+        <ProductCatalogModal
+          theme={theme}
+          initialStoreSlug={storeSlug ?? null}
+          onPick={(p) => {
+            onPick(p);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductCatalogModal — modal grande con grilla de tiendas → grilla de productos
+// ─────────────────────────────────────────────────────────────────────────────
+
+type CatalogStore = {
+  slug: string;
+  name: string;
+  logo: string | null;
+  category: string;
+  zone: string | null;
+  productCount: number;
+  rating: number;
+};
+type CatalogProduct = {
+  id: number | string;
+  name: string;
+  image: string | null;
+  price: number | null;
+  category: string;
+  unit: string;
+  stock: number;
+};
+
+function ProductCatalogModal({
+  theme,
+  initialStoreSlug,
+  onPick,
+  onClose,
+}: {
+  theme: StudioTheme;
+  initialStoreSlug: string | null;
+  onPick: (p: Picked) => void;
+  onClose: () => void;
+}) {
+  const dark = theme === "dark";
+  const [step, setStep] = useState<"stores" | "products">(initialStoreSlug ? "products" : "stores");
+  const [activeStore, setActiveStore] = useState<CatalogStore | null>(null);
+  const [stores, setStores] = useState<CatalogStore[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loadingStores, setLoadingStores] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [storeSearch, setStoreSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
 
   useEffect(() => {
     setLoadingStores(true);
-    fetch("/api/marketplace/stores?limit=50")
+    fetch("/api/marketplace/stores?limit=80")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { stores?: Array<{ slug?: string; tenant?: { slug: string; name: string } }> } | null) => {
-        const opts: StoreOpt[] = (d?.stores ?? [])
-          .map((s) => ({ slug: s.tenant?.slug ?? s.slug ?? "", name: s.tenant?.name ?? s.slug ?? "" }))
-          .filter((s) => !!s.slug);
-        setStores(opts);
+      .then((d: { data?: CatalogStore[] } | null) => {
+        const list = (d?.data ?? []).filter((s) => !!s.slug);
+        setStores(list);
+        if (initialStoreSlug) {
+          const found = list.find((s) => s.slug === initialStoreSlug);
+          if (found) setActiveStore(found);
+        }
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
-        console.warn("[ProductPicker] load stores", err);
+        console.warn("[CatalogModal] stores", err);
       })
       .finally(() => setLoadingStores(false));
-  }, []);
+  }, [initialStoreSlug]);
 
   useEffect(() => {
-    if (!storeSlug) { setProducts([]); return; }
+    if (!activeStore) return;
     setLoadingProducts(true);
-    fetch(`/api/marketplace/stores/${storeSlug}/products?limit=80`)
+    fetch(`/api/marketplace/stores/${activeStore.slug}/products?limit=120`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { products?: Array<{ id: number | string; name?: string; image?: string | null; price?: number | string; salePrice?: number | string; oldPrice?: number | string }> } | null) => {
-        const opts: ProdOpt[] = (d?.products ?? []).map((p) => ({
+      .then((d: { data?: Array<{ id: number | string; name: string; image: string; price: string | number; category: string; unit: string; stock: number }> } | null) => {
+        const list: CatalogProduct[] = (d?.data ?? []).map((p) => ({
           id: p.id,
-          name: p.name ?? "",
-          image: p.image ?? null,
-          price: numOrNull(p.salePrice ?? p.price),
-          oldPrice: numOrNull(p.oldPrice ?? (p.salePrice ? p.price : undefined)),
+          name: p.name,
+          image: p.image && p.image.length > 0 ? p.image : null,
+          price: numOrNull(p.price),
+          category: p.category,
+          unit: p.unit,
+          stock: p.stock,
         }));
-        setProducts(opts);
+        setProducts(list);
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
-        console.warn("[ProductPicker] load products", err);
+        console.warn("[CatalogModal] products", err);
       })
       .finally(() => setLoadingProducts(false));
-  }, [storeSlug]);
+  }, [activeStore]);
 
-  const handleProductChange = (id: string) => {
-    const p = products.find((x) => String(x.id) === id);
-    if (!p || !storeSlug) return;
-    onPick({
-      storeSlug,
-      productId: p.id,
-      name: p.name,
-      image: p.image,
-      price: p.price,
-      oldPrice: p.oldPrice,
-      href: `/t/${storeSlug}/producto/${p.id}`,
-    });
-  };
+  // ESC closes
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const filteredStores = stores.filter(
+    (s) => !storeSearch || `${s.name} ${s.slug} ${s.category} ${s.zone ?? ""}`.toLowerCase().includes(storeSearch.toLowerCase()),
+  );
+  const filteredProducts = products.filter(
+    (p) => !productSearch || `${p.name} ${p.category}`.toLowerCase().includes(productSearch.toLowerCase()),
+  );
+
+  const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
-    <div className={cn("rounded-lg p-2.5 border space-y-2", dark ? "bg-[var(--accent)]/[0.08] border-[var(--accent)]/30" : "bg-[var(--accent)]/[0.08] border-[var(--accent)]/30")}>
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-        Pickar del catálogo
-      </p>
-      <div className="grid grid-cols-1 gap-2">
-        <label className="block">
-          <span className={cn("block text-[length:var(--ts-2xs)] mb-0.5", dark ? "text-white/60" : "text-black/60")}>Tienda</span>
-          <select
-            value={storeSlug ?? ""}
-            onChange={(e) => onPick({ storeSlug: e.target.value, productId: "", name: "", image: null, price: null, oldPrice: null, href: "" })}
-            className={STUDIO_INPUT_CLS}
-            disabled={loadingStores}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Catálogo de productos"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8 bg-black/70"
+      onClick={onClose}
+    >
+      <div
+        onClick={stopPropagation}
+        className={cn(
+          "w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden",
+          dark ? "bg-[#0c1015] border border-[rgb(var(--st-fg)/0.1)]" : "bg-white border border-black/10",
+        )}
+      >
+        {/* Header */}
+        <header className={cn("shrink-0 px-5 py-3 flex items-center gap-3 border-b", dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/40" : "border-black/10 bg-[#f4f5f7]")}>
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] shrink-0">
+            <Search className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className={cn("text-sm font-extrabold leading-none", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+              {step === "stores" ? "Elegí una tienda" : "Elegí un producto"}
+            </p>
+            <p className={cn("text-[length:var(--ts-2xs)] leading-tight mt-0.5 truncate", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
+              {step === "stores"
+                ? `${stores.length} tiendas en el marketplace`
+                : `${activeStore?.name ?? ""} · ${products.length} productos`}
+            </p>
+          </div>
+          {step === "products" && (
+            <button
+              type="button"
+              onClick={() => { setStep("stores"); setActiveStore(null); setProducts([]); setProductSearch(""); }}
+              className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition-colors",
+                dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/5 text-black/70 hover:bg-black/10")}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Tiendas
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+              dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/5 text-[#0c1015] hover:bg-black/10")}
+            aria-label="Cerrar"
           >
-            <option value="">{loadingStores ? "Cargando…" : "— Elegí una tienda —"}</option>
-            {stores.map((s) => (
-              <option key={s.slug} value={s.slug}>{s.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className={cn("block text-[length:var(--ts-2xs)] mb-0.5", dark ? "text-white/60" : "text-black/60")}>Producto</span>
-          <select
-            value={productId !== null ? String(productId) : ""}
-            onChange={(e) => handleProductChange(e.target.value)}
-            disabled={!storeSlug || loadingProducts}
-            className={STUDIO_INPUT_CLS}
-          >
-            <option value="">
-              {!storeSlug ? "— Elegí tienda primero —" : loadingProducts ? "Cargando…" : products.length === 0 ? "Sin productos" : "— Elegí producto —"}
-            </option>
-            {products.map((p) => (
-              <option key={String(p.id)} value={String(p.id)}>
-                {p.name}{p.price != null ? ` · S/ ${Number(p.price).toFixed(2)}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        {/* Search */}
+        <div className={cn("shrink-0 px-5 py-3 border-b", dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10")}>
+          <div className={cn("flex items-center gap-2 rounded-lg px-3 py-2 border", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10")}>
+            <Search className={cn("h-4 w-4 shrink-0", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/40")} />
+            {step === "stores" ? (
+              <input
+                value={storeSearch}
+                onChange={(e) => setStoreSearch(e.target.value)}
+                placeholder="Buscar por nombre, categoría o zona…"
+                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[#0c1015] placeholder-black/40")}
+                autoFocus
+              />
+            ) : (
+              <input
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Buscar producto…"
+                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[#0c1015] placeholder-black/40")}
+                autoFocus
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5">
+          {step === "stores" ? (
+            loadingStores ? (
+              <p className={cn("text-center py-12 text-sm", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>Cargando tiendas…</p>
+            ) : filteredStores.length === 0 ? (
+              <p className={cn("text-center py-12 text-sm", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+                {storeSearch ? "Ninguna tienda matchea." : "Sin tiendas en el marketplace."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {filteredStores.map((s) => (
+                  <button
+                    key={s.slug}
+                    type="button"
+                    onClick={() => { setActiveStore(s); setStep("products"); }}
+                    className={cn(
+                      "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
+                      dark
+                        ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
+                        : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
+                    )}
+                  >
+                    <div className={cn("aspect-square rounded-lg overflow-hidden mb-2 flex items-center justify-center",
+                      dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5")}>
+                      {s.logo ? (
+                        <div role="img" aria-label={s.name} className="h-full w-full" style={{ background: `url(${s.logo}) center/cover` }} />
+                      ) : (
+                        <span className={cn("font-display text-3xl font-extrabold", dark ? "text-[rgb(var(--st-fg)/0.3)]" : "text-black/30")}>
+                          {(s.name || "?").charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                      {s.name}
+                    </p>
+                    <div className={cn("flex items-center gap-1 mt-0.5 text-[length:var(--ts-2xs)]", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+                      <span className="capitalize truncate">{s.category}</span>
+                      <span>·</span>
+                      <span className="tabular-nums shrink-0">{s.productCount} prod.</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
+          ) : loadingProducts ? (
+            <p className={cn("text-center py-12 text-sm", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>Cargando productos…</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className={cn("text-center py-12 text-sm", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+              {productSearch ? "Ningún producto matchea." : "Esta tienda no tiene productos."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {filteredProducts.map((p) => (
+                <button
+                  key={String(p.id)}
+                  type="button"
+                  onClick={() => {
+                    if (!activeStore) return;
+                    onPick({
+                      storeSlug: activeStore.slug,
+                      productId: p.id,
+                      name: p.name,
+                      image: p.image,
+                      price: p.price,
+                      oldPrice: null,
+                      href: `/t/${activeStore.slug}/producto/${p.id}`,
+                    });
+                  }}
+                  className={cn(
+                    "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
+                    dark
+                      ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
+                      : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
+                  )}
+                >
+                  <div className={cn("aspect-square rounded-lg overflow-hidden mb-2 flex items-center justify-center",
+                    dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5")}>
+                    {p.image ? (
+                      <div role="img" aria-label={p.name} className="h-full w-full" style={{ background: `url(${p.image}) center/cover` }} />
+                    ) : (
+                      <ImageIconLucide className={cn("h-8 w-8", dark ? "text-[rgb(var(--st-fg)/0.3)]" : "text-black/30")} strokeWidth={1.25} />
+                    )}
+                  </div>
+                  <p className={cn("text-xs font-extrabold truncate leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                    {p.name}
+                  </p>
+                  <div className="flex items-baseline justify-between gap-1 mt-1">
+                    <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                      {p.price !== null ? `S/ ${p.price.toFixed(2)}` : "—"}
+                    </span>
+                    <span className={cn("text-[length:var(--ts-2xs)] truncate", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")}>
+                      {p.unit}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-white/50" : "text-black/50")}>
-        Auto-completa imagen, precio y link al producto. Podés editarlos manualmente abajo después.
-      </p>
     </div>
   );
 }
@@ -1614,7 +1962,7 @@ function StateTab({
   onRemove: () => void;
 }) {
   return (
-    <div className="space-y-3 text-white">
+    <div className="space-y-3 text-[rgb(var(--st-fg))]">
       <Section title="Visibilidad">
         <button
           type="button"
@@ -1655,12 +2003,12 @@ function StateTab({
         </div>
       </Section>
       <Section title="Identificador interno">
-        <code className="block px-2 py-1 rounded bg-white/5 text-[length:var(--ts-2xs)] text-white/50 font-mono">{banner.id}</code>
+        <code className="block px-2 py-1 rounded bg-[rgb(var(--st-fg)/0.05)] text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] font-mono">{banner.id}</code>
       </Section>
-      <p className="text-[length:var(--ts-2xs)] text-white/50 leading-snug pt-2 border-t border-white/10">
+      <p className="text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] leading-snug pt-2 border-t border-[rgb(var(--st-fg)/0.1)]">
         <Save className="inline h-3 w-3 mr-1" />
         Los cambios se aplican al instante en el editor. No olvides presionar
-        <span className="text-white/80 font-extrabold"> Guardar </span>
+        <span className="text-[rgb(var(--st-fg)/0.8)] font-extrabold"> Guardar </span>
         en la barra inferior cuando salgas del estudio.
       </p>
     </div>
@@ -1668,7 +2016,7 @@ function StateTab({
 }
 
 const STATE_BTN_CLS =
-  "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-extrabold text-white/85 transition-all hover:bg-white/[0.12] hover:border-white/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.06] disabled:hover:border-white/10";
+  "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg)/0.85)] transition-all hover:bg-[rgb(var(--st-fg)/0.12)] hover:border-[rgb(var(--st-fg)/0.25)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[rgb(var(--st-fg)/0.06)] disabled:hover:border-[rgb(var(--st-fg)/0.1)]";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-bits
@@ -1698,9 +2046,9 @@ function ModeBtn({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-colors",
         active
-          ? "bg-[var(--accent)] text-white"
+          ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]"
           : theme === "dark"
-            ? "bg-white/10 text-white/80 hover:bg-white/20"
+            ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]"
             : "bg-black/5 text-[#0c1015]/70 hover:bg-black/10 hover:text-[#0c1015]",
       )}
     >
@@ -1713,7 +2061,7 @@ function ModeBtn({
 function ToolGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/40 mr-1.5 hidden lg:inline">
+      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.4)] mr-1.5 hidden lg:inline">
         {label}
       </span>
       <div className="flex items-center gap-0.5">{children}</div>
@@ -1745,8 +2093,8 @@ function ToolBtn({
       aria-pressed={active}
       className={cn(
         "inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-extrabold transition-colors",
-        active ? "bg-[var(--accent)] text-white" : "bg-white/5 hover:bg-white/15 text-white/80",
-        disabled && "opacity-30 cursor-not-allowed hover:bg-white/5",
+        active ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]" : "bg-[rgb(var(--st-fg)/0.05)] hover:bg-[rgb(var(--st-fg)/0.15)] text-[rgb(var(--st-fg)/0.8)]",
+        disabled && "opacity-30 cursor-not-allowed hover:bg-[rgb(var(--st-fg)/0.05)]",
       )}
     >
       {icon}
@@ -1756,7 +2104,7 @@ function ToolBtn({
 }
 
 function Divider() {
-  return <span aria-hidden className="h-6 w-px bg-white/10 mx-1" />;
+  return <span aria-hidden className="h-6 w-px bg-[rgb(var(--st-fg)/0.1)] mx-1" />;
 }
 
 function AnchorGrid({ value, onChange, disabled }: { value: { x: number; y: number }; onChange: (p: { x: number; y: number }) => void; disabled?: boolean }) {
@@ -1766,7 +2114,7 @@ function AnchorGrid({ value, onChange, disabled }: { value: { x: number; y: numb
     { x: 0, y: 100, title: "Inf. izq." }, { x: 50, y: 100, title: "Inf. centro" }, { x: 100, y: 100, title: "Inf. der." },
   ];
   return (
-    <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-white/5 rounded-md">
+    <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-[rgb(var(--st-fg)/0.05)] rounded-md">
       {points.map((p) => {
         const active = Math.abs(value.x - p.x) < 1 && Math.abs(value.y - p.y) < 1;
         return (
@@ -1779,7 +2127,7 @@ function AnchorGrid({ value, onChange, disabled }: { value: { x: number; y: numb
             aria-pressed={active}
             className={cn(
               "h-5 w-5 rounded-sm transition-colors",
-              active ? "bg-[var(--accent)]" : "bg-white/15 hover:bg-white/30",
+              active ? "bg-[var(--accent)]" : "bg-[rgb(var(--st-fg)/0.15)] hover:bg-[rgb(var(--st-fg)/0.3)]",
               disabled && "opacity-30 cursor-not-allowed",
             )}
           />
@@ -1791,7 +2139,7 @@ function AnchorGrid({ value, onChange, disabled }: { value: { x: number; y: numb
 
 function NavCounter({ idx, total, onPrev, onNext }: { idx: number; total: number; onPrev: () => void; onNext: () => void }) {
   return (
-    <div className="flex items-center gap-2 text-white">
+    <div className="flex items-center gap-2 text-[rgb(var(--st-fg))]">
       <button type="button" onClick={onPrev} disabled={total <= 1} className={NAV_BTN_CLS}><ChevronLeft className="h-4 w-4" /></button>
       <span className="text-xs font-bold tabular-nums min-w-[44px] text-center">
         {total === 0 ? "—" : `${idx + 1} / ${total}`}
@@ -1802,7 +2150,7 @@ function NavCounter({ idx, total, onPrev, onNext }: { idx: number; total: number
 }
 
 const NAV_BTN_CLS =
-  "inline-flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/10";
+  "inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] transition-colors hover:bg-[rgb(var(--st-fg)/0.2)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[rgb(var(--st-fg)/0.1)]";
 
 function TabBtn({ icon, active, onClick, title }: { icon: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
   return (
@@ -1814,8 +2162,8 @@ function TabBtn({ icon, active, onClick, title }: { icon: React.ReactNode; activ
       className={cn(
         "h-10 inline-flex items-center justify-center text-xs font-extrabold transition-colors border-b-2",
         active
-          ? "border-[var(--accent)] text-[var(--accent)] bg-white/5"
-          : "border-transparent text-white/60 hover:text-white hover:bg-white/5",
+          ? "border-[var(--accent)] text-[var(--accent)] bg-[rgb(var(--st-fg)/0.05)]"
+          : "border-transparent text-[rgb(var(--st-fg)/0.6)] hover:text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.05)]",
       )}
     >
       {icon}
@@ -1826,7 +2174,7 @@ function TabBtn({ icon, active, onClick, title }: { icon: React.ReactNode; activ
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white/50 mb-1.5">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[rgb(var(--st-fg)/0.5)] mb-1.5">
         {title}
       </p>
       {children}
@@ -1837,7 +2185,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function NumField({ label, value, min, max, step, onChange }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {
   return (
     <label className="block">
-      <span className="block text-[length:var(--ts-2xs)] text-white/60 mb-0.5">{label}</span>
+      <span className="block text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.6)] mb-0.5">{label}</span>
       <input
         type="number"
         min={min}
@@ -1845,7 +2193,7 @@ function NumField({ label, value, min, max, step, onChange }: { label: string; v
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-xs font-extrabold text-white tabular-nums focus:border-[var(--accent)] outline-none"
+        className="w-full px-2 py-1.5 rounded-md bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg))] tabular-nums focus:border-[var(--accent)] outline-none"
       />
     </label>
   );
@@ -1859,11 +2207,11 @@ function FitChip({ active, onClick, label, hint }: { active: boolean; onClick: (
       aria-pressed={active}
       className={cn(
         "rounded-lg border px-2 py-2 text-left transition-all",
-        active ? "border-[var(--accent)] bg-[var(--accent)]/15" : "border-white/10 bg-white/5 hover:border-white/30",
+        active ? "border-[var(--accent)] bg-[var(--accent)]/15" : "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[rgb(var(--st-fg)/0.3)]",
       )}
     >
-      <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : "text-white")}>{label}</p>
-      <p className="text-[length:var(--ts-2xs)] text-white/50 leading-snug mt-0.5">{hint}</p>
+      <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : "text-[rgb(var(--st-fg))]")}>{label}</p>
+      <p className="text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] leading-snug mt-0.5">{hint}</p>
     </button>
   );
 }
@@ -1871,7 +2219,7 @@ function FitChip({ active, onClick, label, hint }: { active: boolean; onClick: (
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <label className="block">
-      <span className="block text-[length:var(--ts-2xs)] text-white/60 mb-0.5">{label}</span>
+      <span className="block text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.6)] mb-0.5">{label}</span>
       <div className="flex items-center gap-1.5">
         <input
           type="color"
@@ -1883,7 +2231,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-xs font-mono text-white focus:border-[var(--accent)] outline-none"
+          className="flex-1 px-2 py-1.5 rounded-md bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] focus:border-[var(--accent)] outline-none"
         />
       </div>
     </label>
@@ -1907,6 +2255,14 @@ function round(v: number): number {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STUDIO_CSS = `
+.studio-root[data-studio-theme="dark"] {
+  --st-fg: 255 255 255;
+  --st-bg: 12 16 21;
+}
+.studio-root[data-studio-theme="light"] {
+  --st-fg: 12 16 21;
+  --st-bg: 244 245 247;
+}
 @keyframes bs-fade {
   from { opacity: 0; }
   to { opacity: 1; }
