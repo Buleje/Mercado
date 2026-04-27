@@ -16,7 +16,7 @@
  * API: GET/PUT /api/superadmin/banners.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Save,
   Plus,
@@ -43,7 +43,6 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
 import PromoBannerRenderer, { type PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
-import BannerImageAdjuster, { useImageAdjustDrag } from "@/components/superadmin/banners/BannerImageAdjuster";
 import BannerPreviewStudio from "@/components/superadmin/banners/BannerPreviewStudio";
 import type { ImageAdjust } from "@/lib/promo-banners";
 
@@ -674,6 +673,14 @@ export default function SuperadminBannersPage() {
             {studioOpen && (
               <BannerPreviewStudio
                 banners={banners as PromoBanner[]}
+                slotLabel={meta?.label}
+                uploadFolder={`banners-${activeSlot}`}
+                onPatchBanner={(i, p) => updateBanner(activeSlot, i, p as Partial<Banner>)}
+                onMoveBanner={(i, d) => moveBanner(activeSlot, i, d)}
+                onDuplicateBanner={(i) => duplicateBanner(activeSlot, i)}
+                onRemoveBanner={(i) => removeBanner(activeSlot, i)}
+                onAddBanner={() => addBanner(activeSlot)}
+                colorPresets={COLOR_PRESETS}
                 onClose={() => setStudioOpen(false)}
               />
             )}
@@ -1160,12 +1167,19 @@ function BannerCard({
             </Field>
           )}
 
-          {/* ── Encuadre de la imagen (drag + zoom + nudge + fit) ── */}
+          {/* ── Encuadre y previsualización avanzada ── */}
           {banner.type !== "promo" && banner.imageUrl && (
-            <BannerImageAdjustPanel
-              banner={banner}
-              onPatch={onPatch}
-            />
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 flex items-center gap-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                <Monitor className="h-4 w-4" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">Encuadre, recorte, color y previsualización</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
+                  Abrí el Estudio para reposicionar la imagen, hacer zoom, cambiar tipo, color y vista en presentación.
+                </p>
+              </div>
+            </div>
           )}
 
           {/* ── Color presets (oculto en type=image puro, visible en classic+promo cuando NO hay imagen) ── */}
@@ -1402,57 +1416,3 @@ function Field({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BannerImageAdjustPanel — preview interactivo con drag + adjuster controls.
-// Muestra el renderer real (single source of truth) y permite arrastrar la
-// imagen sobre él para reposicionar.
-// ─────────────────────────────────────────────────────────────────────────────
-
-function BannerImageAdjustPanel({
-  banner,
-  onPatch,
-}: {
-  banner: Banner;
-  onPatch: (patch: Partial<Banner>) => void;
-}) {
-  const previewRef = useRef<HTMLDivElement | null>(null);
-  const { dragging, handlers } = useImageAdjustDrag(
-    banner.imageAdjust,
-    (next) => onPatch({ imageAdjust: next }),
-    previewRef,
-  );
-
-  return (
-    <Field
-      label="Encuadre y previsualización"
-      hint="Arrastrá la imagen sobre el preview para reposicionarla, o usá los controles a la derecha"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-        <div
-          ref={previewRef}
-          {...handlers}
-          className={cn(
-            "relative overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] cursor-grab select-none touch-none",
-            dragging && "cursor-grabbing ring-2 ring-[var(--accent)]/40",
-          )}
-          aria-label="Preview interactivo — arrastrá para mover la imagen"
-        >
-          <PromoBannerRenderer
-            banner={banner as PromoBanner}
-            asLink={false}
-            className="[&>div]:rounded-none [&>div]:border-0"
-          />
-          {dragging && (
-            <span className="absolute top-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
-              Moviendo
-            </span>
-          )}
-        </div>
-        <BannerImageAdjuster
-          value={banner.imageAdjust}
-          onChange={(next) => onPatch({ imageAdjust: next })}
-        />
-      </div>
-    </Field>
-  );
-}
