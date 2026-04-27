@@ -16,7 +16,7 @@
  * API: GET/PUT /api/superadmin/banners.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Save,
   Plus,
@@ -34,10 +34,18 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
+  Monitor,
+  Type as TypeIcon,
+  Layout,
+  ShoppingBag,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
+import PromoBannerRenderer, { type PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
+import BannerImageAdjuster, { useImageAdjustDrag } from "@/components/superadmin/banners/BannerImageAdjuster";
+import BannerPreviewStudio from "@/components/superadmin/banners/BannerPreviewStudio";
+import type { ImageAdjust } from "@/lib/promo-banners";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & taxonomy
@@ -74,6 +82,7 @@ type Banner = {
   order: number;
   type?: BannerType;
   promo?: PromoEmbed;
+  imageAdjust?: ImageAdjust;
 };
 
 const DEFAULT_PROMO: PromoEmbed = {
@@ -263,6 +272,7 @@ export default function SuperadminBannersPage() {
   const [search, setSearch] = useState("");
   const [dirtySlots, setDirtySlots] = useState<Set<Slot>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [studioOpen, setStudioOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/superadmin/banners", { cache: "no-store" })
@@ -644,6 +654,15 @@ export default function SuperadminBannersPage() {
                 )}
               </div>
               <button
+                onClick={() => setStudioOpen(true)}
+                disabled={banners.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Abrir estudio de previsualización"
+              >
+                <Monitor className="h-3.5 w-3.5" aria-hidden />
+                Estudio
+              </button>
+              <button
                 onClick={() => addBanner(activeSlot)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
@@ -651,6 +670,13 @@ export default function SuperadminBannersPage() {
                 Nuevo banner
               </button>
             </div>
+
+            {studioOpen && (
+              <BannerPreviewStudio
+                banners={banners as PromoBanner[]}
+                onClose={() => setStudioOpen(false)}
+              />
+            )}
 
             {/* Banner cards */}
             {filteredBanners.length === 0 ? (
@@ -984,11 +1010,12 @@ function BannerCard({
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {([
-                { id: "classic", label: "Clásico", desc: "Texto + botón hacia otra página", emoji: "📝" },
-                { id: "image",   label: "Imagen",  desc: "Solo imagen (1600×400 4:1)",       emoji: "🖼️" },
-                { id: "promo",   label: "Promo",   desc: "Producto/combo con compra directa", emoji: "🛒" },
-              ] as Array<{ id: BannerType; label: string; desc: string; emoji: string }>).map((opt) => {
+                { id: "classic", label: "Clásico", desc: "Texto + botón hacia otra página", Icon: TypeIcon },
+                { id: "image",   label: "Imagen",  desc: "Solo imagen (1600×400 · 4:1)",     Icon: Layout },
+                { id: "promo",   label: "Promo",   desc: "Producto/combo con compra directa", Icon: ShoppingBag },
+              ] as Array<{ id: BannerType; label: string; desc: string; Icon: typeof TypeIcon }>).map((opt) => {
                 const active = (banner.type ?? "classic") === opt.id;
+                const Icon = opt.Icon;
                 return (
                   <button
                     key={opt.id}
@@ -1003,13 +1030,22 @@ function BannerCard({
                     )}
                   >
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-base">{opt.emoji}</span>
+                      <span
+                        className={cn(
+                          "inline-flex h-5 w-5 items-center justify-center rounded-md",
+                          active
+                            ? "bg-[var(--accent)] text-white"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                        )}
+                      >
+                        <Icon className="h-3 w-3" />
+                      </span>
                       <p className={cn("text-sm font-extrabold", active ? "text-[var(--accent)]" : "text-[var(--text-primary)]")}>
                         {opt.label}
                       </p>
                       {active && <CheckCircle2 className="h-3.5 w-3.5 text-[var(--accent)] ml-auto" />}
                     </div>
-                    <p className="text-[11px] text-[var(--text-tertiary)] leading-snug">{opt.desc}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">{opt.desc}</p>
                   </button>
                 );
               })}
@@ -1124,6 +1160,14 @@ function BannerCard({
             </Field>
           )}
 
+          {/* ── Encuadre de la imagen (drag + zoom + nudge + fit) ── */}
+          {banner.type !== "promo" && banner.imageUrl && (
+            <BannerImageAdjustPanel
+              banner={banner}
+              onPatch={onPatch}
+            />
+          )}
+
           {/* ── Color presets (oculto en type=image puro, visible en classic+promo cuando NO hay imagen) ── */}
           {banner.type !== "image" && !banner.imageUrl && (
           <Field
@@ -1221,139 +1265,15 @@ function BannerCard({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function BannerPreview({ banner }: { banner: Banner }) {
-  const type = banner.type ?? "classic";
-  const bgStyle = banner.imageUrl
-    ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35)), url(${banner.imageUrl}) center/cover`
-    : `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`;
-
-  // ── Tipo PROMO: producto/combo embebido con compra directa ──
-  if (type === "promo" && banner.promo) {
-    const p = banner.promo;
-    return (
-      <div
-        className="relative overflow-hidden aspect-[4/1] flex items-stretch px-4 sm:px-8 gap-4 sm:gap-6"
-        style={{ background: bgStyle }}
-      >
-        {/* Producto image (left, square) */}
-        <div className="self-center aspect-square h-[80%] rounded-xl bg-white/90 shrink-0 overflow-hidden flex items-center justify-center">
-          {p.productImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.productImage} alt={p.productName} className="h-full w-full object-cover" />
-          ) : (
-            <ImageIcon className="h-1/3 w-1/3 text-[#0c1015]/30" strokeWidth={1.25} />
-          )}
-        </div>
-        {/* Info (center) */}
-        <div className="flex-1 min-w-0 self-center">
-          {p.badge && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-              {p.badge}
-            </span>
-          )}
-          {banner.title && (
-            <h3
-              className={cn(
-                "font-display text-base sm:text-xl font-extrabold tracking-tight truncate",
-                banner.imageUrl ? "text-white drop-shadow" : "text-[#0c1015]",
-              )}
-            >
-              {banner.title}
-            </h3>
-          )}
-          <p className={cn("text-xs sm:text-sm font-bold truncate mt-0.5", banner.imageUrl ? "text-white/90 drop-shadow" : "text-[#0c1015]/80")}>
-            {p.productName || "(sin producto)"}
-          </p>
-          {(p.price !== null || p.oldPrice !== null) && (
-            <div className="flex items-baseline gap-2 mt-1">
-              {p.price !== null && (
-                <span className={cn("font-display text-lg sm:text-2xl font-extrabold tabular-nums", banner.imageUrl ? "text-white drop-shadow" : "text-[#0c1015]")}>
-                  S/ {p.price.toFixed(2)}
-                </span>
-              )}
-              {p.oldPrice !== null && p.oldPrice > (p.price ?? 0) && (
-                <span className={cn("text-xs sm:text-sm font-bold tabular-nums line-through", banner.imageUrl ? "text-white/60" : "text-[#0c1015]/40")}>
-                  S/ {p.oldPrice.toFixed(2)}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        {/* Comprar (right) */}
-        <div className="self-center shrink-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
-            {p.buyLabel || "Comprar"}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Tipo IMAGE puro: solo imagen, sin overlay textual ──
-  if (type === "image") {
-    return (
-      <div
-        className="relative overflow-hidden aspect-[4/1] flex items-center justify-center"
-        style={{
-          background: banner.imageUrl
-            ? `url(${banner.imageUrl}) center/cover`
-            : `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`,
-        }}
-      >
-        {!banner.imageUrl && (
-          <span className="inline-flex items-center gap-1.5 text-[#0c1015]/40 text-xs font-bold">
-            <ImageIcon className="h-4 w-4" /> Subí una imagen 1600×400
-          </span>
-        )}
-        {/* CTA flotante mínima */}
-        {banner.imageUrl && banner.ctaLabel && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-3 py-1.5 text-xs font-extrabold whitespace-nowrap shadow">
-            {banner.ctaLabel}
-            <ChevronRight className="h-3 w-3" />
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  // ── Tipo CLASSIC (default): texto + CTA hacia otra página ──
+  // Delegamos al renderer canónico para que el preview = producción exacta.
+  // El borde redondeado lo aporta el card; desactivamos el del renderer interno.
   return (
-    <div
-      className="relative overflow-hidden aspect-[4/1] flex items-center justify-between px-6 sm:px-10"
-      style={{ background: bgStyle }}
-    >
-      <div className="flex-1 min-w-0 max-w-[60%]">
-        <h3
-          className={cn(
-            "font-display text-lg sm:text-2xl font-extrabold tracking-tight truncate",
-            banner.imageUrl ? "text-white drop-shadow-md" : "text-[#0c1015]",
-          )}
-        >
-          {banner.title}
-        </h3>
-        {banner.subtitle && (
-          <p
-            className={cn(
-              "text-xs sm:text-sm font-medium mt-1 truncate",
-              banner.imageUrl ? "text-white/90 drop-shadow" : "text-[#0c1015]/70",
-            )}
-          >
-            {banner.subtitle}
-          </p>
-        )}
-      </div>
-      <span
-        className={cn(
-          "shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-extrabold whitespace-nowrap",
-          banner.imageUrl ? "bg-white text-[#0c1015]" : "bg-[#0c1015] text-white",
-        )}
-      >
-        {banner.ctaLabel}
-        <ChevronRight className="h-3 w-3" />
-      </span>
+    <div className="relative overflow-hidden">
+      <PromoBannerRenderer banner={banner as PromoBanner} asLink={false} className="[&>div]:rounded-none [&>div]:border-0" />
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PromoEmbedFields — form para promos embebidas (banner type=promo)
@@ -1371,12 +1291,12 @@ function PromoEmbedFields({
   return (
     <div className="rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/5 p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success)] text-white text-xs">
-          🛒
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+          <ShoppingBag className="h-3.5 w-3.5" />
         </span>
         <div>
           <p className="text-sm font-extrabold text-[var(--text-primary)]">Datos de la promo embebida</p>
-          <p className="text-[11px] text-[var(--text-tertiary)] leading-snug">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
             El cliente verá este combo dentro del banner y podrá comprar directamente
           </p>
         </div>
@@ -1479,5 +1399,60 @@ function Field({
       </label>
       {children}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BannerImageAdjustPanel — preview interactivo con drag + adjuster controls.
+// Muestra el renderer real (single source of truth) y permite arrastrar la
+// imagen sobre él para reposicionar.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function BannerImageAdjustPanel({
+  banner,
+  onPatch,
+}: {
+  banner: Banner;
+  onPatch: (patch: Partial<Banner>) => void;
+}) {
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const { dragging, handlers } = useImageAdjustDrag(
+    banner.imageAdjust,
+    (next) => onPatch({ imageAdjust: next }),
+    previewRef,
+  );
+
+  return (
+    <Field
+      label="Encuadre y previsualización"
+      hint="Arrastrá la imagen sobre el preview para reposicionarla, o usá los controles a la derecha"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+        <div
+          ref={previewRef}
+          {...handlers}
+          className={cn(
+            "relative overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] cursor-grab select-none touch-none",
+            dragging && "cursor-grabbing ring-2 ring-[var(--accent)]/40",
+          )}
+          aria-label="Preview interactivo — arrastrá para mover la imagen"
+        >
+          <PromoBannerRenderer
+            banner={banner as PromoBanner}
+            asLink={false}
+            className="[&>div]:rounded-none [&>div]:border-0"
+          />
+          {dragging && (
+            <span className="absolute top-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
+              Moviendo
+            </span>
+          )}
+        </div>
+        <BannerImageAdjuster
+          value={banner.imageAdjust}
+          onChange={(next) => onPatch({ imageAdjust: next })}
+        />
+      </div>
+    </Field>
   );
 }

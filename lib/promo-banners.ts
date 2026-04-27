@@ -33,6 +33,27 @@ export type PromoEmbed = {
   buyLabel: string;
 };
 
+/** Ajuste de imagen aplicado al banner.
+ *  - `position.x|y`: offset en % (0=izq/top, 50=center, 100=der/bot). Default 50/50.
+ *  - `scale`: % zoom respecto al ancho del slot (100=cover natural, >100 crop, <100 deja
+ *    espacio negro/relleno). Default 100.
+ *  - `fit`: "cover" llena el slot recortando; "contain" muestra la imagen entera con
+ *    posibles franjas. Default "cover". */
+export type ImageAdjust = {
+  position: { x: number; y: number };
+  scale: number;
+  fit: "cover" | "contain";
+};
+
+export const DEFAULT_IMAGE_ADJUST: ImageAdjust = {
+  position: { x: 50, y: 50 },
+  scale: 100,
+  fit: "cover",
+};
+
+/** Animación de transición en el carrusel (preview + carrusel público). */
+export type CarouselTransition = "fade" | "slide" | "zoom" | "none";
+
 export type PromoBanner = {
   id: string;
   title: string;
@@ -49,6 +70,8 @@ export type PromoBanner = {
   type?: BannerType;
   /** Datos de la promo embebida (solo si type==="promo"). */
   promo?: PromoEmbed;
+  /** Encuadre de la imagen (drag/zoom/fit). Si falta, se asume DEFAULT_IMAGE_ADJUST. */
+  imageAdjust?: ImageAdjust;
 };
 
 type BannerStore = Record<PromoBannerSlot, PromoBanner[]>;

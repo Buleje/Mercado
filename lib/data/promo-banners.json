@@ -246,13 +246,14 @@
       "id": "tiendas-hero-1",
       "title": "Las mejores bodegas, en un solo lugar",
       "subtitle": "Pedí ahora y recibí en 25 minutos",
-      "imageUrl": null,
+      "imageUrl": "/uploads/banners-tiendas-hero/banners-tiendas-hero_1777253322244-Baner_1.webp",
       "ctaHref": "/marketplace/ofertas",
       "ctaLabel": "Ver ofertas",
       "bgFrom": "#0f766e",
       "bgTo": "#0d9488",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "image"
     },
     {
       "id": "tiendas-hero-2",
@@ -264,7 +265,8 @@
       "bgFrom": "#1e1b4b",
       "bgTo": "#312e81",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "tiendas-hero-3",
@@ -276,7 +278,8 @@
       "bgFrom": "#7c2d12",
       "bgTo": "#9a3412",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     },
     {
       "id": "tiendas-hero-4",
@@ -288,7 +291,8 @@
       "bgFrom": "#1f2937",
       "bgTo": "#111827",
       "active": true,
-      "order": 4
+      "order": 4,
+      "type": "classic"
     }
   ]
 }

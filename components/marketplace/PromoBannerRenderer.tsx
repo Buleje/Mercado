@@ -34,6 +34,12 @@ export type PromoEmbed = {
   buyLabel: string;
 };
 
+export type ImageAdjust = {
+  position: { x: number; y: number };
+  scale: number;
+  fit: "cover" | "contain";
+};
+
 export type PromoBanner = {
   id: string;
   title: string;
@@ -47,6 +53,7 @@ export type PromoBanner = {
   order: number;
   type?: BannerType;
   promo?: PromoEmbed;
+  imageAdjust?: ImageAdjust;
 };
 
 interface Props {
@@ -79,10 +86,26 @@ export default function PromoBannerRenderer({ banner, asLink = true, className =
   );
 }
 
+/** Estilos de imagen calculados desde imageAdjust. Se renderizan en un layer
+ *  absoluto detrás del contenido para no interferir con el text overlay. */
+function adjustedImageStyle(banner: PromoBanner): React.CSSProperties {
+  const adj = banner.imageAdjust;
+  const x = adj?.position?.x ?? 50;
+  const y = adj?.position?.y ?? 50;
+  const scale = adj?.scale ?? 100;
+  const fit = adj?.fit ?? "cover";
+  return {
+    backgroundImage: banner.imageUrl ? `url(${banner.imageUrl})` : undefined,
+    backgroundPosition: `${x}% ${y}%`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: fit === "contain" ? `${scale}% auto` : `${scale}% ${scale}%`,
+    backgroundColor: fit === "contain" ? banner.bgFrom : undefined,
+  };
+}
+
 function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }) {
-  const bgStyle = banner.imageUrl
-    ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35)), url(${banner.imageUrl}) center/cover`
-    : `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`;
+  const hasImage = !!banner.imageUrl;
+  const bgGradient = `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`;
 
   // ── PROMO: producto embebido + Comprar directo ────────────────────────────
   if (type === "promo" && banner.promo) {
@@ -90,8 +113,23 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
     return (
       <div
         className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-stretch px-4 sm:px-8 gap-4 sm:gap-6 border border-[var(--rule-soft)]"
-        style={{ background: bgStyle }}
+        style={{ background: bgGradient }}
       >
+        {hasImage && (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={adjustedImageStyle(banner)}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }}
+            />
+          </>
+        )}
+        <div className="relative z-10 flex items-stretch w-full gap-4 sm:gap-6">
         <div className="self-center aspect-square h-[80%] rounded-xl bg-white/95 shrink-0 overflow-hidden flex items-center justify-center shadow">
           {p.productImage ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -155,6 +193,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
             <ChevronRight className="h-3.5 w-3.5" />
           </span>
         </div>
+        </div>
       </div>
     );
   }
@@ -164,19 +203,22 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
     return (
       <div
         className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-center border border-[var(--rule-soft)]"
-        style={{
-          background: banner.imageUrl
-            ? `url(${banner.imageUrl}) center/cover`
-            : `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`,
-        }}
+        style={{ background: bgGradient }}
       >
+        {hasImage && (
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={adjustedImageStyle(banner)}
+          />
+        )}
         {!banner.imageUrl && (
           <span className="inline-flex items-center gap-1.5 text-[#0c1015]/50 text-xs font-bold">
-            <ImageIcon className="h-4 w-4" /> Imagen pendiente
+            <ImageIcon className="h-4 w-4" /> Sin imagen — subila desde el editor
           </span>
         )}
         {banner.imageUrl && banner.ctaLabel && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-3 py-1.5 text-xs font-extrabold whitespace-nowrap shadow">
+          <span className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-3 py-1.5 text-xs font-extrabold whitespace-nowrap shadow">
             {banner.ctaLabel}
             <ChevronRight className="h-3 w-3" />
           </span>
@@ -189,8 +231,23 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   return (
     <div
       className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
-      style={{ background: bgStyle }}
+      style={{ background: bgGradient }}
     >
+      {hasImage && (
+        <>
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={adjustedImageStyle(banner)}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }}
+          />
+        </>
+      )}
+      <div className="relative z-10 flex items-center justify-between w-full">
       <div className="flex-1 min-w-0 max-w-[60%]">
         <h3
           className={
@@ -220,6 +277,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
         {banner.ctaLabel}
         <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
       </span>
+      </div>
     </div>
   );
 }
