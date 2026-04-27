@@ -9,9 +9,15 @@ import { logger } from "@/lib/logger";
 /**
  * GET/PATCH /api/superadmin/marketplace/categories
  *
- * Gestiona imágenes y textos de las categorías principales del marketplace.
- * Storage: `lib/data/marketplace-categories.json` (mismo patrón que
- * promo-banners). Cuando exista tabla Prisma, reemplazar.
+ * Storage: `lib/data/marketplace-categories.json`. Modelo:
+ *   {
+ *     [categoryId]: {
+ *       label, description, imageUrl, active (true=visible),
+ *       subcategories: SubCategory[]
+ *     }
+ *   }
+ *
+ * SubCategory = { id, label, description, imageUrl, active, linkedStoreSlugs[] }
  */
 
 const STORE_PATH = join(process.cwd(), "lib", "data", "marketplace-categories.json");
@@ -30,28 +36,64 @@ const DEFAULTS = {
   tecnologia: { label: "Tecnología", description: "Gadgets & accesorios" },
 } as const;
 
+type SubCategoryRecord = {
+  id: string;
+  label: string;
+  description: string;
+  imageUrl: string | null;
+  active: boolean;
+  linkedStoreSlugs: string[];
+};
+
 type CategoryRecord = {
   label: string;
   description: string;
   imageUrl: string | null;
   active: boolean;
+  /** Tiendas vinculadas a esta categoría PRINCIPAL (paso 1 del filtro de /tiendas). */
+  linkedStoreSlugs: string[];
+  subcategories: SubCategoryRecord[];
 };
 
-async function loadStore(): Promise<Record<string, CategoryRecord>> {
+type StoreFile = {
+  /** Override manual de zona por slug — fallback cuando store.zone está vacío. */
+  storeZones: Record<string, string>;
+  categories: Record<string, CategoryRecord>;
+};
+
+async function loadStore(): Promise<StoreFile> {
   try {
     const raw = await readFile(STORE_PATH, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    const init: Record<string, CategoryRecord> = {};
-    for (const [id, v] of Object.entries(DEFAULTS)) {
-      init[id] = { ...v, imageUrl: null, active: true };
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const meta = (parsed["_meta"] ?? {}) as { storeZones?: Record<string, string> };
+    const storeZones = (meta.storeZones && typeof meta.storeZones === "object") ? meta.storeZones : {};
+    const categories: Record<string, CategoryRecord> = {};
+    for (const [id, def] of Object.entries(DEFAULTS)) {
+      const cur = (parsed[id] ?? {}) as Partial<CategoryRecord>;
+      categories[id] = {
+        label: cur.label ?? def.label,
+        description: cur.description ?? def.description,
+        imageUrl: cur.imageUrl ?? null,
+        active: cur.active ?? true,
+        linkedStoreSlugs: Array.isArray(cur.linkedStoreSlugs) ? cur.linkedStoreSlugs : [],
+        subcategories: Array.isArray(cur.subcategories) ? (cur.subcategories as SubCategoryRecord[]) : [],
+      };
     }
-    return init;
+    return { storeZones, categories };
+  } catch {
+    const categories: Record<string, CategoryRecord> = {};
+    for (const [id, v] of Object.entries(DEFAULTS)) {
+      categories[id] = { ...v, imageUrl: null, active: true, linkedStoreSlugs: [], subcategories: [] };
+    }
+    return { storeZones: {}, categories };
   }
 }
 
-async function saveStore(data: Record<string, CategoryRecord>): Promise<void> {
-  await writeFile(STORE_PATH, JSON.stringify(data, null, 2), "utf8");
+async function saveStore(file: StoreFile): Promise<void> {
+  // Estructura de disco: claves de categoría a primer nivel + `_meta` opcional.
+  const out: Record<string, unknown> = { _meta: { storeZones: file.storeZones } };
+  for (const [id, cat] of Object.entries(file.categories)) out[id] = cat;
+  await writeFile(STORE_PATH, JSON.stringify(out, null, 2), "utf8");
 }
 
 export async function GET(req: NextRequest) {
@@ -61,20 +103,29 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   try {
-    const store = await loadStore();
+    const file = await loadStore();
     const categories = Object.entries(DEFAULTS).map(([id, def]) => {
-      const cur = store[id] ?? { label: def.label, description: def.description, imageUrl: null, active: true };
+      const cur = file.categories[id];
       return {
         id,
-        label: cur.label ?? def.label,
-        description: cur.description ?? def.description,
-        imageUrl: cur.imageUrl ?? null,
-        active: cur.active ?? true,
+        label: cur.label,
+        description: cur.description,
+        imageUrl: cur.imageUrl,
+        active: cur.active,
+        linkedStoreSlugs: cur.linkedStoreSlugs ?? [],
+        subcategories: cur.subcategories.map((s) => ({
+          id: s.id,
+          label: s.label,
+          description: s.description,
+          imageUrl: s.imageUrl,
+          active: s.active,
+          linkedStoreSlugs: s.linkedStoreSlugs ?? [],
+        })),
         defaultLabel: def.label,
         defaultDescription: def.description,
       };
     });
-    return NextResponse.json({ categories });
+    return NextResponse.json({ categories, storeZones: file.storeZones });
   } catch (err) {
     logger.error("[superadmin/marketplace/categories GET]", { error: String(err) });
     return NextResponse.json(
@@ -84,12 +135,26 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const SubCategorySchema = z.object({
+  id: z.string().min(1).max(80),
+  label: z.string().min(1).max(60),
+  description: z.string().max(160).default(""),
+  imageUrl: z
+    .string()
+    .max(500)
+    .refine((v) => v === "" || /^(https?:\/\/|\/)/.test(v), {
+      message: "imageUrl debe ser URL https:// o path /uploads/...",
+    })
+    .nullable()
+    .optional(),
+  active: z.boolean().default(true),
+  linkedStoreSlugs: z.array(z.string().min(1).max(120)).default([]),
+});
+
 const PatchSchema = z.object({
   id: z.string().min(1),
   label: z.string().max(40).optional(),
   description: z.string().max(120).optional(),
-  // Acepta tanto URL absoluta (https://...) como path relativo (/uploads/...)
-  // emitido por el fallback local del endpoint /api/superadmin/upload.
   imageUrl: z
     .string()
     .max(500)
@@ -98,6 +163,11 @@ const PatchSchema = z.object({
     })
     .optional(),
   active: z.boolean().optional(),
+  /** Vínculo a tiendas para la CATEGORÍA PRINCIPAL (paso 1 del filtro de /tiendas). */
+  linkedStoreSlugs: z.array(z.string().min(1).max(120)).optional(),
+  /** Override manual de zona por slug — fallback cuando store.zone está vacío. */
+  storeZones: z.record(z.string().min(1), z.string().max(80)).optional(),
+  subcategories: z.array(SubCategorySchema).optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -122,22 +192,47 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const store = await loadStore();
-    const cur = store[parsed.data.id] ?? {
-      label: known.label,
-      description: known.description,
-      imageUrl: null,
-      active: true,
-    };
+    const file = await loadStore();
+    const cur = file.categories[parsed.data.id];
     const next: CategoryRecord = {
       label: parsed.data.label ?? cur.label,
       description: parsed.data.description ?? cur.description,
       imageUrl: parsed.data.imageUrl === "" ? null : parsed.data.imageUrl ?? cur.imageUrl,
       active: parsed.data.active ?? cur.active,
+      linkedStoreSlugs:
+        parsed.data.linkedStoreSlugs !== undefined
+          ? Array.from(new Set(parsed.data.linkedStoreSlugs))
+          : cur.linkedStoreSlugs,
+      subcategories:
+        parsed.data.subcategories !== undefined
+          ? parsed.data.subcategories.map((s) => ({
+              id: s.id,
+              label: s.label,
+              description: s.description ?? "",
+              imageUrl: s.imageUrl === "" ? null : s.imageUrl ?? null,
+              active: s.active,
+              linkedStoreSlugs: s.linkedStoreSlugs,
+            }))
+          : cur.subcategories,
     };
-    store[parsed.data.id] = next;
-    await saveStore(store);
-    return NextResponse.json({ ok: true, id: parsed.data.id, value: next });
+    file.categories[parsed.data.id] = next;
+    if (parsed.data.storeZones) {
+      // Merge: keys con valor vacío se eliminan del map.
+      const mergedZones = { ...file.storeZones };
+      for (const [slug, zone] of Object.entries(parsed.data.storeZones)) {
+        const trimmed = (zone ?? "").trim();
+        if (trimmed === "") delete mergedZones[slug];
+        else mergedZones[slug] = trimmed;
+      }
+      file.storeZones = mergedZones;
+    }
+    await saveStore(file);
+    return NextResponse.json({
+      ok: true,
+      id: parsed.data.id,
+      value: next,
+      storeZones: file.storeZones,
+    });
   } catch (err) {
     logger.error("[superadmin/marketplace/categories PATCH]", { error: String(err) });
     return NextResponse.json({ error: "server_error" }, { status: 500 });

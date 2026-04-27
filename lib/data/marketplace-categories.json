@@ -3,66 +3,77 @@
     "label": "Restaurantes",
     "description": "Sabor de la casa",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777179997242-Restaurantes.webp",
-    "active": true
+    "active": true,
+    "subcategories": []
   },
   "bodega": {
     "label": "Bodegas",
     "description": "Lo de siempre, cerca",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777234286469-Bodegas.webp",
+    "active": true,
+    "subcategories": []
   },
   "fruteria": {
     "label": "Mercado",
     "description": "Frescos del día",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777234486586-Supermercado.webp",
+    "active": true,
+    "subcategories": []
   },
   "farmacia": {
     "label": "Farmacias",
     "description": "Tu botiquín",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777236086432-Farmacia.webp",
+    "active": true,
+    "subcategories": []
   },
   "ferreteria": {
     "label": "Ferreterías",
     "description": "Para reparar y construir",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777235809142-Ferretria_1.webp",
+    "active": true,
+    "subcategories": []
   },
   "polleria": {
     "label": "Pollerías",
     "description": "Brasa de barrio",
     "imageUrl": null,
-    "active": true
+    "active": false,
+    "subcategories": []
   },
   "panaderia": {
     "label": "Panaderías",
     "description": "Recién horneado",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777236455591-Panaderia.webp",
+    "active": true,
+    "subcategories": []
   },
   "licoreria": {
     "label": "Licorerías",
     "description": "Para la reunión",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777237796270-LIcor.webp",
+    "active": true,
+    "subcategories": []
   },
   "carniceria": {
     "label": "Carnicerías",
     "description": "Cortes frescos",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777242515712-Carneceria.webp",
+    "active": true,
+    "subcategories": []
   },
   "minimarket": {
     "label": "Minimarkets",
     "description": "Todo en un lugar",
     "imageUrl": null,
-    "active": true
+    "active": false,
+    "subcategories": []
   },
   "tecnologia": {
     "label": "Tecnología",
     "description": "Gadgets & accesorios",
-    "imageUrl": null,
-    "active": true
+    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777242692871-Tecnologia.webp",
+    "active": true,
+    "subcategories": []
   }
 }
