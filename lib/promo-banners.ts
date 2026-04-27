@@ -16,7 +16,22 @@ export type PromoBannerSlot =
   | "bodegas"
   | "recetas"
   | "ofertas"
+  | "tiendas-hero"
   | "bento";
+
+/** Tipo del banner — define qué campos se renderizan. */
+export type BannerType = "classic" | "image" | "promo";
+
+/** Datos de promo embebida cuando type === "promo". */
+export type PromoEmbed = {
+  productName: string;
+  productImage: string | null;
+  price: number | null;
+  oldPrice: number | null;
+  badge: string;
+  buyHref: string;
+  buyLabel: string;
+};
 
 export type PromoBanner = {
   id: string;
@@ -30,6 +45,10 @@ export type PromoBanner = {
   bgTo: string;
   active: boolean;
   order: number;
+  /** Default "classic" — back-compat con banners legacy sin tipo. */
+  type?: BannerType;
+  /** Datos de la promo embebida (solo si type==="promo"). */
+  promo?: PromoEmbed;
 };
 
 type BannerStore = Record<PromoBannerSlot, PromoBanner[]>;

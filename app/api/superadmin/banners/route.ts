@@ -13,19 +13,47 @@ const SLOTS = [
   "recetas",
   "ofertas",
   "tiendas-hero",
+  "bento",
 ] as const;
+
+/**
+ * Tipos de banner soportados:
+ *   - "classic": texto + CTA hacia otra página (default, comportamiento legacy)
+ *   - "image":   imagen pura (1600×400 4:1) — texto opcional, CTA opcional
+ *   - "promo":   producto/combo embebido — el banner ES la promo, con su propio
+ *                botón "Comprar" que dispara compra directa (link a producto/checkout)
+ */
+const BannerTypeSchema = z.enum(["classic", "image", "promo"]).default("classic");
+
+/** Datos de la promo embebida cuando type === "promo". */
+const PromoEmbedSchema = z
+  .object({
+    productName: z.string().max(120).default(""),
+    productImage: z.string().max(500).nullable().default(null),
+    price: z.number().nonnegative().nullable().default(null),
+    oldPrice: z.number().nonnegative().nullable().default(null),
+    badge: z.string().max(40).default(""),
+    buyHref: z.string().max(500).default(""),
+    buyLabel: z.string().max(40).default("Comprar"),
+  })
+  .optional();
 
 const BannerSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(200).optional(),
-  imageUrl: z.string().url().nullable(),
+  imageUrl: z.string().nullable().refine(
+    (v) => v === null || v === "" || /^(https?:\/\/|\/)/.test(v),
+    { message: "imageUrl debe ser URL https:// o path /uploads/..." },
+  ),
   ctaHref: z.string().min(1),
   ctaLabel: z.string().min(1).max(40),
   bgFrom: z.string().regex(/^#[0-9a-f]{6}$/i),
   bgTo: z.string().regex(/^#[0-9a-f]{6}$/i),
   active: z.boolean(),
   order: z.number().int().min(1).max(99),
+  type: BannerTypeSchema,
+  promo: PromoEmbedSchema,
 });
 
 const PutSchema = z.object({
