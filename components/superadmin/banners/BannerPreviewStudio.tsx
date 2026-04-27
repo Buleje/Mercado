@@ -57,7 +57,7 @@ import {
 import { cn } from "@/lib/utils";
 import PromoBannerRenderer, { type PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
-import type { ImageAdjust, PromoItem } from "@/lib/promo-banners";
+import type { ImageAdjust, PromoItem, Anchor as PromoAnchor } from "@/lib/promo-banners";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1382,9 +1382,107 @@ function PromoItemEditor({
               <input value={item.buyHref} onChange={(e) => onChange({ buyHref: e.target.value })} placeholder="/t/store/producto/123" className={cn(STUDIO_INPUT_CLS, "font-mono text-[length:var(--ts-2xs)]")} />
             </Section>
           </div>
+
+          {/* ── Posición libre del botón Comprar ─────────────────── */}
+          <AnchorControl
+            title="Posición del botón Comprar"
+            value={item.buyAnchor ?? null}
+            onChange={(a) => onChange({ buyAnchor: a })}
+            theme={theme}
+          />
+
+          {/* ── Posición libre de la insignia ────────────────────── */}
+          {item.badge && (
+            <AnchorControl
+              title="Posición de la insignia"
+              value={item.badgeAnchor ?? null}
+              onChange={(a) => onChange({ badgeAnchor: a })}
+              theme={theme}
+            />
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+/** Control compacto para posicionar libremente un overlay sobre el banner.
+ *  Estados: "default" (null) | "free" (con X/Y %). Presets rápidos a 5 esquinas. */
+function AnchorControl({
+  title,
+  value,
+  onChange,
+  theme,
+}: {
+  title: string;
+  value: PromoAnchor | null;
+  onChange: (next: PromoAnchor | null) => void;
+  theme: StudioTheme;
+}) {
+  const dark = theme === "dark";
+  const isFree = value !== null && value !== undefined;
+  const x = value?.x ?? 50;
+  const y = value?.y ?? 50;
+
+  const presets: Array<{ label: string; pos: PromoAnchor | null }> = [
+    { label: "Defecto", pos: null },
+    { label: "↖", pos: { x: 8, y: 12 } },
+    { label: "↗", pos: { x: 92, y: 12 } },
+    { label: "Centro", pos: { x: 50, y: 50 } },
+    { label: "↙", pos: { x: 8, y: 88 } },
+    { label: "↘", pos: { x: 92, y: 88 } },
+  ];
+
+  return (
+    <Section title={title}>
+      <div className={cn("rounded-lg border p-2 space-y-2",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)]" : "border-black/10 bg-black/5")}>
+        <div className="grid grid-cols-6 gap-1">
+          {presets.map((p) => {
+            const active = p.pos === null
+              ? !isFree
+              : isFree && Math.abs(x - p.pos.x) < 1 && Math.abs(y - p.pos.y) < 1;
+            return (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => onChange(p.pos)}
+                aria-pressed={active}
+                className={cn(
+                  "h-7 rounded text-[length:var(--ts-2xs)] font-extrabold transition-colors",
+                  active
+                    ? "bg-[var(--accent)] text-white"
+                    : dark
+                      ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.7)] hover:bg-[rgb(var(--st-fg)/0.15)]"
+                      : "bg-black/5 text-black/60 hover:bg-black/10",
+                )}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        {isFree && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-7", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>X</span>
+              <input type="range" min={0} max={100} step={1} value={x} onChange={(e) => onChange({ x: Number(e.target.value), y })} className="flex-1 accent-[var(--accent)]" />
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]")}>{x}%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-7", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>Y</span>
+              <input type="range" min={0} max={100} step={1} value={y} onChange={(e) => onChange({ x, y: Number(e.target.value) })} className="flex-1 accent-[var(--accent)]" />
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]")}>{y}%</span>
+            </div>
+          </div>
+        )}
+        {!isFree && (
+          <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+            Tip: presioná uno de los presets de arriba o usá <strong>Centro</strong> para liberar el slider X/Y.
+          </p>
+        )}
+      </div>
+    </Section>
   );
 }
 
@@ -1885,52 +1983,68 @@ function ProductCatalogModal({
               {productSearch ? "Ningún producto matchea." : "Esta tienda no tiene productos."}
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredProducts.map((p) => (
-                <button
-                  key={String(p.id)}
-                  type="button"
-                  onClick={() => {
-                    if (!activeStore) return;
-                    onPick({
-                      storeSlug: activeStore.slug,
-                      productId: p.id,
-                      name: p.name,
-                      image: p.image,
-                      price: p.price,
-                      oldPrice: null,
-                      href: `/t/${activeStore.slug}/producto/${p.id}`,
-                    });
-                  }}
-                  className={cn(
-                    "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
-                    dark
-                      ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
-                      : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
-                  )}
-                >
-                  <div className={cn("aspect-square rounded-lg overflow-hidden mb-2 flex items-center justify-center",
-                    dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5")}>
-                    {p.image ? (
-                      <div role="img" aria-label={p.name} className="h-full w-full" style={{ background: `url(${p.image}) center/cover` }} />
-                    ) : (
-                      <ImageIconLucide className={cn("h-8 w-8", dark ? "text-[rgb(var(--st-fg)/0.3)]" : "text-black/30")} strokeWidth={1.25} />
-                    )}
+            (() => {
+              const pickProduct = (p: CatalogProduct) => {
+                if (!activeStore) return;
+                onPick({
+                  storeSlug: activeStore.slug,
+                  productId: p.id,
+                  name: p.name,
+                  image: p.image,
+                  price: p.price,
+                  oldPrice: null,
+                  href: `/t/${activeStore.slug}/producto/${p.id}`,
+                });
+              };
+              // Si hay search activa, mostrar lista plana. Si no, agrupar por categoría.
+              if (productSearch.trim()) {
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {filteredProducts.map((p) => (
+                      <ProductCard key={String(p.id)} product={p} onPick={pickProduct} dark={dark} />
+                    ))}
                   </div>
-                  <p className={cn("text-xs font-extrabold truncate leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
-                    {p.name}
-                  </p>
-                  <div className="flex items-baseline justify-between gap-1 mt-1">
-                    <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
-                      {p.price !== null ? `S/ ${p.price.toFixed(2)}` : "—"}
-                    </span>
-                    <span className={cn("text-[length:var(--ts-2xs)] truncate", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")}>
-                      {p.unit}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
+                );
+              }
+              // Agrupar por categoría
+              const groups = new Map<string, CatalogProduct[]>();
+              for (const p of filteredProducts) {
+                const cat = (p.category || "sin-categoria").trim() || "sin-categoria";
+                if (!groups.has(cat)) groups.set(cat, []);
+                groups.get(cat)!.push(p);
+              }
+              const sorted = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+              return (
+                <div className="space-y-6">
+                  {sorted.map(([cat, items]) => (
+                    <section key={cat}>
+                      <header className={cn(
+                        "sticky top-0 z-10 -mx-4 sm:-mx-5 px-4 sm:px-5 py-2 mb-3 flex items-center gap-2 backdrop-blur",
+                        dark ? "bg-[rgb(var(--st-bg)/0.85)]" : "bg-[rgb(var(--st-bg)/0.85)]",
+                      )}>
+                        <h3 className={cn(
+                          "text-xs font-extrabold uppercase tracking-wider truncate flex-1",
+                          dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]",
+                        )}>
+                          {cat.replace(/-/g, " ")}
+                        </h3>
+                        <span className={cn(
+                          "text-[length:var(--ts-2xs)] font-extrabold tabular-nums shrink-0 rounded-full px-2 py-0.5",
+                          dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "bg-black/5 text-black/60",
+                        )}>
+                          {items.length}
+                        </span>
+                      </header>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {items.map((p) => (
+                          <ProductCard key={String(p.id)} product={p} onPick={pickProduct} dark={dark} />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              );
+            })()
           )}
         </div>
       </div>
@@ -1942,6 +2056,51 @@ function numOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+function ProductCard({
+  product,
+  onPick,
+  dark,
+}: {
+  product: CatalogProduct;
+  onPick: (p: CatalogProduct) => void;
+  dark: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(product)}
+      className={cn(
+        "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
+        dark
+          ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
+          : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
+      )}
+    >
+      <div className={cn(
+        "aspect-square rounded-lg overflow-hidden mb-2 flex items-center justify-center",
+        dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5",
+      )}>
+        {product.image ? (
+          <div role="img" aria-label={product.name} className="h-full w-full" style={{ background: `url(${product.image}) center/cover` }} />
+        ) : (
+          <ImageIconLucide className={cn("h-8 w-8", dark ? "text-[rgb(var(--st-fg)/0.3)]" : "text-black/30")} strokeWidth={1.25} />
+        )}
+      </div>
+      <p className={cn("text-xs font-extrabold truncate leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+        {product.name}
+      </p>
+      <div className="flex items-baseline justify-between gap-1 mt-1">
+        <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+          {product.price !== null ? `S/ ${product.price.toFixed(2)}` : "—"}
+        </span>
+        <span className={cn("text-[length:var(--ts-2xs)] truncate", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")}>
+          {product.unit}
+        </span>
+      </div>
+    </button>
+  );
 }
 
 function StateTab({

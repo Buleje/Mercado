@@ -27,6 +27,10 @@ export type BannerType = "classic" | "image" | "promo";
  *  el ID para sincronizar precio si querés). */
 export type PromoItemSource = "manual" | "linked";
 
+/** Posición libre dentro del banner — % desde el borde sup-izq. Si null,
+ *  el elemento se renderiza con su layout por defecto (flex). */
+export type Anchor = { x: number; y: number };
+
 export type PromoItem = {
   id: string;
   source: PromoItemSource;
@@ -42,6 +46,11 @@ export type PromoItem = {
   linkedProductId?: string | number | null;
   /** Encuadre de la imagen del producto (drag/zoom/fit por item). */
   imageAdjust?: ImageAdjust;
+  /** Posición libre del botón "Comprar" dentro del banner. Si undefined,
+   *  usa el layout por defecto (lado derecho, centrado vertical). */
+  buyAnchor?: Anchor | null;
+  /** Posición libre de la insignia/badge. Si undefined, va arriba del nombre. */
+  badgeAnchor?: Anchor | null;
 };
 
 /** Datos de promo embebida cuando type === "promo". Campos legacy (single)

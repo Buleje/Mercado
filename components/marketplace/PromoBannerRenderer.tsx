@@ -32,6 +32,8 @@ export type ImageAdjust = {
 
 export type PromoItemSource = "manual" | "linked";
 
+export type Anchor = { x: number; y: number };
+
 export type PromoItem = {
   id: string;
   source: PromoItemSource;
@@ -45,6 +47,8 @@ export type PromoItem = {
   linkedStoreSlug?: string | null;
   linkedProductId?: string | number | null;
   imageAdjust?: ImageAdjust;
+  buyAnchor?: Anchor | null;
+  badgeAnchor?: Anchor | null;
 };
 
 export type PromoEmbed = {
@@ -298,6 +302,17 @@ function PromoItemCard({
   const textOnImage = hasBgImage;
 
   if (layout === "hero") {
+    const badge = item.badge ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+        {item.badge}
+      </span>
+    ) : null;
+    const buyChip = (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
+        {item.buyLabel || "Comprar"}
+        <ChevronRight className="h-3.5 w-3.5" />
+      </span>
+    );
     return (
       <>
         <div className="self-center aspect-square h-[80%] rounded-xl bg-white/95 shrink-0 overflow-hidden flex items-center justify-center shadow">
@@ -308,11 +323,8 @@ function PromoItemCard({
           )}
         </div>
         <div className="flex-1 min-w-0 self-center">
-          {item.badge && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-              {item.badge}
-            </span>
-          )}
+          {/* Badge: sólo inline si no tiene anchor libre (sino se renderiza absolute abajo) */}
+          {badge && !item.badgeAnchor && <div className="mb-1">{badge}</div>}
           {bannerTitle && (
             <h3 className={"font-display text-base sm:text-xl lg:text-2xl font-extrabold tracking-tight truncate " + (textOnImage ? "text-white drop-shadow" : "text-[#0c1015]")}>
               {bannerTitle}
@@ -336,12 +348,36 @@ function PromoItemCard({
             </div>
           )}
         </div>
-        <div className="self-center shrink-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
-            {item.buyLabel || "Comprar"}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </span>
-        </div>
+        {/* Buy chip — flex slot solo si no tiene anchor libre */}
+        {!item.buyAnchor && (
+          <div className="self-center shrink-0">{buyChip}</div>
+        )}
+
+        {/* Overlays absolutos cuando hay anchor */}
+        {item.badgeAnchor && badge && (
+          <div
+            className="absolute z-20 pointer-events-none"
+            style={{
+              left: `${item.badgeAnchor.x}%`,
+              top: `${item.badgeAnchor.y}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {badge}
+          </div>
+        )}
+        {item.buyAnchor && (
+          <div
+            className="absolute z-20"
+            style={{
+              left: `${item.buyAnchor.x}%`,
+              top: `${item.buyAnchor.y}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {buyChip}
+          </div>
+        )}
       </>
     );
   }
