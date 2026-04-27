@@ -60,13 +60,16 @@ console.log("✓ Migraciones al día");
 
 // 3. Schema drift: prisma db pull en archivo temporal y diff contra schema actual.
 //    `prisma migrate diff` es más preciso y no requiere ficheros temporales.
+// Prisma 7+ removed the `-datamodel`/`-datasource` suffixes. The current
+// flags accept a schema path directly: `--from-schema` reads the data model,
+// while pairing with `--to-config-datasource` introspects the live DB.
 const diff = run("npx", [
   "prisma",
   "migrate",
   "diff",
-  "--from-schema-datamodel",
+  "--from-schema",
   "prisma/schema.prisma",
-  "--to-schema-datasource",
+  "--to-config-datasource",
   "prisma/schema.prisma",
   "--exit-code",
 ]);
