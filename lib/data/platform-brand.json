@@ -1,0 +1,65 @@
+{
+  "identity": {
+    "name": "Buleje",
+    "tagline": "El marketplace de tu barrio",
+    "description": "Conectamos vecinos con bodegas, restaurantes y servicios locales en Pucallpa. Pedí en minutos, pagá al recibir.",
+    "since": "2024",
+    "city": "Pucallpa",
+    "country": "Perú"
+  },
+  "logos": {
+    "logoLight": null,
+    "logoDark": null,
+    "logoSquare": null,
+    "favicon": null,
+    "ogImage": null
+  },
+  "colors": {
+    "primary": "#00B4A6",
+    "secondary": "#0c1015",
+    "accent": "#f4a261",
+    "danger": "#b91c1c",
+    "success": "#047857"
+  },
+  "typography": {
+    "fontFamily": "geist",
+    "fontDisplay": "fraunces"
+  },
+  "contact": {
+    "email": "hola@buleje.com",
+    "phone": "+51 961 234 567",
+    "whatsapp": "+51 961 234 567",
+    "address": "Pucallpa, Ucayali — Perú",
+    "supportHours": "Lun a Sáb · 8:00 a 22:00"
+  },
+  "socials": {
+    "instagram": "https://instagram.com/buleje",
+    "facebook": "",
+    "tiktok": "",
+    "x": "",
+    "youtube": ""
+  },
+  "seo": {
+    "metaTitle": "Buleje — Marketplace local de Pucallpa",
+    "metaDescription": "Pedí a tu bodega, restaurante o farmacia favorita y recibí en 25 minutos. Pago al recibir, sin tarjeta.",
+    "ogTitle": "Buleje · El marketplace de tu barrio",
+    "ogDescription": "Pucallpa entera en una app. Bodegas, comida y delivery rápido."
+  },
+  "legal": {
+    "legalName": "Buleje S.A.C.",
+    "ruc": "20612345678",
+    "termsUrl": "/terminos",
+    "privacyUrl": "/privacidad",
+    "cookiesUrl": "/cookies"
+  },
+  "eventMode": {
+    "active": false,
+    "name": "",
+    "logoLight": null,
+    "logoDark": null,
+    "primaryColor": null,
+    "accentColor": null,
+    "startsAt": null,
+    "endsAt": null
+  }
+}
