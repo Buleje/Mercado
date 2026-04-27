@@ -51,8 +51,8 @@ export const CHART_LABEL_COLOR = "var(--text-primary, #0a0a0a)";
  * constantes — ellos pintan sin ejes. */
 export const CHART_FONT = {
   family: "var(--font-geist-sans), system-ui, sans-serif",
-  axisSize: 13,
-  labelSize: 14,
+  axisSize: 14,
+  labelSize: 15,
   tooltipSize: 14,
 } as const;
 

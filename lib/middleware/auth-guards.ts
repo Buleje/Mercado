@@ -37,6 +37,20 @@ async function hasValidAdminSession(req: NextRequest): Promise<boolean> {
   return verifySessionToken(token);
 }
 
+/**
+ * Endpoints under /api/admin/* that a valid platform (superadmin) session
+ * is also allowed to read. Keep narrow: only platform-shaped data, never
+ * tenant-mutation routes.
+ */
+const ADMIN_ENDPOINTS_ALLOWED_FOR_PLATFORM = ["/api/admin/health"] as const;
+
+async function hasValidPlatformSession(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  if (!token) return false;
+  const session = await getPlatformSession(token);
+  return !!session;
+}
+
 // ── Guards ────────────────────────────────────────────────────────────────────
 
 /**
@@ -154,6 +168,17 @@ export async function guardAdminOnlyApi(
   if (!isAdminOnly) return null;
 
   if (await hasValidAdminSession(req)) return null;
+
+  // Narrow opt-in: a few admin GET endpoints are also readable with a
+  // valid platform session (e.g. /api/admin/health for the superadmin
+  // health dashboard). The route handler still re-checks auth.
+  const isPlatformReadable = ADMIN_ENDPOINTS_ALLOWED_FOR_PLATFORM.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+  if (isPlatformReadable && req.method === "GET" && (await hasValidPlatformSession(req))) {
+    return null;
+  }
+
   return json401();
 }
 

@@ -12,12 +12,11 @@ import {
 } from "@buleje/design-system/icons";
 import {
   StatCard,
-  PageTitle,
-  Caption,
-  Kicker,
   ErrorAlert,
   LoadingState,
 } from "@buleje/design-system";
+import { LayoutDashboard } from "@buleje/design-system/icons";
+import { AdminTabShell } from "../_components/_shared";
 import { DateRangeSelector, type DateRange } from "@/components/superadmin/dashboard/DateRangeSelector";
 import { RevenueAreaChart } from "@/components/superadmin/dashboard/RevenueAreaChart";
 import { OrdersBarChart } from "@/components/superadmin/dashboard/OrdersBarChart";
@@ -145,15 +144,13 @@ export default function DashboardPage() {
   }, [data]);
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Kicker>Plataforma Buleje</Kicker>
-          <PageTitle className="mt-1">Dashboard ejecutivo</PageTitle>
-          <Caption className="mt-1 block">Vista global del negocio SaaS.</Caption>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+    <AdminTabShell
+      title="Dashboard ejecutivo"
+      description="Vista global del negocio SaaS · MRR, ARR, crecimiento de tenants y top stores."
+      icon={LayoutDashboard}
+      kicker="Plataforma Buleje"
+      actions={
+        <>
           <DateRangeSelector
             value={range}
             onChange={setRange}
@@ -170,9 +167,9 @@ export default function DashboardPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             Actualizar
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
         <ErrorAlert
@@ -352,6 +349,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
-    </div>
+    </AdminTabShell>
   );
 }

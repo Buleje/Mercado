@@ -7,17 +7,42 @@
  * tipografica clara, botones neutros con accent solo en hover.
  */
 
+/**
+ * 2026-04-26 — Unificación premium: la jerarquía tipográfica del superadmin
+ * y del admin se equipara al hero de /superadmin/marca y /superadmin/banners
+ * para tener un look cohesivo (font-display serif + kicker + icon badge).
+ *
+ * Cambios clave:
+ *  - headingH2: text-xl font-bold → text-2xl sm:text-3xl font-extrabold + font-display
+ *  - kicker: tracking más cerrado + color accent
+ *  - Nuevos: headingHero, headerBar, iconBadge, statPill — para el hero estilo premium
+ */
+
 export const ADMIN_TOKENS = {
-  /** Heading principal del tab (h2). */
+  /** Heading hero (premium) — h1 grande con font-display. Para top de página. */
+  headingHero:
+    "font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]",
+  /** Heading principal del tab (h2). Premium serif por defecto. */
   headingH2:
-    "text-xl font-bold tracking-tight text-[var(--text-primary)]",
+    "font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]",
   /** Heading de seccion dentro del tab (h3). */
-  headingH3: "text-base font-bold text-[var(--text-primary)]",
+  headingH3: "font-display text-lg font-bold text-[var(--text-primary)] tracking-tight",
   /** Texto de cuerpo / descripciones. */
   bodyText: "text-sm text-[var(--text-secondary)]",
-  /** Kicker uppercase (label encima de heading o sectionizing). */
+  /** Texto de cuerpo grande para descripción del hero. */
+  bodyTextLg: "text-sm sm:text-base text-[var(--text-secondary)]",
+  /** Kicker uppercase (label encima de heading o sectionizing). Color accent. */
   kicker:
-    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]",
+    "text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]",
+  /** Header bar premium — fondo surface-raised + border bottom para top de página. */
+  headerBar:
+    "border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8",
+  /** Icon badge premium — cuadrado teal, ideal a la izquierda del título hero. */
+  iconBadge:
+    "inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shrink-0",
+  /** Stat pill — card pequeña para stats en el header (ej. "23 banners totales"). */
+  statPill:
+    "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]",
   /** Card base — el que se usa para casi todos los containers. */
   card:
     "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
@@ -45,10 +70,10 @@ export const ADMIN_TOKENS = {
   sectionGap: "space-y-6",
   /** Chip accent (ej "Universal", "Beta"). */
   chipAccent:
-    "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--accent)]",
+    "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]",
   /** Chip muted (info secundaria). */
   chipMuted:
-    "inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]",
+    "inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]",
   /** Banner de error. */
   errorBanner:
     "rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-rose-700 dark:text-rose-300",

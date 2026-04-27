@@ -26,6 +26,7 @@ import {
   Wrench,
   FileCheck,
   ImageIcon,
+  Sparkles,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
+  { label: "Marca",           icon: <Sparkles        className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
   { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
@@ -65,6 +67,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",
   "/superadmin/stores":          "Marketplace",
+  "/superadmin/marca":           "Marca de la plataforma",
   "/superadmin/banners":         "Banners promocionales",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
@@ -242,7 +245,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     visual.theme === "dark"
       ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
       : visual.theme === "shaded"
-        ? "bg-gradient-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)] border-r border-[var(--rule-base)]"
+        ? "bg-linear-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)] border-r border-[var(--rule-base)]"
         : visual.theme === "cristal"
           ? "bg-[var(--surface-canvas)]/85 backdrop-blur-md border-r border-[var(--rule-base)]"
           : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";

@@ -59,8 +59,12 @@ export function MicroDonut({
   const restValue = sorted.slice(maxLegendItems).reduce((a, d) => a + d.value, 0);
   const legendItems =
     restValue > 0
-      ? [...topItems, { name: "Otros", value: restValue, color: "#94a3b8" }]
+      ? [...topItems, { name: "Otros", value: restValue, color: "var(--data-3)" }]
       : topItems;
+
+  // Radio dinámico para que el donut crezca con la altura del card
+  const innerR = Math.max(44, Math.round(height * 0.30));
+  const outerR = Math.max(70, Math.round(height * 0.46));
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -73,8 +77,8 @@ export function MicroDonut({
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={45}
-              outerRadius={70}
+              innerRadius={innerR}
+              outerRadius={outerR}
               paddingAngle={2}
               strokeWidth={0}
             >
@@ -92,30 +96,30 @@ export function MicroDonut({
         {centerLabel && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             {centerSubLabel && (
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-none">
+              <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted leading-none">
                 {centerSubLabel}
               </span>
             )}
-            <span className="text-base font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-tight mt-0.5">
+            <span className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-tight mt-1 tracking-tight">
               {centerLabel}
             </span>
           </div>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center w-full">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 justify-center w-full">
         {legendItems.map((item, i) => {
           const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
           return (
             <span
               key={i}
-              className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted"
+              className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] dark:text-muted font-medium"
             >
               <span
-                className="w-2 h-2 rounded-full shrink-0"
+                className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="truncate max-w-[80px]">{item.name}</span>
-              <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+              <span className="truncate max-w-[110px]">{item.name}</span>
+              <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums">
                 {pct}%
               </span>
             </span>

@@ -64,6 +64,7 @@ export default function StoresPage() {
       title="Administrar Marketplace"
       description="Gestión completa de tiendas, pedidos, cupones y métricas del marketplace."
       icon={ShoppingBag}
+      kicker="Marketplace"
     >
       {/* Tab bar — Ola 3: tab activo usa accent-soft (bg tenue) en vez de primary saturado */}
       <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 overflow-x-auto">

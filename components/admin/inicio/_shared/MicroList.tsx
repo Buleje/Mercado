@@ -48,13 +48,13 @@ interface MicroListProps {
 
 export function MicroList({
   items,
-  barColor = "#00B4A6",
+  barColor = "var(--data-5, #00B4A6)",
   showRank = true,
   emptyText = "Sin datos",
 }: MicroListProps) {
   if (items.length === 0) {
     return (
-      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-6">
+      <p className="text-sm font-semibold text-[var(--text-tertiary)] dark:text-muted text-center py-6">
         {emptyText}
       </p>
     );
@@ -62,7 +62,7 @@ export function MicroList({
   const maxValue = Math.max(...items.map((i) => i.value), 1);
 
   return (
-    <div className="space-y-2 w-full">
+    <div className="space-y-2.5 w-full">
       {items.map((item, i) => {
         const pct = (item.value / maxValue) * 100;
         const color = item.color ?? barColor;
@@ -74,13 +74,13 @@ export function MicroList({
               style={{ width: `${pct}%`, backgroundColor: color }}
               aria-hidden="true"
             />
-            <div className="relative flex items-center gap-2 py-1.5 px-2">
+            <div className="relative flex items-center gap-2.5 py-2 px-2.5">
               {showRank && (
                 <span
                   className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
+                    "w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold tabular-nums shrink-0",
                     i < 3
-                      ? "bg-gray-900 dark:bg-foreground text-white dark:text-background"
+                      ? "bg-[var(--data-1)] dark:bg-foreground text-white dark:text-background"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                   )}
                 >
@@ -88,24 +88,24 @@ export function MicroList({
                 </span>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-foreground truncate leading-tight">
+                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate leading-tight">
                   {item.name}
                 </p>
                 {item.sublabel && (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-tight">
+                  <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted leading-tight mt-0.5">
                     {item.sublabel}
                   </p>
                 )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {item.label && (
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums">
+                  <span className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums tracking-tight">
                     {item.label}
                   </span>
                 )}
                 {item.TrailIcon && (
                   <item.TrailIcon
-                    className={cn("h-3 w-3", item.trailIconClass ?? "text-[var(--text-tertiary)]")}
+                    className={cn("h-4 w-4", item.trailIconClass ?? "text-[var(--text-tertiary)]")}
                   />
                 )}
               </div>

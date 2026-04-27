@@ -57,9 +57,9 @@ export function MicroGauge({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (pct / 100) * circumference;
 
-  // Color automatico si no se especifica
+  // Color automatico si no se especifica — alineado con --data-success/warning/error.
   const stroke =
-    color ?? (pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444");
+    color ?? (pct >= 80 ? "var(--data-success)" : pct >= 50 ? "var(--data-warning)" : "var(--data-error)");
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -97,27 +97,27 @@ export function MicroGauge({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           {centerOverLabel && (
-            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-none">
+            <span className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted leading-none">
               {centerOverLabel}
             </span>
           )}
           <span
             className={cn(
-              "text-2xl font-extrabold tabular-nums leading-tight",
+              "font-display text-3xl sm:text-4xl font-extrabold tabular-nums leading-none tracking-tight",
               "text-[var(--text-primary)] dark:text-foreground",
             )}
           >
             {centerLabel}
           </span>
           {centerSubLabel && (
-            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center px-2 leading-tight mt-0.5 max-w-[120px]">
+            <span className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted text-center px-2 leading-snug mt-1.5 max-w-[140px]">
               {centerSubLabel}
             </span>
           )}
         </div>
       </div>
       {footerText && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-2 text-center">
+        <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mt-3 text-center">
           {footerText}
         </p>
       )}

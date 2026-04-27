@@ -19,9 +19,10 @@ import {
   AdminSection,
   BodyText,
   Kicker,
-  PageTitle,
   cn,
 } from "@buleje/design-system";
+import { AdminTabShell } from "../_components/_shared";
+import { Gauge } from "@buleje/design-system/icons";
 import {
   Brain,
   Building2,
@@ -245,14 +246,12 @@ export function ControlCenterClient({
 
   return (
     <AdminPage>
-      <header className="space-y-1">
-        <Kicker>PLATAFORMA</Kicker>
-        <PageTitle>Centro de control</PageTitle>
-        <BodyText className="text-[var(--text-secondary)]">
-          Accesos rápidos a todas las plataformas
-        </BodyText>
-      </header>
-
+      <AdminTabShell
+        title="Centro de control"
+        description="Accesos rápidos a las 10 plataformas + estado de envs críticas + info del sistema."
+        icon={Gauge}
+        kicker="Plataforma Buleje"
+      >
       {/* ── A. Launchpad ────────────────────────────────────────────── */}
       <AdminSection
         title="Plataformas"
@@ -357,6 +356,7 @@ export function ControlCenterClient({
         ]}
         deployedAt={systemInfo.deployedAt}
       />
+      </AdminTabShell>
     </AdminPage>
   );
 }

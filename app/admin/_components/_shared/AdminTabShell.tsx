@@ -1,12 +1,22 @@
 "use client";
 
 /**
- * AdminTabShell — wrapper canonico para cada tab del panel
- * `/admin/store-page`. Provee header consistente (icono + titulo +
- * descripcion + chip opcional + actions) y spacing fijo.
+ * AdminTabShell — wrapper canónico para cada página del admin/superadmin.
  *
- * Toda tab debe envolverse con este shell en lugar de inventar su
- * propio header.
+ * Rediseño 2026-04-26: header hero premium consistente con /superadmin/marca y
+ * /superadmin/banners. Toda página debe envolverse con este shell para evitar
+ * divergencia visual entre módulos.
+ *
+ * Estructura del header:
+ *   [icon badge teal] KICKER ACCENT
+ *                     Título grande font-display extrabold
+ *                     Descripción opcional
+ *                     [chip Beta/Universal opcional]
+ *                                                  [actions / stats →]
+ *
+ * El parámetro legacy `chip` sigue funcionando. Nuevo `kicker` para texto
+ * uppercase encima del título (ej. "CENTRO DE CONTROL", "PLATAFORMA").
+ * Nuevo `stats` para slot derecho con pills de KPI.
  */
 
 import type { ComponentType, ReactNode } from "react";
@@ -28,9 +38,13 @@ interface AdminTabShellProps {
   title: string;
   description?: string;
   icon?: LucideIcon;
+  /** Texto uppercase encima del título — ej. "CENTRO DE CONTROL". */
+  kicker?: string;
   chip?: ChipProps;
   /** Botones u otros elementos a la derecha del header. */
   actions?: ReactNode;
+  /** Slot derecho con stat pills (ej. KPIs del módulo). Si presente, reemplaza actions. */
+  stats?: ReactNode;
   children: ReactNode;
 }
 
@@ -38,47 +52,54 @@ export default function AdminTabShell({
   title,
   description,
   icon: Icon,
+  kicker,
   chip,
   actions,
+  stats,
   children,
 }: AdminTabShellProps) {
   const ChipIcon = chip?.icon;
   return (
     <div className={ADMIN_TOKENS.sectionGap}>
+      {/* ── Header hero premium ───────────────────────────────────────── */}
       <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className={`${ADMIN_TOKENS.headingH2} inline-flex items-center gap-2`}>
-              {Icon && (
-                <Icon
-                  className="h-5 w-5 text-[var(--accent)]"
-                  strokeWidth={2}
-                  aria-hidden
-                />
+        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+          {Icon && (
+            <span className={ADMIN_TOKENS.iconBadge}>
+              <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            {kicker && (
+              <p className={`${ADMIN_TOKENS.kicker} mb-1`}>{kicker}</p>
+            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className={ADMIN_TOKENS.headingHero}>{title}</h1>
+              {chip && (
+                <span
+                  className={
+                    chip.tone === "muted"
+                      ? ADMIN_TOKENS.chipMuted
+                      : ADMIN_TOKENS.chipAccent
+                  }
+                >
+                  {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
+                  {chip.label}
+                </span>
               )}
-              {title}
-            </h2>
-            {chip && (
-              <span
-                className={
-                  chip.tone === "muted"
-                    ? ADMIN_TOKENS.chipMuted
-                    : ADMIN_TOKENS.chipAccent
-                }
-              >
-                {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
-                {chip.label}
-              </span>
+            </div>
+            {description && (
+              <p className={`${ADMIN_TOKENS.bodyTextLg} mt-1.5 max-w-3xl`}>
+                {description}
+              </p>
             )}
           </div>
-          {description && (
-            <p className={`${ADMIN_TOKENS.bodyText} mt-1 max-w-3xl`}>
-              {description}
-            </p>
-          )}
         </div>
-        {actions && (
-          <div className="flex items-center gap-2 shrink-0">{actions}</div>
+        {(stats || actions) && (
+          <div className="flex items-stretch gap-2 flex-wrap shrink-0">
+            {stats}
+            {actions}
+          </div>
         )}
       </header>
       {children}

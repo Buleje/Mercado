@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { cacheStore } from "@/lib/cache";
 import { isQueueEnabled } from "@/lib/queue";
@@ -79,8 +80,14 @@ function serviceStatus(ok: boolean, ms: number): "operativo" | "degradado" | "ca
 // ── GET /api/admin/health ─────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "owner", "manager", "tienda_owner", "cajero"]);
-  if (auth instanceof NextResponse) return auth;
+  // Allow superadmin (platform) sessions to read health metrics — the data is
+  // platform-scope friendly (DB/cache probes, recent order count, queue status).
+  const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  const platformSession = platformToken ? await getPlatformSession(platformToken) : null;
+  if (!platformSession) {
+    const auth = await requireAdmin(req, ["admin", "owner", "manager", "tienda_owner", "cajero"]);
+    if (auth instanceof NextResponse) return auth;
+  }
 
   try {
     const checkedAt = new Date().toISOString();

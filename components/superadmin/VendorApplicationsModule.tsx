@@ -292,20 +292,23 @@ export default function VendorApplicationsModule() {
 
   return (
     <div className="space-y-4">
-      {/* Page Header */}
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center shrink-0">
-          <Building2 className="h-6 w-6" />
-        </div>
+      {/* Page Header — usa el shell unificado del superadmin (font-display + kicker accent) */}
+      <header className="flex items-start gap-3.5">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shrink-0">
+          <Building2 className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+        </span>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1">
+            Marketplace
+          </p>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Aplicaciones de vendedores
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Review de onboarding para nuevos vendedores del marketplace
+          <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5">
+            Review de onboarding para nuevos vendedores del marketplace.
           </p>
         </div>
-      </div>
+      </header>
 
       {error && (
         <div className="rounded-xl border border-[var(--data-error)] bg-[var(--data-error)]/5 px-4 py-3 text-sm text-[var(--data-error)] flex items-center justify-between">

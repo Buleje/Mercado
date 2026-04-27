@@ -268,6 +268,7 @@ export default function SystemHealthPage() {
       title="Salud del sistema"
       description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 s."
       icon={HeartPulse}
+      kicker="Operaciones"
     >
       {/* Overall Status Banner + Health Score */}
       <div className={`rounded-xl border-2 p-6 flex items-center gap-6 ${overallColors[overallStatus]}`}>

@@ -244,6 +244,9 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /StoreCreativeMode\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /ThemeCustomizer\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /BannerEditor\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
+  // Admin token catalog — las clases hardcodeadas ARE the data (single source of truth para todo /admin).
+  // El errorBanner usa rose semantico (canonical danger color) que no tiene aun un --danger token.
+  { file: /admin[\\/]_components[\\/]_shared[\\/]admin-tokens\.ts$/, allowedRules: ["no-decorative-text-color"] },
 ];
 
 function isAdminPath(file: string): boolean {

@@ -159,8 +159,9 @@ export default function AnalyticsPage() {
   return (
     <AdminTabShell
       title="Analytics de plataforma"
-      description="Métricas globales de todos los tenants."
+      description="Métricas globales de todos los tenants — ingresos, registros, conversion, churn."
       icon={BarChart3}
+      kicker="Plataforma Buleje"
     >
       {/* Growth metrics — Ola 3: removido border-top gradient semaforo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

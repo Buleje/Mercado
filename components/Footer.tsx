@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "@/contexts/settings-context";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
+import { usePlatformBrand } from "@/lib/use-platform-brand";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -188,6 +189,17 @@ function WhatsAppContactSection({
 export default function Footer() {
   const year = new Date().getFullYear();
   const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
+  // Marca de la plataforma (gestionada en /superadmin/marca).
+  // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
+  const { brand } = usePlatformBrand();
+  const platformName = brand?.identity.name || "Buleje";
+  const platformDesc = brand?.identity.description ?? "";
+  const platformPhone = brand?.contact.phone ?? "";
+  const platformWa = brand?.contact.whatsapp ?? "";
+  const platformCity = brand?.identity.city || "Pucallpa";
+  const platformRegion = brand?.identity.country || "Ucayali";
+  const fbUrl = brand?.socials.facebook || "";
+  const igUrl = brand?.socials.instagram || "";
   const [nlEmail, setNlEmail] = useState("");
   const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -350,11 +362,11 @@ export default function Footer() {
               />
             </div>
             <p className="text-white/50 text-sm leading-relaxed mb-3">
-              {storeTheme?.description || hp.footerDescription}
+              {storeTheme?.description || platformDesc || hp.footerDescription}
             </p>
             <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/70 mb-4">
               <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-              Pucallpa · Ucayali
+              {platformCity} · {platformRegion}
             </div>
             <div className="flex items-center gap-1.5 mb-4">
               {[...Array(5)].map((_, i) => (
@@ -364,7 +376,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <a
-                href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || "Buleje"}, quiero hacer un pedido`)}`}
+                href={`${storeTheme?.whatsapp || platformWa || hp.footerWhatsApp}${(storeTheme?.whatsapp || platformWa || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
@@ -374,7 +386,7 @@ export default function Footer() {
                 WhatsApp
               </a>
               <a
-                href={hp.footerFacebook}
+                href={fbUrl || hp.footerFacebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
@@ -384,7 +396,7 @@ export default function Footer() {
                 Facebook
               </a>
               <a
-                href={hp.footerInstagram}
+                href={igUrl || hp.footerInstagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
@@ -398,10 +410,10 @@ export default function Footer() {
               <div className="flex items-center gap-2.5 text-xs text-white/55">
                 <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
                 <a
-                  href={`tel:${storeTheme?.phone ?? "+51916409675"}`}
+                  href={`tel:${storeTheme?.phone || platformPhone || "+51916409675"}`}
                   className="tabular-nums hover:text-white/80"
                 >
-                  {storeTheme?.phone ?? "916 409 675"}
+                  {storeTheme?.phone || platformPhone || "916 409 675"}
                 </a>
               </div>
               <div className="flex items-center gap-2.5 text-xs text-white/55">
@@ -493,7 +505,7 @@ export default function Footer() {
 
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
-                © {year} {storeTheme?.name || "Buleje"} · Hecho en Perú
+                © {year} {storeTheme?.name || platformName} · Hecho en {brand?.identity.country || "Perú"}
                 <span className="mx-1">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
                 <span className="mx-0.5">·</span>

@@ -132,6 +132,7 @@ export default function TenantsPage() {
       title="Tenants"
       description={`${sorted.length} tienda${sorted.length !== 1 ? "s" : ""}${tenants.length !== sorted.length ? ` de ${tenants.length}` : ""} — gestión de plataforma multi-tenant.`}
       icon={Building2}
+      kicker="Plataforma multi-tenant"
     >
       {/* Toggle bar (pageTab + view mode) */}
       <div className="flex items-center justify-end">

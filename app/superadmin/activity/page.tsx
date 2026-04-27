@@ -97,6 +97,7 @@ export default function ActivityPage() {
       title="Log de actividad"
       description={`${pagination.total} registros — se actualiza automáticamente cada 30 s.`}
       icon={Activity}
+      kicker="Auditoría"
     >
       {/* Date range picker chips */}
       <div className="flex flex-wrap items-center gap-2">
