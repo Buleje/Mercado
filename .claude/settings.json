@@ -164,12 +164,6 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-checkpoint.mjs",
             "timeout": 5,
             "async": true
-          },
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-alert-sound.mjs",
-            "timeout": 3,
-            "async": true
           }
         ]
       }
