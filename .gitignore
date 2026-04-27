@@ -136,6 +136,23 @@ build-output.txt
 
 build-task003.log
 
+# Local Twilio dev SQLite
+/data/twilio.db
+
+# Ad-hoc QA scripts (per-session, not shared)
+/scripts/.qa-*.mjs
+/scripts/.qa-output/
+/scripts/.inspect-page.mjs
+
+# tsc debounce lock (per-machine runtime)
+/.claude/.tsc-debounce.lock
+
+# Local MCP server config (per-machine)
+/.mcp.json
+
+# Personal notes (root-level scratchpads)
+/notas-*.txt
+
 .env*.local
 lint-compact.txt
 lint-output.txt
