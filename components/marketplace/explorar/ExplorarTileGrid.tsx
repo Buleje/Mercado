@@ -18,9 +18,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  Truck,
   Sparkles,
-  Wallet,
   Leaf,
   Clock,
   ArrowRight,
@@ -31,68 +29,24 @@ import {
   Gift,
   Package,
   HeartPulse,
-  ArrowUpRight,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { getBannersForSlot } from "@/lib/promo-banners";
+import { getBannersForSlot, type PromoBanner } from "@/lib/promo-banners";
 import { MOCK_DEALS } from "@/lib/mock-deals";
+import PromoBannerRenderer from "@/components/marketplace/PromoBannerRenderer";
 
 // ── Estilos shared ─────────────────────────────────────────────────────────
 const TILE_BASE =
   "relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]";
 
-// ── Bento 4 cajas iguales ──────────────────────────────────────────────────
-const BENTO_ICONS: LucideIcon[] = [Truck, Sparkles, Wallet, Leaf];
-
-function BentoTile({
-  banner,
-  Icon,
-}: {
-  banner: {
-    id: string;
-    title: string;
-    subtitle?: string;
-    ctaHref: string;
-    bgFrom: string;
-    bgTo: string;
-  };
-  Icon: LucideIcon;
-}) {
-  const bgIsLight = parseInt(banner.bgFrom.slice(1), 16) > 0xa0a0a0;
-  const textCls = bgIsLight ? "text-[var(--text-primary)]" : "text-white";
-
+// ── Bento card (renderer compartido) ───────────────────────────────────────
+function BentoTile({ banner }: { banner: PromoBanner }) {
   return (
-    <Link
-      href={banner.ctaHref}
-      className={cn(
-        "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-5",
-        "transition-all hover:-translate-y-0.5 hover:shadow-lg",
-        textCls,
-      )}
-      style={{
-        background: `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})`,
-      }}
-    >
-      <div className="flex items-start justify-between">
-        <Icon className="h-6 w-6 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
-        <ArrowUpRight
-          className="h-4 w-4 opacity-60 transition-transform group-hover:rotate-12 group-hover:opacity-100"
-          strokeWidth={2}
-          aria-hidden
-        />
-      </div>
-      <div>
-        <h3 className="text-base sm:text-lg font-black tracking-[-0.02em] leading-[1.1]">
-          {banner.title}
-        </h3>
-        {banner.subtitle && (
-          <p className="mt-1 text-xs leading-snug opacity-85 line-clamp-2">
-            {banner.subtitle}
-          </p>
-        )}
-      </div>
-    </Link>
+    <PromoBannerRenderer
+      banner={banner}
+      className="h-full [&>div]:!aspect-auto [&>div]:!h-full"
+    />
   );
 }
 
@@ -232,7 +186,7 @@ function OfertasTile() {
   );
 }
 
-// ── Fill banner — respeta h-full del padre sin aspect-ratio propio ────────
+// ── Fill banner — usa PromoBannerRenderer compartido ──────────────────────
 export function FillBanner({
   slot,
 }: {
@@ -249,62 +203,28 @@ export function FillBanner({
 
   if (banners.length === 0) return null;
   const b = banners[idx];
-  const bgIsLight = parseInt(b.bgFrom.slice(1), 16) > 0xa0a0a0;
-  const textCls = bgIsLight ? "text-[var(--text-primary)]" : "text-white";
 
   return (
-    <Link
-      href={b.ctaHref}
-      className={cn(
-        "group relative flex h-full w-full flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-6 sm:p-8",
-        "transition-shadow hover:shadow-lg",
-        textCls,
-      )}
-      style={
-        b.imageUrl
-          ? { backgroundImage: `url(${b.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : { background: `linear-gradient(135deg, ${b.bgFrom}, ${b.bgTo})` }
-      }
-    >
-      <div className="relative z-10">
-        <h2
-          className={cn(
-            "font-black tracking-[-0.025em] leading-[1.05]",
-            slot === "explorar"
-              ? "text-[clamp(1.5rem,4vw,3rem)]"
-              : "text-xl sm:text-2xl lg:text-3xl",
-          )}
-        >
-          {b.title}
-        </h2>
-        {b.subtitle && (
-          <p className="mt-2 text-sm sm:text-base leading-snug opacity-85 max-w-xl">
-            {b.subtitle}
-          </p>
-        )}
-      </div>
-      <div className="relative z-10">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-4 py-2 text-xs font-black uppercase tracking-wider text-[var(--surface-canvas)] hover:bg-[var(--accent)] transition-colors">
-          {b.ctaLabel}
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden strokeWidth={2.25} />
-        </span>
-      </div>
-      {/* Dots si hay más de 1 banner */}
+    <div className="relative h-full w-full">
+      <PromoBannerRenderer
+        banner={b}
+        className="h-full w-full [&>a>div]:!aspect-auto [&>a>div]:!h-full [&>div]:!aspect-auto [&>div]:!h-full"
+      />
       {banners.length > 1 && (
-        <div className="absolute bottom-3 right-3 flex gap-1 z-10">
+        <div className="absolute bottom-3 right-3 flex gap-1 z-10 pointer-events-none">
           {banners.map((_, i) => (
             <span
               key={i}
               aria-hidden
               className={cn(
                 "h-1 rounded-full transition-all",
-                i === idx ? "w-4 bg-[var(--text-primary)]" : "w-1 bg-[var(--text-primary)]/30",
+                i === idx ? "w-4 bg-white/90" : "w-1 bg-white/40",
               )}
             />
           ))}
         </div>
       )}
-    </Link>
+    </div>
   );
 }
 
@@ -323,12 +243,12 @@ export default function ExplorarTileGrid() {
           <FillBanner slot="explorar" />
         </div>
 
-        {/* ROW 2 · 4 bento cards iguales */}
+        {/* ROW 2 · 4 bento cards iguales — renderer compartido */}
         {bentoBanners.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {bentoBanners.slice(0, 4).map((b, i) => (
+            {bentoBanners.slice(0, 4).map((b) => (
               <div key={b.id} className="h-[170px] sm:h-[180px]">
-                <BentoTile banner={b} Icon={BENTO_ICONS[i] ?? Truck} />
+                <BentoTile banner={b} />
               </div>
             ))}
           </div>

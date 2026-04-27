@@ -451,15 +451,15 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             aria-haspopup="listbox"
             aria-label={`Ordenar por: ${currentSort.label}`}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+              "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               filters.sortBy !== "relevance"
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
+                ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
+                : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20"
             )}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
             {currentSort.short}
-            <ChevronDown className={cn("h-3 w-3 transition-transform", sortOpen && "rotate-180")} aria-hidden="true" />
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", sortOpen && "rotate-180")} aria-hidden="true" />
           </button>
           <FilterDropdown open={sortOpen} onClose={handleCloseSortDropdown}>
             <div className="space-y-0.5">
@@ -493,15 +493,15 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             aria-haspopup="dialog"
             aria-label={priceActive ? `Precio: S/${filters.minPrice} a S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Filtrar por precio"}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+              "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               priceActive
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
+                ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
+                : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20"
             )}
           >
-            <DollarSign className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+            <DollarSign className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
-            <ChevronDown className={cn("h-3 w-3 transition-transform", priceOpen && "rotate-180")} aria-hidden="true" />
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", priceOpen && "rotate-180")} aria-hidden="true" />
           </button>
           <FilterDropdown open={priceOpen} onClose={handleClosePriceDropdown}>
             <PriceRangePopover
@@ -521,15 +521,15 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           aria-pressed={filters.nearbyEnabled}
           aria-label={geoLoading ? "Obteniendo ubicación..." : filters.nearbyEnabled ? "Desactivar tiendas cercanas" : "Mostrar tiendas cercanas"}
           className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-60",
+            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all disabled:opacity-60",
             filters.nearbyEnabled
-              ? "bg-primary text-white border-primary shadow-sm"
-              : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:text-primary"
+              ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"
+              : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/20"
           )}
         >
           {geoLoading
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            : <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />}
+            ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            : <LocateFixed className="h-4 w-4" aria-hidden="true" />}
           {filters.nearbyEnabled ? "Cerca ✓" : "Cerca"}
         </button>
 
@@ -539,9 +539,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             type="button"
             onClick={handleReset}
             aria-label="Limpiar todos los filtros"
-            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
           >
-            <X className="h-3 w-3" aria-hidden="true" />
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
             Limpiar
           </button>
         )}

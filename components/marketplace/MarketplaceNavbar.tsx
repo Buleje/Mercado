@@ -40,6 +40,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
+import { usePlatformBrand } from "@/lib/use-platform-brand";
 import DiscoverMegaMenu from "@/components/marketplace/navbar/DiscoverMegaMenu";
 // NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
 // Ahorra ~50kb del bundle initial del navbar.
@@ -221,6 +222,14 @@ export default function MarketplaceNavbar() {
   const scrolled = useScrolledPastThreshold(40);
   const navVisible = useNavScrollHide(80);
   const hasActiveLive = useActiveLivePoll();
+  const { brand } = usePlatformBrand();
+  // Logo: si superadmin subió logos.logoLight (o logoDark en dark mode), úsalo;
+  // si no, fallback al wordmark Buleje (SVG inline).
+  const brandLogo =
+    themeResolved === "dark"
+      ? brand?.logos.logoDark ?? brand?.logos.logoLight ?? null
+      : brand?.logos.logoLight ?? null;
+  const brandName = brand?.identity.name ?? "Buleje";
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");
   const navMode = useMarketplaceNavMode();

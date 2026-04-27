@@ -44,16 +44,18 @@ export default function StoresSortSelector({ value, onChange, className }: Props
   return (
     <label
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40 transition-colors",
+        "inline-flex items-center gap-2 rounded-full border bg-[var(--surface-canvas)] px-4 py-2 text-sm font-bold border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20 transition-all cursor-pointer",
         className,
       )}
     >
-      <span className="sr-only">Ordenar por</span>
+      <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mr-0.5">
+        Ordenar
+      </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as StoresSortKey)}
         aria-label="Ordenar tiendas por"
-        className="bg-transparent outline-none cursor-pointer pr-1 appearance-none"
+        className="bg-transparent outline-none cursor-pointer pr-1 appearance-none font-bold"
       >
         {OPTIONS.map((opt) => (
           <option key={opt.id} value={opt.id}>
@@ -62,7 +64,7 @@ export default function StoresSortSelector({ value, onChange, className }: Props
         ))}
       </select>
       <ChevronDown
-        className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
+        className="h-4 w-4 text-[var(--text-tertiary)]"
         strokeWidth={2}
         aria-hidden
       />
