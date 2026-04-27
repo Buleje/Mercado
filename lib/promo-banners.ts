@@ -22,7 +22,31 @@ export type PromoBannerSlot =
 /** Tipo del banner — define qué campos se renderizan. */
 export type BannerType = "classic" | "image" | "promo";
 
-/** Datos de promo embebida cuando type === "promo". */
+/** Cómo se cargó el item: manual (usuario ingresó datos) o linked
+ *  (escogido del catálogo de una tienda — se autocompleta y mantiene
+ *  el ID para sincronizar precio si querés). */
+export type PromoItemSource = "manual" | "linked";
+
+export type PromoItem = {
+  id: string;
+  source: PromoItemSource;
+  productName: string;
+  productImage: string | null;
+  price: number | null;
+  oldPrice: number | null;
+  badge: string;
+  buyHref: string;
+  buyLabel: string;
+  /** Source="linked": referencia al producto real para resync. */
+  linkedStoreSlug?: string | null;
+  linkedProductId?: string | number | null;
+  /** Encuadre de la imagen del producto (drag/zoom/fit por item). */
+  imageAdjust?: ImageAdjust;
+};
+
+/** Datos de promo embebida cuando type === "promo". Campos legacy (single)
+ *  + opcional `items` para banner multi-producto. Si `items.length > 0`,
+ *  el renderer ignora los campos legacy y dibuja la grilla. */
 export type PromoEmbed = {
   productName: string;
   productImage: string | null;
@@ -31,6 +55,8 @@ export type PromoEmbed = {
   badge: string;
   buyHref: string;
   buyLabel: string;
+  imageAdjust?: ImageAdjust;
+  items?: PromoItem[];
 };
 
 /** Ajuste de imagen aplicado al banner.

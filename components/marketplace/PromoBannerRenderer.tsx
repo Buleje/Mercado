@@ -24,6 +24,29 @@ import { ImageIcon, ChevronRight } from "@buleje/design-system/icons";
 
 export type BannerType = "classic" | "image" | "promo";
 
+export type ImageAdjust = {
+  position: { x: number; y: number };
+  scale: number;
+  fit: "cover" | "contain";
+};
+
+export type PromoItemSource = "manual" | "linked";
+
+export type PromoItem = {
+  id: string;
+  source: PromoItemSource;
+  productName: string;
+  productImage: string | null;
+  price: number | null;
+  oldPrice: number | null;
+  badge: string;
+  buyHref: string;
+  buyLabel: string;
+  linkedStoreSlug?: string | null;
+  linkedProductId?: string | number | null;
+  imageAdjust?: ImageAdjust;
+};
+
 export type PromoEmbed = {
   productName: string;
   productImage: string | null;
@@ -32,12 +55,8 @@ export type PromoEmbed = {
   badge: string;
   buyHref: string;
   buyLabel: string;
-};
-
-export type ImageAdjust = {
-  position: { x: number; y: number };
-  scale: number;
-  fit: "cover" | "contain";
+  imageAdjust?: ImageAdjust;
+  items?: PromoItem[];
 };
 
 export type PromoBanner = {
@@ -110,9 +129,13 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   // ── PROMO: producto embebido + Comprar directo ────────────────────────────
   if (type === "promo" && banner.promo) {
     const p = banner.promo;
+    const items: PromoItem[] = (p.items && p.items.length > 0)
+      ? p.items
+      : [legacyToItem(p)];
+
     return (
       <div
-        className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-stretch px-4 sm:px-8 gap-4 sm:gap-6 border border-[var(--rule-soft)]"
+        className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
         {hasImage && (
@@ -129,70 +152,14 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
             />
           </>
         )}
-        <div className="relative z-10 flex items-stretch w-full gap-4 sm:gap-6">
-        <div className="self-center aspect-square h-[80%] rounded-xl bg-white/95 shrink-0 overflow-hidden flex items-center justify-center shadow">
-          {p.productImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.productImage} alt={p.productName} className="h-full w-full object-cover" loading="lazy" />
+        <div className="relative z-10 flex items-stretch w-full gap-3 sm:gap-4 overflow-x-auto scrollbar-thin">
+          {items.length === 1 ? (
+            <PromoItemCard item={items[0]!} bannerTitle={banner.title} hasBgImage={hasImage} layout="hero" />
           ) : (
-            <ImageIcon className="h-1/3 w-1/3 text-[#0c1015]/30" strokeWidth={1.25} />
+            items.map((it) => (
+              <PromoItemCard key={it.id} item={it} bannerTitle={banner.title} hasBgImage={hasImage} layout="grid" />
+            ))
           )}
-        </div>
-        <div className="flex-1 min-w-0 self-center">
-          {p.badge && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-              {p.badge}
-            </span>
-          )}
-          {banner.title && (
-            <h3
-              className={
-                "font-display text-base sm:text-xl lg:text-2xl font-extrabold tracking-tight truncate " +
-                (banner.imageUrl ? "text-white drop-shadow" : "text-[#0c1015]")
-              }
-            >
-              {banner.title}
-            </h3>
-          )}
-          <p
-            className={
-              "text-xs sm:text-sm font-bold truncate mt-0.5 " +
-              (banner.imageUrl ? "text-white/90 drop-shadow" : "text-[#0c1015]/80")
-            }
-          >
-            {p.productName || "(sin producto)"}
-          </p>
-          {(p.price !== null || p.oldPrice !== null) && (
-            <div className="flex items-baseline gap-2 mt-1">
-              {p.price !== null && (
-                <span
-                  className={
-                    "font-display text-lg sm:text-2xl font-extrabold tabular-nums " +
-                    (banner.imageUrl ? "text-white drop-shadow" : "text-[#0c1015]")
-                  }
-                >
-                  {fmtSoles(p.price)}
-                </span>
-              )}
-              {p.oldPrice !== null && p.oldPrice > (p.price ?? 0) && (
-                <span
-                  className={
-                    "text-xs sm:text-sm font-bold tabular-nums line-through " +
-                    (banner.imageUrl ? "text-white/60" : "text-[#0c1015]/40")
-                  }
-                >
-                  {fmtSoles(p.oldPrice)}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="self-center shrink-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
-            {p.buyLabel || "Comprar"}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </span>
-        </div>
         </div>
       </div>
     );
@@ -277,6 +244,143 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
         {banner.ctaLabel}
         <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
       </span>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-item promo helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function legacyToItem(p: PromoEmbed): PromoItem {
+  return {
+    id: "legacy",
+    source: "manual",
+    productName: p.productName,
+    productImage: p.productImage,
+    price: p.price,
+    oldPrice: p.oldPrice,
+    badge: p.badge,
+    buyHref: p.buyHref,
+    buyLabel: p.buyLabel,
+    imageAdjust: p.imageAdjust,
+  };
+}
+
+function itemImageStyle(item: PromoItem): React.CSSProperties {
+  const adj = item.imageAdjust;
+  const x = adj?.position?.x ?? 50;
+  const y = adj?.position?.y ?? 50;
+  const scale = adj?.scale ?? 100;
+  const fit = adj?.fit ?? "cover";
+  return {
+    backgroundImage: item.productImage ? `url(${item.productImage})` : undefined,
+    backgroundPosition: `${x}% ${y}%`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: fit === "contain" ? `${scale}% auto` : `${scale}% ${scale}%`,
+  };
+}
+
+/** Tarjeta de un item dentro del banner. Layout "hero" = un solo item con
+ *  texto al lado; "grid" = múltiples items lado-a-lado, más compactos. */
+function PromoItemCard({
+  item,
+  bannerTitle,
+  hasBgImage,
+  layout,
+}: {
+  item: PromoItem;
+  bannerTitle: string;
+  hasBgImage: boolean;
+  layout: "hero" | "grid";
+}) {
+  const textOnImage = hasBgImage;
+
+  if (layout === "hero") {
+    return (
+      <>
+        <div className="self-center aspect-square h-[80%] rounded-xl bg-white/95 shrink-0 overflow-hidden flex items-center justify-center shadow">
+          {item.productImage ? (
+            <div aria-label={item.productName} role="img" className="h-full w-full" style={itemImageStyle(item)} />
+          ) : (
+            <ImageIcon className="h-1/3 w-1/3 text-[#0c1015]/30" strokeWidth={1.25} />
+          )}
+        </div>
+        <div className="flex-1 min-w-0 self-center">
+          {item.badge && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1">
+              {item.badge}
+            </span>
+          )}
+          {bannerTitle && (
+            <h3 className={"font-display text-base sm:text-xl lg:text-2xl font-extrabold tracking-tight truncate " + (textOnImage ? "text-white drop-shadow" : "text-[#0c1015]")}>
+              {bannerTitle}
+            </h3>
+          )}
+          <p className={"text-xs sm:text-sm font-bold truncate mt-0.5 " + (textOnImage ? "text-white/90 drop-shadow" : "text-[#0c1015]/80")}>
+            {item.productName || "(sin producto)"}
+          </p>
+          {(item.price !== null || item.oldPrice !== null) && (
+            <div className="flex items-baseline gap-2 mt-1">
+              {item.price !== null && (
+                <span className={"font-display text-lg sm:text-2xl font-extrabold tabular-nums " + (textOnImage ? "text-white drop-shadow" : "text-[#0c1015]")}>
+                  {fmtSoles(item.price)}
+                </span>
+              )}
+              {item.oldPrice !== null && item.oldPrice > (item.price ?? 0) && (
+                <span className={"text-xs sm:text-sm font-bold tabular-nums line-through " + (textOnImage ? "text-white/60" : "text-[#0c1015]/40")}>
+                  {fmtSoles(item.oldPrice)}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="self-center shrink-0">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
+            {item.buyLabel || "Comprar"}
+            <ChevronRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      </>
+    );
+  }
+
+  // Grid layout — tarjeta compacta auto-contenida (imagen + nombre + precio + comprar)
+  return (
+    <div className="self-center flex items-center gap-2 sm:gap-3 rounded-xl bg-white/95 px-2 sm:px-3 py-2 shadow-sm shrink-0 min-w-[180px] sm:min-w-[220px] max-w-[280px]">
+      <div className="aspect-square h-14 sm:h-16 rounded-lg bg-[#0c1015]/5 shrink-0 overflow-hidden flex items-center justify-center">
+        {item.productImage ? (
+          <div aria-label={item.productName} role="img" className="h-full w-full" style={itemImageStyle(item)} />
+        ) : (
+          <ImageIcon className="h-1/2 w-1/2 text-[#0c1015]/25" strokeWidth={1.25} />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        {item.badge && (
+          <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-1.5 py-px text-[9px] font-extrabold uppercase tracking-wider mb-0.5">
+            {item.badge}
+          </span>
+        )}
+        <p className="text-xs font-extrabold text-[#0c1015] truncate leading-tight">
+          {item.productName || "(sin nombre)"}
+        </p>
+        <div className="flex items-baseline gap-1.5 mt-0.5">
+          {item.price !== null && (
+            <span className="font-display text-sm font-extrabold text-[#0c1015] tabular-nums leading-tight">
+              {fmtSoles(item.price)}
+            </span>
+          )}
+          {item.oldPrice !== null && item.oldPrice > (item.price ?? 0) && (
+            <span className="text-[10px] font-bold tabular-nums line-through text-[#0c1015]/40 leading-tight">
+              {fmtSoles(item.oldPrice)}
+            </span>
+          )}
+        </div>
+        <span className="inline-flex items-center gap-0.5 mt-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-extrabold">
+          {item.buyLabel || "Comprar"}
+          <ChevronRight className="h-2.5 w-2.5" />
+        </span>
       </div>
     </div>
   );
