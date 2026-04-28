@@ -4,7 +4,7 @@
 // Blocks Edit/Write/MultiEdit on critical files.
 // Exit 0 = allow | Exit 2 = block (stderr shown to user) | Other = non-blocking error
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,8 +30,37 @@ try {
 
   const filePath = tool_input?.file_path || '';
 
+  // Bypass explícito one-shot via archivo firmado.
+  // El operador (que YA leyó el skill) crea:
+  //   /tmp/bsm-dz-bypass-<skill-name>
+  // con el motivo dentro. El hook lo consume y lo borra inmediatamente.
+  // Próxima edición vuelve a estar bloqueada hasta que firme un bypass nuevo.
+  function readBypass(skill) {
+    try {
+      const lockPath = `/tmp/bsm-dz-bypass-${skill}`;
+      if (!existsSync(lockPath)) return null;
+      const reason = readFileSync(lockPath, "utf8").trim();
+      // One-shot: consumir borrando el archivo
+      try { unlinkSync(lockPath); } catch {}
+      return reason || "no reason given";
+    } catch {
+      return null;
+    }
+  }
+
   for (const zone of DANGER_ZONES) {
     if (zone.pattern.test(filePath)) {
+      // Bypass one-shot firmado por archivo
+      const bypassReason = readBypass(zone.skill);
+      if (bypassReason) {
+        process.stderr.write(
+          `🟡 DZ BYPASS · ${zone.label}\n` +
+          `   Skill firmado: ${zone.skill}\n` +
+          `   Razón: ${bypassReason}\n` +
+          `   (lockfile consumido — próxima edición requiere nueva firma)\n`
+        );
+        process.exit(0);
+      }
       // Structured JSON response per official spec
       const skillPath = `.github/instructions/${zone.skill}.instructions.md`;
 
