@@ -62,68 +62,36 @@ export default function StoreHero({
 }: StoreHeroProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
 
+  // Compactación 2026-04: el cliente quiere ver productos primero. Antes el
+  // hero ocupaba ~70vh con kicker grande, H1 a 5xl, subtítulo en 2 líneas,
+  // stats strip y trust chips. Ahora consolido todo en 1 fila densa con los
+  // datos esenciales (nombre, categoría, rating, ubicación, horario) +
+  // CTAs inline. El info panel completo se mueve a un drawer expandible
+  // al pulsar "Más datos" — opt-in en lugar de espacio fijo.
   return (
     <section
       aria-labelledby="store-hero-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-center">
-        {/* ── Left: editorial copy ─────────────────────────────────────────── */}
-        <div className="max-w-2xl">
-          {/* Kicker */}
-          <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-3">
-            Bodega &middot; {category}
-          </span>
-
-          {/* H1 */}
-          <h1
-            id="store-hero-heading"
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]"
-          >
-            {name}
-          </h1>
-
-          {/* Subtitle */}
-          <p className="mt-3 text-base sm:text-lg text-gray-500 dark:text-gray-400 leading-relaxed">
-            {description ??
-              `Tu bodega de confianza en ${zone ?? "el barrio"} — atendemos con los mejores precios y productos frescos.`}
-          </p>
-
-          {/* Stats strip */}
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
-            {ratingLabel && (
-              <span className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 fill-gray-700 text-gray-700 dark:fill-gray-200 dark:text-gray-200" aria-hidden />
-                <span className="text-gray-900 dark:text-white font-semibold">
-                  {ratingLabel}
-                </span>
-                <span className="text-gray-400">
-                  ({reviewCount} reseñas)
-                </span>
-              </span>
-            )}
-            <span className="text-gray-300 dark:text-gray-700 select-none">·</span>
-            <span className="flex items-center gap-1">
-              <Truck className="h-3.5 w-3.5 text-gray-400" aria-hidden />
-              {deliveryMin} min promedio
+      <div className="flex flex-col gap-3">
+        {/* ── Fila 1: nombre + CTAs ──────────────────────────────────────── */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+              {category}
             </span>
-            <span className="text-gray-300 dark:text-gray-700 select-none">·</span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5 text-gray-400" aria-hidden />
-              {distanceLabel}
-            </span>
-            <span className="text-gray-300 dark:text-gray-700 select-none">·</span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-gray-400" aria-hidden />
-              {scheduleLabel}
-            </span>
+            <h1
+              id="store-hero-heading"
+              className="text-xl sm:text-2xl font-extrabold tracking-[-0.01em] text-gray-900 dark:text-white leading-tight mt-0.5"
+            >
+              {name}
+            </h1>
           </div>
 
-          {/* CTAs */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <a
               href="#catalogo"
-              className="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-white px-5 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+              className="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
             >
               Ver catálogo
             </a>
@@ -132,50 +100,87 @@ export default function StoreHero({
                 href={`https://wa.me/51${whatsappNumber.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                aria-label="WhatsApp"
+                className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
               >
-                WhatsApp
+                <Phone className="h-4 w-4" aria-hidden />
               </a>
             )}
             <button
               type="button"
               aria-label="Agregar a favoritos"
-              className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
             >
               <Heart className="h-4 w-4" aria-hidden />
             </button>
           </div>
+        </div>
 
-          {/* Trust strip */}
-          <div className="mt-8 flex flex-wrap gap-2" role="list" aria-label="Sellos de confianza">
-            {TRUST_CHIPS.map(({ label }) => (
-              <span
-                key={label}
-                role="listitem"
-                className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400"
-              >
-                {label}
+        {/* ── Fila 2: stats inline (rating, delivery, ubicación, horario) — tipografía base */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base font-medium text-[var(--text-secondary)]">
+          {ratingLabel && (
+            <span className="flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-amber-500 text-amber-500" aria-hidden />
+              <span className="text-[var(--text-primary)] font-bold tabular-nums">
+                {ratingLabel}
               </span>
-            ))}
-          </div>
+              <span className="text-[var(--text-tertiary)] tabular-nums">({reviewCount})</span>
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Truck className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="font-semibold">{deliveryMin} min</span>
+            {freeDelivery && (
+              <span className="ml-1 text-[var(--data-success)] font-bold">· gratis</span>
+            )}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="font-semibold">{zone ?? distanceLabel}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+            <span className={isOpen ? "text-[var(--data-success)] font-bold" : "text-[var(--data-error)] font-bold"}>
+              {isOpen ? "Abierto" : "Cerrado"}
+            </span>
+            <span className="text-[var(--text-tertiary)]">· {scheduleLabel === "Abierto" ? "6am–11pm" : scheduleLabel}</span>
+          </span>
+          {paymentMethods.length > 0 && (
+            <span className="text-[var(--text-tertiary)] font-medium">
+              {paymentMethods.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" · ")}
+            </span>
+          )}
         </div>
 
-        {/* ── Right: rich info panel ───────────────────────────────────────── */}
-        <div className="lg:sticky lg:top-24 self-start">
-          <StoreInfoPanel
-            name={name}
-            zone={zone}
-            address={address ?? null}
-            scheduleLabel={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel}
-            isOpen={isOpen}
-            rating={rating}
-            reviewCount={reviewCount}
-            deliveryMin={deliveryMin}
-            freeDelivery={freeDelivery}
-            whatsappNumber={whatsappNumber ?? null}
-            paymentMethods={paymentMethods}
-          />
-        </div>
+        {/* ── Fila 3 (opcional): descripción 1 línea + drawer info detallada — texto base */}
+        {description && (
+          <details className="group">
+            <summary className="cursor-pointer list-none flex items-center gap-2 text-base font-medium text-[var(--text-secondary)] select-none hover:text-[var(--text-primary)]">
+              <span className="line-clamp-1 flex-1">{description}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)] group-open:hidden shrink-0">
+                Más datos
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)] hidden group-open:inline shrink-0">
+                Ocultar
+              </span>
+            </summary>
+            <div className="mt-3 lg:max-w-md">
+              <StoreInfoPanel
+                name={name}
+                zone={zone}
+                address={address ?? null}
+                scheduleLabel={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel}
+                isOpen={isOpen}
+                rating={rating}
+                reviewCount={reviewCount}
+                deliveryMin={deliveryMin}
+                freeDelivery={freeDelivery}
+                whatsappNumber={whatsappNumber ?? null}
+                paymentMethods={paymentMethods}
+              />
+            </div>
+          </details>
+        )}
       </div>
     </section>
   );

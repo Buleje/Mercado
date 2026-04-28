@@ -154,31 +154,47 @@
 }
 
 /* ── Modo Oscuro ────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE — Editorial Premium (rediseño 2026-04-28)
+   ═══════════════════════════════════════════════════════════════════════════
+   Filosofía:
+   • Slate-tinted (no negro neutral plano) — fondos #0d1117 / #161b22 / #1c2230
+     dan jerarquía visual REAL entre canvas, sunken y raised.
+   • Texto con ratios WCAG AA verificados sobre canvas:
+       primary   #f0f3f7 ≈ 16:1 (AAA)
+       secondary #b8c0cc ≈  9:1 (AAA)
+       tertiary  #8590a3 ≈ 5.7:1 (AA body) — antes #525252 fallaba AA
+   • Bordes visibles pero discretos (rule-soft #1f2530, base #2e3645, strong #4c5566)
+   • Accent teal-400 (#34d4be) brilla sobre fondo oscuro — ratio ~9.8:1
+   • Sin colores deslumbrantes (#fafafa solo en surface-inverse).
+   ═════════════════════════════════════════════════════════════════════════ */
 .dark {
   color-scheme: dark;
-  --color-background: #0a0f0e;
-  --color-foreground: #e5e7eb;
-  --color-primary: #2dd4bf;        /* Bright teal — legible on dark bg */
-  --color-primary-dark: #00B4A6;   /* Alegra Teal */
-  --color-primary-light: #5eead4;  /* Teal 300 */
-  --color-secondary: #fb923c;      /* Orange 400 */
-  --color-secondary-dark: #f97316; /* Orange 500 */
-  --color-surface: #111c1a;
-  --color-muted: #9ca3af;
-  --color-muted-foreground: #9ca3af;
-  --color-card: #152220;
-  --color-card-foreground: #e5e7eb;
-  --color-card-border: #1e3a36;
-  --color-accent: #2dd4bf;
-  --color-danger: #ef4444;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-popover: #152220;
-  --color-popover-foreground: #e5e7eb;
-  --color-border: #1e3a36;
-  --color-input: #1e3a36;
-  --color-ring: #2dd4bf;
-  --color-destructive: #ef4444;
+
+  /* Legacy --color-* tokens (paleta unificada con --surface-*) */
+  --color-background: #0d1117;
+  --color-foreground: #f0f3f7;
+  --color-primary: #34d4be;        /* teal-400 — bright sobre dark */
+  --color-primary-dark: #14b8a6;   /* teal-500 */
+  --color-primary-light: #5eead4;  /* teal-300 */
+  --color-secondary: #fb923c;      /* orange-400 */
+  --color-secondary-dark: #f97316; /* orange-500 */
+  --color-surface: #161b22;
+  --color-muted: #8590a3;
+  --color-muted-foreground: #8590a3;
+  --color-card: #1c2230;
+  --color-card-foreground: #f0f3f7;
+  --color-card-border: #2e3645;
+  --color-accent: #34d4be;
+  --color-danger: #f87171;
+  --color-success: #34d4be;
+  --color-warning: #fbbf24;
+  --color-popover: #1c2230;
+  --color-popover-foreground: #f0f3f7;
+  --color-border: #2e3645;
+  --color-input: #2e3645;
+  --color-ring: #34d4be;
+  --color-destructive: #f87171;
 }
 
 *,
@@ -212,10 +228,19 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   overflow-x: clip;
 }
+html.dark,
+html.dark body {
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+}
 
 ::selection {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: rgba(0, 180, 166, 0.30);
+  color: var(--text-primary);
+}
+.dark ::selection {
+  background-color: rgba(52, 212, 190, 0.35);
+  color: #f0f3f7;
 }
 
 /* Custom scrollbar */
@@ -1238,10 +1263,16 @@ body {
 }
 
 /* ── Mejora 13: Recharts dark mode fix for axis labels and grid ──────── */
-.dark .recharts-text { fill: #9ca3af !important; }
-.dark .recharts-cartesian-axis-line { stroke: #374151 !important; }
+.dark .recharts-text { fill: #b8c0cc !important; }   /* match --text-secondary */
+.dark .recharts-cartesian-axis-line { stroke: #2e3645 !important; }   /* match --rule-base */
 .dark .recharts-cartesian-grid-horizontal line,
-.dark .recharts-cartesian-grid-vertical line { stroke: rgba(107,114,128,0.15) !important; }
+.dark .recharts-cartesian-grid-vertical line { stroke: rgba(133,144,163,0.18) !important; }
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1c2230 !important;          /* --surface-raised */
+  border: 1px solid #2e3645 !important;          /* --rule-base */
+  border-radius: 8px !important;
+  color: #f0f3f7 !important;                     /* --text-primary */
+}
 
 /* ── ROI Calculator sliders — thumb estilo cross-browser ────────────── */
 /* WebKit / Blink (Chrome, Safari, Edge) */
@@ -1798,31 +1829,42 @@ button,
 }
 
 .dark {
-  --surface-canvas: #0a0a0a;
-  --surface-sunken: #171717;
-  --surface-raised: #1a1a1a;
-  --surface-inverse: #fafafa;
+  /* ── Surfaces con jerarquía visible (no negro plano) ──
+     Slate-tinted blue-gray: descansa la vista, da profundidad.
+     ∆ entre niveles >= 6% para que cards se separen del canvas. */
+  --surface-canvas: #0d1117;     /* Background app — slate-blue profundo */
+  --surface-sunken: #161b22;     /* Inputs / nested cards / hover-bg */
+  --surface-raised: #1c2230;     /* Cards / panels — claramente elevado */
+  --surface-inverse: #f0f3f7;    /* Toasts oscuros sobre claro (raro) */
 
-  --text-primary: #fafafa;
-  --text-secondary: #a3a3a3;
-  --text-tertiary: #525252;
-  --text-inverse: #0a0a0a;
+  /* ── Texto con jerarquía AA-AAA verificada ── */
+  --text-primary: #f0f3f7;       /* ~16:1 sobre canvas — AAA, no deslumbra */
+  --text-secondary: #b8c0cc;     /* ~9:1 — AAA */
+  --text-tertiary: #8590a3;      /* ~5.7:1 — AA body (antes #525252 fallaba) */
+  --text-inverse: #0d1117;
 
-  --rule-soft: #262626;
-  --rule-base: #404040;
-  --rule-strong: #fafafa;
+  /* ── Bordes visibles + escala clara ── */
+  --rule-soft: #1f2530;          /* Divider invisible-ish (background-on-background) */
+  --rule-base: #2e3645;          /* Default border — claramente visible */
+  --rule-strong: #4c5566;        /* Hover/focus border — sin deslumbrar */
 
-  --accent-soft: rgba(45, 212, 191, 0.1);
-  --accent-muted: rgba(45, 212, 191, 0.18);
+  /* ── Accent (teal-400 — bright en dark, ~9.8:1) ── */
+  --accent: #34d4be;
+  --accent-soft: rgba(52, 212, 190, 0.13);
+  --accent-muted: rgba(52, 212, 190, 0.24);
 
-  --data-1: #fafafa;
-  --data-2: #a3a3a3;
-  --data-3: #737373;
-  --data-4: #404040;
-  --data-5: #2dd4bf;
+  /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */
+  --brand-accent: #34d4be;
+
+  /* ── Data viz monochromatic + accent ── */
+  --data-1: #f0f3f7;
+  --data-2: #b8c0cc;
+  --data-3: #8590a3;
+  --data-4: #4c5566;
+  --data-5: #34d4be;
   --data-6: #38bdf8;
-  --data-7: #f59e0b;
-  --data-8: #a78bfa;
+  --data-7: #fbbf24;
+  --data-8: #c4b5fd;
 
   /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
      Light -500 no sirve en dark — usamos -400/300 para contraste AA sobre
@@ -1863,14 +1905,26 @@ button,
   --data-error: var(--data-error-500);
   --data-info: var(--data-info-500);
 
+  /* ── Badges semánticos dark — soft bg + bright text (legibilidad AA) ── */
+  --badge-discount-bg: rgba(248, 113, 113, 0.16);
+  --badge-discount-text: #fca5a5;       /* red-300 — ~7:1 sobre canvas */
+  --badge-new-bg: rgba(96, 165, 250, 0.16);
+  --badge-new-text: #93c5fd;            /* blue-300 — ~8:1 */
+  --badge-shipping-bg: rgba(52, 212, 190, 0.16);
+  --badge-shipping-text: #5eead4;       /* teal-300 — ~10:1 */
+  --badge-urgency-bg: rgba(251, 191, 36, 0.16);
+  --badge-urgency-text: #fcd34d;        /* amber-300 — ~10:1 */
+  --badge-trending-bg: rgba(244, 114, 182, 0.16);
+  --badge-trending-text: #f9a8d4;       /* pink-300 — ~7.5:1 */
+
   /* v4 dark overrides */
   --brand-ink: #060a0d;
-  --brand-cream: #0d0f0c;
+  --brand-cream: #0d1117;               /* matchea canvas — sin "isla cream" */
 
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
-  --elev-3: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
-  --elev-4: 0 24px 48px rgba(0, 0, 0, 0.55), 0 8px 16px rgba(0, 0, 0, 0.35);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.30);
+  --elev-3: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --elev-4: 0 24px 48px rgba(0, 0, 0, 0.65), 0 8px 16px rgba(0, 0, 0, 0.45);
 
   /* ADR-067 Ola P — Paleta Amazónica (dark adjusted) */
   --amazon-earth: #A6724D;
@@ -2333,6 +2387,160 @@ html.theme-transition *::after {
 .dark [data-dark-fallback] input::placeholder,
 .dark [data-dark-fallback] textarea::placeholder {
   color: var(--text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN SHELL DARK MODE — Hardening (rediseño 2026-04-28)
+   ═══════════════════════════════════════════════════════════════════════════
+   Reglas que se aplican AUTOMÁTICAMENTE a cualquier componente bajo el shell
+   admin/superadmin sin necesidad de tocar cada componente individual.
+   Trigger: `.dark [data-admin-shell="true"]` o `.dark [data-admin-shell]`.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Body/canvas del admin en dark — garantiza fondo cohesivo */
+.dark [data-admin-shell="true"],
+.dark [data-admin-shell] {
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+}
+
+/* Sticky header / topbar — garantiza fondo oscuro en cualquier tema sidebar */
+.dark [data-admin-shell] header.sticky,
+.dark [data-admin-shell] [class*="sticky"][class*="top-0"] {
+  background-color: var(--surface-canvas);
+  border-color: var(--rule-base);
+}
+
+/* Botones con bg-white sin override dark — los pasamos a surface-raised */
+.dark [data-admin-shell] button.bg-white:not([class*="dark:bg-"]),
+.dark [data-admin-shell] a.bg-white:not([class*="dark:bg-"]) {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+}
+.dark [data-admin-shell] button.bg-gray-50:not([class*="dark:bg-"]),
+.dark [data-admin-shell] button.bg-slate-50:not([class*="dark:bg-"]),
+.dark [data-admin-shell] button.bg-neutral-50:not([class*="dark:bg-"]),
+.dark [data-admin-shell] a.bg-gray-50:not([class*="dark:bg-"]) {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+/* Texto gris oscuro Tailwind sin override → text-secondary del DS */
+.dark [data-admin-shell] .text-gray-500:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-gray-600:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-500:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-600:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-neutral-500:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-neutral-600:not([class*="dark:text-"]) {
+  color: var(--text-secondary);
+}
+.dark [data-admin-shell] .text-gray-700:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-gray-800:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-gray-900:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-700:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-800:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-900:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-neutral-700:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-neutral-900:not([class*="dark:text-"]) {
+  color: var(--text-primary);
+}
+.dark [data-admin-shell] .text-gray-400:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-slate-400:not([class*="dark:text-"]),
+.dark [data-admin-shell] .text-neutral-400:not([class*="dark:text-"]) {
+  color: var(--text-tertiary);
+}
+
+/* Borders Tailwind sin override → tokens del DS */
+.dark [data-admin-shell] .border-gray-100:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-slate-100:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-neutral-100:not([class*="dark:border-"]) {
+  border-color: var(--rule-soft);
+}
+.dark [data-admin-shell] .border-gray-200:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-gray-300:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-slate-200:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-slate-300:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-neutral-200:not([class*="dark:border-"]),
+.dark [data-admin-shell] .border-neutral-300:not([class*="dark:border-"]) {
+  border-color: var(--rule-base);
+}
+
+/* Hover states grises sin override dark */
+.dark [data-admin-shell] *.hover\:bg-gray-50:hover:not([class*="dark:hover:"]),
+.dark [data-admin-shell] *.hover\:bg-gray-100:hover:not([class*="dark:hover:"]),
+.dark [data-admin-shell] *.hover\:bg-slate-50:hover:not([class*="dark:hover:"]),
+.dark [data-admin-shell] *.hover\:bg-slate-100:hover:not([class*="dark:hover:"]),
+.dark [data-admin-shell] *.hover\:bg-neutral-50:hover:not([class*="dark:hover:"]),
+.dark [data-admin-shell] *.hover\:bg-neutral-100:hover:not([class*="dark:hover:"]) {
+  background-color: var(--surface-sunken);
+}
+
+/* AdminTabBar — al activar dark, baja la saturación de los íconos coloridos
+   (verde-naranja-rojo) para que no compitan con el contenido. Los íconos
+   activos del DS ya usan tokens; este reset golpea los .text-{color}-{500..700}
+   hardcoded que algunos tabs usan como brand-color. */
+.dark [data-admin-shell] [role="tablist"] .text-emerald-500,
+.dark [data-admin-shell] [role="tablist"] .text-emerald-600,
+.dark [data-admin-shell] [role="tablist"] .text-green-500,
+.dark [data-admin-shell] [role="tablist"] .text-green-600 {
+  color: var(--data-success-500);
+}
+.dark [data-admin-shell] [role="tablist"] .text-orange-500,
+.dark [data-admin-shell] [role="tablist"] .text-orange-600,
+.dark [data-admin-shell] [role="tablist"] .text-amber-500,
+.dark [data-admin-shell] [role="tablist"] .text-amber-600 {
+  color: var(--data-warning-500);
+}
+.dark [data-admin-shell] [role="tablist"] .text-red-500,
+.dark [data-admin-shell] [role="tablist"] .text-red-600,
+.dark [data-admin-shell] [role="tablist"] .text-rose-500,
+.dark [data-admin-shell] [role="tablist"] .text-rose-600 {
+  color: var(--data-error-500);
+}
+.dark [data-admin-shell] [role="tablist"] .text-blue-500,
+.dark [data-admin-shell] [role="tablist"] .text-blue-600,
+.dark [data-admin-shell] [role="tablist"] .text-sky-500,
+.dark [data-admin-shell] [role="tablist"] .text-sky-600 {
+  color: var(--data-info-500);
+}
+.dark [data-admin-shell] [role="tablist"] .text-purple-500,
+.dark [data-admin-shell] [role="tablist"] .text-purple-600,
+.dark [data-admin-shell] [role="tablist"] .text-violet-500,
+.dark [data-admin-shell] [role="tablist"] .text-violet-600 {
+  color: #c4b5fd;
+}
+
+/* Inputs / textareas / selects sin dark variant */
+.dark [data-admin-shell] input:not([class*="dark:bg-"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.dark [data-admin-shell] textarea:not([class*="dark:bg-"]),
+.dark [data-admin-shell] select:not([class*="dark:bg-"]) {
+  background-color: var(--surface-sunken);
+  border-color: var(--rule-base);
+  color: var(--text-primary);
+}
+.dark [data-admin-shell] input::placeholder,
+.dark [data-admin-shell] textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Mejor visibilidad del scrollbar en admin shell dark */
+.dark [data-admin-shell] *::-webkit-scrollbar-thumb {
+  background: var(--rule-base);
+}
+.dark [data-admin-shell] *::-webkit-scrollbar-thumb:hover {
+  background: var(--rule-strong);
+}
+
+/* Card primary con bg-card → asegura color real (Tailwind 4 a veces tarda) */
+.dark [data-admin-shell] .bg-card {
+  background-color: var(--color-card);
+  color: var(--color-card-foreground);
+}
+.dark [data-admin-shell] .bg-surface {
+  background-color: var(--color-surface);
+}
+.dark [data-admin-shell] .border-card-border {
+  border-color: var(--color-card-border);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

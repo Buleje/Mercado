@@ -235,7 +235,7 @@ function AdminPage() {
   }
 
   return (
-    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-background" data-admin-shell="true">
+    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
       {/* AdminImpersonationBanner removido — el chip tenant del topbar
           ya indica el negocio administrado. Salir de impersonation se
           hace desde el menu de usuario. */}

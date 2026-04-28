@@ -387,6 +387,22 @@ export default function SidebarConfigurator({
   onCancel,
   onLiveDraftChange,
 }: SidebarConfiguratorProps) {
+  // ── Snapshot estable del estado inicial al MONTAR.
+  //    Necesario porque el padre actualiza `theme/accent/...` props en tiempo
+  //    real vía `onLiveDraftChange` (live preview), por lo que las props
+  //    `initial*` se reescriben a cada cambio. Sin este snapshot, `isDirty`
+  //    siempre devolvía false → el botón "Aplicar cambios" nunca se activaba.
+  const baselineRef = React.useRef({
+    hiddenCategories: new Set(initialHiddenCategories),
+    hiddenSubTabs: new Set(initialHiddenSubTabs),
+    order: [...initialOrder],
+    theme: initialTheme,
+    accent: initialAccent,
+    density: initialDensity,
+    iconStyle: initialIconStyle,
+    applyToHeader: initialApplyToHeader,
+  });
+
   // ── Draft state ──
   const [draftHidden, setDraftHidden] = React.useState<Set<string>>(
     () => new Set(initialHiddenCategories),
@@ -453,22 +469,24 @@ export default function SidebarConfigurator({
   ]);
 
   const isDirty = React.useMemo(() => {
-    if (draftTheme !== initialTheme) return true;
-    if (draftAccent !== initialAccent) return true;
-    if (draftDensity !== initialDensity) return true;
-    if (draftIconStyle !== initialIconStyle) return true;
-    if (draftApplyToHeader !== initialApplyToHeader) return true;
-    if (draftOrder.join(",") !== initialOrder.join(",")) return true;
-    if (draftHidden.size !== initialHiddenCategories.size) return true;
-    if (draftHiddenSubs.size !== initialHiddenSubTabs.size) return true;
-    for (const k of draftHidden) if (!initialHiddenCategories.has(k)) return true;
-    for (const k of draftHiddenSubs) if (!initialHiddenSubTabs.has(k)) return true;
+    const base = baselineRef.current;
+    // Normalizar alias legacy "shaded" → "cristal" para evitar falsos positivos
+    // cuando initial llega como "shaded" y el preset setea "cristal".
+    const normTheme = (t: SidebarTheme) => (t === "shaded" ? "cristal" : t);
+    if (normTheme(draftTheme) !== normTheme(base.theme)) return true;
+    if (draftAccent !== base.accent) return true;
+    if (draftDensity !== base.density) return true;
+    if (draftIconStyle !== base.iconStyle) return true;
+    if (draftApplyToHeader !== base.applyToHeader) return true;
+    if (draftOrder.join(",") !== base.order.join(",")) return true;
+    if (draftHidden.size !== base.hiddenCategories.size) return true;
+    if (draftHiddenSubs.size !== base.hiddenSubTabs.size) return true;
+    for (const k of draftHidden) if (!base.hiddenCategories.has(k)) return true;
+    for (const k of draftHiddenSubs) if (!base.hiddenSubTabs.has(k)) return true;
     return false;
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent, draftDensity,
     draftIconStyle, draftApplyToHeader,
-    initialHiddenCategories, initialHiddenSubTabs, initialOrder, initialTheme,
-    initialAccent, initialDensity, initialIconStyle, initialApplyToHeader,
   ]);
 
   const sensors = useSensors(

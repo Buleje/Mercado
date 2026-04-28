@@ -65,7 +65,7 @@ function ProductListRow({
             className="object-cover w-full h-full"
           />
         ) : (
-          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 text-center leading-tight px-1">
+          <span className="text-xs font-bold text-[var(--text-tertiary)] text-center leading-tight px-1">
             {product.productCategory}
           </span>
         )}
@@ -155,23 +155,23 @@ export default function StoreCatalog({
     >
       {/* Header */}
       <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-2">
           Catálogo
         </p>
         <h2
           id="store-catalog-heading"
-          className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]"
         >
           Todos nuestros productos
         </h2>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+      {/* Toolbar — filtros grandes, cuadrados, visibles */}
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
+        {/* Search — input grande, padding generoso, icono más grande */}
+        <div className="relative flex-1 lg:max-w-md">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+            className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-secondary)]"
             aria-hidden
           />
           <input
@@ -179,43 +179,46 @@ export default function StoreCatalog({
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition"
+            className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
           />
         </div>
 
-        {/* Sort */}
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Ordenar por"
-          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition"
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        {/* Sort — select grande con label visible */}
+        <label className="relative inline-flex flex-col gap-1">
+          <span className="sr-only">Ordenar por</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label="Ordenar por"
+            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] px-4 pr-10 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition cursor-pointer"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
         {/* Count + view toggle */}
-        <div className="flex items-center gap-3 ml-auto">
-          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+        <div className="flex items-center gap-3 lg:ml-auto">
+          <span className="text-sm font-bold tabular-nums text-[var(--text-secondary)] whitespace-nowrap px-3 py-2 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
             {filtered.length} producto{filtered.length !== 1 ? "s" : ""}
           </span>
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
             <button
               type="button"
               onClick={() => setView("grid")}
               aria-label="Vista en cuadrícula"
               aria-pressed={view === "grid"}
               className={cn(
-                "p-2 transition-colors",
+                "h-12 w-12 inline-flex items-center justify-center transition-colors",
                 view === "grid"
-                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  : "bg-white dark:bg-gray-900 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               )}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-5 w-5" />
             </button>
             <button
               type="button"
@@ -223,13 +226,13 @@ export default function StoreCatalog({
               aria-label="Vista en lista"
               aria-pressed={view === "list"}
               className={cn(
-                "p-2 border-l border-gray-200 dark:border-gray-700 transition-colors",
+                "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
                 view === "list"
-                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  : "bg-white dark:bg-gray-900 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               )}
             >
-              <List className="h-4 w-4" />
+              <List className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -237,14 +240,14 @@ export default function StoreCatalog({
 
       {/* Grid or list */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-[var(--text-secondary)]">
           <CanastaVacia size={120} strokeWidth={1.5} />
-          <p className="text-sm font-medium">No hay productos que coincidan</p>
+          <p className="text-lg font-bold text-[var(--text-primary)]">No hay productos que coincidan</p>
           {(search || activeCategory) && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="text-xs underline underline-offset-2 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              className="text-base font-semibold text-[var(--accent)] underline underline-offset-4 decoration-2 hover:text-[var(--data-success-600)] transition-colors"
             >
               Limpiar búsqueda
             </button>
@@ -266,16 +269,16 @@ export default function StoreCatalog({
               className="scroll-mt-28"
               aria-labelledby={`cat-h-${cat}`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)] shrink-0" aria-hidden="true" />
+              <div className="flex items-center gap-3 mb-5">
+                <span className="h-3.5 w-3.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_0_4px_var(--accent-soft)]" aria-hidden="true" />
                 <div>
                   <h3
                     id={`cat-h-${cat}`}
-                    className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight"
+                    className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight"
                   >
                     {humanizeCategory(cat)}
                   </h3>
-                  <p className="text-xs text-[var(--text-tertiary)]">
+                  <p className="text-base font-medium text-[var(--text-secondary)]">
                     {items.length} producto{items.length !== 1 ? "s" : ""}
                   </p>
                 </div>

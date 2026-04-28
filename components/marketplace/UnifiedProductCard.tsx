@@ -354,27 +354,27 @@ export default function UnifiedProductCard({
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
-          Layout compacto para 6 cols/row a xl. Carrito AGRANDADO (h-12) y
-          descripcion resaltada con font-medium + pill background. */}
-      <div className="flex flex-1 flex-col p-3">
-        {/* Nombre — text-sm font-semibold, 2 lineas */}
+          Tipografía aumentada (ADR storefront 2026-04): nombre base/lg, descripción sm,
+          tienda sm — evita texto diminuto que el usuario no podía leer. */}
+      <div className="flex flex-1 flex-col p-4">
+        {/* Nombre — text-base font-bold, 2 lineas, mayor presencia */}
         <Link href={productHref}>
-          <h3 className="text-[length:var(--ts-sm)] font-semibold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] group-hover:text-[var(--accent)] transition-colors">
+          <h3 className="text-base sm:text-lg font-bold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.75rem] group-hover:text-[var(--accent)] transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* Descripcion — resaltada con font-medium, color secondary, leading generoso */}
+        {/* Descripción — text-sm bold-medium, leading generoso */}
         {product.description && (
-          <p className="mt-1.5 text-[length:var(--ts-xs)] font-medium leading-relaxed text-[var(--text-secondary)] line-clamp-2">
+          <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--text-secondary)] line-clamp-2">
             {product.description}
           </p>
         )}
 
-        {/* Tienda — text-xs */}
+        {/* Tienda — text-sm, ícono más grande para legibilidad */}
         {product.storeName && (
-          <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            <StoreIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
+            <StoreIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>
           </div>
         )}
