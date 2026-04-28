@@ -410,7 +410,7 @@ export default function ExecutiveAnalytics() {
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
             <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer minWidth={0} width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={data.mrrByPlan.filter((p) => p.mrr > 0)}
@@ -472,7 +472,7 @@ export default function ExecutiveAnalytics() {
           }
         >
           <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer minWidth={0} width="100%" height="100%">
               <ComposedChart data={data.aov} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 13, fill: "var(--text-secondary)" }} tickMargin={6} />

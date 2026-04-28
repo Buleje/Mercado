@@ -3,6 +3,7 @@ import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 import JsonLd from "@/components/JsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
+import { getStoreTagline } from "@/lib/store-tagline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -145,7 +146,12 @@ export default async function MarketplacePage(props: {
             name: store.name,
             url: `${BASE_URL}/marketplace/${store.slug}`,
             image: store.logo ?? undefined,
-            description: store.description ?? undefined,
+            description: getStoreTagline({
+              slug: store.slug,
+              name: store.name,
+              category: store.category,
+              existing: store.description,
+            }),
             aggregateRating:
               store.reviewCount > 0
                 ? {

@@ -19,7 +19,7 @@
  *  Cmd/Ctrl+Z undo · Cmd/Ctrl+Shift+Z redo · espacio play/pausa (Presentación).
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react";
 import {
   X,
   Play,
@@ -132,6 +132,142 @@ const FALLBACK_PRESETS: Array<{ id: string; label: string; from: string; to: str
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Banner templates — patches que aplican a un banner para arrancar desde un
+// preset estético/comercial. Se aplican con `patch(template.payload)` y luego
+// el usuario edita imagen/producto.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type BannerTemplate = {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  payload: Partial<StudioBanner>;
+};
+
+const BANNER_TEMPLATES: BannerTemplate[] = [
+  {
+    id: "blackfriday",
+    label: "Black Friday",
+    emoji: "🖤",
+    description: "Hero oscuro · badge rojo · CTA contraste",
+    payload: {
+      type: "promo",
+      title: "BLACK FRIDAY",
+      subtitle: "Descuentos imperdibles solo este viernes",
+      bgFrom: "#0c1015",
+      bgTo: "#1f2937",
+      ctaLabel: "Ver ofertas",
+      promo: {
+        ...DEFAULT_PROMO,
+        badge: "-50%",
+        buyLabel: "Comprar ya",
+        badgeAnchor: { x: 12, y: 18 },
+        buyAnchor: { x: 88, y: 80 },
+      },
+    },
+  },
+  {
+    id: "combo2x1",
+    label: "Combo 2x1",
+    emoji: "🎁",
+    description: "Amarillo cálido · badge 2x1",
+    payload: {
+      type: "promo",
+      title: "Llevá 2, pagá 1",
+      subtitle: "Combo de la semana en bodega",
+      bgFrom: "#fef3c7",
+      bgTo: "#fde68a",
+      ctaLabel: "Lo quiero",
+      promo: {
+        ...DEFAULT_PROMO,
+        badge: "2x1",
+        buyLabel: "Aprovechar",
+        badgeAnchor: { x: 12, y: 22 },
+        buyAnchor: { x: 88, y: 78 },
+      },
+    },
+  },
+  {
+    id: "liquidacion",
+    label: "Liquidación",
+    emoji: "🔥",
+    description: "Naranja urgente · % grande",
+    payload: {
+      type: "promo",
+      title: "Liquidación total",
+      subtitle: "Hasta 70% off · Stock limitado",
+      bgFrom: "#fed7aa",
+      bgTo: "#fb923c",
+      ctaLabel: "Ver stock",
+      promo: {
+        ...DEFAULT_PROMO,
+        badge: "-70%",
+        buyLabel: "Llevarlo",
+        badgeAnchor: { x: 50, y: 50 },
+        buyAnchor: { x: 88, y: 80 },
+      },
+    },
+  },
+  {
+    id: "lanzamiento",
+    label: "Lanzamiento",
+    emoji: "✨",
+    description: "Cielo · badge NUEVO",
+    payload: {
+      type: "promo",
+      title: "Acaba de llegar",
+      subtitle: "El producto que estabas esperando",
+      bgFrom: "#dbeafe",
+      bgTo: "#bfdbfe",
+      ctaLabel: "Conocer",
+      promo: {
+        ...DEFAULT_PROMO,
+        badge: "NUEVO",
+        buyLabel: "Probar",
+        badgeAnchor: { x: 14, y: 20 },
+        buyAnchor: { x: 88, y: 76 },
+      },
+    },
+  },
+  {
+    id: "diaespecial",
+    label: "Día especial",
+    emoji: "💝",
+    description: "Rosa cálido · estilo regalo",
+    payload: {
+      type: "promo",
+      title: "Regalá lo que disfruta",
+      subtitle: "Selección especial para fechas especiales",
+      bgFrom: "#fce7f3",
+      bgTo: "#fbcfe8",
+      ctaLabel: "Sorprender",
+      promo: {
+        ...DEFAULT_PROMO,
+        badge: "REGALO",
+        buyLabel: "Elegir",
+        badgeAnchor: { x: 14, y: 18 },
+        buyAnchor: { x: 88, y: 80 },
+      },
+    },
+  },
+  {
+    id: "limpio",
+    label: "Editorial",
+    emoji: "🪶",
+    description: "Gris suave · sin distracción",
+    payload: {
+      type: "classic",
+      title: "Bodega San Martín",
+      subtitle: "Frescura todos los días",
+      bgFrom: "#e2e8f0",
+      bgTo: "#cbd5e1",
+      ctaLabel: "Explorar",
+    },
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -155,6 +291,24 @@ export default function BannerPreviewStudio({
   const [tab, setTab] = useState<EditTab>("frame");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  // Anchos persistentes de los paneles laterales (drag-to-resize). Se hidratan
+  // de localStorage en el primer render del cliente para evitar mismatch SSR.
+  const [leftWidth, setLeftWidth] = useState<number>(240);
+  const [rightWidth, setRightWidth] = useState<number>(320);
+  useEffect(() => {
+    try {
+      const l = Number(localStorage.getItem("studio-left-w"));
+      const r = Number(localStorage.getItem("studio-right-w"));
+      if (Number.isFinite(l) && l >= 200 && l <= 520) setLeftWidth(l);
+      if (Number.isFinite(r) && r >= 260 && r <= 600) setRightWidth(r);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem("studio-left-w", String(leftWidth)); } catch {}
+  }, [leftWidth]);
+  useEffect(() => {
+    try { localStorage.setItem("studio-right-w", String(rightWidth)); } catch {}
+  }, [rightWidth]);
 
   // Solo / Presentación state
   const [width, setWidth] = useState<Width>("1600");
@@ -391,6 +545,10 @@ export default function BannerPreviewStudio({
           setLeftOpen={setLeftOpen}
           rightOpen={rightOpen}
           setRightOpen={setRightOpen}
+          leftWidth={leftWidth}
+          setLeftWidth={setLeftWidth}
+          rightWidth={rightWidth}
+          setRightWidth={setRightWidth}
           patch={patch}
           patchAdjust={patchAdjust}
           undo={undo}
@@ -457,6 +615,10 @@ function EditMode({
   setLeftOpen,
   rightOpen,
   setRightOpen,
+  leftWidth,
+  setLeftWidth,
+  rightWidth,
+  setRightWidth,
   patch,
   patchAdjust,
   undo,
@@ -481,6 +643,10 @@ function EditMode({
   setLeftOpen: (b: boolean) => void;
   rightOpen: boolean;
   setRightOpen: (b: boolean) => void;
+  leftWidth: number;
+  setLeftWidth: (n: number) => void;
+  rightWidth: number;
+  setRightWidth: (n: number) => void;
   patch: (p: Partial<StudioBanner>) => void;
   patchAdjust: (next: ImageAdjust, opts?: { record?: boolean }) => void;
   undo: () => void;
@@ -504,6 +670,7 @@ function EditMode({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; start: { x: number; y: number }; rect: DOMRect } | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const adj = current?.imageAdjust ?? DEFAULT_ADJ;
 
@@ -545,10 +712,61 @@ function EditMode({
     patchAdjust({ ...adj, scale: clamp(adj.scale + delta, ZOOM_MIN, ZOOM_MAX) });
   };
 
+  // Drag state para los handles de resize de los paneles laterales.
+  const sideDragRef = useRef<{ side: "left" | "right"; startX: number; start: number } | null>(null);
+  const onSideResizeDown = (side: "left" | "right") => (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    sideDragRef.current = {
+      side,
+      startX: e.clientX,
+      start: side === "left" ? leftWidth : rightWidth,
+    };
+  };
+  const onSideResizeMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = sideDragRef.current;
+    if (!drag) return;
+    const dx = e.clientX - drag.startX;
+    if (drag.side === "left") {
+      const next = clamp(drag.start + dx, 200, 520);
+      setLeftWidth(Math.round(next));
+    } else {
+      const next = clamp(drag.start - dx, 260, 600);
+      setRightWidth(Math.round(next));
+    }
+  };
+  const onSideResizeEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    sideDragRef.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
   return (
-    <div className="flex-1 min-h-0 grid" style={{ gridTemplateColumns: `${leftOpen ? "240px " : "44px "} 1fr ${rightOpen ? "320px" : "44px"}` }}>
+    <div
+      className="flex-1 min-h-0 grid"
+      style={{ gridTemplateColumns: `${leftOpen ? `${leftWidth}px ` : "44px "} 1fr ${rightOpen ? `${rightWidth}px` : "44px"}` }}
+    >
       {/* ── LEFT: banner list ─────────────────────────────────────── */}
-      <aside className={cn("overflow-hidden flex flex-col border-r", panelBg, panelBorder)}>
+      <aside className={cn("relative overflow-hidden flex flex-col border-r", panelBg, panelBorder)}>
+        {leftOpen && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Redimensionar panel izquierdo"
+            onPointerDown={onSideResizeDown("left")}
+            onPointerMove={onSideResizeMove}
+            onPointerUp={onSideResizeEnd}
+            onPointerCancel={onSideResizeEnd}
+            className={cn(
+              "absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize z-20 group",
+              "hover:bg-[var(--accent)]/40 active:bg-[var(--accent)]/60 transition-colors",
+            )}
+            title="Arrastrá para redimensionar"
+          >
+            <div className={cn("absolute inset-y-0 right-0 w-px", dark ? "bg-white/10" : "bg-black/10")} />
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setLeftOpen(!leftOpen)}
@@ -634,6 +852,25 @@ function EditMode({
             {current && (
               <button
                 type="button"
+                onClick={() => setTemplatesOpen((v) => !v)}
+                aria-pressed={templatesOpen}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition-colors",
+                  templatesOpen
+                    ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]"
+                    : dark
+                      ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.85)] hover:bg-[rgb(var(--st-fg)/0.18)]"
+                      : "bg-black/5 text-[#0c1015] hover:bg-black/10",
+                )}
+                title="Aplicar una plantilla al banner actual"
+              >
+                <Layout className="h-3.5 w-3.5" />
+                Plantillas
+              </button>
+            )}
+            {current && (
+              <button
+                type="button"
                 onClick={() => patch({ active: !current.active })}
                 className={cn(
                   "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition-colors",
@@ -648,6 +885,54 @@ function EditMode({
             )}
           </div>
         </div>
+
+        {/* Templates strip — slide-down justo debajo del toolbar */}
+        {templatesOpen && current && (
+          <div className={cn("shrink-0 px-3 py-3 border-b overflow-x-auto", panelBg, panelBorder)}>
+            <div className="flex items-center gap-2">
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0", subtleText)}>
+                Plantillas
+              </span>
+              <div className="flex gap-2 flex-1">
+                {BANNER_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => {
+                      patch(tpl.payload);
+                      setTemplatesOpen(false);
+                    }}
+                    className={cn(
+                      "shrink-0 rounded-lg border-2 px-3 py-2 text-left transition-all hover:scale-[1.02] hover:shadow-md min-w-[140px]",
+                      dark
+                        ? "border-[rgb(var(--st-fg)/0.15)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)]"
+                        : "border-black/10 bg-white hover:border-[var(--accent)]",
+                    )}
+                  >
+                    <div className="text-lg leading-none mb-1">{tpl.emoji}</div>
+                    <div className={cn("text-xs font-extrabold leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                      {tpl.label}
+                    </div>
+                    <div className={cn("text-[length:var(--ts-2xs)] leading-snug mt-0.5 truncate", subtleText)}>
+                      {tpl.description}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setTemplatesOpen(false)}
+                className={cn(
+                  "shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg",
+                  dark ? "hover:bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "hover:bg-black/10 text-black/60",
+                )}
+                aria-label="Cerrar plantillas"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Canvas viewport */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-6 sm:p-10 overflow-auto">
@@ -671,6 +956,8 @@ function EditMode({
                 aria-label="Canvas — arrastrá para mover la imagen, scroll para zoom"
               >
                 <PromoBannerRenderer banner={current} asLink={false} className="[&>div]:rounded-none [&>div]:border-0 h-full" />
+                {/* Overlay: drag directo de Comprar / Insignia sobre el canvas (solo type=promo) */}
+                <PromoElementOverlay banner={current} onPatch={patch} canvasRef={canvasRef} theme={theme} />
                 {dragging && (
                   <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-[rgb(var(--st-fg))] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
                     <Target className="h-3 w-3" />
@@ -712,7 +999,25 @@ function EditMode({
       </section>
 
       {/* ── RIGHT: tools panel ─────────────────────────────────────── */}
-      <aside className={cn("overflow-hidden flex flex-col border-l", panelBg, panelBorder)}>
+      <aside className={cn("relative overflow-hidden flex flex-col border-l", panelBg, panelBorder)}>
+        {rightOpen && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Redimensionar panel derecho"
+            onPointerDown={onSideResizeDown("right")}
+            onPointerMove={onSideResizeMove}
+            onPointerUp={onSideResizeEnd}
+            onPointerCancel={onSideResizeEnd}
+            className={cn(
+              "absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-20",
+              "hover:bg-[var(--accent)]/40 active:bg-[var(--accent)]/60 transition-colors",
+            )}
+            title="Arrastrá para redimensionar"
+          >
+            <div className={cn("absolute inset-y-0 left-0 w-px", dark ? "bg-white/10" : "bg-black/10")} />
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setRightOpen(!rightOpen)}
@@ -1363,6 +1668,9 @@ function PromoItemEditor({
           <Section title="Nombre del producto">
             <input value={item.productName} onChange={(e) => onChange({ productName: e.target.value })} className={STUDIO_INPUT_CLS} />
           </Section>
+
+          {/* ── ✨ Sugerencias de copy con IA ─────────────────────── */}
+          <AICopySuggester item={item} onApply={onChange} theme={theme} />
           <div className="grid grid-cols-2 gap-2">
             <Section title="Precio">
               <input type="number" step="0.10" value={item.price ?? ""} onChange={(e) => onChange({ price: e.target.value === "" ? null : Number(e.target.value) })} className={cn(STUDIO_INPUT_CLS, "tabular-nums")} />
@@ -1383,6 +1691,27 @@ function PromoItemEditor({
             </Section>
           </div>
 
+          {/* ── Posición libre del producto ──────────────────────── */}
+          <AnchorControl
+            title="Posición de la imagen del producto"
+            value={item.productAnchor ?? null}
+            onChange={(a) => onChange({ productAnchor: a })}
+            theme={theme}
+          />
+          {item.productAnchor && (
+            <Section title={`Tamaño del producto · ${Math.round(item.productSize ?? 28)}%`}>
+              <input
+                type="range"
+                min={10}
+                max={60}
+                step={1}
+                value={item.productSize ?? 28}
+                onChange={(e) => onChange({ productSize: Number(e.target.value) })}
+                className="w-full accent-[var(--accent)]"
+              />
+            </Section>
+          )}
+
           {/* ── Posición libre del botón Comprar ─────────────────── */}
           <AnchorControl
             title="Posición del botón Comprar"
@@ -1390,6 +1719,19 @@ function PromoItemEditor({
             onChange={(a) => onChange({ buyAnchor: a })}
             theme={theme}
           />
+          {item.buyAnchor && (
+            <Section title={`Tamaño del botón · ${Math.round(item.buySize ?? 22)}%`}>
+              <input
+                type="range"
+                min={8}
+                max={50}
+                step={1}
+                value={item.buySize ?? 22}
+                onChange={(e) => onChange({ buySize: Number(e.target.value) })}
+                className="w-full accent-[var(--accent)]"
+              />
+            </Section>
+          )}
 
           {/* ── Posición libre de la insignia ────────────────────── */}
           {item.badge && (
@@ -1402,6 +1744,151 @@ function PromoItemEditor({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Sugerencias de copy con IA (Haiku) — genera 3 títulos / 3 subtítulos / 3 badges
+ *  a partir del producto + precio + tono. Click en chip aplica el valor. */
+function AICopySuggester({
+  item,
+  onApply,
+  theme,
+}: {
+  item: PromoItem;
+  onApply: (p: Partial<PromoItem>) => void;
+  theme: StudioTheme;
+}) {
+  type Tone = "urgent" | "friendly" | "premium" | "playful";
+  const [tone, setTone] = useState<Tone>("friendly");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<{ productNames: string[]; badges: string[]; ctas: string[] } | null>(null);
+  const dark = theme === "dark";
+
+  const canSuggest = (item.productName ?? "").trim().length > 0;
+
+  const fetchSuggestions = async () => {
+    if (!canSuggest || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/superadmin/banners/copy-suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: item.productName,
+          price: item.price,
+          oldPrice: item.oldPrice,
+          tone,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || `Error ${res.status}`);
+        return;
+      }
+      setData(json.data ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "fallo de red");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Section title="✨ Sugerencias de copy (IA)">
+      <div className={cn("rounded-lg border p-2 space-y-2",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)]" : "border-black/10 bg-black/5")}>
+        <div className="flex items-center gap-1 flex-wrap">
+          {(["urgent", "friendly", "premium", "playful"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTone(t)}
+              aria-pressed={tone === t}
+              className={cn(
+                "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-colors",
+                tone === t
+                  ? "bg-[var(--accent)] text-white"
+                  : dark
+                    ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.7)] hover:bg-[rgb(var(--st-fg)/0.15)]"
+                    : "bg-black/5 text-black/60 hover:bg-black/15",
+              )}
+            >
+              {t === "urgent" ? "Urgente" : t === "friendly" ? "Cercano" : t === "premium" ? "Premium" : "Divertido"}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={fetchSuggestions}
+          disabled={!canSuggest || loading}
+          className={cn(
+            "w-full inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-extrabold transition-all",
+            !canSuggest || loading
+              ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.4)] cursor-not-allowed"
+              : "bg-[var(--accent)] text-white hover:brightness-110",
+          )}
+        >
+          {loading ? "Generando…" : data ? "Volver a sugerir" : "Sugerir copy"}
+        </button>
+        {!canSuggest && (
+          <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+            Cargá primero un nombre de producto para que la IA tenga contexto.
+          </p>
+        )}
+        {error && (
+          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-bold">
+            {error}
+          </p>
+        )}
+        {data && (
+          <div className="space-y-2">
+            <SuggestionRow label="Nombre del producto" items={data.productNames} onPick={(v) => onApply({ productName: v })} dark={dark} />
+            <SuggestionRow label="Badge" items={data.badges} onPick={(v) => onApply({ badge: v })} dark={dark} />
+            <SuggestionRow label="Texto del botón" items={data.ctas} onPick={(v) => onApply({ buyLabel: v })} dark={dark} />
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function SuggestionRow({
+  label,
+  items,
+  onPick,
+  dark,
+}: {
+  label: string;
+  items: string[];
+  onPick: (v: string) => void;
+  dark: boolean;
+}) {
+  return (
+    <div>
+      <p className={cn("text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider mb-1", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {items.map((s, i) => (
+          <button
+            key={`${label}-${i}`}
+            type="button"
+            onClick={() => onPick(s)}
+            className={cn(
+              "rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors text-left max-w-full truncate",
+              dark
+                ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.85)] hover:bg-[var(--accent)] hover:text-white"
+                : "bg-black/5 text-[#0c1015] hover:bg-[var(--accent)] hover:text-white",
+            )}
+            title={s}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2394,6 +2881,283 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         />
       </div>
     </label>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canvas overlay — drag directo de "Comprar" e Insignia sobre el banner.
+// Convierte el canvas en un editor estilo Photoshop: cada chip es agarrable y
+// al soltarlo escribe `buyAnchor` / `badgeAnchor` en el item correspondiente.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type AnchorKey = "buyAnchor" | "badgeAnchor" | "productAnchor";
+type SnapResult = { x: number; y: number; matchedX: number | null; matchedY: number | null };
+
+const SNAP_EPS = 2.5; // % tolerance for snap
+const SNAP_GUIDES_X = [0, 25, 33.3333, 50, 66.6667, 75, 100];
+const SNAP_GUIDES_Y = [0, 25, 33.3333, 50, 66.6667, 75, 100];
+
+function PromoElementOverlay({
+  banner,
+  onPatch,
+  canvasRef,
+  theme,
+}: {
+  banner: StudioBanner;
+  onPatch: (p: Partial<StudioBanner>) => void;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+  theme: StudioTheme;
+}) {
+  const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
+  const dark = theme === "dark";
+
+  const promo = banner.promo ?? DEFAULT_PROMO;
+  const items: PromoItem[] = useMemo(() => {
+    if (banner.type !== "promo") return [];
+    return promo.items && promo.items.length > 0
+      ? promo.items
+      : [{
+          id: "legacy",
+          source: "manual",
+          productName: promo.productName,
+          productImage: promo.productImage,
+          price: promo.price,
+          oldPrice: promo.oldPrice,
+          badge: promo.badge,
+          buyHref: promo.buyHref,
+          buyLabel: promo.buyLabel,
+          imageAdjust: promo.imageAdjust,
+        }];
+  }, [banner.type, promo]);
+
+  // Posiciones de TODOS los anchors actuales — para snap entre elementos.
+  const allAnchors = useMemo(() => {
+    const list: Array<{ id: string; idx: number; key: AnchorKey; x: number; y: number }> = [];
+    items.forEach((it, idx) => {
+      if (it.buyAnchor) list.push({ id: it.id, idx, key: "buyAnchor", x: it.buyAnchor.x, y: it.buyAnchor.y });
+      if (it.badgeAnchor) list.push({ id: it.id, idx, key: "badgeAnchor", x: it.badgeAnchor.x, y: it.badgeAnchor.y });
+      if (it.productAnchor) list.push({ id: it.id, idx, key: "productAnchor", x: it.productAnchor.x, y: it.productAnchor.y });
+    });
+    return list;
+  }, [items]);
+
+  const computeSnap = useCallback((rawX: number, rawY: number, excludeIdx: number, excludeKey: AnchorKey): SnapResult => {
+    const otherX = allAnchors.filter((a) => !(a.idx === excludeIdx && a.key === excludeKey)).map((a) => a.x);
+    const otherY = allAnchors.filter((a) => !(a.idx === excludeIdx && a.key === excludeKey)).map((a) => a.y);
+    const xs = [...SNAP_GUIDES_X, ...otherX];
+    const ys = [...SNAP_GUIDES_Y, ...otherY];
+    let best: { v: number; d: number } | null = null;
+    for (const g of xs) {
+      const d = Math.abs(rawX - g);
+      if (d <= SNAP_EPS && (!best || d < best.d)) best = { v: g, d };
+    }
+    const matchedX = best?.v ?? null;
+    best = null;
+    for (const g of ys) {
+      const d = Math.abs(rawY - g);
+      if (d <= SNAP_EPS && (!best || d < best.d)) best = { v: g, d };
+    }
+    const matchedY = best?.v ?? null;
+    return { x: matchedX ?? rawX, y: matchedY ?? rawY, matchedX, matchedY };
+  }, [allAnchors]);
+
+  const updateItemAnchor = useCallback((idx: number, key: AnchorKey, anchor: PromoAnchor | null) => {
+    const next = items.map((it, i) => (i === idx ? { ...it, [key]: anchor } : it));
+    const first = next[0];
+    onPatch({
+      promo: {
+        ...promo,
+        items: next,
+        productName: first?.productName ?? promo.productName,
+        productImage: first?.productImage ?? promo.productImage,
+        price: first?.price ?? promo.price,
+        oldPrice: first?.oldPrice ?? promo.oldPrice,
+        badge: first?.badge ?? promo.badge,
+        buyHref: first?.buyHref ?? promo.buyHref,
+        buyLabel: first?.buyLabel ?? promo.buyLabel,
+        imageAdjust: first?.imageAdjust ?? promo.imageAdjust,
+      },
+    });
+  }, [items, onPatch, promo]);
+
+  if (banner.type !== "promo") return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30">
+      {/* Snap guide lines — solo durante drag activo con match */}
+      {snapLines.x != null && (
+        <div
+          className="absolute top-0 bottom-0 w-px bg-fuchsia-400 shadow-[0_0_4px_rgba(217,70,239,0.8)] pointer-events-none"
+          style={{ left: `${snapLines.x}%` }}
+          aria-hidden
+        />
+      )}
+      {snapLines.y != null && (
+        <div
+          className="absolute left-0 right-0 h-px bg-fuchsia-400 shadow-[0_0_4px_rgba(217,70,239,0.8)] pointer-events-none"
+          style={{ top: `${snapLines.y}%` }}
+          aria-hidden
+        />
+      )}
+
+      {items.map((it, idx) => (
+        <Fragment key={it.id}>
+          <DraggableHandle
+            label={items.length > 1 ? `Producto #${idx + 1}` : "Producto"}
+            color="sky"
+            anchor={it.productAnchor ?? { x: 18, y: 50 }}
+            isFree={it.productAnchor != null}
+            canvasRef={canvasRef}
+            theme={theme}
+            onChange={(a) => updateItemAnchor(idx, "productAnchor", a)}
+            computeSnap={(x, y) => computeSnap(x, y, idx, "productAnchor")}
+            onSnapChange={setSnapLines}
+          />
+          <DraggableHandle
+            label={items.length > 1 ? `Comprar #${idx + 1}` : "Comprar"}
+            color="emerald"
+            anchor={it.buyAnchor ?? { x: 88, y: 88 }}
+            isFree={it.buyAnchor != null}
+            canvasRef={canvasRef}
+            theme={theme}
+            onChange={(a) => updateItemAnchor(idx, "buyAnchor", a)}
+            computeSnap={(x, y) => computeSnap(x, y, idx, "buyAnchor")}
+            onSnapChange={setSnapLines}
+          />
+          {it.badge ? (
+            <DraggableHandle
+              label={items.length > 1 ? `Insignia #${idx + 1}` : "Insignia"}
+              color="rose"
+              anchor={it.badgeAnchor ?? { x: 12, y: 18 }}
+              isFree={it.badgeAnchor != null}
+              canvasRef={canvasRef}
+              theme={theme}
+              onChange={(a) => updateItemAnchor(idx, "badgeAnchor", a)}
+              computeSnap={(x, y) => computeSnap(x, y, idx, "badgeAnchor")}
+              onSnapChange={setSnapLines}
+            />
+          ) : null}
+        </Fragment>
+      ))}
+      {/* Hint inferior */}
+      {!dark && null}
+    </div>
+  );
+}
+
+function DraggableHandle({
+  label,
+  color,
+  anchor,
+  isFree,
+  canvasRef,
+  theme,
+  onChange,
+  computeSnap,
+  onSnapChange,
+}: {
+  label: string;
+  color: "emerald" | "rose" | "sky";
+  anchor: PromoAnchor;
+  isFree: boolean;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+  theme: StudioTheme;
+  onChange: (a: PromoAnchor | null) => void;
+  computeSnap?: (x: number, y: number) => SnapResult;
+  onSnapChange?: (lines: { x: number | null; y: number | null }) => void;
+}) {
+  const dragRef = useRef<{ rect: DOMRect } | null>(null);
+  const [active, setActive] = useState(false);
+  const dark = theme === "dark";
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const node = canvasRef.current;
+    if (!node) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { rect: node.getBoundingClientRect() };
+    setActive(true);
+    if (!isFree) onChange(anchor);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    e.stopPropagation();
+    const { rect } = dragRef.current;
+    const rawX = clamp(((e.clientX - rect.left) / rect.width) * 100, 0, 100);
+    const rawY = clamp(((e.clientY - rect.top) / rect.height) * 100, 0, 100);
+    if (computeSnap) {
+      const snap = computeSnap(rawX, rawY);
+      onSnapChange?.({ x: snap.matchedX, y: snap.matchedY });
+      onChange({ x: round(snap.x), y: round(snap.y) });
+    } else {
+      onChange({ x: round(rawX), y: round(rawY) });
+    }
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current = null;
+    setActive(false);
+    onSnapChange?.({ x: null, y: null });
+    const t = e.currentTarget;
+    if (t.hasPointerCapture(e.pointerId)) t.releasePointerCapture(e.pointerId);
+  };
+
+  const palette =
+    color === "emerald"
+      ? { bg: "bg-emerald-500", ring: "ring-emerald-300" }
+      : color === "rose"
+        ? { bg: "bg-rose-500", ring: "ring-rose-300" }
+        : { bg: "bg-sky-500", ring: "ring-sky-300" };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Arrastrar ${label}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      style={{
+        position: "absolute",
+        left: `${anchor.x}%`,
+        top: `${anchor.y}%`,
+        transform: "translate(-50%, -50%)",
+      }}
+      className={cn(
+        "pointer-events-auto select-none touch-none transition-all",
+        active ? "cursor-grabbing scale-110" : "cursor-grab hover:scale-105",
+      )}
+    >
+      <div
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-lg ring-2",
+          palette.bg,
+          active ? palette.ring : isFree ? "ring-white/40" : "ring-white/20",
+          !isFree && "opacity-70 hover:opacity-100",
+        )}
+        title={isFree ? `${label} · ${Math.round(anchor.x)}% / ${Math.round(anchor.y)}%` : `${label} · click para fijar y arrastrar`}
+      >
+        <span className={cn("inline-block h-1.5 w-1.5 rounded-full", dark ? "bg-white/90" : "bg-white")} />
+        {label}
+        {isFree && (
+          <button
+            type="button"
+            onPointerDown={(ev) => ev.stopPropagation()}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onChange(null);
+            }}
+            className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white text-[10px] leading-none"
+            title="Volver a posición por defecto"
+            aria-label="Resetear posición"
+          >
+            ×
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

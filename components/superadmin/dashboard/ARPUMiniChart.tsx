@@ -72,7 +72,7 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
         </Caption>
       </div>
       <div style={{ height: 110 }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
             <XAxis
               dataKey="month"

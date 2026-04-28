@@ -125,12 +125,29 @@ async function BulejeJsonLd() {
       "@type": "Organization",
       name: "Buleje",
       url: "https://www.buleje.pe",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: "Pucallpa",
-        addressRegion: "Ucayali",
-        addressCountry: "PE",
+      foundingLocation: {
+        "@type": "Place",
+        name: "Ciudad Constitución, Perú",
       },
+      address: [
+        {
+          "@type": "PostalAddress",
+          addressLocality: "Ciudad Constitución",
+          addressRegion: "Pasco",
+          addressCountry: "PE",
+        },
+        {
+          "@type": "PostalAddress",
+          addressLocality: "Pucallpa",
+          addressRegion: "Ucayali",
+          addressCountry: "PE",
+        },
+      ],
+      areaServed: [
+        { "@type": "City", name: "Ciudad Constitución" },
+        { "@type": "City", name: "Pucallpa" },
+        { "@type": "Country", name: "Perú" },
+      ],
     },
   };
 

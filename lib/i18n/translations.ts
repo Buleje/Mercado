@@ -32,6 +32,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   // ── Navegación ─────────────────────────────────────────────────────────
   "nav.home": { es: "Inicio", en: "Home", shi: "Nete" },
   "nav.stores": { es: "Bodegas", en: "Stores", shi: "Xobo" },
+  "nav.shopDirectory": { es: "Tiendas", en: "Shops", shi: "Xobo" },
   "nav.explore": { es: "Explorar", en: "Explore", shi: "Benakoi" },
   "nav.discover": { es: "Descubrí", en: "Discover", shi: "Ikai" },
   "nav.recipes": { es: "Recetas", en: "Recipes", shi: "Piti kirika" },
@@ -54,6 +55,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.lightMode": { es: "Modo claro", en: "Light mode", shi: "Pakoi" },
   "nav.live": { es: "En Vivo", en: "Live", shi: "Kikini" },
   "nav.offers": { es: "Ofertas", en: "Offers", shi: "Rawe" },
+  "nav.howToPay": { es: "Cómo pagar", en: "How to pay", shi: "Akiranki kopiti" },
   "nav.new": { es: "Nuevo", en: "New", shi: "Bena" },
   "nav.liveNow": { es: "Transmisión en vivo activa", en: "Live broadcast active", shi: "Kikini iki" },
   "nav.notifications": { es: "Notificaciones", en: "Notifications", shi: "Yoiti" },

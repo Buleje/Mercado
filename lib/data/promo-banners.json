@@ -10,7 +10,8 @@
       "bgFrom": "#fce7f3",
       "bgTo": "#fbcfe8",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "explorar-2",
@@ -22,7 +23,8 @@
       "bgFrom": "#dbeafe",
       "bgTo": "#bfdbfe",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "explorar-3",
@@ -34,7 +36,8 @@
       "bgFrom": "#d1fae5",
       "bgTo": "#a7f3d0",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     }
   ],
   "explorar-mid": [
@@ -48,7 +51,8 @@
       "bgFrom": "#dbeafe",
       "bgTo": "#bfdbfe",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "explorar-mid-2",
@@ -60,7 +64,8 @@
       "bgFrom": "#fef3c7",
       "bgTo": "#fde68a",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     }
   ],
   "explorar-bottom": [
@@ -74,7 +79,8 @@
       "bgFrom": "#d1fae5",
       "bgTo": "#a7f3d0",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     }
   ],
   "bodegas": [
@@ -88,7 +94,8 @@
       "bgFrom": "#e0f2fe",
       "bgTo": "#bae6fd",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "bodegas-2",
@@ -100,7 +107,8 @@
       "bgFrom": "#ecfccb",
       "bgTo": "#d9f99d",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "bodegas-3",
@@ -112,7 +120,8 @@
       "bgFrom": "#fef3c7",
       "bgTo": "#fde68a",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     }
   ],
   "recetas": [
@@ -126,7 +135,8 @@
       "bgFrom": "#fed7aa",
       "bgTo": "#fdba74",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "recetas-2",
@@ -138,7 +148,8 @@
       "bgFrom": "#dcfce7",
       "bgTo": "#bbf7d0",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "recetas-3",
@@ -150,7 +161,8 @@
       "bgFrom": "#fae8ff",
       "bgTo": "#f5d0fe",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     }
   ],
   "ofertas": [
@@ -164,7 +176,8 @@
       "bgFrom": "#fee2e2",
       "bgTo": "#fecaca",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "ofertas-2",
@@ -176,7 +189,8 @@
       "bgFrom": "#ffedd5",
       "bgTo": "#fed7aa",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "ofertas-3",
@@ -188,7 +202,8 @@
       "bgFrom": "#cffafe",
       "bgTo": "#a5f3fc",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     }
   ],
   "bento": [
@@ -202,7 +217,8 @@
       "bgFrom": "#0c1015",
       "bgTo": "#1a1f26",
       "active": true,
-      "order": 1
+      "order": 1,
+      "type": "classic"
     },
     {
       "id": "bento-cupon",
@@ -214,7 +230,8 @@
       "bgFrom": "#00B4A6",
       "bgTo": "#00998d",
       "active": true,
-      "order": 2
+      "order": 2,
+      "type": "classic"
     },
     {
       "id": "bento-yape",
@@ -226,7 +243,8 @@
       "bgFrom": "#f4f4f3",
       "bgTo": "#e7e5e0",
       "active": true,
-      "order": 3
+      "order": 3,
+      "type": "classic"
     },
     {
       "id": "bento-selva",
@@ -238,22 +256,81 @@
       "bgFrom": "#0c2a25",
       "bgTo": "#0c1015",
       "active": true,
-      "order": 4
+      "order": 4,
+      "type": "classic"
     }
   ],
   "tiendas-hero": [
     {
       "id": "tiendas-hero-1",
-      "title": "Las mejores bodegas, en un solo lugar",
+      "title": "",
       "subtitle": "Pedí ahora y recibí en 25 minutos",
-      "imageUrl": "/uploads/banners-tiendas-hero/banners-tiendas-hero_1777253322244-Baner_1.webp",
+      "imageUrl": "/uploads/banners-tiendas-hero/banners-tiendas-hero_1777347063063-424.webp",
       "ctaHref": "/marketplace/ofertas",
       "ctaLabel": "Ver ofertas",
       "bgFrom": "#0f766e",
       "bgTo": "#0d9488",
       "active": true,
       "order": 1,
-      "type": "image"
+      "type": "promo",
+      "imageAdjust": {
+        "position": {
+          "x": 19.8,
+          "y": 7.7
+        },
+        "scale": 50,
+        "fit": "contain"
+      },
+      "promo": {
+        "productName": "",
+        "productImage": "https://plazavea.vteximg.com.br/arquivos/ids/27188879/20201348.jpg",
+        "price": 4.8,
+        "oldPrice": null,
+        "badge": "",
+        "buyHref": "/t/main/producto/1252383",
+        "buyLabel": "Comprar ahora",
+        "imageAdjust": {
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "scale": 105,
+          "fit": "cover"
+        },
+        "items": [
+          {
+            "id": "legacy",
+            "source": "linked",
+            "productName": "",
+            "productImage": "https://plazavea.vteximg.com.br/arquivos/ids/27188879/20201348.jpg",
+            "price": null,
+            "oldPrice": null,
+            "badge": "",
+            "buyHref": "/t/main/producto/1252383",
+            "buyLabel": "Comprar ahora",
+            "linkedStoreSlug": "main",
+            "linkedProductId": 1252383,
+            "imageAdjust": {
+              "position": {
+                "x": 50,
+                "y": 50
+              },
+              "scale": 105,
+              "fit": "cover"
+            },
+            "productAnchor": {
+              "x": 78.4,
+              "y": 50
+            },
+            "buyAnchor": {
+              "x": 78.4,
+              "y": 85.4
+            },
+            "productSize": 24,
+            "buySize": 31
+          }
+        ]
+      }
     },
     {
       "id": "tiendas-hero-2",

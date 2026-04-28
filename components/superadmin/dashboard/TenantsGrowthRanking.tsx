@@ -264,7 +264,7 @@ export default function TenantsGrowthRanking() {
 
                 {/* Sparkline de revenue */}
                 <div className="hidden sm:block w-32 h-14 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer minWidth={0} width="100%" height="100%">
                     <AreaChart data={tenant.revenuePoints} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
                       <defs>
                         <linearGradient id={`spark-${tenant.tenantId}`} x1="0" y1="0" x2="0" y2="1">

@@ -4,9 +4,9 @@ import TiendasClient from "./TiendasClient";
 const BASE_URL = "https://www.buleje.pe";
 
 export const metadata: Metadata = {
-  title: "Tiendas en Pucallpa | Buleje",
+  title: "Tiendas — Ciudad Constitución y Pucallpa | Buleje Perú",
   description:
-    "Todas las bodegas, minimarkets y tiendas de Pucallpa en un solo lugar. Busca por zona, categoría y recibe delivery rápido con Yape o efectivo.",
+    "Bodegas, minimarkets y tiendas locales en Ciudad Constitución (Pasco) y Pucallpa (Ucayali). Hecho en Ciudad Constitución. Delivery rápido, pago Yape o efectivo.",
   alternates: {
     canonical: `${BASE_URL}/tiendas`,
   },
@@ -15,9 +15,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Tiendas en Pucallpa | Buleje",
+    title: "Tiendas — Ciudad Constitución y Pucallpa | Buleje Perú",
     description:
-      "Encuentra bodegas y tiendas cerca tuyo en Pucallpa. Delivery rápido, pago Yape o efectivo.",
+      "Bodegas y tiendas de Ciudad Constitución y Pucallpa. Hecho en Perú · Delivery rápido · Yape o efectivo.",
     url: `${BASE_URL}/tiendas`,
     siteName: "Buleje",
     locale: "es_PE",

@@ -507,7 +507,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           isEmpty={data.myGrowth.length === 0}
           emptyText="Sin datos históricos"
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <ComposedChart data={data.myGrowth} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
@@ -551,7 +551,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           isEmpty={data.channelData.length === 0}
           emptyText="Sin pedidos en el período"
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <BarChart data={data.channelData} barCategoryGap="22%" margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="0" stroke={T.grid} vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />

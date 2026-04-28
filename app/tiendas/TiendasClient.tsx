@@ -19,9 +19,8 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Store, MapPin, ArrowUpRight, List, Map as MapIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
-import MarketplaceStoresView, {
-  ZONES,
-} from "@/components/marketplace/MarketplaceStoresView";
+import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
+import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
   useMarketplaceGeo,
   type MarketplaceStore,
@@ -278,27 +277,52 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
 
   const fetchStores = useCallback(() => setRetryKey((k) => k + 1), []);
 
-  // Back-nav recovery — Next.js puede rehidratar el client component con
-  // state previo (loading=true, stores=[]) si la fetch anterior fue abortada
-  // por el cleanup del unmount. popstate/pageshow cubren back-nav del browser.
+  // Back-nav recovery — cuando el usuario navega a una tienda (/t/[slug]) y
+  // vuelve atrás, Next.js puede restaurar el árbol cliente con state stale
+  // (stores=[] y loading=false porque la fetch fue abortada por el unmount
+  // anterior). Cubrimos 3 caminos:
+  //  1. popstate: back/forward del browser dentro de la SPA
+  //  2. pageshow persisted=true: bfcache del browser (mobile Safari/Firefox)
+  //  3. visibilitychange: usuario vuelve a la pestaña tras dormir el equipo
+  // En todos los casos: si stores está vacío, forzamos refresh + retry.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const retry = () => {
       setLoading(false);
       setRetryKey((k) => k + 1);
+      // router.refresh limpia el cache del segment del App Router, lo que
+      // garantiza que cualquier dato cacheado server-side también se renueve.
+      try { router.refresh(); } catch {}
     };
     const onPageShow = (e: PageTransitionEvent) => {
       if (e.persisted) retry();
     };
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && stores.length === 0 && !loading) {
+        retry();
+      }
+    };
     window.addEventListener("popstate", retry);
     window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.removeEventListener("popstate", retry);
       window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisible);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
+
+  // Mount-time recovery — si llegamos al render con stores vacío y loading
+  // false (state stuck de un mount anterior), disparamos retry inmediato.
+  useEffect(() => {
+    if (stores.length === 0 && !loading && !error) {
+      setRetryKey((k) => k + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Safety net — si tras 4s no hay stores ni error declarado, asumimos
+  // Safety net — si tras 4.5s no hay stores ni error declarado, asumimos
   // rehidratación con state stuck y forzamos full page reload. Peor caso
   // UX puntual pero el cliente NUNCA ve un skeleton infinito.
   useEffect(() => {
@@ -311,6 +335,12 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
     return () => clearTimeout(safety);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Zonas del filtro: SOLO las que tienen tiendas reales (no inventamos) ──
+  // Si stores aún no cargó, mostramos sólo el item "Todas las zonas".
+  const zonesForFilter = deriveActiveZones(
+    stores.map((s) => ({ zone: (s as { zone?: string }).zone })),
+  );
 
   // ── TS-22 sort: deriva la lista ordenada de filteredStores ──
   const sortedStores = (() => {
@@ -365,7 +395,7 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
 
   // ── TS-47 breadcrumb: zona como label legible ──
   const zonaLabel = zone
-    ? ZONES.find((z) => z.id === zone)?.label
+    ? zonesForFilter.find((z) => z.id === zone)?.label
     : undefined;
 
   const navMode = useMarketplaceNavMode();
@@ -634,14 +664,14 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
           {/* Zonas = cajitas chicas */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
-              Zona de Pucallpa
+              Filtrar por zona
             </p>
             <div
               role="group"
               aria-label="Filtrar por zona"
               className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
             >
-              {ZONES.map((z) => {
+              {zonesForFilter.map((z) => {
                 const active = zone === z.id;
                 return (
                   <button

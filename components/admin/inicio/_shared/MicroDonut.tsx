@@ -69,7 +69,7 @@ export function MicroDonut({
   return (
     <div className="flex flex-col items-center w-full">
       <div className="relative w-full" style={{ height: `${height}px` }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}

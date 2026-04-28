@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import TiendasClient from "../TiendasClient";
+import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -11,18 +12,13 @@ const BASE_URL = "https://www.buleje.pe";
  * Captura long-tail "bodegas en yarinacocha", "tiendas en manantay", etc.
  * Reusa TiendasClient pero sembrando la zona desde el segmento.
  *
- * Sprint 5 marketplace blueprint.
+ * Sprint 5 marketplace blueprint. Zonas del catálogo canónico
+ * (lib/marketplace-zones.ts) — agregar zonas allí genera rutas SEO nuevas.
  */
 
-const ZONES = [
-  { id: "centro",      label: "Centro" },
-  { id: "manantay",    label: "Manantay" },
-  { id: "calleria",    label: "Callería" },
-  { id: "yarinacocha", label: "Yarinacocha" },
-  { id: "campo_verde", label: "Campo Verde" },
-] as const;
+const ZONES = MARKETPLACE_ZONES.map((z) => ({ id: z.id, label: z.label }));
 
-type ZoneSlug = (typeof ZONES)[number]["id"];
+type ZoneSlug = string;
 
 export function generateStaticParams() {
   return ZONES.map((z) => ({ zona: z.id }));

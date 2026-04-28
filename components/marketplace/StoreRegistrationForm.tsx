@@ -32,12 +32,13 @@ const CATEGORIES = [
   { value: "otro", label: "Otro" },
 ];
 
-const ZONES = [
-  "Pucallpa Centro",
-  "Manantay",
-  "Callería",
-  "Yarinacocha",
-  "Campo Verde",
+// Zonas del catálogo canónico (lib/marketplace-zones.ts).
+// "Otra zona" se mantiene como escape-hatch para zones libre que no estén
+// en el catálogo (ej. distrito nuevo o ciudad fuera de cobertura).
+import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+
+const ZONES: string[] = [
+  ...MARKETPLACE_ZONES.map((z) => `${z.label}${z.city ? ` (${z.city})` : ""}`),
   "Otra zona",
 ];
 

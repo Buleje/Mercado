@@ -27,6 +27,7 @@ import StoreCategories, { type StoreCategoryChip } from "./StoreCategories";
 import StoreCatalog from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
 import StorePoliciesBlock from "./StorePoliciesBlock";
+import { getStoreTagline } from "@/lib/store-tagline";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
 import type {
   MockStoreReview,
@@ -86,7 +87,12 @@ export default function StoreDetailClient({
         name={store.name}
         category={store.category}
         zone={store.zone}
-        description={store.description}
+        description={getStoreTagline({
+          slug: store.slug,
+          name: store.name,
+          category: store.category,
+          existing: store.description,
+        })}
         rating={store.rating ?? 0}
         reviewCount={store.reviewCount}
         scheduleLabel="Lun a Dom · 7am – 11pm"
@@ -122,7 +128,7 @@ export default function StoreDetailClient({
 
       {/* ── Reviews ────────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <StoreReviews summary={reviewSummary} reviews={reviews} />
+        <StoreReviews summary={reviewSummary} reviews={reviews} storeSlug={store.slug} storeName={store.name} />
       </div>
 
       {/* ── Divider ────────────────────────────────────────────────────────── */}

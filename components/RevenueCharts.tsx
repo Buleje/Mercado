@@ -84,7 +84,7 @@ export default function RevenueCharts() {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-emerald-500" /> Tendencia de Ingresos (6 meses)
         </h3>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={data.monthlyRevenue} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
@@ -109,7 +109,7 @@ export default function RevenueCharts() {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-indigo-500" /> Nuevos Registros por Mes
         </h3>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer minWidth={0} width="100%" height={240}>
           <BarChart data={data.monthlySignups} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="month" stroke="#9ca3af" tick={{ fontSize: 12 }} />

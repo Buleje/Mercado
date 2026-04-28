@@ -31,6 +31,7 @@ import {
   Radio,
   Tag,
   Package,
+  Wallet,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
@@ -97,6 +98,16 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     matchEquals: "/marketplace",
   },
   {
+    // Directorio de tiendas (filtrable por zona/categoría) — distinto de la
+    // home de marketplace que muestra carruseles editoriales. Acceso directo
+    // desde el navbar para usuarios que vienen a "buscar tienda" no producto.
+    id: "tiendas",
+    href: "/tiendas",
+    labelKey: "nav.shopDirectory",
+    icon: Store,
+    matchPrefix: "/tiendas",
+  },
+  {
     id: "recetas",
     href: "/recetas",
     labelKey: "nav.recipes",
@@ -127,6 +138,13 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     icon: Tag,
     matchPrefix: "/marketplace/ofertas",
     // badge "Nuevo" removido 2026-04-18 — llevaba meses, ya no aporta señal.
+  },
+  {
+    id: "como-pagar",
+    href: "/marketplace/como-pagar",
+    labelKey: "nav.howToPay",
+    icon: Wallet,
+    matchPrefix: "/marketplace/como-pagar",
   },
 ] as const;
 

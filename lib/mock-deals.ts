@@ -25,6 +25,11 @@ export type Deal = {
   /** ISO timestamp cuando termina la oferta */
   endsAt: string;
   isFlash: boolean;
+  /** Campos opcionales para integrar con UnifiedProductCard (carrito + modal). */
+  productId?: number;
+  storeProductId?: string;
+  image?: string | null;
+  stock?: number;
 };
 
 export type DealStore = {

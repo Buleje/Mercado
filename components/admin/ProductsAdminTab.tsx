@@ -17,6 +17,7 @@ import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ExcelProductImporter from "./ExcelProductImporter";
+import BulkImportModal from "./BulkImportModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -772,6 +773,7 @@ export default function ProductsAdminTab() {
   const [sortAsc, setSortAsc] = useState(true);
   const [modal, setModal] = useState<null | "create" | { product: Product } | { duplicate: Product }>(null);
   const [showExcelImporter, setShowExcelImporter] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<null | { msg: string; type: "success" | "error" }>(null);
@@ -963,9 +965,16 @@ export default function ProductsAdminTab() {
             onClick={() => csvInputRef.current?.click()}
             disabled={csvImporting}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
-            title="Importar productos desde CSV"
+            title="Importar productos desde CSV (legacy)"
           >
-            <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "Importar"}
+            <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "CSV"}
+          </button>
+          <button
+            onClick={() => setShowBulkImport(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+            title="Importar productos en masa con preview y validación"
+          >
+            <Upload className="h-4 w-4" /> Importar en masa
           </button>
           <button
             onClick={() => setShowExcelImporter(true)}
@@ -1231,6 +1240,16 @@ export default function ProductsAdminTab() {
           </div>
         </div>
       )}
+
+      {/* Bulk CSV import modal — drag-drop + preview + validación */}
+      <BulkImportModal
+        open={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onImported={(created) => {
+          showToast(`${created} productos importados`, "success");
+          void fetchProducts();
+        }}
+      />
     </>
   );
 }

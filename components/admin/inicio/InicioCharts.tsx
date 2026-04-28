@@ -54,7 +54,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
         isEmpty={data.ventasDiarias.length === 0}
         emptyText="Sin ventas en el periodo"
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <ComposedChart data={data.ventasDiarias} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradVentasInicio" x1="0" y1="0" x2="0" y2="1">
@@ -87,7 +87,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.topProductos.length === 0}
           emptyText="Sin ventas"
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <BarChart data={data.topProductos.slice(0, 8)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
               <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />
@@ -110,7 +110,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.flujoEfectivo.length === 0}
           emptyText="Sin movimientos"
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <BarChart data={data.flujoEfectivo} barGap={-2} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
               <XAxis dataKey="dia" tick={{ fontSize: 9, fill: T.tickFill }} axisLine={false} tickLine={false} />
@@ -252,7 +252,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.comprasPorProveedor.length === 0}
           emptyText="Sin compras"
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <BarChart data={data.comprasPorProveedor.slice(0, 6)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
               <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />

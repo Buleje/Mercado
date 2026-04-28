@@ -6,7 +6,7 @@ import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
-  Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass,
+  Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass, Wallet,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -665,10 +665,9 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        // Re-label "Tienda" → "Comprar" — verbo CTA directo (no sustantivo pasivo).
         return (
           <Link key="tienda" href={tenantPath("/tienda")} className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tienda") && activeNavCls)}>
-            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} /> Comprar
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} /> Tienda
           </Link>
         );
       case "explorar":
@@ -680,10 +679,24 @@ export default function Header() {
           </Link>
         );
       case "ofertas":
-        // Captura price-sensitive shoppers — ancla a seccion ofertas o query.
+        // Captura price-sensitive shoppers — link directo al hub de ofertas.
         return (
-          <Link key="ofertas" href={tenantPath("/tienda?category=ofertas")} className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("ofertas") && activeNavCls)}>
+          <Link key="ofertas" href="/marketplace/ofertas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("ofertas") && activeNavCls)}>
             <Tag className="h-4 w-4" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "como-pagar":
+        return (
+          <Link key="como-pagar" href="/marketplace/como-pagar" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
+            <Wallet className="h-4 w-4" strokeWidth={1.75} /> Cómo pagar
+          </Link>
+        );
+      case "tiendas":
+        // Directorio multi-tienda — disponible también dentro del storefront
+        // de un tenant individual (link absoluto a /tiendas).
+        return (
+          <Link key="tiendas" href="/tiendas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tiendas") && activeNavCls)}>
+            <Store className="h-4 w-4" strokeWidth={1.75} /> Tiendas
           </Link>
         );
       case "a-domicilio":
@@ -798,10 +811,9 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        // Label "Comprar" + icon ShoppingBag en mobile drawer.
         return (
           <Link key="tienda" href={tenantPath("/tienda")} onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <ShoppingBag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Comprar
+            <ShoppingBag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Tienda
           </Link>
         );
       case "explorar":
@@ -813,8 +825,20 @@ export default function Header() {
         );
       case "ofertas":
         return (
-          <Link key="ofertas" href={tenantPath("/tienda?category=ofertas")} onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+          <Link key="ofertas" href="/marketplace/ofertas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
             <Tag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "como-pagar":
+        return (
+          <Link key="como-pagar" href="/marketplace/como-pagar" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Wallet className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Cómo pagar
+          </Link>
+        );
+      case "tiendas":
+        return (
+          <Link key="tiendas" href="/tiendas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Store className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Tiendas
           </Link>
         );
       case "a-domicilio":

@@ -163,7 +163,14 @@ export function CategoriesTab() {
       const hasZoneDraft = (() => {
         const cur = items?.find((c) => c.id === catId);
         if (!cur) return false;
-        const slugs = (d?.linkedStoreSlugs ?? cur.linkedStoreSlugs) ?? [];
+        // Slugs vinculados a la categoría principal + a TODAS las subcategorías,
+        // para que un cambio de zona desde el linker de una subcategoría también
+        // marque la categoría como dirty y se guarde al hacer "Guardar".
+        const primarySlugs = (d?.linkedStoreSlugs ?? cur.linkedStoreSlugs) ?? [];
+        const subSlugs = (d?.subcategories ?? cur.subcategories).flatMap(
+          (s) => s.linkedStoreSlugs ?? [],
+        );
+        const slugs = Array.from(new Set([...primarySlugs, ...subSlugs]));
         return slugs.some(
           (slug) => zoneDrafts[slug] !== undefined && zoneDrafts[slug] !== (storeZones[slug] ?? ""),
         );
@@ -248,8 +255,14 @@ export function CategoriesTab() {
         });
 
         // Construir parche de zonas manuales sólo con drafts modificados.
+        // Incluir slugs de la categoría principal + de cada subcategoría —
+        // así el botón "Guardar" cubre cambios de zona desde cualquier linker.
         const zonesPatch: Record<string, string> = {};
-        for (const slug of cur.linkedStoreSlugs ?? []) {
+        const allSlugs = new Set<string>([
+          ...(cur.linkedStoreSlugs ?? []),
+          ...normalizedSubs.flatMap((s) => s.linkedStoreSlugs ?? []),
+        ]);
+        for (const slug of allSlugs) {
           if (zoneDrafts[slug] !== undefined && zoneDrafts[slug] !== (storeZones[slug] ?? "")) {
             zonesPatch[slug] = zoneDrafts[slug].trim();
           }
@@ -320,6 +333,36 @@ export function CategoriesTab() {
 
   const sortedItems = useMemo(() => items ?? [], [items]);
 
+  // ── Auditoría de vínculos: detectar categorías/subcats sin tiendas ──
+  // Sólo cuenta categorías ACTIVAS — las ocultas no afectan al marketplace
+  // público, así que no son "errores" sino decisiones del admin.
+  const unlinkedReport = useMemo(() => {
+    if (!items) return null;
+    type Issue =
+      | { kind: "category"; catId: string; catLabel: string }
+      | { kind: "subcategory"; catId: string; catLabel: string; subId: string; subLabel: string };
+    const issues: Issue[] = [];
+    for (const c of items) {
+      if (!c.active) continue;
+      if (!c.linkedStoreSlugs || c.linkedStoreSlugs.length === 0) {
+        issues.push({ kind: "category", catId: c.id, catLabel: c.label });
+      }
+      for (const sub of c.subcategories) {
+        if (!sub.active) continue;
+        if (!sub.linkedStoreSlugs || sub.linkedStoreSlugs.length === 0) {
+          issues.push({
+            kind: "subcategory",
+            catId: c.id,
+            catLabel: c.label,
+            subId: sub.id,
+            subLabel: sub.label,
+          });
+        }
+      }
+    }
+    return issues;
+  }, [items]);
+
   return (
     <div className="space-y-4">
       {/* ── Header explicativo ── */}
@@ -354,6 +397,50 @@ export function CategoriesTab() {
       {error && (
         <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
+        </div>
+      )}
+
+      {/* ── Aviso ROJO: categorías/subcats activas sin tienda vinculada ── */}
+      {unlinkedReport && unlinkedReport.length > 0 && (
+        <div className="rounded-xl border-2 border-rose-400 bg-rose-50 px-4 py-3 dark:border-rose-500 dark:bg-rose-950/40">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500 text-white">
+              <AlertTriangle className="h-5 w-5" strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <p className="text-sm font-extrabold text-rose-700 dark:text-rose-200">
+                {unlinkedReport.length === 1
+                  ? "1 elemento sin tienda vinculada"
+                  : `${unlinkedReport.length} elementos sin tienda vinculada`}
+              </p>
+              <p className="text-xs text-rose-700/80 dark:text-rose-200/80 leading-snug">
+                Estos no aparecen poblados en <code>/tiendas</code> porque no hay tienda asignada.
+                Asigná al menos una tienda en el bloque &quot;Paso 1 · Categoría principal&quot;
+                o &quot;Tiendas vinculadas&quot; (subcategoría).
+              </p>
+              <ul className="mt-1 space-y-0.5 max-h-32 overflow-y-auto text-[11px] text-rose-700 dark:text-rose-200">
+                {unlinkedReport.map((it, i) =>
+                  it.kind === "category" ? (
+                    <li key={`cat-${it.catId}-${i}`} className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-200/70 dark:bg-rose-800/40 text-[10px] font-extrabold uppercase tracking-wider">
+                        Categoría
+                      </span>
+                      <span className="font-bold">{it.catLabel}</span>
+                      <span className="text-rose-500/70">· {it.catId}</span>
+                    </li>
+                  ) : (
+                    <li key={`sub-${it.catId}-${it.subId}-${i}`} className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-200/70 dark:bg-rose-800/40 text-[10px] font-extrabold uppercase tracking-wider">
+                        Subcat
+                      </span>
+                      <span className="font-bold">{it.subLabel}</span>
+                      <span className="text-rose-500/70">en {it.catLabel}</span>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
@@ -591,6 +678,9 @@ function CategoryRow({
                   key={sub.id}
                   sub={sub}
                   stores={stores}
+                  storeZones={storeZones}
+                  zoneDrafts={zoneDrafts}
+                  onZoneDraftChange={onZoneDraftChange}
                   onPatch={(patch) => onUpdateSub(sub.id, patch)}
                   onRemove={() => onRemoveSub(sub.id)}
                 />
@@ -609,16 +699,26 @@ function CategoryRow({
 function SubCategoryCard({
   sub,
   stores,
+  storeZones,
+  zoneDrafts,
+  onZoneDraftChange,
   onPatch,
   onRemove,
 }: {
   sub: SubCategory;
   stores: StoreOption[];
+  storeZones: Record<string, string>;
+  zoneDrafts: Record<string, string>;
+  onZoneDraftChange: (slug: string, value: string) => void;
   onPatch: (patch: Partial<SubCategory>) => void;
   onRemove: () => void;
 }) {
   const [showStores, setShowStores] = useState(false);
   const linkedSet = useMemo(() => new Set(sub.linkedStoreSlugs ?? []), [sub.linkedStoreSlugs]);
+  const linkedStores = useMemo(
+    () => stores.filter((s) => linkedSet.has(s.slug)),
+    [stores, linkedSet],
+  );
 
   const toggleStore = (slug: string) => {
     const next = new Set(linkedSet);
@@ -713,6 +813,7 @@ function SubCategoryCard({
             ) : (
               stores.map((s) => {
                 const checked = linkedSet.has(s.slug);
+                const ownZone = (s.ownZone ?? "").trim();
                 return (
                   <label
                     key={s.slug}
@@ -729,8 +830,14 @@ function SubCategoryCard({
                       onChange={() => toggleStore(s.slug)}
                       className="h-3 w-3 accent-[var(--accent)]"
                     />
-                    <span className="truncate">{s.name}</span>
-                    <span className="ml-auto text-[10px] text-[var(--text-tertiary)] truncate">
+                    <span className="truncate flex-1">{s.name}</span>
+                    {ownZone && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-[var(--data-success)]">
+                        <MapPin className="h-2.5 w-2.5" />
+                        {ownZone}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[10px] text-[var(--text-tertiary)] truncate max-w-[80px]">
                       {s.slug}
                     </span>
                   </label>
@@ -740,6 +847,48 @@ function SubCategoryCard({
           </div>
         )}
       </div>
+
+      {/* Zonas (ubicación) por tienda vinculada — paralelo al PrimaryStoreLinker */}
+      {linkedStores.length > 0 && (
+        <div className="rounded-lg border border-dashed border-[var(--accent)]/30 bg-[var(--accent-soft)]/15 p-1.5 space-y-1">
+          <p className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1">
+            <MapPin className="h-2.5 w-2.5" /> Ubicación de cada tienda
+          </p>
+          <div className="space-y-1">
+            {linkedStores.map((s) => {
+              const ownZone = (s.ownZone ?? "").trim();
+              const persisted = (storeZones[s.slug] ?? "").trim();
+              const draftValue = zoneDrafts[s.slug] !== undefined ? zoneDrafts[s.slug] : persisted;
+              const hasOwnZone = ownZone !== "";
+              return (
+                <div key={s.slug} className="flex items-center gap-1.5 text-[10px]">
+                  <span className="truncate flex-1 font-semibold text-[var(--text-primary)]">
+                    {s.name}
+                  </span>
+                  {hasOwnZone ? (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-[var(--data-success)] font-bold"
+                      title="Zona declarada por la propia tienda — autoritaria"
+                    >
+                      <MapPin className="h-2.5 w-2.5" />
+                      {ownZone}
+                    </span>
+                  ) : (
+                    <input
+                      type="text"
+                      value={draftValue}
+                      onChange={(e) => onZoneDraftChange(s.slug, e.target.value)}
+                      placeholder="Asignar zona…"
+                      aria-label={`Zona manual para ${s.name}`}
+                      className="w-[100px] rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 py-0.5 text-[10px] focus:border-[var(--accent)] outline-none"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

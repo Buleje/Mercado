@@ -504,9 +504,13 @@ export default function Footer() {
             {/* Currency + Locale switchers removidos — default: Soles + Español */}
 
             <div className="flex flex-col sm:flex-row items-center gap-2">
-              <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
-                © {year} {storeTheme?.name || platformName} · Hecho en {brand?.identity.country || "Perú"}
-                <span className="mx-1">·</span>
+              <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
+                © {year} {storeTheme?.name || platformName}
+                <span className="mx-0.5">·</span>
+                <span>Hecho en Ciudad Constitución, Perú</span>
+                <span className="mx-0.5">·</span>
+                <span className="text-white/45">Pucallpa próximamente</span>
+                <span className="mx-0.5">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
                 <span className="mx-0.5">·</span>
                 <a href="/terminos" className="hover:text-white/60 transition-colors">Términos</a>

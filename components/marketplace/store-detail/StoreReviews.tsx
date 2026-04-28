@@ -10,10 +10,13 @@
 import { Star, ThumbsUp } from "@buleje/design-system/icons";
 import type { MockStoreReview, MockStoreRatingSummary } from "@/lib/mock-store-reviews";
 import { cn } from "@/lib/utils";
+import LeaveReviewForm from "./LeaveReviewForm";
 
 interface StoreReviewsProps {
   summary: MockStoreRatingSummary;
   reviews: MockStoreReview[];
+  storeSlug?: string;
+  storeName?: string;
 }
 
 function StarRow({ filled, total = 5 }: { filled: number; total?: number }) {
@@ -119,7 +122,7 @@ function ReviewCard({ review }: { review: MockStoreReview }) {
   );
 }
 
-export default function StoreReviews({ summary, reviews }: StoreReviewsProps) {
+export default function StoreReviews({ summary, reviews, storeSlug, storeName }: StoreReviewsProps) {
   const maxCount = Math.max(...summary.breakdown.map((b) => b.count), 1);
 
   return (
@@ -168,21 +171,29 @@ export default function StoreReviews({ summary, reviews }: StoreReviewsProps) {
       </div>
 
       {/* Review list */}
-      <div>
-        {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
-        ))}
-      </div>
+      {reviews.length > 0 ? (
+        <div>
+          {reviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-8 text-center">
+          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+            Esta tienda todavía no tiene reseñas.
+          </p>
+          <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            Sé el primero en compartir tu experiencia después de tu próxima compra.
+          </p>
+        </div>
+      )}
 
-      {/* CTA */}
-      <div className="pt-2">
-        <button
-          type="button"
-          className="text-sm font-semibold text-gray-600 dark:text-gray-400 underline underline-offset-2 hover:text-gray-900 dark:hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-        >
-          Ver todas las reseñas
-        </button>
-      </div>
+      {/* CTA Dejar reseña */}
+      {storeSlug && storeName && (
+        <div className="pt-2">
+          <LeaveReviewForm storeSlug={storeSlug} storeName={storeName} />
+        </div>
+      )}
     </section>
   );
 }

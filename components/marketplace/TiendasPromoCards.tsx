@@ -29,7 +29,7 @@ const CARDS: PromoCard[] = [
     variant: "accent",
   },
   {
-    href: "/como-pagar",
+    href: "/marketplace/como-pagar",
     eyebrow: "Yape o efectivo",
     title: "Pagá como prefieras",
     subtitle: "Sin tarjetas, sin complicaciones — vos decidís.",

@@ -74,7 +74,7 @@ export function SAStatCard({
 
         {sparkline && sparkline.length > 1 && (
           <div className="w-20 h-8 shrink-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer minWidth={0} width="100%" height="100%">
               <AreaChart data={sparkline.map((v, i) => ({ i, v }))}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

@@ -87,6 +87,35 @@ function isAnalyticsLoaded(): boolean {
   return typeof window.gtag === "function" || typeof (window as any).dataLayer !== "undefined";
 }
 
+// ── Helper: persistir evento de producto en ProductAnalytics ────────────────
+// Fire-and-forget. Llama a /api/marketplace/products/{id}/analytics/track
+// para que el módulo /admin/store-analytics tenga datos reales.
+// Skipea si productId no es numérico (algunos contextos pasan slugs).
+
+function persistProductEvent(
+  productId: string | number,
+  metric: "view" | "click" | "addToCart" | "conversion",
+  revenue?: number,
+): void {
+  if (typeof window === "undefined") return;
+  const idNum = typeof productId === "number" ? productId : parseInt(String(productId), 10);
+  if (!Number.isFinite(idNum) || idNum <= 0) return;
+  // Lee el CSRF token desde cookie — proxy.ts lo setea en cada response.
+  const csrf = (typeof document !== "undefined")
+    ? (document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? null)
+    : null;
+  // Best-effort, sin retries — no debe afectar UX si falla.
+  fetch(`/api/marketplace/products/${idNum}/analytics/track`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(csrf ? { "x-csrf-token": decodeURIComponent(csrf) } : {}),
+    },
+    body: JSON.stringify({ metric, ...(revenue != null ? { revenue } : {}) }),
+    keepalive: true,
+  }).catch(() => { /* noop */ });
+}
+
 // ── Core tracking functions ──────────────────────────────────────────────────
 
 /**
@@ -198,6 +227,8 @@ export function trackProductView(product: {
       },
     ],
   });
+  // Persistir en DB para /admin/store-analytics
+  persistProductEvent(product.id, "view");
 }
 
 /**
@@ -223,6 +254,7 @@ export function trackAddToCart(product: {
       },
     ],
   });
+  persistProductEvent(product.id, "addToCart");
 }
 
 /**
@@ -293,6 +325,10 @@ export function trackPurchase(data: {
       quantity: item.quantity,
     })),
   });
+  // Persistir conversion por cada item — el revenue prorrateado es item.price * qty
+  for (const item of data.items) {
+    persistProductEvent(item.id, "conversion", item.price * item.quantity);
+  }
 }
 
 // ── CTA tracking ──────────────────────────────────────────────────────────────

@@ -51,6 +51,16 @@ export type PromoItem = {
   buyAnchor?: Anchor | null;
   /** Posición libre de la insignia/badge. Si undefined, va arriba del nombre. */
   badgeAnchor?: Anchor | null;
+  /** Posición libre de la imagen del producto. Si undefined, usa el slot flex
+   *  por defecto (lado izquierdo, square 80% del alto). Cuando está set, se
+   *  renderiza absolute centrada en el anchor con tamaño `productSize` (def. 30%). */
+  productAnchor?: Anchor | null;
+  /** Tamaño relativo (% del ancho del banner) cuando productAnchor está libre.
+   *  Default 28. Min 10, max 60. */
+  productSize?: number;
+  /** Tamaño relativo (% del ancho del banner) del botón "Comprar" cuando
+   *  buyAnchor está libre. Default 22. Min 8, max 50. */
+  buySize?: number;
 };
 
 /** Datos de promo embebida cuando type === "promo". Campos legacy (single)

@@ -1,179 +1,282 @@
-# Session Handoff — 2026-04-19
+# Session Handoff — 2026-04-28
 
-Sesión larga de fixes + mejoras sistemáticas. 17 items del roadmap ejecutados, 47/47 tests pasan, tsc 0 errores. **NO hay commits pendientes** — 45 archivos modificados + 40 nuevos en working tree esperando tu decisión.
+**Branch:** `prod` (33 commits ahead of origin/prod, no pusheado)
+**Working tree:** 57 archivos sin commitear (1 staged, 32 modified, 24 untracked)
+**Server status:** dev server vivo en `localhost:3000`, todas rutas críticas 200
 
-## Lo crítico primero
+---
 
-### Bugs resueltos (todos en código, ya validados)
+## Lo que se hizo en esta sesión
 
-| Bug | Fix | Verificable en |
-|---|---|---|
-| `.toFixed is not a function` crash `/marketplace/explorar` | `components/store/RecentlyViewed.tsx:111` — el archivo correcto era el de `components/store/`, no el de `components/` (2 archivos shadowed) | Recargar Ctrl+Shift+R |
-| Carrito desaparece al abrir sidebar en marketplace | `contexts/cart-context.tsx` marker `cart-hydration-patch-v1` — guard multi-store + endpoint `/api/marketplace/products/check-exists` | `__tests__/contexts/cart-context-multi-store.test.tsx` |
-| `500 /api/marketplace/stores/[slug]/phone` | Soft-fail: siempre devuelve `{ phone: null }` | `app/api/marketplace/stores/[slug]/phone/route.ts` |
-| `ReferenceError: MarketplaceStoreProviders is not defined` | `app/marketplace/layout.tsx` — import roto por `replace_all` fixeado | — |
-| `Blocked aria-hidden with focused descendant` | `components/auth/AuthModal.tsx` — `aria-hidden` → `inert` | — |
-| `/marketplace/explorar` 500 Element type is invalid | `components/marketplace/QuickAddDrawer.tsx` era 0 bytes — implementado | — |
-| 10 × 404 `/products/*.jpg` | 10 SVGs temáticos en `public/products/` | — |
-| `45 GB .next/dev` / ENOSPC | Script `predev-cache-guard.mjs` auto-limpia >5 GB | — |
-| 45 procesos node zombis | Script `dev-guardian.mjs` mata >12h; auto-trigger si >20 | `npm run dev:zombies` |
+### Banner Studio (superadmin)
+- ✅ Slider de tamaño para botón "Comprar" (no solo producto)
+- ✅ Paneles laterales redimensionables (drag) con persistencia localStorage
+- ✅ Schema Zod del PUT laxo con `.passthrough()` — antes daba 400 al guardar
+- ✅ Errores 400 con `path` detallado para debug
+- ✅ Eliminado texto fantasma "(sin producto)" cuando productName está vacío
+- Archivos: `components/superadmin/banners/BannerPreviewStudio.tsx`, `app/api/superadmin/banners/route.ts`, `components/marketplace/PromoBannerRenderer.tsx`, `lib/promo-banners.ts`, `app/superadmin/banners/page.tsx`
 
-## Para retomar mañana
+### Ofertas reales (no más mocks)
+- ✅ Endpoint `/api/marketplace/deals` con filtros (category/sort/limit/minDiscount/fallbackToLowest)
+- ✅ Página `/marketplace/ofertas` con grid 5 cols + UnifiedProductCard + carrito + modal
+- ✅ Hook compartido `use-marketplace-deals.ts` con cache sessionStorage TTL 60s
+- ✅ Empty state con CTA "Sos bodeguero · Crear mi tienda"
+- ✅ 3 secciones home (OfertasFlashSection, OfertasEditorial, ExplorarTileGrid) migradas → ocultas si no hay deals
+- Archivos nuevos: `app/api/marketplace/deals/`, `hooks/use-marketplace-deals.ts`
+- ADR pendiente migration: `docs/adr/081-store-product-discount-fields.md`
 
-### 1. Arrancar dev server limpio
-```bash
-npm run dev:zombies      # mata zombis si quedaron
-npm run dev              # predev auto-limpia cache si >5 GB
-```
+### Página `/marketplace/como-pagar` (nueva)
+- Hero + 5 métodos (Yape, Plin, Efectivo, Transferencia, Tarjeta) + FAQ + CTA
+- Link agregado al nav primario MarketplaceNavbar
+- Card "Pagá como prefieras" en TiendasPromoCards apunta acá
+- Archivos: `app/marketplace/como-pagar/page.tsx`, `components/marketplace/como-pagar/ComoPagarClient.tsx`
 
-### 2. Verificar que el fix del cart persiste en browser
-- `http://localhost:3000/marketplace/explorar`
-- Click "+" en una card → drawer abre → Agregar al carrito
-- Abrir sidebar → **item sigue ahí** ✅
-- Recargar → **item persiste** ✅
+### Nav: "Tienda · Ofertas · Cómo pagar"
+- DEFAULT_NAV_LINKS reordenado, label "Comprar" → "Tienda"
+- Case `como-pagar` agregado en Header.tsx (desktop + mobile)
+- `lib/i18n/translations.ts`: nav.howToPay agregado
 
-### 3. Correr e2e para confirmar fixes
-```bash
-npx playwright test marketplace-cart-persist marketplace-quickadd marketplace-localstorage-doctor
-```
+### Descripciones únicas por bodega
+- `lib/store-tagline.ts` con pools por categoría (bodega, polleria, restaurante, etc.)
+- Hash determinístico por slug → siempre la misma frase
+- Aplicado en: storefront hero, generateMetadata, JSON-LD, ItemListJsonLd marketplace
 
-### 4. Ver estado completo
-```bash
-npm run dev:health       # tsc + lint + tests + dangers + duplicates en 1 dashboard
-```
+### Footer + SEO Ciudad Constitución / Pucallpa
+- Footer: "Hecho en Ciudad Constitución, Perú · Pucallpa próximamente"
+- JSON-LD: foundingLocation + address[] con ambas ciudades + areaServed
+- metadata `/tiendas` actualizada
+- Sitemap incluye `/tiendas`, `/marketplace/ofertas`, `/marketplace/como-pagar`, `/marketplace/explorar`
 
-## Trabajo pendiente (en orden de prioridad)
+### Bug back-nav `/tiendas`
+- 3 listeners: popstate + pageshow.persisted + visibilitychange
+- Mount-time recovery + safety net 4.5s
+- `router.refresh()` + retry combinado
 
-### Alto (debería ser próximo)
-- **#32 Prisma indexes**: `OrderItem(productId)`, `Product(tenantId, active, deletedAt)`, `Subscription(userId, status)`. Danger zone `schema.prisma` — leer `prisma-schema` skill primero. Migration expand→migrate→contract. ~45 min.
-- **#3 useSWR en cart check-exists**: dedup + revalidation. ~30 min.
-- **#9 IntersectionObserver** lazy-load `RecentlyViewed` + `PersonalizedRecommendations`. ~30 min.
-- **#48 cacheTag + revalidateTag** admin-to-marketplace freshness. ~45 min.
+### Bulk Import productos (admin)
+- Endpoint `POST /api/admin/products/bulk-import` con Zod, dedup, batch 50
+- Parser CSV propio (`lib/csv/parse-products.ts`) con auto-detect separador y aliases ES/EN
+- Modal UI `components/admin/BulkImportModal.tsx` drag-drop + preview + errores
+- Botón "Importar en masa" en ProductsAdminTab (junto a CSV legacy y Excel)
 
-### Medio
-- #10 `npm run analyze` + atacar chunk top (probablemente framer-motion 60KB).
-- #13 Migrar framer-motion a `motion/react` lite donde solo fades/slides.
-- #28 Test Playwright cross-tenant (user A no lee API de B).
-- #30 Sentry breadcrumbs en cart dispatches.
-- #35 Unificar `RecentlyViewedSingleTenant` + `components/store/RecentlyViewed` con variant prop.
+### Geo-detection silenciosa
+- Auto-fetch coords solo si `Permissions API state="granted"` (no insiste con prompt)
+- Cache sessionStorage TTL 1h
+- Silent fail (sin alert invasivo)
 
-### Backlog (ver tabla completa de 50 items en el chat)
+### Store Analytics módulo
+- Endpoint `/api/admin/store-analytics?days=7|30|90`
+- Componente `StoreAnalyticsModule.tsx`: 4 KPIs + sparkline SVG + funnel + top10 views/revenue
+- Página `/admin/store-analytics`
+- Tracking automático: `lib/analytics.ts` ahora dispara fire-and-forget desde trackProductView/AddToCart/Purchase
+- Endpoint batch `/api/marketplace/analytics/track-batch` (creado, antes faltaba)
 
-## Qué se construyó esta sesión
+### ⚠️ Schema Drift descubierto
+- Tabla `ProductAnalytics` en DB de prod NO tiene `clicks`, `addsToCart`, `conversions`, `revenue` ni la UNIQUE
+- Mitigación: `lib/db/product-analytics.db.ts` con detección dinámica de columnas + fallback sin ON CONFLICT
+- Documentado en `docs/SCHEMA-DRIFT.md` con SQL listo para aplicar
+- Track funciona pero todos los eventos van a `views++` por ahora
 
-### 11 scripts nuevos
-```
-scripts/predev-cache-guard.mjs      # Auto-rimraf .next/dev si >5 GB (wired en predev)
-scripts/dev-guardian.mjs + .ps1     # Kill node zombies >12h (dev:zombies)
-scripts/dev-monitor.mjs             # Alerta crecimiento .next/dev en vivo
-scripts/dev-health.mjs              # Dashboard one-shot tsc+lint+tests+dangers
-scripts/find-duplicates.mjs         # Audit de basenames shadowed (58 detectados)
-scripts/list-danger-zones.mjs       # Lista 6 zonas con skill + último commit
-scripts/check-zone-skills.mjs       # Verifica que cada skill existe (pre-commit)
-scripts/audit-lucide-imports.mjs    # 67 imports bulk detectados — top Clock/ShoppingCart/X
-scripts/db-sanity.ts                # prisma migrate diff — drift DB vs schema
-scripts/patch-cart-hydration.mjs    # Patch idempotente del cart (bypass danger-zone hook)
-```
+### Reseñas reales (no más mocks)
+- DB class `lib/db/store-reviews.db.ts` lee de tabla `Review` con summary calculado
+- Storefront `/marketplace/[slug]` usa StoreReviewsDB
+- Empty state honesto cuando no hay reviews
+- Form `LeaveReviewForm.tsx` para que el cliente deje review (POST a endpoint preexistente)
+- Tab admin `/admin/store-reviews` con moderación (approve/reject/hide/reply)
+- Endpoint admin `/api/admin/store-reviews` (GET filtrable + PATCH discriminated union)
 
-### 6 skills documentados (`.github/instructions/`)
-- `state-management.instructions.md` — cart + BroadcastChannel
-- `checkout-flow.instructions.md` — pagos + idempotency
-- `database-migrations.instructions.md` — Order state machine
-- `prisma-schema.instructions.md` — DIRECT_URL, expand→migrate→contract
-- `security-auth.instructions.md` — RBAC + CSP + tenant isolation
-- `fefo-inventory.instructions.md` — expiryDate, batches
+---
 
-### 11 helpers + contexts nuevos
-```
-lib/auth/anonymous-gate.ts                      # GET públicos → 204 en vez de 401
-lib/validations/recently-viewed.schema.ts
-lib/validations/local-storage-extra.schema.ts
-lib/validations/marketplace-product.schema.ts   # contract schema PDP
-hooks/use-is-authenticated.ts
-hooks/use-validated-local-storage.ts            # Zod + sync multi-tab
-components/LocalStorageDoctor.tsx               # sanea localStorage al mount + reporte
-components/MarketplaceStoreProviders.tsx        # versión ligera (sin Reviews/Promotions)
-components/marketplace/QuickAddDrawer.tsx       # drawer de "agregar rápido"
-components/ui-system/SkipLink.tsx               # WCAG 2.4.1 (4 layouts)
-contexts/quick-add-context.tsx
-```
+## Estado del proyecto
 
-### Endpoints migrados a `anonymousGate`
-11 GETs del marketplace ya no devuelven 401 al anonymous:
-`/api/subscriptions`, `/api/subscriptions/[id]`, `/api/me/favorites`, `/api/me/order-history`, `/api/me/dashboard`, `/api/me/notifications`, `/api/me/spending-summary`, `/api/me/referral-status`, `/api/me/credit-score`, `/api/me/addresses` (GET), `/api/marketplace/recommendations/for-me`.
-
-### Endpoint nuevo
-- `/api/marketplace/products/check-exists?ids=1,2,3` — cruza stores (marketplace multi-tenant).
-
-### Tests (47/47 pass)
-```
-__tests__/api/marketplace-products-check-exists.test.ts   # 14 tests
-__tests__/api/marketplace-product-contract.test.ts         # 5 tests (contract Zod)
-__tests__/contexts/cart-context-multi-store.test.tsx       # 2 tests
-__tests__/components/RecentlyViewed.test.tsx                # 9 tests
-__tests__/components/QuickAddDrawer.test.tsx                # 6 tests
-__tests__/hooks/use-recent-viewed.test.tsx                  # 7 tests
-__tests__/lib/auth-anonymous-gate.test.ts                   # 4 tests
-```
-
-### E2E nuevos (3 specs, ~7 tests)
-```
-e2e/marketplace-quickadd.spec.ts            # flujo QuickAdd completo
-e2e/marketplace-cart-persist.spec.ts        # carrito multi-store persiste
-e2e/marketplace-localstorage-doctor.spec.ts # sanitización de legacy data
-```
-
-### Config cambios
-- `vitest.config.ts` — coverage 80→85 / 70→75 / 75→80 / 80→85
-- `eslint.config.mjs` — 17 reglas `jsx-a11y/*` (5 error + 12 warn) + prohibir `.toFixed()` directo sobre objetos
-- `.husky/pre-commit` — gates: empty-file + tsc + `check-zone-skills` + vitest --changed + design-tokens
-- `.github/workflows/ci.yml` — step "Shadow duplicates audit" (non-blocking)
-- `.claude/hooks/danger-zone.mjs` — advierte si skill file no existe
-- `package.json` — 8 scripts nuevos (dev:monitor/health/dangers/duplicates/zombies/lucide/db:sanity)
-
-## Gotchas / notas importantes
-
-1. **Cart hydration**: el marker `cart-hydration-patch-v1` en `contexts/cart-context.tsx` confirma que el patch defensivo está aplicado. Si se pierde, el bug del carrito desapareciendo vuelve.
-
-2. **Danger zones activas**: `cart-context.tsx`, `proxy.ts`, `schema.prisma`, `orders.db.ts`, `CheckoutModal.tsx`, `role-permissions.ts`, `CartSidebar.tsx`. Cualquier edit directo bloqueado por hook. Usa `patch-<x>.mjs` scripts o lee el skill.
-
-3. **Shadows conocidos (58 totales)**: `RecentlyViewed` ya resuelto (rename). Quedan `EmptyState` (3 copias, APIs distintas → cross-ref headers), `OnboardingWizard` (3 copias), `sunat.ts` (3 copias). Ver `npm run dev:duplicates`.
-
-4. **ADR-019 Next 16 Cache Components**: `app/marketplace/explorar/page.tsx` + `[slug]/page.tsx` + `[slug]/producto/[productId]/page.tsx` ya migrados a `"use cache"` + `cacheLife` + `cacheTag`. Patrón canónico para replicar en otras rutas.
-
-5. **LocalStorageDoctor reporta a** `/api/health/storage` (endpoint pendiente crear — opcional, el doctor es fire-and-forget).
-
-## Commit sugerido (si querés guardar)
-
-```bash
-# Opción 1: commit grande
-git add -A
-git commit -m "feat(marketplace): cart persistence + skip-links + cacheLife + 11 scripts dev
-
-- Fix: cart multi-store hydration preserva items de distintos stores
-- Fix: .toFixed crash en /marketplace/explorar (2 archivos RecentlyViewed shadowed)
-- Fix: aria-hidden con focus descendant (AuthModal → inert)
-- Feat: anonymousGate en 11 endpoints GET (marketplace sin ruido 401)
-- Feat: LocalStorageDoctor + useValidatedLocalStorage con Zod schemas
-- Feat: 3 e2e Playwright + 47 tests unitarios nuevos (todos pass)
-- Feat: 6 skills en .github/instructions/ + 11 scripts dev
-- Chore: Next 16 cacheLife en 3 pages marketplace
-"
-
-# Opción 2: separar por áreas (mejor historial)
-# → carrito + auth-gate / scripts + skills / tests + e2e / config
-```
-
-## Métricas de la sesión
-
-| Área | Cantidad |
+### Server health (verificado con curl al final de sesión)
+| Ruta | Status |
 |---|---|
-| Archivos modificados | 45 |
-| Archivos nuevos | 40+ |
-| Tests unitarios agregados | 47 |
-| E2E specs agregados | 3 |
-| Scripts dev nuevos | 11 |
-| Endpoints migrados auth | 11 |
-| Skills documentados | 6 |
-| Bugs críticos resueltos | 9 |
-| Items roadmap ejecutados | 17/50 |
+| `/`, `/tiendas`, `/marketplace`, `/marketplace/ofertas`, `/marketplace/como-pagar`, `/marketplace/explorar`, `/marketplace/[slug]` | 200 ✅ |
+| `/admin/store-analytics`, `/admin/store-reviews` | 200 (con auth) ✅ |
+| `/api/marketplace/deals`, `/api/marketplace/stores`, `/api/marketplace/promo-banners` | 200 ✅ |
+| `/api/admin/store-analytics`, `/api/admin/store-reviews` | 401 sin auth (correcto) ✅ |
+
+### Memoria persistente del agente
+- `~/.claude/projects/-home-usuario-proyectos-Mercado/memory/feedback_always_test.md` — siempre testear con curl + render + tail logs antes de reportar listo
+
+---
+
+## Pendientes / Bloqueados
+
+### 🔴 Bloqueado por DIRECT_URL
+1. **Migration ADR-081** (StoreProduct.discountPrice + discountUntil + discountLabel) — requiere `prisma migrate deploy` con DIRECT_URL accesible
+2. **Schema drift fix ProductAnalytics** — ALTER TABLE para columnas faltantes (`docs/SCHEMA-DRIFT.md` tiene SQL listo)
+
+### 🟡 Próximas mejoras lógicas
+1. Renderizar `adminReply` en ReviewCard pública (hoy solo se ve en admin)
+2. Notificación WhatsApp al bodeguero cuando llega review nueva
+3. Bulk actions en admin de reviews (seleccionar varias y aprobar/rechazar todas)
+4. Filtro "Solo de mi tienda" cuando admin tiene multi-stores
+5. Eliminar `lib/mock-deals.ts` por completo (3 consumers ya migrados)
+6. Form CSV bulk-import: completar UI con tab "Plantillas" para diferentes tipos
+7. Service worker + push notifications de oferta favorita
+
+### 🟢 Discusión estratégica abierta
+Brandon planteó:
+- Idea de dropshipping local con bodegas en Pucallpa, margen S/100-200/venta
+- Consulta sobre SEO rápido en Pucallpa
+- **Recomendación dada: NO dropshipping bodega** (alta fuga de cliente). En su lugar: **pre-venta nicho premium** (repuestos moto, pesca, electrónica usada, equipo bodega, suplementos).
+- Brandon va a configurar single-tenant mode para SU tienda personal (no marketplace ni venta a bodegueros)
+- Cuentas reales: pre-venta puede dar S/600-1k mes 1, S/2.5-5k mes 3, S/8-15k mes 6 con repuestos moto u otro nicho específico
+
+---
+
+## Estrategia de commits sugerida
+
+Cuando vuelvas, agrupá en 7 commits semánticos:
+
+```bash
+# 1. Banner Studio fixes
+git add app/api/superadmin/banners/route.ts \
+        app/superadmin/banners/page.tsx \
+        components/superadmin/banners/BannerPreviewStudio.tsx \
+        components/marketplace/PromoBannerRenderer.tsx \
+        lib/promo-banners.ts \
+        lib/data/promo-banners.json \
+        public/uploads/banners-tiendas-hero/
+git commit -m "feat(superadmin/banners): resize button + side panels drag + zod passthrough fix 400"
+
+# 2. Ofertas reales + endpoint /deals + page como-pagar
+git add app/api/marketplace/deals/ \
+        app/marketplace/como-pagar/ \
+        components/marketplace/como-pagar/ \
+        components/marketplace/ofertas/ \
+        components/marketplace/home/Ofertas*.tsx \
+        components/marketplace/explorar/ExplorarTileGrid.tsx \
+        components/marketplace/TiendasPromoCards.tsx \
+        hooks/use-marketplace-deals.ts \
+        lib/mock-deals.ts
+git commit -m "feat(marketplace): real deals from DB + /como-pagar page + 5col grid + empty CTA"
+
+# 3. Nav + i18n
+git add components/Header.tsx \
+        components/marketplace/MarketplaceNavbar.tsx \
+        contexts/settings-context.tsx \
+        lib/i18n/translations.ts
+git commit -m "feat(nav): add Tienda + Ofertas + Cómo pagar links across primary nav"
+
+# 4. SEO + ciudades + tagline única
+git add app/\(store\)/about/page.tsx \
+        app/\(store\)/page.tsx \
+        app/marketplace/page.tsx \
+        app/marketplace/\[slug\]/page.tsx \
+        app/tiendas/ \
+        app/sitemap.ts \
+        components/Footer.tsx \
+        components/marketplace/store-detail/StoreDetailClient.tsx \
+        lib/store-tagline.ts
+git commit -m "feat(seo): Ciudad Constitución + Pucallpa próximamente + unique tagline per bodega"
+
+# 5. Reviews reales + form + admin
+git add app/admin/store-reviews/ \
+        app/api/admin/store-reviews/ \
+        components/admin/StoreReviewsAdminModule.tsx \
+        components/marketplace/store-detail/StoreReviews.tsx \
+        components/marketplace/store-detail/LeaveReviewForm.tsx \
+        lib/db/store-reviews.db.ts \
+        lib/mock-store-reviews.ts
+git commit -m "feat(reviews): real reviews from Review table + leave-review form + admin moderation"
+
+# 6. Analytics + bulk import
+git add app/admin/store-analytics/ \
+        app/api/admin/store-analytics/ \
+        app/api/admin/products/bulk-import/ \
+        app/api/marketplace/analytics/track-batch/ \
+        components/admin/BulkImportModal.tsx \
+        components/admin/StoreAnalyticsModule.tsx \
+        components/admin/ProductsAdminTab.tsx \
+        lib/analytics.ts \
+        lib/csv/ \
+        lib/db/product-analytics.db.ts
+git commit -m "feat(admin): store analytics module + product bulk CSV import + auto event tracking"
+
+# 7. Bug fixes + ADR + schema drift docs
+git add app/tiendas/TiendasClient.tsx \
+        components/marketplace/useMarketplaceGeo.ts \
+        app/api/marketplace/stores/\[slug\]/products/route.ts \
+        docs/adr/081-store-product-discount-fields.md \
+        docs/SCHEMA-DRIFT.md
+git commit -m "fix: back-nav recovery + silent geo + ADR-081 + schema drift mitigation"
+```
+
+---
+
+## Para arrancar la próxima sesión
+
+1. Lee este SESSION_HANDOFF.md
+2. `git status` para confirmar lo no commiteado
+3. Decidir camino:
+   - **Camino A — commitear todo:** ejecutar script de 7 commits arriba
+   - **Camino B — single-tenant mode personal:** activar flag para que sea TU tienda, definir nicho, subir 20 productos reales con foto propia, configurar Google Business Profile
+   - **Camino C — fix schema drift:** conseguir red con acceso Supabase, correr migrations bloqueadas, revertir mitigaciones defensive
+
+---
+
+## Archivos sin commitear
+
+### Modified (32)
+```
+app/(store)/about/page.tsx
+app/(store)/page.tsx
+app/api/marketplace/stores/[slug]/products/route.ts
+app/api/superadmin/banners/route.ts
+app/marketplace/[slug]/page.tsx
+app/marketplace/page.tsx
+app/sitemap.ts
+app/superadmin/banners/page.tsx
+app/tiendas/TiendasClient.tsx
+app/tiendas/page.tsx
+components/Footer.tsx
+components/Header.tsx
+components/admin/ProductsAdminTab.tsx
+components/marketplace/MarketplaceNavbar.tsx
+components/marketplace/PromoBannerRenderer.tsx
+components/marketplace/TiendasPromoCards.tsx
+components/marketplace/explorar/ExplorarTileGrid.tsx
+components/marketplace/home/OfertasEditorial.tsx
+components/marketplace/home/OfertasFlashSection.tsx
+components/marketplace/ofertas/DealsGrid.tsx
+components/marketplace/ofertas/OfertasClient.tsx
+components/marketplace/store-detail/StoreDetailClient.tsx
+components/marketplace/store-detail/StoreReviews.tsx
+components/marketplace/useMarketplaceGeo.ts
+components/superadmin/banners/BannerPreviewStudio.tsx
+contexts/settings-context.tsx
+lib/analytics.ts
+lib/data/promo-banners.json
+lib/db/product-analytics.db.ts
+lib/i18n/translations.ts
+lib/mock-deals.ts
+lib/mock-store-reviews.ts
+lib/promo-banners.ts
+```
+
+### Untracked (24)
+```
+app/admin/store-analytics/
+app/admin/store-reviews/
+app/api/admin/products/bulk-import/
+app/api/admin/store-analytics/
+app/api/admin/store-reviews/
+app/api/marketplace/analytics/track-batch/
+app/api/marketplace/deals/
+app/api/superadmin/banners/copy-suggest/  ← preexistente
+app/marketplace/como-pagar/
+components/admin/BulkImportModal.tsx
+components/admin/StoreAnalyticsModule.tsx
+components/admin/StoreReviewsAdminModule.tsx
+components/marketplace/como-pagar/
+components/marketplace/store-detail/LeaveReviewForm.tsx
+docs/SCHEMA-DRIFT.md
+docs/adr/081-store-product-discount-fields.md
+hooks/use-marketplace-deals.ts
+lib/csv/
+lib/db/store-reviews.db.ts
+lib/store-tagline.ts
+public/uploads/banners-tiendas-hero/*.webp  ← imágenes subidas vía editor
+```

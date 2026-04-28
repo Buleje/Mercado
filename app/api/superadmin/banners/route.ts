@@ -25,36 +25,98 @@ const SLOTS = [
  */
 const BannerTypeSchema = z.enum(["classic", "image", "promo"]).default("classic");
 
+/** Encuadre (drag/zoom/fit) — laxo para tolerar drags y zooms extremos del editor. */
+const ImageAdjustSchema = z
+  .object({
+    position: z
+      .object({
+        x: z.number().finite().default(50),
+        y: z.number().finite().default(50),
+      })
+      .passthrough()
+      .optional(),
+    scale: z.number().finite().default(100),
+    fit: z.enum(["cover", "contain"]).default("cover"),
+  })
+  .partial()
+  .passthrough()
+  .optional();
+
+/** Posición libre (% relativo al banner) de un overlay. Aceptamos cualquier
+ *  número finito — el renderer hace clamp/clip visual, no es responsabilidad
+ *  de Zod rechazar drags fuera de rango. */
+const AnchorSchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+  })
+  .passthrough()
+  .nullable()
+  .optional();
+
+/** Item de la grilla multi-producto. `.passthrough()` para no romper si el
+ *  editor agrega campos nuevos antes de que el schema los conozca. */
+const PromoItemSchema = z
+  .object({
+    id: z.string().min(1).max(200),
+    source: z.enum(["manual", "linked"]).default("manual"),
+    productName: z.string().max(200).default(""),
+    productImage: z.string().max(2000).nullable().default(null),
+    price: z.number().nonnegative().finite().nullable().default(null),
+    oldPrice: z.number().nonnegative().finite().nullable().default(null),
+    badge: z.string().max(80).default(""),
+    buyHref: z.string().max(2000).default(""),
+    buyLabel: z.string().max(80).default("Comprar"),
+    linkedStoreSlug: z.string().max(200).nullable().optional(),
+    linkedProductId: z.union([z.string(), z.number()]).nullable().optional(),
+    imageAdjust: ImageAdjustSchema,
+    productAnchor: AnchorSchema,
+    buyAnchor: AnchorSchema,
+    badgeAnchor: AnchorSchema,
+    productSize: z.number().finite().optional(),
+    buySize: z.number().finite().optional(),
+  })
+  .passthrough();
+
 /** Datos de la promo embebida cuando type === "promo". */
 const PromoEmbedSchema = z
   .object({
-    productName: z.string().max(120).default(""),
-    productImage: z.string().max(500).nullable().default(null),
-    price: z.number().nonnegative().nullable().default(null),
-    oldPrice: z.number().nonnegative().nullable().default(null),
-    badge: z.string().max(40).default(""),
-    buyHref: z.string().max(500).default(""),
-    buyLabel: z.string().max(40).default("Comprar"),
+    productName: z.string().max(200).default(""),
+    productImage: z.string().max(2000).nullable().default(null),
+    price: z.number().nonnegative().finite().nullable().default(null),
+    oldPrice: z.number().nonnegative().finite().nullable().default(null),
+    badge: z.string().max(80).default(""),
+    buyHref: z.string().max(2000).default(""),
+    buyLabel: z.string().max(80).default("Comprar"),
+    imageAdjust: ImageAdjustSchema,
+    items: z.array(PromoItemSchema).max(50).optional(),
   })
+  .passthrough()
   .optional();
 
-const BannerSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1).max(120),
-  subtitle: z.string().max(200).optional(),
-  imageUrl: z.string().nullable().refine(
-    (v) => v === null || v === "" || /^(https?:\/\/|\/)/.test(v),
-    { message: "imageUrl debe ser URL https:// o path /uploads/..." },
-  ),
-  ctaHref: z.string().min(1),
-  ctaLabel: z.string().min(1).max(40),
-  bgFrom: z.string().regex(/^#[0-9a-f]{6}$/i),
-  bgTo: z.string().regex(/^#[0-9a-f]{6}$/i),
-  active: z.boolean(),
-  order: z.number().int().min(1).max(99),
-  type: BannerTypeSchema,
-  promo: PromoEmbedSchema,
-});
+const BannerSchema = z
+  .object({
+    id: z.string().min(1).max(200),
+    title: z.string().max(200).default(""),
+    subtitle: z.string().max(500).optional(),
+    imageUrl: z
+      .string()
+      .nullable()
+      .refine(
+        (v) => v === null || v === "" || /^(https?:\/\/|\/|data:)/.test(v),
+        { message: "imageUrl debe ser https://, /uploads/... o data:..." },
+      ),
+    ctaHref: z.string().max(2000).default(""),
+    ctaLabel: z.string().max(80).default(""),
+    bgFrom: z.string().regex(/^#[0-9a-f]{6}$/i),
+    bgTo: z.string().regex(/^#[0-9a-f]{6}$/i),
+    active: z.boolean(),
+    order: z.number().int().min(0).max(999),
+    type: BannerTypeSchema,
+    imageAdjust: ImageAdjustSchema,
+    promo: PromoEmbedSchema,
+  })
+  .passthrough();
 
 const PutSchema = z.object({
   slot: z.enum(SLOTS),
@@ -88,8 +150,14 @@ export async function PUT(req: NextRequest) {
 
   const parsed = PutSchema.safeParse(body);
   if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => ({
+      path: i.path.join("."),
+      code: i.code,
+      message: i.message,
+    }));
+    console.error("[banners PUT] zod issues", JSON.stringify(issues, null, 2));
     return NextResponse.json(
-      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+      { error: "Datos inválidos", issues },
       { status: 400 },
     );
   }

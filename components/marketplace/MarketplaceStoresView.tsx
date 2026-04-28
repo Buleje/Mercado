@@ -48,14 +48,22 @@ export const CATEGORIES = [
 
 /* ── Zones ─────────────────────────────────────────────────────────────────── */
 
+// ZONES re-exportado del catálogo canónico — `/tiendas` lo deriva runtime de
+// los stores publicados via `deriveActiveZones(stores)`. Esta constante se
+// mantiene SOLO como fallback estático cuando la lista aún no cargó (skeleton
+// del filtro) y para tests. No debería usarse para inventar zonas que no
+// están realmente representadas en datos.
+import {
+  MARKETPLACE_ZONES,
+  deriveActiveZones,
+} from "@/lib/marketplace-zones";
+
 export const ZONES = [
   { id: "", label: "Todas las zonas" },
-  { id: "centro", label: "Centro" },
-  { id: "manantay", label: "Manantay" },
-  { id: "calleria", label: "Callerìa" },
-  { id: "yarinacocha", label: "Yarinacocha" },
-  { id: "campo_verde", label: "Campo Verde" },
+  ...MARKETPLACE_ZONES.map((z) => ({ id: z.id, label: z.label })),
 ];
+
+export { deriveActiveZones };
 
 /* ── Currency formatter ────────────────────────────────────────────────────── */
 

@@ -33,7 +33,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getBannersForSlot, type PromoBanner } from "@/lib/promo-banners";
-import { MOCK_DEALS } from "@/lib/mock-deals";
+import { useMarketplaceDeals } from "@/hooks/use-marketplace-deals";
 import PromoBannerRenderer from "@/components/marketplace/PromoBannerRenderer";
 
 // ── Estilos shared ─────────────────────────────────────────────────────────
@@ -123,7 +123,9 @@ const fmt = (n: number) =>
 
 function OfertasTile() {
   const { h, m, s } = useCountdownHMS();
-  const deals = MOCK_DEALS.slice(0, 3);
+  const { deals: allDeals, isEmpty } = useMarketplaceDeals({ limit: 8 });
+  const deals = allDeals.slice(0, 3);
+  if (isEmpty) return null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-gradient-to-br from-[#fff1e6] via-[#ffe4cc] to-[#ffd4b3]">

@@ -22,15 +22,17 @@ export type YapeConfig = {
 export type NavLinkItem = { id: string; visible: boolean };
 
 export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
-  // Orden estrategico: Inicio → Comprar → Explorar → Ofertas → Recetas → A domicilio
-  // "tienda" se renderiza con label "Comprar" (verbo CTA directo).
-  // "explorar" es el hub de descubrimiento (estilo Amazon homepage adaptada).
-  // "ofertas" y "a-domicilio" son nuevas entries para capturar
-  // price-sensitive shoppers y transmitir confianza de entrega.
+  // Orden: Inicio → Tienda → Tiendas → Ofertas → Cómo pagar → Explorar → Recetas → A domicilio
+  // "tienda":  catálogo del tenant (label "Tienda").
+  // "tiendas": directorio multi-tienda (label "Tiendas") → /tiendas
+  // "ofertas": captura price-sensitive shoppers.
+  // "como-pagar": transparenta métodos (Yape, Plin, efectivo, transferencia, tarjeta).
   { id: "inicio", visible: true },
   { id: "tienda", visible: true },
-  { id: "explorar", visible: true },
+  { id: "tiendas", visible: true },
   { id: "ofertas", visible: true },
+  { id: "como-pagar", visible: true },
+  { id: "explorar", visible: true },
   { id: "recetas", visible: true },
   { id: "a-domicilio", visible: true },
   { id: "marketplace", visible: false },

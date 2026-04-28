@@ -16,7 +16,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Clock, ArrowRight, Flame, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { MOCK_DEALS } from "@/lib/mock-deals";
+import { useMarketplaceDeals } from "@/hooks/use-marketplace-deals";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -49,7 +49,13 @@ function useCountdown(target: Date) {
 export default function OfertasEditorial() {
   const target = getEndOfDay();
   const { h, m, s } = useCountdown(target);
-  const deals = MOCK_DEALS.slice(0, 4);
+  // Datos REALES desde /api/marketplace/deals
+  const { deals: allDeals } = useMarketplaceDeals({ limit: 12 });
+  const deals = allDeals.slice(0, 4);
+
+  // Si no hay deals reales, ocultamos toda la sección — mejor que mostrar
+  // un editorial sin productos.
+  if (deals.length === 0) return null;
 
   return (
     <section

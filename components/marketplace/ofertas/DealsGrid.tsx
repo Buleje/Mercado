@@ -1,74 +1,39 @@
 "use client";
 
 /**
- * DealsGrid — Grid responsive de cards de deals con badges + paginacion.
+ * DealsGrid — Grilla de ofertas reales con UnifiedProductCard.
  *
- * Estilo Buleje: tokens estrictos, badges accent solido para descuento,
- * precio XL black + tachado original + ahorro pill, hover translate-y.
+ * Mismo formato de tarjeta que el marketplace: imagen, badge de descuento,
+ * precio + tachado, botón añadir al carrito (que abre modal de detalles
+ * cuando aplica). Layout responsive: 2 → 3 → 4 → 5 columnas.
  */
 
 import { useState } from "react";
-import Link from "next/link";
-import { ChevronLeft, ChevronRight, Package, Clock } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Deal } from "@/lib/mock-deals";
-import { useDealsCountdown } from "./useDealsCountdown";
 import ExplorarSectionHeader from "@/components/marketplace/explorar/ExplorarSectionHeader";
+import UnifiedProductCard, {
+  type UnifiedProductCardProduct,
+} from "@/components/marketplace/UnifiedProductCard";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 20;
 
-const pen = new Intl.NumberFormat("es-PE", {
-  style: "currency",
-  currency: "PEN",
-});
-
-// MK-38: countdown con tiers de urgencia.
-//   • >1d: gris, "Termina en Xd Yh"
-//   • 1h-24h: accent, "HH:MM restantes"
-//   • <1h: rojo + pulse + segundos visibles
-//   • Vencida: tachado discreto
-function DealTimeLabel({ endsAt }: { endsAt: string }) {
-  const { days, hours, minutes, seconds, expired } = useDealsCountdown(endsAt);
-
-  if (expired) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        Vencida
-      </span>
-    );
-  }
-
-  if (days > 0) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-        <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        Termina en {days}d {hours}h
-      </span>
-    );
-  }
-
-  // ── Última hora — modo urgente ──
-  if (hours === 0 && minutes < 60) {
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold tabular-nums uppercase tracking-wider text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
-        aria-live="polite"
-      >
-        <Clock className="h-3.5 w-3.5 animate-pulse" strokeWidth={2} aria-hidden />
-        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-        <span className="font-semibold">restantes</span>
-      </span>
-    );
-  }
-
-  // ── Mismo día, fuera de la última hora — accent ──
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-bold tabular-nums uppercase tracking-wider text-[var(--accent)]">
-      <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-      {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")} restantes
-    </span>
-  );
+function dealToCard(d: Deal): UnifiedProductCardProduct {
+  return {
+    id: d.productId ?? (Number(d.id.slice(-8).replace(/\D/g, "0")) || 0),
+    name: d.name,
+    price: d.price,
+    originalPrice: d.previousPrice > d.price ? d.previousPrice : undefined,
+    image: d.image ?? null,
+    storeName: d.storeName,
+    storeSlug: d.storeSlug,
+    storeProductId: d.storeProductId,
+    unit: d.unit,
+    category: d.category,
+    stock: d.stock ?? 0,
+    discount: d.discountPct,
+  };
 }
 
 interface DealsGridProps {
@@ -95,7 +60,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
             Sin ofertas con esos filtros
           </p>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
-            Proba cambiando la categoria o el rango de descuento. Volve pronto — todos los dias hay ofertas nuevas.
+            Probá cambiando la categoría o el rango de descuento. Las bodegas suben ofertas todos los días.
           </p>
         </div>
       </section>
@@ -108,84 +73,40 @@ export default function DealsGrid({ deals }: DealsGridProps) {
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
     >
       <ExplorarSectionHeader
-        kicker="Catalogo de ofertas"
+        kicker="Catálogo de ofertas"
         title="Todas las ofertas"
-        subtitle={`${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtra por categoria o rebaja minima arriba.`}
+        subtitle={`${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`}
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {paginated.map((deal) => {
-          const ahorro = deal.previousPrice - deal.price;
-          return (
-            <Link
-              key={deal.id}
-              href={`/marketplace/${deal.storeSlug}`}
-              className="group relative block rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 transition-all duration-300 motion-reduce:hover:translate-y-0"
-            >
-              {/* Badge descuento — accent solido */}
-              <span className="absolute top-2 left-2 z-10 inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md">
-                -{deal.discountPct}%
-              </span>
-
-              {/* Flash badge (top-right) — solo para deals con isFlash */}
-              {deal.isFlash && (
-                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--surface-canvas)]">
-                  Flash
-                </span>
-              )}
-
-              {/* Placeholder imagen */}
-              <div className="relative aspect-square bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)]">
-                <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
-                  <Package className="h-10 w-10" strokeWidth={1.25} aria-hidden />
-                </span>
-              </div>
-
-              {/* Info */}
-              <div className="p-3 sm:p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  {deal.category}
-                </p>
-                <h3 className="mt-0.5 text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
-                  {deal.name}
-                </h3>
-                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] line-clamp-1">
-                  {deal.storeName} &middot; {deal.unit}
-                </p>
-                <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
-                  <span className="text-xs text-[var(--text-tertiary)] line-through tabular-nums">
-                    {pen.format(deal.previousPrice)}
-                  </span>
-                  <span className="text-xs font-bold tabular-nums text-[var(--accent)]">
-                    Ahorra {pen.format(ahorro)}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xl font-black tabular-nums tracking-[-0.02em] text-[var(--accent)] leading-none">
-                  {pen.format(deal.price)}
-                </p>
-                <div className="mt-2 pt-2 border-t border-[var(--rule-soft)]">
-                  <DealTimeLabel endsAt={deal.endsAt} />
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+      <div
+        className={cn(
+          "grid gap-3 sm:gap-4",
+          "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+        )}
+      >
+        {paginated.map((deal, i) => (
+          <UnifiedProductCard
+            key={deal.id}
+            product={dealToCard(deal)}
+            variant={deal.isFlash ? "flash" : "default"}
+            index={i}
+            endsAt={deal.isFlash ? new Date(deal.endsAt) : undefined}
+          />
+        ))}
       </div>
 
-      {/* Paginacion — botones tokenizados */}
       {totalPages > 1 && (
         <div className="mt-10 flex items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            aria-label="Pagina anterior"
+            aria-label="Página anterior"
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
               "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
-              "disabled:opacity-40 disabled:pointer-events-none",
-              "transition-colors",
+              "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
@@ -196,10 +117,10 @@ export default function DealsGrid({ deals }: DealsGridProps) {
               key={n}
               type="button"
               onClick={() => setPage(n)}
-              aria-label={`Pagina ${n}`}
+              aria-label={`Página ${n}`}
               aria-current={page === n ? "page" : undefined}
               className={cn(
-                "inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold transition-colors tabular-nums",
+                "inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-colors",
                 page === n
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
                   : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
@@ -213,13 +134,12 @@ export default function DealsGrid({ deals }: DealsGridProps) {
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            aria-label="Pagina siguiente"
+            aria-label="Página siguiente"
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
               "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
-              "disabled:opacity-40 disabled:pointer-events-none",
-              "transition-colors",
+              "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >
             <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />

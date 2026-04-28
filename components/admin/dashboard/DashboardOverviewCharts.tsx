@@ -197,7 +197,7 @@ function ChartVentas({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="oc-ventas-grad" x1="0" y1="0" x2="0" y2="1">
@@ -246,7 +246,7 @@ function ChartCompras({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} layout="vertical">
         <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" horizontal={false} />
         <XAxis
@@ -285,7 +285,7 @@ function ChartClientes({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
         <XAxis
@@ -328,7 +328,7 @@ function ChartInventario({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
         <XAxis
@@ -367,7 +367,7 @@ function ChartProductos({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
         <XAxis
@@ -412,7 +412,7 @@ function ChartCaja({
 }) {
   if (data.length === 0) return <EmptyChart />;
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer minWidth={0} width="100%" height="100%">
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
         <XAxis

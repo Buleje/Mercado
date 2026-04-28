@@ -52,6 +52,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${baseUrl}/tiendas`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.95,
+      alternates: { languages: { "es-PE": `${baseUrl}/tiendas` } },
+    },
+    {
+      url: `${baseUrl}/marketplace/ofertas`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.85,
+      alternates: { languages: { "es-PE": `${baseUrl}/marketplace/ofertas` } },
+    },
+    {
+      url: `${baseUrl}/marketplace/explorar`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/marketplace/como-pagar`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7,
+      alternates: { languages: { "es-PE": `${baseUrl}/marketplace/como-pagar` } },
+    },
+    {
       url: `${baseUrl}/pricing`,
       lastModified,
       changeFrequency: "monthly",

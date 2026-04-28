@@ -104,12 +104,16 @@ export default function CatalogView({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const inFlightCursorRef = useRef<string | null>(null);
 
   const fetchProducts = useCallback(
     async (cursor?: string) => {
       if (cursor) {
+        if (inFlightCursorRef.current === cursor) return;
+        inFlightCursorRef.current = cursor;
         setLoadingMore(true);
       } else {
+        inFlightCursorRef.current = null;
         setLoading(true);
       }
       setError(null);
@@ -128,7 +132,13 @@ export default function CatalogView({
         const json = await res.json();
 
         if (cursor) {
-          setProducts((prev) => [...prev, ...(json.data ?? [])]);
+          setProducts((prev) => {
+            const seen = new Set(prev.map((p) => p.storeProductId));
+            const incoming = (json.data ?? []).filter(
+              (p: CatalogProduct) => !seen.has(p.storeProductId),
+            );
+            return [...prev, ...incoming];
+          });
         } else {
           setProducts(json.data ?? []);
         }
@@ -288,7 +298,7 @@ export default function CatalogView({
           className={MARKETPLACE_GRID}
         >
           {products.map((product, i) => (
-            <div key={`${product.storeId}-${product.productId}`} className="relative">
+            <div key={product.storeProductId} className="relative">
               {product.isSponsored && (
                 <div className="absolute top-2 left-2 z-20 pointer-events-none">
                   <SponsoredBadge />

@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Clock,
 } from "@buleje/design-system/icons";
-import { MOCK_DEALS, type Deal } from "@/lib/mock-deals";
+import type { Deal } from "@/lib/mock-deals";
+import { useMarketplaceDeals } from "@/hooks/use-marketplace-deals";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
@@ -52,28 +53,27 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-/** Convierte un Deal (mock) al shape que espera UnifiedProductCard */
+/** Convierte un Deal (real) al shape que espera UnifiedProductCard */
 function dealToCardProduct(deal: Deal) {
-  // MOCK_DEALS usa id string — hasheamos a number para el card
-  const numId = deal.id.split("_")[1] ? parseInt(deal.id.split("_")[1], 10) : 0;
   return {
-    id: numId,
+    id: deal.productId ?? 0,
     name: deal.name,
     price: deal.price,
     originalPrice: deal.previousPrice,
-    image: null,
+    image: deal.image ?? null,
     unit: deal.unit,
     storeName: deal.storeName,
     storeSlug: deal.storeSlug,
+    storeProductId: deal.storeProductId,
     discount: deal.discountPct,
   };
 }
 
 export default function OfertasFlashSection() {
-  const flashDeals = useMemo(
-    () => MOCK_DEALS.filter((d) => d.isFlash).slice(0, 4),
-    [],
-  );
+  // Datos REALES desde /api/marketplace/deals (sin fallback — solo
+  // descuentos verdaderos para flash)
+  const { flashDeals: allFlash } = useMarketplaceDeals({ limit: 12 });
+  const flashDeals = useMemo(() => allFlash.slice(0, 4), [allFlash]);
 
   const nextToExpire = useMemo(() => {
     if (flashDeals.length === 0) return null;

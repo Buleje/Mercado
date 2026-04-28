@@ -21,13 +21,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Acerca de Nosotros — Buleje | Software ERP para Bodegas",
+  title: "Acerca de Nosotros — Buleje | Hecho en Ciudad Constitución, Perú",
   description:
-    "Buleje es un software ERP para bodegas y tiendas de todo el Perú. Inventario, POS, delivery, fiado digital y facturación SUNAT. Creado en Pucallpa.",
+    "Buleje es la plataforma de bodegas y minimarkets del Perú. Hecho en Ciudad Constitución (Pasco) y, próximamente, en Pucallpa (Ucayali). ERP, marketplace, POS, delivery, fiado digital y facturación SUNAT.",
   openGraph: {
-    title: "Acerca de Nosotros — Buleje",
+    title: "Hecho en Ciudad Constitución — Buleje",
     description:
-      "Software ERP para bodegas creado en Pucallpa. Inventario, delivery y facturación SUNAT para todo el Perú.",
+      "Plataforma para bodegas del Perú creada en Ciudad Constitución, próximamente en Pucallpa. ERP + marketplace + POS + delivery.",
     type: "website",
     locale: "es_PE",
     url: "https://www.buleje.pe/about",
@@ -84,7 +84,7 @@ export default async function AboutPage() {
   const email = (settings.businessEmail as string) || "";
   const storyText =
     (settings.storyText as string) ||
-    "Buleje nació de la necesidad de ofrecer productos frescos y de calidad a nuestros vecinos. Comenzamos como una pequeña tienda familiar y hoy atendemos a cientos de familias con el mismo cariño del primer día. Cada producto que ofrecemos es seleccionado cuidadosamente para garantizar frescura y el mejor precio para nuestros clientes.";
+    "Buleje nació en Ciudad Constitución (Pasco) con una idea simple: que el bodeguero del barrio compita de igual a igual con cualquier app grande. Acá no hay sucursales corporativas — hay vecinos atendiendo a vecinos. La plataforma se construyó pensando en la realidad peruana: Yape y efectivo, delivery del repartidor de la cuadra, fiado de toda la vida y facturación SUNAT cuando hace falta. Empezamos en Ciudad Constitución, próximamente abrimos en Pucallpa (Ucayali), y de ahí al resto del Perú. El crecimiento es de barrio a barrio, no de capital a capital.";
 
   const weekdayHours = (settings.weekdayHours as string) || "6:00am - 10:00pm";
   const weekendHours = (settings.weekendHours as string) || "7:00am - 10:00pm";

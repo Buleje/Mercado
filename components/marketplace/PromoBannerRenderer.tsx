@@ -49,6 +49,9 @@ export type PromoItem = {
   imageAdjust?: ImageAdjust;
   buyAnchor?: Anchor | null;
   badgeAnchor?: Anchor | null;
+  productAnchor?: Anchor | null;
+  productSize?: number;
+  buySize?: number;
 };
 
 export type PromoEmbed = {
@@ -89,6 +92,14 @@ interface Props {
 
 function fmtSoles(v: number): string {
   return `S/ ${v.toFixed(2)}`;
+}
+
+function clampSize(v: number): number {
+  return Math.max(10, Math.min(60, v));
+}
+
+function clampBuySize(v: number): number {
+  return Math.max(8, Math.min(50, v));
 }
 
 export default function PromoBannerRenderer({ banner, asLink = true, className = "" }: Props) {
@@ -313,15 +324,24 @@ function PromoItemCard({
         <ChevronRight className="h-3.5 w-3.5" />
       </span>
     );
+    const productSize = clampSize(item.productSize ?? 28);
+    const productCard = (
+      <div className="rounded-xl bg-white/95 overflow-hidden flex items-center justify-center shadow h-full w-full">
+        {item.productImage ? (
+          <div aria-label={item.productName} role="img" className="h-full w-full" style={itemImageStyle(item)} />
+        ) : (
+          <ImageIcon className="h-1/3 w-1/3 text-[#0c1015]/30" strokeWidth={1.25} />
+        )}
+      </div>
+    );
     return (
       <>
-        <div className="self-center aspect-square h-[80%] rounded-xl bg-white/95 shrink-0 overflow-hidden flex items-center justify-center shadow">
-          {item.productImage ? (
-            <div aria-label={item.productName} role="img" className="h-full w-full" style={itemImageStyle(item)} />
-          ) : (
-            <ImageIcon className="h-1/3 w-1/3 text-[#0c1015]/30" strokeWidth={1.25} />
-          )}
-        </div>
+        {/* Slot flex — sólo si no hay productAnchor (modo libre) */}
+        {!item.productAnchor && (
+          <div className="self-center aspect-square h-[80%] shrink-0">
+            {productCard}
+          </div>
+        )}
         <div className="flex-1 min-w-0 self-center">
           {/* Badge: sólo inline si no tiene anchor libre (sino se renderiza absolute abajo) */}
           {badge && !item.badgeAnchor && <div className="mb-1">{badge}</div>}
@@ -330,9 +350,11 @@ function PromoItemCard({
               {bannerTitle}
             </h3>
           )}
-          <p className={"text-xs sm:text-sm font-bold truncate mt-0.5 " + (textOnImage ? "text-white/90 drop-shadow" : "text-[#0c1015]/80")}>
-            {item.productName || "(sin producto)"}
-          </p>
+          {item.productName && (
+            <p className={"text-xs sm:text-sm font-bold truncate mt-0.5 " + (textOnImage ? "text-white/90 drop-shadow" : "text-[#0c1015]/80")}>
+              {item.productName}
+            </p>
+          )}
           {(item.price !== null || item.oldPrice !== null) && (
             <div className="flex items-baseline gap-2 mt-1">
               {item.price !== null && (
@@ -353,6 +375,21 @@ function PromoItemCard({
           <div className="self-center shrink-0">{buyChip}</div>
         )}
 
+        {/* Producto con anchor libre — render absoluto, square con tamaño relativo al ancho del banner */}
+        {item.productAnchor && (
+          <div
+            className="absolute z-10"
+            style={{
+              left: `${item.productAnchor.x}%`,
+              top: `${item.productAnchor.y}%`,
+              width: `${productSize}%`,
+              aspectRatio: "1 / 1",
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {productCard}
+          </div>
+        )}
         {/* Overlays absolutos cuando hay anchor */}
         {item.badgeAnchor && badge && (
           <div
@@ -372,7 +409,8 @@ function PromoItemCard({
             style={{
               left: `${item.buyAnchor.x}%`,
               top: `${item.buyAnchor.y}%`,
-              transform: "translate(-50%, -50%)",
+              transform: `translate(-50%, -50%) scale(${clampBuySize(item.buySize ?? 22) / 22})`,
+              transformOrigin: "center center",
             }}
           >
             {buyChip}
@@ -398,9 +436,11 @@ function PromoItemCard({
             {item.badge}
           </span>
         )}
-        <p className="text-xs font-extrabold text-[#0c1015] truncate leading-tight">
-          {item.productName || "(sin nombre)"}
-        </p>
+        {item.productName && (
+          <p className="text-xs font-extrabold text-[#0c1015] truncate leading-tight">
+            {item.productName}
+          </p>
+        )}
         <div className="flex items-baseline gap-1.5 mt-0.5">
           {item.price !== null && (
             <span className="font-display text-sm font-extrabold text-[#0c1015] tabular-nums leading-tight">

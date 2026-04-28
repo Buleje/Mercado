@@ -380,7 +380,19 @@ export default function SuperadminBannersPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setSavedMsg({ kind: "err", text: err.error ?? `Error ${res.status}` });
+        const issues = Array.isArray(err.issues) ? err.issues : [];
+        const firstIssue = issues[0];
+        const detail = firstIssue
+          ? typeof firstIssue === "string"
+            ? firstIssue
+            : `${firstIssue.path || "?"}: ${firstIssue.message || firstIssue.code || "inválido"}`
+          : "";
+        const text = detail ? `${err.error ?? `Error ${res.status}`} — ${detail}` : err.error ?? `Error ${res.status}`;
+        setSavedMsg({ kind: "err", text });
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.error("[banners save] 400 issues", issues);
+        }
       } else {
         setSavedMsg({ kind: "ok", text: "Cambios guardados" });
         setDirtySlots((prev) => {

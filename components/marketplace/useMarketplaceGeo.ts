@@ -1,7 +1,32 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
+
+/** Cache de coords del usuario en sessionStorage. Evita re-pedir GPS en cada
+ *  navegación dentro de la misma sesión. TTL 1h. */
+const GEO_CACHE_KEY = "buleje:geo:user-coords";
+const GEO_CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+
+function readGeoCache(): { lat: number; lng: number } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(GEO_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { lat: number; lng: number; ts: number };
+    if (Date.now() - parsed.ts > GEO_CACHE_TTL_MS) return null;
+    return { lat: parsed.lat, lng: parsed.lng };
+  } catch {
+    return null;
+  }
+}
+
+function writeGeoCache(coords: { lat: number; lng: number }) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ ...coords, ts: Date.now() }));
+  } catch {}
+}
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -72,6 +97,43 @@ export function useMarketplaceGeo(
   const [geoActive, setGeoActive] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 
+  // ── Auto-detect silencioso al mount ──────────────────────────────────────
+  // 1) Si tenemos coords cacheadas (TTL 1h), las usamos sin pedir permiso.
+  // 2) Si no, consultamos Permissions API. Solo activamos auto-fetch si el
+  //    usuario YA concedió permiso previamente (state="granted"). Nunca
+  //    disparamos el prompt sin acción del user — eso lo hace handleGeoSort.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cached = readGeoCache();
+    if (cached) {
+      setUserCoords(cached);
+      setGeoActive(true);
+      setProductFilters((prev) => ({ ...prev, nearbyEnabled: true }));
+      return;
+    }
+    if (!navigator.geolocation || !("permissions" in navigator)) return;
+    let cancelled = false;
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (cancelled || status.state !== "granted") return;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (cancelled) return;
+            const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            writeGeoCache(coords);
+            setUserCoords(coords);
+            setGeoActive(true);
+            setProductFilters((prev) => ({ ...prev, nearbyEnabled: true }));
+          },
+          () => { /* silent fail — el botón manual sigue disponible */ },
+          { timeout: 5000, maximumAge: 60_000 },
+        );
+      })
+      .catch(() => { /* navegadores viejos sin Permissions API → ignorar */ });
+    return () => { cancelled = true; };
+  }, [setProductFilters]);
+
   const filteredStores = useMemo(() => {
     if (!geoActive || !userCoords) return stores;
 
@@ -107,7 +169,9 @@ export function useMarketplaceGeo(
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        writeGeoCache(coords);
+        setUserCoords(coords);
         setGeoActive(true);
         setGeoLoading(false);
         setProductFilters((prev) => ({ ...prev, nearbyEnabled: true }));

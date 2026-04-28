@@ -24,12 +24,12 @@ interface Store {
 
 // ---------- helpers ----------
 
+// Zonas del catálogo canónico (lib/marketplace-zones.ts).
+import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+
 const ZONES = [
-  { value: "",              label: "Todas las zonas" },
-  { value: "pucallpa-centro", label: "Centro" },
-  { value: "yarinacocha",   label: "Yarinacocha" },
-  { value: "calleria",      label: "Callería" },
-  { value: "manantay",      label: "Manantay" },
+  { value: "", label: "Todas las zonas" },
+  ...MARKETPLACE_ZONES.map((z) => ({ value: z.id, label: z.label })),
 ];
 
 const CATEGORIES = [
