@@ -4,10 +4,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
-import {
-  MOCK_STORE_REVIEWS,
-  MOCK_STORE_RATING_SUMMARY,
-} from "@/lib/mock-store-reviews";
+import { getStoreTagline } from "@/lib/store-tagline";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import type { StoreCategoryChip } from "@/components/marketplace/store-detail/StoreCategories";
 import { computeIsOpenNow } from "@/lib/marketplace/store-hours";
 
@@ -33,9 +31,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
   const zone = store.zone ?? "Perú";
-  const desc =
-    store.description ??
-    `Compra en ${store.name}, ${store.category} en ${zone}. Delivery rápido. Paga con Yape o efectivo. Marketplace Buleje.`;
+  const desc = getStoreTagline({
+    slug,
+    name: store.name,
+    category: store.category,
+    existing: store.description,
+  });
 
   return {
     title: `${store.name} — ${store.category} en ${zone} | Marketplace Buleje`,
@@ -134,10 +135,36 @@ export default async function StoreDetailPage({ params }: Props) {
   if (!store) notFound();
 
   // 2. Fetch products (limit 100 for initial render)
-  const products = await MarketplaceStoreProductsDB.list({
+  const productsRaw = await MarketplaceStoreProductsDB.list({
     storeId: store.id,
     limit: 100,
   });
+
+  // 2b. Aplicar orden manual de productos por categoría (admin/marketplace/orden).
+  // Productos no listados quedan al final, preservando orden original.
+  const { getProductOrder, applyProductOrder } = await import("@/lib/store-product-order");
+  const productOrderMap = await getProductOrder(slug);
+  const products = (() => {
+    if (Object.keys(productOrderMap).length === 0) return productsRaw;
+    // Agrupa por categoría, aplica orden persistido a cada grupo, vuelve a unir.
+    const byCat = new Map<string, typeof productsRaw>();
+    const noCat: typeof productsRaw = [];
+    for (const p of productsRaw) {
+      const cat = p.productCategory;
+      if (!cat) { noCat.push(p); continue; }
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat)!.push(p);
+    }
+    const flat: typeof productsRaw = [];
+    for (const [cat, items] of byCat) {
+      const ordered = productOrderMap[cat]
+        ? applyProductOrder(items, productOrderMap[cat])
+        : items;
+      flat.push(...ordered);
+    }
+    flat.push(...noCat);
+    return flat;
+  })();
 
   // 3. Build categories facet from product list
   const catCounts = new Map<string, number>();
@@ -145,15 +172,42 @@ export default async function StoreDetailPage({ params }: Props) {
     const cat = p.productCategory;
     if (cat) catCounts.set(cat, (catCounts.get(cat) ?? 0) + 1);
   }
-  const categories: StoreCategoryChip[] = Array.from(catCounts.entries())
+  const baseCategories: StoreCategoryChip[] = Array.from(catCounts.entries())
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => ({ name, count }));
+
+  // 3b. Aplicar orden manual configurado por el dueño (admin/marketplace/orden)
+  // o por superadmin (superadmin/stores → Orden). Si no hay orden persistido
+  // se conserva el orden por count desc.
+  const { getCategoryOrder } = await import("@/lib/store-category-order");
+  const persistedOrder = await getCategoryOrder(slug);
+  const categories: StoreCategoryChip[] = persistedOrder.length === 0
+    ? baseCategories
+    : (() => {
+        const idxMap = new Map<string, number>();
+        persistedOrder.forEach((name, i) => idxMap.set(name, i));
+        return [...baseCategories].sort((a, b) => {
+          const ra = idxMap.has(a.name) ? idxMap.get(a.name)! : Number.MAX_SAFE_INTEGER;
+          const rb = idxMap.has(b.name) ? idxMap.get(b.name)! : Number.MAX_SAFE_INTEGER;
+          if (ra !== rb) return ra - rb;
+          return b.count - a.count;
+        });
+      })();
+
+  // 4. Fetch reseñas REALES (de la tabla Review). Defensive: si falla,
+  //    devuelve listas vacías y la UI muestra empty state honesto.
+  const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.id);
 
   return (
     <>
       <StoreJsonLd
         name={store.name}
-        description={store.description}
+        description={getStoreTagline({
+          slug,
+          name: store.name,
+          category: store.category,
+          existing: store.description,
+        })}
         slug={slug}
         logo={store.logo}
         zone={store.zone}
@@ -169,8 +223,8 @@ export default async function StoreDetailPage({ params }: Props) {
         store={store}
         products={products}
         categories={categories}
-        reviewSummary={MOCK_STORE_RATING_SUMMARY}
-        reviews={MOCK_STORE_REVIEWS}
+        reviewSummary={reviewSummary}
+        reviews={reviews}
         isOpen={computeIsOpenNow()}
       />
 
