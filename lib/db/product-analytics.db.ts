@@ -39,7 +39,6 @@ function mapAnalytics(r: PProductAnalytics): DbProductAnalytics {
     clicks: r.clicks,
     addsToCart: r.addsToCart,
     conversions: r.conversions,
-    // TD-018: revenue es Decimal
     revenue: toNumOrZero(r.revenue),
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -53,41 +52,49 @@ export const ProductAnalyticsDB = {
     tenantId: string,
     productId: number,
     metric: "view" | "click" | "addToCart" | "conversion",
-    revenue?: number
+    revenue?: number,
   ): Promise<void> {
     const now = new Date();
     const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-    const incrementMap: Record<typeof metric, object> = {
-      view: { views: { increment: 1 } },
-      click: { clicks: { increment: 1 } },
-      addToCart: { addsToCart: { increment: 1 } },
-      conversion: {
-        conversions: { increment: 1 },
-        ...(revenue != null ? { revenue: { increment: revenue } } : {}),
-      },
-    };
+    const incView = metric === "view" ? 1 : 0;
+    const incClick = metric === "click" ? 1 : 0;
+    const incAddToCart = metric === "addToCart" ? 1 : 0;
+    const incConversion = metric === "conversion" ? 1 : 0;
+    const incRevenue = metric === "conversion" && revenue != null ? revenue : 0;
 
-    await prisma.productAnalytics.upsert({
-      where: { productId_date_tenantId: { productId, date, tenantId } },
-      create: {
-        productId,
-        tenantId,
-        date,
-        views: metric === "view" ? 1 : 0,
-        clicks: metric === "click" ? 1 : 0,
-        addsToCart: metric === "addToCart" ? 1 : 0,
-        conversions: metric === "conversion" ? 1 : 0,
-        revenue: metric === "conversion" && revenue != null ? revenue : 0,
-      },
-      update: incrementMap[metric],
-    });
+    try {
+      await prisma.productAnalytics.upsert({
+        where: { productId_date_tenantId: { productId, date, tenantId } },
+        create: {
+          productId,
+          tenantId,
+          date,
+          views: incView,
+          clicks: incClick,
+          addsToCart: incAddToCart,
+          conversions: incConversion,
+          revenue: incRevenue,
+        },
+        update: {
+          views: { increment: incView },
+          clicks: { increment: incClick },
+          addsToCart: { increment: incAddToCart },
+          conversions: { increment: incConversion },
+          revenue: { increment: incRevenue },
+        },
+      });
+    } catch (err) {
+      // Analytics nunca debe romper el flujo del usuario.
+      // eslint-disable-next-line no-console
+      console.warn("[product-analytics] track failed", { error: String(err).slice(0, 300) });
+    }
   },
 
   async getByProduct(
     tenantId: string,
     productId: number,
-    days: number
+    days: number,
   ): Promise<DbProductAnalytics[]> {
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - days);
@@ -102,7 +109,7 @@ export const ProductAnalyticsDB = {
   async getTopProducts(
     tenantId: string,
     metric: "views" | "clicks" | "addsToCart" | "conversions" | "revenue",
-    limit: number
+    limit: number,
   ): Promise<{ productId: number; total: number }[]> {
     const groups = await prisma.productAnalytics.groupBy({
       by: ["productId"],
@@ -138,7 +145,6 @@ export const ProductAnalyticsDB = {
       totalClicks: agg._sum.clicks ?? 0,
       totalAddsToCart: agg._sum.addsToCart ?? 0,
       totalConversions: agg._sum.conversions ?? 0,
-      // TD-018: revenue es Decimal | null
       totalRevenue: toNumOrZero(agg._sum.revenue),
     };
   },

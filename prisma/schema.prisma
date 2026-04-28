@@ -2555,11 +2555,18 @@ model StoreProduct {
   minOrderQty         Int                  @default(1)
   isActive            Boolean              @default(true)
   volumePricingTiers  Json? // [{ minQty: 10, discount: 5 }, ...]
+  /// ADR-081: precio promocional efectivo. Null = sin oferta vigente.
+  discountPrice       Decimal?             @db.Decimal(12, 2)
+  /// Fecha de vencimiento de la oferta. Null = sin caducidad.
+  discountUntil       DateTime?
+  /// Texto opcional para chips ("2x1", "Liquidación", "-30%"). Max 40 chars.
+  discountLabel       String?              @db.VarChar(40)
   stockoutPredictions StockoutPrediction[]
 
   @@unique([storeId, productId])
   @@index([storeId])
   @@index([productId])
+  @@index([discountUntil])
 }
 
 model DeliveryPartner {
