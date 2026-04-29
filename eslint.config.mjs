@@ -2,6 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettierConfig from "eslint-config-prettier";
+import { PRISMA_DIRECT_LEGACY } from "./eslint.legacy-allowlist.mjs";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -132,17 +133,20 @@ const eslintConfig = defineConfig([
     },
   },
   // ────────────────────────────────────────────────────────────────────────────
-  // SECURITY (HOTFIX-A4, 2026-04-29): no `prisma.<modelo>.<metodo>` directo
-  // fuera de `lib/db/`. Auditoria detecto 370 archivos / 1259 ocurrencias —
-  // bypass del cache, audit log y, peor, riesgo de olvidar tenantId filter.
+  // SECURITY (HOTFIX-A4 + lock-and-progress, 2026-04-29): no `prisma.<modelo>`
+  // directo fuera de `lib/db/`. Auditoria detecto 318 archivos legacy.
   //
-  // STATUS: "warn" — no rompe build (violaciones existentes). Cualquier PR
-  // nuevo vera el warning en CI. Plan progresivo: migrar a lib/db/* y subir
-  // a "error" cuando los 370 esten exiliados.
+  // ESTRATEGIA: lock-and-progress.
+  //   - Rule en "error" — bloquea PRs nuevos con prisma.* directo.
+  //   - Allowlist en `eslint.legacy-allowlist.mjs` exime los 318 archivos
+  //     existentes que ya violan la rule. Cuando se migra uno a lib/db/*,
+  //     removerlo del array. Cuando lleguemos a 0 → eliminar el allowlist.
+  //   - Asi: nadie agrega nuevos prisma.* directo, y el legacy se recorta
+  //     progresivamente sin romper build.
   //
-  // Excepciones legitimas (en `ignores`): wrappers de DB, webhooks externos
-  // (Stripe/MP) que requieren cross-tenant lookups, superadmin platform-level
-  // operations, crons globales, scripts de migracion/seed.
+  // Excepciones permanentes (no allowlist — siempre legitimo): webhooks
+  // externos (Stripe/MP) y superadmin platform-level que requieren queries
+  // cross-tenant por diseno.
   // ────────────────────────────────────────────────────────────────────────────
   {
     files: ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "contexts/**/*.ts"],
@@ -155,14 +159,16 @@ const eslintConfig = defineConfig([
       "scripts/**",
       "**/__tests__/**",
       "prisma/**",
+      // Allowlist legacy — 318 archivos snapshot 2026-04-29.
+      ...PRISMA_DIRECT_LEGACY,
     ],
     rules: {
       "no-restricted-properties": [
-        "warn",
+        "error",
         {
           object: "prisma",
           message:
-            "MULTI-TENANT: usar lib/db/*.db.ts en vez de prisma.<modelo>.<metodo>() directo. El wrapper enforces tenantId + cache + audit log. Si la query es legitimamente cross-tenant (webhook externo, superadmin), añadir el archivo a ignores en eslint.config.mjs.",
+            "MULTI-TENANT: usar lib/db/*.db.ts en vez de prisma.<modelo>.<metodo>() directo. El wrapper enforces tenantId + cache + audit log. Si esta es una query legitimamente cross-tenant (webhook externo, superadmin platform), añadir su PATH a `ignores` en eslint.config.mjs (no a la allowlist legacy — esa es solo para deuda existente).",
         },
       ],
     },
