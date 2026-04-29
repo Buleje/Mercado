@@ -13,12 +13,14 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
-const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete } = vi.hoisted(() => ({
+const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete, mockUpdateMany, mockDeleteMany } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockCreate: vi.fn(),
   mockFindFirst: vi.fn(),
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
+  mockUpdateMany: vi.fn(),
+  mockDeleteMany: vi.fn(),
 }));
 vi.mock("@/lib/tenant", () => ({
   prismaForTenant: () => ({
@@ -28,6 +30,8 @@ vi.mock("@/lib/tenant", () => ({
       findFirst: mockFindFirst,
       update: mockUpdate,
       delete: mockDelete,
+      updateMany: mockUpdateMany,
+      deleteMany: mockDeleteMany,
     },
   }),
 }));
@@ -42,6 +46,8 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: mockFindFirst,
       update: mockUpdate,
       delete: mockDelete,
+      updateMany: mockUpdateMany,
+      deleteMany: mockDeleteMany,
     },
   },
 }));
@@ -154,15 +160,17 @@ describe("PATCH /api/message-templates", () => {
 
   it("returns 404 when template not found", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(null);
+    // SECURITY (HOTFIX-M3): updateMany es la nueva primera query.
+    mockUpdateMany.mockResolvedValue({ count: 0 });
     const res = await PATCH(makeReq("PATCH", "https://host/api/message-templates?id=x", { name: "x" }));
     expect(res.status).toBe(404);
   });
 
   it("increments usageCount successfully", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(BASE_TPL);
-    mockUpdate.mockResolvedValue({ ...BASE_TPL, usageCount: 1 });
+    // SECURITY (HOTFIX-M3): updateMany retorna count > 0 → luego findFirst lee la fila.
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockFindFirst.mockResolvedValue({ ...BASE_TPL, usageCount: 1 });
     const res = await PATCH(makeReq("PATCH", "https://host/api/message-templates?id=t1", { usageCount: 1 }));
     expect(res.status).toBe(200);
     expect((await res.json()).usageCount).toBe(1);
@@ -182,15 +190,15 @@ describe("DELETE /api/message-templates", () => {
 
   it("returns 404 when template not found", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(null);
+    // SECURITY (HOTFIX-M3): deleteMany atomico — count=0 → 404.
+    mockDeleteMany.mockResolvedValue({ count: 0 });
     const res = await DELETE(makeReq("DELETE", "https://host/api/message-templates?id=x"));
     expect(res.status).toBe(404);
   });
 
   it("deletes and returns { ok: true }", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(BASE_TPL);
-    mockDelete.mockResolvedValue({});
+    mockDeleteMany.mockResolvedValue({ count: 1 });
     const res = await DELETE(makeReq("DELETE", "https://host/api/message-templates?id=t1"));
     expect(res.status).toBe(200);
     expect((await res.json()).ok).toBe(true);

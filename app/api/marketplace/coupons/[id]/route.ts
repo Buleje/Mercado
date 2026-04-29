@@ -32,27 +32,35 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
     }
 
+    // SECURITY (HOTFIX-M3, 2026-04-29): patron TOCTOU eliminado.
+    // Antes: findFirst({tenantId}) -> update({where:{id}}) tenia ventana
+    // entre check y update. Ahora updateMany atomico con filtro tenantId.
     const coupon = await prisma.coupon.findFirst({
       where: { id, tenantId: auth.tenantId },
+      select: { id: true, code: true, active: true },
     });
     if (!coupon) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 
-    const updated = await prisma.coupon.update({
-      where: { id },
-      data: { active: parsed.data.active ?? !coupon.active },
+    const newActive = parsed.data.active ?? !coupon.active;
+    const result = await prisma.coupon.updateMany({
+      where: { id, tenantId: auth.tenantId },
+      data: { active: newActive },
     });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
+    }
 
     logActivity(
-      updated.active ? "coupon_activated" : "coupon_deactivated",
+      newActive ? "coupon_activated" : "coupon_deactivated",
       "Coupon",
-      `Cupón ${coupon.code} ${updated.active ? "activado" : "desactivado"}`,
+      `Cupón ${coupon.code} ${newActive ? "activado" : "desactivado"}`,
       id,
       auth.username,
     ).catch((err) => logger.error("[marketplace/coupons/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
-    return NextResponse.json({ data: updated });
+    return NextResponse.json({ data: { id, active: newActive } });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
@@ -71,14 +79,19 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
 
     const { id } = await ctx.params;
 
+    // SECURITY (HOTFIX-M3): deleteMany atomico con filtro tenantId.
     const coupon = await prisma.coupon.findFirst({
       where: { id, tenantId: auth.tenantId },
+      select: { code: true },
     });
     if (!coupon) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 
-    await prisma.coupon.delete({ where: { id } });
+    const result = await prisma.coupon.deleteMany({ where: { id, tenantId: auth.tenantId } });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
+    }
 
     logActivity(
       "coupon_deleted",

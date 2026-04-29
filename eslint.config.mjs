@@ -131,6 +131,42 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // ────────────────────────────────────────────────────────────────────────────
+  // SECURITY (HOTFIX-A4, 2026-04-29): no `prisma.<modelo>.<metodo>` directo
+  // fuera de `lib/db/`. Auditoria detecto 370 archivos / 1259 ocurrencias —
+  // bypass del cache, audit log y, peor, riesgo de olvidar tenantId filter.
+  //
+  // STATUS: "warn" — no rompe build (violaciones existentes). Cualquier PR
+  // nuevo vera el warning en CI. Plan progresivo: migrar a lib/db/* y subir
+  // a "error" cuando los 370 esten exiliados.
+  //
+  // Excepciones legitimas (en `ignores`): wrappers de DB, webhooks externos
+  // (Stripe/MP) que requieren cross-tenant lookups, superadmin platform-level
+  // operations, crons globales, scripts de migracion/seed.
+  // ────────────────────────────────────────────────────────────────────────────
+  {
+    files: ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "contexts/**/*.ts"],
+    ignores: [
+      "lib/db/**",
+      "app/api/billing/webhook/**",
+      "app/api/marketplace/payment/**",
+      "app/api/superadmin/**",
+      "app/api/cron/**",
+      "scripts/**",
+      "**/__tests__/**",
+      "prisma/**",
+    ],
+    rules: {
+      "no-restricted-properties": [
+        "warn",
+        {
+          object: "prisma",
+          message:
+            "MULTI-TENANT: usar lib/db/*.db.ts en vez de prisma.<modelo>.<metodo>() directo. El wrapper enforces tenantId + cache + audit log. Si la query es legitimamente cross-tenant (webhook externo, superadmin), añadir el archivo a ignores en eslint.config.mjs.",
+        },
+      ],
+    },
+  },
   // Prettier compat — must be LAST to disable formatting rules that conflict with Prettier
   prettierConfig,
 ]);

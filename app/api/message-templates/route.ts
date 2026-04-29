@@ -79,10 +79,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existing = await prisma.messageTemplate.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // SECURITY (HOTFIX-M3, 2026-04-29): updateMany atomico con tenantId
+  // (antes findFirst + update tenia ventana TOCTOU).
+  const result = await prisma.messageTemplate.updateMany({
+    where: { id, tenantId: auth.tenantId },
+    data: parsed.data,
+  });
+  if (result.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const row = await prisma.messageTemplate.update({ where: { id }, data: parsed.data });
+  const row = await prisma.messageTemplate.findFirst({
+    where: { id, tenantId: auth.tenantId },
+  });
+  if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) });
 }
@@ -97,10 +105,11 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.messageTemplate.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  await prisma.messageTemplate.delete({ where: { id } });
+  // SECURITY (HOTFIX-M3): deleteMany atomico con tenantId.
+  const result = await prisma.messageTemplate.deleteMany({
+    where: { id, tenantId: auth.tenantId },
+  });
+  if (result.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   return NextResponse.json({ ok: true });
 }
