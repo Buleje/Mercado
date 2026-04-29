@@ -196,6 +196,9 @@ export const ReviewsMarketplaceDB = {
       "", // location default
     );
 
+    // ADR-082: prefijo con tenantId cubre todas las cache keys de reviews
+    // (store, product, agg). Los invalidates legacy sin tenantId quedan
+    // como fallback por si hay keys legacy en cache.
     invalidateByPrefix(`reviews:${params.tenantId}`);
     if (params.storeId) invalidateByPrefix(`reviews:store:${params.storeId}`);
     if (params.productId) invalidateByPrefix(`reviews:product:${params.productId}`);
@@ -243,7 +246,11 @@ export const ReviewsMarketplaceDB = {
     opts: { status?: ReviewStatus; limit?: number; verifiedOnly?: boolean } = {},
   ): Promise<DbMarketplaceReview[]> {
     const limit = Math.min(Math.max(1, opts.limit ?? 50), 200);
-    const cacheKey = `reviews:store:${storeId}:${opts.status ?? "all"}:${opts.verifiedOnly ? "v" : "all"}:${limit}`;
+    // SECURITY (ADR-082, 2026-04-29): cache key prefijada con tenantId
+    // (defense in depth — storeId es CUID global pero la convencion es
+    // SIEMPRE incluir tenantId en cache keys para evitar collision si
+    // el schema cambiara).
+    const cacheKey = `reviews:${tenantId}:store:${storeId}:${opts.status ?? "all"}:${opts.verifiedOnly ? "v" : "all"}:${limit}`;
 
     return getOrSet(cacheKey, 60, async () => {
       const args: unknown[] = [tenantId, storeId];
@@ -283,7 +290,8 @@ export const ReviewsMarketplaceDB = {
     opts: { status?: ReviewStatus; limit?: number; verifiedOnly?: boolean } = {},
   ): Promise<DbMarketplaceReview[]> {
     const limit = Math.min(Math.max(1, opts.limit ?? 50), 200);
-    const cacheKey = `reviews:product:${productId}:${opts.status ?? "all"}:${opts.verifiedOnly ? "v" : "all"}:${limit}`;
+    // SECURITY (ADR-082): cache key prefijada con tenantId.
+    const cacheKey = `reviews:${tenantId}:product:${productId}:${opts.status ?? "all"}:${opts.verifiedOnly ? "v" : "all"}:${limit}`;
 
     return getOrSet(cacheKey, 60, async () => {
       const args: unknown[] = [tenantId, productId];
@@ -331,9 +339,10 @@ export const ReviewsMarketplaceDB = {
       throw new Error("getAggregate requiere storeId o productId");
     }
 
+    // SECURITY (ADR-082): cache key prefijada con tenantId.
     const cacheKey = target.storeId
-      ? `reviews:agg:store:${target.storeId}`
-      : `reviews:agg:product:${target.productId}`;
+      ? `reviews:${tenantId}:agg:store:${target.storeId}`
+      : `reviews:${tenantId}:agg:product:${target.productId}`;
 
     return getOrSet(cacheKey, 120, async () => {
       const filterCol = target.storeId ? '"storeId"' : '"productId"';
