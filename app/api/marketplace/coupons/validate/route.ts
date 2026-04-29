@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { CouponsDB } from "@/lib/db/coupons.db";
 
 const ValidateSchema = z.object({
   code: z.string().min(1).transform((v) => v.toUpperCase().trim()),
@@ -30,32 +31,22 @@ export async function POST(req: NextRequest) {
 
     const { code, storeSlug, cartTotal } = parsed.data;
 
-    // Find the store
-    const store = await prisma.store.findUnique({
-      where: { slug: storeSlug },
-      select: { id: true, tenantId: true },
-    });
+    // Resolver tienda — MarketplaceStoresDB.getBySlug ya filtra `isPublished`.
+    const store = await MarketplaceStoresDB.getBySlug(storeSlug);
     if (!store) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    // Find the coupon: store-specific first, then tenant-wide (storeId=null)
-    const coupon = await prisma.coupon.findFirst({
-      where: {
-        tenantId: store.tenantId,
-        code,
-        active: true,
-        OR: [{ storeId: store.id }, { storeId: null }],
-      },
-      orderBy: { storeId: "desc" }, // prefer store-specific over tenant-wide
-    });
+    // Buscar cupón scoped al tenant del store (CouponsDB.findByCode aplica
+    // tenantId obligatorio + prefiere store-specific sobre tenant-wide).
+    const coupon = await CouponsDB.findByCode(store.tenantId, code, store.id);
 
-    if (!coupon) {
+    if (!coupon || !coupon.active) {
       return NextResponse.json({ valid: false, reason: "Cupón no encontrado o inactivo" });
     }
 
     // Check expiration
-    if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
       return NextResponse.json({ valid: false, reason: "Cupón expirado" });
     }
 

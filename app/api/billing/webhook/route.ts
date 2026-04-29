@@ -29,37 +29,63 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Idempotency: skip if this Stripe event was already processed
-    const alreadyProcessed = await prisma.stripeWebhookQueue.findUnique({
-      where: { stripeId: event.id },
-      select: { processedAt: true },
-    }).catch((err) => { logger.warn("[Stripe Webhook] dedup lookup failed", { error: String(err) }); return null; });
-    if (alreadyProcessed?.processedAt) {
-      logger.info("[Stripe Webhook] Duplicate event skipped", { stripeId: event.id, type: event.type });
-      return NextResponse.json({ received: true, duplicate: true });
+    // Idempotency atómica con lock por UNIQUE constraint
+    // Antes: findUnique + upsert (no atómico) → 2 webhooks simultáneos
+    // ambos veían null y procesaban → doble activación de plan / doble cobro.
+    // Ahora: create con UNIQUE → P2002 = otro webhook ya tomó el lock.
+    try {
+      await prisma.stripeWebhookQueue.create({
+        data: {
+          stripeId: event.id,
+          eventType: "stripe.processing",
+          payload: JSON.stringify({ id: event.id, type: event.type }),
+          attempts: 1,
+          lastError: "",
+          nextRetryAt: new Date(),
+          processedAt: null,
+        },
+      });
+    } catch (lockErr) {
+      const code = (lockErr as { code?: string }).code;
+      if (code === "P2002") {
+        logger.info("[Stripe Webhook] Duplicate event skipped (locked)", {
+          stripeId: event.id,
+          type: event.type,
+        });
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      throw lockErr;
     }
 
     await processStripeEvent(event);
 
-    // Mark as processed for future deduplication
-    await prisma.stripeWebhookQueue.upsert({
-      where: { stripeId: event.id },
-      create: {
-        stripeId: event.id,
-        eventType: event.type,
-        payload: JSON.stringify(event),
-        attempts: 1,
-        lastError: "",
-        nextRetryAt: new Date(),
-        processedAt: new Date(),
-      },
-      update: { processedAt: new Date() },
-    }).catch((err) => { logger.error("[Stripe Webhook] mark-processed upsert failed", { stripeId: event.id, error: String(err) }); });
+    // Lock ya creado — solo actualizamos estado final.
+    await prisma.stripeWebhookQueue
+      .update({
+        where: { stripeId: event.id },
+        data: {
+          eventType: event.type,
+          payload: JSON.stringify(event),
+          processedAt: new Date(),
+        },
+      })
+      .catch((err) =>
+        logger.error("[Stripe Webhook] mark-processed update failed", {
+          stripeId: event.id,
+          error: String(err),
+        }),
+      );
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     logger.error("[Stripe Webhook] Handler error — queuing for retry", {
       stripeId: event.id, type: event.type, err: errorMsg,
     });
+    // Liberar el lock: si processStripeEvent lanzó después de tomar el lock,
+    // el cron de retry necesitará re-procesar este event sin que choque con
+    // el UNIQUE constraint. Borramos solo si quedó sin processedAt.
+    await prisma.stripeWebhookQueue
+      .deleteMany({ where: { stripeId: event.id, processedAt: null } })
+      .catch(() => {});
     // Persist failed event and return 200: Stripe will NOT retry on its own,
     // our cron will replay it with exponential back-off.
     await enqueueWebhookEvent(event, errorMsg);

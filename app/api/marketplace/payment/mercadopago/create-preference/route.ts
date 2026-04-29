@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { Preference } from "mercadopago";
 import { mpClient } from "@/lib/mercadopago";
-import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { OrdersDB } from "@/lib/db/orders.db";
 
 const CreatePreferenceSchema = z.object({
   storeSlug: z.string().min(1),
@@ -35,24 +36,20 @@ export async function POST(req: NextRequest) {
 
     const { storeSlug, storeName, customerName, customerPhone, customerEmail, orderId } = parsed.data;
 
-    // ── SECURITY: Lookup order from DB — never trust client-sent prices ──────
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: { select: { name: true, quantity: true, price: true } } },
-    });
-
-    if (!order) {
-      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    // 1. Resolver store — getBySlug ya filtra `isPublished: true`.
+    const store = await MarketplaceStoresDB.getBySlug(storeSlug);
+    if (!store) {
+      return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    // Verify order belongs to the correct store (anti cross-tenant tampering)
-    const store = await prisma.store.findUnique({
-      where: { slug: storeSlug },
-      select: { tenantId: true },
-    });
-    if (!store || order.tenantId !== store.tenantId) {
-      logger.warn("[mp-preference] Order/store mismatch", { orderId, storeSlug });
-      return NextResponse.json({ error: "Orden no corresponde a esta tienda" }, { status: 403 });
+    // 2. Buscar la orden SCOPED al tenantId del store via OrdersDB.getById,
+    //    que aplica `tenantId` obligatoriamente como 1er param. Cierra el
+    //    cross-tenant leak: con un orderId válido de OTRO tenant + slug
+    //    correcto, OrdersDB retorna null.
+    const order = await OrdersDB.getById(store.tenantId, orderId);
+    if (!order) {
+      logger.warn("[mp-preference] Order not in store tenant", { orderId, storeSlug });
+      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     }
 
     // Use DB-verified items and total (never client-sent values)

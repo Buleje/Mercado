@@ -1,3 +1,9 @@
+/**
+ * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
+ * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
+ * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
+ * dedicada cuando se centralice el patrón.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -7,12 +13,25 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 /**
  * GET /api/marketplace/admin/overview
  * Estadísticas agregadas de TODO el marketplace — solo para admin del tenant principal.
+ *
+ * SECURITY: el `requireAdmin(["admin"])` acepta admin de cualquier tenant.
+ * Sin este chequeo extra, cualquier admin de un vendor podía leer revenue
+ * y órdenes de TODA la plataforma (cross-tenant data leak masivo).
  */
+const PLATFORM_TENANT_ID = "main";
+
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;
+
+    if (auth.tenantId !== PLATFORM_TENANT_ID) {
+      return NextResponse.json(
+        { error: "forbidden", message: "Solo el tenant principal de la plataforma puede acceder al overview global" },
+        { status: 403 },
+      );
+    }
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

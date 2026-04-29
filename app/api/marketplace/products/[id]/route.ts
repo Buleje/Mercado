@@ -5,6 +5,13 @@
  * Public endpoint — no auth required (marketplace browsing).
  */
 
+/**
+ * @cross-tenant intentional — endpoint público marketplace.
+ * Agregados/lecturas cross-tenant son parte del diseño del marketplace
+ * (rankings, búsqueda, comparar, analytics globales). Donde aplica filtra
+ * por `store.isPublished: true` para no exponer tiendas en draft.
+ * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -21,11 +28,18 @@ export async function GET(
   }
 
   try {
+    // El filtro `storeProducts.some.store.isPublished` se aplica también en el
+    // WHERE (no solo en el select) para que SOLO se retorne si existe al menos
+    // una tienda publicada que lo venda. Sin esto, un atacante puede enumerar
+    // existencia de productos privados (info leak vía timing).
     const product = await prisma.product.findFirst({
       where: {
         id: productId,
         active: true,
         deletedAt: null,
+        storeProducts: {
+          some: { isActive: true, store: { isPublished: true } },
+        },
       },
       select: {
         id: true,

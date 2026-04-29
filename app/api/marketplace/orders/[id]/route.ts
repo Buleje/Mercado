@@ -1,3 +1,9 @@
+/**
+ * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
+ * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
+ * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
+ * dedicada cuando se centralice el patrón.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
@@ -84,8 +90,11 @@ export async function PATCH(
     );
   }
 
-  const updated = await prisma.order.update({
-    where: { id },
+  // Atomic update SCOPED a tenantId — cierra TOCTOU window entre el findFirst
+  // anterior y este update. Sin tenantId aquí, un atacante con dos órdenes
+  // (una propia + una target) podría explotar la ventana entre check y write.
+  const updateResult = await prisma.order.updateMany({
+    where: { id, tenantId: auth.tenantId, deletedAt: null },
     data: {
       status: parsed.data.status,
       ...(parsed.data.status === "cancelado" && {
@@ -94,6 +103,15 @@ export async function PATCH(
       }),
     },
   });
+  if (updateResult.count === 0) {
+    return NextResponse.json({ error: "Pedido no encontrado o ya modificado" }, { status: 404 });
+  }
+  const updated = await prisma.order.findFirst({
+    where: { id, tenantId: auth.tenantId },
+  });
+  if (!updated) {
+    return NextResponse.json({ error: "Error inesperado al leer pedido actualizado" }, { status: 500 });
+  }
 
   // Log status change history (fire-and-forget)
   prisma.orderStatusHistory.create({
