@@ -62,7 +62,7 @@ export function OrdersPrintPreview({
                     <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
                       <Store className="h-8 w-8 text-primary" />
                     </div>
-                    <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">{storeName || "Mi Bodega"}</SectionTitle>
+                    <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">{storeName || "Buleje"}</SectionTitle>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">Ticket de Delivery</p>
                   </div>
 

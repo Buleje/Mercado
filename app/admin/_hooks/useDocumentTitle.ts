@@ -33,7 +33,7 @@ const TAB_LABELS: Record<string, string> = {
   plan: "Plan",
 };
 
-const FALLBACK_TENANT_NAME = "Mi Bodega";
+const FALLBACK_TENANT_NAME = "Buleje";
 
 export function useDocumentTitle(tab: string, tenantName: string | null): void {
   // Scroll suave al top al cambiar de tab

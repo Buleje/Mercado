@@ -689,7 +689,7 @@ export function AdminSidebar({
                   ? "text-white"
                   : "text-[var(--text-primary)] dark:text-foreground",
               )}>
-                {activeTenantName ?? "Mi Bodega"}
+                {activeTenantName ?? "Buleje"}
               </p>
               <p className={cn(
                 "text-[length:var(--ts-xs)] leading-tight mt-0.5",

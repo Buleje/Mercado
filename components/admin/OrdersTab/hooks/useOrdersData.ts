@@ -27,7 +27,7 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [storeLat, setStoreLat] = useState<number | null>(null);
   const [storeLon, setStoreLon] = useState<number | null>(null);
-  const [storeName, setStoreName] = useState("Mi Bodega");
+  const [storeName, setStoreName] = useState("Buleje");
   const [detailOrder, setDetailOrder] = useState<DbOrder | null>(null);
 
   const load = useCallback(async () => {

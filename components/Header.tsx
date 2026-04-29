@@ -919,14 +919,14 @@ export default function Header() {
               <div className="flex items-center gap-1.5">
                 {/* Logo name sin badge "v1 Beta" — aura profesional, confianza B2C.
                     Fallback chain: storeTheme.storeName → storeTheme.name →
-                    businessName → "Mi Bodega". El primero es el campo real
+                    businessName → "Buleje". El primero es el campo real
                     que el dueño edita desde el admin. */}
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
                   {(storeTheme as { storeName?: string } | null)?.storeName
                     || storeTheme?.name
                     || businessName
-                    || "Mi Bodega"}
+                    || "Buleje"}
                 </span>
               </div>
             </div>

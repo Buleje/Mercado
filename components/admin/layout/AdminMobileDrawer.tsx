@@ -135,7 +135,7 @@ export function AdminMobileDrawer({
               <ShoppingBasket className="h-4 w-4" />
             </div>
             <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">
-              {activeTenantName || "Mi Bodega"}
+              {activeTenantName || "Buleje"}
             </span>
           </div>
           <button
