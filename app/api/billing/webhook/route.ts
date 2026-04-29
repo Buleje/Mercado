@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const alreadyProcessed = await prisma.stripeWebhookQueue.findUnique({
       where: { stripeId: event.id },
       select: { processedAt: true },
-    }).catch(() => null);
+    }).catch((err) => { logger.warn("[Stripe Webhook] dedup lookup failed", { error: String(err) }); return null; });
     if (alreadyProcessed?.processedAt) {
       logger.info("[Stripe Webhook] Duplicate event skipped", { stripeId: event.id, type: event.type });
       return NextResponse.json({ received: true, duplicate: true });
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         processedAt: new Date(),
       },
       update: { processedAt: new Date() },
-    }).catch(() => {});
+    }).catch((err) => { logger.error("[Stripe Webhook] mark-processed upsert failed", { stripeId: event.id, error: String(err) }); });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     logger.error("[Stripe Webhook] Handler error — queuing for retry", {
@@ -83,6 +83,38 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       const subscriptionId = session.subscription as string;
       const customerId = session.customer as string;
 
+      // SECURITY (2026-04-29): si el tenant ya tiene un stripeCustomerId
+      // distinto, BLOQUEAR — vector de privilege escalation cross-tenant
+      // (atacante crea Checkout con metadata.tenantSlug=victim para regalarse
+      // plan business en una tienda ajena).
+      const existingTenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true, stripeCustomerId: true },
+      });
+      if (!existingTenant) {
+        logger.error("[Stripe] tenantSlug desconocido — ignorando", { tenantSlug, customerId });
+        break;
+      }
+      if (existingTenant.stripeCustomerId && existingTenant.stripeCustomerId !== customerId) {
+        logger.error("[Stripe] Cross-tenant claim attempt — customerId mismatch", {
+          tenantSlug,
+          existingCustomer: existingTenant.stripeCustomerId,
+          incomingCustomer: customerId,
+        });
+        break;
+      }
+      // Adicional: si el customerId YA está asociado a OTRO tenant, bloquear.
+      const otherClaim = await prisma.tenant.findFirst({
+        where: { stripeCustomerId: customerId, NOT: { id: existingTenant.id } },
+        select: { slug: true },
+      });
+      if (otherClaim) {
+        logger.error("[Stripe] customerId ya asignado a otro tenant", {
+          tenantSlug, customerId, conflictWith: otherClaim.slug,
+        });
+        break;
+      }
+
       const sub = await import("./stripe-sub-helper").then((m) =>
         m.fetchSubscription(subscriptionId)
       );
@@ -103,7 +135,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       });
       await prisma.activityLog.create({
         data: { action: "subscription_created", entity: "tenant", entityId: tenantSlug, detail: `Plan activated: ${newPlan}`, user: "stripe-webhook", tenantId: tenantSlug },
-      }).catch(() => {});
+      }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });
       break;
     }
 
@@ -112,6 +144,20 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       const sub = event.data.object as Stripe.Subscription;
       const tenantSlug = sub.metadata?.tenantSlug;
       if (!tenantSlug) break;
+
+      // SECURITY: validar que el customerId del sub coincida con el del tenant
+      // antes de mutar — bloquea cross-tenant claim via metadata.
+      const subCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+      const tenantForUpd = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { stripeCustomerId: true },
+      });
+      if (!tenantForUpd || (tenantForUpd.stripeCustomerId && tenantForUpd.stripeCustomerId !== subCustomerId)) {
+        logger.error("[Stripe] subscription.updated cross-tenant claim — ignorado", {
+          tenantSlug, expected: tenantForUpd?.stripeCustomerId, got: subCustomerId,
+        });
+        break;
+      }
 
       const updatedPlan = planFromSubscription(sub);
       await prisma.tenant.update({
@@ -127,7 +173,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       });
       await prisma.activityLog.create({
         data: { action: "plan_changed", entity: "tenant", entityId: tenantSlug, detail: `Plan updated to: ${updatedPlan}${sub.cancel_at_period_end ? " (canceling)" : ""}`, user: "stripe-webhook", tenantId: tenantSlug },
-      }).catch(() => {});
+      }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });
       break;
     }
 
@@ -136,6 +182,22 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       const sub = event.data.object as Stripe.Subscription;
       const tenantSlug = sub.metadata?.tenantSlug;
       if (!tenantSlug) break;
+
+      // SECURITY: solo downgrade si el customerId del sub coincide con el
+      // del tenant — sin esto un atacante podría cancelar suscripción ajena
+      // creando una sub Stripe propia con metadata.tenantSlug=victim.
+      const subCustId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+      const tenantDel = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { stripeCustomerId: true, stripeSubscriptionId: true },
+      });
+      if (!tenantDel || tenantDel.stripeCustomerId !== subCustId || tenantDel.stripeSubscriptionId !== sub.id) {
+        logger.error("[Stripe] subscription.deleted cross-tenant claim — ignorado", {
+          tenantSlug, expectedCustomer: tenantDel?.stripeCustomerId, gotCustomer: subCustId,
+          expectedSub: tenantDel?.stripeSubscriptionId, gotSub: sub.id,
+        });
+        break;
+      }
 
       await prisma.tenant.update({
         where: { slug: tenantSlug },
@@ -149,7 +211,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       });
       await prisma.activityLog.create({
         data: { action: "subscription_canceled", entity: "tenant", entityId: tenantSlug, detail: "Subscription deleted, downgraded to free", user: "stripe-webhook", tenantId: tenantSlug },
-      }).catch(() => {});
+      }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });
       break;
     }
 
@@ -207,7 +269,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
             user: "stripe-webhook",
             tenantId: failedTenant.slug,
           },
-        }).catch(() => {});
+        }).catch((err) => { logger.warn("[Stripe Webhook] activityLog payment_failed failed", { tenantSlug: failedTenant.slug, error: String(err) }); });
       }
       break;
     }

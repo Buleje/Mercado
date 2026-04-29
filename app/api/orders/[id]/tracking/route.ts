@@ -1,15 +1,16 @@
 /**
- * GET /api/orders/:orderId/tracking — Estado actual + timeline + driver.
+ * GET /api/orders/:orderId/tracking?phone=<customerPhone> — Estado + timeline + driver.
  *
- * Autorización: validar que el `orderId` pertenece al usuario autenticado vía cookie
- * de sesión del cliente (no `requireAdmin`). Por ahora — con datos mock — no
- * consultamos el pedido real. Cuando se reemplace el mock por data real, validar
- * `customerPhone === session.phone` contra `orders.db.ts`.
+ * SECURITY (HOTFIX-A1, 2026-04-29): IDOR cerrado. El caller debe demostrar
+ * propiedad del pedido enviando el `customerPhone` exacto usado en el
+ * checkout. Sin match → 404 indistinguible (no oracle de IDs). Mismo patrón
+ * que `/api/orders/[id]/public/route.ts` (HOTFIX-003).
  */
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { OrderTrackingDB } from "@/lib/db/order-tracking.db";
 import { OrderIdParamSchema } from "@/lib/validators/order-tracking";
-import { resolveTenantSlug } from "@/lib/resolve-tenant";
+import { normalizePhone } from "@/lib/db/misc.db";
 
 export async function GET(
   req: Request,
@@ -27,10 +28,27 @@ export async function GET(
     );
   }
 
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  // Step 1: ownership check — fetch tenantId + customerPhone only (no PII leak).
+  const orderMeta = await prisma.order.findUnique({
+    where: { id: parsed.data.orderId },
+    select: { tenantId: true, customerPhone: true },
+  });
 
-  const snapshot = await OrderTrackingDB.getSnapshot(tenantId, parsed.data.orderId);
+  const url = new URL(req.url);
+  const providedPhone = url.searchParams.get("phone");
+  const normalizedProvided = providedPhone ? normalizePhone(providedPhone) : null;
+
+  if (
+    !orderMeta ||
+    !orderMeta.customerPhone ||
+    !normalizedProvided ||
+    normalizedProvided !== orderMeta.customerPhone
+  ) {
+    // Single 404 for all failure modes — prevents ID enumeration.
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const snapshot = await OrderTrackingDB.getSnapshot(orderMeta.tenantId, parsed.data.orderId);
   if (!snapshot) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

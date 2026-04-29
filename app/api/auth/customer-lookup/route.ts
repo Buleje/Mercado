@@ -5,13 +5,10 @@ import { prisma } from "@/lib/prisma";
 /**
  * GET /api/auth/customer-lookup?phone=51999...
  *
- * Devuelve datos básicos del customer (name + dni) si ya existe en la
- * base, para que el AuthModal autocomplete los campos al tipear el
- * teléfono. NO crea ni envía OTP. Sin auth — si el phone existe en
- * cualquier tenant, se devuelven los datos públicos básicos.
- *
- * Privacidad: solo se exponen `name` y `dni` (no email ni dirección),
- * y el endpoint es idempotente. Rate-limit aplica via proxy global.
+ * Devuelve datos básicos del customer (name + dni) SOLO si pertenece al
+ * tenant del request. SECURITY (2026-04-29): antes era cross-tenant —
+ * cualquier persona podía consultar nombre+DNI de cualquier cliente de
+ * cualquier tenant solo conociendo el teléfono. Vector Ley 29733 PE.
  */
 const QuerySchema = z.object({
   phone: z.string().min(9).max(15),
@@ -26,10 +23,15 @@ export async function GET(req: Request) {
       { status: 400 },
     );
   }
+  // tenantId resuelto por proxy.ts (header overwrite, NO confía cliente).
+  const tenantId = req.headers.get("x-tenant-id");
+  if (!tenantId) {
+    return NextResponse.json({ ok: true, customer: null });
+  }
   const phone = parsed.data.phone.replace(/\D/g, "");
   try {
-    const customer = await prisma.customer.findUnique({
-      where: { phone },
+    const customer = await prisma.customer.findFirst({
+      where: { phone, tenantId },
       select: { name: true, tipoDocumento: true, documento: true },
     });
     if (!customer) {

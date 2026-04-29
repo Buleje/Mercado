@@ -105,18 +105,31 @@ export async function GET(req: NextRequest) {
     }
 
     if (!adminMode) {
-      const customerInDb = await prisma.customer.findUnique({
-        where: { phone },
+      // SECURITY (2026-04-29): solo lookupeamos customer dentro del
+      // tenant del request — antes era findUnique({phone}) cross-tenant.
+      const customerInDb = await prisma.customer.findFirst({
+        where: { phone, tenantId },
         select: { tenantId: true },
       });
-      if (customerInDb) {
-        tenantId = customerInDb.tenantId;
+      if (!customerInDb) {
+        // Sin customer en este tenant → balance público vacío.
+        return NextResponse.json({
+          data: {
+            phone,
+            name: "",
+            points: 0,
+            tier: tierFromPoints(0),
+            totalSpent: 0,
+            transactions: [],
+            total: 0,
+          },
+        });
       }
+      // Mantenemos tenantId del request (ya validado).
     }
 
     // Lookup tolerante — si la DB tira cross-tenant u otro error, devolvemos
-    // balance 0 en vez de 403. El marketplace público NO debe romperse por
-    // un lookup de loyalty. Solo admins ven errores reales.
+    // balance 0 en vez de 403. Solo admins ven errores reales.
     const [pageResult, customer] = await Promise.all([
       LoyaltyDB.getHistory(tenantId, phone, limit, offset).catch((err) => {
         logger.warn("[marketplace/loyalty] GetHistory fallback", {
@@ -126,23 +139,26 @@ export async function GET(req: NextRequest) {
         });
         return { transactions: [], balance: 0, total: 0 };
       }),
-      prisma.customer.findUnique({
-        where: { phone },
+      // PII (name, totalSpent) solo dentro del tenant correcto.
+      prisma.customer.findFirst({
+        where: { phone, tenantId },
         select: { name: true, totalSpent: true },
-      }).catch(() => null),
+      }).catch((err) => { logger.warn("[marketplace/loyalty] customer lookup failed", { tenantId, error: String(err) }); return null; }),
     ]);
 
     const page = pageResult;
 
+    // SECURITY: en read público (no admin) NO exponemos `name` ni `totalSpent`
+    // — solo puntos/tier (agregados públicos del programa de loyalty).
     return NextResponse.json({
       data: {
         phone,
-        name: customer?.name ?? "",
+        name: adminMode ? (customer?.name ?? "") : "",
         points: page.balance,
         tier: tierFromPoints(page.balance),
-        totalSpent: Number(customer?.totalSpent ?? 0),
-        transactions: page.transactions,
-        total: page.total,
+        totalSpent: adminMode ? Number(customer?.totalSpent ?? 0) : 0,
+        transactions: adminMode ? page.transactions : [],
+        total: adminMode ? page.total : 0,
       },
     });
   } catch (err) {

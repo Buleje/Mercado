@@ -73,14 +73,30 @@ export const GET = withApiHandler("orders-list", async (req) => {
   const phoneParam   = searchParams.get("phone");       // filter by customer phone
 
   // ── Public branch: storefront customer reading own orders by phone ────────
-  // Honors PUBLIC_WRITE_ALLOWLIST contract in lib/middleware/constants.ts.
-  // No admin session required; tenant comes from middleware-resolved
-  // x-tenant-id header (proxy.ts:60 — not client-controlled).
-  // Capped to 50 results and locked to phone+tenantId — no enumeration.
+  // SECURITY (HOTFIX-A2, 2026-04-29): exige customer-session firmada cuyo
+  // customerId coincida con el phone solicitado. Antes solo había rate limit
+  // (vector cosecha PII). Ahora rate limit MODERATE + auth obligatoria.
+  // Sin session → respuesta vacía para preservar UX anónima.
   let tenantId: string;
   if (phoneParam) {
-    const rl = applyRateLimit(req, "GENEROUS", "orders-get-public");
+    const rl = applyRateLimit(req, "MODERATE", "orders-get-public");
     if (rl) return rl;
+
+    // Customer-session check (defensa principal — sustituye a rate-only).
+    const { getCustomerPayload, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    const { normalizePhone } = await import("@/lib/db/misc.db");
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    let authorized = false;
+    if (sessionToken) {
+      const payload = await getCustomerPayload(sessionToken);
+      if (payload?.customerId && normalizePhone(payload.customerId) === normalizePhone(phoneParam)) {
+        authorized = true;
+      }
+    }
+    if (!authorized) {
+      return NextResponse.json([]);
+    }
+
     const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
     const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
     tenantId = await resolveTenantSlugToId(slugOrId);

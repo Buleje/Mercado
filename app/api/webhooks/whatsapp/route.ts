@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "buleje-verify-2026";
+// SECURITY: NO fallback hardcodeado. Si la env var falta, el endpoint
+// rechaza cualquier verificación — un fallback predecible permite a un
+// atacante registrar un webhook propio en Meta y suplantar el de Buleje.
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
 export async function GET(req: NextRequest) {
+  if (!VERIFY_TOKEN) {
+    return NextResponse.json(
+      { error: "WHATSAPP_VERIFY_TOKEN no configurado" },
+      { status: 503 },
+    );
+  }
   const params = req.nextUrl.searchParams;
   const mode = params.get("hub.mode");
   const token = params.get("hub.verify_token");
@@ -33,6 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { sendTextMessage } = await import("@/lib/integrations/whatsapp");
-  sendTextMessage(from, reply).catch(() => {});
+  const { logger } = await import("@/lib/logger");
+  sendTextMessage(from, reply).catch((err) => { logger.warn("[whatsapp webhook] reply send failed", { from, error: String(err) }); });
   return NextResponse.json({ status: "ok" });
 }

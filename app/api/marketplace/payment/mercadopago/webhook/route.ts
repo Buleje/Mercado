@@ -25,21 +25,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No data.id" }, { status: 400 });
     }
 
-    // Verify webhook signature
+    // SECURITY: secret OBLIGATORIO. Sin él, atacantes pueden mutar
+    // órdenes de cualquier tenant via POST anónimo (vector demanda Ley 29733).
     const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const xSignature = req.headers.get("x-signature") || "";
-      const xRequestId = req.headers.get("x-request-id") || "";
-      const isValid = verifyMPWebhookSignature({
-        xSignature,
-        xRequestId,
-        dataId: String(dataId),
-        secret: webhookSecret,
-      });
-      if (!isValid) {
-        logger.warn("MP webhook: firma inválida", { traceId, dataId });
-        return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
-      }
+    if (!webhookSecret) {
+      logger.error("[MP webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado", { traceId });
+      return NextResponse.json(
+        { error: "Webhook secret no configurado" },
+        { status: 503 },
+      );
+    }
+    const xSignature = req.headers.get("x-signature") || "";
+    const xRequestId = req.headers.get("x-request-id") || "";
+    const isValid = verifyMPWebhookSignature({
+      xSignature,
+      xRequestId,
+      dataId: String(dataId),
+      secret: webhookSecret,
+    });
+    if (!isValid) {
+      logger.warn("MP webhook: firma inválida", { traceId, dataId });
+      return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
     }
 
     // Fetch payment details from MP
@@ -65,14 +71,30 @@ export async function POST(req: NextRequest) {
     // pending / in_process → don't change order status yet
 
     if (orderStatus) {
-      // Update order status
-      await prisma.order.updateMany({
-        where: { id: orderId },
+      // SECURITY: scope por tenantId del store derivado del storeSlug
+      // (no del payload externo). Si el slug no resuelve a un store o
+      // el orderId no pertenece a ese tenant, NO mutamos.
+      const storeForUpdate = await prisma.store.findFirst({
+        where: { slug: storeSlug },
+        select: { tenantId: true },
+      });
+      if (!storeForUpdate) {
+        logger.warn("[MP webhook] storeSlug desconocido — no update", { traceId, storeSlug, orderId });
+        return NextResponse.json({ received: true, ignored: true });
+      }
+      const updated = await prisma.order.updateMany({
+        where: { id: orderId, tenantId: storeForUpdate.tenantId },
         data: {
           status: orderStatus,
           paymentMethod: "mercado_pago",
         },
       });
+      if (updated.count === 0) {
+        logger.warn("[MP webhook] orderId no pertenece al tenant del storeSlug — posible cross-tenant attack", {
+          traceId, orderId, storeSlug, tenantId: storeForUpdate.tenantId,
+        });
+        return NextResponse.json({ received: true, ignored: true });
+      }
 
       // Fire-and-forget: notify store owner
       (async () => {
@@ -103,7 +125,7 @@ export async function POST(req: NextRequest) {
                 `Pedido: ${orderId.slice(0, 8)}…\n` +
                 `El vendedor está preparando tu pedido. 🛒`,
                 { tenantId: order.tenantId, context: "mercadopago-payment-confirmed" },
-              ).catch(() => {});
+              ).catch((err) => { logger.warn("[MP webhook] customer WA notify failed", { traceId, orderId, error: String(err) }); });
             }
 
             // Notify store owner

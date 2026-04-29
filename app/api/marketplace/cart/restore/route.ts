@@ -28,7 +28,16 @@ export async function POST(req: NextRequest) {
 
     const { phone } = parsed.data;
 
-    // Find the most recent non-recovered cart for this phone (max 24h old)
+    // SECURITY (2026-04-29): scope por tenantId del request — antes era
+    // cross-tenant. Si no hay tenant resuelto, no devolvemos nada.
+    const tenantId = req.headers.get("x-tenant-id");
+    if (!tenantId) {
+      return NextResponse.json({ items: [] });
+    }
+
+    // Find the most recent non-recovered cart for this phone (max 24h old).
+    // MarketplaceAbandonedCart no tiene FK a Store; validamos post-fetch
+    // que el storeSlug pertenece al tenant del request.
     const cart = await prisma.marketplaceAbandonedCart.findFirst({
       where: {
         customerPhone: phone,
@@ -43,6 +52,17 @@ export async function POST(req: NextRequest) {
         total: true,
       },
     });
+
+    if (cart) {
+      const owningStore = await prisma.store.findFirst({
+        where: { slug: cart.storeSlug, tenantId },
+        select: { id: true },
+      });
+      if (!owningStore) {
+        // Carrito pertenece a OTRO tenant → no devolver nada.
+        return NextResponse.json({ items: [] });
+      }
+    }
 
     if (!cart) {
       return NextResponse.json({ items: [] });

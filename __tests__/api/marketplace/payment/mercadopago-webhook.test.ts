@@ -87,9 +87,14 @@ beforeEach(() => {
   mockSendPush.mockResolvedValue(undefined);
   mockOrderUpdateMany.mockResolvedValue({ count: 1 });
   mockOrderFindUnique.mockResolvedValue(null);
-  mockStoreFindFirst.mockResolvedValue(null);
+  // Default: store.findFirst resuelve para que el tenantId-scoped updateMany
+  // pueda ejecutarse en los tests "happy path".
+  mockStoreFindFirst.mockResolvedValue({ tenantId: "tenant-test" });
   mockTenantFindUnique.mockResolvedValue(null);
-  delete process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  // SECURITY (2026-04-29): secret OBLIGATORIO. Tests que prueban el happy
+  // path lo setean + mockean firma valida; tests negativos lo des-setean.
+  process.env.MERCADOPAGO_WEBHOOK_SECRET = "test-secret";
+  mockVerifyMPWebhookSignature.mockReturnValue(true);
 });
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -214,7 +219,10 @@ describe("MP webhook — signature validation", () => {
     expect(mockGetMercadoPagoPayment).toHaveBeenCalled();
   });
 
-  it("sin MERCADOPAGO_WEBHOOK_SECRET → no valida firma (modo dev)", async () => {
+  it("sin MERCADOPAGO_WEBHOOK_SECRET → returns 503 (secret obligatorio)", async () => {
+    // SECURITY: antes este test probaba un BUG (modo dev sin firma). El
+    // bug permitia a atacantes mutar ordenes ajenas via POST anonimo. El
+    // fix exige el secret siempre — el test ahora valida el rechazo.
     delete process.env.MERCADOPAGO_WEBHOOK_SECRET;
     mockGetMercadoPagoPayment.mockResolvedValue({
       status: "pending",
@@ -228,8 +236,9 @@ describe("MP webhook — signature validation", () => {
     const req = buildRequest({ type: "payment", data: { id: "12345" } });
     const res = await POST(req);
 
-    expect(res.status).toBe(200);
-    expect(mockVerifyMPWebhookSignature).not.toHaveBeenCalled();
+    expect(res.status).toBe(503);
+    expect(mockGetMercadoPagoPayment).not.toHaveBeenCalled();
+    expect(mockOrderUpdateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -248,8 +257,12 @@ describe("MP webhook — order status mapping", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(200);
+    expect(mockStoreFindFirst).toHaveBeenCalledWith({
+      where: { slug: "tienda-test" },
+      select: { tenantId: true },
+    });
     expect(mockOrderUpdateMany).toHaveBeenCalledWith({
-      where: { id: "order-abc-123" },
+      where: { id: "order-abc-123", tenantId: "tenant-test" },
       data: {
         status: "confirmado",
         paymentMethod: "mercado_pago",
@@ -276,7 +289,7 @@ describe("MP webhook — order status mapping", () => {
     await POST(req);
 
     expect(mockOrderUpdateMany).toHaveBeenCalledWith({
-      where: { id: "order-xyz" },
+      where: { id: "order-xyz", tenantId: "tenant-test" },
       data: {
         status: "cancelado",
         paymentMethod: "mercado_pago",
@@ -298,7 +311,7 @@ describe("MP webhook — order status mapping", () => {
     await POST(req);
 
     expect(mockOrderUpdateMany).toHaveBeenCalledWith({
-      where: { id: "order-zzz" },
+      where: { id: "order-zzz", tenantId: "tenant-test" },
       data: {
         status: "cancelado",
         paymentMethod: "mercado_pago",
