@@ -12,20 +12,22 @@ import {
  * GET /api/admin/agents/history
  *
  * Paginated history of agent tasks persisted to ActivityLog.
- * Supports filtering by domain and tenantId.
+ * Supports filtering by domain.
  *
  * Query params:
- *   page     — Page number (default 1)
- *   limit    — Items per page, max 100 (default 20)
- *   domain   — Filter by agent domain (inventory, orders, etc.)
- *   tenantId — Filter by tenant (defaults to x-tenant-id header or "main")
+ *   page    — Page number (default 1)
+ *   limit   — Items per page, max 100 (default 20)
+ *   domain  — Filter by agent domain (inventory, orders, etc.)
+ *
+ * SECURITY (regla #3 CLAUDE.md): el `tenantId` viene SIEMPRE de la
+ * sesión admin autenticada — NUNCA del query string. Aceptar ?tenantId=
+ * permitiría a un admin del tenant A leer logs del tenant B (IDOR).
  */
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
   domain: z.string().optional(),
-  tenantId: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -40,7 +42,6 @@ export async function GET(req: NextRequest) {
       page: url.searchParams.get("page") ?? undefined,
       limit: url.searchParams.get("limit") ?? undefined,
       domain: url.searchParams.get("domain") ?? undefined,
-      tenantId: url.searchParams.get("tenantId") ?? undefined,
     });
 
     if (!parsed.success) {
@@ -56,9 +57,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { page, limit, domain, tenantId } = parsed.data;
-    const effectiveTenantId =
-      tenantId || req.headers.get("x-tenant-id") || "main";
+    const { page, limit, domain } = parsed.data;
+    // tenantId SIEMPRE de la sesión autenticada — nunca del cliente
+    const effectiveTenantId = admin.tenantId;
 
     logger.info("[agents] GET /api/admin/agents/history", {
       traceId,

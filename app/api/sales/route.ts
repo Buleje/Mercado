@@ -114,22 +114,20 @@ export async function POST(req: NextRequest) {
   let sale;
   try {
     const saleRow = await prisma.$transaction(async (tx) => {
-      // Pre-validar IDs de producto para evitar violaciones FK
+      // Pre-validar IDs de producto SCOPED a tenant — sin tenantId aquí un
+      // cajero podría vender productos de OTRA tienda si conoce su ID.
       const requestedIds = [...new Set(itemsWithCost.map(i => i.productId))];
       const existingProducts = await tx.product.findMany({
-        where: { id: { in: requestedIds } },
-        select: { id: true },
+        where: { id: { in: requestedIds }, tenantId: auth.tenantId },
+        select: { id: true, stock: true, name: true },
       });
-      const validIds = new Set(existingProducts.map(p => p.id));
-      const validItems = itemsWithCost.filter(i => validIds.has(i.productId));
+      const productById = new Map(existingProducts.map(p => [p.id, p]));
+      const validItems = itemsWithCost.filter(i => productById.has(i.productId));
 
-      // Verificar stock suficiente para todos los items
+      // Verificar stock suficiente con datos ya scoped
       for (const item of validItems) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true, name: true },
-        });
-        if (product?.stock != null && product.stock < item.quantity) {
+        const product = productById.get(item.productId)!;
+        if (product.stock != null && product.stock < item.quantity) {
           throw new Error(`Stock insuficiente para "${product.name}": disponible ${product.stock}, solicitado ${item.quantity}`);
         }
       }
@@ -158,12 +156,28 @@ export async function POST(req: NextRequest) {
         include: { items: true },
       });
 
-      // 2. Decrementar stock de cada producto vendido (dentro de la misma transacción)
+      // 2. Decremento atómico con guardia anti-TOCTOU.
+      //    `updateMany` con `stock: { gte: qty }` falla si entre la
+      //    pre-validación y este punto otro cajero vendió las mismas
+      //    unidades — evita stock negativo bajo concurrencia POS.
       for (const item of validItems) {
-        await tx.product.update({
-          where: { id: item.productId },
+        const result = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            tenantId: auth.tenantId,
+            OR: [
+              { stock: null },                     // producto sin tracking de stock
+              { stock: { gte: item.quantity } },   // suficiente al momento del UPDATE
+            ],
+          },
           data: { stock: { decrement: item.quantity } },
         });
+        if (result.count === 0) {
+          const p = productById.get(item.productId);
+          throw new Error(
+            `Stock insuficiente para "${p?.name ?? item.productId}" (concurrencia detectada). Reintentá.`,
+          );
+        }
       }
 
       return created;

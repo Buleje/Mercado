@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { createSessionToken, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
@@ -67,6 +68,25 @@ export async function POST(req: NextRequest) {
   // role = "admin" para acceso completo al panel
   // Use tenant.id (canonical ID) — NOT tenant.slug
   const token = await createSessionToken("admin", "superadmin", tenant.id, "SuperAdmin");
+
+  // ── Audit trail (Ley 29733 Art. 16) ────────────────────────────────────
+  // OBLIGATORIO: la impersonación da acceso completo a datos personales
+  // del tenant. Sin registro, no hay trazabilidad y la plataforma
+  // queda expuesta a multas y demandas. Fire-and-forget para no bloquear
+  // el flujo, pero el error se logea internamente.
+  logSuperadminAction(
+    "impersonate",
+    `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name})`,
+    {
+      targetTenantId: tenant.id,
+      targetTenantSlug: tenant.slug,
+      targetTenantName: tenant.name,
+      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+      userAgent: req.headers.get("user-agent") || null,
+      timestamp: new Date().toISOString(),
+    },
+    platformSession.username,
+  ).catch(() => {});
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";

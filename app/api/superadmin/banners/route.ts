@@ -2,8 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
+import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 
 const BANNERS_PATH = join(process.cwd(), "lib", "data", "promo-banners.json");
+
+/**
+ * Defense-in-depth: aunque el middleware `guardSuperadminApi` cubre el prefijo
+ * `/api/superadmin/*` a nivel edge, los handlers también validan la sesión
+ * para evitar bypass si el middleware falla, se omite o el endpoint se monta
+ * en otro path. Sin esto, GET/PUT son completamente públicos = defacement.
+ */
+async function requirePlatformSession(req: NextRequest) {
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  if (!token) return null;
+  return await getPlatformSession(token);
+}
 
 const SLOTS = [
   "explorar",
@@ -130,7 +143,10 @@ const PutSchema = z.object({
  * Storage: lib/data/promo-banners.json (file system, MVP).
  * Cuando haya tabla Prisma, reemplazar el read/write file por DB.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await requirePlatformSession(req))) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   try {
     const raw = await readFile(BANNERS_PATH, "utf8");
     return NextResponse.json(JSON.parse(raw));
@@ -141,6 +157,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!(await requirePlatformSession(req))) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   let body: unknown;
   try {
     body = await req.json();

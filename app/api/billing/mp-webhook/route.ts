@@ -84,18 +84,36 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Idempotencia: ¿ya procesamos este paymentId? ─────────
+  // ── Idempotencia atómica con lock por UNIQUE constraint ──
+  // Antes: findUnique + upsert (no atómico) → 2 webhooks simultáneos
+  // ambos veían null, ambos procesaban → doble activación / doble cobro.
+  // Ahora: create con UNIQUE → si choca, otro webhook ya está procesando.
   const idempotencyKey = `mp_${dataId}`;
-  const alreadyProcessed = await prisma.stripeWebhookQueue
-    .findUnique({
-      where: { stripeId: idempotencyKey },
-      select: { processedAt: true },
-    })
-    .catch(() => null);
-
-  if (alreadyProcessed?.processedAt) {
-    logger.info("[MP Webhook] Pago duplicado, ignorado", { dataId });
-    return NextResponse.json({ received: true, duplicate: true });
+  try {
+    await prisma.stripeWebhookQueue.create({
+      data: {
+        stripeId: idempotencyKey,
+        eventType: "mp.payment.processing",
+        payload: JSON.stringify({ dataId }),
+        attempts: 1,
+        lastError: "",
+        nextRetryAt: new Date(),
+        processedAt: null,
+      },
+    });
+  } catch (err) {
+    // P2002 = unique constraint violation = otro webhook ya tomó el lock
+    const code = (err as { code?: string }).code;
+    if (code === "P2002") {
+      logger.info("[MP Webhook] Pago duplicado o procesando, ignorado", { dataId });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    // Otro error de DB — lo reportamos pero no bloqueamos (MP reintentará)
+    logger.error("[MP Webhook] Error tomando lock idempotencia", {
+      dataId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json({ received: true, error: "lock_failed" });
   }
 
   // ── Consultar el pago a la API de MP ─────────────────────
@@ -150,25 +168,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Registrar en tabla de idempotencia (fire-and-forget) ─
+  // ── Marcar el lock como completado (procesado) ─
+  // El INSERT inicial ya tomó el lock al inicio. Ahora actualizamos
+  // con el status final y processedAt para que reintentos futuros del
+  // mismo dataId vean el estado correcto.
   prisma.stripeWebhookQueue
-    .upsert({
+    .update({
       where: { stripeId: idempotencyKey },
-      create: {
-        stripeId: idempotencyKey,
+      data: {
         eventType: `mp.payment.${status}`,
         payload: JSON.stringify({ dataId, status, tenantSlug }),
-        attempts: 1,
-        lastError: "",
-        nextRetryAt: new Date(),
         processedAt: status === "approved" ? new Date() : null,
-      },
-      update: {
-        processedAt: status === "approved" ? new Date() : null,
-        eventType: `mp.payment.${status}`,
       },
     })
-    .catch(() => {});
+    .catch((err) => {
+      logger.warn("[MP Webhook] No se pudo actualizar el lock idempotencia", {
+        dataId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
 
   return NextResponse.json({ received: true });
 }

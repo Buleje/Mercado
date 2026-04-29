@@ -5,9 +5,15 @@ import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/clear-data
- * Nuclear delete: removes ALL business data from every table in FK-safe order.
- * Settings and AdminUser rows are intentionally preserved.
- * Body: { confirm: "BORRAR_TODO", categories?: string[] }
+ * Nuclear delete: removes business data from tables in FK-safe order.
+ * Settings, AdminUser y ActivityLog son preservados por defecto:
+ *  - Settings/AdminUser: para que la cuenta no se rompa
+ *  - ActivityLog: Ley 29733 Art. 11 obliga conservar registros de acceso.
+ *    Si un admin malicioso (o cuenta comprometida) borra todo, el log
+ *    queda como evidencia. Para borrar logs explícitamente, debe usar
+ *    el modo `categories: ["activity"]` con doble confirmación.
+ *
+ * Body: { confirm: "BORRAR_TODO", confirmUsername: "<su-username>", categories?: string[] }
  */
 
 // Delete order: children first, parents last (FK-safe)
@@ -26,7 +32,10 @@ const FULL_DELETE_ORDER: Array<[keyof typeof prisma, string]> = [
   ["pushSubscription",     "pushSubscription"],
   ["customerNotification", "customerNotification"],
   ["notificationLog",      "notificationLog"],
-  ["activityLog",          "activityLog"],
+  // ❌ activityLog NUNCA va en el FULL_DELETE: Ley 29733 Art. 11
+  // (obligación de conservar registros de acceso a datos personales).
+  // Si el usuario realmente quiere borrarlo, debe pedirlo explícito vía
+  // categories=["activity"] con doble confirmación.
   ["adminMessage",         "adminMessage"],
   ["chatMessage",          "chatMessage"],
   ["returnItem",           "returnItem"],
@@ -124,12 +133,48 @@ export async function POST(req: NextRequest) {
     if (body?.confirm !== "BORRAR_TODO") {
       return NextResponse.json({ error: "Se requiere confirmación" }, { status: 400 });
     }
+    // Doble confirmación: el admin debe escribir su propio username.
+    // Esto evita que un script automatizado o un click accidental ejecute
+    // la nuclear-delete con solo la string "BORRAR_TODO".
+    if (body?.confirmUsername !== auth.username) {
+      return NextResponse.json(
+        { error: "Para confirmar, escribí tu usuario actual exactamente." },
+        { status: 400 },
+      );
+    }
 
     const categories: string[] | undefined = body?.categories;
     const deleted: string[] = [];
     const failed: string[] = [];
 
     const { tenantId } = auth;
+
+    // ── Audit pre-operación (Ley 29733 Art. 11) ───────────────────────────
+    // Registramos la intención ANTES de borrar — si después se elimina
+    // explícitamente el activityLog vía categories, este registro ya
+    // habrá sido replicado a logs externos (Sentry, Vercel) por el logger.
+    logger.error("[CLEAR-DATA] NUCLEAR DELETE INVOKED", {
+      tenantId,
+      username: auth.username,
+      role: auth.role,
+      categories: categories ?? "ALL",
+      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+      userAgent: req.headers.get("user-agent") || null,
+      timestamp: new Date().toISOString(),
+    });
+    // Persistir en ActivityLog del tenant — fire-and-forget pero importante
+    prisma.activityLog
+      .create({
+        data: {
+          tenantId,
+          action: "nuclear-delete",
+          entity: "admin.clear-data",
+          entityId: JSON.stringify({ categories: categories ?? "ALL" }),
+          detail: `Admin "${auth.username}" ejecutó borrado masivo (${categories ? categories.join(",") : "TODO"})`,
+          user: auth.username,
+        },
+      })
+      .catch(() => {});
 
     if (!categories || categories.length === 0) {
       // Full nuclear delete in correct FK order — SCOPED TO TENANT

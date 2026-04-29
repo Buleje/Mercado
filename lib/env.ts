@@ -218,9 +218,23 @@ export function validateEnv(): void {
     );
   }
 
+  // ── HARD-FAIL: vars que rompen la seguridad si faltan ──────────────────
+  // AUTH_SECRET firma JWTs. Si falta en prod, los tokens se firman con
+  // string vacía y CUALQUIERA puede emitir tokens válidos. Hard-fail siempre.
+  // DATABASE_URL/DIRECT_URL: sin DB no hay app. Hard-fail siempre.
+  const HARD_FAIL_VARS = ["AUTH_SECRET", "DATABASE_URL", "DIRECT_URL"];
+  const hardFailMissing = HARD_FAIL_VARS.filter((v) => !process.env[v]);
+  if (hardFailMissing.length > 0) {
+    throw new Error(
+      `\n🚨 CRITICAL — required security env vars are missing: ${hardFailMissing.join(", ")}.\n` +
+      "These cannot soft-fail because they would expose the app to JWT forgery or DB-less crashes.\n" +
+      "Set them in .env.local (dev) or Vercel project settings (prod) before booting.\n",
+    );
+  }
+
   if (missing.length > 0) {
-    // SOFT-FAIL en producción en lugar de THROW: la app arranca y los
-    // endpoints específicos que necesitan estas vars fallan cuando se llaman.
+    // SOFT-FAIL en producción para vars NO críticas (Stripe, MP, Resend…):
+    // la app arranca y solo los endpoints que usan esas vars fallan.
     //
     // Antes: throw → crashea TODOS los endpoints (incluso /superadmin/login
     //                que no necesita las vars que están missing)
