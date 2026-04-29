@@ -30,7 +30,7 @@ const log = (s) => lines.push(s);
 async function checkDevServer() {
   try {
     const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 1500);
+    const tid = setTimeout(() => ctrl.abort(), 3000);
     const res = await fetch(`${BASE}/`, { signal: ctrl.signal, redirect: "manual" });
     clearTimeout(tid);
     if (res.status === 200 || res.status === 307) return "running";
@@ -94,6 +94,28 @@ async function quickHealth() {
   return { results, failing: failing.length };
 }
 
+// ── 3b. Warmup heavy client routes (fire-and-forget) ─────────────────────
+// Tibia el caché de Turbopack para páginas con árbol cliente grande
+// (StoreDetailClient, OfertasClient, ProductCatalog). No bloquea boot:
+// las requests se disparan detached con timeout 90s y se descartan.
+// Razón: Turbopack en dev tarda 30-90s en compilar estas páginas el 1er hit.
+function warmupHeavyRoutesAsync() {
+  const heavy = [
+    "/marketplace/main",
+    "/marketplace/ofertas",
+    "/buscar",
+    "/api/superadmin/auth",
+  ];
+  for (const path of heavy) {
+    // fire-and-forget — no await, no bloquea, errores ignorados
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 90000);
+    fetch(`${BASE}${path}`, { signal: ctrl.signal, redirect: "manual" })
+      .catch(() => {});
+  }
+  return heavy.length;
+}
+
 // ── 4. Chromium boot probe ───────────────────────────────────────────────
 function chromiumStatus() {
   if (!existsSync(CHROMIUM)) return "not_installed";
@@ -142,6 +164,8 @@ async function main() {
       log(`Health: ⚠️ ${health.failing} ruta(s) fallando`);
       for (const [p, s] of health.results) log(`   · ${p} → ${s}`);
     }
+    const warmedCount = warmupHeavyRoutesAsync();
+    log(`Warmup: 🔥 ${warmedCount} rutas pesadas disparadas en BG (Turbopack compila mientras trabajás)`);
   }
 
   log(`Chromium: ${chromiumStatus()}`);
