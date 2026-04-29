@@ -8,6 +8,7 @@ import MotionProvider from "@/components/MotionProvider";
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
+import BackNavRefresh from "@/components/marketplace/BackNavRefresh";
 import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import BottomNav from "@/components/marketplace/BottomNav";
 import Footer from "@/components/Footer";
@@ -55,9 +56,17 @@ export default function MarketplaceLayout({
               <Suspense fallback={null}>
                 <ConditionalSecondaryNav />
               </Suspense>
-              <Suspense fallback={null}>
-                <main id="main-content">{children}</main>
-              </Suspense>
+              {/*
+                Antes había un <Suspense fallback={null}> envolviendo {children}
+                — al volver atrás (history back) Next re-suspendía el segmento
+                y este Suspense devolvía `null` en vez de delegar al loading.tsx
+                de la ruta. Resultado: pantalla blanca hasta refresh manual.
+                Removido para que Next maneje el suspense vía route segment
+                loading.tsx (que ya existe en cada subruta del marketplace).
+                BackNavRefresh fuerza re-fetch del RSC en popstate / bfcache.
+              */}
+              <BackNavRefresh />
+              <main id="main-content">{children}</main>
               {/* Footer persistente — evita flash / remount al navegar. */}
               <Footer />
               {/* 4 widgets floating (compare, quick-add, storage doctor)

@@ -252,9 +252,13 @@ export default function MarketplaceNavbar() {
   const navVisibility = useNavVisibility("marketplace");
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
-  const visibleLinks = PRIMARY_LINKS.filter(
-    (l) => navVisibility[l.id] !== false,
-  );
+  // En modo tiendas-only forzamos siempre visibles "ofertas" y "como-pagar"
+  // — son utilitarios que ayudan a comprar y no deben ocultarse junto al resto.
+  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["ofertas", "como-pagar"]);
+  const visibleLinks = PRIMARY_LINKS.filter((l) => {
+    if (isTiendasOnly && FORCE_VISIBLE_IN_TIENDAS_ONLY.has(l.id)) return true;
+    return navVisibility[l.id] !== false;
+  });
   // En modo tiendas-only el chip "Bodegas" sobra: ya estamos en /tiendas
   // y el navbar debe priorizar el buscador centrado.
   const renderedLinks = isTiendasOnly

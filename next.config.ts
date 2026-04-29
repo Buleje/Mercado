@@ -102,6 +102,20 @@ const nextConfig: NextConfig = {
     // NOTE: instrumentation.ts is detected automatically since Next.js 15.
     // The `instrumentationHook` flag was removed in Next.js 16.
 
+    // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
+    // Mode: annotation → solo compila componentes con la directiva `'use memo'`
+    // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
+    // Para activar en un componente: agregar `"use memo"` arriba del archivo.
+    // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
+    reactCompiler: { compilationMode: "annotation" },
+
+    // ── Router cache TTL (fix back-nav blanco en Next 16) ────────────────
+    // Next 15+ default: dynamic=0 → cada navegación back refetcha desde server.
+    // Si el RSC payload streaming queda incompleto al volver, la página queda
+    // en blanco hasta refresh manual (bug reportado en /marketplace/[slug]).
+    // 30s mantiene el HTML cliente válido para back-nav inmediato.
+    staleTimes: { dynamic: 30, static: 180 },
+
     // Tree-shake large packages — avoids importing the entire library
     optimizePackageImports: [
       "framer-motion",

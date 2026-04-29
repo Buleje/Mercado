@@ -12,6 +12,7 @@ import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import NavModeToast from "@/components/marketplace/NavModeToast";
+import BackNavRefresh from "@/components/marketplace/BackNavRefresh";
 
 /**
  * Layout de `/tiendas` — alineado con `/marketplace/layout.tsx`.
@@ -40,9 +41,14 @@ export default function TiendasLayout({
               <Suspense fallback={null}>
                 <ConditionalSecondaryNav />
               </Suspense>
-              <Suspense fallback={null}>
-                <main id="main-content">{children}</main>
-              </Suspense>
+              {/*
+                NO envolver children en <Suspense fallback={null}> — al hacer
+                back, Next 16 re-suspende el segmento y este Suspense devolvía
+                `null`, dejando la página estática hasta refresh manual.
+                BackNavRefresh garantiza re-fetch del RSC al detectar popstate.
+              */}
+              <BackNavRefresh />
+              <main id="main-content">{children}</main>
               <Footer />
               <Suspense fallback={null}>
                 <QuickAddDrawer />
