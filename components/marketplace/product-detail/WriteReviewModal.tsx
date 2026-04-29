@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Send, CheckCircle2, Camera, Image as ImageIcon } from "@buleje/design-system/icons";
+import { X, Send, CheckCircle2, Camera, Image as ImageIcon, Heart } from "@buleje/design-system/icons";
 import RatingStars from "@/components/ui-system/RatingStars";
 
 // Limites para upload de fotos en reviews
@@ -23,6 +23,23 @@ interface WriteReviewModalProps {
   onSubmitted?: () => void;
 }
 
+const RATING_LABELS: Record<number, { label: string; color: string }> = {
+  1: { label: "No me gustó", color: "text-[var(--data-error-600)]" },
+  2: { label: "Algo decepcionante", color: "text-[var(--data-warning-600)]" },
+  3: { label: "Está bien", color: "text-[var(--data-warning-700)]" },
+  4: { label: "Me gustó", color: "text-[var(--accent)]" },
+  5: { label: "¡Excelente!", color: "text-[var(--accent)]" },
+};
+
+const PROMPT_CHIPS = [
+  "Llegó fresco",
+  "Buen empaque",
+  "Precio justo",
+  "Delivery rápido",
+  "Súper atento",
+  "Volvería a pedir",
+];
+
 export default function WriteReviewModal({
   open,
   onClose,
@@ -31,14 +48,13 @@ export default function WriteReviewModal({
   onSubmitted,
 }: WriteReviewModalProps) {
   const [rating, setRating] = useState(0);
-  const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [name, setName] = useState("");
   const [photos, setPhotos] = useState<ReviewPhoto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoAdd = useCallback((files: FileList | null) => {
@@ -47,7 +63,7 @@ export default function WriteReviewModal({
     const newPhotos: ReviewPhoto[] = [];
     for (let i = 0; i < files.length; i++) {
       if (photos.length + newPhotos.length >= MAX_PHOTOS) {
-        setError(`Maximo ${MAX_PHOTOS} fotos por reseña`);
+        setError(`Máximo ${MAX_PHOTOS} fotos por reseña`);
         break;
       }
       const file = files[i];
@@ -77,18 +93,23 @@ export default function WriteReviewModal({
     });
   }, []);
 
+  const insertPrompt = useCallback((chip: string) => {
+    setBody((prev) => {
+      if (prev.trim().length === 0) return chip + ". ";
+      if (prev.endsWith(" ") || prev.endsWith(".")) return prev + chip + ". ";
+      return prev + " " + chip + ". ";
+    });
+    bodyRef.current?.focus();
+  }, []);
+
   useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => titleRef.current?.focus(), 100);
-      return () => clearTimeout(t);
-    }
+    if (open) return;
     // Reset al cerrar — revoca URLs de preview para evitar leak
     setPhotos((prev) => {
       prev.forEach((p) => URL.revokeObjectURL(p.previewUrl));
       return [];
     });
     setRating(0);
-    setTitle("");
     setBody("");
     setName("");
     setSubmitting(false);
@@ -109,31 +130,27 @@ export default function WriteReviewModal({
     e.preventDefault();
     setError(null);
     if (rating === 0) {
-      setError("Elige tu puntuación en estrellas.");
-      return;
-    }
-    if (!title.trim()) {
-      setError("Escribe un título corto.");
+      setError("Tocá las estrellas para calificar.");
       return;
     }
     if (body.trim().length < 10) {
-      setError("Cuéntanos un poco más (mínimo 10 caracteres).");
+      setError("Escribí un poco más (mínimo 10 caracteres) para que ayude a otros.");
       return;
     }
     if (!name.trim()) {
-      setError("Ingresa tu nombre.");
+      setError("Ingresá tu nombre para publicar.");
       return;
     }
 
     setSubmitting(true);
     try {
-      // Este endpoint hoy es mock; cuando integremos a reviews reales
-      // enviamos POST a /api/marketplace/reviews con orderId verificado.
+      // Endpoint mock — cuando se integre reviews reales, POST a
+      // /api/marketplace/reviews con orderId verificado.
       await new Promise((r) => setTimeout(r, 600));
       setSubmitted(true);
       onSubmitted?.();
     } catch {
-      setError("No pudimos enviar tu reseña. Intenta más tarde.");
+      setError("No pudimos enviar tu reseña. Intentá más tarde.");
     } finally {
       setSubmitting(false);
     }
@@ -141,124 +158,151 @@ export default function WriteReviewModal({
 
   if (!open) return null;
 
+  const ratingMeta = rating > 0 ? RATING_LABELS[rating] : null;
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--text-primary)]/50 backdrop-blur-sm motion-safe:animate-[fadeIn_0.2s]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="review-modal-title"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
+        className="w-full max-w-xl rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border-2 border-[var(--rule-base)] motion-safe:animate-[slideUp_0.25s_cubic-bezier(0.32,0.72,0,1)]"
         onClick={(e) => e.stopPropagation()}
       >
         {submitted ? (
-          <div className="p-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
-              <CheckCircle2 className="h-7 w-7" />
+          <div className="p-10 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+              <CheckCircle2 className="h-10 w-10" strokeWidth={2} />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="mt-5 text-2xl font-black tracking-tight text-[var(--text-primary)]">
               ¡Gracias por tu reseña!
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              La revisaremos y publicaremos en unos minutos.
+            <p className="mt-2 text-base text-[var(--text-secondary)] max-w-md mx-auto">
+              Tu opinión ayuda a otros vecinos de Pucallpa a comprar mejor.
             </p>
             <button
+              type="button"
               onClick={onClose}
-              className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+              className="mt-6 h-12 px-8 rounded-2xl bg-[var(--accent)] text-base font-bold text-white hover:opacity-95 active:scale-[0.98] transition-all shadow-md"
             >
               Listo
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <header className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-              <h2
-                id="review-modal-title"
-                className="text-lg font-bold text-gray-900 dark:text-white"
-              >
-                Escribir reseña
-              </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                aria-label="Cerrar"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <header className="px-6 py-5 border-b-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent)]/5 to-transparent">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)]/10 shrink-0">
+                    <Heart className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+                  </div>
+                  <div className="min-w-0">
+                    <h2
+                      id="review-modal-title"
+                      className="text-xl font-black tracking-tight text-[var(--text-primary)]"
+                    >
+                      Compartí tu opinión
+                    </h2>
+                    <p className="text-sm text-[var(--text-secondary)] truncate">
+                      Sobre <span className="font-bold text-[var(--text-primary)]">{productName}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="h-9 w-9 flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <X className="h-5 w-5" strokeWidth={2.5} />
+                </button>
+              </div>
             </header>
 
-            <div className="px-5 py-4 space-y-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Estás reseñando: <span className="font-medium text-gray-700 dark:text-gray-300">{productName}</span>
-              </p>
-
-              {/* Rating (ronda 4: RatingStars input con hover + keyboard nav) */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
-                  Tu calificación
-                </label>
-                <RatingStars
-                  value={rating}
-                  onChange={setRating}
-                  mode="input"
-                  size="lg"
-                  label="Calificación del producto"
-                />
-              </div>
-
-              {/* Title */}
-              <div>
-                <label
-                  htmlFor="rv-title"
-                  className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5"
+            <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-16rem)] overflow-y-auto">
+              {/* Rating — estrellas grandes con feedback */}
+              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 text-center">
+                <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+                  ¿Qué tal te pareció?
+                </p>
+                <div className="flex justify-center mb-2">
+                  <RatingStars
+                    value={rating}
+                    onChange={setRating}
+                    mode="input"
+                    size="lg"
+                    label="Calificación del producto"
+                  />
+                </div>
+                <p
+                  className={`text-base font-bold min-h-[1.5rem] transition-colors ${
+                    ratingMeta ? ratingMeta.color : "text-[var(--text-tertiary)]"
+                  }`}
                 >
-                  Título
-                </label>
-                <input
-                  ref={titleRef}
-                  id="rv-title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={80}
-                  placeholder="Resumen corto (ej. &ldquo;Llegó fresquito&rdquo;)"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                />
+                  {ratingMeta ? ratingMeta.label : "Tocá las estrellas para calificar"}
+                </p>
               </div>
 
-              {/* Body */}
+              {/* Body con prompt chips */}
               <div>
                 <label
                   htmlFor="rv-body"
-                  className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5"
+                  className="block text-base font-bold text-[var(--text-primary)] mb-2"
                 >
-                  Cuéntanos tu experiencia
+                  Contanos cómo te fue
                 </label>
+                <p className="text-sm text-[var(--text-secondary)] mb-3">
+                  Tocá una idea para empezar, o escribí lo que querás:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {PROMPT_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => insertPrompt(chip)}
+                      className="inline-flex items-center px-3 h-9 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 active:scale-95 transition-all"
+                    >
+                      + {chip}
+                    </button>
+                  ))}
+                </div>
                 <textarea
+                  ref={bodyRef}
                   id="rv-body"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  rows={4}
+                  rows={5}
                   maxLength={1000}
-                  placeholder="¿Cómo te llegó? ¿Qué te gustó o mejorarías?"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+                  placeholder="Por ejemplo: 'Llegó en 20 min, todo bien empacado. La señora del local fue super amable. Volvería a pedir.'"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] outline-none resize-none transition-colors"
                 />
-                <p className="mt-1 text-xs text-gray-400">{body.length} / 1000</p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    Mínimo 10 caracteres
+                  </p>
+                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
+                    {body.length} / 1000
+                  </p>
+                </div>
               </div>
 
-              {/* Photos — upload con preview (feature NEW 2026-04-24) */}
+              {/* Photos — más grande y cálido */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
-                  Fotos (opcional, hasta {MAX_PHOTOS})
+                <label className="block text-base font-bold text-[var(--text-primary)] mb-2">
+                  Subí fotos <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-sm text-[var(--text-secondary)] inline-flex items-center gap-1.5 mb-3">
+                  <ImageIcon className="h-4 w-4" />
+                  Las fotos generan más confianza · Hasta {MAX_PHOTOS} fotos · {MAX_FILE_SIZE_MB}MB c/u
+                </p>
+                <div className="flex flex-wrap gap-2.5">
                   {photos.map((photo) => (
                     <div
                       key={photo.id}
-                      className="relative h-20 w-20 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                      className="relative h-24 w-24 rounded-2xl overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -270,9 +314,9 @@ export default function WriteReviewModal({
                         type="button"
                         onClick={() => removePhoto(photo.id)}
                         aria-label="Eliminar foto"
-                        className="absolute top-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-900 transition-colors"
+                        className="absolute top-1.5 right-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--text-primary)]/80 text-white hover:bg-[var(--text-primary)] transition-colors shadow-md"
                       >
-                        <X className="h-3 w-3" strokeWidth={2.5} />
+                        <X className="h-3.5 w-3.5" strokeWidth={2.5} />
                       </button>
                     </div>
                   ))}
@@ -280,11 +324,11 @@ export default function WriteReviewModal({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="h-20 w-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary hover:text-primary transition-colors"
+                      className="h-24 w-24 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] flex flex-col items-center justify-center gap-1 text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 active:scale-95 transition-all"
                       aria-label="Agregar foto"
                     >
-                      <Camera className="h-5 w-5" strokeWidth={1.5} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                      <Camera className="h-6 w-6" strokeWidth={2} />
+                      <span className="text-xs font-bold">
                         Agregar
                       </span>
                     </button>
@@ -299,19 +343,15 @@ export default function WriteReviewModal({
                   className="hidden"
                   aria-hidden
                 />
-                <p className="mt-1.5 text-xs text-gray-400 inline-flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" />
-                  Las fotos dan más confianza (hasta {MAX_PHOTOS} · {MAX_FILE_SIZE_MB}MB c/u)
-                </p>
               </div>
 
               {/* Name */}
               <div>
                 <label
                   htmlFor="rv-name"
-                  className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5"
+                  className="block text-base font-bold text-[var(--text-primary)] mb-2"
                 >
-                  Tu nombre
+                  ¿Cómo te llamamos?
                 </label>
                 <input
                   id="rv-name"
@@ -319,33 +359,33 @@ export default function WriteReviewModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={80}
-                  placeholder="Ej. María Elena V."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  placeholder="Tu nombre o como te conocen"
+                  className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] outline-none transition-colors"
                 />
               </div>
 
               {error && (
-                <p className="rounded-lg bg-danger/10 text-danger px-3 py-2 text-xs font-medium">
+                <p className="rounded-2xl bg-[var(--data-error-600)]/10 border-2 border-[var(--data-error-600)]/30 text-[var(--data-error-700)] px-4 py-3 text-sm font-semibold">
                   {error}
                 </p>
               )}
             </div>
 
-            <footer className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+            <footer className="flex items-center justify-end gap-3 px-6 py-4 border-t-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="h-12 px-5 rounded-2xl text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-md hover:opacity-95 hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" strokeWidth={2.5} />
                 {submitting ? "Enviando…" : "Publicar reseña"}
               </button>
             </footer>

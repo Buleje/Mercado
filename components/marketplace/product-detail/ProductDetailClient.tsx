@@ -24,12 +24,9 @@ import { ProductSpecs } from "./ProductSpecs";
 import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
-import { ProductFaq } from "./ProductFaq";
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
-import LiveViewersChip from "@/components/marketplace/trust/LiveViewersChip";
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
-import RecentPurchaseToast from "@/components/marketplace/trust/RecentPurchaseToast";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -70,32 +67,6 @@ export interface ProductDetailClientProps {
   images: PDPImages[];
   relatedProducts: RelatedProduct[];
   storeProductId: string;
-}
-
-// ── Recent purchases mock (deterministic por productId) ────────────────────────
-
-const PURCHASE_NAMES = [
-  "Ana",
-  "Carlos",
-  "María",
-  "Luis",
-  "Rosa",
-  "Jorge",
-  "Lucía",
-  "Pedro",
-  "Sofía",
-  "Diego",
-];
-
-function derivePurchases(productId: number): { firstName: string; minutesAgo: number }[] {
-  // Pseudo-random determinista basado en productId. Genera 3 compras recientes.
-  const seed = productId;
-  const count = 3;
-  return Array.from({ length: count }).map((_, i) => {
-    const nameIdx = (seed + i * 7) % PURCHASE_NAMES.length;
-    const minutesAgo = 15 + ((seed * (i + 1) * 13) % 180); // 15-195 min
-    return { firstName: PURCHASE_NAMES[nameIdx], minutesAgo };
-  });
 }
 
 // ── Badge derivado ─────────────────────────────────────────────────────────────
@@ -259,19 +230,12 @@ export function ProductDetailClient({
               badge={product.badge}
             />
 
-            {/* Trust signals (ronda 4): viendo ahora + stock bajo si aplica */}
-            <div className="flex flex-wrap items-center gap-2">
-              <LiveViewersChip productId={String(product.id)} />
-              {product.stock !== null && product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+            {/* Stock bajo real — único trust signal sin datos inventados */}
+            {product.stock !== null && product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
                 <LowStockBadge stock={product.stock} />
-              )}
-            </div>
-
-            {/* RecentPurchaseToast — social proof rotatorio (ronda 4). */}
-            <RecentPurchaseToast
-              purchases={derivePurchases(product.id)}
-              rotateMs={8000}
-            />
+              </div>
+            )}
 
             <div className="border-t border-[var(--rule-soft)]" />
 
@@ -327,10 +291,6 @@ export function ProductDetailClient({
               <ProductRelated products={relatedProducts} storeSlug={store.slug} />
             </>
           )}
-
-          <div className="border-t border-[var(--rule-soft)]" />
-
-          <ProductFaq />
         </div>
       </div>
 

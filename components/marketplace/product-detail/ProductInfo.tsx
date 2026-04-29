@@ -39,27 +39,27 @@ export interface ProductInfoProps {
 function StockIndicator({ stock }: { stock: number | null | undefined }) {
   if (stock === null || stock === undefined || stock > 10) {
     return (
-      <div className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-        <Caption className="font-medium text-[var(--accent)]">En stock</Caption>
+      <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)]/10 px-3 py-1.5 border border-[var(--accent)]/20">
+        <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)] animate-pulse" />
+        <span className="text-sm font-semibold text-[var(--accent)]">En stock — listo para entregar</span>
       </div>
     );
   }
   if (stock === 0) {
     return (
-      <div className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-[var(--data-error-600)]" />
-        <Caption className="font-medium text-[var(--data-error-600)]">Agotado</Caption>
+      <div className="inline-flex items-center gap-2 rounded-full bg-[var(--data-error-600)]/10 px-3 py-1.5 border border-[var(--data-error-600)]/30">
+        <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-600)]" />
+        <span className="text-sm font-semibold text-[var(--data-error-600)]">Agotado</span>
       </div>
     );
   }
   // stock entre 1-10
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full bg-[var(--data-warning-600)]" />
-      <Caption className="font-medium text-[var(--data-warning-700)]">
-        Quedan {stock} unidades
-      </Caption>
+    <div className="inline-flex items-center gap-2 rounded-full bg-[var(--data-warning-600)]/10 px-3 py-1.5 border border-[var(--data-warning-600)]/30">
+      <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-600)] animate-pulse" />
+      <span className="text-sm font-semibold text-[var(--data-warning-700)]">
+        ¡Últimas {stock} unidades!
+      </span>
     </div>
   );
 }
@@ -78,92 +78,109 @@ export function ProductInfo({
   unit,
   stock,
   badge,
-  ratingAverage = 4.7,
-  ratingCount = 24,
+  ratingAverage = 0,
+  ratingCount = 0,
 }: ProductInfoProps) {
+  const hasRating = ratingCount > 0 && ratingAverage > 0;
   const hasDiscount = previousPrice != null && previousPrice > price;
   const discountPct = hasDiscount
     ? Math.round(((previousPrice! - price) / previousPrice!) * 100)
     : 0;
 
   return (
-    <div className="space-y-5">
-      {/* Kicker editorial: accent line + tienda */}
+    <div className="space-y-6">
+      {/* Kicker editorial: accent line + tienda — text-sm para legibilidad */}
       <Link
         href={`/marketplace/${storeSlug}`}
-        className="inline-flex items-center gap-2 group"
+        className="inline-flex items-center gap-2.5 group"
         aria-label={`Ver tienda ${storeName}`}
       >
         <span
           aria-hidden
-          className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+          className="inline-flex h-1 w-12 rounded-full bg-[var(--accent)]"
         />
-        <Store className="h-3.5 w-3.5 text-[var(--accent)]" />
-        <span className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] group-hover:underline">
+        <Store className="h-5 w-5 text-[var(--accent)]" />
+        <span className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--accent)] group-hover:underline">
           {storeName}
           {storeZone && ` · ${storeZone}`}
           {storeKm && ` · ${storeKm}`}
         </span>
       </Link>
 
-      {/* Nombre del producto — clamp editorial */}
-      <h1 className="text-[clamp(2rem,4.5vw,3.25rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+      {/* Nombre del producto — clamp editorial más generoso */}
+      <h1 className="text-[clamp(2.25rem,5vw,3.75rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[1.02]">
         {name}
       </h1>
 
-      {/* Rating */}
-      <RatingStars value={ratingAverage} count={ratingCount} size="sm" />
-
-      {/* Precio + badge oferta */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <ProductPrice
-          price={price}
-          previousPrice={previousPrice ?? undefined}
-          unit={unit ?? undefined}
-          size="lg"
-        />
-        {hasDiscount && (
-          <ProductBadge intent="offer">-{discountPct}%</ProductBadge>
-        )}
-        {badge && !hasDiscount && (
-          <ProductBadge intent="fresh">{badge}</ProductBadge>
-        )}
-      </div>
-
-      {/* Precio Socio Buleje — se muestra si hay socioPrice válido */}
-      {socioPrice != null && socioPrice < price && (
-        <SocioBadge regularPrice={price} socioPrice={socioPrice} />
+      {/* Rating — solo mostrar si hay reseñas reales */}
+      {hasRating && (
+        <div className="flex items-center gap-3">
+          <RatingStars value={ratingAverage} count={ratingCount} size="md" />
+          <span className="text-sm font-medium text-[var(--text-secondary)]">
+            {ratingAverage.toFixed(1)} de 5 · {ratingCount} {ratingCount === 1 ? "reseña" : "reseñas"}
+          </span>
+        </div>
       )}
 
-      {/* Stock indicator */}
-      <StockIndicator stock={stock} />
+      {/* Precio + badge oferta — destacado en card sutil */}
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-3">
+        <div className="flex items-end gap-3 flex-wrap">
+          <ProductPrice
+            price={price}
+            previousPrice={previousPrice ?? undefined}
+            unit={unit ?? undefined}
+            size="lg"
+          />
+          {hasDiscount && (
+            <ProductBadge intent="offer">-{discountPct}% OFF</ProductBadge>
+          )}
+          {badge && !hasDiscount && (
+            <ProductBadge intent="fresh">{badge}</ProductBadge>
+          )}
+        </div>
 
-      {/* Delivery estimate (ronda 4: Tooltip sobre tiempo explicando origen) */}
-      <div className="flex items-center gap-2 py-2.5 px-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-muted)]">
-        <Truck className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-        <Tooltip content="Tiempo estimado desde que la bodega confirma tu pedido">
-          <BodyText className="text-[var(--text-secondary)] underline decoration-dotted cursor-help">
-            Llega en 25 min aprox
-          </BodyText>
-        </Tooltip>
-        <span className="text-[var(--rule-base)]">·</span>
-        <div className="flex items-center gap-1">
-          <MapPin className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-          <Caption className="text-[var(--text-tertiary)]">Pucallpa</Caption>
+        {/* Precio Socio Buleje */}
+        {socioPrice != null && socioPrice < price && (
+          <SocioBadge regularPrice={price} socioPrice={socioPrice} />
+        )}
+
+        {/* Stock indicator (pill prominente) */}
+        <StockIndicator stock={stock} />
+      </div>
+
+      {/* Delivery estimate — más prominente, text-base */}
+      <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-[var(--accent)]/5 border-2 border-[var(--accent)]/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/15 shrink-0">
+          <Truck className="h-5 w-5 text-[var(--accent)]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <Tooltip content="Tiempo estimado desde que la bodega confirma tu pedido">
+            <p className="text-base font-semibold text-[var(--text-primary)] underline decoration-dotted decoration-[var(--accent)]/40 underline-offset-4 cursor-help">
+              Llega en 25 min aprox
+            </p>
+          </Tooltip>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />
+            <span className="text-sm text-[var(--text-secondary)]">Entrega en Pucallpa</span>
+          </div>
         </div>
       </div>
 
-      {/* Métodos de pago */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Caption className="text-[var(--text-tertiary)]">Acepta:</Caption>
-        {["Yape", "Plin", "Efectivo"].map((method) => (
-          <span
-            key={method}
-            className="px-2 py-0.5 rounded-md bg-[var(--surface-sunken)] border border-[var(--rule-muted)] text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]"
-          >
-            {method}
-          </span>
-        ))}
+      {/* Métodos de pago — chips más grandes y legibles */}
+      <div className="space-y-2.5">
+        <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Métodos de pago aceptados
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {["Yape", "Plin", "Efectivo"].map((method) => (
+            <span
+              key={method}
+              className="inline-flex items-center px-3.5 py-2 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-primary)]"
+            >
+              {method}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

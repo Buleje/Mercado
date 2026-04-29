@@ -49,7 +49,7 @@ function ProductListRow({
   product: DbStoreProduct;
   storeSlug: string;
 }) {
-  const href = `/marketplace/${storeSlug}/producto/${product.id}`;
+  const href = `/marketplace/${storeSlug}/producto/${product.productId}`;
   return (
     <Link
       href={href}
@@ -288,7 +288,7 @@ export default function StoreCatalog({
                   <UnifiedProductCard
                     key={p.id}
                     index={idx}
-                    href={`/marketplace/${storeSlug}/producto/${p.id}`}
+                    href={`/marketplace/${storeSlug}/producto/${p.productId}`}
                     product={{
                       id: p.productId,
                       name: p.productName,
@@ -315,7 +315,7 @@ export default function StoreCatalog({
             <UnifiedProductCard
               key={p.id}
               index={idx}
-              href={`/marketplace/${storeSlug}/producto/${p.id}`}
+              href={`/marketplace/${storeSlug}/producto/${p.productId}`}
               product={{
                 id: p.productId,
                 name: p.productName,

@@ -177,6 +177,7 @@
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/coverage-v8": "^4.0.18",
     "babel-loader": "^10.1.1",
+    "babel-plugin-react-compiler": "^1.0.0",
     "chromatic": "^16.3.0",
     "cross-env": "^10.1.0",
     "css-loader": "^7.1.4",

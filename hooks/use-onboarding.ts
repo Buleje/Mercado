@@ -9,9 +9,20 @@ export function useOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = 8;
 
+  // 2026-04-28: Bypass tour para QA admin (Brandon usa qaadmin para demos).
+  // El tour de 8 pasos bloqueaba la interacción durante walkthroughs.
+  // Detectamos por session cookie del backend O cookie qaadmin-flag.
+  const isQAAdmin = typeof document !== "undefined"
+    ? /(?:^|;\s*)bsm-qa-admin=1\b/.test(document.cookie) ||
+      /(?:^|;\s*)admin-username=qaadmin\b/.test(document.cookie)
+    : false;
+
   // SuperAdmin impersonating a tenant is never treated as a first-time visitor
+  // QA admin tampoco — para no romper demos / walkthroughs.
   const isFirstVisit = typeof window !== "undefined"
-    ? !localStorage.getItem(STORAGE_KEY) && !localStorage.getItem("superadmin-impersonate-tenant")
+    ? !localStorage.getItem(STORAGE_KEY) &&
+      !localStorage.getItem("superadmin-impersonate-tenant") &&
+      !isQAAdmin
     : false;
 
   const startTour = useCallback(() => {

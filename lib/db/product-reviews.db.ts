@@ -1,12 +1,67 @@
 import "server-only";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 import {
-  MOCK_REVIEWS_LIBRARY,
-  getMockReviewsForProduct,
   getReviewBreakdown,
   type MockReview,
 } from "@/lib/mocks/product-reviews.mock";
+
+/**
+ * Trae reseñas reales del modelo Prisma Review filtradas por productId.
+ * Devuelve array vacío si no hay — NO genera datos mock.
+ */
+async function fetchRealReviews(productId: number): Promise<MockReview[]> {
+  try {
+    const rows = await prisma.review.findMany({
+      where: {
+        productId,
+        status: "approved",
+        deletedAt: null,
+      },
+      orderBy: { date: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        name: true,
+        text: true,
+        rating: true,
+        date: true,
+        verified: true,
+        helpfulCount: true,
+        photosJson: true,
+      },
+    });
+
+    return rows.map((r) => {
+      let photos: string[] = [];
+      if (r.photosJson) {
+        try {
+          const parsed = JSON.parse(r.photosJson);
+          if (Array.isArray(parsed)) photos = parsed.filter((p) => typeof p === "string");
+        } catch {
+          // ignore malformed
+        }
+      }
+      return {
+        id: r.id,
+        productId,
+        userId: "anon",
+        userName: r.name,
+        rating: Math.max(1, Math.min(5, r.rating)) as 1 | 2 | 3 | 4 | 5,
+        title: "",
+        body: r.text,
+        photos,
+        verifiedPurchase: r.verified,
+        helpfulCount: r.helpfulCount,
+        createdAt: r.date.toISOString(),
+      };
+    });
+  } catch (err) {
+    logger.warn("[ProductReviewsDB] real reviews query failed", { err: String(err), productId });
+    return [];
+  }
+}
 
 /**
  * lib/db/product-reviews.db.ts — Reviews del marketplace (Ola 3).
@@ -61,7 +116,7 @@ export const ProductReviewsDB = {
     const cacheKey = `product-reviews:${tenantId}:${productId}:${filter}:${sort}:${limit}:${offset}`;
     return getOrSet(cacheKey, 120, async () => {
       try {
-        const all = getMockReviewsForProduct(productId);
+        const all = await fetchRealReviews(productId);
 
         // Apply filter
         let filtered = all;
@@ -110,7 +165,7 @@ export const ProductReviewsDB = {
   async getBreakdown(tenantId: string, productId: number) {
     const cacheKey = `product-reviews-breakdown:${tenantId}:${productId}`;
     return getOrSet(cacheKey, 120, async () => {
-      const all = getMockReviewsForProduct(productId);
+      const all = await fetchRealReviews(productId);
       const base = getReviewBreakdown(all);
       const verifiedCount = all.filter((r) => r.verifiedPurchase).length;
       const withPhotos = all.filter((r) => r.photos.length > 0).length;
@@ -128,5 +183,3 @@ export const ProductReviewsDB = {
     logger.info("[ProductReviewsDB.markHelpful] noop", { tenantId, reviewId });
   },
 };
-
-export { MOCK_REVIEWS_LIBRARY };

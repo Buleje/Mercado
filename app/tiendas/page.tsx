@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import TiendasClient from "./TiendasClient";
+import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -28,11 +29,16 @@ export const metadata: Metadata = {
 /**
  * /tiendas — Directorio de tiendas del marketplace Buleje.
  *
- * Sin "use cache" — el page renderiza fresh cada nav. El client component
- * trae los datos via fetch (que tiene su propio Cache-Control de 60s
- * en el endpoint /api/marketplace/stores). Next 16 + cacheComponents
- * prohíbe `export const revalidate` (ADR-019).
+ * Fix bug back-nav cross-layout (Next 16): pre-fetch de stores en el server
+ * vía `getInitialMarketplaceStores` (con Cache Components + cacheTag) y los
+ * pasamos como prop initial al client. El HTML server-rendered ya tiene la
+ * lista materializada, así que aunque la hidratación cliente quede frozen
+ * tras un back nav, los items siguen visibles.
+ *
+ * El client sigue haciendo su useEffect fetch para refrescar/filtrar; el prop
+ * solo cubre el render inicial.
  */
 export default async function TiendasPage() {
-  return <TiendasClient />;
+  const initialStores = await getInitialMarketplaceStores();
+  return <TiendasClient initialStores={initialStores} />;
 }

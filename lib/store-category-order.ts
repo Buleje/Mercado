@@ -3,23 +3,32 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * Persistencia simple de orden de categorías por tienda.
+ * Persistencia simple de orden e imágenes de categorías por tienda.
  * Storage: lib/data/store-category-orders.json (mismo patrón que
  * marketplace-categories.json — permitir editar sin migración de schema).
  *
- * Shape:
- *   { [storeSlug]: string[] }   // array ordenado de category ids
+ * Shape (legacy + nuevo):
+ *   { [storeSlug]: string[] }                             // legacy (solo orden)
+ *   { [storeSlug]: { order: string[], images: {} } }      // nuevo
  *
  * Uso:
- *   - Admin del negocio (su tienda): usa el endpoint /api/admin/marketplace/category-order
+ *   - Admin del negocio (su tienda): usa /api/admin/marketplace/category-order
  *   - Superadmin (cualquier tienda): /api/superadmin/stores/[slug]/category-order
  *   - Storefront /marketplace/[slug]: lee con `getCategoryOrder(slug)` server-side
  *     y reordena las categorías antes de pasarlas a `<StoreCategories />`.
+ *   - Imágenes: lee con `getCategoryImages(slug)` que merge tienda + defaults
+ *     globales del superadmin (lib/superadmin-category-images.ts).
  */
 
 const STORE_PATH = join(process.cwd(), "lib", "data", "store-category-orders.json");
 
-type Orders = Record<string, string[]>;
+interface StoreEntry {
+  order: string[];
+  /** Mapa categoryId/name → URL de imagen subida por el dueño de la tienda. */
+  images: Record<string, string>;
+}
+
+type Orders = Record<string, StoreEntry>;
 
 async function readOrders(): Promise<Orders> {
   try {
@@ -28,8 +37,27 @@ async function readOrders(): Promise<Orders> {
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const out: Orders = {};
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        // Legacy: array de strings → migrar a { order, images: {} }
         if (Array.isArray(v) && v.every((x) => typeof x === "string")) {
-          out[k] = v as string[];
+          out[k] = { order: v as string[], images: {} };
+        } else if (
+          v &&
+          typeof v === "object" &&
+          "order" in v &&
+          Array.isArray((v as { order: unknown }).order)
+        ) {
+          const entry = v as { order: unknown; images?: unknown };
+          out[k] = {
+            order: (entry.order as unknown[]).filter((x) => typeof x === "string") as string[],
+            images:
+              entry.images && typeof entry.images === "object" && !Array.isArray(entry.images)
+                ? Object.fromEntries(
+                    Object.entries(entry.images as Record<string, unknown>).filter(
+                      ([, v]) => typeof v === "string" && v.length > 0,
+                    ) as [string, string][],
+                  )
+                : {},
+          };
         }
       }
       return out;
@@ -47,7 +75,7 @@ async function writeOrders(o: Orders): Promise<void> {
 /** Devuelve el orden persistido para una tienda, o `[]` si no existe. */
 export async function getCategoryOrder(storeSlug: string): Promise<string[]> {
   const o = await readOrders();
-  return o[storeSlug] ?? [];
+  return o[storeSlug]?.order ?? [];
 }
 
 /** Persiste el orden completo (array de category ids). */
@@ -64,10 +92,42 @@ export async function setCategoryOrder(
     seen.add(id);
     return true;
   });
-  if (clean.length === 0) {
+  const existing = o[storeSlug] ?? { order: [], images: {} };
+  if (clean.length === 0 && Object.keys(existing.images).length === 0) {
     delete o[storeSlug];
   } else {
-    o[storeSlug] = clean;
+    o[storeSlug] = { ...existing, order: clean };
+  }
+  await writeOrders(o);
+}
+
+/** Devuelve las imágenes per-store (sin merge con global). */
+export async function getStoreCategoryImages(
+  storeSlug: string,
+): Promise<Record<string, string>> {
+  const o = await readOrders();
+  return o[storeSlug]?.images ?? {};
+}
+
+/** Persiste las imágenes per-store. Pasa `null` o "" en una key para borrarla. */
+export async function setStoreCategoryImages(
+  storeSlug: string,
+  images: Record<string, string | null | undefined>,
+): Promise<void> {
+  const o = await readOrders();
+  const existing = o[storeSlug] ?? { order: [], images: {} };
+  const next = { ...existing.images };
+  for (const [k, v] of Object.entries(images)) {
+    if (!v || v.length === 0) {
+      delete next[k];
+    } else {
+      next[k] = v;
+    }
+  }
+  if (existing.order.length === 0 && Object.keys(next).length === 0) {
+    delete o[storeSlug];
+  } else {
+    o[storeSlug] = { order: existing.order, images: next };
   }
   await writeOrders(o);
 }

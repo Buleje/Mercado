@@ -278,9 +278,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   return (
     <m.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 24 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.05 }}
+      transition={{ duration: 0.25, delay: index * 0.04 }}
       onMouseEnter={loadPreview}
       onFocus={loadPreview}
       className="relative"

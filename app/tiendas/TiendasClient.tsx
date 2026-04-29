@@ -86,17 +86,33 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
 interface TiendasClientProps {
   /** Zona prefijada por la ruta SSG `/tiendas/[zona]`. Override de query params. */
   initialZone?: string;
+  /** Stores pre-fetched en el server (fix bug back-nav cross-layout Next 16).
+   *  El HTML server-rendered ya tiene la lista materializada, así que aunque
+   *  la hidratación cliente quede frozen tras un back nav, los items siguen
+   *  visibles. El client useEffect refresca/filtra normalmente. */
+  initialStores?: MarketplaceStore[];
 }
 
-export default function TiendasClient({ initialZone }: TiendasClientProps = {}) {
+export default function TiendasClient({ initialZone, initialStores = [] }: TiendasClientProps = {}) {
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const initialSyncDone = useRef(false);
 
-  const [stores, setStores] = useState<MarketplaceStore[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
+  const [loading, setLoading] = useState(initialStores.length === 0);
+
+  // Sync initialStores prop → state cuando el server entrega datos frescos.
+  // Necesario tras `router.refresh()` post back-nav: el server re-renderiza
+  // con initialStores poblados pero React useState NO re-inicializa, así que
+  // sin este efecto el listado quedaba en estado loading=true (skeletons).
+  useEffect(() => {
+    if (initialStores.length > 0) {
+      setStores(initialStores);
+      setLoading(false);
+    }
+  }, [initialStores]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [category, setCategory] = useState(
@@ -233,10 +249,19 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
   // Retry counter — bump para re-ejecutar el useEffect del fetch
   const [retryKey, setRetryKey] = useState(0);
 
+  // Skip flag: en el primer mount, si ya tenemos initialStores del server,
+  // NO disparamos fetch ni setLoading(true) porque la lista ya está
+  // materializada. Si el usuario filtra/busca, los siguientes runs sí fetchean.
+  const skipInitialFetchRef = useRef(initialStores.length > 0);
+
   // Fetch con AbortController — cancela request previa si el user sigue
   // tipeando/filtrando. Debounce 300ms unificado (no solo en search) para
   // reducir requests cuando cambian multiples filtros rapido.
   useEffect(() => {
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
+      return;
+    }
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -322,16 +347,16 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Safety net — si tras 4.5s no hay stores ni error declarado, asumimos
-  // rehidratación con state stuck y forzamos full page reload. Peor caso
-  // UX puntual pero el cliente NUNCA ve un skeleton infinito.
+  // Safety net — si tras 1.2s no hay stores ni error, asumimos
+  // rehidratación con state stuck (Next 16 RSC cache) y forzamos hard reload.
+  // Reducido de 4.5s a 1.2s para que el back-nav sea casi imperceptible.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const safety = setTimeout(() => {
       if (stores.length === 0 && !error && !loading) {
         window.location.reload();
       }
-    }, 4500);
+    }, 1200);
     return () => clearTimeout(safety);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -541,7 +566,10 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
           eyebrow="Más pedidas"
           title="Las que tus vecinos eligen"
         />
-        <RecommendationsStrip />
+        {/* Pasamos las primeras 6 stores SSR-fetched al strip para evitar
+            skeletons eternos cuando Next 16 reusa el árbol cliente y el
+            useEffect del strip no se vuelve a ejecutar tras navegación. */}
+        <RecommendationsStrip initialStores={initialStores.slice(0, 6) as never} />
       </section>
 
       {/* ── Grid de Categorías principales (cajas grandes con imagen) ─

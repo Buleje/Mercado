@@ -17,6 +17,10 @@ import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
 import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import SSEListener from "@/components/admin/SSEListener";
+
+const AIStatusBanner = dynamic(() => import("@/components/admin/AIStatusBanner"), {
+  ssr: false,
+});
 import type { useOnboarding } from "@/hooks/use-onboarding";
 import type { Tab } from "../_lib/tabs.types";
 
@@ -94,6 +98,7 @@ export function AdminOverlaysLayer({
         onOpenMobileNav={onOpenMobileNav}
       />
 
+      <AIStatusBanner />
       <SSEListener />
       <MorningSummaryModal />
 

@@ -40,6 +40,7 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 // ServiceWorker + InstallPrompt + ClientEffects). Reducen el bundle
 // del root layout en ~100-150kb.
 import RootDeferredWidgets from "@/components/RootDeferredWidgets";
+import BackNavRefresh from "@/components/marketplace/BackNavRefresh";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -261,6 +262,10 @@ export default function RootLayout({
         {/* 5 widgets client-only deferred — SmoothScroll, ClientEffects,
             ServiceWorker, InstallPrompt, CommandPalette. Descarga post-FCP. */}
         <RootDeferredWidgets />
+        {/* BackNavRefresh: detecta back-nav desde detail → listado y recarga
+            la página automáticamente. Montado a nivel root para no remountarse
+            entre layouts hijos (que perdería el state del effect). */}
+        <BackNavRefresh />
         {children}
         <ToastContainer position="bottom-right" />
         <SonnerToaster

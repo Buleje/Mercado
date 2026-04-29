@@ -107,54 +107,60 @@ export function ProductActions({
   const previewTotal = format(price * quantity);
 
   return (
-    <div className="space-y-4">
-      {/* Trust strip — beneficios clave arriba de las acciones */}
-      <div className="grid grid-cols-3 gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-        <div className="flex flex-col items-center text-center gap-1">
-          <Truck className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
+    <div className="space-y-5">
+      {/* Trust strip — beneficios clave arriba de las acciones, tipografía legible */}
+      <div className="grid grid-cols-3 gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="flex flex-col items-center text-center gap-1.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
+            <Truck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
             Delivery
           </p>
-          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
             25 min
           </p>
         </div>
-        <div className="flex flex-col items-center text-center gap-1 border-x border-[var(--rule-soft)]">
-          <ShieldCheck className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
+        <div className="flex flex-col items-center text-center gap-1.5 border-x-2 border-[var(--rule-base)]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
+            <ShieldCheck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
             Pago
           </p>
-          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
             Al recibir
           </p>
         </div>
-        <div className="flex flex-col items-center text-center gap-1">
-          <RotateCcw className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
-            Devolucion
+        <div className="flex flex-col items-center text-center gap-1.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
+            <RotateCcw className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+            Devolución
           </p>
-          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
             Gratis
           </p>
         </div>
       </div>
 
-      {/* Stepper — label arriba, botones prominentes */}
+      {/* Stepper — label legible, botones grandes (h-12 mín por ergonomía móvil) */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)] mb-2">
-          {t("cart.quantity")}
+        <label className="block text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2.5">
+          Cantidad
         </label>
-        <div className="inline-flex items-center border border-[var(--rule-base)] rounded-xl overflow-hidden bg-[var(--surface-raised)]">
+        <div className="inline-flex items-center border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden bg-[var(--surface-raised)]">
           <button
             onClick={handleDecrement}
             disabled={quantity <= minOrderQty}
             aria-label="Reducir cantidad"
-            className="p-3 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-12 w-12 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Minus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
+            <Minus className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} />
           </button>
           <span
-            className="px-5 py-3 text-base font-black text-[var(--text-primary)] min-w-[3.5rem] text-center tabular-nums"
+            className="px-6 h-12 flex items-center text-xl font-black text-[var(--text-primary)] min-w-[4rem] justify-center tabular-nums border-x-2 border-[var(--rule-base)]"
             aria-live="polite"
             aria-label={`Cantidad: ${quantity}`}
           >
@@ -164,28 +170,28 @@ export function ProductActions({
             onClick={handleIncrement}
             disabled={quantity >= maxQty}
             aria-label="Aumentar cantidad"
-            className="p-3 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-12 w-12 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
+            <Plus className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} />
           </button>
         </div>
       </div>
 
-      {/* CTA: Agregar al carrito */}
+      {/* CTA: Agregar al carrito — botón grande (h-14), text-base font-bold */}
       <button
         onClick={handleAddToCart}
         disabled={isOutOfStock}
         className={cn(
-          "w-full py-3.5 rounded-xl font-semibold text-[length:var(--ts-sm)] flex items-center justify-center gap-2 transition-all active:scale-[0.98]",
+          "w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md hover:shadow-lg",
           added
             ? "bg-[var(--accent)] text-white"
             : isOutOfStock
-            ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border border-[var(--rule-base)]"
-            : "bg-[var(--accent)] text-white hover:opacity-90"
+            ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border-2 border-[var(--rule-base)] shadow-none hover:shadow-none"
+            : "bg-[var(--accent)] text-white hover:opacity-95"
         )}
         aria-label={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
       >
-        <ShoppingCart className="h-4 w-4" aria-hidden />
+        <ShoppingCart className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         {isOutOfStock
           ? t("product.outOfStock")
           : added
@@ -193,14 +199,14 @@ export function ProductActions({
           : `${t("cart.add")} · ${previewTotal}`}
       </button>
 
-      {/* CTA: Comprar ahora (existente — fallback si no hay 1-click ready) */}
+      {/* CTA: Comprar ahora — h-14, border-2, text-base */}
       {!isOutOfStock && (
         <button
           onClick={handleBuyNow}
-          className="w-full py-3.5 rounded-xl font-semibold text-[length:var(--ts-sm)] flex items-center justify-center gap-2 border border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent-soft)] active:scale-[0.98] transition-all"
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 border-2 border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent)]/5 active:scale-[0.98] transition-all"
           aria-label={t("product.buyNow")}
         >
-          <Zap className="h-4 w-4" aria-hidden />
+          <Zap className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           {t("product.buyNow")}
         </button>
       )}
@@ -218,16 +224,16 @@ export function ProductActions({
         />
       )}
 
-      {/* Wishlist */}
+      {/* Wishlist — h-12 con texto legible */}
       <button
         onClick={() => setWishlisted((w) => !w)}
         aria-label={wishlisted ? t("product.inWishlist") : t("product.wishlist")}
         aria-pressed={wishlisted}
-        className="w-full py-2.5 rounded-xl font-medium text-[length:var(--ts-sm)] flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
+        className="w-full h-12 rounded-2xl font-semibold text-base flex items-center justify-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all border-2 border-transparent hover:border-[var(--rule-base)]"
       >
         <Heart
           className={cn(
-            "h-4 w-4 transition-colors",
+            "h-5 w-5 transition-colors",
             wishlisted
               ? "text-[var(--data-error-600)] fill-[var(--data-error-600)]"
               : "text-[var(--text-tertiary)]"

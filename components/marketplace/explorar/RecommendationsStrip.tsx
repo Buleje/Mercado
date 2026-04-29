@@ -49,11 +49,21 @@ function StoreCardSkeleton() {
 
 // ── Componente ─────────────────────────────────────────────────────────────────
 
-export default function RecommendationsStrip() {
-  const [stores, setStores] = useState<RecommendedStore[]>([]);
-  const [loading, setLoading] = useState(true);
+interface RecommendationsStripProps {
+  /** Stores pre-fetched server-side. Si se pasa, se evita el client-side fetch
+   *  y el strip muestra la data inmediatamente (sin skeletons). Soluciona el
+   *  bug de skeletons eternos cuando Next 16 preserva el árbol cliente y el
+   *  useEffect no vuelve a correr tras navegación. */
+  initialStores?: RecommendedStore[];
+}
+
+export default function RecommendationsStrip({ initialStores }: RecommendationsStripProps = {}) {
+  const [stores, setStores] = useState<RecommendedStore[]>(initialStores ?? []);
+  const [loading, setLoading] = useState(!initialStores);
 
   useEffect(() => {
+    // Si ya tenemos initialStores, no fetcheamos.
+    if (initialStores && initialStores.length > 0) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -69,9 +79,19 @@ export default function RecommendationsStrip() {
       }
     };
     load();
+    // Watchdog: si tras 3s el componente sigue en loading sin stores,
+    // re-disparamos un fetch (cubre casos donde el primer fetch quedó stale
+    // por Next 16 client cache).
+    const watchdog = setTimeout(() => {
+      if (!cancelled && stores.length === 0) {
+        load();
+      }
+    }, 3000);
     return () => {
       cancelled = true;
+      clearTimeout(watchdog);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // No renderizar nada si no hay tiendas y ya terminó de cargar

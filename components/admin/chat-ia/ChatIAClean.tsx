@@ -268,7 +268,10 @@ export default function ChatIAClean({
           // Si el stream terminó sin contenido, mostramos error claro.
           // Caso típico: Vercel AI Gateway devuelve 401 (falta AI_GATEWAY_API_KEY).
           if (fullContent.length === 0) {
-            const errorText = sawError
+            const looks401 = typeof sawError === "string" && /401|unauthor|api.?key|invalid.*key/i.test(sawError);
+            const errorText = looks401
+              ? `**API key del proveedor IA inválida o expirada.**\n\nDetalle: ${sawError}\n\n**Solución:** verificá que \`GROQ_API_KEY\` (o \`ANTHROPIC_API_KEY\` / \`XAI_API_KEY\`) en \`.env.local\` sea la key real del proveedor (Groq ~56 chars, Anthropic ~108 chars, xAI ~84 chars). Si vale solo \`gsk_...\` o similar corto, es un placeholder.`
+              : sawError
               ? `**No pude responder:** ${sawError}`
               : `**El asistente está inactivo.** No se recibió respuesta de la IA.\n\nPosibles causas:\n- Falta configurar \`AI_GATEWAY_API_KEY\` o \`GROQ_API_KEY\` en el servidor\n- El servicio de IA externo está temporalmente caído\n- Se agotaron los tokens disponibles del mes\n\nContactá al administrador técnico para revisar la configuración.`;
             setMessages((prev) =>

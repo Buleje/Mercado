@@ -17,9 +17,11 @@
  * StoreCategories → StoreCatalog sin setState en useEffect.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { ChevronRight } from "@buleje/design-system/icons";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 import StorePromoBannersStrip from "./StorePromoBannersStrip";
@@ -44,6 +46,8 @@ interface StoreDetailClientProps {
   isOpen?: boolean;
   /** Métodos de pago expuestos por la tienda. Por ahora yape+efectivo. */
   paymentMethods?: string[];
+  /** Mapa name → URL imagen (resolved server-side: per-store > global) */
+  categoryImages?: Record<string, string>;
 }
 
 export default function StoreDetailClient({
@@ -54,8 +58,27 @@ export default function StoreDetailClient({
   reviews,
   isOpen = true,
   paymentMethods = ["yape", "efectivo"],
+  categoryImages,
 }: StoreDetailClientProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  // Detección de sticky scroll: cuando el sentinel sale del viewport,
+  // el bar de categorías está pegado al top y rendea en modo `compact`.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [isStuck, setIsStuck] = useState(false);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        // Si el sentinel NO está visible → el sticky bar quedó pegado arriba.
+        if (entry) setIsStuck(!entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: "0px" },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -68,19 +91,8 @@ export default function StoreDetailClient({
         zone={store.zone}
       />
 
-      {/* ── Volver a Tiendas — reemplaza breadcrumb largo ─────────────────── */}
-      <nav
-        aria-label="Volver al directorio"
-        className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4"
-      >
-        <Link
-          href="/tiendas"
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-        >
-          <ChevronRight className="h-3.5 w-3.5 rotate-180" strokeWidth={2.5} aria-hidden />
-          Volver a Tiendas
-        </Link>
-      </nav>
+      {/* ── Botón Volver ─────────────────────────────────────────────────── */}
+      <BackToTiendasButton />
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <StoreHero
@@ -105,11 +117,20 @@ export default function StoreDetailClient({
 
       {/* ── Categories sticky + Catalog ───────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-10">
-        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 mb-6 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-soft)] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]">
+        {/* Sentinel: detecta cuando el bar queda sticky arriba */}
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+        <div
+          className={cn(
+            "sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-soft)] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-[padding] duration-200",
+            isStuck ? "py-1.5" : "py-2.5",
+          )}
+        >
           <StoreCategories
             categories={categories}
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
+            images={categoryImages}
+            compact={isStuck}
           />
         </div>
         <StoreCatalog
@@ -160,6 +181,32 @@ export default function StoreDetailClient({
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Botón Volver ───────────────────────────────────────────────────────────
+function BackToTiendasButton() {
+  const router = useRouter();
+  const handleBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/tiendas");
+    }
+  }, [router]);
+
+  return (
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+      <button
+        type="button"
+        onClick={handleBack}
+        className="inline-flex items-center gap-2.5 px-5 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
+        aria-label="Volver a Tiendas"
+      >
+        <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+        <span>Volver a Tiendas</span>
+      </button>
     </div>
   );
 }

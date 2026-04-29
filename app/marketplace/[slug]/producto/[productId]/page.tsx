@@ -17,7 +17,7 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
-import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
+import BackToStoreButton from "@/components/marketplace/product-detail/BackToStoreButton";
 import type { RelatedProduct } from "@/components/marketplace/product-detail/ProductRelated";
 
 // ── Types desde la API ─────────────────────────────────────────────────────────
@@ -231,18 +231,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <>
       <ProductJsonLd product={product} slug={slug} productId={productId} />
 
-      {/* Breadcrumbs — cliente puede volver a la tienda o al marketplace en 1 click. */}
+      {/* Botón Volver — más limpio que breadcrumbs, vuelve a la tienda. */}
       <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
-        <Breadcrumbs
-          items={[
-            { label: "Marketplace", href: "/marketplace" },
-            { label: product.store.name, href: `/marketplace/${slug}` },
-            ...(product.category
-              ? [{ label: product.category, href: `/marketplace/${slug}?categoria=${encodeURIComponent(product.category)}` }]
-              : []),
-            { label: product.name },
-          ]}
-        />
+        <BackToStoreButton storeSlug={slug} storeName={product.store.name} />
       </div>
 
       <ProductDetailClient

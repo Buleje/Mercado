@@ -62,6 +62,29 @@ function buildSummary(reviews: Array<{ rating: number }>): StoreRatingSummary {
   return { average: Math.round(average * 10) / 10, total, breakdown };
 }
 
+function buildSummaryFromGroups(
+  groups: Array<{ rating: number; _count: { rating: number } }>,
+): StoreRatingSummary {
+  if (groups.length === 0) return EMPTY_SUMMARY;
+  let total = 0;
+  let sum = 0;
+  const counts = new Map<number, number>([[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]);
+  for (const g of groups) {
+    const k = Math.max(1, Math.min(5, Math.round(g.rating)));
+    const c = g._count.rating;
+    counts.set(k, (counts.get(k) ?? 0) + c);
+    total += c;
+    sum += g.rating * c;
+  }
+  if (total === 0) return EMPTY_SUMMARY;
+  const average = sum / total;
+  const breakdown = [5, 4, 3, 2, 1].map((stars) => {
+    const count = counts.get(stars) ?? 0;
+    return { stars, count, percentage: Math.round((count / total) * 100) };
+  });
+  return { average: Math.round(average * 10) / 10, total, breakdown };
+}
+
 export const StoreReviewsDB = {
   /** Lee reseñas reales para una tienda marketplace. */
   async listByStoreId(storeId: string, limit = 50): Promise<{
@@ -69,23 +92,30 @@ export const StoreReviewsDB = {
     summary: StoreRatingSummary;
   }> {
     try {
-      const rows = await prisma.review.findMany({
-        where: {
-          storeId,
-          status: "approved",
-          deletedAt: null,
-        },
-        orderBy: { date: "desc" },
-        take: limit,
-        select: {
-          id: true,
-          name: true,
-          location: true,
-          text: true,
-          rating: true,
-          date: true,
-        },
-      });
+      // Paralelizar: top-N reviews + groupBy de ratings para summary.
+      // Antes: 2 queries seriales (~2× latencia + traía todos los rows).
+      // Ahora: 2 queries paralelas, summary via groupBy (DB-side).
+      const baseWhere = { storeId, status: "approved", deletedAt: null };
+      const [rows, ratingGroups] = await Promise.all([
+        prisma.review.findMany({
+          where: baseWhere,
+          orderBy: { date: "desc" },
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            text: true,
+            rating: true,
+            date: true,
+          },
+        }),
+        prisma.review.groupBy({
+          by: ["rating"],
+          where: baseWhere,
+          _count: { rating: true },
+        }),
+      ]);
 
       const reviews: StoreReview[] = rows.map((r) => {
         const text = r.text ?? "";
@@ -106,12 +136,8 @@ export const StoreReviewsDB = {
         };
       });
 
-      // Para el summary contamos TODAS las reseñas approved, no solo las top 50.
-      const allRatings = await prisma.review.findMany({
-        where: { storeId, status: "approved", deletedAt: null },
-        select: { rating: true },
-      });
-      const summary = buildSummary(allRatings);
+      // Summary desde groupBy (más eficiente que traer todos los rows).
+      const summary = buildSummaryFromGroups(ratingGroups);
 
       return { reviews, summary };
     } catch (err) {

@@ -179,8 +179,14 @@ export default async function StoreDetailPage({ params }: Props) {
   // 3b. Aplicar orden manual configurado por el dueño (admin/marketplace/orden)
   // o por superadmin (superadmin/stores → Orden). Si no hay orden persistido
   // se conserva el orden por count desc.
-  const { getCategoryOrder } = await import("@/lib/store-category-order");
-  const persistedOrder = await getCategoryOrder(slug);
+  const { getCategoryOrder, getStoreCategoryImages } = await import("@/lib/store-category-order");
+  const { resolveCategoryImages } = await import("@/lib/superadmin-category-images");
+  const [persistedOrder, ownImages] = await Promise.all([
+    getCategoryOrder(slug),
+    getStoreCategoryImages(slug),
+  ]);
+  // Resuelve imágenes: per-store > global default > undefined (texto-only).
+  const categoryImages = await resolveCategoryImages(ownImages);
   const categories: StoreCategoryChip[] = persistedOrder.length === 0
     ? baseCategories
     : (() => {
@@ -223,6 +229,7 @@ export default async function StoreDetailPage({ params }: Props) {
         store={store}
         products={products}
         categories={categories}
+        categoryImages={categoryImages}
         reviewSummary={reviewSummary}
         reviews={reviews}
         isOpen={computeIsOpenNow()}

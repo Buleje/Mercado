@@ -159,6 +159,34 @@ export function validateEnv(): void {
     logger.warn("[env] Optional env vars not set (OK for dev)", { warnings });
   }
 
+  // ── LLM provider keys (sanity check) ────────────────────────────────────
+  // 2026-04-28: detectar API keys placeholder (muy cortas) — son la causa
+  // de respuestas vacías silenciosas en /api/ai-assistant.
+  // Real Groq key ~56 chars. Anthropic ~108. xAI ~84.
+  const llmKeyChecks = [
+    { key: "GROQ_API_KEY", minLen: 30 },
+    { key: "ANTHROPIC_API_KEY", minLen: 30 },
+    { key: "XAI_API_KEY", minLen: 30 },
+    { key: "AI_GATEWAY_API_KEY", minLen: 30 },
+  ];
+  const presentLlmKeys = llmKeyChecks.filter((c) => {
+    const v = process.env[c.key];
+    return v && v.trim().length > 0;
+  });
+  const validLlmKeys = presentLlmKeys.filter((c) => (process.env[c.key]?.length ?? 0) >= c.minLen);
+  const placeholderLlmKeys = presentLlmKeys.filter((c) => (process.env[c.key]?.length ?? 0) < c.minLen);
+  if (placeholderLlmKeys.length > 0) {
+    logger.warn(
+      "[env] LLM API keys parecen placeholders (longitud sospechosa) — el chat IA devolverá respuesta vacía",
+      { keys: placeholderLlmKeys.map((c) => `${c.key} (${process.env[c.key]?.length} chars, esperado ≥${c.minLen})`) },
+    );
+  }
+  if (validLlmKeys.length === 0) {
+    logger.warn(
+      "[env] Ningún LLM provider configurado (GROQ/ANTHROPIC/XAI/AI_GATEWAY) — chat IA y features IA estarán inactivas",
+    );
+  }
+
   // Upstash Redis rate-limiting (ADR-022). In production we now HARD-FAIL when
   // the REST vars are missing, unless the operator opts into the in-memory
   // fallback by setting ALLOW_IN_MEMORY_RATELIMIT=true. Keeping the fallback
