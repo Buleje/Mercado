@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/analytics/payment-methods
@@ -20,8 +21,7 @@ export async function GET(req: NextRequest) {
   const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 365);
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const validStatuses: any[] = ["entregado", "confirmado", "en_camino", "completado"];
+  const validStatuses = ["entregado", "confirmado", "en_camino"] as const;
 
   const orders = await prisma.order.findMany({
     where: {
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     username,
     undefined,
     tenantId,
-  ).catch(() => {});
+  ).catch((err) => logger.error("[analytics/payment-methods] logActivity failed", { tenantId, error: (err as Error).message }));
 
   return NextResponse.json({
     data: {

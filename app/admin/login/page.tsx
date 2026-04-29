@@ -277,7 +277,12 @@ export default function AdminLoginPage() {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (tenantSlug) headers["x-tenant-id"] = tenantSlug;
+      if (tenantSlug) {
+        headers["x-tenant-id"] = tenantSlug;
+        // Overwrite stale `active-tenant` cookie so proxy.ts resolveTenantMultiSource
+        // doesn't pin us to a previous tenant when the user picks a new one.
+        document.cookie = `active-tenant=${tenantSlug}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+      }
 
       const res = await fetch("/api/auth/login", {
         method: "POST",

@@ -14,9 +14,7 @@ export async function GET(req: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
-    // Using "any" to prevent strict Prisma union complaining about valid statuses across versions
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const validStatuses: any[] = ["entregado", "confirmado", "en_camino", "completado"];
+    const validStatuses = ["entregado", "confirmado", "en_camino"] as const;
 
     const [currentAgg, prevAgg] = await Promise.all([
       prisma.order.aggregate({

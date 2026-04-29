@@ -37,12 +37,116 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const last30Start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+  const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
 
-  // ── Cohorts: signups por mes ───────────────────────────────────────────
-  const allTenants = await prisma.tenant.findMany({
-    where: { active: true },
-    select: { id: true, createdAt: true, plan: true },
+  // Pre-compute month windows para AOV (últimos 6 meses)
+  const aovWindows = Array.from({ length: 6 }, (_, idx) => {
+    const i = 5 - idx;
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+    return { monthStart, nextMonthStart };
   });
+
+  // ── Phase 1: TODAS las queries independientes en paralelo ──────────────
+  const [
+    allTenants,
+    planCounts,
+    ordersByCustomer,
+    paymentBreakdown,
+    ordersLast30,
+    zoneGroups,
+    aovMonthly,
+    itemAgg,
+    statusBreakdown,
+    ordersForHeatmap,
+    channelBreakdown,
+    customerOrderCounts,
+    lowStockProducts,
+  ] = await Promise.all([
+    prisma.tenant.findMany({
+      where: { active: true },
+      select: { id: true, createdAt: true, plan: true },
+    }),
+    prisma.tenant.groupBy({
+      by: ["plan"],
+      where: { active: true },
+      _count: { _all: true },
+    }),
+    prisma.order.groupBy({
+      by: ["customerPhone"],
+      where: { status: { not: "cancelado" }, customerPhone: { not: null } },
+      _sum: { total: true },
+      _count: { _all: true },
+      orderBy: { _sum: { total: "desc" } },
+      take: 10,
+    }),
+    prisma.order.groupBy({
+      by: ["paymentMethod"],
+      where: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
+      _count: { _all: true },
+      _sum: { total: true },
+    }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      select: { tenantId: true, createdAt: true },
+    }),
+    prisma.store.groupBy({
+      by: ["zone"],
+      where: { isPublished: true },
+      _count: { _all: true },
+    }),
+    Promise.all(
+      aovWindows.map(({ monthStart, nextMonthStart }) =>
+        prisma.order.aggregate({
+          where: {
+            createdAt: { gte: monthStart, lt: nextMonthStart },
+            status: { not: "cancelado" },
+          },
+          _sum: { total: true },
+          _count: { _all: true },
+        }),
+      ),
+    ),
+    prisma.orderItem.groupBy({
+      by: ["productId", "name"],
+      where: {
+        order: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
+      },
+      _sum: { quantity: true, price: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 10,
+    }),
+    prisma.order.groupBy({
+      by: ["status"],
+      where: { createdAt: { gte: last30Start } },
+      _count: { _all: true },
+    }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      select: { createdAt: true },
+    }),
+    prisma.order.groupBy({
+      by: ["source"],
+      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      _count: { _all: true },
+      _sum: { total: true },
+    }),
+    prisma.order.groupBy({
+      by: ["customerPhone"],
+      where: {
+        createdAt: { gte: last30Start },
+        status: { not: "cancelado" },
+        customerPhone: { not: null },
+      },
+      _count: { _all: true },
+    }),
+    prisma.product.findMany({
+      where: { deletedAt: null, active: true, stock: { lte: 5, not: null } },
+      select: { id: true, name: true, stock: true, stockMin: true, tenantId: true },
+      orderBy: { stock: "asc" },
+      take: 10,
+    }),
+  ]);
   const cohortMap = new Map<string, { signups: number; payingNow: number }>();
   for (const t of allTenants) {
     const k = `${t.createdAt.getFullYear()}-${String(t.createdAt.getMonth() + 1).padStart(2, "0")}`;
@@ -62,11 +166,6 @@ export async function GET(req: NextRequest) {
     }));
 
   // ── MRR breakdown por plan ─────────────────────────────────────────────
-  const planCounts = await prisma.tenant.groupBy({
-    by: ["plan"],
-    where: { active: true },
-    _count: { _all: true },
-  });
   // Precios placeholder — el dashboard real ya los lee de PlatformSetting,
   // acá usamos defaults razonables para el breakdown.
   const PLAN_PRICES: Record<string, number> = {
@@ -82,14 +181,6 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Top customers cross-tenant por gasto ────────────────────────────────
-  const ordersByCustomer = await prisma.order.groupBy({
-    by: ["customerPhone"],
-    where: { status: { not: "cancelado" }, customerPhone: { not: null } },
-    _sum: { total: true },
-    _count: { _all: true },
-    orderBy: { _sum: { total: "desc" } },
-    take: 10,
-  });
   const topCustomers = ordersByCustomer.map((c) => ({
     phone: c.customerPhone ?? "",
     totalSpent: toNumOrZero(c._sum.total ?? 0),
@@ -97,12 +188,6 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Payment methods distribución ────────────────────────────────────────
-  const paymentBreakdown = await prisma.order.groupBy({
-    by: ["paymentMethod"],
-    where: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
-    _count: { _all: true },
-    _sum: { total: true },
-  });
   const paymentMethods = paymentBreakdown.map((p) => ({
     method: p.paymentMethod ?? "desconocido",
     orders: p._count._all,
@@ -110,10 +195,6 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Daily active stores ────────────────────────────────────────────────
-  const ordersLast30 = await prisma.order.findMany({
-    where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
-    select: { tenantId: true, createdAt: true },
-  });
   const dayKey = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const dasMap = new Map<string, Set<string>>();
@@ -132,48 +213,23 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Geographic distribution: tenants por zona ──────────────────────────
-  const zoneGroups = await prisma.store.groupBy({
-    by: ["zone"],
-    where: { isPublished: true },
-    _count: { _all: true },
-  });
   const geographic = zoneGroups
     .map((z) => ({ zone: z.zone ?? "Sin zona", stores: z._count._all }))
     .sort((a, b) => b.stores - a.stores);
 
-  // ── AOV mensual (últimos 6 meses) ──────────────────────────────────────
-  const aov: Array<{ month: string; aov: number; orders: number }> = [];
-  const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
-  for (let i = 5; i >= 0; i--) {
-    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const agg = await prisma.order.aggregate({
-      where: {
-        createdAt: { gte: monthStart, lt: nextMonthStart },
-        status: { not: "cancelado" },
-      },
-      _sum: { total: true },
-      _count: { _all: true },
-    });
+  // ── AOV mensual (últimos 6 meses) — desde resultados pre-calculados ────
+  const aov = aovWindows.map(({ monthStart }, idx) => {
+    const agg = aovMonthly[idx];
     const total = toNumOrZero(agg._sum.total ?? 0);
     const orders = agg._count._all;
-    aov.push({
+    return {
       month: monthFmt.format(monthStart),
       aov: orders > 0 ? Math.round((total / orders) * 100) / 100 : 0,
       orders,
-    });
-  }
+    };
+  });
 
   // ── Product velocity: top productos por unidades vendidas (mes en curso) ─
-  const itemAgg = await prisma.orderItem.groupBy({
-    by: ["productId", "name"],
-    where: {
-      order: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
-    },
-    _sum: { quantity: true, price: true },
-    orderBy: { _sum: { quantity: "desc" } },
-    take: 10,
-  });
   const productVelocity = itemAgg.map((it) => ({
     productId: it.productId,
     name: it.name,
@@ -182,11 +238,6 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Order status funnel + cancellation rate ────────────────────────────
-  const statusBreakdown = await prisma.order.groupBy({
-    by: ["status"],
-    where: { createdAt: { gte: last30Start } },
-    _count: { _all: true },
-  });
   const statusMap = new Map(statusBreakdown.map((s) => [s.status, s._count._all]));
   const totalLast30 = Array.from(statusMap.values()).reduce((s, n) => s + n, 0);
   const orderFunnel = [
@@ -204,13 +255,6 @@ export async function GET(req: NextRequest) {
   // ── Hour-of-day heatmap: cuándo compran los clientes ───────────────────
   // Buckets por día-de-semana (0=Lun, 6=Dom) × hora (0-23). Devolvemos solo
   // celdas con count > 0 para optimizar payload.
-  const ordersForHeatmap = await prisma.order.findMany({
-    where: {
-      createdAt: { gte: last30Start },
-      status: { not: "cancelado" },
-    },
-    select: { createdAt: true },
-  });
   const heatmap: number[][] = Array(7)
     .fill(0)
     .map(() => Array(24).fill(0));
@@ -235,12 +279,6 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Channel breakdown: direct vs marketplace vs wholesale ──────────────
-  const channelBreakdown = await prisma.order.groupBy({
-    by: ["source"],
-    where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
-    _count: { _all: true },
-    _sum: { total: true },
-  });
   const channels = channelBreakdown.map((c) => ({
     channel: c.source,
     orders: c._count._all,
@@ -248,17 +286,6 @@ export async function GET(req: NextRequest) {
   }));
 
   // ── Repeat customer rate: % clientes que compraron 2+ veces ────────────
-  // Grupo por phone (proxy de cliente). Si phone null, contamos como guests
-  // separados (no se pueden agrupar).
-  const customerOrderCounts = await prisma.order.groupBy({
-    by: ["customerPhone"],
-    where: {
-      createdAt: { gte: last30Start },
-      status: { not: "cancelado" },
-      customerPhone: { not: null },
-    },
-    _count: { _all: true },
-  });
   const totalCustomers = customerOrderCounts.length;
   const repeatCustomers = customerOrderCounts.filter((c) => c._count._all >= 2).length;
   const repeatRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
@@ -269,23 +296,7 @@ export async function GET(req: NextRequest) {
 
   // ── Stock alerts cross-tenant: productos con stock bajo ────────────────
   // Product no tiene relación `tenant` definida en schema, así que hacemos
-  // 2 queries: productos con stock bajo + tenants por sus tenantIds.
-  const lowStockProducts = await prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      active: true,
-      stock: { lte: 5, not: null },
-    },
-    select: {
-      id: true,
-      name: true,
-      stock: true,
-      stockMin: true,
-      tenantId: true,
-    },
-    orderBy: { stock: "asc" },
-    take: 10,
-  });
+  // 1 query adicional para los tenants de los productos en stock bajo.
   const stockTenantIds = Array.from(new Set(lowStockProducts.map((p) => p.tenantId)));
   const stockTenants = stockTenantIds.length
     ? await prisma.tenant.findMany({
