@@ -1,0 +1,210 @@
+{
+  "runAt": "2026-04-29T01:00:05.324Z",
+  "user": "superadmin",
+  "base": "http://localhost:3000",
+  "routes": [
+    {
+      "name": "01-dashboard",
+      "url": "/superadmin",
+      "httpStatus": 200,
+      "ms": 6779,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "02-control-center",
+      "url": "/superadmin/control-center",
+      "httpStatus": 200,
+      "ms": 2040,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "03-tenants",
+      "url": "/superadmin/tenants",
+      "httpStatus": 200,
+      "ms": 2073,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "04-stores",
+      "url": "/superadmin/stores",
+      "httpStatus": 200,
+      "ms": 2056,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "05-marketplace",
+      "url": "/superadmin/marketplace",
+      "httpStatus": 200,
+      "ms": 6421,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "06-mkt-suppliers",
+      "url": "/superadmin/marketplace/suppliers",
+      "httpStatus": 200,
+      "ms": 1985,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "07-mkt-cat-images",
+      "url": "/superadmin/marketplace/category-images",
+      "httpStatus": 200,
+      "ms": 2939,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "08-vendor-apps",
+      "url": "/superadmin/vendor-applications",
+      "httpStatus": 200,
+      "ms": 4227,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "09-banners",
+      "url": "/superadmin/banners",
+      "httpStatus": 200,
+      "ms": 3801,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "10-marca",
+      "url": "/superadmin/marca",
+      "httpStatus": 200,
+      "ms": 2698,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "11-recetario",
+      "url": "/superadmin/recetario",
+      "httpStatus": 200,
+      "ms": 2732,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "12-analytics",
+      "url": "/superadmin/analytics",
+      "httpStatus": 200,
+      "ms": 4512,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "13-activity",
+      "url": "/superadmin/activity",
+      "httpStatus": 200,
+      "ms": 3043,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "14-security",
+      "url": "/superadmin/security",
+      "httpStatus": 200,
+      "ms": 3095,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "15-health",
+      "url": "/superadmin/health",
+      "httpStatus": 200,
+      "ms": 2901,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "16-roadmap",
+      "url": "/superadmin/roadmap",
+      "httpStatus": 200,
+      "ms": 3231,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "17-sitemap",
+      "url": "/superadmin/sitemap",
+      "httpStatus": 200,
+      "ms": 4512,
+      "navError": null,
+      "consoleErrors": 0
+    },
+    {
+      "name": "18-settings",
+      "url": "/superadmin/settings",
+      "httpStatus": 200,
+      "ms": 5170,
+      "navError": null,
+      "consoleErrors": 0
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [
+    {
+      "url": "http://localhost:3000/api/superadmin/analytics",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/dashboard"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/dashboard/widgets",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/dashboard"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/tenants",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/tenants"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/dashboard/widgets",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/analytics"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/analytics/executive",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/analytics"
+    },
+    {
+      "url": "http://localhost:3000/_next/static/chunks/components_RevenueCharts_tsx_0e~tgem._.js",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/analytics"
+    },
+    {
+      "url": "http://localhost:3000/_next/static/chunks/_0rzzq2r._.js",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/analytics"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/analytics/executive",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/analytics"
+    },
+    {
+      "url": "http://localhost:3000/icon?health-check",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/health"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/dashboard/tenant-growth?range=30d&metric=orders&top=8",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/dashboard"
+    },
+    {
+      "url": "http://localhost:3000/api/superadmin/dashboard/tenant-growth?range=30d&metric=orders&top=8",
+      "reason": "net::ERR_ABORTED",
+      "on": "http://localhost:3000/superadmin/dashboard"
+    }
+  ]
+}

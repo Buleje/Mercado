@@ -1,0 +1,654 @@
+{
+  "initial": {
+    "cards": 25,
+    "skeletons": 0,
+    "bodyLen": 2820,
+    "sessionFromDetail": null,
+    "sessionReloaded": null
+  },
+  "inStore": {
+    "url": "/marketplace/mi-pollo",
+    "sessionFromDetail": "/marketplace/mi-pollo",
+    "sessionReloaded": null,
+    "bodyLen": 5213
+  },
+  "finalState": {
+    "url": "/tiendas",
+    "cards": 14,
+    "skeletons": 54,
+    "bodyLen": 2278,
+    "sessionFromDetail": "/marketplace/mi-pollo",
+    "sessionReloaded": null,
+    "overflow": "clip visible",
+    "hasModal": false
+  },
+  "console": [
+    {
+      "type": "log",
+      "text": "[BackNavRefresh] effect ran, pathname= /marketplace/mi-pollo marker= null reloaded= null"
+    }
+  ],
+  "failed": [],
+  "requests": [
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__0van8im._.css"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_in"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/media/caa3a2e1cccd8315-s.16t1db8_9y2o~.woff2"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/media/e41d5df559864f9e-s.0gq7fw9.sy_5..woff2"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0.4_mz-._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_server_0bxku-~._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_%40swc_helpers_cjs_0-4ujiy._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0rqeker._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/turbopack-_03c09sy._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_079ko4n._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0pq807j._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_icon--metadata_0mm9iwh.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0fi.i7c._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0u_rc3-._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0t9-j93._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_layout_tsx_0mm9iwh._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui-system_0o2ut5i._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0kjjy2w._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/contexts_0nlxmbg._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_087vk45._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_0ie7358._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_framer-motion_dist_es_0nqcsi0._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_0k_iq10._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_motion-dom_dist_es_0iughv7._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_%40supabase_auth-js_dist_module_0.p"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_zod_v4_0pm4kr6._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_layout_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0-.q6.e._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui-system_BulejeLoader_tsx_10iimnu._."
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_loading_tsx_0g_b~lu._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_global-error_tsx_076mf8i._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_global-error_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_error_tsx_0_t04ej._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_error_tsx_0g_b~lu._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0i-cs9w._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_error_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_01rhsqz._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_not-found_tsx_0g_b~lu._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0ym3aue._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_not-found_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0bdm6--._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/_0ptrt5c._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/packages_design-system_src_0d83l-3._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_09eugvi._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0fx991r._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_marketplace_%5Bslug%5D_page_tsx_0g_b~lu._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_SmoothScrollProvider_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui_ClientEffects_tsx_01r95zg._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui_ClientEffects_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_ServiceWorkerRegistrar_tsx_09g4n2z._."
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_ServiceWorkerRegistrar_tsx_0bcd82x._."
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/_01y4ygr._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_InstallPrompt_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/_0zhbyqr._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_CommandPalette_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplacePromoBar_tsx_0"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplacePromoBar_tsx_0"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/_08-yjvb._.js"
+    },
+    {
+      "status": 304,
+      "url": "http://localhost:3000/_next/static/chunks/_0hte82f._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0ku5apw._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_NotificationsMenu_tsx_0-j"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplaceSecondaryNav_t"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_LocalStorageDoctor_tsx_0-j~m-g._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_CompareFloatingBadge_tsx_"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_ProductCompareDrawer_tsx_"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_CompareFloatingBadge_tsx_"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_ProductCompareDrawer_tsx_"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_store_QuickAddModal_tsx_0zx~q5g._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_store_QuickAddModal_tsx_0-j~m-g._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_01kb4--._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0i7c92z._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0wtxbj5._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplaceFirstVisitTour"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_DockFeatureSpotlight_tsx_"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_FloatingDockController_ts"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/marketplace/stores?limit=5"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/platform-brand"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/lives/active"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/tenants/resolve?slug=main"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/auth/customer/me"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/settings"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/socio-buleje/status?userId=user_demo_01"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/tenants/resolve?slug=main"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/api/marketplace/stores/mi-pollo/banners?section=promo"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__0van8im._.css"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_in"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0.4_mz-._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_server_0bxku-~._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_%40swc_helpers_cjs_0-4ujiy._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0rqeker._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/turbopack-_03c09sy._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_dist_079ko4n._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_icon--metadata_0mm9iwh.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0pq807j._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0fi.i7c._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0u_rc3-._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_layout_tsx_0mm9iwh._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui-system_0o2ut5i._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_zod_v4_0pm4kr6._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_next_0ie7358._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_%40supabase_auth-js_dist_module_0.p"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui-system_BulejeLoader_tsx_10iimnu._."
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_global-error_tsx_076mf8i._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_global-error_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0i-cs9w._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_01rhsqz._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_error_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0ym3aue._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_not-found_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0ptrt5c._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_SmoothScrollProvider_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui_ClientEffects_tsx_01r95zg._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ui_ClientEffects_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ServiceWorkerRegistrar_tsx_09g4n2z._."
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_ServiceWorkerRegistrar_tsx_0bcd82x._."
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_01y4ygr._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_InstallPrompt_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0zhbyqr._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_CommandPalette_tsx_0bcd82x._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplacePromoBar_tsx_0"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplacePromoBar_tsx_1"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_08-yjvb._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_NotificationsMenu_tsx_12m"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0hte82f._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_MarketplaceSecondaryNav_t"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_02m.pin._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/contexts_10sp_s-._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/media/caa3a2e1cccd8315-s.16t1db8_9y2o~.woff2"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/media/e41d5df559864f9e-s.0gq7fw9.sy_5..woff2"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_0-2vu8f._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_0p-zmab._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-clien"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0snnd1c._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_tiendas_loading_tsx_0r.uu0w._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_framer-motion_dist_es_0svqt1l._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_motion-dom_dist_es_0.tr9_o._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_tiendas_layout_tsx_0b6bwxn._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0ok84bt._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/node_modules_0l-qo0p._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/components_marketplace_TiendasMap_tsx_0ht~gb8._."
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/app_tiendas_page_tsx_0r.uu0w._.js"
+    },
+    {
+      "status": 200,
+      "url": "http://localhost:3000/_next/static/chunks/_0bbydkp._.js"
+    }
+  ]
+}
