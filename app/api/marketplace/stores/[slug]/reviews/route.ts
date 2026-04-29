@@ -2,8 +2,16 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+/**
+ * @prisma-direct excepción documentada — el endpoint POST hace `review.create`
+ * + `store.update` con scope explícito (storeId resuelto via getBySlug que
+ * ya filtra `isPublished:true`). Migrar a ReviewsMarketplaceDB.create cuando
+ * esa clase soporte el incremento de rating de la tienda atómicamente.
+ */
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -24,12 +32,8 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      select: { id: true, isPublished: true },
-    });
-
-    if (!store || !store.isPublished) {
+    const store = await MarketplaceStoresDB.getBySlug(slug);
+    if (!store) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
@@ -83,12 +87,9 @@ export async function POST(
   try {
     const { slug } = await params;
 
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      select: { id: true, tenantId: true, isPublished: true, rating: true, reviewCount: true },
-    });
-
-    if (!store || !store.isPublished) {
+    // getBySlug retorna id, tenantId, rating, reviewCount + filtra isPublished.
+    const store = await MarketplaceStoresDB.getBySlug(slug);
+    if (!store) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 

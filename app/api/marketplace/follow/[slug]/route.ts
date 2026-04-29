@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logger } from "@/lib/logger";
 
 const ParamsSchema = z.object({
@@ -35,10 +35,9 @@ interface RouteContext {
 
 async function verifyStoreExists(slug: string): Promise<boolean> {
   try {
-    const found = await prisma.store.findUnique({
-      where: { slug },
-      select: { id: true },
-    });
+    // MarketplaceStoresDB.getBySlug filtra `isPublished: true` — antes el
+    // findUnique permitía probe de existencia de slugs ocultos.
+    const found = await MarketplaceStoresDB.getBySlug(slug);
     return Boolean(found);
   } catch (e) {
     logger.warn("[follow] store lookup failed", { error: String(e), slug });

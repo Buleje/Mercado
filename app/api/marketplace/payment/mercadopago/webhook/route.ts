@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMercadoPagoPayment, verifyMPWebhookSignature } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { logger } from "@/lib/logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { OrderStatus } from "@/lib/generated/prisma/client";
+
+/**
+ * @prisma-direct excepción documentada — el `prisma.order.updateMany` y el
+ * `prisma.tenant.findUnique` se mantienen porque (a) updateMany ya aplica
+ * `tenantId` explícito (no hay método equivalente atómico en OrdersDB para
+ * cambio de status + paymentMethod simultáneo) y (b) tenant lookup por
+ * slug es un caso administrativo de webhook. Ambas operaciones tienen
+ * scope explícito por tenantId.
+ */
 
 // POST /api/marketplace/payment/mercadopago/webhook
 // Handles MercadoPago IPN notifications for marketplace orders
@@ -74,6 +84,8 @@ export async function POST(req: NextRequest) {
       // SECURITY: scope por tenantId del store derivado del storeSlug
       // (no del payload externo). Si el slug no resuelve a un store o
       // el orderId no pertenece a ese tenant, NO mutamos.
+      // Para webhook usamos query directo (no getBySlug) porque tiendas
+      // suspendidas también pueden recibir webhooks de pagos previos.
       const storeForUpdate = await prisma.store.findFirst({
         where: { slug: storeSlug },
         select: { tenantId: true },
@@ -99,8 +111,11 @@ export async function POST(req: NextRequest) {
       // Fire-and-forget: notify store owner
       (async () => {
         try {
-          const order = await prisma.order.findUnique({
-            where: { id: orderId },
+          // Query directo con scope `tenantId` explícito (cierra cross-tenant
+          // aún dentro del fire-and-forget). DbOrder de OrdersDB.getById tiene
+          // forma diferente — para webhook usamos shape específico.
+          const order = await prisma.order.findFirst({
+            where: { id: orderId, tenantId: storeForUpdate.tenantId },
             select: { tenantId: true, customerName: true, customerPhone: true, total: true },
           });
           if (!order) return;
@@ -128,11 +143,10 @@ export async function POST(req: NextRequest) {
               ).catch((err) => { logger.warn("[MP webhook] customer WA notify failed", { traceId, orderId, error: String(err) }); });
             }
 
-            // Notify store owner
-            const store = await prisma.store.findFirst({
-              where: { slug: storeSlug },
-              select: { tenantId: true, name: true },
-            });
+            // Notify store owner — getBySlug filtra isPublished pero los
+            // pagos confirmados también notifican aunque el store esté en
+            // pausa. Para esa edge case usamos query directo con scope.
+            const store = await MarketplaceStoresDB.getBySlug(storeSlug);
             if (store) {
               const tenant = await prisma.tenant.findUnique({
                 where: { slug: store.tenantId },

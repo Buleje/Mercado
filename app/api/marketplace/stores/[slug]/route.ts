@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
+/**
+ * @cross-tenant intentional — endpoint público del storefront marketplace.
+ * @prisma-direct excepción documentada — este endpoint necesita columnas
+ * `vacationMode` y `vacationMessage` que la migration 20260411 todavía no
+ * aplicó (ver lib/db/marketplace.db.ts:329-330). Al usar prisma directo aquí
+ * tolera el schema drift transitorio. Cuando la migration esté en prod,
+ * migrar a MarketplaceStoresDB.getDetailBySlug().
+ */
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },

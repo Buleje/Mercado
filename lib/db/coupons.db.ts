@@ -163,4 +163,24 @@ export const CouponsDB = {
       data: { usedCount: { increment: 1 } },
     });
   },
+
+  /**
+   * Toggle the `active` flag of a coupon. Atomic + scoped al tenant.
+   * Returns the new value or null if the coupon doesn't belong to the tenant.
+   */
+  async setActive(tenantId: string, id: string, active: boolean): Promise<boolean | null> {
+    const result = await prisma.coupon.updateMany({
+      where: { id, tenantId },
+      data: { active },
+    });
+    return result.count === 0 ? null : active;
+  },
+
+  /**
+   * Delete a coupon scoped al tenant. Returns true if deleted, false otherwise.
+   */
+  async delete(tenantId: string, id: string): Promise<boolean> {
+    const result = await prisma.coupon.deleteMany({ where: { id, tenantId } });
+    return result.count > 0;
+  },
 };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { CouponsDB } from "@/lib/db/coupons.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
@@ -32,23 +32,15 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
     }
 
-    // SECURITY (HOTFIX-M3, 2026-04-29): patron TOCTOU eliminado.
-    // Antes: findFirst({tenantId}) -> update({where:{id}}) tenia ventana
-    // entre check y update. Ahora updateMany atomico con filtro tenantId.
-    const coupon = await prisma.coupon.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      select: { id: true, code: true, active: true },
-    });
+    // CouponsDB.getById + setActive aplican tenantId en cada paso.
+    const coupon = await CouponsDB.getById(auth.tenantId, id);
     if (!coupon) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 
     const newActive = parsed.data.active ?? !coupon.active;
-    const result = await prisma.coupon.updateMany({
-      where: { id, tenantId: auth.tenantId },
-      data: { active: newActive },
-    });
-    if (result.count === 0) {
+    const updated = await CouponsDB.setActive(auth.tenantId, id, newActive);
+    if (updated === null) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 
@@ -79,17 +71,14 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
 
     const { id } = await ctx.params;
 
-    // SECURITY (HOTFIX-M3): deleteMany atomico con filtro tenantId.
-    const coupon = await prisma.coupon.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      select: { code: true },
-    });
+    // CouponsDB.getById + delete scoped al tenant.
+    const coupon = await CouponsDB.getById(auth.tenantId, id);
     if (!coupon) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 
-    const result = await prisma.coupon.deleteMany({ where: { id, tenantId: auth.tenantId } });
-    if (result.count === 0) {
+    const deleted = await CouponsDB.delete(auth.tenantId, id);
+    if (!deleted) {
       return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     }
 

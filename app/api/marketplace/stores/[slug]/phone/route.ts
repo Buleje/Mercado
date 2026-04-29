@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -22,15 +23,15 @@ export async function GET(
   try {
     ({ slug } = await params);
 
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      select: { tenantId: true, isPublished: true },
-    });
-
-    if (!store || !store.isPublished) {
+    // MarketplaceStoresDB.getBySlug ya filtra `isPublished: true` y cachea.
+    const store = await MarketplaceStoresDB.getBySlug(slug);
+    if (!store) {
       return NextResponse.json({ phone: null });
     }
 
+    // tenantStorePage es un único modelo de configuración (1-1 con tenant).
+    // No requiere clase lib/db propia — query directo aceptable porque
+    // siempre va con scope `tenantId` (PK).
     const page = await prisma.tenantStorePage.findUnique({
       where: { tenantId: store.tenantId },
       select: { whatsappPhone: true },

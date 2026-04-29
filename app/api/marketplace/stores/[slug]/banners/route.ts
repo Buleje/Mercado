@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { StoreBannersDB } from "@/lib/db/store-banners.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 
@@ -16,6 +17,14 @@ const PostSchema = z.object({
   endDate: z.string().datetime().optional(),
 });
 
+/**
+ * Resolver tienda para escritura admin. Filtra por `tenantId` (no usa
+ * `MarketplaceStoresDB.getBySlug` porque ese filtra `isPublished:true`
+ * y el admin debe poder editar tiendas no publicadas / draft).
+ *
+ * @prisma-direct excepción documentada — operación admin con `tenantId`
+ * obligatorio en el WHERE = aislada cross-tenant.
+ */
 async function resolveStore(slug: string, tenantId: string) {
   return prisma.store.findFirst({ where: { slug, tenantId } });
 }
@@ -28,13 +37,9 @@ export async function GET(
   const section = req.nextUrl.searchParams.get("section") ?? undefined;
 
   // El marketplace es cross-tenant: el banner se resuelve por slug
-  // y luego usamos su tenantId real (no `x-tenant-id` que viene de "main").
-  // Resiliente: cualquier error → devolvemos lista vacía para no romper UI.
+  // y luego usamos su tenantId real. Resiliente: cualquier error → lista vacía.
   try {
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      select: { id: true, tenantId: true },
-    });
+    const store = await MarketplaceStoresDB.getBySlug(slug);
     if (!store) return NextResponse.json({ banners: [] });
 
     const banners = await StoreBannersDB.list(store.tenantId, store.id, section);

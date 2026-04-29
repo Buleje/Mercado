@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { getOrSet } from "@/lib/cache";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+/**
+ * @prisma-direct excepción documentada — `prisma.storeProduct.findMany`
+ * accede a la junction table StoreProduct (cross-tenant intencional: el
+ * marketplace público lista productos de cualquier tenant). El scope se
+ * cierra por `storeId` que ya viene del store resuelto via
+ * MarketplaceStoresDB.getBySlug (que filtra `isPublished:true`).
+ */
 
 const QuerySchema = z.object({
   category: z.string().optional(),
@@ -34,12 +43,9 @@ export async function GET(
     const cacheKey = `marketplace:products:${slug}:${JSON.stringify({ category, search, sort, limit, cursor })}`;
 
     const result = await getOrSet(cacheKey, 60, async () => {
-      // Verificar que la tienda exista y esté publicada
-      const store = await prisma.store.findUnique({
-        where: { slug },
-        select: { id: true, isPublished: true },
-      });
-      if (!store || !store.isPublished) {
+      // Verificar que la tienda exista y esté publicada (getBySlug ya filtra)
+      const store = await MarketplaceStoresDB.getBySlug(slug);
+      if (!store) {
         throw new NotFoundError("Tienda");
       }
 

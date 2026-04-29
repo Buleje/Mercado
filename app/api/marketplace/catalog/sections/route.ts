@@ -1,3 +1,10 @@
+/**
+ * @cross-tenant intentional — endpoint público marketplace.
+ * Agregados/lecturas cross-tenant son parte del diseño del marketplace
+ * (rankings, búsqueda, comparar, analytics globales). Donde aplica filtra
+ * por `store.isPublished: true` para no exponer tiendas en draft.
+ * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";

@@ -1,3 +1,9 @@
+/**
+ * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
+ * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
+ * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
+ * dedicada cuando se centralice el patrón.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";

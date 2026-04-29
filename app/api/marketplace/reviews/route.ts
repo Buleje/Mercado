@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { ReviewsMarketplaceDB } from "@/lib/db/reviews.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -63,12 +63,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 1. Resolver tienda por slug para obtener tenantId + storeId
-    const store = await prisma.store.findUnique({
-      where: { slug: parsed.data.storeSlug },
-      select: { id: true, tenantId: true, isPublished: true, name: true },
-    });
-    if (!store || !store.isPublished) {
+    // 1. Resolver tienda — getBySlug filtra `isPublished: true` y cachea.
+    const store = await MarketplaceStoresDB.getBySlug(parsed.data.storeSlug);
+    if (!store) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
@@ -139,11 +136,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const store = await prisma.store.findUnique({
-      where: { slug: storeSlug },
-      select: { id: true, tenantId: true, isPublished: true, name: true },
-    });
-    if (!store || !store.isPublished) {
+    const store = await MarketplaceStoresDB.getBySlug(storeSlug);
+    if (!store) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 

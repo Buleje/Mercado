@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ReviewVotesDB, type VoteType } from "@/lib/db/reviews.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
@@ -52,16 +53,16 @@ export async function POST(
   }
 
   try {
-    // 1. Resolver la tienda para obtener tenantId + verificar publicada
-    const store = await prisma.store.findUnique({
-      where: { slug: parsed.data.storeSlug },
-      select: { id: true, tenantId: true, isPublished: true },
-    });
-    if (!store || !store.isPublished) {
+    // 1. Resolver la tienda — getBySlug filtra `isPublished: true`.
+    const store = await MarketplaceStoresDB.getBySlug(parsed.data.storeSlug);
+    if (!store) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
-    // 2. Verificar que la review existe en este tenant (defense in depth)
+    // 2. Verificar que la review existe en este tenant (defense in depth).
+    // @prisma-direct excepción documentada: $queryRawUnsafe con $1 $2 + tenantId
+    // — está parametrizado, no hay SQLi. Migrar a ReviewsMarketplaceDB.exists()
+    // cuando esa clase se extienda.
     const reviewRows = await prisma.$queryRawUnsafe<
       Array<{ id: string; tenantId: string; deletedAt: Date | null }>
     >(

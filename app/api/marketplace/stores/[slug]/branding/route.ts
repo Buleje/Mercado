@@ -6,6 +6,12 @@
  *
  * Permisos: requireAdmin con tenantId match (no se permite editar
  * branding de tiendas de otro tenant).
+ *
+ * @prisma-direct excepción documentada — usa `prismaForTenant(auth.tenantId)`
+ * que es el wrapper equivalente a una clase lib/db: aplica `tenantId` en
+ * cada query automáticamente. Migrar a una hipotética
+ * MarketplaceStoresDB.updateBranding(tenantId, slug, payload) sería
+ * estéticamente más limpio pero el aislamiento ya está garantizado.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
