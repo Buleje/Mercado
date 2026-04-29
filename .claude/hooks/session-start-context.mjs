@@ -93,6 +93,25 @@ if (evolutionLog?.evolutions?.length > 0) {
   lines.push(`**🧬 Ultima evolucion:** ${lastEvo.agent} — ${lastEvo.changes?.length ?? 0} cambios (${lastEvo.status})`);
 }
 
+// ── Improvement Radar (propuestas pendientes) ──────────────────
+const radarPath = join(projectRoot, ".claude/improvement-radar.md");
+if (existsSync(radarPath)) {
+  try {
+    const radar = readFileSync(radarPath, "utf8");
+    const pending = radar
+      .split("\n")
+      .filter((l) => l.startsWith("### [pending]"))
+      .slice(0, 5)
+      .map((l) => l.replace(/^### \[pending\] \d{4}-\d{2}-\d{2} — /, "  • "));
+    if (pending.length > 0) {
+      lines.push("");
+      lines.push(`**🎯 Improvement Radar (${pending.length} pending):**`);
+      pending.forEach((p) => lines.push(p));
+      lines.push("  → leé `.claude/improvement-radar.md` y proponé las top 3 al usuario.");
+    }
+  } catch {}
+}
+
 const additionalContext = lines.join("\n");
 
 // ── Output ──────────────────────────────────────────────────────

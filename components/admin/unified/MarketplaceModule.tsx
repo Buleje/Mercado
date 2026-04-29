@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ImageUpload from "@/components/admin/ImageUpload";
+import CategoryImageUploader from "@/components/admin/marketplace/CategoryImageUploader";
 
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
@@ -4721,6 +4722,11 @@ function OrdenTab() {
   const [success, setSuccess] = useState<string | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
+  // Imágenes por categoría
+  const [ownImages, setOwnImages] = useState<Record<string, string>>({});
+  const [globalImages, setGlobalImages] = useState<Record<string, string>>({});
+  const [initialOwnImages, setInitialOwnImages] = useState<Record<string, string>>({});
+
   // Drag state — usamos namespace "cat:N" o "prod:CAT:N" para evitar mezclar.
   const [dragCatIdx, setDragCatIdx] = useState<number | null>(null);
   const [dragOverCat, setDragOverCat] = useState<number | null>(null);
@@ -4731,10 +4737,11 @@ function OrdenTab() {
     setLoading(true);
     setError(null);
     try {
-      const [productsRes, catOrderRes, prodOrderRes] = await Promise.all([
+      const [productsRes, catOrderRes, prodOrderRes, imagesRes] = await Promise.all([
         fetch("/api/marketplace/stores/my/products"),
         fetch("/api/admin/marketplace/category-order"),
         fetch("/api/admin/marketplace/product-order"),
+        fetch("/api/admin/marketplace/category-images"),
       ]);
       const products: MarketplaceProduct[] = productsRes.ok ? await productsRes.json() : [];
       const catOrderJson = catOrderRes.ok
@@ -4743,6 +4750,23 @@ function OrdenTab() {
       const prodOrderJson = prodOrderRes.ok
         ? (await prodOrderRes.json()) as { byCategory: Record<string, string[]>; storeSlug: string | null }
         : { byCategory: {}, storeSlug: null };
+      // resolvedImages = own + global merged. Calculamos own y derivamos global.
+      const imagesJson = imagesRes.ok
+        ? ((await imagesRes.json()) as {
+            ownImages: Record<string, string>;
+            resolvedImages: Record<string, string>;
+            storeSlug: string | null;
+          })
+        : { ownImages: {}, resolvedImages: {}, storeSlug: null };
+      const own = imagesJson.ownImages ?? {};
+      // Global = resolved - own (lo que viene del default que NO sobrescribió la tienda)
+      const global: Record<string, string> = {};
+      for (const [k, v] of Object.entries(imagesJson.resolvedImages ?? {})) {
+        if (!own[k]) global[k] = v;
+      }
+      setOwnImages(own);
+      setInitialOwnImages(own);
+      setGlobalImages(global);
 
       // Agrupar productos por categoría
       const grouped = new Map<string, OrdenProductRow[]>();
@@ -4830,6 +4854,14 @@ function OrdenTab() {
       const initial = (initialProductOrder[cat] ?? []).join(",");
       if (current !== initial) return true;
     }
+    // Cambió alguna imagen propia (subida/borrada)?
+    const allKeys = new Set([
+      ...Object.keys(ownImages),
+      ...Object.keys(initialOwnImages),
+    ]);
+    for (const k of allKeys) {
+      if (ownImages[k] !== initialOwnImages[k]) return true;
+    }
     return false;
   })();
 
@@ -4908,7 +4940,19 @@ function OrdenTab() {
         byCategory[cat] = items.map((p) => p.id);
       }
 
-      const [catRes, prodRes] = await Promise.all([
+      // Diff de imágenes: incluye solo las que cambiaron (set o delete).
+      const imagesDiff: Record<string, string | null> = {};
+      const allImageKeys = new Set([
+        ...Object.keys(ownImages),
+        ...Object.keys(initialOwnImages),
+      ]);
+      for (const k of allImageKeys) {
+        if (ownImages[k] !== initialOwnImages[k]) {
+          imagesDiff[k] = ownImages[k] ?? null;
+        }
+      }
+
+      const [catRes, prodRes, imgRes] = await Promise.all([
         fetch("/api/admin/marketplace/category-order", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -4919,6 +4963,13 @@ function OrdenTab() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ byCategory }),
         }),
+        Object.keys(imagesDiff).length > 0
+          ? fetch("/api/admin/marketplace/category-images", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ images: imagesDiff }),
+            })
+          : Promise.resolve(new Response(JSON.stringify({ ok: true }))),
       ]);
 
       if (!catRes.ok) {
@@ -4929,10 +4980,15 @@ function OrdenTab() {
         const j = await prodRes.json().catch(() => ({}));
         throw new Error(j.error ?? "save_failed");
       }
+      if (!imgRes.ok) {
+        const j = await imgRes.json().catch(() => ({}));
+        throw new Error(j.error ?? "save_failed");
+      }
 
       setInitialCatOrder(rows.map((r) => r.name));
       setInitialProductOrder(byCategory);
-      setSuccess("Orden guardado · se aplicará al storefront en segundos");
+      setInitialOwnImages(ownImages);
+      setSuccess("Orden e imágenes guardados · se aplicará al storefront en segundos");
       setTimeout(() => setSuccess(null), 4000);
     } catch (e) {
       setError(e instanceof Error && e.message === "no_store_for_tenant"
@@ -5113,6 +5169,21 @@ function OrdenTab() {
                   )}>
                     {i + 1}
                   </span>
+
+                  {/* Imagen de la categoría (subida por el dueño o default global) */}
+                  <CategoryImageUploader
+                    categoryName={row.name}
+                    value={ownImages[row.name] ?? null}
+                    defaultValue={globalImages[row.name] ?? null}
+                    onChange={(url) =>
+                      setOwnImages((prev) => {
+                        const next = { ...prev };
+                        if (url) next[row.name] = url;
+                        else delete next[row.name];
+                        return next;
+                      })
+                    }
+                  />
 
                   {/* Nombre + count */}
                   <div className="flex-1 min-w-0">

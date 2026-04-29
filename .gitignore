@@ -146,6 +146,7 @@ build-task003.log
 
 # tsc debounce lock (per-machine runtime)
 /.claude/.tsc-debounce.lock
+/.claude/.screenshot-debounce.lock
 
 # Local MCP server config (per-machine)
 /.mcp.json

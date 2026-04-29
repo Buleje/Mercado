@@ -114,7 +114,9 @@ try {
       timeout: 300_000,
       env: {
         ...process.env,
-        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=12288`.trim(),
+        // 2026-04-28: bajado de 12288→4096. WSL tope 10GB; con next-server (3GB)
+        // + MCPs (2GB) + claude, 12GB causaba OOM kill y reinicio del terminal.
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=4096`.trim(),
       },
     },
   );

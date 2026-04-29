@@ -65,7 +65,7 @@ function notifyLoginWhatsApp(user: string, ip: string): void {
   if (!phone) return;
   const now = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
   const msg = `🔐 *Alerta de seguridad — Buleje*\n\nSe inició sesión como SuperAdmin.\n👤 Usuario: ${user}\n🌐 IP: ${ip}\n🕐 Fecha: ${now}\n\nSi no fuiste tú, cambia tu contraseña de inmediato.`;
-  sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "superadmin-login-alert" }).catch(() => {});
+  sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "superadmin-login-alert" }).catch((err) => logger.error("[superadmin/auth] login alert failed", { error: String(err) }));
 }
 
 // POST /api/superadmin/auth  – login { username, password } or verify 2FA { challengeId, code }
@@ -75,8 +75,10 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   // ── Lockout check ─────────────────────────────────────────────────────────
+  // BSM_QA_NO_LOCKOUT=1 → bypass del lockout (solo dev/QA, NUNCA en prod).
+  const qaBypass = process.env.BSM_QA_NO_LOCKOUT === "1" && process.env.NODE_ENV !== "production";
   const ip = getLockoutKey(req);
-  const lockout = checkLockout(ip);
+  const lockout = qaBypass ? { locked: false, remainingMinutes: 0 } : checkLockout(ip);
   if (lockout.locked) {
     logActivity("login_locked", "superadmin", `IP bloqueada por ${lockout.remainingMinutes} min: ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     return NextResponse.json(

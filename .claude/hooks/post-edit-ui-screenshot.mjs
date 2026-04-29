@@ -75,6 +75,29 @@ process.stdin.on("end", () => {
     // Skippable si BSM_HOOKS_DEBUG=skip-screenshot
     if (process.env.BSM_HOOKS_SKIP_SCREENSHOT === "1") return process.exit(0);
 
+    // ── Debounce 5s — evita 5 chromiums paralelos en bursts de edits ──
+    // (mismo patrón que post-tool-tsc.mjs)
+    const lockPath = path.join(process.cwd(), ".claude/.screenshot-debounce.lock");
+    const myTs = String(Date.now());
+    try {
+      fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+      fs.writeFileSync(lockPath, myTs, "utf8");
+    } catch { return process.exit(0); }
+
+    // Sleep sync 5s
+    const sleepEnd = Date.now() + 5000;
+    while (Date.now() < sleepEnd) {
+      try { spawnSync("sh", ["-c", "sleep 0.5"], { timeout: 600 }); } catch {}
+      if (Date.now() >= sleepEnd) break;
+    }
+
+    let currentTs = "";
+    try { currentTs = fs.existsSync(lockPath) ? fs.readFileSync(lockPath, "utf8").trim() : ""; } catch {}
+    if (currentTs !== myTs) {
+      // Edit más nuevo tomó el slot → skip
+      return process.exit(0);
+    }
+
     // Si chromium binary no existe, sólo emitir hint
     if (!fs.existsSync(CHROMIUM)) {
       process.stderr.write(

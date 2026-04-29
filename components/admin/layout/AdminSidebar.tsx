@@ -1011,25 +1011,26 @@ export function AdminSidebar({
           <Link
             href="/marketplace"
             target="_blank"
-            title={effectiveCompact ? "Marketplace" : undefined}
+            rel="noopener noreferrer"
+            title={effectiveCompact ? "Ver marketplace público (nueva pestaña)" : "Abre el marketplace público en una pestaña nueva"}
             className={cn(
               "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)]/50 dark:hover:bg-[var(--accent-muted)] transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
-            <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Marketplace"}
+            <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver marketplace ↗"}
           </Link>
           <Link
             href={storeHref}
             target="_blank"
             rel="noopener noreferrer"
-            title={effectiveCompact ? "Mi Tienda" : undefined}
+            title={effectiveCompact ? "Ver mi tienda (nueva pestaña)" : "Abre tu storefront público en una pestaña nueva"}
             className={cn(
               "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)]/50 dark:hover:bg-[var(--accent-muted)] transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
-            <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Mi Tienda"}
+            <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver mi tienda ↗"}
           </Link>
 
           {/* ── Compact mode toggle (hidden when auto-collapsed on narrow screens) ── */}
