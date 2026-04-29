@@ -31,20 +31,21 @@ export type PublicPlatformBrand = {
   legal: { legalName: string; ruc: string; termsUrl: string; privacyUrl: string; cookiesUrl: string };
 };
 
+const BROADCAST_NAME = "buleje-platform-brand";
+
 let _cache: PublicPlatformBrand | null = null;
 let _inflight: Promise<PublicPlatformBrand | null> | null = null;
 
-async function fetchBrand(): Promise<PublicPlatformBrand | null> {
-  if (_cache) return _cache;
+async function fetchBrand(force = false): Promise<PublicPlatformBrand | null> {
+  if (_cache && !force) return _cache;
   if (_inflight) return _inflight;
-  _inflight = fetch("/api/platform-brand")
+  _inflight = fetch("/api/platform-brand", force ? { cache: "no-store" } : undefined)
     .then((r) => (r.ok ? r.json() : null))
     .then((d: PublicPlatformBrand | null) => {
       _cache = d;
       return d;
     })
     .catch((err) => {
-      // eslint-disable-next-line no-console
       console.warn("[usePlatformBrand]", err);
       return null;
     })
@@ -52,9 +53,25 @@ async function fetchBrand(): Promise<PublicPlatformBrand | null> {
   return _inflight;
 }
 
-/** Cleat cache global (útil tras guardar en superadmin). */
+/** Vacía el cache global. Usar tras guardar la marca desde superadmin. */
 export function clearPlatformBrandCache() {
   _cache = null;
+}
+
+/**
+ * Notifica a todas las tabs/pestañas que la marca cambió.
+ * El hook escucha este broadcast y refetcha automáticamente.
+ * Llamar después de guardar exitosamente en /superadmin/marca.
+ */
+export function broadcastPlatformBrandUpdate() {
+  if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+  try {
+    const ch = new BroadcastChannel(BROADCAST_NAME);
+    ch.postMessage({ type: "updated", at: Date.now() });
+    ch.close();
+  } catch {
+    /* silent — fallback nada */
+  }
 }
 
 export function usePlatformBrand() {
@@ -69,7 +86,25 @@ export function usePlatformBrand() {
         setLoading(false);
       }
     });
-    return () => { cancelled = true; };
+
+    // Listener: cuando otra tab guarda la marca, refetch en esta tab.
+    let ch: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        ch = new BroadcastChannel(BROADCAST_NAME);
+        ch.onmessage = () => {
+          clearPlatformBrandCache();
+          fetchBrand(true).then((d) => {
+            if (!cancelled) setBrand(d);
+          });
+        };
+      } catch { /* fallback nada */ }
+    }
+
+    return () => {
+      cancelled = true;
+      if (ch) ch.close();
+    };
   }, []);
 
   return { brand, loading };

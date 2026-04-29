@@ -26,11 +26,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Save, Sparkles, Image as ImageIcon, Palette, Type, Phone,
   Hash, Search, Scale, CalendarClock, CheckCircle2, AlertCircle,
-  Globe, Eye, EyeOff,
+  Globe, Eye, EyeOff, ExternalLink, MessageCircle, Mail, MapPin,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
+import { broadcastPlatformBrandUpdate, clearPlatformBrandCache } from "@/lib/use-platform-brand";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types (espejo de lib/platform-brand.ts)
@@ -108,9 +109,12 @@ export default function SuperadminMarcaPage() {
       } else {
         const json = await res.json();
         if (json.brand) setBrand(json.brand);
-        setSaved({ kind: "ok", text: "Marca actualizada" });
+        setSaved({ kind: "ok", text: "Marca actualizada · cambios visibles en el sitio" });
         setDirty(false);
-        setTimeout(() => setSaved(null), 2500);
+        // Notificar a todas las tabs y limpiar el cache del hook usePlatformBrand
+        clearPlatformBrandCache();
+        broadcastPlatformBrandUpdate();
+        setTimeout(() => setSaved(null), 4000);
       }
     } catch (e) {
       setSaved({ kind: "err", text: `Error de red: ${(e as Error).message}` });
@@ -183,6 +187,15 @@ export default function SuperadminMarcaPage() {
               {brand.eventMode.active && (
                 <StatPill label={`Evento: ${brand.eventMode.name || "activo"}`} value="ON" accent="warning" />
               )}
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-colors"
+                title="Abrir el sitio en una nueva pestaña para verificar los cambios"
+              >
+                <ExternalLink className="h-4 w-4" /> Ver en el sitio
+              </a>
             </div>
           </div>
         </div>
@@ -237,15 +250,18 @@ export default function SuperadminMarcaPage() {
               </div>
             </div>
 
+            {/* Live preview de cómo se ve el footer/contact en el sitio */}
+            <LivePreviewCard brand={brand} />
+
             {/* Tip */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
                 Cómo funciona
               </p>
               <p className="text-xs text-[var(--text-secondary)] leading-snug">
-                Cualquier página puede consumir esta marca con el hook{" "}
-                <code className="text-[10px] bg-[var(--surface-sunken)] px-1 rounded">usePlatformBrand()</code>.
-                El cache CDN tarda hasta 5 min en propagar.
+                Cada cambio que guardás se propaga al instante a las pestañas
+                abiertas vía <code className="text-[10px] bg-[var(--surface-sunken)] px-1 rounded">BroadcastChannel</code>.
+                Los visitantes nuevos ven los cambios en máx. 5 min (cache CDN).
               </p>
             </div>
           </aside>
@@ -536,10 +552,10 @@ function ContactSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p:
           <TextInput type="email" value={brand.contact.email} onChange={(e) => onPatch({ email: e.target.value })} placeholder="hola@buleje.com" />
         </Field>
         <Field label="Teléfono">
-          <TextInput type="tel" value={brand.contact.phone} onChange={(e) => onPatch({ phone: e.target.value })} placeholder="+51 961 234 567" />
+          <TextInput type="tel" value={brand.contact.phone} onChange={(e) => onPatch({ phone: e.target.value })} placeholder="+51 916 409 675" />
         </Field>
         <Field label="WhatsApp" hint="Soporte chat por WhatsApp">
-          <TextInput type="tel" value={brand.contact.whatsapp} onChange={(e) => onPatch({ whatsapp: e.target.value })} placeholder="+51 961 234 567" />
+          <TextInput type="tel" value={brand.contact.whatsapp} onChange={(e) => onPatch({ whatsapp: e.target.value })} placeholder="+51 916 409 675" />
         </Field>
         <Field label="Horarios de soporte">
           <TextInput value={brand.contact.supportHours} onChange={(e) => onPatch({ supportHours: e.target.value })} placeholder="Lun a Sáb · 8:00 a 22:00" />
@@ -730,5 +746,95 @@ function EventSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: P
         </Field>
       </div>
     </SectionShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live preview — mini-tarjeta del footer con los datos actuales
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
+  const phone = brand.contact.phone || "—";
+  const wa = brand.contact.whatsapp || "—";
+  const email = brand.contact.email || "—";
+  const address = brand.contact.address || "—";
+  const initial = brand.identity.name.charAt(0).toUpperCase() || "B";
+
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      <div className="px-3.5 py-2 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+          Vista previa en vivo
+        </p>
+        <p className="text-[11px] text-[var(--text-tertiary)] leading-tight">
+          Cómo se ve en el footer del sitio
+        </p>
+      </div>
+      <div className="p-3.5 space-y-3">
+        {/* Brand row */}
+        <div className="flex items-center gap-2.5">
+          {brand.logos.logoLight ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brand.logos.logoLight}
+              alt={`Logo ${brand.identity.name}`}
+              className="h-8 w-auto max-w-[100px] object-contain"
+            />
+          ) : (
+            <span
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white font-display font-extrabold text-base"
+              style={{ backgroundColor: brand.colors.primary }}
+            >
+              {initial}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+              {brand.identity.name || "Sin nombre"}
+            </p>
+            <p className="text-[10px] text-[var(--text-tertiary)] truncate">
+              {brand.identity.tagline || "Sin tagline"}
+            </p>
+          </div>
+        </div>
+
+        {/* Contact rows */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <Phone className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
+            <span className="font-mono truncate">{phone}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <MessageCircle className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
+            <span className="font-mono truncate">{wa}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <Mail className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
+            <span className="truncate">{email}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
+            <span className="truncate">{address}</span>
+          </div>
+        </div>
+
+        {/* Color swatches */}
+        <div className="pt-2 border-t border-[var(--rule-soft)]">
+          <p className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+            Paleta
+          </p>
+          <div className="flex items-center gap-1">
+            {(["primary", "secondary", "accent", "danger", "success"] as const).map((k) => (
+              <span
+                key={k}
+                className="h-6 w-6 rounded border border-[var(--rule-base)]"
+                style={{ backgroundColor: brand.colors[k] }}
+                title={`${k}: ${brand.colors[k]}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
