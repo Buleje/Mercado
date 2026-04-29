@@ -11,6 +11,13 @@ import { logger } from "@/lib/logger";
  * localStorage). El front lo usa en checkout para mostrar el descuento
  * implícito que se aplicará.
  *
+ * @cross-tenant intentional (ADR-082)
+ * SECURITY: este endpoint cuenta pedidos del cliente CROSS-TENANT por
+ * diseño — el programa marketplace recompensa fidelidad GLOBAL del
+ * cliente al ecosistema Buleje, no a una tienda específica. No filtra
+ * por tenantId del request. Devuelve solo agregados (count + tier);
+ * NO retorna PII (name, total spent, items).
+ *
  * Tiers:
  *   - 5–9 pedidos   → "frecuente" (-5%)
  *   - 10–24 pedidos → "vip"       (-7%)

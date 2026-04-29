@@ -17,7 +17,9 @@ const PostSchema = z.object({
   priceRating: z.int().min(1).max(5).optional(),
   deliveryRating: z.int().min(1).max(5).optional(),
   photosJson: z.string().optional(),
-  customerPhone: z.string().min(1),
+  // HOTFIX-A3 (2026-04-29): customerPhone removido del body — el phone
+  // viene del JWT customer-session (HMAC verified). El cliente NO puede
+  // spoofear el phone de otro customer.
   customerName: z.string().min(1).max(100),
 });
 
@@ -125,6 +127,26 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
+    // SECURITY (HOTFIX-A3, 2026-04-29): exige customer-session firmada.
+    // Antes: cualquiera dejaba review con phone de otro cliente (vector
+    // de impersonation publica). Ahora el phone proviene del JWT customer
+    // verificado por HMAC, no del body.
+    const { getCustomerPayload, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    if (!sessionToken) {
+      return NextResponse.json(
+        { error: "Iniciá sesión para dejar una reseña" },
+        { status: 401 },
+      );
+    }
+    const sessionPayload = await getCustomerPayload(sessionToken);
+    if (!sessionPayload?.customerId) {
+      return NextResponse.json(
+        { error: "Sesión inválida o expirada" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json().catch((err) => { logger.error("[marketplace/products/[id]/reviews-detailed] parse JSON body failed", { error: String(err) }); return null; });
     if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = PostSchema.safeParse(body);
@@ -132,7 +154,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const { customerPhone, customerName, ...reviewFields } = parsed.data;
+    // SECURITY (HOTFIX-A3): el phone NO viene del body — viene del JWT customer.
+    // El customerName del body se mantiene como display name, pero el phone
+    // (que define identidad) es del session token verificado.
+    const customerPhone = sessionPayload.customerId;
+    const { customerName, ...reviewFields } = parsed.data;
 
     // Verificar si el cliente tiene una orden con este producto
     const existingOrder = await prisma.order.findFirst({

@@ -61,6 +61,17 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// HOTFIX-A3 (2026-04-29): el endpoint ahora exige customer-session firmada.
+// Mockeamos getCustomerPayload para devolver un customerId valido — el phone
+// del review viene del JWT, no del body.
+const { mockGetCustomerPayload } = vi.hoisted(() => ({
+  mockGetCustomerPayload: vi.fn(),
+}));
+vi.mock("@/lib/auth/customer-session", () => ({
+  getCustomerPayload: mockGetCustomerPayload,
+  CUSTOMER_SESSION: { COOKIE_NAME: "buleje-customer-sess" },
+}));
+
 import { GET, POST } from "@/app/api/marketplace/products/[id]/reviews-detailed/route";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -95,10 +106,16 @@ function makeGetReq(qs = "", tenantId = "test-tenant") {
   });
 }
 
-function makePostReq(body: unknown) {
+function makePostReq(body: unknown, withSession = true) {
+  // HOTFIX-A3: cookie de customer-session presente por default. Cuando
+  // se quiere probar el rechazo 401 sin sesion, pasar withSession=false.
   return new NextRequest("https://host/api/marketplace/products/42/reviews-detailed", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-tenant-id": "test-tenant" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-tenant-id": "test-tenant",
+      ...(withSession ? { cookie: "buleje-customer-sess=fake-token" } : {}),
+    },
     body: JSON.stringify(body),
   });
 }
@@ -107,7 +124,6 @@ const VALID_POST = {
   text: "Muy buen producto",
   rating: 5,
   qualityRating: 4,
-  customerPhone: "999888777",
   customerName: "María",
 };
 
@@ -207,6 +223,14 @@ describe("GET /api/marketplace/products/[id]/reviews-detailed", () => {
 describe("POST /api/marketplace/products/[id]/reviews-detailed", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // HOTFIX-A3: customer-session valida por default → customerId="999888777".
+    mockGetCustomerPayload.mockResolvedValue({
+      customerId: "999888777",
+      email: "maria@test.com",
+      name: "María",
+      tenantId: "test-tenant",
+      provider: "email",
+    });
     mockReviewCreate.mockResolvedValue({
       id: "rev-new", name: "María", text: "Muy buen producto",
       rating: 5, qualityRating: 4, priceRating: null, deliveryRating: null,
@@ -234,10 +258,16 @@ describe("POST /api/marketplace/products/[id]/reviews-detailed", () => {
     expect(res.status).toBe(400);
   });
 
-  it("POST sin customerPhone → 400", async () => {
-    const { customerPhone: _, ...sinPhone } = VALID_POST;
-    const res = await POST(makePostReq(sinPhone), makeParams());
-    expect(res.status).toBe(400);
+  it("HOTFIX-A3: POST sin customer-session → 401", async () => {
+    // Sin cookie → handler rechaza antes del schema parse.
+    const res = await POST(makePostReq(VALID_POST, false), makeParams());
+    expect(res.status).toBe(401);
+  });
+
+  it("HOTFIX-A3: customer-session inválida → 401", async () => {
+    mockGetCustomerPayload.mockResolvedValueOnce(null);
+    const res = await POST(makePostReq(VALID_POST), makeParams());
+    expect(res.status).toBe(401);
   });
 
   it("customer con orden previa → verified=true en el create", async () => {
@@ -261,6 +291,15 @@ describe("POST /api/marketplace/products/[id]/reviews-detailed", () => {
     await POST(makePostReq(VALID_POST), makeParams());
     expect(mockReviewCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ tenantId: "test-tenant" }) })
+    );
+  });
+
+  it("HOTFIX-A3: el phone del Review viene del JWT (no del body)", async () => {
+    mockOrderFindFirst.mockResolvedValue(null);
+    // VALID_POST ya NO trae customerPhone. El handler debe usar el customerId del JWT.
+    await POST(makePostReq(VALID_POST), makeParams());
+    expect(mockReviewCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ phone: "999888777" }) })
     );
   });
 });

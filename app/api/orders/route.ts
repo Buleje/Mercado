@@ -204,10 +204,25 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
   // ── Idempotency: return existing order if same key is reused ────────────────
   // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.
+  // HOTFIX-M2 (2026-04-29): scoped tambien por phone (cuando viene en body)
+  // para evitar que dos clientes del MISMO tenant con mismo idempotency key
+  // (ej. UUID fijado por bug en SDK) colisionen y un cliente reciba la orden
+  // de otro. Si no hay phone en body, fallback al check legacy (solo tenantId).
   const idempotencyKey = req.headers.get("x-idempotency-key")?.slice(0, 128) || undefined;
+  // Peek body sin consumir — body se vuelve a leer abajo. Clonamos req.
+  let phoneFromBody: string | undefined;
+  if (idempotencyKey) {
+    try {
+      const peek = await req.clone().json();
+      const ph = peek?.customer?.phone;
+      if (typeof ph === "string" && ph.length >= 6) phoneFromBody = ph.replace(/\D/g, "");
+    } catch { /* body invalido — el zod parse abajo lo rechaza */ }
+  }
   if (idempotencyKey) {
     const existing = await prismaForTenant(tenantId).order.findFirst({
-      where: { idempotencyKey, tenantId },
+      where: phoneFromBody
+        ? { idempotencyKey, tenantId, customerPhone: phoneFromBody }
+        : { idempotencyKey, tenantId },
     }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
     if (existing) {
       // Duplicate request — return the already-created order with 200

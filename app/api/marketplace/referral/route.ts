@@ -5,7 +5,13 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
 // GET /api/marketplace/referral?phone=...
-// Returns referral code + stats for a customer
+// Returns referral code + stats for a customer.
+//
+// @cross-tenant intentional (ADR-082)
+// SECURITY: el codigo referral es global del cliente (ecosistema Buleje),
+// y `referredCount` cuenta CROSS-TENANT — un cliente puede haber referido
+// gente que compró en bodegas distintas. Solo retorna agregados (count,
+// totalEarned, shareUrl); NO retorna PII (nombres de referidos).
 export async function GET(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "GENEROUS", "referral-stats");
   if (rateLimitResponse) return rateLimitResponse;
