@@ -37,15 +37,15 @@ export default function GiftCardsFAQ() {
     <section className="border-b border-gray-100 bg-white py-14 dark:border-gray-800 dark:bg-gray-900">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <header className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
             Preguntas frecuentes
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
             Todo lo que queres saber antes de regalar.
           </p>
         </header>
 
-        <ul className="divide-y divide-gray-200 rounded-2xl border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+        <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-soft)]">
           {FAQS.map((item, idx) => {
             const isOpen = openIdx === idx;
             return (
@@ -53,22 +53,22 @@ export default function GiftCardsFAQ() {
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--surface-sunken)]"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
                     {item.q}
                   </span>
                   <ChevronDown
                     className={[
-                      "h-4 w-4 shrink-0 text-gray-500 transition-transform dark:text-gray-400",
+                      "h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-300",
                       isOpen ? "rotate-180" : "",
                     ].join(" ")}
                     aria-hidden="true"
                   />
                 </button>
                 {isOpen && (
-                  <div className="px-5 pb-4 text-sm text-gray-600 dark:text-gray-300">
+                  <div className="px-5 pb-4 text-sm text-[var(--text-secondary)]">
                     {item.a}
                   </div>
                 )}

@@ -18,14 +18,14 @@ interface PolicyCardProps {
 
 function PolicyCard({ icon, title, description }: PolicyCardProps) {
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-      <span className="text-gray-400 dark:text-gray-500" aria-hidden>
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+      <span className="text-[var(--text-tertiary)]" aria-hidden>
         {icon}
       </span>
-      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+      <h3 className="text-sm font-bold text-[var(--text-primary)]">
         {title}
       </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
         {description}
       </p>
     </div>
@@ -37,12 +37,12 @@ export default function StorePoliciesBlock() {
     <section aria-labelledby="store-policies-heading" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
           Políticas
         </p>
         <h2
           id="store-policies-heading"
-          className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+          className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]"
         >
           Cómo compramos
         </h2>
