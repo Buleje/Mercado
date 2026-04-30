@@ -110,24 +110,24 @@ export default function QuickAddDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-950"
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-xl"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft)] px-5 py-4">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Agregar al carrito
               </h2>
               <button
                 ref={closeButtonRef}
                 onClick={close}
                 aria-label="Cerrar"
-                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                className="rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 
             <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
-              <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900">
+              <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
                 {product.image ? (
                   <Image
                     src={product.image}
@@ -163,11 +163,11 @@ export default function QuickAddDrawer() {
                 {/* En la tienda individual no hay PDP — el quick-view
                     contiene toda la info necesaria. Mostramos el nombre como
                     heading no enlazable. */}
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
                   {product.name}
                 </h3>
                 {product.category && (
-                  <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">
+                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                     {product.category}
                     {product.unit ? ` · ${product.unit}` : ""}
                   </span>
@@ -175,17 +175,17 @@ export default function QuickAddDrawer() {
               </div>
 
               {product.description && (
-                <p className="mt-3 text-[length:var(--ts-sm)] leading-relaxed text-gray-600 dark:text-gray-300">
+                <p className="mt-3 text-[length:var(--ts-sm)] leading-relaxed text-[var(--text-secondary)]">
                   {product.description}
                 </p>
               )}
 
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                <span className="text-xl font-bold text-[var(--text-primary)]">
                   S/ {product.price.toFixed(2)}
                 </span>
                 {product.unit && (
-                  <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">
+                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                     / {product.unit}
                   </span>
                 )}
@@ -198,21 +198,21 @@ export default function QuickAddDrawer() {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-gray-100 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-950">
+            <div className="shrink-0 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-800">
+                <div className="inline-flex items-center rounded-xl border border-[var(--rule-soft)]">
                   <button
                     type="button"
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
                     disabled={qty <= 1 || outOfStock}
                     aria-label="Disminuir cantidad"
-                    className="flex h-10 w-10 items-center justify-center text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-100"
+                    className="flex h-10 w-10 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Minus className="h-4 w-4" aria-hidden="true" />
                   </button>
                   <span
                     aria-live="polite"
-                    className="min-w-[2.5rem] text-center text-sm font-semibold text-gray-900 dark:text-gray-100"
+                    className="min-w-[2.5rem] text-center text-sm font-semibold text-[var(--text-primary)]"
                   >
                     {qty}
                   </span>
@@ -221,17 +221,17 @@ export default function QuickAddDrawer() {
                     onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
                     disabled={qty >= maxQty || outOfStock}
                     aria-label="Aumentar cantidad"
-                    className="flex h-10 w-10 items-center justify-center text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-100"
+                    className="flex h-10 w-10 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Plus className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <div className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                     Subtotal
                   </div>
-                  <div className="text-base font-bold text-gray-900 dark:text-gray-100">
+                  <div className="text-base font-bold text-[var(--text-primary)]">
                     S/ {(product.price * qty).toFixed(2)}
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export default function QuickAddDrawer() {
                 type="button"
                 onClick={handleAdd}
                 disabled={outOfStock || adding}
-                className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gray-900 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
+                className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--text-primary)] text-sm font-semibold text-[var(--surface-canvas)] transition-all hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ShoppingCart className="h-4 w-4" aria-hidden="true" />
                 {outOfStock
