@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     const data = await withDbRetry(() => PurchasesDB.getAll(auth.tenantId));
     return NextResponse.json(data);
   } catch (e) {
-    console.error("[purchases] GET error:", e);
+    logger.error("[purchases] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -74,7 +74,10 @@ export async function POST(req: NextRequest) {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + days);
       // Verificar que no exista ya un Payable para esta OC
-      const existingPayable = await prisma.payable.findFirst({ where: { purchaseOrderId: id } }).catch(() => null);
+      const existingPayable = await prisma.payable.findFirst({ where: { purchaseOrderId: id } }).catch((err) => {
+        logger.warn("[purchases] payable lookup failed", { id, err: String(err) });
+        return null;
+      });
       if (existingPayable) {
         logger.warn("[purchases] Payable ya existe para OC — omitiendo duplicado", { purchaseOrderId: id });
       } else {
@@ -90,7 +93,7 @@ export async function POST(req: NextRequest) {
         dueDate: dueDate.toISOString(),
         payments: [],
         createdAt: now,
-      }).catch((e) => console.error("[purchases] Error creando payable:", e));
+      }).catch((e) => logger.error("[purchases] Error creando payable", { err: e instanceof Error ? e.message : String(e) }));
       logAudit({ req, action: "CREATE", entity: "Purchase", entityId: id, detail: `Payable auto-generado OC ${id}, S/${total.toFixed(2)}, vence en ${days} días` });
       } // end else (no duplicado)
     }
@@ -100,12 +103,12 @@ export async function POST(req: NextRequest) {
       prisma.product.update({
         where: { id: item.productId },
         data: { costPrice: item.unitCost },
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[purchases] costPrice update failed", { productId: item.productId, err: String(err) }));
     }
 
     return NextResponse.json(po, { status: 201 });
   } catch (e) {
-    console.error("[purchases] POST error:", e);
+    logger.error("[purchases] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al crear orden de compra" }, { status: 500 });
   }
 }

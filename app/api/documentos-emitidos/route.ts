@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -231,7 +232,7 @@ export async function GET(req: NextRequest) {
       kpis: { boletasMes, facturasMes, totalFacturado, docsHoy },
     });
   } catch (e) {
-    console.error("[documentos-emitidos] GET error:", e);
+    logger.error("[documentos-emitidos] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({
       documentos: [],
       kpis: { boletasMes: 0, facturasMes: 0, totalFacturado: 0, docsHoy: 0 },

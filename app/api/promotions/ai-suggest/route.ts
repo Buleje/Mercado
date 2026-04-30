@@ -114,7 +114,7 @@ Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
     });
 
     if (!res.ok) {
-      console.error("[promotions-ai-suggest] router error:", res.error);
+      logger.error("[promotions-ai-suggest] router error", { err: String(res.error) });
       return NextResponse.json({ error: res.error ?? "Error IA" }, { status: 502 });
     }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!po) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     return NextResponse.json(po);
   } catch (e) {
-    console.error("[purchases/id] GET error:", e);
+    logger.error("[purchases/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -63,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
 
       try {
+        // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via auth guard arriba.
         await prisma.$transaction(async (tx) => {
           for (const item of updated.items) {
             const product = await tx.product.findUnique({ where: { id: item.productId } });
@@ -124,18 +126,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           await PurchasesDB.update(id, { notes: newNotes } as Record<string, unknown>);
         }
       } catch (err) {
-        console.error("Transaction failed:", err);
+        logger.error("[purchases/id] transaction failed", { err: err instanceof Error ? err.message : String(err) });
         return NextResponse.json({ error: "Fallo de transacción al actualizar stock" }, { status: 500 });
       }
     }
 
     if (statusChanged) {
-       logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch(() => {});
+       logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
 
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[purchases/id] PATCH error:", e);
+    logger.error("[purchases/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -147,10 +149,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   try {
     await PurchasesDB.delete(id);
-    logActivity("Eliminar", "compra", `Orden de compra ${id.slice(-6)} eliminada`, id, auth.username).catch(() => {});
+    logActivity("Eliminar", "compra", `Orden de compra ${id.slice(-6)} eliminada`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
-    console.error("[purchases/id] DELETE error:", e);
+    logger.error("[purchases/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

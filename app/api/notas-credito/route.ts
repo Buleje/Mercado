@@ -3,6 +3,7 @@ import { z } from "zod";
 import { NotasCreditoDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 const CreateNotaCreditoSchema = z.object({
   orderId: z.string().optional(),
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(data);
   } catch (e) {
-    console.error("[notas-credito] GET error:", e);
+    logger.error("[notas-credito] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(nota, { status: 201 });
   } catch (e) {
-    console.error("[notas-credito] POST error:", e);
+    logger.error("[notas-credito] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

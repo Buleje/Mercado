@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { catalogPeru, CATALOG_CATEGORIES } from "@/data/catalog-peru";
+import { logger } from "@/lib/logger";
 
 // ── Validación con safeParse (nunca .parse()) ───────────────────────────────
 
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[import-catalog] Error al importar:", err);
+    logger.error("[import-catalog] Error al importar", { err: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { error: "Error al importar productos. Intenta de nuevo." },
       { status: 500 },

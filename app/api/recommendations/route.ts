@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/recommendations?phone=XXXXXXXXX&limit=8
@@ -159,7 +160,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(results);
   } catch (e) {
-    console.error("[recommendations] error:", e);
+    logger.error("[recommendations] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

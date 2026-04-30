@@ -3,6 +3,7 @@ import { z } from "zod";
 import { NotasCreditoDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 const UpdateNotaCreditoSchema = z.object({
   status: z.enum(["BORRADOR", "EMITIDA", "ANULADA"]),
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     }
     return NextResponse.json(nota);
   } catch (e) {
-    console.error("[notas-credito] GET by id error:", e);
+    logger.error("[notas-credito] GET by id error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -56,7 +57,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[notas-credito] PATCH error:", e);
+    logger.error("[notas-credito] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
