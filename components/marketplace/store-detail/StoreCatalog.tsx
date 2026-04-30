@@ -55,7 +55,7 @@ function ProductListRow({
       href={href}
       className="flex gap-4 items-center p-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
     >
-      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
         {product.productImage ? (
           <Image
             src={product.productImage}
@@ -65,7 +65,7 @@ function ProductListRow({
             className="object-cover w-full h-full"
           />
         ) : (
-          <span className="text-xs font-bold text-[var(--text-tertiary)] text-center leading-tight px-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center leading-tight px-1">
             {product.productCategory}
           </span>
         )}
@@ -75,7 +75,7 @@ function ProductListRow({
           {product.productName}
         </p>
         {product.productUnit && (
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
             {product.productUnit}
           </p>
         )}
@@ -155,7 +155,7 @@ export default function StoreCatalog({
     >
       {/* Header */}
       <div>
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-2">
+        <p className="text-sm font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
           Catálogo
         </p>
         <h2

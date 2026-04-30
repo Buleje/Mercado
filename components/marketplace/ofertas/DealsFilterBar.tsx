@@ -74,7 +74,8 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
                     onClick={() => onFiltersChange({ ...filters, category: tab.id })}
                     className={cn(
                       "shrink-0 inline-flex items-center rounded-full px-4 py-2 text-[length:var(--ts-sm)] font-bold whitespace-nowrap transition-colors",
-                      "border",
+                      // Visual QA P1 fix 2026-04-30: border-2 explicito segun bsm-typography-rules
+                      "border-2",
                       active
                         ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
                         : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
@@ -100,7 +101,7 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
                 onChange={(e) =>
                   onFiltersChange({ ...filters, sort: e.target.value as DealSortKey })
                 }
-                className="appearance-none rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-3 pr-9 py-2 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors cursor-pointer"
+                className="appearance-none h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-3 pr-9 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors cursor-pointer"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>

@@ -19,7 +19,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Store } from "@buleje/design-system/icons";
+import { ArrowUpRight, Store, Tag } from "@buleje/design-system/icons";
 import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import SectionDivider from "@/components/marketplace/home/SectionDivider";
@@ -151,12 +151,19 @@ function EmptyState() {
   return (
     <section className="max-w-3xl mx-auto px-4 py-20">
       <div className="text-center">
-        <div className="text-6xl mb-4" aria-hidden>🛒</div>
+        {/* Visual QA P1 fix 2026-04-30: emoji 🛒 reemplazado por icono Lucide
+            del DS (regla bsm-design-system: no emojis decorativos). */}
+        <div
+          aria-hidden
+          className="mx-auto mb-5 inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
+        >
+          <Tag className="h-10 w-10" strokeWidth={1.5} />
+        </div>
         <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3">
           Todavía no hay ofertas activas
         </h2>
         <p className="text-base text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl mx-auto">
-          Las bodegas de Ciudad Constitución están subiendo su catálogo. Volvé pronto — o explorá las tiendas activas y descubrí lo que ya está disponible.
+          Las bodegas de Pucallpa están subiendo sus descuentos. Volvé pronto — o explorá las tiendas activas y descubrí lo que ya está disponible.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           <Link
