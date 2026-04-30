@@ -155,6 +155,12 @@ export const MarketplaceStoresDB = {
     const tenantSlug = tenantSlugTaken ? `${baseSlug}-${suffix}` : baseSlug;
 
     // 3. Crear Tenant + Store en una transacción atómica
+    // Trial: 15 días desde la creación. La tienda queda invisible hasta
+    // que el superadmin la aprueba (active=true + isPublished=true), pero
+    // el contador de trial arranca al registrar — política de producto.
+    const TRIAL_DAYS = 15;
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
     const { store } = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
@@ -164,6 +170,7 @@ export const MarketplaceStoresDB = {
           type:       "store",
           plan:       "free",
           active:     false, // requiere aprobación del superadmin
+          trialEndsAt,
           ownerEmail: params.ownerEmail ?? null,
           ownerPhone: phoneDigits,
         },

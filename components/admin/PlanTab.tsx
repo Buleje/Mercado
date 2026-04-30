@@ -8,6 +8,7 @@ import {
   Link, Trash2, RefreshCw,
 } from "@buleje/design-system/icons";
 import { PLANS, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
+import { tenantFetch } from "@/lib/tenant-fetch";
 
 // ─── Icono SVG de Mercado Pago ────────────────────────────
 function MercadoPagoIcon({ className }: { className?: string }) {
@@ -362,7 +363,7 @@ export default function PlanTab() {
   const handleUpgrade = async (planId: PlanId) => {
     setRedirecting(true);
     try {
-      const res = await fetch("/api/billing/checkout", {
+      const res = await tenantFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
@@ -383,7 +384,7 @@ export default function PlanTab() {
   const handleUpgradeMP = async (planId: PlanId) => {
     setRedirectingMP(true);
     try {
-      const res = await fetch("/api/billing/mp-checkout", {
+      const res = await tenantFetch("/api/billing/mp-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
@@ -404,7 +405,7 @@ export default function PlanTab() {
   const handlePortal = async () => {
     setRedirecting(true);
     try {
-      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const res = await tenantFetch("/api/billing/portal", { method: "POST" });
       const data = await res.json() as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         showToast(data.error ?? "No se pudo abrir el portal de facturación", false);

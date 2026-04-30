@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import {
   ExternalLink, Mail, XCircle, CheckCircle2, Loader2,
   ArrowDownRight, ArrowUpRight,
   Package, Users, Store, ShoppingBag,
   BarChart3, Trash2, Eraser, LogIn,
+  Clock, AlertTriangle,
 } from "lucide-react";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
@@ -84,15 +86,70 @@ export function TenantCard({
     (storeInfo?._count.products ?? 0) > 0;
   const planLabel = PLAN_LABEL[t.plan] ?? t.plan;
 
+  // ── Trial counter ──────────────────────────────────────────────
+  // Calcula días de prueba restantes basado en trialEndsAt.
+  // Política: 15 días al registrarse. Tras 0, el dueño queda bloqueado
+  // hasta que pague o el superadmin lo habilite manualmente.
+  // Estados visuales:
+  //   - hasPaidPlan: oculta el badge (ya no necesita trial)
+  //   - daysLeft > 7: verde "X días"
+  //   - 1–7: ámbar "X días"
+  //   - 0: rojo "expirado"
+  // Snapshot Date.now() en mount — evita re-render storms y satisface la
+  // regla react-hooks/purity (Date.now en render = impuro).
+  const [now] = useState(() => Date.now());
+  const hasPaidPlan = t.plan !== "free";
+  const trialEnds = t.trialEndsAt ? new Date(t.trialEndsAt) : null;
+  const daysLeft = trialEnds
+    ? Math.max(0, Math.ceil((trialEnds.getTime() - now) / 86_400_000))
+    : null;
+  const trialBadge = (() => {
+    if (hasPaidPlan || daysLeft === null) return null;
+    if (daysLeft <= 0) {
+      return {
+        text: "Trial expirado",
+        bg: "bg-red-50 dark:bg-red-950/40",
+        border: "border-red-300 dark:border-red-800",
+        fg: "text-red-700 dark:text-red-300",
+        Icon: AlertTriangle,
+      };
+    }
+    if (daysLeft <= 7) {
+      return {
+        text: `${daysLeft} día${daysLeft === 1 ? "" : "s"} restantes`,
+        bg: "bg-amber-50 dark:bg-amber-950/40",
+        border: "border-amber-300 dark:border-amber-800",
+        fg: "text-amber-700 dark:text-amber-300",
+        Icon: Clock,
+      };
+    }
+    return {
+      text: `${daysLeft} días de prueba`,
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+      border: "border-emerald-300 dark:border-emerald-800",
+      fg: "text-emerald-700 dark:text-emerald-300",
+      Icon: Clock,
+    };
+  })();
+
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-sm)] hover:border-[var(--rule-strong)] transition-colors overflow-hidden">
       <div className="p-5 space-y-4">
         {/* Kicker: plan label + status pill, sin gradient */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[length:var(--ts-xs)] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
+          <span className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold">
             Plan {planLabel}
           </span>
           <div className="flex items-center gap-1.5">
+            {trialBadge && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${trialBadge.bg} ${trialBadge.border} ${trialBadge.fg}`}
+                title={trialEnds ? `Vence ${trialEnds.toLocaleDateString("es-PE")}` : ""}
+              >
+                <trialBadge.Icon className="w-3 h-3" strokeWidth={2.25} />
+                {trialBadge.text}
+              </span>
+            )}
             {t.plan === "enterprise" ? (
               <ProductBadge intent="premium">Enterprise</ProductBadge>
             ) : null}

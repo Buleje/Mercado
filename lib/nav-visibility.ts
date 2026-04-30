@@ -32,9 +32,13 @@ export const NAV_LINK_CATALOG: Record<NavScope, NavLinkEntry[]> = {
     { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda", description: "CTA bodegueros" },
   ],
   marketplace: [
-    { id: "explorar", label: "Explorar", href: "/marketplace/explorar", description: "Hub de descubrimiento" },
+    // Default: modo "Solo Tiendas" (estilo PedidosYa / piwi). El superadmin
+    // puede activar el modo "Marketplace completo" desde /superadmin/stores
+    // tab Navegación. La política de producto actual privilegia el listado
+    // de bodegas frente a Explorar/Recetas/En Vivo.
+    { id: "explorar", label: "Explorar", href: "/marketplace/explorar", description: "Hub de descubrimiento", defaultVisible: false },
     { id: "bodegas", label: "Bodegas", href: "/marketplace", description: "Home del marketplace" },
-    { id: "recetas", label: "Recetas", href: "/recetas", description: "Catálogo de recetas" },
+    { id: "recetas", label: "Recetas", href: "/recetas", description: "Catálogo de recetas", defaultVisible: false },
     { id: "descubri", label: "Descubrí", href: "#discover", description: "Mega menú", defaultVisible: false },
     { id: "en-vivo", label: "En Vivo", href: "/marketplace/en-vivo", description: "Live shopping", defaultVisible: false },
     { id: "ofertas", label: "Ofertas", href: "/marketplace/ofertas", description: "Deals del día (también en sub-nav)", defaultVisible: false },

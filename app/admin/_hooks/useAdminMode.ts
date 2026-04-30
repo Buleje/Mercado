@@ -21,61 +21,40 @@ export type AdminMode = "easy" | "advanced";
 export interface UseAdminModeResult {
   mode: AdminMode;
   isEasyMode: boolean;
+  /** Always returns true — los modos avanzados estan deshabilitados por defecto. */
+  isLocked: boolean;
   toggleMode: () => void;
   setMode: (m: AdminMode) => void;
 }
 
+// Política actual: el modo del admin queda forzado a "easy" (modo basico)
+// para todos los tenants en plan free/trial. Los modos avanzados se habilitan
+// solo cuando el superadmin lo permita explicitamente (TODO: surface a flag
+// en Tenant). Hasta entonces, ignoramos el localStorage previo y el endpoint
+// de preferencias devuelve solo lectura.
+const FORCED_MODE: AdminMode = "easy";
 const STORAGE_KEY = "admin_mode";
 
-function readStored(): AdminMode {
-  if (typeof window === "undefined") return "easy";
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v === "advanced" ? "advanced" : "easy";
-  } catch {
-    return "easy";
-  }
-}
-
-function persist(m: AdminMode) {
-  try { localStorage.setItem(STORAGE_KEY, m); } catch { /* quota exceeded */ }
-  // Fire-and-forget API sync — failures are non-critical
-  fetch("/api/admin/preferences", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ adminMode: m }),
-  }).catch(() => {});
-}
-
 export function useAdminMode(): UseAdminModeResult {
-  const [mode, setModeState] = useState<AdminMode>(readStored);
+  const [mode] = useState<AdminMode>(FORCED_MODE);
 
-  // Hydrate from API on mount to sync cross-device preference
+  // Mantener el localStorage limpio para que el resto del codigo que lee
+  // `admin_mode` directamente (sin pasar por este hook) tambien vea "easy".
   useEffect(() => {
-    fetch("/api/admin/preferences")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { adminMode?: string } | null) => {
-        if (data?.adminMode === "easy" || data?.adminMode === "advanced") {
-          setModeState(data.adminMode);
-          try { localStorage.setItem(STORAGE_KEY, data.adminMode); } catch { /* ignore */ }
-        }
-      })
-      .catch(() => {});
+    if (typeof window === "undefined") return;
+    try { localStorage.setItem(STORAGE_KEY, FORCED_MODE); } catch { /* quota */ }
   }, []);
 
-  const setMode = useCallback((m: AdminMode) => {
-    setModeState(m);
-    persist(m);
+  const noop = useCallback(() => {
+    // Modo locked: cualquier intento de toggle se ignora silenciosamente.
   }, []);
 
-  const toggleMode = useCallback(() => {
-    setModeState((prev) => {
-      const next = prev === "easy" ? "advanced" : "easy";
-      persist(next);
-      return next;
-    });
-  }, []);
-
-  return { mode, isEasyMode: mode === "easy", toggleMode, setMode };
+  return {
+    mode,
+    isEasyMode: true,
+    isLocked: true,
+    toggleMode: noop,
+    setMode: noop,
+  };
 }
 
