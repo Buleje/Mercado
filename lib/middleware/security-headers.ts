@@ -42,9 +42,12 @@ export function applySecurityHeaders(
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  // geolocation=(self) habilita el botón "Usar mi ubicación" en
+  // /marketplace/registrar — solo same-origin, los iframes externos no
+  // heredan permiso. camera/microphone siguen bloqueados.
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
+    "camera=(), microphone=(), geolocation=(self)",
   );
 
   return response;

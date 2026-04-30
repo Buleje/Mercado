@@ -184,9 +184,17 @@ export default function StoreRegistrationForm() {
       const fullAddress = [direccion.trim(), distritoName, provinciaName]
         .filter(Boolean)
         .join(", ");
+      // CSRF double-submit cookie: el middleware exige x-csrf-token en
+      // mutations. Lo leemos del cookie csrf-token que el server setea en
+      // cada respuesta (ver lib/csrf.ts → ensureCsrfCookie).
+      const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
       const res = await fetch("/api/marketplace/stores/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrf ? { "x-csrf-token": csrf } : {}),
+        },
         body: JSON.stringify({
           ownerName: ownerName.trim(),
           ownerPhone: ownerPhone.trim(),
