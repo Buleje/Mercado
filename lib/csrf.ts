@@ -120,6 +120,8 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/auth/customer-lookup",
     "/api/webhooks/",
     "/api/stripe/webhook",
+    "/api/billing/webhook",
+    "/api/billing/mp-webhook",
     "/api/cron/",
     "/api/health",
     "/api/admin/log-error", // error boundary, dispara antes del login

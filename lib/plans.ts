@@ -23,8 +23,8 @@ export interface PlanDef {
   id: PlanId;
   name: string;
   description: string;
-  priceMonthly: number;   // USD
-  priceYearly: number;    // USD (total/year — includes discount)
+  priceMonthly: number;   // PEN (soles) — Stripe charges in PEN, UI renders "S/"
+  priceYearly: number;    // PEN (total/year — includes ~20% discount)
   color: string;           // Tailwind color key
   popular?: boolean;
   limits: PlanLimits;
@@ -102,11 +102,12 @@ export const PLANS: Record<PlanId, PlanDef> = {
     id: "enterprise",
     name: "Enterprise",
     description: "Para cadenas y franquicias con requerimientos avanzados",
-    // Canonical price. Matches lib/superadmin-types.ts:DEFAULT_SETTINGS.priceEnterprise.
+    // Canonical price. Matches lib/superadmin-types.ts:DEFAULT_SETTINGS.priceEnterprise
+    // and Stripe price_1TRogQ8wsdxsjwKC9245XlfE ("Buleje Max" recurring monthly PEN).
     // NOTE: static default only — runtime consumers must use `getPlanPrice("enterprise")`
     // which reads from the PlatformSetting("plan-prices") row in DB.
-    priceMonthly: 499,
-    priceYearly: 4790, // ~20% discount (~$399.17/mo)
+    priceMonthly: 299,
+    priceYearly: 2870, // ~20% discount (~S/239/mo)
     color: "amber",
     limits: {
       maxProducts: -1,
@@ -177,7 +178,7 @@ export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
   free: 0,
   pro: 49,
   business: 149,
-  enterprise: 499,
+  enterprise: 299,
 };
 
 /**

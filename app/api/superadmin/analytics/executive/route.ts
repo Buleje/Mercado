@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
     free: 0,
     pro: 49,
     business: 149,
-    enterprise: 499,
+    enterprise: 299,
   };
   const mrrByPlan = planCounts.map((p) => ({
     plan: p.plan ?? "free",

@@ -48,7 +48,7 @@ export const MP_PLAN_ITEMS: Partial<Record<PlanId, {
   },
   enterprise: {
     title: `Suscripción ${PLANS.enterprise.name} — Buleje`,
-    unit_price: PLANS.enterprise.priceMonthly, // S/499 (canonical — ver lib/plans.ts)
+    unit_price: PLANS.enterprise.priceMonthly, // S/299 (canonical — ver lib/plans.ts)
     currency_id: "PEN",
   },
 };

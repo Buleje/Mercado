@@ -33,6 +33,7 @@ const prismaMocks = {
   couponDeleteMany: vi.fn(),
   couponUpdateMany: vi.fn(),
   orderUpdateMany: vi.fn(),
+  orderFindFirst: vi.fn(),
 };
 
 vi.mock("@/lib/prisma", () => ({
@@ -90,6 +91,62 @@ vi.mock("@/lib/api-error", () => ({
   },
 }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => undefined) }));
+
+// Wave 8 (2026-04-29): coupons/[id] usa CouponsDB.{getById,setActive,delete}.
+// Routeamos los mocks a las llamadas equivalentes de prisma.coupon para
+// preservar las assertions existentes (toHaveBeenCalledWith en couponFindFirst,
+// couponUpdateMany, couponDeleteMany).
+vi.mock("@/lib/db/coupons.db", () => ({
+  CouponsDB: {
+    getById: async (tenantId: string, id: string) => {
+      const row = await prismaMocks.couponFindFirst({ where: { id, tenantId } });
+      return row ?? null;
+    },
+    setActive: async (tenantId: string, id: string, active: boolean) => {
+      const result = await prismaMocks.couponUpdateMany({
+        where: { id, tenantId },
+        data: { active },
+      });
+      return result?.count === 0 ? null : active;
+    },
+    delete: async (tenantId: string, id: string) => {
+      const result = await prismaMocks.couponDeleteMany({ where: { id, tenantId } });
+      return (result?.count ?? 0) > 0;
+    },
+    findByCode: vi.fn(),
+    list: vi.fn(),
+    listByStore: vi.fn(),
+    create: vi.fn(),
+    incrementUsage: vi.fn(),
+  },
+}));
+
+// Wave 8: marketplace endpoints usan MarketplaceStoresDB.getBySlug; routeamos
+// al storeFindFirst para preservar las assertions actuales.
+vi.mock("@/lib/db/marketplace.db", () => ({
+  MarketplaceStoresDB: {
+    getBySlug: async (slug: string) => prismaMocks.storeFindFirst({ where: { slug } }),
+    getByTenantId: vi.fn(),
+    list: vi.fn(),
+    getById: vi.fn(),
+  },
+  MarketplaceStoreProductsDB: {},
+  MarketplaceOrdersDB: {},
+  MarketplaceReviewsDB: {},
+  MarketplaceAbandonedCartsDB: {},
+}));
+
+// Wave 8: payment/mp/create-preference usa OrdersDB.getById.
+vi.mock("@/lib/db/orders.db", () => ({
+  OrdersDB: {
+    getById: async (tenantId: string, id: string) => {
+      const row = await prismaMocks.orderFindFirst?.({ where: { id, tenantId } });
+      return row ?? null;
+    },
+  },
+  DeliverySlotsDB: {},
+  ReturnsDB: {},
+}));
 
 beforeEach(async () => {
   Object.values(prismaMocks).forEach((m) => m.mockReset());

@@ -82,7 +82,7 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   priceFree: 0,
   pricePro: 49,
   priceBusiness: 149,
-  priceEnterprise: 499,
+  priceEnterprise: 299,
   commissionDefault: 2.5,
   limitsFreeProducts: 50,
   limitsFreeUsers: 2,
