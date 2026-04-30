@@ -817,18 +817,33 @@ export const POST = withApiHandler("orders-create", async (req) => {
       })();
     }
 
-    // Log customer notification for inbox
+    // Log customer notification for inbox.
+    // BUG-03 (QA report 2026-04-30): envuelto en IIFE async para fire-and-forget
+    // estricto. Antes era `prisma.create({...}).catch(...)` que captura solo
+    // rejections, pero un throw sincrono del cliente Prisma (ej. body invalido)
+    // se propagaba al response. Ahora cualquier error queda contenido.
     if (saved.customer.phone) {
-      prismaForTenant(tenantId).customerNotification.create({
-        data: {
-          tenantId,
-          customerPhone: saved.customer.phone,
-          type: "order",
-          title: "📋 Pedido recibido",
-          body: `Tu pedido #${saved.id.slice(-6)} por S/${saved.total.toFixed(2)} fue recibido. Te avisaremos cuando sea confirmado.`,
-          link: `/pedido/${saved.id}`,
-        },
-      }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
+      const phoneForNotif = saved.customer.phone;
+      void (async () => {
+        try {
+          await prismaForTenant(tenantId).customerNotification.create({
+            data: {
+              tenantId,
+              customerPhone: phoneForNotif,
+              type: "order",
+              title: "📋 Pedido recibido",
+              body: `Tu pedido #${saved.id.slice(-6)} por S/${saved.total.toFixed(2)} fue recibido. Te avisaremos cuando sea confirmado.`,
+              link: `/pedido/${saved.id}`,
+            },
+          });
+        } catch (err) {
+          logger.warn("[orders] customer notification create failed", {
+            error: err instanceof Error ? err.message : String(err),
+            tenantId,
+            orderId: saved.id,
+          });
+        }
+      })();
     }
 
     return NextResponse.json(saved, { status: 201 });
