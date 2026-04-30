@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
       headers: { "X-Total-Count": String(total) },
     });
   } catch (e) {
-    console.error("[sales] GET error:", e);
+    logger.error("[sales] GET error", { err: e instanceof Error ? e.message : String(e), tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
   } catch (dbErr) {
     const msg = dbErr instanceof Error ? dbErr.message : "Error al procesar venta";
     const isValidation = msg.startsWith("Stock insuficiente");
-    console.error("[sales] POST error:", dbErr);
+    logger.error("[sales] POST error", { err: dbErr instanceof Error ? dbErr.message : String(dbErr), tenantId: auth.tenantId });
     return NextResponse.json({ error: msg }, { status: isValidation ? 400 : 500 });
   }
 
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
       // Attach to response object
       (sale as Record<string, unknown>).comprobanteNumero = comprobanteNumero;
     } catch (numErr) {
-      console.error("[sales] Error generando número comprobante:", numErr);
+      logger.error("[sales] Error generando numero comprobante", { err: numErr instanceof Error ? numErr.message : String(numErr), tenantId: auth.tenantId });
     }
   }
 

@@ -58,7 +58,7 @@ export async function GET(
     }));
     return NextResponse.json(safe);
   } catch (e) {
-    console.error("[customers/orders] GET error:", e);
+    logger.error("[customers/orders] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

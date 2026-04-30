@@ -3,6 +3,7 @@ import { OrdersDB } from "@/lib/jsondb";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/db/misc.db";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/orders/[id]/public?phone=<customerPhone>
@@ -29,6 +30,7 @@ export async function GET(
   try {
     // Step 1: lightweight lookup that leaks nothing — only tenantId and the
     // stored (already normalized) customer phone. No PII returned yet.
+    // eslint-disable-next-line no-restricted-properties -- public IDOR-protected lookup; phone match guard antes de devolver datos.
     const orderMeta = await prisma.order.findUnique({
       where: { id },
       select: { tenantId: true, customerPhone: true },
@@ -71,7 +73,7 @@ export async function GET(
       updatedAt: order.updatedAt,
     });
   } catch (e) {
-    console.error("[orders/id/public] GET error:", e);
+    logger.error("[orders/id/public] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

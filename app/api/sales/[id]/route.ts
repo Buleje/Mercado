@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
     const data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
     return NextResponse.json(data);
   } catch (e) {
-    console.error("[sales] GET error:", e);
+    logger.error("[sales/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
-    }).catch(() => {});
+    }).catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
     hasBatchesWithStock(auth.tenantId, item.productId)
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
           return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
   }
 
   // Register cash movement if a register is open (fire-and-forget)
@@ -86,11 +87,11 @@ export async function POST(req: NextRequest) {
         saleId: sale.id,
       });
     }
-  }).catch(() => {});
+  }).catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
-    LoyaltyDB.accruePoints(data.customerPhone, total).catch(() => {});
+    LoyaltyDB.accruePoints(data.customerPhone, total).catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
   }
 
   return NextResponse.json(sale, { status: 201 });

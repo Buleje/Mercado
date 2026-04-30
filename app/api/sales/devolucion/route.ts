@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 const ReturnItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
       "Devolucion", "venta",
       `Devolucion de S/${totalRefund.toFixed(2)} para venta ${saleId.slice(0, 8)} (${refundType})`,
       saleId, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[sales/devolucion] activity log failed", { err: String(err) }));
 
     return NextResponse.json({
       success: true,
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
       items: returnItems,
     });
   } catch (e) {
-    console.error("[sales/devolucion] POST error", e);
+    logger.error("[sales/devolucion] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al procesar la devolucion" },
       { status: 500 },
