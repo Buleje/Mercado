@@ -688,14 +688,20 @@ export const POST = withApiHandler("orders-create", async (req) => {
       tenantId,
     }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
 
-    // Auto-send WhatsApp order received notification (fire-and-forget)
+    // Auto-send WhatsApp order received notification (fire-and-forget).
+    // BUG-04 (QA report 2026-04-30): consolidamos 2 customer.findUnique en
+    // 1 sola query — antes habia un lookup separado por cada flag (notifOrderUpdates
+    // y alertasWhatsapp) que costaba ~1 RTT extra por orden.
     if (saved.customer.phone) {
-      // Check customer notification preferences
-      const custPrefs = await prismaForTenant(tenantId).customer.findUnique({
+      const custFlags = await prismaForTenant(tenantId).customer.findUnique({
         where: { phone: saved.customer.phone },
-        select: { notifOrderUpdates: true },
-      }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
-      const wantsOrderNotifs = custPrefs?.notifOrderUpdates !== false;
+        select: { notifOrderUpdates: true, alertasWhatsapp: true },
+      }).catch((err) => {
+        logger.warn("[orders] customer flags lookup failed", { error: String(err), tenantId });
+        return null;
+      });
+      const wantsOrderNotifs = custFlags?.notifOrderUpdates !== false;
+      const wantsWhatsappReceipt = custFlags?.alertasWhatsapp !== false;
 
       const orderInfo = {
         id: saved.id,
@@ -713,11 +719,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
         });
 
         // Enviar recibo por WhatsApp solo si el cliente tiene alertasWhatsapp activo
-        const custWa = await prismaForTenant(tenantId).customer.findUnique({
-          where: { phone: saved.customer.phone },
-          select: { alertasWhatsapp: true },
-        }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
-        if (custWa?.alertasWhatsapp !== false) {
+        if (wantsWhatsappReceipt) {
           sendReceiptByWhatsApp(
             {
               id: saved.id,
