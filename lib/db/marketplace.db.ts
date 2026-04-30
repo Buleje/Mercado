@@ -1,4 +1,5 @@
 import "server-only";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { NotFoundError } from "@/lib/api-error";
@@ -697,15 +698,28 @@ export const MarketplaceStoreProductsDB = {
           });
         }
         if (toReactivate.length > 0) {
-          // Per-row prices prevent updateMany; parallelize inside the transaction
-          await Promise.all(
-            toReactivate.map((r) =>
-              tx.storeProduct.update({
-                where: { id: r.id },
-                data:  { isActive: true, retailPrice: r.price },
-              })
-            )
-          );
+          // Bulk UPDATE con CASE WHEN — 1 query en lugar de N (perf fix
+          // Bug Hunter Report 2026-04-30). Para 1000 productos: 1000 -> 1.
+          // Tenant scope via storeId que ya viene scoped en la closure.
+          if (toReactivate.length === 1) {
+            const r = toReactivate[0];
+            await tx.storeProduct.update({
+              where: { id: r.id },
+              data:  { isActive: true, retailPrice: r.price },
+            });
+          } else {
+            const cases = Prisma.join(
+              toReactivate.map((r) => Prisma.sql`WHEN ${r.id} THEN ${r.price}::decimal`),
+              " ",
+            );
+            const ids = Prisma.join(toReactivate.map((r) => Prisma.sql`${r.id}`));
+            await tx.$executeRaw`
+              UPDATE "StoreProduct"
+                 SET "isActive" = true,
+                     "retailPrice" = CASE "id" ${cases} END
+               WHERE "id" IN (${ids}) AND "storeId" = ${store.id}
+            `;
+          }
         }
       });
     }
