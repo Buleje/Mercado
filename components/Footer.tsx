@@ -224,11 +224,15 @@ function isStoreModePath(pathname: string): boolean {
 }
 
 // Footer simplificado para modo tienda: solo links relevantes a esa tienda.
+// Modo tienda: solo links que tienen sentido para el cliente que ESTA
+// viendo una tienda especifica. Sin enlaces a paginas globales del
+// marketplace (Explorar, Catalogo, Recetas, IA) ni redes sociales falsas.
 const storeModeLinks = [
   { href: "/marketplace/ofertas", label: "Ofertas" },
-  { href: "/marketplace/tiendas", label: "Otras tiendas" },
-  { href: "/ayuda/como-pagar", label: "Cómo pagar" },
   { href: "/cuenta/pedidos", label: "Mis pedidos" },
+  { href: "/ayuda/como-pagar", label: "Cómo pagar" },
+  { href: "/ayuda#como-funciona", label: "Cómo funciona" },
+  { href: "/marketplace/registrar", label: "Crear tienda" },
 ];
 
 export default function Footer() {
