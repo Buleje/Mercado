@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { MapPin, Home, ShoppingCart } from "@buleje/design-system/icons";
+import { MapPin, Home, ShoppingCart, ShieldCheck, Lock, CheckCircle2 } from "@buleje/design-system/icons";
 
 interface CartItem {
   id: number;
@@ -211,6 +211,36 @@ export function CheckoutOrderReview({
       >
         📲 Enviar resumen por WhatsApp
       </a>
+
+      {/* Trust signals — pago seguro */}
+      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 px-4 py-3">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+            Compra 100% protegida
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <Lock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
+              SSL encriptado
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
+              Pago verificado
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
+              Datos seguros
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

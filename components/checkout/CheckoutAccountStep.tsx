@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { User, Phone, Loader2, ChevronRight } from "@buleje/design-system/icons";
+import { User, Phone, Loader2, ShieldCheck, Lock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PhoneValidation {
@@ -37,41 +37,39 @@ export function CheckoutAccountStep({
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="px-6 py-5 space-y-4">
-        <div className="flex items-center gap-4 mb-1">
+      <div className="px-6 py-5 space-y-5">
+        <div className="flex items-center gap-4">
           <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <User className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground">
-              Ya tienes cuenta?
+              ¿Ya tienes cuenta con nosotros?
             </h3>
-            <p className="text-sm text-gray-400">
-              Ingresa tu celular para cargar tus datos guardados.
+            <p className="text-sm text-gray-500 dark:text-zinc-400">
+              Ingresa tu celular para cargar tus datos automáticamente.
             </p>
           </div>
         </div>
 
-        {/* 2 columnas: buscar número | cliente nuevo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Col 1: Buscar número */}
-          <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-5 flex flex-col gap-3">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Buscar cuenta
-            </p>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-5 flex flex-col gap-3 bg-white dark:bg-zinc-900/40">
+          <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+            Número de celular
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="tel"
                 value={phoneQuery}
                 onChange={(e) => {
                   onPhoneQueryChange(e.target.value.replace(/[^\d]/g, ""));
                 }}
-                placeholder="987654321"
+                placeholder="987 654 321"
                 maxLength={9}
                 onKeyDown={(e) => e.key === "Enter" && onPhoneSearch()}
                 className={cn(
-                  "w-full pl-9 pr-3 py-2.5 rounded-xl border text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
+                  "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all",
                   phoneQuery.length === 0
                     ? "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
                     : phoneQueryValidation.valid
@@ -80,55 +78,56 @@ export function CheckoutAccountStep({
                 )}
               />
             </div>
-            {phoneQuery.length > 0 && phoneQueryValidation.hint && (
-              <p className={`text-xs font-semibold ${phoneQueryValidation.color}`}>
-                {phoneQueryValidation.hint}
-              </p>
-            )}
-            {phoneNotFound && (
-              <p className="text-xs text-red-500 font-semibold">Número no encontrado</p>
-            )}
             <m.button
               type="button"
               onClick={onPhoneSearch}
               disabled={!phoneQueryValidation.valid || phoneSearching}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.96 }}
-              className="mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-md shadow-primary/20 disabled:opacity-50"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="h-12 px-6 flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-md shadow-primary/20 disabled:opacity-50 sm:min-w-[140px]"
             >
               {phoneSearching ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Phone className="h-4 w-4" />
               )}
-              {phoneSearching ? "Buscando..." : "Buscar"}
+              {phoneSearching ? "Buscando..." : "Buscar cuenta"}
             </m.button>
           </div>
+          {phoneQuery.length > 0 && phoneQueryValidation.hint && (
+            <p className={`text-xs font-semibold ${phoneQueryValidation.color}`}>
+              {phoneQueryValidation.hint}
+            </p>
+          )}
+          {phoneNotFound && (
+            <p className="text-xs text-red-500 font-semibold">
+              Número no encontrado en nuestra base.
+            </p>
+          )}
+        </div>
 
-          {/* Col 2: Cliente nuevo */}
-          <m.div
-            className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 flex flex-col gap-4 items-center justify-center"
-            whileHover={{ scale: 1.02, borderColor: "rgba(0,180,166,0.5)" }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        {/* Guest checkout — link discreto, no card brotante */}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onSkipAccount}
+            data-testid="checkout-skip-account"
+            className="text-sm font-semibold text-gray-500 dark:text-zinc-400 hover:text-primary transition-colors underline-offset-4 hover:underline"
           >
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-extrabold text-primary">Soy nuevo</p>
-              <p className="text-xs text-gray-400 mt-1">Registro rápido sin cuenta</p>
-            </div>
-            <m.button
-              type="button"
-              onClick={onSkipAccount}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              data-testid="checkout-skip-account"
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
-            >
-              Continuar <ChevronRight className="h-4 w-4" />
-            </m.button>
-          </m.div>
+            ¿Es tu primera vez? Continuar sin cuenta
+          </button>
+        </div>
+
+        {/* Trust signals */}
+        <div className="flex items-center justify-center gap-6 pt-2 border-t border-gray-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-zinc-400">
+            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <span>Compra protegida</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-zinc-400">
+            <Lock className="h-4 w-4 text-emerald-500" />
+            <span>SSL encriptado</span>
+          </div>
         </div>
       </div>
     </m.div>
