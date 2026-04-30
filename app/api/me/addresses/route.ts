@@ -33,22 +33,61 @@ const DeleteBody = z.object({
 
 // ── GET: list addresses ─────────────────────────────────────────────
 
+/**
+ * Verifica que el Customer asociado a `phone` pertenece al `tenantId` del
+ * session actual. Defense-in-depth ante el caso (improbable con ADR-083 que
+ * tiene phone @id) de que un phone aparezca en otro tenant.
+ *
+ * Devuelve `null` si OK, o un NextResponse 403 si hay mismatch.
+ */
+async function assertCustomerBelongsToTenant(
+  customerPhone: string,
+  sessionTenantId: string,
+): Promise<NextResponse | null> {
+  // eslint-disable-next-line no-restricted-properties -- lookup global por phone (PK), guard cross-tenant explícito.
+  const c = await prisma.customer.findUnique({
+    where: { phone: customerPhone },
+    select: { tenantId: true },
+  });
+  if (!c) {
+    return NextResponse.json(
+      { error: "Cliente no encontrado en este tenant" },
+      { status: 404 },
+    );
+  }
+  if (c.tenantId !== sessionTenantId) {
+    logger.warn("[me/addresses] cross-tenant attempt blocked", {
+      customerPhone,
+      sessionTenant: sessionTenantId,
+      customerTenant: c.tenantId,
+    });
+    return NextResponse.json(
+      { error: "forbidden", message: "Cuenta de otro tenant" },
+      { status: 403 },
+    );
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const anon = anonymousGate(req);
   if (anon) return anon;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
-  const { customerId: customerPhone } = customer;
+  const { customerId: customerPhone, tenantId: sessionTenantId } = customer;
 
   if (!customerPhone) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
 
+  // Defense-in-depth: bloquear cross-tenant antes de tocar SavedLocation
+  // (que no tiene tenantId field — ver TODO de migration ADR-085 pendiente).
+  const blocked = await assertCustomerBelongsToTenant(customerPhone, sessionTenantId);
+  if (blocked) return blocked;
+
   try {
-    // SavedLocation no tiene tenantId en el schema — el aislamiento se da
-    // porque customerPhone viene del session autenticado (no de query param).
-    // TODO(P1 #15): migrar a CustomersDB + agregar tenantId a SavedLocation
+    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
     const addresses = await prisma.savedLocation.findMany({
       where: { customerPhone },
       orderBy: { id: "desc" },
@@ -75,11 +114,14 @@ export async function POST(req: NextRequest) {
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
-  const { customerId: customerPhone } = customer;
+  const { customerId: customerPhone, tenantId: sessionTenantId } = customer;
 
   if (!customerPhone) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
+
+  const blocked = await assertCustomerBelongsToTenant(customerPhone, sessionTenantId);
+  if (blocked) return blocked;
 
   const body = await req.json().catch((err) => {
     logger.warn("Invalid JSON body in me/addresses POST", { err: err instanceof Error ? err.message : String(err) });
@@ -95,7 +137,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Limit to 10 addresses per customer
-    // TODO(P1 #15): agregar tenantId a SavedLocation para aislamiento estricto
+    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
     const count = await prisma.savedLocation.count({
       where: { customerPhone },
     });
@@ -107,6 +149,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
     const address = await prisma.savedLocation.create({
       data: {
         customerPhone,
@@ -133,11 +176,14 @@ export async function DELETE(req: NextRequest) {
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
-  const { customerId: customerPhone } = customer;
+  const { customerId: customerPhone, tenantId: sessionTenantId } = customer;
 
   if (!customerPhone) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
+
+  const blocked = await assertCustomerBelongsToTenant(customerPhone, sessionTenantId);
+  if (blocked) return blocked;
 
   const body = await req.json().catch((err) => {
     logger.warn("Invalid JSON body in me/addresses DELETE", { err: err instanceof Error ? err.message : String(err) });
@@ -149,7 +195,8 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    // Verify ownership before delete
+    // Verify ownership before delete (customerPhone scope on top of tenant guard).
+    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
     const address = await prisma.savedLocation.findFirst({
       where: { id: parsed.data.id, customerPhone },
     });
@@ -158,6 +205,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Direccion no encontrada" }, { status: 404 });
     }
 
+    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; ownership double-checked arriba.
     await prisma.savedLocation.delete({
       where: { id: parsed.data.id },
     });
