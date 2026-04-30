@@ -102,7 +102,7 @@ export default function LandingHero({
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="order-2 lg:order-1"
           >
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -159,7 +159,7 @@ export default function LandingHero({
               className="relative aspect-[4/3] flex items-center justify-center"
             >
               {/* Gradient accent sutil de fondo */}
-              <div className="absolute inset-4 rounded-3xl bg-gradient-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.02]" />
+              <div className="absolute inset-4 rounded-3xl bg-linear-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.02]" />
 
               {/* Mapa grande — protagonista */}
               <MapaUcayaliAutentico
@@ -167,15 +167,18 @@ export default function LandingHero({
                 className="relative text-[var(--text-primary)]/75"
               />
 
-              {/* Chip bodega flotante — bottom-left */}
+              {/* Chip bodega flotante — bottom-left.
+                  UX P1-1 fix 2026-04-30: antes "Don Paco · 5 min" era un
+                  dueño inventado. Ahora copy honesto sobre cobertura local
+                  sin atribuir nombre falso. */}
               <div className="absolute bottom-6 left-6 flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3 shadow-sm">
                 <BodegaAbriendo size={32} className="text-[var(--accent)]" />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
-                    Abierta ahora
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
+                    Bodegas cerca tuyo
                   </p>
                   <p className="text-sm font-black tracking-tight text-[var(--text-primary)]">
-                    Don Paco · 5 min
+                    Pucallpa · Ucayali
                   </p>
                 </div>
               </div>
@@ -213,7 +216,7 @@ export default function LandingHero({
                     <span className="text-[var(--accent)]">{stat.suffix}</span>
                   )}
                 </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {stat.label}
                 </p>
               </div>
