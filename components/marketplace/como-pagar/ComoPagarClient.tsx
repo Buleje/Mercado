@@ -168,7 +168,7 @@ function MethodCard({ method }: { method: Method }) {
       <p
         className={[
           "text-sm leading-relaxed",
-          isAccent || isInk ? "text-white/90" : "text-[var(--text-secondary)]",
+          isAccent || isInk ? "text-white" : "text-[var(--text-secondary)]",
         ].join(" ")}
       >
         {method.description}
@@ -188,7 +188,7 @@ function MethodCard({ method }: { method: Method }) {
             >
               {i + 1}
             </span>
-            <span className={isAccent || isInk ? "text-white/90" : "text-[var(--text-secondary)]"}>
+            <span className={isAccent || isInk ? "text-white" : "text-[var(--text-secondary)]"}>
               {s}
             </span>
           </li>
@@ -260,12 +260,24 @@ export default function ComoPagarClient() {
                 a: "Solo si vos lo pedís. Por defecto, los datos no se guardan — Stripe y Mercado Pago tokenizan cada cobro.",
               },
             ].map((f) => (
-              <details key={f.q} className="group rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5 [&[open]_svg]:rotate-90">
+              // Visual QA P2 fix 2026-04-30: details ahora con shadow on open
+              // y arrow rotando suave (transition-transform duration-300).
+              <details
+                key={f.q}
+                className="group rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5 [&[open]_svg]:rotate-90 transition-shadow open:shadow-md"
+              >
                 <summary className="flex items-start justify-between gap-4 cursor-pointer list-none font-bold text-[var(--text-primary)]">
                   <span>{f.q}</span>
-                  <ArrowRight className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform" strokeWidth={2} />
+                  <ArrowRight
+                    className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-300"
+                    strokeWidth={2}
+                  />
                 </summary>
-                <p className="mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">{f.a}</p>
+                <div className="grid grid-rows-[1fr] mt-3 transition-[grid-template-rows] duration-300">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed overflow-hidden">
+                    {f.a}
+                  </p>
+                </div>
               </details>
             ))}
           </div>
