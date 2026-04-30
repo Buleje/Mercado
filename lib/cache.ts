@@ -197,6 +197,7 @@ export async function getOrSet<T>(
 }
 
 /** Evict a specific key (call after mutations to invalidate stale data) */
+// reload-marker: 2026-04-30 mi-pollo trial fix
 export function invalidate(key: string): void {
   cacheStore.del(key);
 }
