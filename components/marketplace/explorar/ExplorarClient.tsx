@@ -38,7 +38,7 @@ import ExplorarBackToTop from "./ExplorarBackToTop";
 import ExplorarTracker from "./ExplorarTracker";
 import ExplorarAmazonBoxes from "./ExplorarAmazonBoxes";
 import ExplorarCategoriasGrid from "./ExplorarCategoriasGrid";
-import RecentlyViewedStrip from "./RecentlyViewedStrip";
+import RecentlyViewedStrip, { RecentlyViewedSectionBox } from "./RecentlyViewedStrip";
 import BuyAgainStrip from "./BuyAgainStrip";
 import DealsOfTheDayStrip from "./DealsOfTheDayStrip";
 import TopRatedBento from "./TopRatedBento";
@@ -78,7 +78,7 @@ function FinalCTA() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
       />
       <div className="relative max-w-4xl mx-auto px-4 text-center">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
           <span
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -171,7 +171,8 @@ export default function ExplorarClient() {
           </ExplorarErrorBoundary>
 
           <ExplorarErrorBoundary section="recently-viewed">
-            <SectionBox><RecentlyViewedStrip /></SectionBox>
+            {/* Visual QA P1 fix: SectionBox auto-oculta cuando no hay items. */}
+            <RecentlyViewedSectionBox />
           </ExplorarErrorBoundary>
 
           <ExplorarErrorBoundary section="amazon-boxes">

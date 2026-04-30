@@ -7,6 +7,31 @@ import { useRecentViewed } from "@/hooks/use-recent-viewed";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import ExplorarSectionHeader from "./ExplorarSectionHeader";
 
+/**
+ * RecentlyViewedSectionBox — wrapper que SOLO renderiza el SectionBox si
+ * hay items recientes. Visual QA P1 fix 2026-04-30: antes el SectionBox
+ * externo en ExplorarClient se renderizaba siempre (caja vacía visible
+ * brevemente cuando localStorage estaba vacío).
+ *
+ * Ahora se exporta este wrapper que se auto-oculta cuando no hay datos.
+ */
+export function RecentlyViewedSectionBox() {
+  const { count } = useRecentViewed();
+  if (count === 0) return null;
+
+  return (
+    <div
+      className={[
+        "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+        "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+        "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+      ].join(" ")}
+    >
+      <RecentlyViewedStrip />
+    </div>
+  );
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function relativeTime(ts: number): string {
@@ -78,7 +103,7 @@ export default function RecentlyViewedStrip() {
               <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                 {item.name}
               </p>
-              <p className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+              <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
                 {pen.format(item.price)}
               </p>
               <p className="text-xs font-semibold text-[var(--text-tertiary)]">
