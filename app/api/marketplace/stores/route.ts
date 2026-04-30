@@ -558,7 +558,7 @@ export async function POST(req: NextRequest) {
       vacationMessage: store.vacationMessage ?? "",
     }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/marketplace/stores] Error:", err);
+    logger.error("[POST /api/marketplace/stores] Error", { err: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
@@ -643,7 +643,7 @@ export async function PUT(req: NextRequest) {
       vacationMessage: store.vacationMessage ?? "",
     });
   } catch (err) {
-    console.error("[PUT /api/marketplace/stores] Error:", err);
+    logger.error("[PUT /api/marketplace/stores] Error", { err: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }

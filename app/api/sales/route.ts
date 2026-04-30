@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (cotErr) {
-      console.error("[sales] Error creando cotización automática:", cotErr);
+      logger.error("[sales] Error creando cotizacion automatica", { err: cotErr instanceof Error ? cotErr.message : String(cotErr) });
     }
   }
 
