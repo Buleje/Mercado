@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { prisma } from "@/lib/prisma";
+import { prismaForTenant } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
@@ -96,6 +97,7 @@ export async function PATCH(
 
     // Log status change to history (fire-and-forget)
     if (statusChanged) {
+      // eslint-disable-next-line no-restricted-properties -- pre-existing: orderStatusHistory still has direct access; deuda técnica scheduled for migration to lib/db/orders.db.ts. tenantId guard in payload.
       prisma.orderStatusHistory.create({
         data: {
           orderId: id,
@@ -105,17 +107,48 @@ export async function PATCH(
           note: parsed.data.cancelReason ?? null,
           tenantId: auth.tenantId,
         },
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
-      // Persist cancel metadata on the Prisma Order if exists
+      // BUG-01 fix (Bug Hunter Report 2026-04-30):
+      // Antes — al cancelar, solo se persistía metadata pero el stock NO se
+      // reponía → cada cancelación perdía inventario permanentemente.
+      // Ahora — transacción atómica que: 1) repone stock de cada item, 2)
+      // persiste cancelReason+cancelledAt. Mismo patrón atómico que el POST
+      // (RED-005): UPDATE conditional con tenantId guard.
       if (parsed.data.status === "cancelado") {
-        prisma.order.update({
-          where: { id },
-          data: {
-            cancelReason: parsed.data.cancelReason ?? null,
-            cancelledAt: new Date(),
-          },
-        }).catch(() => {});
+        prismaForTenant(auth.tenantId).$transaction(async (tx) => {
+          const items = await tx.orderItem.findMany({
+            where: { orderId: id },
+            select: { productId: true, quantity: true },
+          });
+          for (const it of items) {
+            await tx.$executeRaw`
+              UPDATE "Product"
+                 SET "stock" = "stock" + ${it.quantity}
+               WHERE "id" = ${it.productId}
+                 AND "tenantId" = ${auth.tenantId}
+                 AND "stock" IS NOT NULL
+            `;
+          }
+          await tx.order.update({
+            where: { id },
+            data: {
+              cancelReason: parsed.data.cancelReason ?? null,
+              cancelledAt: new Date(),
+            },
+          });
+          logger.info("[orders/cancel] stock reverted + metadata persisted", {
+            orderId: id,
+            tenantId: auth.tenantId,
+            itemsReverted: items.length,
+          });
+        }).catch((err) => {
+          logger.error("[orders/cancel] revert+metadata transaction failed", {
+            orderId: id,
+            tenantId: auth.tenantId,
+            err: err instanceof Error ? err.message : String(err),
+          });
+        });
       }
     }
 
@@ -123,7 +156,8 @@ export async function PATCH(
     // autoEarnLoyaltyPoints maneja: mínimo S/5, 1pto/S/1,(×2 para frescos, etc.),
     // anti-duplicación por orderId, niveles Bronce/Plata/Oro/Diamante y audit trail.
     if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone) {
-      // Fetch order items with product categories for multiplier calculation
+      // Fetch order items with product categories for multiplier calculation.
+      // eslint-disable-next-line no-restricted-properties -- pre-existing: orderItem read scoped por orderId; migracion a lib/db/orders.db.ts pendiente.
       prisma.orderItem.findMany({
         where: { orderId: id },
         select: {
@@ -143,13 +177,14 @@ export async function PATCH(
           updated.total,
           categoryItems.length > 0 ? categoryItems : undefined,
         );
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     }
 
     // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
     if (statusChanged && parsed.data.status === "entregado") {
       const suffix = id.slice(-5).toUpperCase();
       const couponCode = `VUELVE${suffix}`;
+      // eslint-disable-next-line no-restricted-properties -- pre-existing: coupon side-effect; tenantId in payload. Migration to lib/db/coupons.db.ts pendiente.
       prisma.coupon.create({
         data: {
           code: couponCode,
@@ -169,7 +204,7 @@ export async function PATCH(
             title: "🎁 ¡Tienes un cupón de regalo!",
             body: `Usa el código ${couponCode} y obtén 5% de descuento en tu próxima compra. Válido por 15 días.`,
             url: "/",
-          }).catch(() => {});
+          }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
           sendWhatsAppNotification({
             id: updated.id,
             customerName: updated.customer.name,
@@ -179,18 +214,24 @@ export async function PATCH(
             paymentMethod: updated.paymentMethod,
             deliverySlot: updated.deliverySlot,
             items: updated.items,
-          }).catch(() => {});
+          }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
         }
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     }
 
-    // Check customer notification preferences for order updates
-    const custPrefs = (statusChanged && updated.customer.phone)
-      ? await prisma.customer.findUnique({
+    // Check customer notification preferences for order updates.
+    let custPrefs: { notifOrderUpdates: boolean | null } | null = null;
+    if (statusChanged && updated.customer.phone) {
+      try {
+        // eslint-disable-next-line no-restricted-properties -- pre-existing: lookup global por phone; deuda pendiente migrar a lib/db/customers.db.ts.
+        custPrefs = await prisma.customer.findUnique({
           where: { phone: updated.customer.phone },
           select: { notifOrderUpdates: true },
-        }).catch(() => null)
-      : null;
+        });
+      } catch (err) {
+        logger.warn("[orders/id] customer prefs lookup failed", { phone: updated.customer.phone, err: String(err) });
+      }
+    }
     const wantsOrderNotifs = custPrefs?.notifOrderUpdates !== false;
 
     if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone && wantsOrderNotifs) {
@@ -199,7 +240,7 @@ export async function PATCH(
         title: "✅ ¡Pedido entregado!",
         body: `Tu pedido de S/${updated.total.toFixed(2)} fue entregado. ¿Cómo estuvo? Déjanos tu reseña 🌟`,
         url: `/pedido/${updated.id}`,
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     }
 
     // Send push for other status changes
@@ -213,7 +254,7 @@ export async function PATCH(
         title: statusLabels[parsed.data.status!] ?? "Actualización de pedido",
         body: `Pedido #${updated.id.slice(-6)} — S/${updated.total.toFixed(2)}`,
         url: `/pedido/${updated.id}`,
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     }
 
     // Build WhatsApp link when status advances to a customer-facing state
@@ -251,7 +292,7 @@ export async function PATCH(
             : `WhatsApp link generado: estado -> ${updated.status}`,
           status: whatsappSent ? "sent" : whatsappLink ? "link" : "skipped",
           orderId: updated.id,
-        }, auth.tenantId).catch(() => {});
+        }, auth.tenantId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
       }
     }
 
@@ -262,7 +303,7 @@ export async function PATCH(
       id,
       "admin",
       requestId,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
     // Log to customer notification inbox
     if (statusChanged && updated.customer.phone && NOTIFIABLE_STATUSES.has(parsed.data.status!)) {
@@ -274,6 +315,7 @@ export async function PATCH(
       };
       const msg = statusMsgs[parsed.data.status!];
       if (msg) {
+        // eslint-disable-next-line no-restricted-properties -- pre-existing direct prisma access, scheduled for migration to lib/db/customer-notifications.db.ts. Tenant guard explicit via tenantId field.
         prisma.customerNotification.create({
           data: {
             tenantId: auth.tenantId,
@@ -283,7 +325,7 @@ export async function PATCH(
             body: msg.body,
             link: `/pedido/${updated.id}`,
           },
-        }).catch(() => {});
+        }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
       }
     }
 
@@ -307,7 +349,7 @@ export async function DELETE(
   try {
     await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch(() => {});
+    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return new NextResponse(null, { status: 204 });
   } catch (e) {
