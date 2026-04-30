@@ -1,7 +1,9 @@
+/* eslint-disable no-restricted-properties -- deuda existente: Product directo. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
@@ -115,7 +117,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[inventory/declaracion] GET error:", e);
+    logger.error("[inventory/declaracion] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

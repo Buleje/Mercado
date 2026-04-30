@@ -1,8 +1,10 @@
+/* eslint-disable no-restricted-properties -- deuda existente: Batch sin clase lib/db wrapper completa. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 // GET — Returns batches grouped by expiry urgency: expired, 7d, 30d
 export async function GET(req: NextRequest) {
@@ -104,7 +106,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[inventory/expiry/GET]", e);
+    logger.error("[inventory/expiry/GET]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Error al obtener datos de vencimiento" },
       { status: 500 },
@@ -163,7 +165,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
   } catch (e) {
-    console.error("[inventory/expiry/PATCH]", e);
+    logger.error("[inventory/expiry/PATCH]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Error al procesar la acción" },
       { status: 500 },

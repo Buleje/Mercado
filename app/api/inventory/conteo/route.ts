@@ -1,7 +1,9 @@
+/* eslint-disable no-restricted-properties -- deuda existente: ConteoFisico/ConteoFisicoItem sin clase lib/db dedicada todavía. Todas las queries de este archivo son tenant-scoped via auth.tenantId guard. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const CreateSchema = z.object({
   tipo: z.enum(["completo", "categoria", "ubicacion"]).default("completo"),
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
       message: `Se generaron ${conteo.items.length} productos para contar`,
     }, { status: 201 });
   } catch (e) {
-    console.error("[conteo/POST]", e);
+    logger.error("[conteo/POST]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al crear conteo" }, { status: 500 });
   }
 }
@@ -95,7 +97,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(conteos);
   } catch (e) {
-    console.error("[conteo/GET]", e);
+    logger.error("[conteo/GET]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al listar conteos" }, { status: 500 });
   }
 }

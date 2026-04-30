@@ -1,7 +1,9 @@
+/* eslint-disable no-restricted-properties -- deuda existente: ConteoFisico/Item sin clase lib/db dedicada. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 // GET — Lista items del conteo con info del producto
 export async function GET(
@@ -50,7 +52,7 @@ export async function GET(
       contados: items.filter(i => i.stockContado !== null).length,
     });
   } catch (e) {
-    console.error("[conteo/items/GET]", e);
+    logger.error("[conteo/items/GET]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al obtener items" }, { status: 500 });
   }
 }
@@ -118,7 +120,7 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[conteo/items/PATCH]", e);
+    logger.error("[conteo/items/PATCH]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al actualizar item" }, { status: 500 });
   }
 }

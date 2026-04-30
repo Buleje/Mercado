@@ -1,6 +1,8 @@
+/* eslint-disable no-restricted-properties -- deuda existente: ConteoFisico sin clase lib/db. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // POST — Cerrar conteo y aplicar ajustes
 export async function POST(
@@ -76,7 +78,7 @@ export async function POST(
       },
     });
   } catch (e) {
-    console.error("[conteo/close/POST]", e);
+    logger.error("[conteo/close/POST]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al cerrar conteo" }, { status: 500 });
   }
 }

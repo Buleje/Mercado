@@ -1,5 +1,7 @@
+/* eslint-disable no-restricted-properties -- public predictivo. NOTA: ESTE endpoint actualmente NO scopea por tenantId — TODO migrar a lib/db con guard tenant. */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -57,7 +59,7 @@ export async function GET() {
 
     return NextResponse.json(predictions);
   } catch (err) {
-    console.error("stock-prediction error:", err);
+    logger.error("[stock-prediction] error", { err: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { error: "Error al calcular la prediccion de stock" },
       { status: 500 }

@@ -1,6 +1,8 @@
+/* eslint-disable no-restricted-properties -- deuda existente: forecast lee Product+SaleItem direct. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // GET — Pronóstico de demanda para un producto
 export async function GET(req: NextRequest) {
@@ -168,7 +170,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[forecast/GET]", e);
+    logger.error("[forecast/GET]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al calcular pronóstico" }, { status: 500 });
   }
 }
