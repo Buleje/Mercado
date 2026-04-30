@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ comparaciones: result });
   } catch (e) {
-    console.error("[compras/precio-comparativo] GET error:", e);
+    logger.error("[compras/precio-comparativo] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error obteniendo comparaciones" }, { status: 500 });
   }
 }

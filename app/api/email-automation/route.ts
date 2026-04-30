@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/email-automation — Automated customer lifecycle notifications.
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
       results.abandoned++;
     }
   } catch (e) {
-    console.error("[email-automation] Error:", e);
+    logger.error("[email-automation] Error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Automation failed" }, { status: 500 });
   }
 

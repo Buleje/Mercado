@@ -4,6 +4,7 @@ import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { logger } from "@/lib/logger";
 
 const SupplierSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     // Graceful fallback — si la tabla no está migrada o hay timeout,
     // devolver [] en vez de 503 para no romper UI admin que iterará sobre el array.
-    console.warn("[suppliers] GET fallback empty:", e instanceof Error ? e.message : String(e));
+    logger.warn("[suppliers] GET fallback empty", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json([], { headers: { "Cache-Control": "no-store" } });
   }
 }

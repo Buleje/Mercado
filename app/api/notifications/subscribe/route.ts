@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 function initWebPush() {
   const email = process.env.VAPID_EMAIL;
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     await PushSubscriptionsStore.save(tenantId, { endpoint: subscription.endpoint, keys: subscription.keys, phone });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("[push/subscribe] error:", e);
+    logger.error("[push/subscribe] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
