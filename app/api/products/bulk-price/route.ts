@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 const PatchItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -74,7 +75,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ updated, failed });
   } catch (e) {
-    console.error("[bulk-price/PATCH]", e);
+    logger.error("[bulk-price/PATCH]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al actualizar precios" }, { status: 500 });
   }
 }
@@ -130,7 +131,7 @@ export async function PUT(req: NextRequest) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[bulk-price] PUT error:", msg);
+    logger.error("[bulk-price] PUT error", { err: msg });
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

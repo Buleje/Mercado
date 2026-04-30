@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/products/frecuentes?limit=8
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(results);
   } catch (e) {
-    console.error("[products/frecuentes] error:", e);
+    logger.error("[products/frecuentes] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json([]);
   }
 }

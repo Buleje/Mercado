@@ -66,7 +66,7 @@ export async function POST(
       subscriberCount: phones.length,
     });
   } catch (error) {
-    console.error("[RESTOCK-NOTIFY] Error:", error);
+    logger.error("[RESTOCK-NOTIFY] Error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al registrar notificación" },
       { status: 500 }

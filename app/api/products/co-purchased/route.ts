@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/products/co-purchased?ids=1,2,3&limit=6
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(results);
   } catch (e) {
-    console.error("[co-purchased] error:", e);
+    logger.error("[co-purchased] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json([]);
   }
 }

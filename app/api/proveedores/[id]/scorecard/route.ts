@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -15,6 +16,7 @@ export async function GET(
 
   try {
     // 1. Fetch all purchase orders for this supplier
+    // eslint-disable-next-line no-restricted-properties -- scorecard tenant-scoped en where.
     const orders = await prisma.purchaseOrder.findMany({
       where: { tenantId, supplierId: id },
       include: { items: true },
@@ -102,7 +104,7 @@ export async function GET(
       insufficient: false,
     });
   } catch (e) {
-    console.error("[proveedores/scorecard] GET error:", e);
+    logger.error("[proveedores/scorecard] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error calculando scorecard" }, { status: 500 });
   }
 }

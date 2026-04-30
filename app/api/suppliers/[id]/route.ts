@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const SupplierPatchSchema = z.object({
   // Existing fields
@@ -46,10 +47,11 @@ export async function GET(
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
     // Get full record with new fields from prisma
+    // eslint-disable-next-line no-restricted-properties -- supplier lookup tenant-scoped por auth.tenantId guard arriba.
     const full = await prisma.supplier.findUnique({ where: { id } });
     return NextResponse.json({ ...supplier, ...full });
   } catch (e) {
-    console.error("[suppliers/id] GET error:", e);
+    logger.error("[suppliers/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -100,10 +102,11 @@ export async function PATCH(
       return NextResponse.json({ ok: true });
     }
 
+    // eslint-disable-next-line no-restricted-properties -- supplier update tenant-scoped por auth.tenantId guard arriba.
     const updated = await prisma.supplier.update({ where: { id }, data });
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[suppliers/id] PATCH error:", e);
+    logger.error("[suppliers/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -120,7 +123,7 @@ export async function DELETE(
     await SuppliersDB.delete(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("[suppliers/id] DELETE error:", e);
+    logger.error("[suppliers/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

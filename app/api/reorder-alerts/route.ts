@@ -4,6 +4,7 @@ import { broadcastPush } from "@/lib/push-sender";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/reorder-alerts — Check low-stock products and send reorder suggestions.
@@ -143,7 +144,7 @@ async function checkAndAlert() {
     title: `🔄 ${items.length} productos para reabastecer`,
     body: items.slice(0, 3).map(p => p.name).join(", ") + (items.length > 3 ? ` y ${items.length - 3} más` : ""),
     url: "/admin?tab=inventario",
-  }).catch(() => {});
+  }).catch((err) => logger.warn("[reorder-alerts] broadcastPush failed", { err: String(err) }));
 
   return { alerts: items.length, sent: true, bySupplier: Object.fromEntries(bySupplier) };
 }
@@ -200,7 +201,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[reorder-alerts] error:", e);
+    logger.error("[reorder-alerts] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Failed to check reorder alerts" }, { status: 500 });
   }
 }
