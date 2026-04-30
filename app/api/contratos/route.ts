@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -257,7 +258,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ contratos, kpis });
   } catch (e) {
-    console.error("[contratos] GET error:", e);
+    logger.error("[contratos] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -343,7 +344,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (e) {
-    console.error("[contratos] POST error:", e);
+    logger.error("[contratos] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

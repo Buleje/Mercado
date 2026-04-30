@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[cron/batch-expiry-alerts] Fatal error:", message);
+    logger.error("[cron/batch-expiry-alerts] Fatal error", { err: message });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

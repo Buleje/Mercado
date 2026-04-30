@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SurveyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { logger } from "@/lib/logger";
 
 // POST — submit a survey response (public, from customer)
 export async function POST(req: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(survey);
   } catch (e) {
-    console.error("POST /api/surveys error", e);
+    logger.error("[surveys] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al guardar" }, { status: 500 });
   }
 }
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ stats, recent });
   } catch (e) {
-    console.error("GET /api/surveys error", e);
+    logger.error("[surveys] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error" }, { status: 500 });
   }
 }

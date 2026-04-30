@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     if (supplierId) return NextResponse.json(await withDbRetry(() => PayablesDB.getBySupplierId(auth.tenantId, supplierId)));
     return NextResponse.json(await withDbRetry(() => PayablesDB.getAll(auth.tenantId)));
   } catch (e) {
-    console.error("[payables] GET error:", e);
+    logger.error("[payables] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

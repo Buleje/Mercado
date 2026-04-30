@@ -3,6 +3,7 @@ import { writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
+import { logger } from "@/lib/logger";
 
 const BANNERS_PATH = join(process.cwd(), "lib", "data", "promo-banners.json");
 
@@ -151,7 +152,7 @@ export async function GET(req: NextRequest) {
     const raw = await readFile(BANNERS_PATH, "utf8");
     return NextResponse.json(JSON.parse(raw));
   } catch (e) {
-    console.error("[banners GET] error", e);
+    logger.error("[banners GET] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "No se pudieron leer los banners" }, { status: 500 });
   }
 }
@@ -174,7 +175,7 @@ export async function PUT(req: NextRequest) {
       code: i.code,
       message: i.message,
     }));
-    console.error("[banners PUT] zod issues", JSON.stringify(issues, null, 2));
+    logger.error("[banners PUT] zod issues", { issues });
     return NextResponse.json(
       { error: "Datos inválidos", issues },
       { status: 400 },
@@ -188,7 +189,7 @@ export async function PUT(req: NextRequest) {
     await writeFile(BANNERS_PATH, JSON.stringify(store, null, 2), "utf8");
     return NextResponse.json({ ok: true, slot: parsed.data.slot, count: parsed.data.banners.length });
   } catch (e) {
-    console.error("[banners PUT] error", e);
+    logger.error("[banners PUT] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "No se pudieron guardar los banners" }, { status: 500 });
   }
 }
