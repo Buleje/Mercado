@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
+import { logger } from "@/lib/logger";
 
 // ── Fuzzy match local fallback ───────────────────────────────────────────
 function fuzzyMatchProducts(
@@ -129,7 +130,7 @@ Si necesitas aclaración:
     });
 
     if (!res.ok) {
-      console.error("[voice-interpret] router error:", res.error);
+      logger.error("[voice-interpret] router error", { err: String(res.error) });
       const result = fuzzyMatchProducts(transcript, availableProducts);
       return NextResponse.json({ ...result, mode: "fallback" });
     }
@@ -151,7 +152,7 @@ Si necesitas aclaración:
       mode: "ai",
     });
   } catch (err) {
-    console.error("[voice-interpret] Error:", err);
+    logger.error("[voice-interpret] error", { err: err instanceof Error ? err.message : String(err) });
     const result = fuzzyMatchProducts(transcript, availableProducts);
     return NextResponse.json({ ...result, mode: "fallback" });
   }

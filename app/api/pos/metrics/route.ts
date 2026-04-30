@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
       ticketPromedio: Math.round(ticketPromedio * 100) / 100,
     });
   } catch (e) {
-    console.error("[POS Metrics]", e);
+    logger.error("[POS Metrics]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Error al obtener metricas" },
       { status: 500 }

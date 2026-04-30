@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // GET /api/delivery/kpis — KPIs for delivery module dashboard
 export async function GET(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
       pendingDeliveries,
     });
   } catch (err) {
-    console.error("[GET /api/delivery/kpis] Error:", err);
+    logger.error("[delivery/kpis] GET error", { err: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { activePartners: 0, deliveriesToday: 0, pendingDeliveries: 0 },
     );

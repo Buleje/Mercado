@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/customer/intelligence
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
           },
         })
         .catch((err) => {
-          console.warn("[intelligence] customer lookup failed", { error: String(err) });
+          logger.warn("[intelligence] customer lookup failed", { err: String(err) });
           return null;
         }),
 

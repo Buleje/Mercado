@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
       "Crear", "fiado",
       `Nuevo fiado de S/${parsed.data.total.toFixed(2)} para cliente ${resolvedPhone}`,
       fiado.id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[fiados] activity log failed", { err: String(err) }));
 
     return NextResponse.json({
       id: fiado.id,
@@ -222,8 +222,8 @@ export async function POST(req: NextRequest) {
     }, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.error("[fiados] POST error", { err: msg });
-    console.error("[fiados] POST FULL ERROR:", e);
+    const stack = e instanceof Error ? e.stack : undefined;
+    logger.error("[fiados] POST error", { err: msg, stack });
     return NextResponse.json({ error: `Error al crear fiado: ${msg}` }, { status: 503 });
   }
 }

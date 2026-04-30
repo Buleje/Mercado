@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 const PaymentItemSchema = z.object({
   fiadoId: z.string().min(1),
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
       "Cobro masivo", "fiado",
       `Cobro masivo de ${results.length} fiados por S/${totalCobrado.toFixed(2)}`,
       undefined, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[fiados/cobro-masivo] activity log failed", { err: String(err) }));
 
     return NextResponse.json({
       success: true,
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (e) {
-    console.error("[fiados/cobro-masivo] POST error", e);
+    logger.error("[fiados/cobro-masivo] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al procesar el cobro masivo" },
       { status: 500 },
