@@ -285,17 +285,23 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
  * bodegas se vea como una tarjeta (igual que Mercado Libre): borde, bg
  * raised sobre wrapper sunken (contraste). Anula el padding/max-width
  * interno de cada strip para evitar doble padding.
+ *
+ * Visual QA P2 fix 2026-04-30: envuelto en RevealOnScroll para que cada
+ * strip aparezca con fade+slide al entrar en viewport (sensación premium,
+ * ~700ms ease-out, respeta prefers-reduced-motion).
  */
 function BodegasSectionBox({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className={[
-        "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-        "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
-        "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
-      ].join(" ")}
-    >
-      {children}
-    </div>
+    <RevealOnScroll>
+      <div
+        className={[
+          "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+          "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+          "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+        ].join(" ")}
+      >
+        {children}
+      </div>
+    </RevealOnScroll>
   );
 }
