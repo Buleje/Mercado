@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const RecepcionItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, stockUpdated, status: finalStatus });
   } catch (e) {
-    console.error("[compras/recepciones] POST error:", e);
+    logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });
   }
 }

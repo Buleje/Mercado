@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 
 const CreateMovementSchema = z.object({
@@ -58,11 +59,11 @@ export async function POST(req: NextRequest) {
       "Crear", "movimiento_caja",
       `${type === "ingreso" ? "Ingreso" : "Egreso"} manual de S/${amount.toFixed(2)} — ${description}`,
       movement.id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[cash-movements] activity log failed", { err: String(err) }));
 
     return NextResponse.json(movement, { status: 201 });
   } catch (e) {
-    console.error("[cash-movements] POST error", e);
+    logger.error("[cash-movements] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(movements);
   } catch (e) {
-    console.error("[cash-movements] GET error", e);
+    logger.error("[cash-movements] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

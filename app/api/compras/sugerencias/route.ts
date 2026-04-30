@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -65,10 +66,9 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       // Schema drift en PurchaseItem (CLAUDE.md regla 14) — degrada graceful:
       // calcula sugerencias sin info de proveedor anterior. Mejor que 500.
-      console.warn(
-        "[compras/sugerencias] purchaseItem query failed (schema drift):",
-        e instanceof Error ? e.message : String(e),
-      );
+      logger.warn("[compras/sugerencias] purchaseItem query failed (schema drift)", {
+        err: e instanceof Error ? e.message : String(e),
+      });
     }
 
     // 4. Calculate suggestions
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ sugerencias });
   } catch (e) {
-    console.error("[compras/sugerencias] GET error:", e);
+    logger.error("[compras/sugerencias] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error calculando sugerencias" }, { status: 500 });
   }
 }

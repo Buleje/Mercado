@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/cash-registers/close-shift
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (e) {
-    console.error("[close-shift]", e);
+    logger.error("[close-shift] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Error al cerrar turno" },
       { status: 500 }

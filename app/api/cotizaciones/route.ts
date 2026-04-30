@@ -3,6 +3,7 @@ import { z } from "zod";
 import { CotizacionesDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 const CotizacionItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(data);
   } catch (e) {
-    console.error("[cotizaciones] GET error:", e);
+    logger.error("[cotizaciones] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(cotizacion, { status: 201 });
   } catch (e) {
-    console.error("[cotizaciones] POST error:", e);
+    logger.error("[cotizaciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

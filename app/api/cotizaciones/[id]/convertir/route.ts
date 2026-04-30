@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     }
 
     // Create order from cotización in a transaction
+    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped por auth.tenantId guard arriba.
     const result = await prisma.$transaction(async (tx) => {
       const orderId = `ord-cot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const order = await tx.order.create({
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ orderId: result.id, numero: cotizacion.numero }, { status: 201 });
   } catch (e) {
-    console.error("[cotizaciones] convertir error:", e);
+    logger.error("[cotizaciones] convertir error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
