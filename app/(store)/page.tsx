@@ -71,8 +71,11 @@ async function getMarketplaceStats() {
   cacheTag("marketplace-stats");
   const { prisma } = await import("@/lib/prisma");
   const [storeCount, productCount, avgRating] = await Promise.all([
+    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
     prisma.store.count({ where: { isPublished: true } }).catch(() => 0),
+    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
     prisma.product.count({ where: { active: true } }).catch(() => 0),
+    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
     prisma.review
       .aggregate({ _avg: { rating: true }, where: { status: "approved" } })
       .then((r) => r._avg.rating ?? 4.8)
@@ -88,6 +91,7 @@ async function getMarketplaceReviews() {
   cacheTag("marketplace-reviews");
   const { prisma } = await import("@/lib/prisma");
   try {
+    // eslint-disable-next-line no-restricted-properties -- reviews publicas marketplace cross-tenant.
     return await prisma.review.findMany({
       where: { status: "approved", rating: { gte: 4 }, storeId: { not: null } },
       orderBy: { date: "desc" },
@@ -172,21 +176,14 @@ async function HeroSection() {
 }
 
 // ── Reviews section (real DB data → animated carousel) ──
+// UX Strategy P1-5 fix 2026-04-30: ANTES caía a fallbackReviews con 6 nombres
+// inventados (Maria L., Carlos R., Ana P., etc.) cuando la DB estaba vacía
+// — contenido engañoso. AHORA: si no hay reviews reales, la sección NO se
+// renderiza (return null) — evita mostrar testimonios falsos al cliente.
 async function ReviewsSection() {
   const reviews = await getMarketplaceReviews();
-
-  const fallbackReviews = [
-    { id: "f1", name: "Maria L.", text: "Pide mis cosas de la bodega y llegaron en 30 minutos. Increíble.", rating: 5, date: new Date("2025-12-15") },
-    { id: "f2", name: "Carlos R.", text: "Pago con Yape y listo. Más fácil que ir al mercado.", rating: 5, date: new Date("2025-11-20") },
-    { id: "f3", name: "Ana P.", text: "Las frutas llegaron frescas y bien empacadas. Volveré a comprar.", rating: 4, date: new Date("2025-10-10") },
-    { id: "f4", name: "Jorge M.", text: "Los precios son iguales que en la bodega pero me lo traen a la casa. Genial.", rating: 5, date: new Date("2025-09-05") },
-    { id: "f5", name: "Rosa T.", text: "Ya no necesito salir al mercado con esta lluvia. Todo llega perfecto.", rating: 5, date: new Date("2025-08-18") },
-    { id: "f6", name: "Luis S.", text: "Compré para la semana entera. Rápido y sin problemas.", rating: 4, date: new Date("2025-07-22") },
-  ];
-
-  const displayReviews = reviews.length > 0 ? reviews : fallbackReviews;
-
-  return <ReviewsCarousel reviews={displayReviews} />;
+  if (reviews.length === 0) return null;
+  return <ReviewsCarousel reviews={reviews} />;
 }
 
 // ── Business + Driver CTA banners — editorial asimétrico ──
@@ -230,7 +227,7 @@ function PromoBanners() {
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Icon className="h-5 w-5" strokeWidth={1.75} />
                   </span>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+                  <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                     {b.kicker}
                   </p>
                 </div>
@@ -312,7 +309,7 @@ function AboutAndPricingSnapshot() {
         {/* Header editorial */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-16">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -346,14 +343,14 @@ function AboutAndPricingSnapshot() {
                 }`}
               >
                 {isPrimary && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-white">
                     Más popular
                   </span>
                 )}
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
                   {p.tagline}
                 </p>
-                <h3 className="mt-2 text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+                <h3 className="mt-2 text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   {p.name}
                 </h3>
                 <p
@@ -417,7 +414,7 @@ function PaymentMethods() {
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-14">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -472,7 +469,7 @@ function FinalCTA() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
       />
       <div className="relative max-w-4xl mx-auto px-4 text-center">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
           <span
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
