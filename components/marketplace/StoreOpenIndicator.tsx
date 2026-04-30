@@ -207,11 +207,11 @@ export default function StoreOpenIndicator({ hoursText, weekly, compact, classNa
     );
   }
 
-  // Fallback — mostrar el string libre
+  // Fallback — mostrar el string libre (tokens DS para coherencia dark mode)
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400",
+        "inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]",
         className,
       )}
     >
