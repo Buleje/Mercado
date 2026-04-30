@@ -1,6 +1,8 @@
 import "server-only";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { propagateExpiresAt } from "@/lib/db/batches.db";
+import { logger } from "@/lib/logger";
 
 // ── Tipos de resultado ───────────────────────────────────────────────────────
 
@@ -68,16 +70,30 @@ export async function deductStockFEFO(
       remaining -= toDeduct;
     }
 
-    // Aplicar las actualizaciones de lotes en paralelo dentro de la transacción
-    if (updates.length > 0) {
-      await Promise.all(
-        updates.map((u) =>
-          tx.batch.update({
-            where: { id: u.id },
-            data: { quantity: u.newQty },
-          }),
-        ),
+    // Aplicar updates: bulk UPDATE con CASE WHEN — 1 sola query en lugar
+    // de N (perf fix Bug Hunter Report 2026-04-30).
+    //
+    // Para producto con 20 lotes: antes 1 findMany + 20 update = 21 queries
+    // con N RTTs en serie dentro de la transacción (atomicidad de Prisma).
+    // Ahora 1 findMany + 1 UPDATE = 2 queries (~10x menos round trips).
+    if (updates.length === 1) {
+      const u = updates[0];
+      await tx.batch.update({
+        where: { id: u.id },
+        data: { quantity: u.newQty },
+      });
+    } else if (updates.length > 1) {
+      const cases = Prisma.join(
+        updates.map((u) => Prisma.sql`WHEN ${u.id} THEN ${u.newQty}::int`),
+        " ",
       );
+      const ids = Prisma.join(updates.map((u) => Prisma.sql`${u.id}`));
+      await tx.$executeRaw`
+        UPDATE "Batch"
+           SET "quantity" = CASE "id" ${cases} END
+         WHERE "id" IN (${ids})
+           AND "tenantId" = ${tenantId}
+      `;
     }
 
     return {
@@ -86,8 +102,13 @@ export async function deductStockFEFO(
     };
   });
 
-  // Propagar expiresAt al producto (fire-and-forget)
-  propagateExpiresAt(productId).catch(() => {});
+  // Propagar expiresAt al producto (fire-and-forget).
+  propagateExpiresAt(productId).catch((err) =>
+    logger.warn("[fefo-deduct] propagateExpiresAt failed", {
+      productId,
+      err: err instanceof Error ? err.message : String(err),
+    }),
+  );
 
   return result;
 }
