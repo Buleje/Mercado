@@ -57,7 +57,11 @@ function adapt(d: ApiDeal): Deal {
     unit: d.unit,
     storeName: d.store.name,
     storeSlug: d.store.slug,
-    endsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    // Bug Hunter P1#5 fix 2026-04-30: era 24h hardcoded → countdown falso
+    // de 23h59m. Ahora 7d como fallback graceful hasta que API devuelva real.
+    endsAt:
+      (d as { endsAt?: string }).endsAt ??
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     isFlash: d.discountPct >= 30,
     productId: d.productId,
     storeProductId: d.id,

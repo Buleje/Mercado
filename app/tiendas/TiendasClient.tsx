@@ -138,7 +138,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     () => searchParams.get("subcat") ?? null,
   );
 
-  // Fetch subcategorías cuando cambia la categoría principal
+  // Fetch subcategorías cuando cambia la categoría principal.
+  // Filtramos para mostrar SOLO las que tienen ≥1 tienda vinculada — un
+  // filtro vacío sin acción es ruido visual. Si ninguna tiene tiendas,
+  // la sección entera de subcategorías se oculta (controlado por el
+  // `subcategories.length > 0` del render).
   useEffect(() => {
     const ctrl = new AbortController();
     const url =
@@ -148,7 +152,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     fetch(url, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : { subcategories: [] }))
       .then((j) => {
-        const subs = (j.subcategories ?? []) as SubCategoryOption[];
+        const all = (j.subcategories ?? []) as SubCategoryOption[];
+        const subs = all.filter(
+          (s) =>
+            Array.isArray(s.linkedStoreSlugs) && s.linkedStoreSlugs.length > 0,
+        );
         setSubcategories(subs);
         // Si la subcategoría seleccionada ya no existe en este filtro, limpiarla
         if (subCategoryId && !subs.some((s) => s.id === subCategoryId)) {
@@ -347,16 +355,18 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Safety net — si tras 1.2s no hay stores ni error, asumimos
-  // rehidratación con state stuck (Next 16 RSC cache) y forzamos hard reload.
-  // Reducido de 4.5s a 1.2s para que el back-nav sea casi imperceptible.
+  // Safety net (Visual QA P0-4 fix 2026-04-30): antes 1.2s era demasiado
+  // agresivo — en conexiones 3G de Pucallpa el vecino veía la página recargar
+  // mientras todavía cargaba. Aumentado a 8s + solo si NO hay loading state
+  // visible. La condición original (stores.length===0 && !error && !loading)
+  // se mantiene para casos reales de RSC cache stuck.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const safety = setTimeout(() => {
       if (stores.length === 0 && !error && !loading) {
         window.location.reload();
       }
-    }, 1200);
+    }, 8000);
     return () => clearTimeout(safety);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -435,31 +445,96 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            fuera del contexto de tienda y confundiría al usuario. */}
       {!isTiendasOnly && <TiendasBreadcrumb zonaLabel={zonaLabel} />}
 
-      {/* ── Header compacto: ubicación + buscador inline ─────────────────
-           Reemplaza el hero editorial gigante. Estilo PedidosYa: data-density
-           > storytelling. La marca se siente vía paleta + tipografía, no
-           vía H1 magazine. */}
-      <section className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                <MapPin className="h-4 w-4" strokeWidth={2} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] leading-none">
-                  Tu ubicación
-                </p>
-                <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5 truncate">
-                  Pucallpa · Ucayali
-                </p>
+      {/* ── Hero editorial Buleje ───────────────────────────────────────
+           Headline grande con accent en italic serif (alineado con marca),
+           subtitle, ubicación + buscador, y stats trust bar abajo. */}
+      <section className="relative overflow-hidden border-b border-[var(--rule-base)] bg-linear-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
+        />
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 sm:pt-14 sm:pb-14">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-end">
+            {/* Headline + ubicación + buscador */}
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-1.5 mb-3 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
+                Directorio · Pucallpa
+              </p>
+              <h1 className="text-[clamp(2rem,5vw,3.25rem)] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                Las mejores tiendas de tu{" "}
+                <span className="italic font-serif text-[var(--accent)]">barrio</span>
+              </h1>
+              <p className="mt-3 max-w-xl text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
+                Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
+                con delivery rápido y pago al recibir.
+              </p>
+
+              {/* Ubicación + buscador en linea */}
+              <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2.5 shrink-0 shadow-sm">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </span>
+                  <div className="min-w-0 leading-tight">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Tu ubicación
+                    </p>
+                    <p className="text-sm font-black text-[var(--text-primary)]">
+                      Pucallpa · Ucayali
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <SearchAutocomplete
+                    onSearch={setSearch}
+                    placeholder="¿Qué buscás hoy? Bodega, farmacia, restaurante…"
+                  />
+                </div>
               </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <SearchAutocomplete
-                onSearch={setSearch}
-                placeholder="¿Qué buscás hoy? Bodega, farmacia, restaurante…"
-              />
+
+            {/* Trust stats card — Visual QA P1-8 fix 2026-04-30:
+                antes mostraba "25 min", "4.8★", "+800 vecinos" hardcoded.
+                Ahora calcula desde stores reales y oculta el suffix si no hay
+                data suficiente para evitar números engañosos en plataforma temprana. */}
+            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6 shadow-sm">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-4">
+                Comunidad Buleje
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+                {(() => {
+                  const ratedStores = stores.filter((s) => (s as { rating?: number }).rating && (s as { rating?: number }).rating! > 0);
+                  const avgRating = ratedStores.length > 0
+                    ? (ratedStores.reduce((acc, s) => acc + ((s as { rating?: number }).rating ?? 0), 0) / ratedStores.length).toFixed(1)
+                    : null;
+                  const zoneCount = new Set(stores.map((s) => (s as { zone?: string }).zone).filter(Boolean)).size;
+                  return [
+                    { value: stores.length || "—", label: "Tiendas activas" },
+                    { value: zoneCount > 0 ? String(zoneCount) : "—", label: "Zonas con cobertura" },
+                    { value: avgRating ?? "—", suffix: avgRating ? "★" : undefined, label: "Rating promedio" },
+                    { value: "Pucallpa", label: "Ciudad principal" },
+                  ];
+                })().map((s) => (
+                  <div key={s.label}>
+                    <p className="text-2xl sm:text-[1.75rem] font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
+                      {s.value}
+                      {s.suffix && (
+                        <span className="ml-0.5 text-base text-[var(--accent)]">
+                          {s.suffix}
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-1.5 text-xs font-bold text-[var(--text-secondary)]">
+                      {s.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -478,10 +553,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-5 sm:p-6">
             <div className="flex items-end justify-between gap-4 mb-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+                <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Resultados para tu búsqueda
                 </p>
-                <h2 className="text-xl sm:text-2xl font-black tracking-[-0.015em] text-[var(--text-primary)]">
+                <h2 className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   &quot;{search.trim()}&quot;{" "}
                   <span className="text-[var(--text-tertiary)] font-bold text-base">
                     · {stores.length} {stores.length === 1 ? "tienda" : "tiendas"}
@@ -561,23 +636,25 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       <MisPedidosFavoritosStrip />
 
       {/* ── Recomendadas / destacadas (carrusel) ─────────────────────── */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
-        <TiendasSectionHeader
-          eyebrow="Más pedidas"
-          title="Las que tus vecinos eligen"
-        />
-        {/* Pasamos las primeras 6 stores SSR-fetched al strip para evitar
-            skeletons eternos cuando Next 16 reusa el árbol cliente y el
-            useEffect del strip no se vuelve a ejecutar tras navegación. */}
+      {/* Sin TiendasSectionHeader extra — RecommendationsStrip ya tiene
+          su propio header "Tiendas destacadas cerca tuyo". Spacing
+          armonizado con el resto de secciones (pt-12 sm:pt-16). */}
+      <div className="pt-12 sm:pt-16">
         <RecommendationsStrip initialStores={initialStores.slice(0, 6) as never} />
-      </section>
+      </div>
 
       {/* ── Grid de Categorías principales (cajas grandes con imagen) ─
-           Click filtra el grid de "Todas las tiendas" más abajo. */}
-      <TiendasMainCategoriesGrid selected={category} onSelect={setCategory} />
+           Click filtra el grid de "Todas las tiendas" más abajo.
+           Pasamos stores reales para que oculte categorías sin tiendas
+           (la sección entera desaparece si ninguna categoría tiene tiendas). */}
+      <TiendasMainCategoriesGrid
+        selected={category}
+        onSelect={setCategory}
+        stores={stores}
+      />
 
       {/* ── Filtros + Grid — directo, sin hero pesado ─────────────────── */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12 pb-10">
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-12">
         <div className="mb-3">
           <TiendasSectionHeader
             eyebrow="Todas las tiendas"
@@ -597,7 +674,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           {/* Subcategoría = cajitas grandes con imagen (gestionadas desde superadmin) */}
           {subcategories.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
                 Subcategoría
               </p>
               <div
@@ -628,7 +705,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   </span>
                   <span
                     className={cn(
-                      "text-[11px] font-bold leading-tight text-center",
+                      "text-[length:var(--ts-xs)] font-bold leading-tight text-center",
                       subCategoryId === null
                         ? "text-[var(--accent)]"
                         : "text-[var(--text-primary)]",
@@ -674,7 +751,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       </span>
                       <span
                         className={cn(
-                          "text-[11px] font-bold leading-tight text-center max-w-[120px] truncate",
+                          "text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[120px] truncate",
                           active
                             ? "text-[var(--accent)]"
                             : "text-[var(--text-primary)]",
@@ -689,9 +766,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             </div>
           )}
 
-          {/* Zonas = cajitas chicas */}
+          {/* Zonas = cajitas chicas. Solo se muestra si hay ≥1 zona real
+              vinculada a tiendas (zonesForFilter siempre incluye "Todas",
+              así que length>1 indica que hay zonas con tiendas). */}
+          {zonesForFilter.length > 1 && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               Filtrar por zona
             </p>
             <div
@@ -715,7 +795,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   >
                     <span
                       className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-black tracking-tight",
+                        "h-9 w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-black tracking-tight",
                         active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
@@ -723,7 +803,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     </span>
                     <span
                       className={cn(
-                        "text-[11px] font-bold leading-tight text-center",
+                        "text-[length:var(--ts-xs)] font-bold leading-tight text-center",
                         active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
                       )}
                     >
@@ -734,6 +814,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               })}
             </div>
           </div>
+          )}
 
           {/* ── Fila de acciones inline · rediseñada (mas grande, DS tokens) ──
                Toolbar superior tipo PedidosYa: chips grandes, mejor jerarquía
@@ -849,10 +930,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
             <div className="max-w-xl">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1.5">
+              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
                 Para bodegueros
               </p>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 ¿Tenés una tienda? <span className="text-[var(--accent)]">Sumate gratis.</span>
               </h2>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">

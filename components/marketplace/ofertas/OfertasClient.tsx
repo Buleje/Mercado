@@ -76,8 +76,13 @@ function adapt(d: ApiDeal): Deal {
     unit: d.unit,
     storeName: d.store.name,
     storeSlug: d.store.slug,
-    // sin endsAt real — placeholder de 24h para que el countdown UI no rompa
-    endsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    // Visual QA P0-7 fix 2026-04-30: el API actualmente NO devuelve endsAt
+    // real — se usa fallback de 7 días para evitar urgencia falsa de "23h 59m"
+    // que mostraba el placeholder de 24h. Cuando el endpoint /api/marketplace/deals
+    // exponga endsAt real, este fallback queda como graceful degradation.
+    endsAt:
+      (d as { endsAt?: string }).endsAt ??
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     isFlash: d.discountPct >= 30,
     productId: d.productId,
     storeProductId: d.id,
@@ -172,7 +177,7 @@ function EmptyState() {
 
         {/* CTA secundaria — captura leads de bodegueros */}
         <div className="rounded-2xl bg-[var(--accent)]/8 border border-[var(--accent)]/20 p-6 sm:p-8 text-left max-w-xl mx-auto">
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Sos bodeguero
           </p>
           <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] mb-2">
@@ -210,7 +215,7 @@ function FinalCTA() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
       />
       <div className="relative max-w-4xl mx-auto px-4 text-center">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Sigue explorando
         </p>
