@@ -139,7 +139,7 @@ export default function MarketplaceStories() {
   return (
     <section
       aria-label="Accesos rápidos"
-      className="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-900"
+      className="bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <m.div
@@ -170,8 +170,8 @@ export default function MarketplaceStories() {
                   "inline-flex items-center gap-2 shrink-0 px-3.5 py-2 rounded-full border text-xs font-semibold transition-all",
                   "whitespace-nowrap",
                   s.featured
-                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white hover:bg-gray-800 dark:hover:bg-gray-100"
-                    : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500",
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)] hover:opacity-90"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
                 )}
               >
                 <Icon

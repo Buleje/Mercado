@@ -160,10 +160,10 @@ export function MarketplaceCrossStoreCombos({
             <Sparkles className="h-4 w-4" />
             <p className="text-xs font-black uppercase tracking-[0.24em]">Combo inteligente</p>
           </div>
-          <h3 className="mt-1 text-sm font-bold text-gray-900 dark:text-white">
+          <h3 className="mt-1 text-sm font-bold text-[var(--text-primary)]">
             Completa tu compra con otra tienda sin volver a buscar
           </h3>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
             Elegimos productos que combinan con tu canasta actual y que pueden llegar junto a tu pedido.
           </p>
         </div>
@@ -215,7 +215,7 @@ export function MarketplaceCrossStoreCombos({
                         {suggestion.name}
                       </p>
 
-                      <p className="mt-1 line-clamp-2 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 line-clamp-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         {suggestion.comboReason}
                       </p>
 

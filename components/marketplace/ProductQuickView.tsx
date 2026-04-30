@@ -90,7 +90,7 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl max-h-[85vh] overflow-y-auto sm:max-w-lg sm:mx-auto sm:mb-8 sm:rounded-2xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2"
+            className="fixed bottom-0 left-0 right-0 z-[101] bg-[var(--surface-raised)] rounded-t-2xl shadow-2xl max-h-[85vh] overflow-y-auto sm:max-w-lg sm:mx-auto sm:mb-8 sm:rounded-2xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2"
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
