@@ -25,7 +25,8 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Package, Tag, Store, X } from "lucide-react";
+import { Search, Package, Tag, Store, X, Clock } from "lucide-react";
+import { loadHistory } from "./SearchSuggestions";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ async function fetchSuggestions(q: string): Promise<Suggestion[]> {
 // ── Iconos por tipo ───────────────────────────────────────────────────────────
 
 function SuggestionIcon({ type }: { type: Suggestion["type"] }) {
-  const cls = "h-4 w-4 text-gray-400 flex-shrink-0";
+  const cls = "h-4 w-4 text-[var(--text-tertiary)] flex-shrink-0";
   if (type === "product")
     return <Package className={cls} strokeWidth={1.5} aria-hidden="true" />;
   if (type === "category")
@@ -121,7 +122,7 @@ function SuggestionTypeLabel({ type }: { type: Suggestion["type"] }) {
     store: "Tienda",
   };
   return (
-    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500">
+    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
       {labels[type]}
     </span>
   );
@@ -157,6 +158,9 @@ export default function SearchAutocompleteInput({
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [loading, setLoading] = useState(false);
+  // UX P2-1 fix 2026-04-30: historial de búsquedas locales — se muestran
+  // como chips cuando el input está focused y vacío.
+  const [history, setHistory] = useState<string[]>([]);
 
   const listboxId = `autocomplete-listbox-${instanceId}`;
 
@@ -289,7 +293,7 @@ export default function SearchAutocompleteInput({
       {/* Input */}
       <div className="relative">
         <Search
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
           aria-hidden="true"
         />
         <input
@@ -308,10 +312,12 @@ export default function SearchAutocompleteInput({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => {
+            // Cargar historial al primer focus para mostrar chips si query vacío
+            if (history.length === 0) setHistory(loadHistory());
             if (suggestions.length > 0) setOpen(true);
           }}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 pl-10 pr-10 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all"
         />
 
         {/* Clear button */}
@@ -324,7 +330,7 @@ export default function SearchAutocompleteInput({
               setOpen(false);
               inputRef.current?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
             aria-label="Limpiar busqueda"
           >
             <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
@@ -338,7 +344,43 @@ export default function SearchAutocompleteInput({
           className="absolute right-10 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
           aria-hidden="true"
         >
-          <span className="block h-full w-full rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-primary animate-spin" />
+          <span className="block h-full w-full rounded-full border-2 border-[var(--rule-base)] border-t-[var(--accent)] animate-spin" />
+        </div>
+      )}
+
+      {/* Historial de búsquedas — solo visible cuando query vacío y hay history.
+          UX P2-1 fix 2026-04-30: el vecino que vuelve a buscar ve sus
+          búsquedas pasadas como chips (1 click) en lugar de re-tipear. */}
+      {query.length === 0 && history.length > 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Búsquedas recientes
+            </p>
+          </div>
+          <ul role="list" className="p-2">
+            {history.slice(0, 6).map((term) => (
+              <li key={term}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery(term);
+                    router.push(`/marketplace/buscar?q=${encodeURIComponent(term)}`);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  <Clock
+                    className="h-4 w-4 text-[var(--text-tertiary)] flex-shrink-0"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                  <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+                    {term}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -349,7 +391,7 @@ export default function SearchAutocompleteInput({
           id={listboxId}
           role="listbox"
           aria-label="Sugerencias de busqueda"
-          className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden"
+          className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-lg overflow-hidden"
         >
           {suggestions.map((s, idx) => {
             const isActive = idx === activeIdx;
@@ -368,17 +410,17 @@ export default function SearchAutocompleteInput({
                   onClick={() => navigateTo(s)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                     isActive
-                      ? "bg-gray-50 dark:bg-gray-800"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                      ? "bg-[var(--surface-sunken)]"
+                      : "hover:bg-[var(--surface-sunken)]"
                   }`}
                 >
                   <SuggestionIcon type={s.type} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                       {s.label}
                     </p>
                     {s.type === "product" && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                      <p className="text-xs text-[var(--text-tertiary)] truncate">
                         {s.sub}
                       </p>
                     )}
@@ -393,7 +435,7 @@ export default function SearchAutocompleteInput({
           <li role="option" aria-selected={false}>
             <button
               type="submit"
-              className="w-full flex items-center gap-3 px-4 py-3 border-t border-gray-100 dark:border-gray-800 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 border-t border-[var(--rule-soft)] text-left hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <Search
                 className="h-4 w-4 text-primary flex-shrink-0"
