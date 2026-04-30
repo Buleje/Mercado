@@ -4,14 +4,18 @@
  * SubscribeAndSaveSection — Carrusel de productos suscribibles (homepage marketplace).
  *
  * Muestra 6-8 productos que admiten "Bodega al Mes" con el descuento del 5%.
- * Consume MOCK_SUBSCRIBABLE_PRODUCTS; cuando exista backend se reemplaza con
- * fetch a /api/marketplace/subscribable.
+ *
+ * Bug Hunter Report 2026-04-30 P1#6: antes mostraba MOCK_SUBSCRIBABLE_PRODUCTS
+ * en producción (8 productos hardcoded de tiendas inventadas). Ahora intenta
+ * fetch a /api/marketplace/subscribable; si el endpoint no existe (404) o
+ * retorna lista vacía, la sección NO se renderiza (return null) — evita
+ * mostrar productos falsos al cliente.
  *
  * Layout: horizontal scroll en mobile, grid 4 columns desktop.
  */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   BadgePercent,
@@ -19,10 +23,7 @@ import {
   ShoppingCart,
   Check,
 } from "@buleje/design-system/icons";
-import {
-  MOCK_SUBSCRIBABLE_PRODUCTS,
-  type SubscribableProductMock,
-} from "@/lib/mocks/subscriptions.mock";
+import { type SubscribableProductMock } from "@/lib/mocks/subscriptions.mock";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import MarketplaceSection, { MARKETPLACE_CAROUSEL, CAROUSEL_ITEM_W } from "@/components/marketplace/MarketplaceSection";
@@ -154,8 +155,32 @@ function SubscribableCard({ product }: { product: SubscribableProductMock }) {
 }
 
 export default function SubscribeAndSaveSection() {
-  const products = MOCK_SUBSCRIBABLE_PRODUCTS.slice(0, 8);
-  if (products.length === 0) return null;
+  const [products, setProducts] = useState<SubscribableProductMock[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/marketplace/subscribable", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { products: [] }))
+      .then((data: { products?: SubscribableProductMock[] }) => {
+        if (cancelled) return;
+        setProducts(data.products?.slice(0, 8) ?? []);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProducts([]);
+        setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // No renderizar nada hasta que tengamos respuesta del backend.
+  // Si no hay productos suscribibles reales, la sección queda invisible
+  // (evita mostrar mocks en producción — Bug Hunter P1#6).
+  if (!loaded || products.length === 0) return null;
 
   return (
     <MarketplaceSection

@@ -10,6 +10,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { m } from "framer-motion";
 import { ProductCardGrid } from "@buleje/design-system";
 import { toProductCardShape } from "@/lib/marketplace/product-adapter";
 import type { SearchProduct } from "@/lib/db/marketplace-search.db";
@@ -86,20 +87,33 @@ export default function SearchResults({
         </p>
       </div>
 
-      {/* ProductCardGrid (Ola 7) — grid catalogo principal de busqueda */}
+      {/* ProductCardGrid (Ola 7) — grid catalogo principal de busqueda
+          Visual QA P2 fix 2026-04-30: stagger animation al cargar — cada
+          card aparece con fade+slide y delay incremental (60ms por card,
+          cap 600ms para grids grandes). Sensación premium ML/iFood. */}
       <div
         className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
         aria-label={`Resultados de busqueda: ${total} productos`}
       >
-        {products.map((p) => (
-          <ProductCardGrid
+        {products.map((p, idx) => (
+          <m.div
             key={p.storeProductId}
-            product={toProductCardShape({
-              ...p,
-              href: `/marketplace/${p.storeSlug}/producto/${p.productId}`,
-            })}
-            renderImage={p.image ? nextImage : undefined}
-          />
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.35,
+              ease: "easeOut",
+              delay: Math.min(idx * 0.06, 0.6),
+            }}
+          >
+            <ProductCardGrid
+              product={toProductCardShape({
+                ...p,
+                href: `/marketplace/${p.storeSlug}/producto/${p.productId}`,
+              })}
+              renderImage={p.image ? nextImage : undefined}
+            />
+          </m.div>
         ))}
       </div>
 

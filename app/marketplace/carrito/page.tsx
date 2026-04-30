@@ -15,6 +15,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useState } from "react";
+import { m, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Store,
@@ -44,7 +45,14 @@ function ItemRow({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex gap-4 py-5 border-b border-[var(--rule-soft)] last:border-b-0">
+    <m.div
+      layout
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="flex gap-4 py-5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+    >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
         className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)]"
@@ -111,7 +119,7 @@ function ItemRow({
           {fmt(item.price * item.quantity)}
         </p>
       </div>
-    </div>
+    </m.div>
   );
 }
 
@@ -257,6 +265,7 @@ export default function CarritoPage() {
                     </div>
                   </header>
                   <div className="px-6">
+                    <AnimatePresence initial={false} mode="popLayout">
                     {group.items.map((item) => (
                       <ItemRow
                         key={`${item.storeId}-${item.productId}`}
@@ -265,6 +274,7 @@ export default function CarritoPage() {
                         onRemove={() => handleRemove(item)}
                       />
                     ))}
+                    </AnimatePresence>
                   </div>
                 </article>
               );
