@@ -3,16 +3,18 @@
 /**
  * /cuenta/pedidos — Lista de pedidos del cliente.
  *
- * Usa el mock `MOCK_ORDERS` por ahora (ADR-XXX: reemplazar con
- * `CustomerOrdersDB.listByCustomer(tenantId, phone)`).
+ * Conecta a `GET /api/me/order-history` (requireCustomer + tenantId scope).
+ * Antes (P1 Bug Hunter Report 2026-04-30): usaba MOCK_ORDERS — el cliente
+ * veía pedidos falsos en su historial.
  *
  * Muestra `OrderTrackingMini` (widget compacto) en los pedidos activos.
  */
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   Clock, CheckCircle2, Truck, XCircle, ChevronRight, ArrowLeft,
-  ShoppingBag,
+  ShoppingBag, Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -37,45 +39,42 @@ interface UiOrder {
   etaMinutes?: number;
 }
 
-// ── Mock orders (replace con CustomerOrdersDB.listByCustomer) ──
-const MOCK: UiOrder[] = [
-  {
-    id: "BSM-2026-04-18-0042",
-    storeName: "Buleje",
-    createdAt: new Date(Date.now() - 32 * 60_000).toISOString(),
-    total: 45.5,
-    status: "en_camino",
-    itemsPreview: "Arroz, Aceite, Azúcar",
-    miniStatus: "shipping",
-    etaMinutes: 18,
-  },
-  {
-    id: "BSM-2026-04-17-0031",
-    storeName: "Buleje",
-    createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
-    total: 22.9,
-    status: "confirmado",
-    itemsPreview: "Pan, Leche",
-    miniStatus: "preparing",
-    etaMinutes: 35,
-  },
-  {
-    id: "BSM-2026-04-15-0022",
-    storeName: "Bodega Doña Elena",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60_000).toISOString(),
-    total: 38.2,
-    status: "entregado",
-    itemsPreview: "Fideos, Detergente, Jabón",
-  },
-  {
-    id: "BSM-2026-04-10-0019",
-    storeName: "Buleje",
-    createdAt: new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString(),
-    total: 12.5,
-    status: "cancelado",
-    itemsPreview: "Gaseosa",
-  },
-];
+interface ApiOrder {
+  id: string;
+  status: UiStatus;
+  total: number;
+  paymentMethod: string | null;
+  createdAt: string;
+  updatedAt: string;
+  notes: string | null;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+    unit: string;
+    image: string;
+    productId: number | null;
+  }>;
+  itemCount: number;
+  canCancel: boolean;
+  canReorder: boolean;
+}
+
+// ── Mapeo status → mini-tracker (los activos muestran widget de progreso) ──
+function statusToMiniStatus(status: UiStatus): MiniStatus | undefined {
+  switch (status) {
+    case "confirmado": return "preparing";
+    case "en_camino":  return "shipping";
+    default:           return undefined;
+  }
+}
+
+function buildItemsPreview(items: ApiOrder["items"]): string {
+  if (!items.length) return "";
+  const names = items.map((i) => i.name).filter(Boolean);
+  const preview = names.slice(0, 3).join(", ");
+  return names.length > 3 ? `${preview} +${names.length - 3} más` : preview;
+}
 
 const STATUS_META: Record<
   UiStatus,
@@ -182,7 +181,7 @@ function OrderListCard({ order }: { order: UiOrder }) {
                 <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
                 {meta.label}
               </span>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted truncate">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted truncate">
                 {order.storeName}
               </span>
             </div>
@@ -207,8 +206,51 @@ function OrderListCard({ order }: { order: UiOrder }) {
 }
 
 export default function PedidosPage() {
-  const active = MOCK.filter((o) => o.status !== "entregado" && o.status !== "cancelado");
-  const past = MOCK.filter((o) => o.status === "entregado" || o.status === "cancelado");
+  const [orders, setOrders] = useState<UiOrder[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me/order-history?limit=50", { credentials: "include" })
+      .then((r) => {
+        if (r.status === 401 || r.status === 403) {
+          // Sesión expirada o anon → mostrar empty state legítimo
+          return { orders: [] };
+        }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: { orders?: ApiOrder[] }) => {
+        if (cancelled) return;
+        const apiOrders = data.orders ?? [];
+        const mapped: UiOrder[] = apiOrders.map((o) => ({
+          id: o.id,
+          storeName: "Buleje",
+          createdAt: o.createdAt,
+          total: o.total,
+          status: o.status,
+          itemsPreview: buildItemsPreview(o.items),
+          miniStatus: statusToMiniStatus(o.status),
+        }));
+        setOrders(mapped);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Error al cargar pedidos");
+        setOrders([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isLoading = orders === null;
+  const active = (orders ?? []).filter(
+    (o) => o.status !== "entregado" && o.status !== "cancelado",
+  );
+  const past = (orders ?? []).filter(
+    (o) => o.status === "entregado" || o.status === "cancelado",
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
@@ -235,7 +277,7 @@ export default function PedidosPage() {
             Volver a mi cuenta
           </Link>
           <div className="mt-4">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               Historial
             </span>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mt-1">
@@ -247,11 +289,24 @@ export default function PedidosPage() {
           </div>
         </div>
 
-        {active.length > 0 ? (
+        {isLoading ? (
+          <section className="rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card px-6 py-12 text-center">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+            <p className="mt-3 text-sm text-muted">Cargando tus pedidos…</p>
+          </section>
+        ) : error ? (
+          <section className="rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/40 dark:bg-red-900/10 px-6 py-8 text-center">
+            <XCircle className="h-8 w-8 mx-auto text-red-500" />
+            <p className="mt-3 text-sm font-semibold text-red-700 dark:text-red-300">
+              No pudimos cargar tus pedidos
+            </p>
+            <p className="mt-1 text-xs text-muted">{error}</p>
+          </section>
+        ) : active.length > 0 ? (
           <section aria-labelledby="active-orders-heading">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
                   En curso
                 </span>
                 <h2
@@ -290,11 +345,11 @@ export default function PedidosPage() {
           </section>
         )}
 
-        {past.length > 0 && (
+        {!isLoading && !error && past.length > 0 && (
           <section aria-labelledby="past-orders-heading">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
                   Historial
                 </span>
                 <h2
