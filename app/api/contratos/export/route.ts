@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
@@ -363,7 +364,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Formato no soportado" }, { status: 400 });
     }
   } catch (e) {
-    console.error("[contratos/export] POST error:", e);
+    logger.error("[contratos/export] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

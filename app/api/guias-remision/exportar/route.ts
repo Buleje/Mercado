@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GuiasRemisionDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[guias-remision/exportar] GET error:", e);
+    logger.error("[guias-remision/exportar] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

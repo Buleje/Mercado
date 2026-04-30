@@ -17,6 +17,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ROADMAP_ITEMS, ROADMAP_TOTAL } from "@/lib/roadmap/items";
 import { RoadmapStatusDB } from "@/lib/db/roadmap-status.db";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -40,10 +41,9 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     // Si la tabla aún no existe (migración pendiente) devolvemos el catálogo
     // con todos los items en "planned" — permite que el módulo funcione sin DB.
-    console.warn(
-      "[superadmin/roadmap/items] RoadmapItemStatus table not reachable, falling back to empty map:",
-      (err as Error).message,
-    );
+    logger.warn("[superadmin/roadmap/items] RoadmapItemStatus table not reachable, falling back to empty map", {
+      err: (err as Error).message,
+    });
     statusMap = new Map();
   }
 

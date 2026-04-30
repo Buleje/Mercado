@@ -3,6 +3,7 @@ import { OrdersDB, CustomersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -85,7 +86,7 @@ Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
     });
 
     if (!res.ok) {
-      console.error("[promotions-id] router error:", res.error);
+      logger.error("[promotions-id] router error", { err: String(res.error) });
       return NextResponse.json({ error: res.error ?? "Error IA" }, { status: 502 });
     }
 

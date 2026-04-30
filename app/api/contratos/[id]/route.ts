@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ export async function GET(
   const { id } = await params;
 
   try {
+    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -64,7 +66,7 @@ export async function GET(
       updatedAt: nota.updatedAt.toISOString(),
     });
   } catch (e) {
-    console.error("[contratos/id] GET error:", e);
+    logger.error("[contratos/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -97,6 +99,7 @@ export async function PUT(
   const updates = parsed.data;
 
   try {
+    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -137,6 +140,7 @@ export async function PUT(
     // Update the title to reflect potential name/type changes
     const titulo = `CONTRATO: ${mergedData.numero} — ${mergedData.tipo} — ${mergedData.clienteNombre}`;
 
+    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
     const updated = await prisma.note.update({
       where: { id },
       data: {
@@ -164,7 +168,7 @@ export async function PUT(
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (e) {
-    console.error("[contratos/id] PUT error:", e);
+    logger.error("[contratos/id] PUT error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -181,6 +185,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -212,6 +217,7 @@ export async function DELETE(
     existingData.fechaAnulacion = new Date().toISOString();
     existingData.anuladoPor = auth.username;
 
+    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
     const updated = await prisma.note.update({
       where: { id },
       data: {
@@ -236,7 +242,7 @@ export async function DELETE(
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (e) {
-    console.error("[contratos/id] DELETE error:", e);
+    logger.error("[contratos/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

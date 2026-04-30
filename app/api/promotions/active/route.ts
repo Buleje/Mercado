@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 // GET /api/promotions/active — retorna promociones activas para el POS
 // Por ahora las promociones viven en localStorage del admin.
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
       message: "Endpoint listo. Las promociones se migrarán a BD próximamente.",
     });
   } catch (e) {
-    console.error("[promotions] GET error:", e);
+    logger.error("[promotions/active] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error" }, { status: 500 });
   }
 }

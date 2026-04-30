@@ -23,6 +23,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ROADMAP_ITEMS_BY_ID } from "@/lib/roadmap/items";
 import { RoadmapStatusDB } from "@/lib/db/roadmap-status.db";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -98,7 +99,7 @@ export async function POST(
     });
     return NextResponse.json({ ok: true, itemId, state: updated });
   } catch (err) {
-    console.error("[superadmin/roadmap/items/status] upsert failed:", err);
+    logger.error("[superadmin/roadmap/items/status] upsert failed", { err: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       {
         error: "upsert_failed",
