@@ -12,6 +12,11 @@ import { withCircuitBreaker, getCircuitStatus } from "@/lib/circuit-breaker";
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 
+// Next 16 con cacheComponents NO permite `export const dynamic = "force-dynamic"`
+// (rompe el build con segment-config error). El dinamismo ya está garantizado
+// porque cada request ejecuta `prisma.$queryRaw` (side-effect). Lo único que
+// queda por blindar es el cache del cliente / CDN — ver `Cache-Control` abajo.
+
 // In-process counter for DB failures in the current minute.
 // Resets every 60 s. When failures exceed ALERT_THRESHOLD, a Sentry alert fires
 // and an email notification is sent to the superadmin.
@@ -62,7 +67,7 @@ export async function GET() {
             actionLabel: "Ver health check",
             actionUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe"}/api/health`,
           })
-        ).catch(() => {});
+        ).catch((err) => logger.warn("[health] superadmin alert dispatch failed", { err: String(err) }));
       }
       // Reset so a repeated burst doesn't spam Sentry on every request
       _failCount = 0;
@@ -89,6 +94,12 @@ export async function GET() {
       },
       responseTimeMs: Date.now() - start,
     },
-    { status: healthy ? 200 : 503 },
+    {
+      status: healthy ? 200 : 503,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        Pragma: "no-cache",
+      },
+    },
   );
 }
