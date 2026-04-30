@@ -198,17 +198,19 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
         </div>
       </div>
 
-      {/* ── CTA a /descubri — compensa las secciones secundarias ocultas ── */}
+      {/* ── CTA a /marketplace/explorar — compensa las secciones secundarias ocultas
+              (antes apuntaba a /descubri que no existe — fix Visual QA P0-3) ── */}
       {!SHOW_SECONDARY_HOME_SECTIONS && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
           <p className="text-sm text-[var(--text-tertiary)] mb-3">
-            ¿Quieres más? Explora lo que hay en el ecosistema Buleje.
+            ¿Quieres más? Recorré categorías, ocasiones y bodegas en Pucallpa.
           </p>
           <Link
-            href="/descubri"
+            href="/marketplace/explorar"
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
-            Descubrí más
+            Explorar todo el marketplace
+            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
           </Link>
         </section>
       )}
@@ -225,7 +227,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
         />
         <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"

@@ -42,12 +42,17 @@ export default function NavModeToast() {
       lastMode.current = next;
     };
 
-    window.addEventListener("buleje:nav-visibility-changed", handler);
-    window.addEventListener("storage", (e) => {
+    // BUG FIX (Bug Hunter Report 2026-04-30 P0#4): el storage listener era
+    // función inline anónima — `removeEventListener` no podía limpiarla y
+    // cada remount acumulaba listeners (memory leak).
+    const storageHandler = (e: StorageEvent) => {
       if (e.key === "buleje-nav-visibility") handler();
-    });
+    };
+    window.addEventListener("buleje:nav-visibility-changed", handler);
+    window.addEventListener("storage", storageHandler);
     return () => {
       window.removeEventListener("buleje:nav-visibility-changed", handler);
+      window.removeEventListener("storage", storageHandler);
     };
   }, []);
 

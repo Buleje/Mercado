@@ -149,7 +149,7 @@ export default function BuscarClient({
   const hasResults = initialData.products.length > 0;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* Header: breadcrumb + titulo + stats + sort */}
       <SearchHeader
         query={initialQuery}
@@ -219,14 +219,14 @@ export default function BuscarClient({
             aria-label="Cerrar filtros"
           />
           {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-white dark:bg-gray-900 overflow-y-auto p-5">
+          <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-[var(--surface-raised)] overflow-y-auto p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">
+              <h2 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
                 Filtros
               </h2>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-full p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 aria-label="Cerrar filtros"
               >
                 <svg

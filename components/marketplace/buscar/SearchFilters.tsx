@@ -55,7 +55,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
+      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {title}
       </h3>
       <div className="space-y-2">{children}</div>
@@ -89,7 +89,7 @@ function RadioRow({
         className={`h-4 w-4 rounded-full border flex items-center justify-center transition-colors ${
           checked
             ? "border-primary bg-primary"
-            : "border-gray-300 dark:border-gray-700 group-hover:border-gray-500"
+            : "border-[var(--rule-base)] group-hover:border-[var(--rule-strong)]"
         }`}
       >
         {checked && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
@@ -97,14 +97,14 @@ function RadioRow({
       <span
         className={`flex-1 ${
           checked
-            ? "font-semibold text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400"
+            ? "font-semibold text-[var(--text-primary)]"
+            : "text-[var(--text-secondary)]"
         }`}
       >
         {children ?? label}
       </span>
       {count != null && (
-        <span className="text-xs text-gray-400 dark:text-gray-500">
+        <span className="text-xs text-[var(--text-tertiary)]">
           {count}
         </span>
       )}
@@ -136,7 +136,7 @@ function CheckboxRow({
         className={`h-4 w-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
           checked
             ? "border-primary bg-primary"
-            : "border-gray-300 dark:border-gray-700 group-hover:border-gray-500"
+            : "border-[var(--rule-base)] group-hover:border-[var(--rule-strong)]"
         }`}
       >
         {checked && (
@@ -161,14 +161,14 @@ function CheckboxRow({
       <span
         className={`flex-1 truncate ${
           checked
-            ? "font-semibold text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400"
+            ? "font-semibold text-[var(--text-primary)]"
+            : "text-[var(--text-secondary)]"
         }`}
       >
         {label}
       </span>
       {count != null && (
-        <span className="text-xs text-gray-400 dark:text-gray-500">
+        <span className="text-xs text-[var(--text-tertiary)]">
           {count}
         </span>
       )}
@@ -229,7 +229,7 @@ export default function SearchFilters({
     : categoriesFacet.slice(0, MAX_CATS_VISIBLE);
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-6 lg:sticky lg:top-24">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl p-5 space-y-6 lg:sticky lg:top-24">
       {/* Categorias (facets dinamicos del backend) */}
       {categoriesFacet.length > 0 && (
         <FilterGroup title="Categoria">
@@ -303,11 +303,11 @@ export default function SearchFilters({
                 priceMin: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)] transition-colors"
             min={0}
             aria-label="Precio mínimo"
           />
-          <span className="text-gray-400 text-xs" aria-hidden="true">
+          <span className="text-[var(--text-tertiary)] text-xs" aria-hidden="true">
             —
           </span>
           <input
@@ -320,7 +320,7 @@ export default function SearchFilters({
                 priceMax: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)] transition-colors"
             min={0}
             aria-label="Precio máximo"
           />
@@ -368,14 +368,14 @@ export default function SearchFilters({
                   key={s}
                   className={`h-3 w-3 ${
                     s <= n
-                      ? "text-gray-900 dark:text-white fill-current"
-                      : "text-gray-300 dark:text-gray-700"
+                      ? "text-[var(--text-primary)] fill-current"
+                      : "text-[var(--rule-base)]"
                   }`}
                   strokeWidth={1.5}
                   aria-hidden="true"
                 />
               ))}
-              <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+              <span className="ml-1 text-xs text-[var(--text-tertiary)]">
                 y mas
               </span>
             </span>
@@ -423,7 +423,7 @@ export default function SearchFilters({
       {hasActive && (
         <button
           onClick={onReset}
-          className="w-full rounded-full border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="w-full rounded-full border-2 border-[var(--rule-base)] px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-strong)] transition-colors"
         >
           Limpiar filtros
         </button>

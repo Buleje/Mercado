@@ -64,13 +64,13 @@ export default function SearchResults({
     >
       {/* Strip de conteo */}
       <div className="flex items-center justify-between mb-5">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+        <p className="text-sm font-medium text-[var(--text-secondary)]">
           Mostrando{" "}
-          <span className="text-gray-900 dark:text-white font-semibold">
+          <span className="text-[var(--text-primary)] font-semibold">
             {from}–{to}
           </span>{" "}
           de{" "}
-          <span className="text-gray-900 dark:text-white font-semibold">
+          <span className="text-[var(--text-primary)] font-semibold">
             {total.toLocaleString("es-PE")}
           </span>{" "}
           resultado{total === 1 ? "" : "s"}
@@ -78,7 +78,7 @@ export default function SearchResults({
             <>
               {" "}
               para{" "}
-              <span className="text-gray-900 dark:text-white font-semibold">
+              <span className="text-[var(--text-primary)] font-semibold">
                 &ldquo;{query}&rdquo;
               </span>
             </>
@@ -112,19 +112,19 @@ export default function SearchResults({
           {page > 1 && (
             <Link
               href={buildPageUrl(query, page - 1)}
-              className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center rounded-xl border-2 border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-strong)] transition-colors"
             >
               Anterior
             </Link>
           )}
 
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 px-4">
+          <span className="text-sm font-medium text-[var(--text-secondary)] px-4">
             Pagina{" "}
-            <span className="text-gray-900 dark:text-white font-semibold">
+            <span className="text-[var(--text-primary)] font-semibold">
               {page}
             </span>{" "}
             de{" "}
-            <span className="text-gray-900 dark:text-white font-semibold">
+            <span className="text-[var(--text-primary)] font-semibold">
               {totalPages}
             </span>
           </span>
@@ -132,7 +132,7 @@ export default function SearchResults({
           {page < totalPages && (
             <Link
               href={buildPageUrl(query, page + 1)}
-              className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center rounded-xl border-2 border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-strong)] transition-colors"
             >
               Siguiente
             </Link>

@@ -1,3 +1,10 @@
+/**
+ * @cross-tenant intentional — endpoint público marketplace (recetas
+ * compartidas entre tiendas son discoverable). Visual QA Bug Hunter Report
+ * P0#1 marcó esto como leak — pero es por diseño del marketplace
+ * (descubrimiento cross-store). Si en el futuro se quiere scope por tenant,
+ * agregar header `x-tenant-id` + `WHERE tenantId = ...`.
+ */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +36,7 @@ interface RecetaSEO {
 
 async function getRecetaForSEO(id: string): Promise<RecetaSEO | null> {
   try {
+    // eslint-disable-next-line no-restricted-properties -- ruta pública marketplace; recetas cross-tenant por diseño (descubrimiento). Ver header del archivo.
     const row = await prisma.receta.findFirst({
       where: { id, activa: true },
       select: {
