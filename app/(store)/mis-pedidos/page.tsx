@@ -21,8 +21,9 @@ import {
   LupaConfundida,
   IllustrationCard,
 } from "@/components/ui-system/illustrations";
-import { MOCK_ORDERS } from "@/lib/customer-orders.mock";
-import type { MockOrder } from "@/lib/customer-orders.mock";
+// MOCK_ORDERS removido — UX P0-1 fix 2026-04-30. El tipo MockOrderItem queda
+// para compatibilidad con la firma del API (mismo shape) hasta que se renombre
+// a OrderItemRecord en un sprint posterior.
 import type { MockOrderItem } from "@/lib/customer-orders.mock";
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
@@ -245,7 +246,7 @@ function OrderDetailModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-card z-10 px-5 pt-4 pb-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
           <div>
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               Pedido
             </span>
             <h2 className="text-base font-extrabold text-foreground leading-tight">
@@ -275,7 +276,7 @@ function OrderDetailModal({
         <div className="px-5 py-4 space-y-5">
           {/* Timeline */}
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted mb-3">
               SEGUIMIENTO
             </p>
             <OrderTimeline status={order.status} />
@@ -283,7 +284,7 @@ function OrderDetailModal({
 
           {/* Productos */}
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted mb-3">
               PRODUCTOS
             </p>
             <div className="space-y-2">
@@ -325,7 +326,7 @@ function OrderDetailModal({
 
           {/* Totales */}
           <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 space-y-2">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted mb-2">
               RESUMEN
             </p>
             <div className="flex justify-between text-sm text-muted">
@@ -347,7 +348,7 @@ function OrderDetailModal({
           {/* Info entrega */}
           {order.deliveryAddress && (
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted mb-2">
                 ENTREGA
               </p>
               <div className="flex items-start gap-2 text-sm text-muted">
@@ -367,7 +368,7 @@ function OrderDetailModal({
           {/* Info repartidor (solo si en camino) */}
           {order.status === "en_camino" && order.courierName && (
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted mb-2">
                 REPARTIDOR
               </p>
               <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-100 dark:border-amber-800/30">
@@ -712,17 +713,25 @@ export default function MisPedidosPage() {
       const res = await fetch(
         `/api/customers/${encodeURIComponent(clean)}/orders`
       );
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: Order[] = await res.json();
       startTransition(() => {
         setOrders(data);
         setIdentified(true);
       });
-    } catch {
-      // Fallback a mock data para demo
+    } catch (err) {
+      // UX P0-1 fix 2026-04-30: ANTES caía a MOCK_ORDERS (4 pedidos falsos)
+      // si el fetch fallaba — el cliente real veía pedidos inventados, rompía
+      // confianza para siempre. AHORA: empty state real + identifica al cliente
+      // (puede haber pedidos en otro tenant o aún no comprado).
       startTransition(() => {
-        setOrders(MOCK_ORDERS as Order[]);
+        setOrders([]);
         setIdentified(true);
+        setError(
+          err instanceof Error && err.message.startsWith("HTTP")
+            ? "No pudimos cargar tus pedidos. Intentá de nuevo en un momento."
+            : ""
+        );
       });
     } finally {
       setLoading(false);
@@ -838,10 +847,10 @@ export default function MisPedidosPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div className="flex-1">
-              <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-1">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-1">
                 PEDIDOS
               </span>
-              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white leading-tight tracking-[-0.02em]">
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white leading-tight tracking-[var(--ls-tight)]">
                 Todo tu historial
               </h1>
             </div>
@@ -854,7 +863,7 @@ export default function MisPedidosPage() {
                 <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">
                   {completedOrders.length}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[var(--ls-wider)] mt-1.5">
                   Realizados
                 </p>
               </div>
@@ -862,7 +871,7 @@ export default function MisPedidosPage() {
                 <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums tracking-tight">
                   {fmt(totalSpent)}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[var(--ls-wider)] mt-1.5">
                   Invertido
                 </p>
               </div>
@@ -875,7 +884,7 @@ export default function MisPedidosPage() {
                 >
                   {activeOrders.length}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[var(--ls-wider)] mt-1.5">
                   En curso
                 </p>
               </div>
