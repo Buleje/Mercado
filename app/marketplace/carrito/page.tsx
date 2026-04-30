@@ -67,12 +67,12 @@ function ItemRow({
       <div className="flex-1 min-w-0 flex flex-col">
         <Link
           href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-          className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[-0.01em] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2"
+          className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2"
         >
           {item.name}
         </Link>
 
-        <p className="mt-1 text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">
+        <p className="mt-1 text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
           {fmt(item.price)}
           {item.unit && (
             <span className="ml-1 text-[length:var(--ts-xs)] font-normal text-[var(--text-tertiary)]">
@@ -94,19 +94,20 @@ function ItemRow({
           <button
             type="button"
             onClick={onRemove}
-            className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+            aria-label="Eliminar producto del carrito"
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
           >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Eliminar
           </button>
         </div>
       </div>
 
       <div className="hidden sm:block text-right shrink-0 self-start">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] font-bold">
+        <p className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-bold">
           Subtotal
         </p>
-        <p className="mt-1 text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[-0.02em]">
+        <p className="mt-1 text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
           {fmt(item.price * item.quantity)}
         </p>
       </div>
@@ -145,7 +146,7 @@ export default function CarritoPage() {
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
             Seguir comprando
           </Link>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Tu carrito
           </h1>
           {itemCount > 0 && (
@@ -166,7 +167,7 @@ export default function CarritoPage() {
                   storeName: s.storeName,
                 })),
               )}
-              heading="🛒 Mi carrito Buleje"
+              heading="Mi carrito Buleje"
             />
             <button
               type="button"
@@ -203,7 +204,7 @@ export default function CarritoPage() {
             <PaicheMascot size={160} animated />
           </div>
           <div className="relative max-w-md">
-            <p className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+            <p className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               Tu carrito está{" "}
               <span className="italic font-serif text-[var(--accent)]">vacío.</span>
             </p>
@@ -235,20 +236,20 @@ export default function CarritoPage() {
                         <Store className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                           Tienda
                         </p>
                         <Link
                           href={`/marketplace/${group.storeSlug}`}
-                          className="text-[length:var(--ts-sm)] font-bold tracking-[-0.01em] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors truncate block"
+                          className="text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors truncate block"
                         >
                           {group.storeName}
                         </Link>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                        {group.items.length} {group.items.length === 1 ? "item" : "items"}
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                        {group.items.length} {group.items.length === 1 ? "producto" : "productos"}
                       </p>
                       <p className="text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums">
                         {fmt(subtotal)}

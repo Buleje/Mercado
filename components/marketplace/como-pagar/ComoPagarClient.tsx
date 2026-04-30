@@ -143,20 +143,20 @@ function MethodCard({ method }: { method: Method }) {
         <div className="flex-1 min-w-0">
           <p
             className={[
-              "text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] mb-1",
+              "text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-1",
               isAccent || isInk ? "opacity-80" : "text-[var(--text-tertiary)]",
             ].join(" ")}
           >
             {method.eyebrow}
           </p>
-          <h3 className="text-xl sm:text-2xl font-black tracking-[-0.02em]">
+          <h3 className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)]">
             {method.title}
           </h3>
         </div>
         {method.badge && (
           <span
             className={[
-              "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider",
+              "shrink-0 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
               isAccent || isInk ? "bg-white/15 text-white" : "bg-[var(--accent)] text-white",
             ].join(" ")}
           >
@@ -180,7 +180,7 @@ function MethodCard({ method }: { method: Method }) {
             <span
               aria-hidden
               className={[
-                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold tabular-nums",
+                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold tabular-nums",
                 isAccent || isInk
                   ? "bg-white/20 text-white"
                   : "bg-[var(--accent-soft)] text-[var(--accent)]",
@@ -203,7 +203,7 @@ export default function ComoPagarClient() {
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* Hero */}
       <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-8 sm:pb-12">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-4">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Pagás como prefieras
         </p>
@@ -238,7 +238,7 @@ export default function ComoPagarClient() {
       {/* FAQ corto */}
       <section className="bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)] py-16 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] mb-8">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] mb-8">
             Preguntas frecuentes
           </h2>
           <div className="space-y-6">
@@ -275,11 +275,11 @@ export default function ComoPagarClient() {
       {/* CTA bottom */}
       <section className="py-16 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-4xl font-black tracking-[-0.02em] text-[var(--text-primary)] mb-4">
+          <h2 className="text-3xl sm:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] mb-4">
             Listo para hacer tu primer pedido
           </h2>
           <p className="text-base sm:text-lg text-[var(--text-secondary)] mb-8">
-            Bodegas activas en Ciudad Constitución y, próximamente, en Pucallpa.
+            Bodegas activas en Pucallpa, Ucayali. Cobertura en expansión por toda la región.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link
