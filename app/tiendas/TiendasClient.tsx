@@ -30,7 +30,9 @@ import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
 } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, CupSoda, Sparkles, Leaf, MoreHorizontal } from "lucide-react";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal } from "@buleje/design-system/icons";
+// CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
+import { CupSoda } from "lucide-react";
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
