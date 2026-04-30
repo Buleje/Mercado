@@ -105,15 +105,20 @@ async function main() {
   console.log(`\n🐔 Creando tienda "${TENANT_NAME}" (${TENANT_SLUG})…\n`);
 
   // 1. Tenant — upsert por slug
+  // ADR-084: trialEndsAt requerido para que el Store sea visible en marketplace
+  // (sin paid sub Y sin trial vigente, getBySlug retorna null).
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + 30);
   const tenant = await prisma.tenant.upsert({
     where: { slug: TENANT_SLUG },
-    update: { name: TENANT_NAME, active: true },
+    update: { name: TENANT_NAME, active: true, trialEndsAt },
     create: {
       slug: TENANT_SLUG,
       name: TENANT_NAME,
       plan: "pro",
       type: "store",
       active: true,
+      trialEndsAt,
       primaryColor: "#D62828", // rojo pollería
       secondaryColor: "#F4A261",
     },

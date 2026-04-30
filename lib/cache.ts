@@ -179,6 +179,18 @@ function createStore(): CacheStore {
 export const cacheStore: CacheStore = (globalForCache.__bulejeCache ??= createStore());
 
 /**
+ * Single-flight registry — coalesce concurrent cache misses for the same key
+ * into one underlying call. Prevents thundering-herd on cold caches: if
+ * three requests for `getBySlug("foo")` arrive in parallel, only the first
+ * actually queries the DB; the other two await the same promise.
+ *
+ * The map is keyed by cache key and stores the in-flight promise. Entries
+ * are cleared as soon as the promise settles (success or failure), so the
+ * dedup window equals the call duration — usually milliseconds.
+ */
+const inFlight = new Map<string, Promise<unknown>>();
+
+/**
  * Get a cached value or compute it.
  * @param key    Cache key (include tenantId to isolate per tenant)
  * @param ttlSec Time-to-live in seconds
@@ -191,9 +203,21 @@ export async function getOrSet<T>(
 ): Promise<T> {
   const cached = cacheStore.get<T>(key);
   if (cached !== null) return cached;
-  const value = await fn();
-  cacheStore.set(key, value, ttlSec);
-  return value;
+
+  const pending = inFlight.get(key) as Promise<T> | undefined;
+  if (pending) return pending;
+
+  const promise = (async () => {
+    try {
+      const value = await fn();
+      cacheStore.set(key, value, ttlSec);
+      return value;
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+  inFlight.set(key, promise);
+  return promise;
 }
 
 /** Evict a specific key (call after mutations to invalidate stale data) */
