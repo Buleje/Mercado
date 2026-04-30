@@ -142,13 +142,45 @@ export function TenantCard({
           </span>
           <div className="flex items-center gap-1.5">
             {trialBadge && (
-              <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${trialBadge.bg} ${trialBadge.border} ${trialBadge.fg}`}
-                title={trialEnds ? `Vence ${trialEnds.toLocaleDateString("es-PE")}` : ""}
+              <button
+                type="button"
+                onClick={async () => {
+                  const input = window.prompt(
+                    `Extender trial de "${t.name}"\n` +
+                    `Vence: ${trialEnds ? trialEnds.toLocaleDateString("es-PE") : "—"}\n\n` +
+                    `Cuántos días sumar? (negativo = restar)`,
+                    "15",
+                  );
+                  if (input == null) return;
+                  const days = Number(input);
+                  if (!Number.isFinite(days) || days === 0) return;
+                  try {
+                    const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
+                    const r = await fetch(`/api/superadmin/tenants/${t.slug}/extend-trial`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(csrf ? { "x-csrf-token": csrf } : {}),
+                      },
+                      credentials: "include",
+                      body: JSON.stringify({ days }),
+                    });
+                    if (!r.ok) {
+                      const data = await r.json().catch(() => null);
+                      window.alert(`Error: ${data?.error ?? r.statusText}`);
+                      return;
+                    }
+                    window.location.reload();
+                  } catch (err) {
+                    window.alert(`Error de red: ${String(err)}`);
+                  }
+                }}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold transition-all hover:scale-[1.02] ${trialBadge.bg} ${trialBadge.border} ${trialBadge.fg}`}
+                title={`${trialEnds ? `Vence ${trialEnds.toLocaleDateString("es-PE")} · ` : ""}Click para extender o reducir el trial`}
               >
                 <trialBadge.Icon className="w-3 h-3" strokeWidth={2.25} />
                 {trialBadge.text}
-              </span>
+              </button>
             )}
             {t.plan === "enterprise" ? (
               <ProductBadge intent="premium">Enterprise</ProductBadge>
