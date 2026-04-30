@@ -4,7 +4,7 @@
  * Uso: npx tsx -r dotenv/config scripts/diagnose-mi-pollo.ts dotenv_config_path=.env.local
  */
 import { prisma } from "../lib/prisma";
-const SLUG = "mi-pollo";
+const SLUG = process.env.SLUG || "mi-pollo";
 
 async function main() {
   const store = await prisma.store.findUnique({

@@ -148,6 +148,7 @@ export {
   // ── Contact / location ───────────────────────────────────────
   MapPin,
   Map,
+  Locate,
   Phone,
   Mail,
   MessageSquare,
