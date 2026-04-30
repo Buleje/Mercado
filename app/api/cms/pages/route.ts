@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { getAllPages, createPage } from "@/lib/cms-db/pages";
 import { PageSchema } from "@/lib/cms/types";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages - List all pages
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const pages = await getAllPages();
     return NextResponse.json(pages);
   } catch (error) {
-    console.error("[cms/pages] GET error:", error);
+    logger.error("[cms/pages] GET error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al obtener páginas" },
       { status: 500 }
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(page, { status: 201 });
   } catch (error) {
-    console.error("[cms/pages] POST error:", error);
+    logger.error("[cms/pages] POST error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al crear página" },
       { status: 500 }

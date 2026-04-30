@@ -9,6 +9,7 @@ import {
   duplicateBlock,
 } from "@/lib/cms-db/pages";
 import { BlockSchema } from "@/lib/cms/types";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages/:id/blocks - Get all blocks
@@ -25,7 +26,7 @@ export async function GET(
     const blocks = await getPageBlocks(id);
     return NextResponse.json(blocks);
   } catch (error) {
-    console.error("[cms/blocks] GET error:", error);
+    logger.error("[cms/blocks] GET error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al obtener bloques" },
       { status: 500 }
@@ -71,7 +72,7 @@ export async function POST(
 
     return NextResponse.json(block, { status: 201 });
   } catch (error) {
-    console.error("[cms/blocks] POST error:", error);
+    logger.error("[cms/blocks] POST error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al crear bloque" },
       { status: 500 }
@@ -112,7 +113,7 @@ export async function PUT(
 
     return NextResponse.json(block);
   } catch (error) {
-    console.error("[cms/blocks] PUT error:", error);
+    logger.error("[cms/blocks] PUT error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al actualizar bloque" },
       { status: 500 }
@@ -143,7 +144,7 @@ export async function DELETE(
     await deleteBlock(blockId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[cms/blocks] DELETE error:", error);
+    logger.error("[cms/blocks] DELETE error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al eliminar bloque" },
       { status: 500 }

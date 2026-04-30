@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { publishPage } from "@/lib/cms-db/pages";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════
 // POST /api/cms/pages/:id/publish - Publish page
@@ -17,7 +18,7 @@ export async function POST(
     const page = await publishPage(id);
     return NextResponse.json(page);
   } catch (error) {
-    console.error("[cms/pages/publish] error:", error);
+    logger.error("[cms/pages/publish] error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al publicar página" },
       { status: 500 }

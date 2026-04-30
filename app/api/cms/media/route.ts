@@ -6,6 +6,7 @@ import {
   searchMedia,
 } from "@/lib/cms-db/media";
 import { MediaSchema } from "@/lib/cms/types";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/media - List all media
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(media);
   } catch (error) {
-    console.error("[cms/media] GET error:", error);
+    logger.error("[cms/media] GET error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al obtener medios" },
       { status: 500 }
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(media, { status: 201 });
   } catch (error) {
-    console.error("[cms/media] POST error:", error);
+    logger.error("[cms/media] POST error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al crear medio" },
       { status: 500 }

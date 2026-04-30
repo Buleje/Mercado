@@ -6,6 +6,7 @@ import {
   deletePage
 } from "@/lib/cms-db/pages";
 import { PageSchema } from "@/lib/cms/types";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages/:id - Get single page
@@ -30,7 +31,7 @@ export async function GET(
 
     return NextResponse.json(page);
   } catch (error) {
-    console.error("[cms/pages/id] GET error:", error);
+    logger.error("[cms/pages/id] GET error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al obtener página" },
       { status: 500 }
@@ -64,7 +65,7 @@ export async function PUT(
 
     return NextResponse.json(page);
   } catch (error) {
-    console.error("[cms/pages/id] PUT error:", error);
+    logger.error("[cms/pages/id] PUT error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al actualizar página" },
       { status: 500 }
@@ -87,7 +88,7 @@ export async function DELETE(
     await deletePage(id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[cms/pages/id] DELETE error:", error);
+    logger.error("[cms/pages/id] DELETE error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al eliminar página" },
       { status: 500 }

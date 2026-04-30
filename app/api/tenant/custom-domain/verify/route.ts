@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import dns from "dns/promises";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/tenant/custom-domain/verify
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
         expected,
       });
     }
-    console.error("[custom-domain verify]", err);
+    logger.error("[custom-domain verify]", { err: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ verified: false, error: "Error al consultar DNS", expected }, { status: 500 });
   }
 }
