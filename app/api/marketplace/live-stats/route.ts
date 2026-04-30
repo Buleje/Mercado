@@ -6,6 +6,7 @@
  * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
  */
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 
@@ -53,7 +54,7 @@ export async function GET() {
 
     return NextResponse.json({ data });
   } catch (e) {
-    console.error("[live-stats] error", e);
+    logger.error("[live-stats] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { data: { ordersToday: 0, shoppersToday: 0, activeStores: 0, avgDeliveryMin: 25 } },
       { status: 200 },

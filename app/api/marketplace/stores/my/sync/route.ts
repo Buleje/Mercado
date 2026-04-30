@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       message: `Sincronización completada: ${result.created} nuevos, ${result.updated} reactivados, ${result.deactivated} desactivados.`,
     });
   } catch (err) {
-    console.error("[POST /api/marketplace/stores/my/sync] Error:", err);
+    logger.error("[POST /api/marketplace/stores/my/sync] Error", { err: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }

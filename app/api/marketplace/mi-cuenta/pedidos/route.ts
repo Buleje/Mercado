@@ -4,6 +4,7 @@ import { CustomerOrdersDB } from "@/lib/db/customer-orders.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
   phone: z.string().min(6).max(20),
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     const store = await prisma.store
       .findFirst({ where: { tenantId }, select: { slug: true } })
       .catch((e: unknown) => {
-        console.warn("[mi-cuenta/pedidos] store lookup failed:", e);
+        logger.warn("[mi-cuenta/pedidos] store lookup failed", { err: e instanceof Error ? e.message : String(e) });
         return null;
       });
     const storeSlug = store?.slug ?? tenantId;

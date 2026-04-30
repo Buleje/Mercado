@@ -18,6 +18,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 interface WeekStats {
   deliveredOrders: number;
@@ -52,11 +53,11 @@ function revalidateInBackground() {
             },
           })
           .catch((e: unknown) => {
-            console.warn("[stats/week] order count failed:", e);
+            logger.warn("[stats/week] order count failed", { err: e instanceof Error ? e.message : String(e) });
             return null;
           }),
         prisma.store.count().catch((e: unknown) => {
-          console.warn("[stats/week] store count failed:", e);
+          logger.warn("[stats/week] store count failed", { err: e instanceof Error ? e.message : String(e) });
           return null;
         }),
       ]);
