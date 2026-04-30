@@ -3,7 +3,14 @@
 /**
  * ClienteFrecuenteBadge — Badge dorado que aparece tras 5+ pedidos. Crea
  * sensación de pertenencia y comunica el descuento implícito (-5% en
- * próximas compras). El conteo vive en localStorage `buleje:order-count`.
+ * próximas compras).
+ *
+ * Bug Hunter Report 2026-04-30 P1#9 fix: ANTES el conteo vivia en
+ * localStorage `buleje:order-count` — manipulable por el usuario para
+ * obtener -10% que no le correspondía. AHORA: fetch a
+ * `/api/marketplace/customer-tier` que cuenta orders entregados reales
+ * del cliente en DB (cross-tenant fidelity). localStorage queda solo
+ * como fallback opcional cuando el cliente NO tiene sesión.
  *
  * Tres niveles de prestigio:
  *   - 5–9 pedidos → "Cliente Frecuente"   · halo teal claro
@@ -13,7 +20,10 @@
 
 import { useEffect, useState } from "react";
 import { Crown, Sparkles, Award } from "lucide-react";
+import { useCustomer } from "@/contexts/customer-context";
 
+// LocalStorage key — solo se usa como fallback para clientes ANONIMOS
+// que aun no tienen sesion. Cliente con sesion -> server count.
 const COUNT_KEY = "buleje:order-count";
 
 type Tier = {
@@ -72,11 +82,37 @@ interface ClienteFrecuenteBadgeProps {
 export default function ClienteFrecuenteBadge({
   variant = "chip",
 }: ClienteFrecuenteBadgeProps) {
+  const { customer } = useCustomer();
   const [count, setCount] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
+  // Bug Hunter P1#9 fix: priorizar count del SERVIDOR si hay cliente con
+  // sesión (no manipulable). localStorage solo como fallback anónimo.
   useEffect(() => {
     setHydrated(true);
+
+    // 1. Si hay cliente identificado → fetch tier real del servidor
+    if (customer?.phone) {
+      let cancelled = false;
+      fetch(
+        `/api/marketplace/customer-tier?phone=${encodeURIComponent(customer.phone)}`,
+        { credentials: "include" },
+      )
+        .then((r) => (r.ok ? r.json() : { count: 0 }))
+        .then((data: { count?: number }) => {
+          if (cancelled) return;
+          if (typeof data.count === "number") setCount(data.count);
+        })
+        .catch(() => {
+          // Silent — sin sesión válida o endpoint caido, no mostrar badge
+          if (!cancelled) setCount(0);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 2. Sin cliente identificado → fallback localStorage (legacy anónimo)
     try {
       const raw = localStorage.getItem(COUNT_KEY);
       const n = raw ? Number(raw) : 0;
@@ -96,7 +132,7 @@ export default function ClienteFrecuenteBadge({
     window.addEventListener("buleje:order-count-updated", onUpdate);
     return () =>
       window.removeEventListener("buleje:order-count-updated", onUpdate);
-  }, []);
+  }, [customer?.phone]);
 
   if (!hydrated) return null;
 
@@ -109,7 +145,7 @@ export default function ClienteFrecuenteBadge({
     return (
       <span
         title={`${label} — ${count} pedidos · -${discountPct}% extra`}
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold border"
+        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-xs)] font-bold border"
         style={{ color, backgroundColor: bg, borderColor: border }}
       >
         <Icon className="h-3 w-3" strokeWidth={2.25} />
@@ -132,7 +168,7 @@ export default function ClienteFrecuenteBadge({
           <Icon className="h-6 w-6" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color }}>
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]" style={{ color }}>
             Tu nivel
           </p>
           <p className="text-lg font-black" style={{ color }}>
@@ -140,7 +176,7 @@ export default function ClienteFrecuenteBadge({
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[11px] font-bold uppercase" style={{ color }}>
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase" style={{ color }}>
             Pedidos
           </p>
           <p className="text-2xl font-black tabular-nums" style={{ color }}>
