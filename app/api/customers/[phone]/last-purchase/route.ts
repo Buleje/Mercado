@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/customers/[phone]/last-purchase
@@ -18,6 +19,7 @@ export async function GET(
 
   try {
     // Try Sale first (POS sales)
+    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
     const lastSale = await prisma.sale.findFirst({
       where: { customerPhone: phone, tenantId },
       orderBy: { createdAt: "desc" },
@@ -49,6 +51,7 @@ export async function GET(
     }
 
     // Fallback: try Order
+    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
     const lastOrder = await prisma.order.findFirst({
       where: { customerPhone: phone, tenantId },
       orderBy: { createdAt: "desc" },
@@ -81,7 +84,7 @@ export async function GET(
 
     return NextResponse.json(null);
   } catch (e) {
-    console.error("[customers/phone/last-purchase] GET error", e);
+    logger.error("[customers/phone/last-purchase] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

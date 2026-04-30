@@ -4,6 +4,7 @@ import { normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 // GET /api/customers/[phone]/favorite-products
 // Top 5 productos mas comprados por el cliente (ventas POS + orders)
@@ -27,6 +28,7 @@ export async function GET(
   try {
     // Oracle defense: verificar que el customer existe en este tenant antes de exponer datos.
     // Devuelve 404 uniforme tanto si no existe como si pertenece a otro tenant (no revela existencia).
+    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped; migration a lib/db pendiente.
     const customer = await prisma.customer.findFirst({
       where: { phone: normalized, tenantId },
       select: { phone: true },
@@ -36,6 +38,7 @@ export async function GET(
     }
 
     // Aggregate from SaleItems (POS sales) — filtrado por tenantId
+    // eslint-disable-next-line no-restricted-properties -- nested where filter por sale.tenantId; migration pendiente.
     const saleItems = await prisma.saleItem.findMany({
       where: {
         sale: { customerPhone: normalized, tenantId },
@@ -50,6 +53,7 @@ export async function GET(
     });
 
     // Aggregate from OrderItems (online orders) — filtrado por tenantId, excluir cancelados
+    // eslint-disable-next-line no-restricted-properties -- nested where filter por order.tenantId; migration pendiente.
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {
@@ -144,7 +148,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[favorite-products] GET error:", e);
+    logger.error("[favorite-products] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

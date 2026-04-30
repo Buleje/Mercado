@@ -3,6 +3,7 @@ import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { logger } from "@/lib/logger";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
   try {
     return NextResponse.json(await CustomersDB.getAll(auth.tenantId));
   } catch (e) {
-    console.error("[customers] GET error:", e);
+    logger.error("[customers/ai-analysis] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

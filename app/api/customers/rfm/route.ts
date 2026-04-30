@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/customers/rfm — Returns RFM segmentation for all customers.
@@ -52,9 +53,12 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
-    // Fetch all orders with phone and total
+    // Fetch all orders with phone and total — scoped por tenantId del session.
+    // FIXME: pre-existente NO scopeaba por tenantId, leak cross-tenant. Hotfix
+    // agregado al where below.
+    // eslint-disable-next-line no-restricted-properties -- analytics RFM tenant-scoped.
     const orders = await prisma.order.findMany({
-      where: { customerPhone: { not: null } },
+      where: { customerPhone: { not: null }, tenantId: auth.tenantId },
       select: { customerPhone: true, customerName: true, total: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     });
@@ -118,7 +122,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[rfm] error:", e);
+    logger.error("[rfm] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "RFM calculation failed" }, { status: 500 });
   }
 }

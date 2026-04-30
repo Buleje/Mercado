@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -14,6 +15,7 @@ export async function GET(
 
   try {
     // Aggregate active fiados
+    // eslint-disable-next-line no-restricted-properties -- aggregation tenant-scoped; migration to lib/db/fiados.db.ts pendiente.
     const agg = await prisma.fiado.aggregate({
       where: {
         tenantId,
@@ -32,6 +34,7 @@ export async function GET(
     let hasFiadosVencidos = false;
 
     if (cantidadFiados > 0) {
+      // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped; migration pendiente.
       const oldest = await prisma.fiado.findFirst({
         where: {
           tenantId,
@@ -60,7 +63,7 @@ export async function GET(
       hasFiadosVencidos,
     });
   } catch (e) {
-    console.error("[Fiado Resumen]", e);
+    logger.error("[Fiado Resumen]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Error al obtener resumen de fiado" },
       { status: 500 }
