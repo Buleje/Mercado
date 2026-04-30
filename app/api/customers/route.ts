@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prismaForTenant } from "@/lib/tenant";
@@ -133,6 +134,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
   const rl = applyRateLimit(req, "MODERATE", "customers-post");
   if (rl) return rl;
 
@@ -193,13 +196,13 @@ export async function POST(req: NextRequest) {
       await prismaForTenant(auth.tenantId).customer.update({
         where: { phone: normalizedPhone },
         data: fichaUpdate,
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[customers] ficha update failed", { phone: normalizedPhone, err: String(err) }));
     }
 
     // Audit log — fire-and-forget
     prismaForTenant(auth.tenantId).activityLog.create({
       data: { action: "create", entity: "customer", entityId: record.phone, detail: `Cliente creado: ${record.name} (${record.phone})`, user: auth.username, tenantId: auth.tenantId },
-    }).catch(() => {});
+    }).catch((err) => logger.warn("[customers] activityLog failed", { phone: record.phone, err: String(err) }));
 
     // Mejora 16: Notificacion de bienvenida para cliente nuevo — fire-and-forget
     try {

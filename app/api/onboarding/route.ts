@@ -150,8 +150,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Trial de 14 días para todos los planes
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    // 6. Trial de 15 días para todos los planes — pasado el periodo, el tenant
+    //    pasa a modo read-only (no ventas, oculto de marketplace, sin altas)
+    //    hasta que active un plan pagado.
+    const trialEndsAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
 
     // 7. Crear tenant en DB — via DB class, transacción interna
     const tenant = await createTenant({
@@ -183,7 +185,7 @@ export async function POST(req: NextRequest) {
       ownerEmail,
       ownerPhone,
       adminName,
-    }).catch(() => {});
+    }).catch((err) => logger.warn("[onboarding] welcome side-effect failed", { slug, err: String(err) }));
 
     // 10. Canjear referido si viene uno (fire-and-forget)
     if (referralCode) {
@@ -208,7 +210,7 @@ export async function POST(req: NextRequest) {
       `Tenant '${slug}' registrado con plan ${plan} (tipo: ${type})`,
       tenant.id,
       "onboarding",
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[onboarding] logActivity failed", { slug, err: String(err) }));
 
     // 13. Auto-login: generar sesión para no requerir login manual post-registro
     const sessionToken = await createSessionToken(

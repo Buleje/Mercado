@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
@@ -47,6 +48,11 @@ const BATCH_SIZE = 50;
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
+  // Re-check tipos: el guard arriba garantiza auth no es NextResponse
+  void auth;
   if (auth instanceof NextResponse) return auth;
 
   let body: unknown;

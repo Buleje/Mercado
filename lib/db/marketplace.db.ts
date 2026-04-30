@@ -288,10 +288,21 @@ export const MarketplaceStoresDB = {
     const cacheKey = `marketplace:stores:list:${JSON.stringify(params)}`;
 
     return getOrSet(cacheKey, 300, async () => {
+      // ADR-084: ocultar tiendas cuyo tenant tiene trial expirado sin plan pagado.
+      // Visible si: tenant.active && (sub stripe OR sub mp OR trial vigente).
+      const now = new Date();
       const rows = await prisma.store.findMany({
         where: {
           isPublished: true,
           tenantId: params.tenantId,
+          tenant: {
+            active: true,
+            OR: [
+              { stripeSubscriptionId: { not: null } },
+              { mpSubscriptionId: { not: null } },
+              { trialEndsAt: { gt: now } },
+            ],
+          },
           ...(params.zone     && { zone: params.zone }),
           ...(params.category && { category: params.category }),
           ...(params.search   && { name: { contains: params.search, mode: "insensitive" } }),
@@ -334,9 +345,23 @@ export const MarketplaceStoresDB = {
           id: true, tenantId: true, slug: true, name: true, description: true,
           logo: true, banner: true, category: true, zone: true, rating: true,
           reviewCount: true, isPublished: true, commission: true, createdAt: true,
+          tenant: {
+            select: {
+              active: true,
+              plan: true,
+              trialEndsAt: true,
+              stripeSubscriptionId: true,
+              mpSubscriptionId: true,
+            },
+          },
         },
       });
       if (!s || !s.isPublished) return null;
+      // ADR-084: tienda oculta si tenant inactivo o trial expirado sin plan pagado.
+      const t = s.tenant;
+      const hasPaidSub = !!(t.stripeSubscriptionId || t.mpSubscriptionId);
+      const trialActive = t.trialEndsAt ? t.trialEndsAt.getTime() > Date.now() : false;
+      if (!t.active || (!hasPaidSub && !trialActive)) return null;
 
       return {
         id:          s.id,

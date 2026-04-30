@@ -28,6 +28,7 @@ import {
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
+import { TrialCountdownBannerLoader } from "@/components/admin/billing/TrialCountdownBannerLoader";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
 
@@ -236,6 +237,9 @@ function AdminPage() {
 
   return (
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
+      {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
+      <TrialCountdownBannerLoader />
+
       {/* AdminImpersonationBanner removido — el chip tenant del topbar
           ya indica el negocio administrado. Salir de impersonation se
           hace desde el menu de usuario. */}

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     // el UNIQUE constraint. Borramos solo si quedó sin processedAt.
     await prisma.stripeWebhookQueue
       .deleteMany({ where: { stripeId: event.id, processedAt: null } })
-      .catch(() => {});
+      .catch((err) => logger.warn("[Stripe Webhook] queue cleanup failed", { stripeId: event.id, err: String(err) }));
     // Persist failed event and return 200: Stripe will NOT retry on its own,
     // our cron will replay it with exponential back-off.
     await enqueueWebhookEvent(event, errorMsg);
@@ -157,6 +157,9 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
             : null,
           plan: newPlan,
           cancelAtPeriodEnd: sub.cancel_at_period_end,
+          // ADR-084: reactivación tras pago — si el tenant había sido apagado
+          // por trial expirado, garantizamos que vuelve a estar activo.
+          active: true,
         },
       });
       await prisma.activityLog.create({

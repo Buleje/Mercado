@@ -3,6 +3,8 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
@@ -68,6 +70,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
   if (auth instanceof NextResponse) return auth;
 
   const raw = await req.json();
@@ -269,7 +274,7 @@ export async function POST(req: NextRequest) {
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
-    }).catch(() => {});
+    }).catch((err) => logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) }));
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
     hasBatchesWithStock(auth.tenantId, item.productId)
@@ -278,7 +283,7 @@ export async function POST(req: NextRequest) {
           return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) }));
   }
 
   // Register cash movement if a register is open (fire-and-forget)
@@ -292,11 +297,11 @@ export async function POST(req: NextRequest) {
         saleId: sale.id,
       });
     }
-  }).catch(() => {});
+  }).catch((err) => logger.warn("[sales] cash register movement failed", { saleId: sale.id, err: String(err) }));
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
-    LoyaltyDB.accruePoints(data.customerPhone, finalTotal).catch(() => {});
+    LoyaltyDB.accruePoints(data.customerPhone, finalTotal).catch((err) => logger.warn("[sales] loyalty accrue failed", { saleId: sale.id, err: String(err) }));
   }
 
   // AUDIT LOG

@@ -12,6 +12,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prismaForTenant } from "@/lib/tenant";
@@ -201,6 +202,13 @@ export const POST = withApiHandler("orders-create", async (req) => {
   const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
   const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
   const tenantId = await resolveTenantSlugToId(slugOrId);
+
+  // ── Trial expiry guard (ADR-084) ────────────────────────────────────────────
+  // Tienda con trial vencido sin plan pagado → no se aceptan pedidos.
+  // Defense-in-depth: el storefront ya redirige a "tienda no disponible",
+  // pero acá bloqueamos requests directos a la API.
+  const trialBlocked = await requireActiveSubscription(tenantId);
+  if (trialBlocked) return trialBlocked;
 
   // ── Idempotency: return existing order if same key is reused ────────────────
   // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.

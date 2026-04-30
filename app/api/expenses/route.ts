@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ExpensesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { toErrorPayload } from "@/lib/api-error";
 
 export async function GET(req: NextRequest) {
@@ -24,6 +25,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const body = await req.json();

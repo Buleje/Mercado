@@ -24,33 +24,58 @@ export async function GET(req: NextRequest) {
     const result = await withCronRetry("trial-expiry", async () => {
       const now = new Date();
 
+      // ADR-084: NO desactivamos al tenant (active=false bloquearía el panel).
+      // En su lugar, la lógica de read-only vive en `lib/billing/trial-status.ts`
+      // y se aplica via:
+      //   - `requireActiveSubscription()` en endpoints write (POST/PATCH/PUT/DELETE)
+      //   - filtro en `lib/db/marketplace.db.ts` (oculta del marketplace)
+      //   - guard en storefront público (redirect a "tienda no disponible")
+      // El tenant sigue accesible en /admin para hacer upgrade del plan.
+      //
+      // Este cron ahora SOLO loggea y notifica — no muta `active`.
       const expired = await prisma.tenant.findMany({
         where: {
           active: true,
           plan: "free",
           stripeSubscriptionId: null,
+          mpSubscriptionId: null,
           trialEndsAt: { lt: now },
         },
-        select: { id: true, slug: true, trialEndsAt: true },
+        select: { id: true, slug: true, trialEndsAt: true, ownerEmail: true, ownerPhone: true },
       });
 
       if (expired.length === 0) {
-        return { ok: true, suspended: 0, message: "No expired trials found" };
+        return { ok: true, expired: 0, message: "No expired trials found" };
       }
 
-      await prisma.tenant.updateMany({
-        where: { id: { in: expired.map((t) => t.id) } },
-        data: { active: false },
-      });
-
-      logger.info("[cron/trial-expiry] Tenants suspended", {
+      // Log de quien quedó en modo read-only (visibilidad operativa).
+      logger.info("[cron/trial-expiry] Tenants en modo read-only post-trial", {
         count: expired.length,
         slugs: expired.map((t) => t.slug),
       });
 
+      // Persistir un activity log por cada tenant expirado para auditoría.
+      await Promise.all(
+        expired.map((t) =>
+          prisma.activityLog
+            .create({
+              data: {
+                action: "trial_expired_readonly",
+                entity: "tenant",
+                entityId: t.slug,
+                detail: `Trial expirado el ${t.trialEndsAt?.toISOString()} — tenant en modo read-only hasta activar plan`,
+                user: "cron-trial-expiry",
+                tenantId: t.slug,
+              },
+            })
+            .catch((err) => logger.warn("[cron/trial-expiry] activityLog failed", { slug: t.slug, err: String(err) })),
+        ),
+      );
+
       return {
         ok: true,
-        suspended: expired.length,
+        expired: expired.length,
+        readOnly: true,
         slugs: expired.map((t) => t.slug),
       };
     });
