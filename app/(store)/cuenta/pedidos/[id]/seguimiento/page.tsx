@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { OrderTrackingDB } from "@/lib/db/order-tracking.db";
+import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import SeguimientoClient from "./SeguimientoClient";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
@@ -27,8 +29,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SeguimientoPage({ params }: PageProps) {
   const { id } = await params;
-  // Tenant resolution — default "main". TODO(ADR-XXX): tomar del cookie real.
-  const tenantId = "main";
+
+  // Tenant resolution — usa x-tenant-id inyectado por el proxy/middleware.
+  // Default "main" si la request no tiene header (legacy / dev directo).
+  // Soporta custom domains via resolveTenantSlug (custom-- prefix).
+  const h = await headers();
+  const rawTenantId = h.get("x-tenant-id") ?? "main";
+  const slugOrMain = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  const tenantId = await resolveTenantSlugToId(slugOrMain);
 
   const snapshot = await OrderTrackingDB.getSnapshot(tenantId, id);
   if (!snapshot) notFound();
