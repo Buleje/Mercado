@@ -10,7 +10,14 @@
  * y confianza. "Conoce a la persona que te vende" es uno de los principales
  * drivers de fidelidad en marketplaces locales.
  *
- * Data: hoy mock (3 bodegueros rotando). Cuando haya CMS, reemplazar.
+ * Bug Hunter Report 2026-04-30 P2-3: ANTES tenia 3 bodegueros hardcoded
+ * con slugs que no existen en DB (Don Pepe, Doña Elena, Carlos) — los
+ * clicks llevaban a 404 y el storytelling era ficticio.
+ *
+ * AHORA: el componente queda DESACTIVADO (return null) hasta que exista
+ * un endpoint /api/marketplace/featured-bodeguero con datos reales de
+ * un CMS de bodegueros. Cuando exista, descomentar la rotación y conectar
+ * al fetch.
  */
 
 import Link from "next/link";
@@ -71,6 +78,16 @@ const BODEGUEROS: Bodeguero[] = [
 const ROTATE_MS = 12_000;
 
 export default function BodegueroSpotlight() {
+  // Bug Hunter P2-3 fix 2026-04-30: deshabilitado hasta CMS real.
+  // El componente carga el código pero no renderiza — preserva el dynamic
+  // import + bundle split sin mostrar contenido falso al cliente.
+  return null;
+
+  // ── CÓDIGO DE LA UI MANTENIDO PARA REUSO POST-CMS ──
+  // Cuando exista /api/marketplace/featured-bodeguero, cambiar el return
+  // null arriba por: const [bodeguero, setBodeguero] = useState(null);
+  // useEffect(fetch + setBodeguero); if (!bodeguero) return null;
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -79,6 +96,7 @@ export default function BodegueroSpotlight() {
   }, []);
 
   const b = BODEGUEROS[idx];
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   return (
     <section
@@ -87,10 +105,10 @@ export default function BodegueroSpotlight() {
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-6 pb-4 border-b border-[var(--rule-soft)]">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Detrás del mostrador
           </p>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.015em] text-[var(--text-primary)]">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Conoce a tu bodeguero
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -105,7 +123,7 @@ export default function BodegueroSpotlight() {
           {/* Editorial photo column */}
           <Link
             href={`/marketplace/${b.storeSlug}`}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border border-[var(--rule-soft)] aspect-square lg:aspect-auto min-h-[280px] flex flex-col items-center justify-center text-center p-8 transition-all duration-300 hover:border-[var(--accent)]/30"
+            className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border border-[var(--rule-soft)] aspect-square lg:aspect-auto min-h-[280px] flex flex-col items-center justify-center text-center p-8 transition-all duration-300 hover:border-[var(--accent)]/30"
           >
             {/* Decorative accent blob — solo accent, sin colores random */}
             <div
@@ -143,7 +161,7 @@ export default function BodegueroSpotlight() {
                 strokeWidth={1}
                 aria-hidden
               />
-              <blockquote className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] leading-[1.3] tracking-[-0.01em]">
+              <blockquote className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] leading-[1.3] tracking-[var(--ls-tight)]">
                 &ldquo;{b.quote}&rdquo;
               </blockquote>
             </div>
