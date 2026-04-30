@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   InventoryMovement as PInventoryMovement,
   Warehouse as PWarehouse,
@@ -140,12 +141,12 @@ export const InventoryMovementsDB = {
   },
   async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
-    const product = await prisma.product.findUnique({ where: { id: data.productId } });
+    const product = await prisma.product.findFirst({ where: { id: data.productId, tenantId: data.tenantId } });
     const prevStock = product?.stock ?? 0;
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
     const clampedNewStock = Math.max(0, newStock);
-    await prisma.product.update({ where: { id: data.productId }, data: { stock: clampedNewStock } });
+    await prisma.product.updateMany({ where: { id: data.productId, tenantId: data.tenantId }, data: { stock: clampedNewStock } });
     const row = await prisma.inventoryMovement.create({
       data: {
         productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
@@ -175,7 +176,7 @@ export const InventoryMovementsDB = {
             : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${stockMin}).`,
           url: "/admin?tab=inventario",
         })
-      ).catch(() => {});
+      ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: data.productId }));
 
       // 2) Domain event — permite que otros módulos reaccionen (ver ADR 007)
       if (data.tenantId) {
@@ -192,7 +193,7 @@ export const InventoryMovementsDB = {
               : data.type === "ajuste_negativo"
                 ? "ajuste"
                 : "transferencia",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[inventory.db] DomainEvents.stockBajo failed", { error: String(err), productId: data.productId }));
       }
     }
 
@@ -235,15 +236,15 @@ export const InventoryMovementsDB = {
     });
 
     // 3. Update Product.expiresAt to reflect the nearest batch expiry
-    await refreshProductExpiresAt(productId);
+    await refreshProductExpiresAt(productId, tenantId);
   },
 
   async adjust(productId: number, newStock: number, tenantId: string, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
     const prevStock = product?.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
-    await prisma.product.update({ where: { id: productId }, data: { stock: Math.max(0, newStock) } });
+    await prisma.product.updateMany({ where: { id: productId, tenantId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
       data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes,
         tenantId,
@@ -257,15 +258,16 @@ export const InventoryMovementsDB = {
 /**
  * Update Product.expiresAt to the nearest batch expiry date (FEFO).
  * Called after any batch quantity change (sale, adjustment, purchase).
+ * tenantId is required to prevent cross-tenant stock updates.
  */
-async function refreshProductExpiresAt(productId: number): Promise<void> {
+async function refreshProductExpiresAt(productId: number, tenantId: string): Promise<void> {
   const nearestBatch = await prisma.batch.findFirst({
     where: { productId, quantity: { gt: 0 } },
     orderBy: { expiryDate: "asc" },
     select: { expiryDate: true },
   });
-  await prisma.product.update({
-    where: { id: productId },
+  await prisma.product.updateMany({
+    where: { id: productId, tenantId },
     data: { expiresAt: nearestBatch?.expiryDate ?? null },
   });
 }
@@ -276,21 +278,24 @@ export const WarehousesDB = {
   async getAll(tenantId: string): Promise<DbWarehouse[]> {
     return (await prisma.warehouse.findMany({ where: { tenantId }, orderBy: { createdAt: "asc" } })).map(mapWarehouse);
   },
-  async getById(id: string): Promise<DbWarehouse | null> {
-    const row = await prisma.warehouse.findUnique({ where: { id } });
+  async getById(tenantId: string, id: string): Promise<DbWarehouse | null> {
+    const row = await prisma.warehouse.findFirst({ where: { id, tenantId } });
     return row ? mapWarehouse(row) : null;
   },
   async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number; tenantId: string }): Promise<DbWarehouse> {
     const row = await prisma.warehouse.create({ data: { ...data, tenantId: data.tenantId } });
     return mapWarehouse(row);
   },
-  async update(id: string, data: Partial<{ name: string; location: string; manager: string; capacity: number; active: boolean }>): Promise<DbWarehouse | null> {
-    const row = await prisma.warehouse.update({ where: { id }, data });
-    return mapWarehouse(row);
+  async update(tenantId: string, id: string, data: Partial<{ name: string; location: string; manager: string; capacity: number; active: boolean }>): Promise<DbWarehouse | null> {
+    const existing = await prisma.warehouse.findFirst({ where: { id, tenantId } });
+    if (!existing) return null;
+    await prisma.warehouse.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.warehouse.findFirst({ where: { id, tenantId } });
+    return row ? mapWarehouse(row) : null;
   },
-  async delete(id: string): Promise<boolean> {
+  async delete(tenantId: string, id: string): Promise<boolean> {
     try {
-      await prisma.warehouse.delete({ where: { id } });
+      await prisma.warehouse.deleteMany({ where: { id, tenantId } });
       return true;
     } catch {
       return false;

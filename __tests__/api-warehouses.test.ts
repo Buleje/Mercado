@@ -13,12 +13,15 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
-const { mockFindMany, mockCreate, mockUpdate, mockDelete, mockFindUnique } = vi.hoisted(() => ({
+const { mockFindMany, mockCreate, mockUpdate, mockDelete, mockFindUnique, mockFindFirst, mockUpdateMany, mockDeleteMany } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockCreate: vi.fn(),
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
   mockFindUnique: vi.fn(),
+  mockFindFirst: vi.fn(),
+  mockUpdateMany: vi.fn().mockResolvedValue({ count: 1 }),
+  mockDeleteMany: vi.fn().mockResolvedValue({ count: 1 }),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -28,7 +31,9 @@ vi.mock("@/lib/prisma", () => ({
       update: mockUpdate,
       delete: mockDelete,
       findUnique: mockFindUnique,
-      findFirst: vi.fn(),
+      findFirst: mockFindFirst,
+      updateMany: mockUpdateMany,
+      deleteMany: mockDeleteMany,
     },
   },
 }));
@@ -175,7 +180,9 @@ describe("PATCH /api/admin/warehouses", () => {
 
   it("updates warehouse name", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH_ADMIN);
-    mockUpdate.mockResolvedValue({ ...BASE_WH, name: "Almacén Actualizado" });
+    mockFindFirst
+      .mockResolvedValueOnce(BASE_WH)
+      .mockResolvedValueOnce({ ...BASE_WH, name: "Almacén Actualizado" });
     const res = await PATCH(makeReq("PATCH", "https://host/api/admin/warehouses", { id: "wh-1", name: "Almacén Actualizado" }));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -184,7 +191,9 @@ describe("PATCH /api/admin/warehouses", () => {
 
   it("updates active status", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH_ADMIN);
-    mockUpdate.mockResolvedValue({ ...BASE_WH, active: false });
+    mockFindFirst
+      .mockResolvedValueOnce(BASE_WH)
+      .mockResolvedValueOnce({ ...BASE_WH, active: false });
     const res = await PATCH(makeReq("PATCH", "https://host/api/admin/warehouses", { id: "wh-1", active: false }));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -235,7 +244,7 @@ describe("DELETE /api/admin/warehouses", () => {
     mockRequireAdmin.mockResolvedValue(AUTH_ADMIN);
     const target = { ...BASE_WH, id: "wh-2", code: "DEP-001", type: "deposito" };
     mockFindMany.mockResolvedValue([BASE_WH, target]);
-    mockDelete.mockResolvedValue(target);
+    mockDeleteMany.mockResolvedValueOnce({ count: 1 });
     const res = await DELETE(makeReq("DELETE", "https://host/api/admin/warehouses?id=wh-2"));
     expect(res.status).toBe(200);
     const body = await res.json();

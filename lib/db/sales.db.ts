@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   Sale as PSale,
   SaleItem as PSaleItem,
@@ -96,8 +97,8 @@ export const SalesDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.sale.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
   },
-  async getById(id: string): Promise<DbSale | null> {
-    const row = await prisma.sale.findUnique({ where: { id }, include: { items: true } });
+  async getById(tenantId: string, id: string): Promise<DbSale | null> {
+    const row = await prisma.sale.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapSale(row) : null;
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {
@@ -131,8 +132,8 @@ export const SalesDB = {
     });
     return mapSale(row);
   },
-  async delete(id: string): Promise<void> {
-    await prisma.sale.delete({ where: { id } }).catch(() => {});
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.sale.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
   },
 };
 
@@ -143,8 +144,9 @@ export const CashRegistersDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
   },
-  async getAllPaginated(limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
+  async getAllPaginated(tenantId: string, limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({
+      where: { tenantId },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { movements: { orderBy: { createdAt: "desc" } } },
@@ -158,8 +160,8 @@ export const CashRegistersDB = {
     const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
-  async getById(id: string): Promise<DbCashRegister | null> {
-    const row = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: { orderBy: { createdAt: "desc" } } } });
+  async getById(tenantId: string, id: string): Promise<DbCashRegister | null> {
+    const row = await prisma.cashRegister.findFirst({ where: { id, tenantId }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
   async open(tenantId: string, openingAmount: number, notes?: string): Promise<DbCashRegister> {
@@ -173,8 +175,8 @@ export const CashRegistersDB = {
     });
     return mapCashRegister(row);
   },
-  async close(id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
-    const reg = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: true } });
+  async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
+    const reg = await prisma.cashRegister.findFirst({ where: { id, tenantId }, include: { movements: true } });
     if (!reg || reg.closedAt) return null;
 
     const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
@@ -183,9 +185,9 @@ export const CashRegistersDB = {
     const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
     const difference = closingAmount - expectedAmount;
 
-    // Optimistic lock: only update if closedAt is still null
+    // Optimistic lock: only update if closedAt is still null (tenantId guard incluido)
     const result = await prisma.cashRegister.updateMany({
-      where: { id, closedAt: null },
+      where: { id, tenantId, closedAt: null },
       data: { status: "cerrada", closedAt: new Date(), closingAmount, expectedAmount, difference, notes },
     });
 

@@ -153,8 +153,11 @@ export const CustomersDB = {
 
     return { customers: items.map(mapCustomer), nextCursor, total };
   },
-  async getByPhone(phone: string): Promise<DbCustomer | null> {
-    const row = await prisma.customer.findUnique({ where: { phone: normalizePhone(phone) }, include: { locations: true } });
+  async getByPhone(phone: string, tenantId?: string): Promise<DbCustomer | null> {
+    const normalized = normalizePhone(phone);
+    const row = tenantId
+      ? await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, include: { locations: true } })
+      : await prisma.customer.findUnique({ where: { phone: normalized }, include: { locations: true } });
     return row ? mapCustomer(row) : null;
   },
   /** Find the first customer with a given email within a tenant. */
@@ -189,45 +192,46 @@ export const CustomersDB = {
     });
     return mapCustomer(row);
   },
-  async delete(phone: string): Promise<void> {
-    await prisma.customer.delete({ where: { phone: normalizePhone(phone) } }).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
+  async delete(tenantId: string, phone: string): Promise<void> {
+    await prisma.customer.deleteMany({ where: { phone: normalizePhone(phone), tenantId } }).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
   },
-  async updateAiNotes(phone: string, aiNotes: string): Promise<void> {
-    await prisma.customer.update({ where: { phone: normalizePhone(phone) }, data: { aiNotes, aiNotesDate: new Date() } });
+  async updateAiNotes(tenantId: string, phone: string, aiNotes: string): Promise<void> {
+    await prisma.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { aiNotes, aiNotesDate: new Date() } });
   },
-  async updatePrivateNotes(phone: string, privateNotes: string): Promise<void> {
-    await prisma.customer.update({ where: { phone: normalizePhone(phone) }, data: { privateNotes } });
+  async updatePrivateNotes(tenantId: string, phone: string, privateNotes: string): Promise<void> {
+    await prisma.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { privateNotes } });
   },
-  async updateCreditBalance(phone: string, delta: number): Promise<number> {
-    const c = await prisma.customer.update({
-      where: { phone: normalizePhone(phone) },
+  async updateCreditBalance(tenantId: string, phone: string, delta: number): Promise<number> {
+    await prisma.customer.updateMany({
+      where: { phone: normalizePhone(phone), tenantId },
       data: { creditBalance: { increment: delta } },
     });
-    return toNumOrZero(c.creditBalance);
+    const c = await prisma.customer.findFirst({ where: { phone: normalizePhone(phone), tenantId }, select: { creditBalance: true } });
+    return toNumOrZero(c?.creditBalance);
   },
   /** Generate a unique referral code for a customer if they don't have one */
-  async ensureReferralCode(phone: string): Promise<string> {
+  async ensureReferralCode(tenantId: string, phone: string): Promise<string> {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findUnique({ where: { phone: normalized }, select: { referralCode: true } });
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, select: { referralCode: true } });
     if (c?.referralCode) return c.referralCode;
     // Generate 6-char alphanumeric code
     const code = randomBytes(6).toString("base64url").slice(0, 8).toUpperCase();
-    await prisma.customer.update({ where: { phone: normalized }, data: { referralCode: code } }).catch((err) => logger.error("[customers.db] referralCode assign failed", { error: String(err), phone: normalized }));
+    await prisma.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referralCode: code } }).catch((err) => logger.error("[customers.db] referralCode assign failed", { error: String(err), phone: normalized }));
     return code;
   },
   /** Apply a referral code: credits 50 points to referrer, links referredBy */
-  async applyReferralCode(phone: string, code: string): Promise<{ success: boolean; message: string }> {
+  async applyReferralCode(tenantId: string, phone: string, code: string): Promise<{ success: boolean; message: string }> {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findUnique({ where: { phone: normalized } });
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
     if (!c) return { success: false, message: "Cliente no encontrado" };
     if (c.referredBy) return { success: false, message: "Ya usaste un código de referido" };
     if (c.referralCode === code) return { success: false, message: "No puedes usar tu propio código" };
-    const referrer = await prisma.customer.findUnique({ where: { referralCode: code } });
+    const referrer = await prisma.customer.findFirst({ where: { referralCode: code, tenantId } });
     if (!referrer) return { success: false, message: "Código no válido" };
-    // Award 50 points to referrer
-    await prisma.customer.update({ where: { phone: referrer.phone }, data: { loyaltyPoints: { increment: 50 } } });
+    // Award 50 points to referrer (tenant-scoped)
+    await prisma.customer.updateMany({ where: { phone: referrer.phone, tenantId }, data: { loyaltyPoints: { increment: 50 } } });
     // Link referredBy on the new customer
-    await prisma.customer.update({ where: { phone: normalized }, data: { referredBy: referrer.phone } });
+    await prisma.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referredBy: referrer.phone } });
     return { success: true, message: "Código aplicado correctamente" };
   },
 };
@@ -235,33 +239,33 @@ export const CustomersDB = {
 // ── LoyaltyDB ─────────────────────────────────────────────────────────────────
 
 export const LoyaltyDB = {
-  async getByPhone(phone: string) {
+  async getByPhone(tenantId: string, phone: string) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findUnique({ where: { phone: normalized } });
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
     if (!c) return null;
     return { phone: c.phone, name: c.name, loyaltyPoints: c.loyaltyPoints, loyaltyTier: c.loyaltyTier, totalSpent: c.totalSpent, referralCode: c.referralCode ?? null, creditBalance: c.creditBalance };
   },
   /** Accrue points for a completed order/sale */
-  async accruePoints(phone: string, amount: number) {
+  async accruePoints(tenantId: string, phone: string, amount: number) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findUnique({ where: { phone: normalized } });
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
     if (!c) return null;
     const newTotal = toNumOrZero(c.totalSpent) + amount;
     const newPoints = c.loyaltyPoints + computePoints(amount);
     const newTier = computeTier(newTotal);
-    await prisma.customer.update({
-      where: { phone: normalized },
+    await prisma.customer.updateMany({
+      where: { phone: normalized, tenantId },
       data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
     });
     return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
   },
   /** Redeem points (returns false if insufficient) */
-  async redeemPoints(phone: string, points: number) {
+  async redeemPoints(tenantId: string, phone: string, points: number) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findUnique({ where: { phone: normalized } });
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
     if (!c || c.loyaltyPoints < points) return false;
-    await prisma.customer.update({
-      where: { phone: normalized },
+    await prisma.customer.updateMany({
+      where: { phone: normalized, tenantId },
       data: { loyaltyPoints: c.loyaltyPoints - points },
     });
     return true;
@@ -276,14 +280,17 @@ export const ReviewsDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
-  async getApproved(productId?: number): Promise<DbReview[]> {
+  async getApproved(tenantId: string, productId?: number): Promise<DbReview[]> {
     const where = productId != null
-      ? { status: "approved", productId }
-      : { status: "approved" };
+      ? { status: "approved", productId, tenantId }
+      : { status: "approved", tenantId };
     return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
   async add(r: DbReview, tenantId: string): Promise<DbReview> {
     const productIdVal = r.productId ?? null;
+    // Pre-check: if a review with this id exists, it must belong to this tenant
+    const existing = await prisma.review.findUnique({ where: { id: r.id }, select: { tenantId: true } });
+    if (existing && existing.tenantId !== tenantId) throw new Error("cross-tenant upsert denied");
     const row = await prisma.review.upsert({
       where: { id: r.id },
       create: { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date), tenantId },
@@ -291,19 +298,17 @@ export const ReviewsDB = {
     });
     return mapReview(row);
   },
-  async updateStatus(id: string, status: DbReview["status"]): Promise<void> {
-    await prisma.review.update({ where: { id }, data: { status } }).catch((err) => logger.error("[customers.db] review status update failed", { error: String(err), id, status }));
+  async updateStatus(tenantId: string, id: string, status: DbReview["status"]): Promise<void> {
+    await prisma.review.updateMany({ where: { id, tenantId }, data: { status } }).catch((err) => logger.error("[customers.db] review status update failed", { error: String(err), id, status }));
   },
-  async updateReply(id: string, adminReply: string | null): Promise<void> {
-    await prisma.$executeRaw`
-      UPDATE "Review"
-      SET "adminReply" = ${adminReply},
-          "adminReplyDate" = ${adminReply != null ? new Date() : null}
-      WHERE id = ${id}
-    `.catch((err) => logger.error("[customers.db] review adminReply update failed", { error: String(err), id }));
+  async updateReply(tenantId: string, id: string, adminReply: string | null): Promise<void> {
+    await prisma.review.updateMany({
+      where: { id, tenantId },
+      data: { adminReply, adminReplyDate: adminReply != null ? new Date() : null } as Record<string, unknown>,
+    }).catch((err) => logger.error("[customers.db] review adminReply update failed", { error: String(err), id }));
   },
-  async delete(id: string): Promise<void> {
-    await prisma.review.delete({ where: { id } }).catch((err) => logger.error("[customers.db] review delete failed", { error: String(err), id }));
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.review.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[customers.db] review delete failed", { error: String(err), id }));
   },
 
   /** Aggregate ratings per product (approved reviews only) */
@@ -330,9 +335,9 @@ export const ReviewsDB = {
 // ── ShoppingListsDB ───────────────────────────────────────────────────────────
 
 export const ShoppingListsDB = {
-  async getByPhone(phone: string): Promise<DbShoppingList[]> {
+  async getByPhone(tenantId: string, phone: string): Promise<DbShoppingList[]> {
     return (await prisma.shoppingList.findMany({
-      where: { customerPhone: normalizePhone(phone) },
+      where: { customerPhone: normalizePhone(phone), tenantId },
       include: { items: true },
       orderBy: { updatedAt: "desc" },
     })).map(mapShoppingList);
@@ -348,18 +353,18 @@ export const ShoppingListsDB = {
     });
     return mapShoppingList(row);
   },
-  async update(id: string, data: { name?: string; items?: { productId: number; quantity: number }[] }): Promise<DbShoppingList | null> {
-    const existing = await prisma.shoppingList.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, data: { name?: string; items?: { productId: number; quantity: number }[] }): Promise<DbShoppingList | null> {
+    const existing = await prisma.shoppingList.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     if (data.items) {
       await prisma.shoppingListItem.deleteMany({ where: { shoppingListId: id } });
       await prisma.shoppingListItem.createMany({ data: data.items.map(i => ({ shoppingListId: id, productId: i.productId, quantity: i.quantity })) });
     }
-    if (data.name) await prisma.shoppingList.update({ where: { id }, data: { name: data.name } });
-    const row = await prisma.shoppingList.findUnique({ where: { id }, include: { items: true } });
+    if (data.name) await prisma.shoppingList.updateMany({ where: { id, tenantId }, data: { name: data.name } });
+    const row = await prisma.shoppingList.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapShoppingList(row) : null;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.shoppingList.delete({ where: { id } }).catch((err) => logger.error("[customers.db] shoppingList delete failed", { error: String(err), id }));
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.shoppingList.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[customers.db] shoppingList delete failed", { error: String(err), id }));
   },
 };

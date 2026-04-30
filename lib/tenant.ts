@@ -178,6 +178,28 @@ function buildTenantExtension(tenantId: string) {
           if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
+        // findUnique only accepts unique constraints in `where`, so we cannot
+        // inject `tenantId` there. Instead we run the query and post-check
+        // that the row belongs to the current tenant — returning null if not.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async findUnique({ args, query, model }: any) {
+          const row = await query(args);
+          if (!TENANT_MODELS.has(model) || row == null) return row;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return (row as any).tenantId === tenantId ? row : null;
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async findUniqueOrThrow({ args, query, model }: any) {
+          const row = await query(args);
+          if (!TENANT_MODELS.has(model)) return row;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((row as any).tenantId !== tenantId) {
+            throw new Error(
+              `[tenant-guard] findUniqueOrThrow on ${model}: cross-tenant access denied`,
+            );
+          }
+          return row;
+        },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async count({ args, query, model }: any) {
           if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
@@ -206,6 +228,18 @@ function buildTenantExtension(tenantId: string) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async upsert({ args, query, model }: any) {
           if (TENANT_MODELS.has(model)) {
+            // Pre-check: if a row already matches the unique where but belongs
+            // to a different tenant, refuse — otherwise upsert would overwrite
+            // another tenant's data via the update branch.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const ext = (prisma as any).$extends({});
+            const existing = await ext[model].findUnique({ where: args.where });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (existing && (existing as any).tenantId !== tenantId) {
+              throw new Error(
+                `[tenant-guard] upsert on ${model}: cross-tenant access denied`,
+              );
+            }
             args.create = { ...args.create, tenantId };
           }
           return query(args);

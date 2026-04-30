@@ -181,8 +181,8 @@ export const TreasuryDB = {
     return rows.map(mapCuenta);
   },
 
-  async getCuenta(id: string): Promise<DbCuenta | null> {
-    const row = await prisma.treasuryCuenta.findUnique({ where: { id } });
+  async getCuenta(tenantId: string, id: string): Promise<DbCuenta | null> {
+    const row = await prisma.treasuryCuenta.findFirst({ where: { id, tenantId } });
     return row ? mapCuenta(row) : null;
   },
 
@@ -205,22 +205,21 @@ export const TreasuryDB = {
     return mapCuenta(row);
   },
 
-  async updateCuenta(id: string, data: CuentaUpdateInput): Promise<DbCuenta | null> {
-    const existing = await prisma.treasuryCuenta.findUnique({ where: { id } });
+  async updateCuenta(tenantId: string, id: string, data: CuentaUpdateInput): Promise<DbCuenta | null> {
+    const existing = await prisma.treasuryCuenta.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
-    const row = await prisma.treasuryCuenta.update({
-      where: { id },
-      data: {
-        ...(data.nombre !== undefined && { nombre: data.nombre }),
-        ...(data.banco !== undefined && { banco: data.banco }),
-        ...(data.numeroCuenta !== undefined && { numeroCuenta: data.numeroCuenta }),
-        ...(data.cci !== undefined && { cci: data.cci }),
-        ...(data.color !== undefined && { color: data.color }),
-        ...(data.notas !== undefined && { notas: data.notas }),
-        ...(data.activa !== undefined && { activa: data.activa }),
-      },
-    });
-    return mapCuenta(row);
+    const updateData = {
+      ...(data.nombre !== undefined && { nombre: data.nombre }),
+      ...(data.banco !== undefined && { banco: data.banco }),
+      ...(data.numeroCuenta !== undefined && { numeroCuenta: data.numeroCuenta }),
+      ...(data.cci !== undefined && { cci: data.cci }),
+      ...(data.color !== undefined && { color: data.color }),
+      ...(data.notas !== undefined && { notas: data.notas }),
+      ...(data.activa !== undefined && { activa: data.activa }),
+    };
+    await prisma.treasuryCuenta.updateMany({ where: { id, tenantId }, data: updateData });
+    const row = await prisma.treasuryCuenta.findFirst({ where: { id, tenantId } });
+    return row ? mapCuenta(row) : null;
   },
 
   // ── Movimientos ──────────────────────────────────────
@@ -257,8 +256,8 @@ export const TreasuryDB = {
 
   async registrarMovimiento(data: MovimientoCreateInput): Promise<DbMovimiento> {
     return await prisma.$transaction(async (tx) => {
-      // Get current balance
-      const cuenta = await tx.treasuryCuenta.findUnique({ where: { id: data.cuentaId } });
+      // Get current balance — tenant-scoped to prevent cross-tenant movement injection
+      const cuenta = await tx.treasuryCuenta.findFirst({ where: { id: data.cuentaId, tenantId: data.tenantId } });
       if (!cuenta) throw new Error("Cuenta no encontrada");
 
       const saldoAnterior = Number(cuenta.saldo);
@@ -283,9 +282,9 @@ export const TreasuryDB = {
         include: { cuenta: { select: { nombre: true } } },
       });
 
-      // Update account balance
-      await tx.treasuryCuenta.update({
-        where: { id: data.cuentaId },
+      // Update account balance — tenantId in where for isolation
+      await tx.treasuryCuenta.updateMany({
+        where: { id: data.cuentaId, tenantId: data.tenantId },
         data: { saldo: saldoPosterior },
       });
 
@@ -313,8 +312,9 @@ export const TreasuryDB = {
     if (data.monto <= 0) throw new Error("El monto debe ser positivo");
 
     return await prisma.$transaction(async (tx) => {
-      const origen = await tx.treasuryCuenta.findUnique({ where: { id: data.origenId } });
-      const destino = await tx.treasuryCuenta.findUnique({ where: { id: data.destinoId } });
+      // Both accounts must belong to the same tenant — prevents cross-tenant fund movement
+      const origen = await tx.treasuryCuenta.findFirst({ where: { id: data.origenId, tenantId: data.tenantId } });
+      const destino = await tx.treasuryCuenta.findFirst({ where: { id: data.destinoId, tenantId: data.tenantId } });
       if (!origen || !destino) throw new Error("Cuenta no encontrada");
 
       const saldoOrigenAnterior = Number(origen.saldo);
@@ -365,13 +365,13 @@ export const TreasuryDB = {
         },
       });
 
-      // Update balances
-      await tx.treasuryCuenta.update({
-        where: { id: data.origenId },
+      // Update balances — tenantId included to guarantee isolation even inside the tx
+      await tx.treasuryCuenta.updateMany({
+        where: { id: data.origenId, tenantId: data.tenantId },
         data: { saldo: { decrement: data.monto } },
       });
-      await tx.treasuryCuenta.update({
-        where: { id: data.destinoId },
+      await tx.treasuryCuenta.updateMany({
+        where: { id: data.destinoId, tenantId: data.tenantId },
         data: { saldo: { increment: data.monto } },
       });
 

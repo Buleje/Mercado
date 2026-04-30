@@ -94,14 +94,14 @@ export const FiadosDB = {
     return rows.map(r => mapFiado({ ...r, customer: { name: customerMap.get(r.customerId) || null } }));
   },
 
-  async getById(id: string): Promise<DbFiado | null> {
-    const row = await prisma.fiado.findUnique({
-      where: { id },
+  async getById(tenantId: string, id: string): Promise<DbFiado | null> {
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
       include: { cuotas: { orderBy: { createdAt: "asc" } } },
     });
     if (!row) return null;
     // Fetch customer name separately
-    const customer = await prisma.customer.findUnique({ where: { phone: row.customerId }, select: { name: true } }).catch((err) => {
+    const customer = await prisma.customer.findFirst({ where: { phone: row.customerId, tenantId }, select: { name: true } }).catch((err) => {
       logger.warn("FiadosDB.getById: customer lookup failed (non-critical)", { fiadoId: id, err: String(err) });
       return null;
     });
@@ -130,11 +130,12 @@ export const FiadosDB = {
   },
 
   async registerPago(
+    tenantId: string,
     fiadoId: string,
     monto: number,
     notas?: string
   ): Promise<DbFiado | null> {
-    const fiado = await prisma.fiado.findUnique({ where: { id: fiadoId } });
+    const fiado = await prisma.fiado.findFirst({ where: { id: fiadoId, tenantId } });
     if (!fiado) return null;
 
     const nuevoSaldo = Math.max(Number(fiado.saldo) - monto, 0);
@@ -161,19 +162,22 @@ export const FiadosDB = {
   },
 
   async updateStatus(
+    tenantId: string,
     id: string,
     status: "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO"
   ): Promise<DbFiado | null> {
-    const row = await prisma.fiado
-      .update({
-        where: { id },
-        data: { status },
-        include: { cuotas: { orderBy: { createdAt: "asc" } } },
-      })
-      .catch((err) => {
-        logger.warn("FiadosDB.updateStatus: update failed", { fiadoId: id, status, err: String(err) });
-        return null;
-      });
+    const result = await prisma.fiado.updateMany({
+      where: { id, tenantId },
+      data: { status },
+    });
+    if (result.count === 0) return null;
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
+      include: { cuotas: { orderBy: { createdAt: "asc" } } },
+    }).catch((err) => {
+      logger.warn("FiadosDB.updateStatus: update failed", { fiadoId: id, status, err: String(err) });
+      return null;
+    });
     return row ? mapFiado(row) : null;
   },
 

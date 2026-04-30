@@ -17,14 +17,18 @@ vi.mock("server-only", () => ({}));
 
 const {
   mockProductFindUnique,
+  mockProductFindFirst,
   mockProductUpdate,
+  mockProductUpdateMany,
   mockInventoryMovementCreate,
   mockBatchFindMany,
   mockBatchUpdate,
   mockBatchFindFirst,
 } = vi.hoisted(() => ({
   mockProductFindUnique: vi.fn(),
+  mockProductFindFirst: vi.fn(),
   mockProductUpdate: vi.fn(),
+  mockProductUpdateMany: vi.fn().mockResolvedValue({ count: 1 }),
   mockInventoryMovementCreate: vi.fn(),
   mockBatchFindMany: vi.fn(),
   mockBatchUpdate: vi.fn(),
@@ -37,7 +41,9 @@ vi.mock("@/lib/prisma", () => {
   const prismaMock = {
     product: {
       findUnique: mockProductFindUnique,
+      findFirst: mockProductFindFirst,
       update: mockProductUpdate,
+      updateMany: mockProductUpdateMany,
     },
     inventoryMovement: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -85,6 +91,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
     vi.clearAllMocks();
     // Default: product has stock = 100
     mockProductFindUnique.mockResolvedValue({ id: 1, stock: 100 });
+    mockProductFindFirst.mockResolvedValue({ id: 1, stock: 100, tenantId: "main" });
     mockProductUpdate.mockResolvedValue({ id: 1, stock: 90 });
     mockInventoryMovementCreate.mockImplementation(async ({ data }) =>
       makeMovement(data.productId, data.quantity)

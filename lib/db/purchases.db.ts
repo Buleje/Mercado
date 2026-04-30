@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import type {
   Supplier as PSupplier,
@@ -77,8 +78,8 @@ export const SuppliersDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.supplier.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplier);
   },
-  async getById(id: string): Promise<DbSupplier | null> {
-    const row = await prisma.supplier.findUnique({ where: { id } });
+  async getById(tenantId: string, id: string): Promise<DbSupplier | null> {
+    const row = await prisma.supplier.findFirst({ where: { id, tenantId } });
     return row ? mapSupplier(row) : null;
   },
   async add(s: DbSupplier, tenantId: string): Promise<DbSupplier> {
@@ -87,16 +88,16 @@ export const SuppliersDB = {
     });
     return mapSupplier(row);
   },
-  async update(id: string, patch: Partial<DbSupplier>): Promise<DbSupplier | null> {
-    const existing = await prisma.supplier.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, patch: Partial<DbSupplier>): Promise<DbSupplier | null> {
+    const existing = await prisma.supplier.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
-     
     const { id: _id, createdAt: _c, ...data } = patch;
-    const row = await prisma.supplier.update({ where: { id }, data });
-    return mapSupplier(row);
+    await prisma.supplier.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.supplier.findFirst({ where: { id, tenantId } });
+    return row ? mapSupplier(row) : null;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.supplier.delete({ where: { id } }).catch(() => {});
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.supplier.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[purchases.db] supplier delete failed", { error: String(err), id, tenantId }));
   },
 };
 
@@ -107,8 +108,8 @@ export const PurchasesDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.purchaseOrder.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
   },
-  async getById(id: string): Promise<DbPurchaseOrder | null> {
-    const row = await prisma.purchaseOrder.findUnique({ where: { id }, include: { items: true } });
+  async getById(tenantId: string, id: string): Promise<DbPurchaseOrder | null> {
+    const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapPurchaseOrder(row) : null;
   },
   async add(po: DbPurchaseOrder, tenantId: string): Promise<DbPurchaseOrder> {
@@ -125,8 +126,8 @@ export const PurchasesDB = {
     });
     return mapPurchaseOrder(row);
   },
-  async update(id: string, patch: Partial<DbPurchaseOrder>): Promise<DbPurchaseOrder | null> {
-    const existing = await prisma.purchaseOrder.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, patch: Partial<DbPurchaseOrder>): Promise<DbPurchaseOrder | null> {
+    const existing = await prisma.purchaseOrder.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.status) data.status = patch.status;
@@ -136,11 +137,12 @@ export const PurchasesDB = {
     if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
     if (patch.deliveryDate !== undefined) data.deliveryDate = patch.deliveryDate ? new Date(patch.deliveryDate) : null;
     if (patch.discount !== undefined) data.discount = patch.discount;
-    const row = await prisma.purchaseOrder.update({ where: { id }, data, include: { items: true } });
-    return mapPurchaseOrder(row);
+    await prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
+    return row ? mapPurchaseOrder(row) : null;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.purchaseOrder.delete({ where: { id } }).catch(() => {});
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.purchaseOrder.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[purchases.db] purchaseOrder delete failed", { error: String(err), id, tenantId }));
   },
 };
 

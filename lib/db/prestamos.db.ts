@@ -306,9 +306,9 @@ export const PrestamosDB = {
     return rows.map(mapPrestamo);
   },
 
-  async getById(id: string): Promise<DbPrestamo | null> {
-    const row = await prisma.prestamo.findUnique({
-      where: { id },
+  async getById(tenantId: string, id: string): Promise<DbPrestamo | null> {
+    const row = await prisma.prestamo.findFirst({
+      where: { id, tenantId },
       include: INCLUDE_FULL,
     });
     return row ? mapPrestamo(row) : null;
@@ -362,47 +362,45 @@ export const PrestamosDB = {
     return mapPrestamo(row);
   },
 
-  async update(id: string, data: PrestamoUpdateInput): Promise<DbPrestamo | null> {
-    const existing = await prisma.prestamo.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, data: PrestamoUpdateInput): Promise<DbPrestamo | null> {
+    const existing = await prisma.prestamo.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
 
-    const row = await prisma.prestamo.update({
-      where: { id },
-      data: {
-        ...(data.customerId !== undefined && { customerId: data.customerId || null }),
-        ...(data.tipo && { tipo: data.tipo }),
-        ...(data.direccion && { direccion: data.direccion }),
-        ...(data.entidadNombre !== undefined && { entidadNombre: data.entidadNombre }),
-        ...(data.entidadTipo !== undefined && { entidadTipo: data.entidadTipo }),
-        ...(data.nroOperacion !== undefined && { nroOperacion: data.nroOperacion }),
-        ...(data.moneda && { moneda: data.moneda }),
-        ...(data.tea !== undefined && { tea: data.tea }),
-        ...(data.moraInteres !== undefined && { moraInteres: data.moraInteres }),
-        ...(data.garantia !== undefined && { garantia: data.garantia }),
-        ...(data.notas !== undefined && { notas: data.notas }),
-        ...(data.fechaDesembolso !== undefined && { fechaDesembolso: data.fechaDesembolso ? new Date(data.fechaDesembolso) : null }),
-        ...(data.fechaVencimiento !== undefined && { fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null }),
-      },
-      include: INCLUDE_FULL,
-    });
-    return mapPrestamo(row);
+    const updateData = {
+      ...(data.customerId !== undefined && { customerId: data.customerId || null }),
+      ...(data.tipo && { tipo: data.tipo }),
+      ...(data.direccion && { direccion: data.direccion }),
+      ...(data.entidadNombre !== undefined && { entidadNombre: data.entidadNombre }),
+      ...(data.entidadTipo !== undefined && { entidadTipo: data.entidadTipo }),
+      ...(data.nroOperacion !== undefined && { nroOperacion: data.nroOperacion }),
+      ...(data.moneda && { moneda: data.moneda }),
+      ...(data.tea !== undefined && { tea: data.tea }),
+      ...(data.moraInteres !== undefined && { moraInteres: data.moraInteres }),
+      ...(data.garantia !== undefined && { garantia: data.garantia }),
+      ...(data.notas !== undefined && { notas: data.notas }),
+      ...(data.fechaDesembolso !== undefined && { fechaDesembolso: data.fechaDesembolso ? new Date(data.fechaDesembolso) : null }),
+      ...(data.fechaVencimiento !== undefined && { fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null }),
+    };
+    await prisma.prestamo.updateMany({ where: { id, tenantId }, data: updateData });
+    return this.getById(tenantId, id);
   },
 
-  async updateStatus(id: string, status: DbPrestamo["status"]): Promise<DbPrestamo | null> {
-    const row = await prisma.prestamo.update({
-      where: { id },
-      data: { status },
-      include: INCLUDE_FULL,
-    });
-    return mapPrestamo(row);
+  async updateStatus(tenantId: string, id: string, status: DbPrestamo["status"]): Promise<DbPrestamo | null> {
+    const existing = await prisma.prestamo.findFirst({ where: { id, tenantId } });
+    if (!existing) return null;
+    await prisma.prestamo.updateMany({ where: { id, tenantId }, data: { status } });
+    return this.getById(tenantId, id);
   },
 
-  async registrarPago(cuotaId: string, monto: number): Promise<DbPrestamo | null> {
-    const cuota = await prisma.prestamoCuota.findUnique({ where: { id: cuotaId } });
+  async registrarPago(tenantId: string, cuotaId: string, monto: number): Promise<DbPrestamo | null> {
+    // Verify cuota belongs to a prestamo owned by this tenant
+    const cuota = await prisma.prestamoCuota.findFirst({
+      where: { id: cuotaId, prestamo: { tenantId } },
+    });
     if (!cuota) return null;
 
     // Calculate mora if overdue
-    const prestamo = await prisma.prestamo.findUnique({ where: { id: cuota.prestamoId } });
+    const prestamo = await prisma.prestamo.findFirst({ where: { id: cuota.prestamoId, tenantId } });
     let moraCalc = 0;
     if (prestamo && cuota.fechaVence < new Date()) {
       const diasAtraso = Math.floor((Date.now() - cuota.fechaVence.getTime()) / (1000 * 60 * 60 * 24));
@@ -412,8 +410,9 @@ export const PrestamosDB = {
       }
     }
 
-    await prisma.prestamoCuota.update({
-      where: { id: cuotaId },
+    // PrestamoCuota has no tenantId column — scoped via prestamoId which was verified above
+    await prisma.prestamoCuota.updateMany({
+      where: { id: cuotaId, prestamoId: cuota.prestamoId },
       data: { pagadoEn: new Date(), montoPagado: monto, moraCalculada: moraCalc },
     });
 
@@ -424,21 +423,21 @@ export const PrestamosDB = {
     const allPaid = allCuotas.every((c) => c.pagadoEn != null || c.id === cuotaId);
 
     if (allPaid) {
-      await prisma.prestamo.update({
-        where: { id: cuota.prestamoId },
+      await prisma.prestamo.updateMany({
+        where: { id: cuota.prestamoId, tenantId },
         data: { status: "PAGADO" },
       });
     }
 
-    return this.getById(cuota.prestamoId);
+    return this.getById(tenantId, cuota.prestamoId);
   },
 
-  async refinanciar(id: string, data: {
+  async refinanciar(tenantId: string, id: string, data: {
     nuevaTasa?: number;
     nuevasCuotas: number;
     sistema?: PrestamoSistemaAmortizacion;
   }): Promise<DbPrestamo | null> {
-    const existing = await this.getById(id);
+    const existing = await this.getById(tenantId, id);
     if (!existing || existing.status !== "ACTIVO") return null;
 
     const saldoPendiente = existing.cuotas
@@ -472,10 +471,10 @@ export const PrestamosDB = {
       })),
     });
 
-    // Update prestamo metadata
+    // Update prestamo metadata — tenantId in where for isolation
     const lastNew = newCuotas[newCuotas.length - 1];
-    await prisma.prestamo.update({
-      where: { id },
+    await prisma.prestamo.updateMany({
+      where: { id, tenantId },
       data: {
         tasaInteres: tasa,
         numeroCuotas: maxExisting + data.nuevasCuotas,
@@ -485,7 +484,7 @@ export const PrestamosDB = {
       },
     });
 
-    return this.getById(id);
+    return this.getById(tenantId, id);
   },
 
   async getResumen(tenantId: string): Promise<{
@@ -535,14 +534,20 @@ export const PrestamosDB = {
     };
   },
 
-  async addDocumento(prestamoId: string, doc: { nombre: string; tipo: string; url: string }): Promise<DbPrestamoDocumento> {
+  async addDocumento(tenantId: string, prestamoId: string, doc: { nombre: string; tipo: string; url: string }): Promise<DbPrestamoDocumento> {
+    // Verify prestamo belongs to this tenant before adding documents
+    const prestamo = await prisma.prestamo.findFirst({ where: { id: prestamoId, tenantId }, select: { id: true } });
+    if (!prestamo) throw new Error("Préstamo no encontrado o acceso denegado");
     const row = await prisma.prestamoDocumento.create({
       data: { prestamoId, nombre: doc.nombre, tipo: doc.tipo, url: doc.url },
     });
     return mapDocumento(row);
   },
 
-  async listDocumentos(prestamoId: string): Promise<DbPrestamoDocumento[]> {
+  async listDocumentos(tenantId: string, prestamoId: string): Promise<DbPrestamoDocumento[]> {
+    // Verify prestamo belongs to tenant
+    const prestamo = await prisma.prestamo.findFirst({ where: { id: prestamoId, tenantId }, select: { id: true } });
+    if (!prestamo) return [];
     const rows = await prisma.prestamoDocumento.findMany({
       where: { prestamoId },
       orderBy: { createdAt: "desc" },
@@ -550,9 +555,15 @@ export const PrestamosDB = {
     return rows.map(mapDocumento);
   },
 
-  async deleteDocumento(docId: string): Promise<boolean> {
+  async deleteDocumento(tenantId: string, docId: string): Promise<boolean> {
     try {
-      await prisma.prestamoDocumento.delete({ where: { id: docId } });
+      // Verify the document's prestamo belongs to this tenant
+      const doc = await prisma.prestamoDocumento.findFirst({
+        where: { id: docId, prestamo: { tenantId } },
+        select: { id: true },
+      });
+      if (!doc) return false;
+      await prisma.prestamoDocumento.deleteMany({ where: { id: docId } });
       return true;
     } catch { return false; }
   },

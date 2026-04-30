@@ -422,7 +422,7 @@ export const OrdersDB = {
       if (patch.customer.location) data.customerLocation = patch.customer.location;
       if (patch.customer.reference) data.customerReference = patch.customer.reference;
     }
-    const row = await prisma.order.update({ where: { id }, data, include: { items: true } });
+    const row = await prisma.order.update({ where: { id, tenantId }, data, include: { items: true } });
     return mapOrder(row);
   },
   /**
@@ -591,14 +591,19 @@ export const OrdersDB = {
 // ── Delivery Slots DB ─────────────────────────────────────────────────────────
 
 export const DeliverySlotsDB = {
-  async getByDate(date: string): Promise<DbDeliverySlot[]> {
-    return (await prisma.deliverySlot.findMany({ where: { date }, orderBy: { createdAt: "asc" } })).map(mapDeliverySlot);
+  async getByDate(tenantId: string, date: string): Promise<DbDeliverySlot[]> {
+    return (await prisma.deliverySlot.findMany({ where: { tenantId, date }, orderBy: { createdAt: "asc" } })).map(mapDeliverySlot);
   },
-  async getByOrderId(orderId: string): Promise<DbDeliverySlot | null> {
-    const row = await prisma.deliverySlot.findUnique({ where: { orderId } });
+  async getByOrderId(tenantId: string, orderId: string): Promise<DbDeliverySlot | null> {
+    const row = await prisma.deliverySlot.findFirst({ where: { orderId, tenantId } });
     return row ? mapDeliverySlot(row) : null;
   },
   async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId: string }): Promise<DbDeliverySlot> {
+    // Pre-check: refuse to attach a delivery slot to an order owned by another tenant.
+    const order = await prisma.order.findFirst({ where: { id: data.orderId, tenantId: data.tenantId } });
+    if (!order) {
+      throw new Error(`[orders.db] DeliverySlotsDB.set: order ${data.orderId} not found for tenant ${data.tenantId}`);
+    }
     const row = await prisma.deliverySlot.upsert({
       where: { orderId: data.orderId },
       create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId },

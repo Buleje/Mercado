@@ -90,8 +90,8 @@ export const PromotionsDB = {
     });
     return mapPromotion(row);
   },
-  async update(id: string, patch: Partial<DbPromotion>): Promise<DbPromotion | null> {
-    const existing = await prisma.promotion.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, patch: Partial<DbPromotion>): Promise<DbPromotion | null> {
+    const existing = await prisma.promotion.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.name !== undefined) data.name = patch.name;
@@ -104,11 +104,13 @@ export const PromotionsDB = {
     if (patch.targetPhones !== undefined) data.targetPhones = patch.targetPhones;
     if (patch.active !== undefined) data.active = patch.active;
     if (patch.expiresAt !== undefined) data.expiresAt = patch.expiresAt ? new Date(patch.expiresAt) : null;
-    const row = await prisma.promotion.update({ where: { id }, data });
-    return mapPromotion(row);
+    // Use updateMany with tenantId to avoid IDOR race condition
+    await prisma.promotion.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.promotion.findFirst({ where: { id, tenantId } });
+    return row ? mapPromotion(row) : null;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.promotion.delete({ where: { id } }).catch((err) => {
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.promotion.deleteMany({ where: { id, tenantId } }).catch((err) => {
       logger.error("[promotions.db] delete failed", { id, error: String(err) });
     });
   },
@@ -152,8 +154,8 @@ export const CouponsDB = {
     });
     return mapCoupon(row);
   },
-  async update(id: string, patch: Partial<DbCoupon>): Promise<DbCoupon | null> {
-    const existing = await prisma.coupon.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, patch: Partial<DbCoupon>): Promise<DbCoupon | null> {
+    const existing = await prisma.coupon.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.code !== undefined) data.code = patch.code.toUpperCase().trim();
@@ -165,8 +167,10 @@ export const CouponsDB = {
     if (patch.maxUses !== undefined) data.maxUses = patch.maxUses;
     if (patch.active !== undefined) data.active = patch.active;
     if (patch.expiresAt !== undefined) data.expiresAt = patch.expiresAt ? new Date(patch.expiresAt) : null;
-    const row = await prisma.coupon.update({ where: { id }, data });
-    return mapCoupon(row);
+    // Use updateMany with tenantId to avoid IDOR race condition
+    await prisma.coupon.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.coupon.findFirst({ where: { id, tenantId } });
+    return row ? mapCoupon(row) : null;
   },
   // RED-006 + RED-007: atomic, tenant-scoped redemption. The conditional UPDATE
   // executes server-side in PostgreSQL so two parallel callers cannot both
@@ -232,14 +236,18 @@ export const CouponsDB = {
       const currentBalance =
         toNumOrZero(row.balance) || toNumOrZero(row.discountValue);
       const newBalance = Math.max(0, currentBalance - deductAmount);
-      const updated = await prisma.coupon.update({
-        where: { id: row.id },
+      const giftWhere = tenantId
+        ? { id: row.id, tenantId }
+        : { id: row.id };
+      await prisma.coupon.updateMany({
+        where: giftWhere,
         data: {
           balance: newBalance,
           ...(newBalance <= 0 ? { active: false } : {}),
         },
       });
-      return mapCoupon(updated);
+      const updated = await prisma.coupon.findFirst({ where: giftWhere });
+      return updated ? mapCoupon(updated) : null;
     }
 
     return mapCoupon(row);
@@ -247,8 +255,8 @@ export const CouponsDB = {
     (code: string, deductAmount?: number): Promise<DbCoupon | null>;
     (tenantId: string, code: string, deductAmount?: number): Promise<DbCoupon | null>;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.coupon.delete({ where: { id } }).catch((err) => {
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.coupon.deleteMany({ where: { id, tenantId } }).catch((err) => {
       logger.error("[coupons.db] delete failed", { id, error: String(err) });
     });
   },

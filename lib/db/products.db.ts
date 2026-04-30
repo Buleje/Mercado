@@ -151,8 +151,8 @@ export const ProductsDB = {
 
     return { products: items.map(mapProduct), nextCursor, total };
   },
-  async getById(id: number): Promise<DbProduct | null> {
-    const p = await prisma.product.findUnique({ where: { id } });
+  async getById(tenantId: string, id: number): Promise<DbProduct | null> {
+    const p = await prisma.product.findFirst({ where: { id, tenantId } });
     return p ? mapProduct(p) : null;
   },
   async upsert(product: DbProduct): Promise<DbProduct> {
@@ -164,6 +164,17 @@ export const ProductsDB = {
       badge: product.badge, barcode: product.barcode, stock: product.stock,
       stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
     };
+    if (product.id) {
+      const existing = await prisma.product.findUnique({
+        where: { id: product.id },
+        select: { tenantId: true },
+      });
+      if (existing && existing.tenantId !== product.tenantId) {
+        throw new Error(
+          `[products.db] upsert: cross-tenant access denied for product id=${product.id}`,
+        );
+      }
+    }
     const row = await prisma.product.upsert({
       where: { id: product.id },
       create: { id: product.id, ...d, tenantId: product.tenantId },
@@ -172,16 +183,15 @@ export const ProductsDB = {
     return mapProduct(row);
   },
   /** Soft-delete: sets deletedAt instead of physically removing the row. */
-  async delete(id: number): Promise<void> {
-    // Use raw SQL until `prisma generate` is re-run after migration 20260316
-    await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id}`.catch((err) => {
-      logger.error("[products.db] soft-delete failed", { id, error: String(err) });
+  async delete(tenantId: string, id: number): Promise<void> {
+    await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id} AND "tenantId" = ${tenantId}`.catch((err) => {
+      logger.error("[products.db] soft-delete failed", { id, tenantId, error: String(err) });
     });
   },
   /** Hard-delete: permanently removes the row (admin use only). */
-  async hardDelete(id: number): Promise<void> {
-    await prisma.product.delete({ where: { id } }).catch((err) => {
-      logger.error("[products.db] hard-delete failed", { id, error: String(err) });
+  async hardDelete(tenantId: string, id: number): Promise<void> {
+    await prisma.product.deleteMany({ where: { id, tenantId } }).catch((err) => {
+      logger.error("[products.db] hard-delete failed", { id, tenantId, error: String(err) });
     });
   },
 
@@ -209,10 +219,10 @@ export const ProductsDB = {
     return rows.map(mapProduct);
   },
   /** Bulk soft-delete: sets deletedAt on multiple products at once. */
-  async bulkDelete(ids: number[]): Promise<number> {
+  async bulkDelete(tenantId: string, ids: number[]): Promise<number> {
     if (ids.length === 0) return 0;
     const result = await prisma.product.updateMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where: { id: { in: ids }, tenantId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return result.count;
@@ -222,11 +232,11 @@ export const ProductsDB = {
 // ── Price History ─────────────────────────────────────────────────────────────
 
 export const PriceHistoryDB = {
-  async getByProduct(productId: number): Promise<DbPriceHistory[]> {
-    return (await prisma.priceHistory.findMany({ where: { productId }, orderBy: { changedAt: "desc" } })).map(mapPriceHistory);
+  async getByProduct(tenantId: string, productId: number): Promise<DbPriceHistory[]> {
+    return (await prisma.priceHistory.findMany({ where: { productId, tenantId }, orderBy: { changedAt: "desc" } })).map(mapPriceHistory);
   },
-  async getAll(limit = 100): Promise<DbPriceHistory[]> {
-    return (await prisma.priceHistory.findMany({ orderBy: { changedAt: "desc" }, take: limit })).map(mapPriceHistory);
+  async getAll(tenantId: string, limit = 100): Promise<DbPriceHistory[]> {
+    return (await prisma.priceHistory.findMany({ where: { tenantId }, orderBy: { changedAt: "desc" }, take: limit })).map(mapPriceHistory);
   },
   async record(productId: number, oldPrice: number, newPrice: number, tenantId: string): Promise<DbPriceHistory> {
     if (oldPrice === newPrice) return { id: 0, productId, oldPrice, newPrice, changedAt: new Date().toISOString() };
@@ -242,8 +252,8 @@ export const BundlesDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.bundle.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
-  async getActive(): Promise<DbBundle[]> {
-    return (await prisma.bundle.findMany({ where: { active: true }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
+  async getActive(tenantId: string): Promise<DbBundle[]> {
+    return (await prisma.bundle.findMany({ where: { active: true, tenantId }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
   async add(data: { name: string; description?: string; price: number; image?: string; tenantId: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
     const row = await prisma.bundle.create({
@@ -252,16 +262,15 @@ export const BundlesDB = {
     });
     return mapBundle(row);
   },
-  async update(id: string, data: { name?: string; description?: string; price?: number; image?: string; active?: boolean }): Promise<DbBundle | null> {
-    const row = await prisma.bundle.update({ where: { id }, data, include: { items: true } }).catch((err) => {
-      logger.warn("[products.db] bundle update failed", { id, error: String(err) });
-      return null;
-    });
+  async update(tenantId: string, id: string, data: { name?: string; description?: string; price?: number; image?: string; active?: boolean }): Promise<DbBundle | null> {
+    const updated = await prisma.bundle.updateMany({ where: { id, tenantId }, data });
+    if (updated.count === 0) return null;
+    const row = await prisma.bundle.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapBundle(row) : null;
   },
-  async delete(id: string): Promise<void> {
-    await prisma.bundle.delete({ where: { id } }).catch((err) => {
-      logger.error("[products.db] bundle delete failed", { id, error: String(err) });
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.bundle.deleteMany({ where: { id, tenantId } }).catch((err) => {
+      logger.error("[products.db] bundle delete failed", { id, tenantId, error: String(err) });
     });
   },
 };
