@@ -29,7 +29,7 @@ export async function POST(
       );
     }
 
-    const existing = await FiadosDB.getById(id);
+    const existing = await FiadosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     }
@@ -41,14 +41,14 @@ export async function POST(
       );
     }
 
-    const updated = await FiadosDB.registerPago(id, parsed.data.monto, parsed.data.notas);
+    const updated = await FiadosDB.registerPago(auth.tenantId, id, parsed.data.monto, parsed.data.notas);
     if (!updated) return NextResponse.json({ error: "Error al registrar pago" }, { status: 500 });
 
     logActivity(
       "Pago", "fiado",
       `Pago de S/${parsed.data.monto.toFixed(2)} en fiado ${id.slice(-6)} — saldo: S/${updated.saldo.toFixed(2)}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[fiados/pagar] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {

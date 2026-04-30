@@ -301,7 +301,7 @@ export async function POST(req: NextRequest) {
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
-    LoyaltyDB.accruePoints(data.customerPhone, finalTotal).catch((err) => logger.warn("[sales] loyalty accrue failed", { saleId: sale.id, err: String(err) }));
+    LoyaltyDB.accruePoints(auth.tenantId, data.customerPhone, finalTotal).catch((err) => logger.warn("[sales] loyalty accrue failed", { saleId: sale.id, err: String(err) }));
   }
 
   // AUDIT LOG

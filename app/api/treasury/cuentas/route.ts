@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       ...parsed.data,
     });
 
-    enqueueActivityLog({ action: "Crear", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" creada con saldo S/${cuenta.saldo.toFixed(2)}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Crear", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" creada con saldo S/${cuenta.saldo.toFixed(2)}` }, timestamp: new Date().toISOString() }).catch((err) => logger.error("[treasury/cuentas] enqueueActivityLog POST failed", { error: String(err) }));
 
     return NextResponse.json(cuenta, { status: 201 });
   } catch (e) {
@@ -91,12 +91,12 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const cuenta = await TreasuryDB.updateCuenta(id, parsed.data);
+    const cuenta = await TreasuryDB.updateCuenta(auth.tenantId, id, parsed.data);
     if (!cuenta) {
       return NextResponse.json({ error: "Cuenta no encontrada" }, { status: 404 });
     }
 
-    enqueueActivityLog({ action: "Editar", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Editar", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" actualizada` }, timestamp: new Date().toISOString() }).catch((err) => logger.error("[treasury/cuentas] enqueueActivityLog PATCH failed", { error: String(err) }));
 
     return NextResponse.json(cuenta);
   } catch (e) {

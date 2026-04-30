@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const updated = await WarehousesDB.update(id, parsed.data);
+  const updated = await WarehousesDB.update(auth.tenantId, id, parsed.data);
   if (!updated) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   return NextResponse.json(updated);
 }
@@ -101,7 +101,7 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const deleted = await WarehousesDB.delete(id);
+  const deleted = await WarehousesDB.delete(auth.tenantId, id);
   if (!deleted) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   logActivity("delete", "warehouse", `Almacén eliminado: ${target.name} (${target.code})`, id, "admin");
   return NextResponse.json({ success: true });

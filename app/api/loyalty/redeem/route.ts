@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Verificar que el cliente tiene suficientes puntos
-    const customer = await LoyaltyDB.getByPhone(normalized);
+    const customer = await LoyaltyDB.getByPhone(auth.tenantId, normalized);
     if (!customer) {
       return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
     }
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Descontar puntos
-    const ok = await LoyaltyDB.redeemPoints(normalized, pointsCost);
+    const ok = await LoyaltyDB.redeemPoints(auth.tenantId, normalized, pointsCost);
     if (!ok) {
       return NextResponse.json({ error: "No se pudieron descontar los puntos" }, { status: 500 });
     }
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       `${customer.name} (${normalized}) canjeó ${pointsCost} pts por "${reward.name}"`,
       normalized,
       "admin",
-    ).catch(() => {});
+    ).catch((err) => logger.error("[loyalty/redeem] logActivity failed", { error: String(err) }));
 
     logger.info("[loyalty/redeem] canje exitoso", { phone: normalized, rewardId, pointsCost });
 

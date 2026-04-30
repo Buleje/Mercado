@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
   try {
     const phone = req.nextUrl.searchParams.get("phone");
     if (!phone) return NextResponse.json({ error: "phone requerido" }, { status: 400 });
-    const lists = await ShoppingListsDB.getByPhone(phone);
+    const tenantId = getTenantIdFromRequest(req);
+    const lists = await ShoppingListsDB.getByPhone(tenantId, phone);
     return NextResponse.json(lists);
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

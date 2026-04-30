@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
-    LoyaltyDB.accruePoints(data.customerPhone, total).catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
+    LoyaltyDB.accruePoints(auth.tenantId, data.customerPhone, total).catch((err) => logger.warn("[sales/id] background task failed", { err: String(err) }));
   }
 
   return NextResponse.json(sale, { status: 201 });

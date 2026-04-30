@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "date requerido (YYYY-MM-DD)" }, { status: 400 });
     }
 
-    const slots = await DeliverySlotsDB.getByDate(date);
+    const slots = await DeliverySlotsDB.getByDate(auth.tenantId, date);
     return NextResponse.json(slots);
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
-    const validStatuses = ["entregado", "confirmado", "en_camino"] as const;
+    const validStatuses: ("entregado" | "confirmado" | "en_camino")[] = ["entregado", "confirmado", "en_camino"];
 
     const [currentAgg, prevAgg] = await Promise.all([
       prisma.order.aggregate({
@@ -38,10 +38,10 @@ export async function GET(req: NextRequest) {
     ]);
 
     // TD-018: _sum.total es Decimal | null → convertir
-    const currentRevenue = toNumOrZero(currentAgg._sum.total);
-    const previousRevenue = toNumOrZero(prevAgg._sum.total);
-    const currentCount = currentAgg._count.id;
-    const previousCount = prevAgg._count.id;
+    const currentRevenue = toNumOrZero(currentAgg._sum?.total);
+    const previousRevenue = toNumOrZero(prevAgg._sum?.total);
+    const currentCount = currentAgg._count?.id ?? 0;
+    const previousCount = prevAgg._count?.id ?? 0;
 
     const revPct = previousRevenue ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100) : 100;
     const countPct = previousCount ? Math.round(((currentCount - previousCount) / previousCount) * 100) : 100;

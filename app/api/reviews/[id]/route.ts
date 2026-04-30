@@ -10,7 +10,7 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  await ReviewsDB.delete(id);
+  await ReviewsDB.delete(auth.tenantId, id);
   return NextResponse.json({ ok: true });
 }
 
@@ -28,12 +28,12 @@ export async function PATCH(
     if (!["pending", "approved", "rejected"].includes(body.status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
-    await ReviewsDB.updateStatus(id, body.status as "pending" | "approved" | "rejected");
+    await ReviewsDB.updateStatus(auth.tenantId, id, body.status as "pending" | "approved" | "rejected");
     return NextResponse.json({ ok: true });
   }
 
   if ("adminReply" in body) {
-    await ReviewsDB.updateReply(id, body.adminReply ?? null);
+    await ReviewsDB.updateReply(auth.tenantId, id, body.adminReply ?? null);
     return NextResponse.json({ ok: true });
   }
 

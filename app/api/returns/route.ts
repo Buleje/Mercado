@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   let creditApplied = false;
   if (applyCredit && customerPhone && total > 0) {
     try {
-      await CustomersDB.updateCreditBalance(customerPhone, total);
+      await CustomersDB.updateCreditBalance(auth.tenantId, customerPhone, total);
       creditApplied = true;
     } catch {
       // Non-fatal: continue even if credit fails

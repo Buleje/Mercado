@@ -30,7 +30,7 @@ export async function POST(
       );
     }
 
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
@@ -42,7 +42,7 @@ export async function POST(
       );
     }
 
-    const updated = await PrestamosDB.refinanciar(id, parsed.data);
+    const updated = await PrestamosDB.refinanciar(auth.tenantId, id, parsed.data);
     if (!updated) {
       return NextResponse.json({ error: "Error al refinanciar" }, { status: 500 });
     }
@@ -51,7 +51,7 @@ export async function POST(
       "Refinanciar", "prestamo",
       `Préstamo ${id.slice(-6)} refinanciado: ${parsed.data.nuevasCuotas} cuotas`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[prestamos/refinanciar] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {

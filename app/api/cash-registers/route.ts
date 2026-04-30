@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     if (limitParam !== null || cursor) {
       const limit = Math.min(Math.max(1, parseInt(limitParam ?? "25", 10)), 200);
-      const result = await withDbRetry(() => CashRegistersDB.getAllPaginated(limit, cursor));
+      const result = await withDbRetry(() => CashRegistersDB.getAllPaginated(auth.tenantId, limit, cursor));
       return NextResponse.json(result);
     }
 

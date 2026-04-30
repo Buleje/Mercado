@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
         const expectedClosing = reg.openingAmount + totalIn - totalOut;
 
         const updated = await CashRegistersDB.close(
+          "main",
           reg.id,
           expectedClosing,
           "Cierre automático del sistema"
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
             `Caja ${reg.id} cerrada automáticamente por inactividad (abierta desde ${reg.openedAt})`,
             reg.id,
             "cron"
-          ).catch(() => {});
+          ).catch((err) => logger.error("[auto-close-register] logActivity failed", { error: String(err) }));
         }
       }
 

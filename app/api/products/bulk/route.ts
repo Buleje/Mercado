@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       "Bulk", "producto",
       `Actualización masiva de ${updated} producto(s): ${Object.keys(fields).join(", ")}`,
       undefined, "admin", requestId,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[products/bulk] logActivity POST failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
 
     return NextResponse.json({ ok: true, updated });
@@ -124,14 +124,14 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const deleted = await ProductsDB.bulkDelete(parsed.data.ids);
+    const deleted = await ProductsDB.bulkDelete(auth.tenantId, parsed.data.ids);
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity(
       "Eliminar", "producto",
       `Eliminación masiva de ${deleted} producto(s)`,
       undefined, "admin", requestId,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[products/bulk] logActivity DELETE failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
 
     return NextResponse.json({ ok: true, deleted });

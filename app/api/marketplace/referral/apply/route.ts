@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 const ApplySchema = z.object({
   phone: z.string().min(6).max(20),
@@ -24,7 +25,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const tenantId = getTenantIdFromRequest(req);
     const result = await CustomersDB.applyReferralCode(
+      tenantId,
       parsed.data.phone,
       parsed.data.code.toUpperCase(),
     );

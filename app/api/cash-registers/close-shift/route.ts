@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
         .reduce((s, m) => s + m.amount, 0);
 
     const closed = await CashRegistersDB.close(
+      auth.tenantId,
       open.id,
       closingAmount,
       "Cierre automático desde Cerrar Turno"

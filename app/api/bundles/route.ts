@@ -3,7 +3,7 @@ import { BundlesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { ALLOWED_ROLES } from "@/lib/auth/role-permissions";
 import { toErrorPayload } from "@/lib/api-error";
-import { applyRateLimit } from "@/lib/rate-limit";
+
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ALLOWED_ROLES.BUNDLES_READ);
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const activeOnly = searchParams.get("active") === "true";
-    return NextResponse.json(activeOnly ? await BundlesDB.getActive() : await BundlesDB.getAll(auth.tenantId));
+    return NextResponse.json(activeOnly ? await BundlesDB.getActive(auth.tenantId) : await BundlesDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

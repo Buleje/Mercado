@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
@@ -24,10 +25,11 @@ const ProductUpdateSchema = z.object({
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: NextRequest, ctx: RouteCtx) {
+export async function GET(req: NextRequest, ctx: RouteCtx) {
   try {
+    const tenantId = getTenantIdFromRequest(req);
     const { id } = await ctx.params;
-    const product = await ProductsDB.getById(Number(id));
+    const product = await ProductsDB.getById(tenantId, Number(id));
     if (!product) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     return NextResponse.json(product);
   } catch (e) {
@@ -43,7 +45,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
   try {
     const { id } = await ctx.params;
     const numId = Number(id);
-    const existing = await ProductsDB.getById(numId);
+    const existing = await ProductsDB.getById(auth.tenantId, numId);
     if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
     const raw = await req.json();
@@ -70,7 +72,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
 
     // Record price history when price actually changed
     if (body.price != null && body.price !== existing.price) {
-      await PriceHistoryDB.record(numId, existing.price, body.price, auth.tenantId).catch(() => {});
+      await PriceHistoryDB.record(numId, existing.price, body.price, auth.tenantId).catch((err) => logger.error("[products/id] PriceHistoryDB.record failed", { error: String(err) }));
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
@@ -81,7 +83,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       String(updated.id),
       "admin",
       requestId,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[products/id] logActivity update failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json(updated);
   } catch (e) {
@@ -100,12 +102,12 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx) {
   try {
     const { id } = await ctx.params;
     const numId = Number(id);
-    const existing = await ProductsDB.getById(numId);
+    const existing = await ProductsDB.getById(auth.tenantId, numId);
     if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
-    await ProductsDB.delete(numId);
+    await ProductsDB.delete(auth.tenantId, numId);
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId).catch(() => {});
+    logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId).catch((err) => logger.error("[products/id] logActivity delete failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json({ ok: true });
   } catch (e) {

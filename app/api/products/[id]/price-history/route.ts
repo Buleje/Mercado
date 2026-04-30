@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
     }
 
-    const history = await PriceHistoryDB.getByProduct(productId);
+    const history = await PriceHistoryDB.getByProduct(auth.tenantId, productId);
     return NextResponse.json(history);
   } catch (e) {
     logger.error("[products/id/price-history] GET error", {

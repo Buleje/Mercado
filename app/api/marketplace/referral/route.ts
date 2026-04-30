@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 // GET /api/marketplace/referral?phone=...
 // Returns referral code + stats for a customer.
@@ -24,7 +25,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Ensure customer has a referral code
-    const code = await CustomersDB.ensureReferralCode(phone);
+    const tenantId = getTenantIdFromRequest(req);
+    const code = await CustomersDB.ensureReferralCode(tenantId, phone);
 
     // Count how many people used this code
     const referredCount = await prisma.customer.count({

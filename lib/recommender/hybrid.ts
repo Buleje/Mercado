@@ -128,7 +128,7 @@ export async function getHybridRecommendations(
   if (!parsed.success) return { recommendations: [], source: "empty" };
   const { tenantId: t, productId: sourceId, limit: safeLimit } = parsed.data;
 
-  const source = await ProductsDB.getById(sourceId);
+  const source = await ProductsDB.getById(t, sourceId);
   if (!source) return { recommendations: [], source: "empty" };
 
   const embedText = `${source.name} ${source.category ?? ""} ${source.description ?? ""}`;

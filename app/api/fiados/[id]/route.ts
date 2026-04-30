@@ -19,7 +19,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const fiado = await FiadosDB.getById(id);
+    const fiado = await FiadosDB.getById(auth.tenantId, id);
     if (!fiado) return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     if (fiado.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
@@ -50,19 +50,19 @@ export async function PATCH(
       );
     }
 
-    const existing = await FiadosDB.getById(id);
+    const existing = await FiadosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     }
 
-    const updated = await FiadosDB.updateStatus(id, parsed.data.status);
+    const updated = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
     logActivity(
       "Actualizar", "fiado",
       `Fiado ${id.slice(-6)} status -> ${parsed.data.status}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const { id } = await params;
-    const reg = await CashRegistersDB.getById(id);
+    const reg = await CashRegistersDB.getById(auth.tenantId, id);
     if (!reg) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(reg);
   } catch (err) {
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (body.action === "close") {
       const closingAmount = Number(body.closingAmount) || 0;
-      const reg = await CashRegistersDB.close(id, closingAmount, body.notes);
+      const reg = await CashRegistersDB.close(auth.tenantId, id, closingAmount, body.notes);
       if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
 
       // Send summary email (fire and forget — do not block response)

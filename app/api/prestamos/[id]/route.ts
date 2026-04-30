@@ -35,7 +35,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const prestamo = await PrestamosDB.getById(id);
+    const prestamo = await PrestamosDB.getById(auth.tenantId, id);
     if (!prestamo || prestamo.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
@@ -82,12 +82,12 @@ export async function PUT(
       );
     }
 
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
 
-    const updated = await PrestamosDB.update(id, parsed.data as PrestamoUpdateInput);
+    const updated = await PrestamosDB.update(auth.tenantId, id, parsed.data as PrestamoUpdateInput);
     if (!updated) {
       return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
@@ -96,7 +96,7 @@ export async function PUT(
       "Actualizar", "prestamo",
       `Préstamo ${id.slice(-6)} editado`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[prestamos] logActivity PUT failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {
@@ -124,18 +124,18 @@ export async function PATCH(
       );
     }
 
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
 
-    const updated = await PrestamosDB.updateStatus(id, parsed.data.status);
+    const updated = await PrestamosDB.updateStatus(auth.tenantId, id, parsed.data.status);
 
     logActivity(
       "Actualizar", "prestamo",
       `Préstamo ${id.slice(-6)} status -> ${parsed.data.status}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[prestamos] logActivity PATCH failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {

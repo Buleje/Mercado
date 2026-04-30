@@ -42,7 +42,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const supplier = await SuppliersDB.getById(id);
+    const supplier = await SuppliersDB.getById(auth.tenantId, id);
     if (!supplier) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
@@ -120,7 +120,7 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    await SuppliersDB.delete(id);
+    await SuppliersDB.delete(auth.tenantId, id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[suppliers/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

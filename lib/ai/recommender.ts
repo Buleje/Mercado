@@ -41,7 +41,7 @@ export async function getRecommendations(
   try {
     // 1. Fetch the source product + catalog from DB
     const [source, catalog] = await Promise.all([
-      ProductsDB.getById(Number(productId)),
+      ProductsDB.getById(tenantId, Number(productId)),
       ProductsDB.getAll(tenantId),
     ]);
 

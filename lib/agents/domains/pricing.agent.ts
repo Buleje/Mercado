@@ -327,8 +327,8 @@ async function priceHistory(
   }
 
   const [product, history] = await Promise.all([
-    ProductsDB.getById(productId),
-    PriceHistoryDB.getByProduct(productId),
+    ProductsDB.getById(task.tenantId, productId),
+    PriceHistoryDB.getByProduct(task.tenantId, productId),
   ]);
 
   if (!product) {

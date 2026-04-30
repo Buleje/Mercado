@@ -70,7 +70,7 @@ async function deliverySchedule(
   const date =
     (task.payload.date as string) ?? new Date().toISOString().split("T")[0];
 
-  const slots = await DeliverySlotsDB.getByDate(date);
+  const slots = await DeliverySlotsDB.getByDate(task.tenantId, date);
 
   // Enrich with order data — scope to the task's tenant (HOTFIX-002)
   const enrichedSlots = await Promise.all(

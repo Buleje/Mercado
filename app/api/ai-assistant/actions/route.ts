@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ProductsDB, OrdersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/ai-assistant/actions
@@ -19,7 +20,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       if (!productId || typeof newPrice !== "number" || newPrice <= 0) {
         return { ok: false, message: "productId y newPrice (> 0) son requeridos." };
       }
-      const product = await ProductsDB.getById(productId);
+      const product = await ProductsDB.getById(tenantId, productId);
       if (!product) return { ok: false, message: `Producto #${productId} no encontrado.` };
       const oldPrice = product.price;
       await ProductsDB.upsert({ ...product, price: newPrice });
@@ -31,7 +32,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       if (!productId || typeof newStock !== "number" || newStock < 0) {
         return { ok: false, message: "productId y newStock (>= 0) son requeridos." };
       }
-      const product = await ProductsDB.getById(productId);
+      const product = await ProductsDB.getById(tenantId, productId);
       if (!product) return { ok: false, message: `Producto #${productId} no encontrado.` };
       await ProductsDB.upsert({ ...product, stock: newStock });
       return { ok: true, message: `Stock de "${product.name}" actualizado a ${newStock} ${product.unit}` };
@@ -40,7 +41,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
     case "toggle_product": {
       const { productId, active } = action.payload as { productId: number; active: boolean };
       if (!productId) return { ok: false, message: "productId es requerido." };
-      const product = await ProductsDB.getById(productId);
+      const product = await ProductsDB.getById(tenantId, productId);
       if (!product) return { ok: false, message: `Producto #${productId} no encontrado.` };
       await ProductsDB.upsert({ ...product, active: active ?? !product.active });
       return { ok: true, message: `"${product.name}" ${active ? "activado" : "desactivado"} en tienda.` };
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
   const rateLimited = applyRateLimit(req, "STRICT", "ai-actions");
   if (rateLimited) return rateLimited;
 
-  const body = await req.json().catch(() => null);
+  const body = await req.json().catch((err) => { logger.error("[ai-assistant] failure", { error: String(err) }); return null; });
   if (!body?.action?.type) {
     return NextResponse.json({ error: "Se requiere { action: { type, payload } }" }, { status: 400 });
   }

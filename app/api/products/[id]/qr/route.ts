@@ -293,7 +293,7 @@ export async function GET(
   }
 
   try {
-    const product = await ProductsDB.getById(parsed.data.id);
+    const product = await ProductsDB.getById(auth.tenantId, parsed.data.id);
     if (!product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }

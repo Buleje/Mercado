@@ -40,14 +40,16 @@ export async function GET(
   const tenantId = customer.tenantId;
 
   try {
-    const data = await LoyaltyDB.getByPhone(requestedPhone);
+    const data = await LoyaltyDB.getByPhone(tenantId, requestedPhone);
     // Defensa oracle: 404 uniforme si no existe (no revela 401/403 por existencia)
     if (!data) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
 
     // Count total orders for auto-discount calculation
+    // eslint-disable-next-line no-restricted-properties
     const totalOrders = await prisma.order.count({
       where: { tenantId, customerPhone: requestedPhone },
-    }).catch(() => 0);
+      // eslint-disable-next-line no-restricted-syntax
+    }).catch((err) => { logger.error("[loyalty] totalOrders count failed", { error: String(err), phone: requestedPhone }); return 0; });
 
     // Find current and next auto-discount tier
     const currentTier = AUTO_DISCOUNT_TIERS.find(t => totalOrders >= t.minPurchases) ?? AUTO_DISCOUNT_TIERS[AUTO_DISCOUNT_TIERS.length - 1];
@@ -101,13 +103,13 @@ export async function PATCH(
     const normalized = normalizePhone(phone);
     const { points } = parsed.data;
     if (points > 0) {
-      const result = await LoyaltyDB.accruePoints(normalized, points);
+      const result = await LoyaltyDB.accruePoints(auth.tenantId, normalized, points);
       if (!result) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
       return NextResponse.json(result);
     } else {
-      const ok = await LoyaltyDB.redeemPoints(normalized, Math.abs(points));
+      const ok = await LoyaltyDB.redeemPoints(auth.tenantId, normalized, Math.abs(points));
       if (!ok) return NextResponse.json({ error: "Puntos insuficientes" }, { status: 422 });
-      const data = await LoyaltyDB.getByPhone(normalized);
+      const data = await LoyaltyDB.getByPhone(auth.tenantId, normalized);
       return NextResponse.json(data);
     }
   } catch (e) {

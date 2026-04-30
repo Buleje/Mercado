@@ -21,12 +21,12 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
 
-    const docs = await PrestamosDB.listDocumentos(id);
+    const docs = await PrestamosDB.listDocumentos(auth.tenantId, id);
     return NextResponse.json(docs);
   } catch (e) {
     logger.error("[prestamos/id/documentos] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -53,12 +53,12 @@ export async function POST(
       );
     }
 
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
 
-    const doc = await PrestamosDB.addDocumento(id, {
+    const doc = await PrestamosDB.addDocumento(auth.tenantId, id, {
       nombre: parsed.data.nombre,
       tipo: parsed.data.tipo ?? "otro",
       url: parsed.data.url,
@@ -68,7 +68,7 @@ export async function POST(
       "Documento", "prestamo",
       `Documento "${parsed.data.nombre}" adjuntado a préstamo ${id.slice(-6)}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[prestamos/documentos] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(doc, { status: 201 });
   } catch (e) {

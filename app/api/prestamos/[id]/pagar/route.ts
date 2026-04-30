@@ -30,7 +30,7 @@ export async function POST(
     }
 
     // Verify prestamo exists and belongs to tenant
-    const existing = await PrestamosDB.getById(id);
+    const existing = await PrestamosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Préstamo no encontrado" }, { status: 404 });
     }
@@ -51,7 +51,7 @@ export async function POST(
       return NextResponse.json({ error: "Esta cuota ya fue pagada" }, { status: 422 });
     }
 
-    const updated = await PrestamosDB.registrarPago(parsed.data.cuotaId, parsed.data.montoPagado);
+    const updated = await PrestamosDB.registrarPago(auth.tenantId, parsed.data.cuotaId, parsed.data.montoPagado);
     if (!updated) {
       return NextResponse.json({ error: "Error al registrar pago" }, { status: 500 });
     }
@@ -60,7 +60,7 @@ export async function POST(
       "Pago", "prestamo",
       `Pago de cuota S/${parsed.data.montoPagado.toFixed(2)} en préstamo ${id.slice(-6)} — status: ${updated.status}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[prestamos/pagar] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);
   } catch (e) {

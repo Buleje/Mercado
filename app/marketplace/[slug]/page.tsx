@@ -1,9 +1,18 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
+
+// Deduplicate getBySlug across generateMetadata + page render in the same
+// request tree. Without this React.cache wrapper Next 16 invokes the lookup
+// once per server lifecycle (generateMetadata, the page itself, and any
+// nested RSC) — the in-memory `getOrSet` cache inside the DB layer cannot
+// deduplicate within a single render because it is keyed by string and
+// fetched concurrently. React.cache solves the per-request dedupe problem.
+const getStoreBySlug = cache((slug: string) => MarketplaceStoresDB.getBySlug(slug));
 import { getStoreTagline } from "@/lib/store-tagline";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import type { StoreCategoryChip } from "@/components/marketplace/store-detail/StoreCategories";
@@ -20,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   cacheLife("minutes");
   const { slug } = await params;
   cacheTag("marketplace-store", `marketplace-store:${slug}`);
-  const store = await MarketplaceStoresDB.getBySlug(slug);
+  const store = await getStoreBySlug(slug);
 
   if (!store) {
     return {
@@ -131,7 +140,7 @@ export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
 
   // 1. Fetch store
-  const store = await MarketplaceStoresDB.getBySlug(slug);
+  const store = await getStoreBySlug(slug);
   if (!store) notFound();
 
   // 2. Fetch products (limit 100 for initial render)

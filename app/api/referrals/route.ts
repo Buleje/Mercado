@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 const ApplySchema = z.object({
   phone: z.string().min(5).max(20),
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { phone, code } = parsed.data;
-  const result = await CustomersDB.applyReferralCode(normalizePhone(phone), code);
+  const tenantId = getTenantIdFromRequest(req);
+  const result = await CustomersDB.applyReferralCode(tenantId, normalizePhone(phone), code);
   if (!result.success) return NextResponse.json({ error: result.message }, { status: 400 });
   return NextResponse.json({ ok: true, message: result.message });
 }
@@ -45,6 +47,7 @@ export async function GET(req: NextRequest) {
   const phone = req.nextUrl.searchParams.get("phone");
   if (!phone) return NextResponse.json({ error: "phone requerido" }, { status: 400 });
 
-  const code = await CustomersDB.ensureReferralCode(normalizePhone(phone));
+  const tenantId = getTenantIdFromRequest(req);
+  const code = await CustomersDB.ensureReferralCode(tenantId, normalizePhone(phone));
   return NextResponse.json({ code });
 }

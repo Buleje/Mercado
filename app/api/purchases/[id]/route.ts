@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   try {
-    const po = await withDbRetry(() => PurchasesDB.getById(id));
+    const po = await withDbRetry(() => PurchasesDB.getById(auth.tenantId, id));
     if (!po) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     return NextResponse.json(po);
   } catch (e) {
@@ -46,11 +46,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
 
   try {
-    const existing = await PurchasesDB.getById(id);
+    const existing = await PurchasesDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
 
     const statusChanged = parsed.data.status && parsed.data.status !== existing.status;
-    const updated = await PurchasesDB.update(id, parsed.data);
+    const updated = await PurchasesDB.update(auth.tenantId, id, parsed.data);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
 
@@ -123,7 +123,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           const newNotes = currentNotes
             ? `${currentNotes}\n[DIFERENCIAS] ${difNotes}`
             : `[DIFERENCIAS] ${difNotes}`;
-          await PurchasesDB.update(id, { notes: newNotes } as Record<string, unknown>);
+          await PurchasesDB.update(auth.tenantId, id, { notes: newNotes } as Record<string, unknown>);
         }
       } catch (err) {
         logger.error("[purchases/id] transaction failed", { err: err instanceof Error ? err.message : String(err) });
@@ -148,7 +148,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { id } = await params;
   try {
-    await PurchasesDB.delete(id);
+    await PurchasesDB.delete(auth.tenantId, id);
     logActivity("Eliminar", "compra", `Orden de compra ${id.slice(-6)} eliminada`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     return new NextResponse(null, { status: 204 });
   } catch (e) {

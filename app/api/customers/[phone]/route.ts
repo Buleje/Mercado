@@ -42,26 +42,30 @@ const CustomerPatchSchema = z.object({
 }).partial();
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
+  const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
   const { phone } = await params;
   const normalized = normalizePhone(phone);
   if (!/^\d{6,15}$/.test(normalized)) {
     return NextResponse.json({ error: "Teléfono inválido" }, { status: 400 });
   }
   try {
-    const customer = await CustomersDB.getByPhone(normalized);
+    const customer = await CustomersDB.getByPhone(auth.tenantId, normalized);
     if (!customer) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
     // Compute health score based on last order
     let healthScore: HealthScore = "SIN_HISTORIAL";
+    // eslint-disable-next-line no-restricted-properties
     const lastOrder = await prisma.order.findFirst({
-      where: { customerPhone: normalized },
+      where: { customerPhone: normalized, tenantId: auth.tenantId },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
-    }).catch(() => null);
+      // eslint-disable-next-line no-restricted-syntax
+    }).catch((err) => { logger.error("[customers GET] lastOrder lookup failed", { error: String(err), phone: normalized }); return null; });
     if (lastOrder) {
       const daysSince = Math.floor((Date.now() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24));
       if (daysSince <= 30) healthScore = "ACTIVO";
@@ -70,8 +74,9 @@ export async function GET(
     }
 
     // Fetch all fields directly from prisma (CustomersDB may not expose them)
-    const fullCustomer = await prisma.customer.findUnique({
-      where: { phone: normalized },
+    // eslint-disable-next-line no-restricted-properties
+    const fullCustomer = await prisma.customer.findFirst({
+      where: { phone: normalized, tenantId: auth.tenantId },
     });
 
     return NextResponse.json({
@@ -133,13 +138,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
     if (parsed.data.privateNotes !== undefined) {
-      await CustomersDB.updatePrivateNotes(normalized, parsed.data.privateNotes);
+      await CustomersDB.updatePrivateNotes(auth.tenantId, normalized, parsed.data.privateNotes);
     }
     if (parsed.data.creditDelta !== undefined && parsed.data.creditDelta !== 0) {
-      await CustomersDB.updateCreditBalance(normalized, parsed.data.creditDelta);
+      await CustomersDB.updateCreditBalance(auth.tenantId, normalized, parsed.data.creditDelta);
     }
     if (parsed.data.aiNotes !== undefined) {
-      await CustomersDB.updateAiNotes(normalized, parsed.data.aiNotes);
+      await CustomersDB.updateAiNotes(auth.tenantId, normalized, parsed.data.aiNotes);
     }
 
     // Build prisma update data for all direct fields
@@ -174,16 +179,18 @@ export async function PATCH(
     if (parsed.data.observaciones !== undefined) prismaUpdate.observaciones = parsed.data.observaciones;
 
     if (Object.keys(prismaUpdate).length > 0) {
-      await prisma.customer.update({
-        where: { phone: normalized },
+      // eslint-disable-next-line no-restricted-properties
+      await prisma.customer.updateMany({
+        where: { phone: normalized, tenantId: auth.tenantId },
         data: prismaUpdate,
       });
     }
     // Audit log — fire-and-forget
     const detail = Object.keys(parsed.data).join(", ");
+    // eslint-disable-next-line no-restricted-properties
     prisma.activityLog.create({
       data: { action: "update", entity: "customer", entityId: normalized, detail: `Campos actualizados: ${detail}`, user: auth.username, tenantId: auth.tenantId },
-    }).catch(() => {});
+    }).catch((err) => logger.error("[customers PATCH] activityLog failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json({ ok: true });
   } catch (e) {
@@ -207,10 +214,11 @@ export async function DELETE(
     return NextResponse.json({ error: "Teléfono inválido" }, { status: 400 });
   }
   try {
-    await CustomersDB.delete(normalized);
+    await CustomersDB.delete(auth.tenantId, normalized);
+    // eslint-disable-next-line no-restricted-properties
     prisma.activityLog.create({
       data: { action: "delete", entity: "customer", entityId: normalized, detail: `Cliente eliminado: ${normalized}`, user: auth.username, tenantId: auth.tenantId },
-    }).catch(() => {});
+    }).catch((err) => logger.error("[customers DELETE] activityLog failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json({ ok: true });
   } catch (e) {
