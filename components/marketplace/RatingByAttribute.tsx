@@ -38,7 +38,7 @@ function StarRow({ label, value }: { label: string; value?: number }) {
   if (!value) return null;
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="w-20 text-gray-500 dark:text-gray-400 text-xs shrink-0">{label}</span>
+      <span className="w-20 text-[var(--text-tertiary)] text-xs shrink-0">{label}</span>
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((s) => (
           <Star
@@ -47,12 +47,12 @@ function StarRow({ label, value }: { label: string; value?: number }) {
               "h-3 w-3",
               s <= Math.round(value)
                 ? "fill-amber-400 text-amber-400"
-                : "text-gray-200 dark:text-gray-700"
+                : "text-[var(--rule-base)]"
             )}
           />
         ))}
       </div>
-      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+      <span className="text-xs font-semibold text-[var(--text-secondary)]">
         {value.toFixed(1)}
       </span>
     </div>
@@ -70,7 +70,7 @@ function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "l
             cls,
             s <= Math.round(rating)
               ? "fill-amber-400 text-amber-400"
-              : "text-gray-200 dark:text-gray-700"
+              : "text-[var(--rule-base)]"
           )}
         />
       ))}
@@ -106,10 +106,10 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/20 mb-4">
           <Star className="h-8 w-8 text-amber-400" />
         </div>
-        <p className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
+        <p className="font-semibold text-[var(--text-secondary)] text-sm">
           Se el primero en dejar una resena
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">
           Comparte tu experiencia con este producto
         </p>
       </div>
@@ -125,7 +125,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
             {summary.avgRating.toFixed(1)}
           </span>
           <StarDisplay rating={summary.avgRating} size="lg" />
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <span className="text-xs text-[var(--text-tertiary)] mt-1">
             {summary.totalReviews} resena{summary.totalReviews !== 1 ? "s" : ""}
           </span>
         </div>
@@ -141,7 +141,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
       {/* Distribucion de estrellas */}
       <div>
         <button
-          className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 sm:cursor-default"
+          className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] sm:cursor-default"
           onClick={() => setShowDistribution((v) => !v)}
         >
           Distribucion de calificaciones
@@ -160,17 +160,17 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
             const pct = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
             return (
               <div key={star} className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400 w-4 text-right shrink-0">
+                <span className="text-xs text-[var(--text-tertiary)] w-4 text-right shrink-0">
                   {star}
                 </span>
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
-                <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-amber-400 transition-all duration-500"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right shrink-0">
+                <span className="text-xs text-[var(--text-tertiary)] w-8 text-right shrink-0">
                   {pct.toFixed(0)}%
                 </span>
               </div>
@@ -207,7 +207,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                         Compra verificada
                       </span>
                     )}
-                    <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 ml-auto">
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-auto">
                       {timeAgo(review.date)}
                     </span>
                   </div>
@@ -220,24 +220,24 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                   {(review.qualityRating || review.priceRating || review.deliveryRating) && (
                     <div className="mt-2 flex flex-wrap gap-3">
                       {review.qualityRating && (
-                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           Calidad: <strong>{review.qualityRating}</strong>/5
                         </span>
                       )}
                       {review.priceRating && (
-                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           Precio: <strong>{review.priceRating}</strong>/5
                         </span>
                       )}
                       {review.deliveryRating && (
-                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           Entrega: <strong>{review.deliveryRating}</strong>/5
                         </span>
                       )}
                     </div>
                   )}
 
-                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
                     {review.text}
                   </p>
 
@@ -269,7 +269,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                       "mt-3 flex items-center gap-1.5 text-xs font-medium transition-colors",
                       voted
                         ? "text-primary cursor-default"
-                        : "text-gray-400 dark:text-gray-500 hover:text-primary"
+                        : "text-[var(--text-tertiary)] hover:text-primary"
                     )}
                   >
                     <ThumbsUp className="h-3.5 w-3.5" />

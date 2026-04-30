@@ -94,19 +94,19 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+              <div className="w-10 h-1 rounded-full bg-[var(--rule-base)]" />
             </div>
 
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-base)] transition-colors"
             >
               <X className="h-4 w-4 text-gray-500" />
             </button>
 
             {/* Product image */}
-            <div className="relative aspect-square max-h-72 bg-gray-50 dark:bg-gray-800 overflow-hidden sm:rounded-t-2xl">
+            <div className="relative aspect-square max-h-72 bg-[var(--surface-sunken)] overflow-hidden sm:rounded-t-2xl">
               {product.image ? (
                 <Image
                   src={product.image}

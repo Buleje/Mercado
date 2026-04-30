@@ -118,13 +118,13 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 space-y-3">
         {[0, 1].map((i) => (
           <div key={i} className="flex items-center gap-3 animate-pulse">
-            <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 shrink-0" />
+            <div className="h-8 w-8 rounded-full bg-[var(--surface-sunken)] shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/4" />
-              <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+              <div className="h-3 bg-[var(--surface-sunken)] rounded w-3/4" />
+              <div className="h-3 bg-[var(--surface-sunken)] rounded w-1/2" />
             </div>
           </div>
         ))}
@@ -178,7 +178,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
 
                 {/* Texto */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
+                  <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">
                     {isDown ? "Bajaste" : "Subiste"} un{" "}
                     <span
                       className={cn(
@@ -190,7 +190,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                     </span>{" "}
                     en {formatMetric(item.metric)}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                     {formatDate(item.date)} ·{" "}
                     Esperado: {item.expected.toFixed(0)} · Real: {item.actual.toFixed(0)}
                   </p>
@@ -203,8 +203,8 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                   aria-label="Marcar como entendido"
                   className={cn(
                     "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0",
-                    "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
-                    "text-gray-600 dark:text-gray-300 hover:border-primary/40 hover:text-primary",
+                    "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
+                    "text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
