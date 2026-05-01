@@ -28,6 +28,9 @@ import {
   Plus,
   TrendingUp,
   ShoppingBag,
+  Banknote,
+  CheckCircle2,
+  Heart,
 } from "@buleje/design-system/icons";
 
 interface Props {
@@ -190,50 +193,73 @@ export default function LandingHero({
 
 /* ── Phone preview ANIMADO — dashboard del negocio en vivo ──────────── */
 
-const ROTATING_ORDERS = [
-  { customer: "Mariela", total: "47.50", items: 4 },
-  { customer: "Carlos R.", total: "82.00", items: 7 },
-  { customer: "Doña Elena", total: "28.90", items: 3 },
-  { customer: "Andrés", total: "115.00", items: 9 },
-  { customer: "Pedro M.", total: "39.80", items: 5 },
+type EventKind = "order" | "payment" | "review" | "delivery";
+
+interface LiveEvent {
+  kind: EventKind;
+  title: string;
+  subtitle: string;
+  amount?: string;
+  delta: number; // suma a las ventas
+}
+
+const EVENT_STREAM: LiveEvent[] = [
+  { kind: "order", title: "Nuevo pedido · 4 items", subtitle: "Mariela · Av. Centenario", amount: "+S/ 47.50", delta: 47 },
+  { kind: "payment", title: "Pago Yape recibido", subtitle: "Carlos R. · #2402", amount: "+S/ 82.00", delta: 82 },
+  { kind: "review", title: "Cliente dejó 5 estrellas", subtitle: "Doña Elena · Pollo a la brasa", delta: 0 },
+  { kind: "delivery", title: "Pedido entregado", subtitle: "Andrés · Llegó en 14 min", amount: "+S/ 115.00", delta: 115 },
+  { kind: "order", title: "Nuevo pedido · 7 items", subtitle: "Pedro M. · Centro comercial", amount: "+S/ 39.80", delta: 40 },
+  { kind: "payment", title: "Pago Plin recibido", subtitle: "Lucía · #2401", amount: "+S/ 28.90", delta: 29 },
 ];
 
+const EVENT_META: Record<EventKind, { Icon: typeof ShoppingBag; tone: string }> = {
+  order: { Icon: ShoppingBag, tone: "bg-[var(--brand-success)]/25 text-[var(--brand-success)]" },
+  payment: { Icon: Banknote, tone: "bg-emerald-500/25 text-emerald-400" },
+  review: { Icon: Heart, tone: "bg-rose-500/25 text-rose-400" },
+  delivery: { Icon: CheckCircle2, tone: "bg-sky-500/25 text-sky-400" },
+};
+
+// Sparkline path: día de ventas (12 puntos)
+const SPARKLINE_POINTS = [22, 28, 24, 35, 30, 42, 38, 48, 52, 60, 68, 75];
+
 function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
-  // Contador de ventas que va subiendo
   const [sales, setSales] = useState(2840);
-  const [orderIdx, setOrderIdx] = useState(0);
+  const [eventIdx, setEventIdx] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [progress, setProgress] = useState(45);
+  const [pulse, setPulse] = useState(0); // trigger pulso al entrar evento
 
   useEffect(() => {
     if (reducedMotion) return;
-    // Cada 3.2s: nueva orden entra + sumar ventas + show toast + reset progress
     const tick = setInterval(() => {
-      setOrderIdx((i) => (i + 1) % ROTATING_ORDERS.length);
-      setSales((s) => s + Math.floor(Math.random() * 80) + 20);
+      setEventIdx((i) => (i + 1) % EVENT_STREAM.length);
       setShowToast(true);
-      setProgress(0);
-      setTimeout(() => setShowToast(false), 2400);
-    }, 3200);
-
+      setPulse((p) => p + 1);
+      setTimeout(() => setShowToast(false), 2600);
+    }, 3400);
     return () => clearInterval(tick);
   }, [reducedMotion]);
 
-  // Progreso de la barra del tracker animado (0 → 100% en 3s loop)
+  // Sumar ventas cuando entra el evento (delta del evento actual)
   useEffect(() => {
-    if (reducedMotion) {
-      setProgress(75);
-      return;
-    }
+    if (reducedMotion) return;
+    const ev = EVENT_STREAM[eventIdx];
+    if (ev.delta > 0) setSales((s) => s + ev.delta);
+  }, [eventIdx, reducedMotion]);
+
+  // Barra de progreso del tracker (0 → 100% en 3.4s loop)
+  useEffect(() => {
+    if (reducedMotion) { setProgress(75); return; }
     const start = Date.now();
     const id = setInterval(() => {
-      const elapsed = (Date.now() - start) % 3200;
-      setProgress(Math.min(100, (elapsed / 3200) * 100));
+      const elapsed = (Date.now() - start) % 3400;
+      setProgress(Math.min(100, (elapsed / 3400) * 100));
     }, 50);
     return () => clearInterval(id);
   }, [reducedMotion]);
 
-  const currentOrder = ROTATING_ORDERS[orderIdx];
+  const ev = EVENT_STREAM[eventIdx];
+  const { Icon: EvIcon, tone: evTone } = EVENT_META[ev.kind];
 
   return (
     <div aria-hidden className="relative h-[520px] sm:h-[580px] lg:h-[640px] flex items-center justify-center select-none">
@@ -241,61 +267,82 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
       <div className="absolute inset-x-4 top-8 bottom-4 rounded-[3.5rem] bg-linear-to-br from-[var(--accent)]/[0.22] via-fuchsia-500/[0.08] to-amber-400/[0.12] blur-3xl" />
       <div className="absolute inset-x-12 top-16 bottom-12 rounded-[3rem] bg-linear-to-tr from-[var(--accent)]/[0.18] to-transparent blur-2xl" />
 
+      {/* Pulso expansivo al entrar evento (sutil) */}
+      {!reducedMotion && (
+        <m.div
+          key={pulse}
+          aria-hidden
+          initial={{ scale: 0.92, opacity: 0.55 }}
+          animate={{ scale: 1.18, opacity: 0 }}
+          transition={{ duration: 1.6, ease: "easeOut" }}
+          className="absolute inset-x-8 top-12 bottom-8 rounded-[3rem] border-2 border-[var(--accent)]/30 pointer-events-none"
+        />
+      )}
+
       {/* Frame del teléfono */}
-      <div className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20">
+      <m.div
+        whileHover={reducedMotion ? undefined : { y: -4, scale: 1.01 }}
+        transition={{ type: "spring", stiffness: 220, damping: 20 }}
+        className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20"
+      >
         <div className="relative h-full w-full rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">
           {/* Dynamic island */}
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2 h-6 w-24 bg-[var(--text-primary)] rounded-full z-20" />
 
-          {/* Header del dashboard del negocio */}
-          <div className="px-4 pt-12 pb-3 bg-linear-to-b from-[var(--accent)]/8 to-transparent">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Mi negocio
-            </p>
-            <p className="text-base font-black text-[var(--text-primary)] leading-tight mt-0.5">
-              Hoy estás vendiendo
-            </p>
-          </div>
-
-          {/* Contador de ventas animado */}
-          <div className="px-4 mt-1">
-            <p className="text-[2.75rem] font-black tabular-nums tracking-[-0.04em] text-[var(--text-primary)] leading-none">
-              S/{" "}
-              <NumberFlow
-                value={sales}
-                format={{ maximumFractionDigits: 0 }}
-                locales="es-PE"
-              />
-            </p>
-            <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-success)]/12 px-2 py-0.5">
-              <TrendingUp className="h-3 w-3 text-[var(--brand-success)]" strokeWidth={2.5} />
-              <span className="text-xs font-extrabold text-[var(--brand-success)]">
-                +18% vs ayer
+          {/* Header */}
+          <div className="px-4 pt-12 pb-2 bg-linear-to-b from-[var(--accent)]/8 to-transparent">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Mi negocio · hoy
+                </p>
+                <p className="text-base font-black text-[var(--text-primary)] leading-tight mt-0.5">
+                  Estás vendiendo
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-success)]/15 px-2 py-1">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-success)]" />
+                </span>
+                <span className="text-xs font-black text-[var(--brand-success)]">LIVE</span>
               </span>
             </div>
           </div>
 
-          {/* Mini cards de KPI */}
+          {/* Contador grande + sparkline */}
+          <div className="px-4 mt-1">
+            <m.p
+              key={Math.floor(sales / 100)}
+              initial={{ y: -2, color: "var(--brand-success)" }}
+              animate={{ y: 0, color: "var(--text-primary)" }}
+              transition={{ duration: 0.5 }}
+              className="text-[2.5rem] font-black tabular-nums tracking-[-0.04em] leading-none"
+            >
+              S/{" "}
+              <NumberFlow value={sales} format={{ maximumFractionDigits: 0 }} locales="es-PE" />
+            </m.p>
+            <div className="mt-1 flex items-center justify-between">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-success)]/12 px-2 py-0.5">
+                <TrendingUp className="h-3 w-3 text-[var(--brand-success)]" strokeWidth={2.5} />
+                <span className="text-xs font-extrabold text-[var(--brand-success)]">+18% vs ayer</span>
+              </div>
+              {/* Sparkline */}
+              <Sparkline points={SPARKLINE_POINTS} reducedMotion={reducedMotion} />
+            </div>
+          </div>
+
+          {/* KPI cards */}
           <div className="px-4 mt-3 grid grid-cols-2 gap-2">
-            <KpiCard
-              kicker="Pedidos"
-              value={42 + orderIdx}
-              tone="bg-linear-to-br from-amber-400 to-orange-500"
-            />
-            <KpiCard
-              kicker="Clientes"
-              value={128 + orderIdx * 2}
-              tone="bg-linear-to-br from-fuchsia-500 to-rose-500"
-            />
+            <KpiCard kicker="Pedidos" value={42 + eventIdx} tone="bg-linear-to-br from-amber-400 to-orange-500" />
+            <KpiCard kicker="Clientes" value={128 + eventIdx * 2} tone="bg-linear-to-br from-fuchsia-500 to-rose-500" />
           </div>
 
           {/* Tracker pedido en vivo */}
           <div className="px-4 mt-3">
             <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-extrabold text-[var(--text-primary)]">
-                  Pedido #2403
-                </p>
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">Pedido #2403</p>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-success)]">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
@@ -310,12 +357,9 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                 </span>
                 <p className="text-xs text-[var(--text-secondary)]">
                   Marco · Llega en{" "}
-                  <span className="font-black text-[var(--text-primary)]">
-                    12 min
-                  </span>
+                  <span className="font-black text-[var(--text-primary)]">12 min</span>
                 </p>
               </div>
-              {/* Barra de progreso animada */}
               <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                 <div
                   className="h-full rounded-full bg-linear-to-r from-emerald-400 to-[var(--accent)] transition-[width] duration-100"
@@ -331,35 +375,41 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
             <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
           </div>
 
-          {/* Toast "+1 nuevo pedido" — animado */}
-          <AnimatePresence>
+          {/* Toast multi-evento — animado por kind */}
+          <AnimatePresence mode="wait">
             {showToast && (
               <m.div
-                initial={{ y: -40, opacity: 0, scale: 0.9 }}
+                key={eventIdx}
+                initial={{ y: -50, opacity: 0, scale: 0.9 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: -20, opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                className="absolute top-12 left-3 right-3 rounded-2xl bg-[var(--text-primary)] text-white px-3 py-2.5 shadow-2xl flex items-center gap-2.5 z-30"
+                exit={{ y: -30, opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 360, damping: 24 }}
+                className="absolute top-12 left-3 right-3 rounded-2xl bg-[var(--text-primary)] text-white px-3 py-2.5 shadow-2xl flex items-center gap-2.5 z-30 backdrop-blur"
               >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand-success)]/25 text-[var(--brand-success)] shrink-0">
-                  <ShoppingBag className="h-4 w-4" strokeWidth={2.5} />
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-xl shrink-0 ${evTone}`}>
+                  <EvIcon className="h-4 w-4" strokeWidth={2.5} />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold opacity-80 leading-none">
-                    Nuevo pedido · {currentOrder.items} items
-                  </p>
-                  <p className="text-sm font-black leading-tight mt-0.5 truncate">
-                    {currentOrder.customer} · S/ {currentOrder.total}
-                  </p>
+                  <p className="text-xs font-bold opacity-80 leading-none">{ev.title}</p>
+                  <p className="text-sm font-black leading-tight mt-0.5 truncate">{ev.subtitle}</p>
                 </div>
-                <span className="text-xs font-black text-[var(--brand-success)] shrink-0">
-                  +1
-                </span>
+                {ev.amount && (
+                  <span className="text-xs font-black text-[var(--brand-success)] shrink-0">
+                    {ev.amount}
+                  </span>
+                )}
+                {ev.kind === "review" && (
+                  <span className="inline-flex items-center gap-0.5 text-amber-400 shrink-0">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-current" strokeWidth={1.5} />
+                    ))}
+                  </span>
+                )}
               </m.div>
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </m.div>
 
       {/* Chip flotante: ventas del mes (top-right) */}
       <m.div
@@ -422,16 +472,88 @@ function KpiCard({
   tone: string;
 }) {
   return (
-    <div className="relative rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-      <div className={`absolute -top-6 -right-6 h-16 w-16 rounded-full ${tone} opacity-30 blur-xl`} />
+    <m.div
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", stiffness: 280, damping: 20 }}
+      className="relative rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+    >
+      <div className={`absolute -top-6 -right-6 h-16 w-16 rounded-full ${tone} opacity-40 blur-xl`} />
       <div className="relative px-2.5 py-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-          {kicker}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+            {kicker}
+          </p>
+          <span className="inline-flex items-center gap-0.5 text-xs font-black text-[var(--brand-success)]">
+            <TrendingUp className="h-2.5 w-2.5" strokeWidth={3} />
+          </span>
+        </div>
         <p className="text-xl font-black tabular-nums tracking-tight text-[var(--text-primary)] mt-1 leading-none">
           <NumberFlow value={value} format={{ maximumFractionDigits: 0 }} locales="es-PE" />
         </p>
       </div>
-    </div>
+    </m.div>
+  );
+}
+
+/* ── Sparkline mini-chart (sin lib externa) ─────────────────────────── */
+function Sparkline({
+  points,
+  reducedMotion,
+}: {
+  points: number[];
+  reducedMotion: boolean;
+}) {
+  const max = Math.max(...points);
+  const w = 60;
+  const h = 18;
+  const step = w / (points.length - 1);
+  const path = points
+    .map((p, i) => {
+      const x = i * step;
+      const y = h - (p / max) * h;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const lastX = (points.length - 1) * step;
+  const lastY = h - (points[points.length - 1] / max) * h;
+
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      className="overflow-visible"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="spark-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--brand-success)" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="var(--accent)" />
+        </linearGradient>
+      </defs>
+      <m.path
+        d={path}
+        fill="none"
+        stroke="url(#spark-grad)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={reducedMotion ? undefined : { pathLength: 0 }}
+        animate={reducedMotion ? undefined : { pathLength: 1 }}
+        transition={{ duration: 1.4, ease: "easeOut" }}
+      />
+      {/* Punto pulsante en el último valor */}
+      <circle cx={lastX} cy={lastY} r="2" fill="var(--accent)" />
+      {!reducedMotion && (
+        <circle
+          cx={lastX}
+          cy={lastY}
+          r="2"
+          fill="var(--accent)"
+          className="animate-ping origin-center"
+          style={{ transformOrigin: `${lastX}px ${lastY}px` }}
+        />
+      )}
+    </svg>
   );
 }

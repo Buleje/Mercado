@@ -302,22 +302,37 @@ function AboutAndPricingSnapshot() {
     {
       name: "Gratis",
       price: "S/ 0",
-      tagline: "Para empezar hoy",
-      perks: ["Catálogo ilimitado", "Yape/efectivo", "Hasta 50 pedidos/mes"],
+      tagline: "Probá sin riesgo",
+      perks: [
+        "Catálogo ilimitado",
+        "Cobros Yape, Plin y efectivo",
+        "Hasta 50 pedidos/mes",
+        "Soporte por WhatsApp",
+      ],
       tone: "neutral" as const,
     },
     {
       name: "Pro",
       price: "S/ 49",
-      tagline: "Para vender en serio",
-      perks: ["Inventario + caja", "Reportes + exportes", "Pedidos ilimitados"],
+      tagline: "El más elegido",
+      perks: [
+        "Pedidos ilimitados",
+        "Inventario, caja y reportes",
+        "Cupones y promociones",
+        "Tu propio repartidor",
+      ],
       tone: "primary" as const,
     },
     {
       name: "Enterprise",
       price: "A medida",
-      tagline: "Para cadenas",
-      perks: ["Multi-sucursal", "API + webhooks", "Soporte dedicado"],
+      tagline: "Para escalar fuerte",
+      perks: [
+        "Multi-sucursal en tiempo real",
+        "API + webhooks",
+        "Integración con tu ERP",
+        "Soporte dedicado",
+      ],
       tone: "neutral" as const,
     },
   ];
@@ -340,15 +355,16 @@ function AboutAndPricingSnapshot() {
               Planes
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Empieza gratis.
+              Empezá gratis.
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                Sin letra chica.
+                Pagás solo si crecés.
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Elige el plan que te queda. Cambiás cuando quieras, sin contratos ni permanencias.
+            Cambiás de plan cuando quieras. Sin contratos, sin mínimos, sin
+            sorpresas en la factura.
           </p>
         </div>
 

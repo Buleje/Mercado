@@ -25,64 +25,68 @@ type Category = {
 
 const CATEGORIES: Category[] = [
   {
-    id: "compradores",
-    label: "Para compradores",
+    id: "negocio",
+    label: "Vendé más",
     items: [
       {
-        q: "¿Cuánto demora el delivery?",
-        a: "25-45 minutos en promedio en Pucallpa, dependiendo de la bodega y tu distrito. Ves el tiempo estimado antes de pagar.",
+        q: "¿Cómo me ayuda Buleje a atraer clientes?",
+        a: "Tu negocio aparece en buscadores, mapa local y app. Cupones, ofertas del día y notificaciones push automáticas. Tus clientes te encuentran sin que pagues publicidad.",
       },
       {
-        q: "¿Qué formas de pago aceptan?",
-        a: "Yape, Plin, tarjeta de débito/crédito y efectivo contra entrega. Elige la que te convenga en el checkout.",
+        q: "¿Qué pasa si ya tengo clientes fieles?",
+        a: "Buleje los retiene mejor: historial de compras, recordatorios, cumpleaños y promociones personalizadas. Convertís compradores ocasionales en habituales.",
       },
       {
-        q: "¿Puedo pedir de varias bodegas a la vez?",
-        a: "Sí — armás un carrito por tienda y pagás en uno solo. El delivery viene consolidado.",
+        q: "¿Qué herramientas vienen incluidas?",
+        a: "Catálogo, inventario, caja, cobros Yape/Plin/tarjeta, repartidores, reportes, reseñas, fiados, cupones, multi-sucursal. Todo en una sola app.",
       },
       {
-        q: "¿Hay comisión por comprar?",
-        a: "Ninguna. El precio que ves es el precio que pagás más el costo de delivery (si aplica).",
+        q: "¿Funciona en cualquier ciudad del Perú?",
+        a: "Sí. Cualquier negocio del Perú puede activar su tienda en 5 minutos y empezar a recibir pedidos hoy.",
       },
     ],
   },
   {
-    id: "bodegueros",
-    label: "Para bodegueros",
+    id: "costos",
+    label: "Precios y planes",
     items: [
       {
-        q: "¿Cuánto cuesta vender en Buleje?",
-        a: "El plan Gratis tiene 0% de comisión. Plan Pro S/ 49/mes con herramientas avanzadas. Sin contratos, cancelás cuando quieras.",
+        q: "¿Cuánto cuesta usar Buleje?",
+        a: "Plan Gratis con 0% de comisión por 90 días. Plan Pro S/ 49/mes con herramientas avanzadas. Plan Enterprise a medida. Sin contratos, cancelás cuando quieras.",
       },
       {
-        q: "¿Cuánto demora registrar mi bodega?",
-        a: "5 minutos. Subes logo, productos y horario — y ya estás visible para los vecinos.",
+        q: "¿Hay comisión por venta?",
+        a: "No durante los primeros 90 días. Después depende del plan que elijas — siempre transparente y sin sorpresas en la factura.",
       },
       {
-        q: "¿Necesito tener sistema de inventario?",
-        a: "No. Buleje incluye inventario, caja, reportes y cobros digitales. Si ya tienes uno, lo conectamos.",
+        q: "¿Qué pasa si dejo de usarlo?",
+        a: "Cancelás con un click. Te llevás todos tus datos exportados (clientes, pedidos, productos) en CSV. No hay permanencia.",
       },
       {
-        q: "¿Cómo cobro los pedidos?",
-        a: "Buleje transfiere a tu cuenta cada semana. Yape/Plin/transferencia bancaria — lo que uses.",
+        q: "¿Necesito tarjeta de crédito para registrarme?",
+        a: "No. Empezás con Yape o efectivo y migras a tarjeta cuando quieras.",
       },
     ],
   },
   {
-    id: "repartidores",
-    label: "Para repartidores",
+    id: "tecnico",
+    label: "Setup y soporte",
     items: [
       {
-        q: "¿Qué necesito para ser repartidor?",
-        a: "Moto/bici propia, DNI vigente, y ganas de trabajar. Registras y aprobamos en 24h.",
+        q: "¿Cuánto demora el setup?",
+        a: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si querés.",
       },
       {
-        q: "¿Cuánto puedo ganar?",
-        a: "Depende de la zona y horario. Promedio S/ 40-70/día para medio turno. Vos eliges cuándo trabajás.",
+        q: "¿Necesito saber de tecnología?",
+        a: "Cero. La app está hecha para que la maneje cualquier persona. Si ya usás WhatsApp, podés usar Buleje.",
       },
       {
-        q: "¿Cómo me pagan?",
-        a: "Cobros diarios o semanales por Yape/Plin/banco. Sin descuentos ocultos.",
+        q: "¿Tienen soporte humano?",
+        a: "Sí. Respondemos en menos de 2 horas por WhatsApp. Sin bots, sin formularios largos. Personas reales.",
+      },
+      {
+        q: "¿Puedo conectar mi sistema actual?",
+        a: "Sí. Tenemos API y webhooks abiertos para sincronizar con tu ERP, contabilidad o e-commerce existente.",
       },
     ],
   },
