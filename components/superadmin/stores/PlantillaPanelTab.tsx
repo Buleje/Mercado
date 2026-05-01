@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Eye, EyeOff, Sparkles, RotateCcw, CheckCircle2, Crown, Lock, Layers,
-  ChevronDown, ChevronRight, Edit3, Save, X,
+  ChevronDown, ChevronRight, Edit3, Save, X, ExternalLink, Zap,
 } from "@buleje/design-system/icons";
 import {
   ADMIN_MODULE_CATALOG,
@@ -76,12 +76,23 @@ const PRESET_MODES: PresetMode[] = [
   },
 ];
 
+interface ChangeToast {
+  /** Texto principal — qué se cambió. */
+  title: string;
+  /** Descripción opcional — efecto del cambio. */
+  detail?: string;
+  /** Variante visual. */
+  tone: "success" | "info" | "warning";
+  /** ID interno para forzar re-trigger de animación con setState. */
+  nonce: number;
+}
+
 export function PlantillaPanelTab() {
   const [tpl, setTpl] = useState<AdminTemplate | null>(null);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ChangeToast | null>(null);
 
   useEffect(() => {
     setTpl(readAdminTemplate());
@@ -89,9 +100,17 @@ export function PlantillaPanelTab() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2500);
+    const t = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  const showToast = useCallback((title: string, detail?: string, tone: ChangeToast["tone"] = "success") => {
+    setToast({ title, detail, tone, nonce: Date.now() });
+  }, []);
+
+  const openAdminPanelInNewTab = useCallback(() => {
+    window.open("/admin", "_blank", "noopener,noreferrer");
+  }, []);
 
   const stats = useMemo(() => {
     if (!tpl) return { visible: 0, total: ADMIN_MODULE_CATALOG.length, byPlan: { free: 0, pro: 0, enterprise: 0 } };
@@ -117,12 +136,12 @@ export function PlantillaPanelTab() {
   }, []);
 
   const updateOverride = useCallback((id: string, patch: { visible?: boolean; plan?: AdminPlan; label?: string }) => {
+    const entry = ADMIN_MODULE_CATALOG.find((m) => m.id === id);
     setTpl((prev) => {
       if (!prev) return prev;
       const current = prev.overrides[id] ?? {};
       const nextOv = { ...current, ...patch };
       // Limpia las claves que coincidan con el default — mantiene el override mínimo.
-      const entry = ADMIN_MODULE_CATALOG.find((m) => m.id === id);
       if (entry) {
         if (nextOv.visible === entry.defaultVisible) delete nextOv.visible;
         if (nextOv.plan === entry.defaultPlan) delete nextOv.plan;
@@ -135,14 +154,41 @@ export function PlantillaPanelTab() {
       writeAdminTemplate(next);
       return next;
     });
-  }, []);
+
+    // Toast específico según el tipo de cambio
+    if (!entry) return;
+    const moduleName = entry.defaultLabel;
+    if (typeof patch.visible === "boolean") {
+      showToast(
+        patch.visible ? `${moduleName} ahora es visible` : `${moduleName} ahora está oculto`,
+        patch.visible
+          ? "Se mostrará en el sidebar de todos los tenants nuevos."
+          : "Ya no aparece en el sidebar del panel admin.",
+        patch.visible ? "success" : "warning",
+      );
+    } else if (patch.plan) {
+      showToast(
+        `${moduleName} ahora requiere plan ${PLAN_LABEL[patch.plan]}`,
+        `Los tenants con plan inferior dejarán de verlo.`,
+        "info",
+      );
+    } else if (typeof patch.label === "string") {
+      showToast(
+        `Etiqueta cambiada`,
+        `${moduleName} ahora se muestra como “${patch.label}” en el panel.`,
+        "success",
+      );
+    }
+  }, [showToast]);
 
   const applyPreset = useCallback((preset: PresetMode) => {
+    let visibleCount = 0;
     setTpl((prev) => {
       if (!prev) return prev;
       const overrides: AdminTemplate["overrides"] = {};
       for (const m of ADMIN_MODULE_CATALOG) {
         const wantsVisible = preset.apply(m);
+        if (wantsVisible) visibleCount++;
         const current = prev.overrides[m.id] ?? {};
         const nextOv = { ...current };
         if (wantsVisible !== m.defaultVisible) nextOv.visible = wantsVisible;
@@ -153,15 +199,23 @@ export function PlantillaPanelTab() {
       writeAdminTemplate(next);
       return next;
     });
-    setToast(`Plantilla "${preset.label}" aplicada.`);
-  }, []);
+    showToast(
+      `Preset "${preset.label}" aplicado`,
+      `${visibleCount} módulos visibles · Cambios en vivo en todos los paneles admin.`,
+      "success",
+    );
+  }, [showToast]);
 
   const handleResetAll = useCallback(() => {
     if (!confirm("¿Restaurar la plantilla a los valores de fábrica? Se perderán todos los cambios.")) return;
     resetAdminTemplate();
     setTpl(readAdminTemplate());
-    setToast("Plantilla restablecida a default.");
-  }, []);
+    showToast(
+      "Plantilla restablecida",
+      "Todos los módulos vuelven a su configuración default del catálogo.",
+      "info",
+    );
+  }, [showToast]);
 
   const startEditLabel = (id: string, currentLabel: string) => {
     setEditingLabel(id);
@@ -194,28 +248,99 @@ export function PlantillaPanelTab() {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
+      {/* Toast — feedback inmediato + CTA "Ver en panel" */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-xl)] text-sm font-semibold animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <CheckCircle2 className="h-4 w-4" />
-          {toast}
+        <div
+          key={toast.nonce}
+          className="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] animate-in fade-in slide-in-from-bottom-4 duration-200"
+          style={{
+            borderColor:
+              toast.tone === "success" ? "var(--data-success)" :
+              toast.tone === "warning" ? "var(--data-warning)" :
+              "var(--accent)",
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-3 p-4">
+            <div
+              className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0"
+              style={{
+                backgroundColor:
+                  toast.tone === "success" ? "rgb(from var(--data-success) r g b / 0.12)" :
+                  toast.tone === "warning" ? "rgb(from var(--data-warning) r g b / 0.12)" :
+                  "rgb(from var(--accent) r g b / 0.12)",
+                color:
+                  toast.tone === "success" ? "var(--data-success)" :
+                  toast.tone === "warning" ? "var(--data-warning)" :
+                  "var(--accent)",
+              }}
+            >
+              {toast.tone === "warning" ? (
+                <EyeOff className="h-4 w-4" strokeWidth={2.25} />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" strokeWidth={2.25} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                {toast.title}
+              </p>
+              {toast.detail && (
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+                  {toast.detail}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  <Zap className="h-3 w-3" strokeWidth={2.5} />
+                  Aplicado en vivo
+                </span>
+                <button
+                  type="button"
+                  onClick={openAdminPanelInNewTab}
+                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[var(--accent)] text-white text-xs font-bold hover:bg-[var(--accent)]/90 transition-colors"
+                >
+                  Ver en panel
+                  <ExternalLink className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+              aria-label="Cerrar notificación"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Header explicativo */}
+      {/* Header explicativo + CTA permanente */}
       <header className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="flex items-start gap-3">
-          <Layers className="h-6 w-6 text-[var(--accent)] shrink-0 mt-0.5" strokeWidth={1.75} />
-          <div className="min-w-0">
-            <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
-              Plantilla del Panel Admin
-            </h2>
-            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Define qué módulos ven los dueños de tienda al cargar su panel admin por primera vez.
-              Esta plantilla es el <strong className="text-[var(--text-primary)]">default global</strong>:
-              cada tenant puede ajustarla luego desde su propio sidebar.
-            </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <Layers className="h-6 w-6 text-[var(--accent)] shrink-0 mt-0.5" strokeWidth={1.75} />
+            <div className="min-w-0">
+              <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
+                Plantilla del Panel Admin
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                Define qué módulos ven los dueños de tienda al cargar su panel admin por primera vez.
+                Cambios <strong className="text-[var(--text-primary)]">se aplican en vivo</strong> a todos los tenants abiertos.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={openAdminPanelInNewTab}
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)]/90 transition-colors shrink-0"
+          >
+            <ExternalLink className="h-4 w-4" strokeWidth={2} />
+            Abrir panel admin
+          </button>
         </div>
       </header>
 
