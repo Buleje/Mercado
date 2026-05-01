@@ -60,6 +60,10 @@
       "schedule": "0 3 * * *"
     },
     {
+      "path": "/api/cron/trial-warning",
+      "schedule": "30 14 * * *"
+    },
+    {
       "path": "/api/billing/webhook-replay",
       "schedule": "0 4 * * *"
     },

@@ -20,12 +20,20 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/_next/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/superadmin/",
+          "/checkout/",
+          "/cuenta/",
+          "/marketplace/mi-cuenta/",
+          "/_next/",
+        ],
       },
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: ["/api/", "/admin/"],
+        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
       },
       // Block AI training crawlers — they scrape content without linking back
       {
