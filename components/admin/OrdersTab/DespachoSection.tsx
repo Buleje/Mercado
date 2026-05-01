@@ -119,7 +119,7 @@ export function DespachoSection({
           <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Despacho
           </p>
-          <p className="text-base font-extrabold text-[var(--text-primary)] mt-0.5">
+          <p className="text-base font-bold text-[var(--text-primary)] mt-0.5">
             {currentDriver ? "Motorizado asignado" : "Sin asignar"}
           </p>
         </div>
@@ -141,13 +141,13 @@ export function DespachoSection({
         <div className="flex items-center gap-3 px-5 py-3 bg-[var(--accent-soft)]/40 border-b border-[var(--rule-soft)]">
           <span
             aria-hidden
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-black text-sm shrink-0"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
             style={{ backgroundColor: driverColor(currentDriver) }}
           >
             {currentDriver.charAt(0).toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{currentDriver}</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] truncate">{currentDriver}</p>
             <p className="text-xs text-[var(--text-secondary)]">Motorizado en marcha</p>
           </div>
           <button
@@ -221,14 +221,14 @@ export function DespachoSection({
               >
                 <span
                   aria-hidden
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white font-black text-base shrink-0"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white font-bold text-base shrink-0"
                   style={{ backgroundColor: driverColor(p.name) }}
                 >
                   {p.name.charAt(0).toUpperCase()}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-[var(--text-primary)] text-sm truncate">{p.name}</span>
+                    <span className="font-bold text-[var(--text-primary)] text-sm truncate">{p.name}</span>
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--data-success)]/15 text-[var(--data-success)] text-xs font-bold border border-[var(--data-success)]/30">
                       <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)]" />
                       Libre
@@ -254,7 +254,7 @@ export function DespachoSection({
                     )}
                   </p>
                 </div>
-                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-extrabold uppercase tracking-wider">
+                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-bold uppercase tracking-wider">
                   {assigning === p.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -281,7 +281,7 @@ export function DespachoSection({
               <li key={p.id} className="flex items-center gap-3 px-5 py-3 opacity-70">
                 <span
                   aria-hidden
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-black text-sm shrink-0"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
                   style={{ backgroundColor: driverColor(p.name) }}
                 >
                   {p.name.charAt(0).toUpperCase()}
@@ -343,7 +343,7 @@ export function DespachoSection({
                 type="button"
                 onClick={handleSaveAdHoc}
                 disabled={savingDriver || !customDriver.trim()}
-                className="h-12 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--accent)] transition-colors disabled:opacity-50"
+                className="h-12 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-50"
               >
                 {savingDriver ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
               </button>

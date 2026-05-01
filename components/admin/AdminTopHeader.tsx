@@ -138,14 +138,14 @@ export function AdminTopHeader({
         <button
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
-          className="flex items-center gap-2.5 px-4 h-10 rounded-xl text-[var(--text-tertiary)] dark:text-muted bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-all text-sm font-medium border border-[var(--rule-base)] dark:border-card-border flex-1 max-w-xl group cursor-pointer"
+          className="group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-sm"
         >
-          <Search className="h-4.5 w-4.5 shrink-0 group-hover:text-primary transition-colors" />
-          <span className="flex-1 text-left text-[var(--text-tertiary)] dark:text-muted truncate">
+          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary transition-colors" strokeWidth={2} />
+          <span className="flex-1 text-left text-sm font-medium text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)] truncate transition-colors">
             Buscar módulos, productos, clientes...
           </span>
-          <kbd className="text-[length:var(--ts-2xs)] bg-white dark:bg-card px-2 py-0.5 rounded-lg font-mono text-[var(--text-tertiary)] border border-[var(--rule-base)] dark:border-card-border hidden sm:inline">
-            ⌘K
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono text-[var(--text-tertiary)] dark:text-muted bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 py-0.5 rounded-md tabular-nums">
+            <span className="text-base leading-none">⌘</span>K
           </kbd>
         </button>
 

@@ -566,35 +566,41 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl mx-4 overflow-hidden border border-[var(--rule-base)] dark:border-card-border"
+        className="bg-white dark:bg-card rounded-2xl w-full max-w-2xl mx-4 overflow-hidden border border-[var(--rule-base)] dark:border-card-border shadow-[var(--shadow-xl)]"
         onClick={e => e.stopPropagation()}
       >
-        {/* ── Input de búsqueda ── */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border">
-          {loading
-            ? <Loader2 className="h-5 w-5 text-[var(--text-tertiary)] shrink-0 animate-spin" />
-            : <Search className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted shrink-0" />
-          }
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Buscar módulos, productos, clientes, pedidos…"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setSelected(0); }}
-            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted outline-none"
-          />
-          <div className="flex items-center gap-2 shrink-0">
-            {query && (
-              <button
-                onClick={() => { setQuery(""); setSelected(0); }}
-                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-surface transition-colors"
-              >
-                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-              </button>
-            )}
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono text-[var(--text-tertiary)] bg-gray-100 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border">
-              Esc
-            </kbd>
+        {/* ── Input de búsqueda — más prominente, h-14, con eyebrow ── */}
+        <div className="px-5 pt-4 pb-2 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+            Buscar en todo el panel
+          </p>
+          <div className="flex items-center gap-3">
+            {loading
+              ? <Loader2 className="h-5 w-5 text-primary shrink-0 animate-spin" />
+              : <Search className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted shrink-0" strokeWidth={2} />
+            }
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Módulos, productos, clientes, pedidos, acciones…"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setSelected(0); }}
+              className="flex-1 bg-transparent text-base font-semibold text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted placeholder:font-normal outline-none"
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              {query && (
+                <button
+                  onClick={() => { setQuery(""); setSelected(0); }}
+                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+                </button>
+              )}
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold font-mono text-[var(--text-tertiary)] bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border">
+                Esc
+              </kbd>
+            </div>
           </div>
         </div>
 
@@ -618,11 +624,16 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
               return (
                 <div key={groupKey}>
-                  {/* Cabecera de grupo */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
-                    <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} />
-                    <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                      {meta.label}
+                  {/* Cabecera de grupo — eyebrow uppercase + counter */}
+                  <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[var(--surface-sunken)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border sticky top-0 z-10">
+                    <div className="flex items-center gap-2">
+                      <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} strokeWidth={2.25} />
+                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-muted">
+                        {meta.label}
+                      </span>
+                    </div>
+                    <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                      {items.length}
                     </span>
                   </div>
 
@@ -688,8 +699,8 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
         {/* ── Acceso rápido (estado vacío) ── */}
         {!isSearching && (
-          <div className="px-4 py-3">
-            <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
+          <div className="px-5 py-4">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted mb-3">
               Acceso rápido
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -699,12 +710,12 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   <button
                     key={item.tab}
                     onClick={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors text-left"
                   >
-                    <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", item.color)}>
-                      <Icon className="h-3.5 w-3.5" />
+                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", item.color)}>
+                      <Icon className="h-4 w-4" strokeWidth={2} />
                     </div>
-                    <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-foreground leading-tight">
+                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground leading-tight">
                       {item.label}
                     </span>
                   </button>
@@ -714,27 +725,25 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
           </div>
         )}
 
-        {/* ── Footer ── */}
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
-            <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">↑↓</kbd>
+        {/* ── Footer — atajos de teclado discretos ── */}
+        <div className="px-5 py-2.5 bg-[var(--surface-sunken)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
+            <span className="flex items-center gap-1.5">
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 rounded font-mono font-semibold">↑↓</kbd>
               navegar
             </span>
-            <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Enter</kbd>
-              ir
+            <span className="flex items-center gap-1.5">
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 rounded font-mono font-semibold">↵</kbd>
+              abrir
             </span>
-            <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Esc</kbd>
+            <span className="flex items-center gap-1.5">
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 rounded font-mono font-semibold">Esc</kbd>
               cerrar
             </span>
           </div>
-          <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] dark:text-muted">
-            <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
-            <span>+</span>
-            <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">K</kbd>
-            <span className="ml-0.5">abrir/cerrar</span>
+          <span className="hidden sm:flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
+            <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 rounded font-mono font-semibold">⌘K</kbd>
+            <span>abrir/cerrar</span>
           </span>
         </div>
       </div>

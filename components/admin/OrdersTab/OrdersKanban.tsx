@@ -178,12 +178,12 @@ function OrderCard({
           />
           <span
             aria-hidden
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-lg font-black tracking-tight"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
           >
             {initial}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-[var(--text-primary)] text-sm truncate leading-tight">
+            <p className="font-bold text-[var(--text-primary)] text-sm truncate leading-tight">
               {order.customer.name}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
@@ -198,10 +198,10 @@ function OrderCard({
             )}
           </div>
           <div className="text-right shrink-0">
-            <p className="font-display italic font-black text-xl tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+            <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
               S/{order.total.toFixed(2)}
             </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">
               {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
             </p>
           </div>
@@ -323,19 +323,17 @@ function KanbanColumn({
   const total = orders.reduce((s, o) => s + o.total, 0);
   return (
     <div className="flex flex-col min-h-0">
-      {/* Column header editorial */}
+      {/* Column header — patrón estándar (SectionTitle DS, sin tipografía editorial) */}
       <div className="flex items-baseline justify-between gap-2 px-1 pb-3 mb-3 border-b-2" style={{ borderColor: accentVar }}>
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5">
             {description}
           </p>
-          <SectionTitle className="font-display italic text-2xl font-black leading-tight tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            {label}
-          </SectionTitle>
+          <SectionTitle>{label}</SectionTitle>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            {orders.length}
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
           </p>
           <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
             S/{total.toFixed(0)}
@@ -443,7 +441,7 @@ export function OrdersKanban({
               type="button"
               onClick={() => setMobileColumn(col.id)}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all",
+                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
                 isActive
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
@@ -452,7 +450,7 @@ export function OrdersKanban({
               {col.label}
               <span
                 className={cn(
-                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-black tabular-nums",
+                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-extrabold tabular-nums",
                   isActive ? "bg-[var(--surface-canvas)]/20" : "bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
                 )}
               >
