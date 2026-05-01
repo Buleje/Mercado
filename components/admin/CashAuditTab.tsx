@@ -170,7 +170,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           </div>
           <div className="text-left">
             <span className="block font-bold text-sm">Conteo de efectivo manual</span>
-            <span className="block text-xs text-[var(--text-tertiary)] mt-0.5">Contador por denominaci&oacute;n para validar caja en vivo</span>
+            <span className="block text-xs text-[var(--text-tertiary)] mt-0.5">Contador por denominación para validar caja en vivo</span>
           </div>
         </span>
         <PlusCircle className={cn("h-4 w-4 text-primary transition-transform shrink-0", open && "rotate-45")} strokeWidth={1.75} aria-hidden />

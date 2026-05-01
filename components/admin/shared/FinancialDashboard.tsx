@@ -318,7 +318,7 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Package className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2" />
-        <p className="text-sm text-[var(--text-tertiary)]">Sin ventas en los &uacute;ltimos 30 d&iacute;as</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Sin ventas en los últimos 30 días</p>
       </div>
     );
   }
@@ -546,7 +546,7 @@ export default function FinancialDashboard() {
               Tendencia de ingresos
             </CardTitle>
             <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-              &Uacute;ltimos 30 d&iacute;as — pasa el cursor sobre una barra para ver el detalle
+              Últimos 30 días — pasa el cursor sobre una barra para ver el detalle
             </p>
           </div>
           <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -578,7 +578,7 @@ export default function FinancialDashboard() {
               Top 5 productos por ingresos
             </CardTitle>
             <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-              &Uacute;ltimos 30 d&iacute;as
+              Últimos 30 días
             </p>
           </div>
           <div className="h-8 w-8 rounded-xl bg-[#f4a261]/10 flex items-center justify-center">

@@ -194,7 +194,7 @@ export default function HistorialCierresTab() {
                 <ChevronLeft className="h-4 w-4" /> Anterior
               </button>
               <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                P&aacute;gina {page} de {totalPages}
+                Página {page} de {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -221,7 +221,7 @@ export default function HistorialCierresTab() {
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
-                  Cierre &mdash; {formatFecha(detail.fecha)}
+                  Cierre — {formatFecha(detail.fecha)}
                 </CardTitle>
                 <button
                   onClick={() => setDetail(null)}
@@ -255,7 +255,7 @@ export default function HistorialCierresTab() {
                     )}
                   </div>
                   {detail.productoTop && (
-                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">M&aacute;s vendido: <strong>{detail.productoTop}</strong></p>
+                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Más vendido: <strong>{detail.productoTop}</strong></p>
                   )}
                 </div>
 

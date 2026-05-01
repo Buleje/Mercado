@@ -64,7 +64,7 @@ export default function CierrePaso1Caja({
           Conteo de efectivo
         </h2>
         <p className="text-sm text-gray-500 dark:text-muted mt-1">
-          Toca cada denominaci&oacute;n para sumar 1. Doble clic para escribir la cantidad.
+          Toca cada denominación para sumar 1. Doble clic para escribir la cantidad.
         </p>
       </div>
 

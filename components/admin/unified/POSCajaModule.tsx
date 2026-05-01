@@ -401,7 +401,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     // Section 4: Tendencia semanal
     <div key="weekly" className="bg-white rounded-xl border border-[var(--rule-base)] p-6  relative">
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Tendencia de ventas &mdash; Ultimos 7 dias</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Tendencia de ventas — Ultimos 7 dias</CardTitle>
         <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>

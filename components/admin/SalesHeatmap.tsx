@@ -157,7 +157,7 @@ export default function SalesHeatmap() {
       {/* Best slot insight */}
       {bestCell && bestCell.amount > 0 && (
         <div className="rounded-xl border border-primary/30 bg-primary/5 px-5 py-3 text-sm text-primary dark:text-[var(--data-success)]">
-          Hora pico: <strong>{bestCell.day} {hourLabel(bestCell.hour)}</strong> &mdash;{" "}
+          Hora pico: <strong>{bestCell.day} {hourLabel(bestCell.hour)}</strong> —{" "}
           {formatCurrency(bestCell.amount)} en {bestCell.value} venta{bestCell.value !== 1 ? "s" : ""}
         </div>
       )}

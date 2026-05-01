@@ -68,7 +68,7 @@ export function ActionableEmptyState({
       </div>
 
       {eyebrow && (
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
           {eyebrow}
         </p>
       )}

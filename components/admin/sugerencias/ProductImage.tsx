@@ -13,7 +13,7 @@ interface Props {
 }
 
 const SIZES = {
-  xs: { box: "h-9 w-9", text: "text-[10px]", icon: "h-4 w-4" },
+  xs: { box: "h-9 w-9", text: "text-[length:var(--ts-2xs)]", icon: "h-4 w-4" },
   sm: { box: "h-12 w-12", text: "text-xs", icon: "h-5 w-5" },
   md: { box: "h-16 w-16", text: "text-sm", icon: "h-6 w-6" },
   lg: { box: "h-24 w-24", text: "text-lg", icon: "h-8 w-8" },

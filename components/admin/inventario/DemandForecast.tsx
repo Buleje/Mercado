@@ -80,7 +80,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   if (!data) {
     return (
       <div className="p-4 text-center text-[var(--text-secondary)] dark:text-muted text-sm">
-        Sin datos de ventas para este producto en los &uacute;ltimos 30 d&iacute;as
+        Sin datos de ventas para este producto en los últimos 30 días
       </div>
     );
   }
@@ -118,7 +118,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Chart */}
       <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
-        <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (&uacute;ltimos 30 d&iacute;as)</h4>
+        <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
         <div className="h-48">
           <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <BarChart data={chartData}>

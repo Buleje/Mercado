@@ -257,7 +257,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
                     style={{ width: `${width}%`, background: colors[i], opacity: 0.25 }}
                   />
                   <div className="relative flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shrink-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)]">
                       {i + 1}
                     </span>
                     <span className="text-sm font-semibold text-[var(--text-primary)] flex-1">
@@ -452,7 +452,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
                   {heatmap.days.map((d) => (
                     <div
                       key={d}
-                      className="text-center text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
+                      className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
                     >
                       {d}
                     </div>
@@ -471,7 +471,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
                         return (
                           <div
                             key={dayIdx}
-                            className="relative m-0.5 rounded-md flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-105 cursor-default"
+                            className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
                             style={{
                               background: bg,
                               color:

@@ -129,7 +129,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
         <div className="flex justify-end mb-2">
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
+              "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
               halfDelta > 0
                 ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))]"
                 : "bg-[var(--data-error-50)] text-[var(--data-error)]",

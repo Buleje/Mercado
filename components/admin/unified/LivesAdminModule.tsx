@@ -172,7 +172,7 @@ export default function LivesAdminModule() {
       {/* Hero CTA */}
       <div className="bg-white border-2 border-primary/20 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-[#00B4A6] text-white flex items-center justify-center shrink-0">
+          <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-red-500 to-[#00B4A6] text-white flex items-center justify-center shrink-0">
             <Radio className="h-7 w-7" />
           </div>
           <div className="flex-1 min-w-0">

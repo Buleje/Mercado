@@ -206,7 +206,7 @@ export function ChartPresentationModal({
             <Maximize2 className="h-4 w-4 text-gray-700" />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-gray-500">
               Presentación · {activeIdx + 1} de {items.length}
               {autoplay && <span className="ml-2 text-[var(--data-success)]">· Modo TV</span>}
             </p>
@@ -261,7 +261,7 @@ export function ChartPresentationModal({
           >
             <X className="h-4 w-4" />
             <span className="hidden sm:inline">Cerrar</span>
-            <kbd className="hidden md:inline-block text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
+            <kbd className="hidden md:inline-block text-[length:var(--ts-2xs)] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
               Esc
             </kbd>
           </button>
@@ -371,27 +371,27 @@ export function ChartPresentationModal({
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] text-gray-500 flex items-center gap-3 flex-wrap">
+        <p className="mt-2 text-[length:var(--ts-xs)] text-gray-500 flex items-center gap-3 flex-wrap">
           <span>
-            <kbd className="text-[10px] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               ← →
             </kbd>{" "}
             navegar
           </span>
           <span>
-            <kbd className="text-[10px] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Shift+rueda
             </kbd>{" "}
             scroll lateral
           </span>
           <span>
-            <kbd className="text-[10px] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Espacio
             </kbd>{" "}
             modo TV
           </span>
           <span>
-            <kbd className="text-[10px] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Esc
             </kbd>{" "}
             cerrar

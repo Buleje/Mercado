@@ -371,7 +371,7 @@ export default function CRMTab() {
         </div>
         <div className="flex-1 min-w-0">
           <PageTitle className="text-xl font-bold text-[var(--text-primary)] truncate">Mis Clientes</PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">CRM, fidelizaci&oacute;n y seguimiento</p>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">CRM, fidelización y seguimiento</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button onClick={() => setShowNewClientModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-white transition-colors bg-primary" style={{ backgroundColor: "#00B4A6" }}>
@@ -659,10 +659,10 @@ export default function CRMTab() {
                 {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
                 <th className="text-center px-3 py-3 text-xs font-bold text-[var(--text-tertiary)] w-14">Rank</th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Cliente</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Tel&eacute;fono</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">&Uacute;ltimo pedido</th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Teléfono</th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">Último pedido</th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Total gastado</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden lg:table-cell">Cr&eacute;dito</th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden lg:table-cell">Crédito</th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Segmento</th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Contacto</th>
                 <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Ver</th>
@@ -802,7 +802,7 @@ export default function CRMTab() {
                     <td className="px-4 py-3 hidden md:table-cell">
                       {(() => {
                         const lastContact = c._lastOrder;
-                        if (!lastContact) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&mdash;</span>;
+                        if (!lastContact) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                         const days = Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000);
                         let label: string;
                         let colorClass: string;

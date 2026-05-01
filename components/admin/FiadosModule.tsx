@@ -279,7 +279,7 @@ function FiadoTendenciaCobro() {
         <p className="text-xs font-bold text-[var(--text-secondary)]">Tendencia de Cobro</p>
         <StatusBadge
           variant={lastNeto >= 0 ? "success" : "error"}
-          label={lastNeto >= 0 ? "Recuperando m&aacute;s de lo que prestas" : "Prestando mas de lo que cobras"}
+          label={lastNeto >= 0 ? "Recuperando más de lo que prestas" : "Prestando mas de lo que cobras"}
         />
       </div>
       <ResponsiveContainer minWidth={0} width="100%" height={200}>
@@ -808,7 +808,7 @@ export default function FiadosModule() {
     return best;
   }, [fiados]);
 
-  // ── Mejora 19 (ronda 3): Proyecci&oacute;n de cobro ─────────────────────────────────
+  // ── Mejora 19 (ronda 3): Proyección de cobro ─────────────────────────────────
   const proyeccionCobro = useMemo(() => {
     const now = new Date();
     const startOfWeek = new Date(now);

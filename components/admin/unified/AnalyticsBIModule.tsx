@@ -51,7 +51,7 @@ const _PERIODS: { key: AnalyticsPeriod; label: string }[] = [
 const _PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
   "1d": "Hoy",
   "7d": "Ultimos 7 dias",
-  "30d": "&Uacute;ltimos 30 d&iacute;as",
+  "30d": "Últimos 30 días",
   "90d": "Ultimos 90 dias",
   "1y": "Último ano",
 };

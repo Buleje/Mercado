@@ -204,7 +204,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                               <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                                 {c.name}
                               </p>
-                              <p className="text-[11px] text-[var(--text-tertiary)]">
+                              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                                 Stock: {c.stock} u · Quedan ~{c.daysRemaining}d
                               </p>
                             </div>

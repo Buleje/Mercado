@@ -202,7 +202,7 @@ export default function AdminOptionsDropdown({
                         {it.label}
                       </span>
                       {it.hint && (
-                        <span className="block text-[11px] text-[var(--text-tertiary)] mt-0.5">
+                        <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">
                           {it.hint}
                         </span>
                       )}
@@ -245,7 +245,7 @@ export default function AdminOptionsDropdown({
                   );
                 })}
               </div>
-              <p className="mt-2 text-[11px] text-[var(--text-tertiary)] text-center">
+              <p className="mt-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] text-center">
                 {themeMode === "system"
                   ? `Siguiendo sistema · actualmente ${resolvedTheme === "dark" ? "oscuro" : "claro"}`
                   : `Tema actual: ${themeMode === "dark" ? "oscuro" : "claro"}`}

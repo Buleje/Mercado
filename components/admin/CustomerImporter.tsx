@@ -332,7 +332,7 @@ export default function CustomerImporter() {
               <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)]">Clientes no importados:</p>
               {summary.errors.map((e, i) => (
                 <p key={i} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
-                  Fila {e.row} &mdash; {e.nombre}: {e.error}
+                  Fila {e.row} — {e.nombre}: {e.error}
                 </p>
               ))}
             </div>

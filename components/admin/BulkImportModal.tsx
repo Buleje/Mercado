@@ -331,7 +331,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
                   </tbody>
                 </table>
                 {rows.length > previewRows.length && (
-                  <p className="px-3 py-2 text-center text-[10px] text-[var(--text-tertiary)] bg-[var(--surface-sunken)]">
+                  <p className="px-3 py-2 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-[var(--surface-sunken)]">
                     + {rows.length - previewRows.length} filas más (no mostradas)
                   </p>
                 )}
@@ -379,15 +379,15 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
                   <p className="text-xl font-black text-[var(--data-success)] tabular-nums">{result.created}</p>
-                  <p className="text-[10px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Creados</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Creados</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
                   <p className="text-xl font-black text-[var(--text-secondary)] tabular-nums">{result.skipped}</p>
-                  <p className="text-[10px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Omitidos</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Omitidos</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
                   <p className="text-xl font-black text-[var(--data-error)] tabular-nums">{result.errors.length}</p>
-                  <p className="text-[10px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Errores</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Errores</p>
                 </div>
               </div>
 

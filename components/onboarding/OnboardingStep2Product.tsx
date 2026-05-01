@@ -52,7 +52,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
           Agrega tu primer producto
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
-          No te preocupes, puedes agregar m&aacute;s despu&eacute;s.
+          No te preocupes, puedes agregar más después.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
             type="text"
             value={form.nombre}
             onChange={e => handleChange('nombre', e.target.value)}
-            placeholder="Ej: Arroz Coste&ntilde;o 1kg"
+            placeholder="Ej: Arroz Costeño 1kg"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
           />
         </div>
@@ -104,7 +104,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Categor&iacute;a
+              Categoría
             </label>
             <select
               value={form.categoria}
@@ -144,7 +144,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
         onClick={handleSkip}
         className="w-full text-sm text-gray-400 hover:text-[#00B4A6] transition-colors py-2"
       >
-        &iquest;No tienes la informaci&oacute;n ahora? &rarr; Saltar
+        ¿No tienes la información ahora? &rarr; Saltar
       </button>
     </div>
   );

@@ -117,7 +117,7 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {sections.map((section) => (
               <section key={section.title}>
-                <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+                <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                   {section.title}
                 </h3>
                 <dl className="divide-y divide-[var(--rule-soft)]">

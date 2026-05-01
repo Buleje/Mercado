@@ -304,10 +304,10 @@ export default function CommissionCalculator() {
                   Nro ventas
                 </th>
                 <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  % Comisi&oacute;n
+                  % Comisión
                 </th>
                 <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  Comisi&oacute;n
+                  Comisión
                 </th>
               </tr>
             </thead>

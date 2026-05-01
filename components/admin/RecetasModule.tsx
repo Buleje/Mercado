@@ -873,7 +873,7 @@ export default function RecetasModule() {
                             </div>
                             {margen !== null && margen < 10 && (
                               <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] mt-1">
-                                Margen muy bajo &mdash; revisa tus precios
+                                Margen muy bajo — revisa tus precios
                               </p>
                             )}
                           </div>

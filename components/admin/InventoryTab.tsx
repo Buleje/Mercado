@@ -1448,7 +1448,7 @@ export default function InventoryTab() {
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
                           {p.costPrice != null && p.costPrice > 0
                             ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-foreground" title="Basado en las ultimas compras">S/{p.costPrice.toFixed(2)}</span>
-                            : <span className="text-[var(--text-tertiary)] dark:text-muted">&mdash;</span>
+                            : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
                           }
                         </td>
                         {/* Mejora 6: Rotation indicator */}

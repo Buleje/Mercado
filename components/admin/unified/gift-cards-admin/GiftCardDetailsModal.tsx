@@ -112,7 +112,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
         {/* Body */}
         <div className="p-5 space-y-5">
           {/* Código */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl p-4">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-2">Código</p>
             <div className="flex items-center gap-3">
               <p className="font-mono text-2xl font-extrabold text-[var(--text-primary)] tracking-wider">

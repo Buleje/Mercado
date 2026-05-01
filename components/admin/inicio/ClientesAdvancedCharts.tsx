@@ -387,16 +387,16 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
+                  <th className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
                     Cohorte
                   </th>
-                  <th className="text-right text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
+                  <th className="text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
                     Tamaño
                   </th>
                   {["M0", "M1", "M2", "M3"].map((m) => (
                     <th
                       key={m}
-                      className="text-center text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 px-1"
+                      className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 px-1"
                     >
                       {m}
                     </th>
@@ -417,7 +417,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                         return (
                           <td
                             key={i}
-                            className="px-1 py-1 text-center text-[10px] text-[var(--text-tertiary)]"
+                            className="px-1 py-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]"
                           >
                             —
                           </td>
@@ -474,22 +474,22 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                 className="absolute left-0 right-0 border-t-2 border-dashed border-[var(--rule-base)]"
                 style={{ top: "50%" }}
               />
-              <span className="absolute top-2 left-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
+              <span className="absolute top-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
                 🌱 Nuevos
               </span>
-              <span className="absolute top-2 right-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
                 🏆 Champions
               </span>
-              <span className="absolute bottom-2 left-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
+              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
                 ⚠️ En riesgo
               </span>
-              <span className="absolute bottom-2 right-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+              <span className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
                 💙 Leales
               </span>
-              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[10px] font-semibold text-[var(--text-tertiary)] -rotate-90">
+              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] -rotate-90">
                 ← Más reciente
               </span>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-[var(--text-tertiary)]">
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
                 Frecuencia →
               </span>
               {rfm.rows.slice(0, 50).map((r, i) => {
@@ -619,7 +619,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                   {heatmap.days.map((d) => (
                     <div
                       key={d}
-                      className="text-center text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
+                      className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
                     >
                       {d}
                     </div>
@@ -638,7 +638,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                         return (
                           <div
                             key={dayIdx}
-                            className="relative m-0.5 rounded-md flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-105 cursor-default"
+                            className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
                             style={{
                               background: bg,
                               color: intensity > 0.55 ? "#fff" : "var(--text-secondary)",
@@ -707,7 +707,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                     <div className="relative flex items-center gap-3">
                       <span
                         className={
-                          "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold shrink-0 " +
+                          "flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 " +
                           (c.riskScore === 3
                             ? "bg-[var(--data-warning)] text-white"
                             : "bg-[var(--data-warning-50)] text-[var(--data-warning)]")
@@ -719,7 +719,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                         <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                           {c.name}
                         </p>
-                        <p className="text-[11px] text-[var(--text-tertiary)]">
+                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                           {c.freq} pedidos · último hace {c.daysSinceLast} días
                         </p>
                       </div>

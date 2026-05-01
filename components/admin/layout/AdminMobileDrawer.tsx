@@ -466,7 +466,7 @@ export function AdminMobileDrawer({
             onClick={() => { onOpenCierreDiario(); onClose(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
           >
-            <Power className="h-5 w-5" /> Cerrar d&iacute;a
+            <Power className="h-5 w-5" /> Cerrar día
           </button>
         </div>
       </aside>

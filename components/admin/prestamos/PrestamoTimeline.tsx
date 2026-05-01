@@ -139,7 +139,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               )}>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold text-[var(--text-primary)]">
-                    Cuota {c.numeroCuota} &mdash; {formatCurrency(c.monto)}
+                    Cuota {c.numeroCuota} — {formatCurrency(c.monto)}
                   </p>
                   <span className={cn(
                     "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",

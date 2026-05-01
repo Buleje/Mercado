@@ -87,7 +87,7 @@ export default function FiadoFormModal({
             </div>
             <div>
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Nuevo fiado</h3>
-              <p className="text-sm text-[var(--text-tertiary)]">Registra una venta al cr&eacute;dito</p>
+              <p className="text-sm text-[var(--text-tertiary)]">Registra una venta al crédito</p>
             </div>
           </div>
           <button onClick={() => setShowNew(false)} aria-label="Cerrar" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
@@ -98,14 +98,14 @@ export default function FiadoFormModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(nombre o tel&eacute;fono)</span></label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(nombre o teléfono)</span></label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
                       <input
                         type="text"
                         value={newForm.customerId}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }))}
-                        placeholder="Ej: 987654321 o Maria Rodr&iacute;guez"
+                        placeholder="Ej: 987654321 o Maria Rodríguez"
                         className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
@@ -123,7 +123,7 @@ export default function FiadoFormModal({
                         <div className="border-2 border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 space-y-1">
                           <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Cliente bloqueado por morosidad</p>
                           <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
-                            {clienteResumen.nombre} tiene deudas vencidas hace m&aacute;s de 60 d&iacute;as. Deuda actual: {formatCurrency(clienteResumen.deudaActual)}
+                            {clienteResumen.nombre} tiene deudas vencidas hace más de 60 días. Deuda actual: {formatCurrency(clienteResumen.deudaActual)}
                           </p>
                         </div>
                       ) : (
@@ -177,13 +177,13 @@ export default function FiadoFormModal({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Descripci&oacute;n <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
                     <div className="relative">
                       <FileText className="absolute left-4 top-3.5 h-5 w-5 text-[var(--text-tertiary)]" />
                       <textarea
                         value={newForm.descripcion}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
-                        placeholder="Detalle de lo que se llev&oacute;..."
+                        placeholder="Detalle de lo que se llevó..."
                         rows={2}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                       />
@@ -241,7 +241,7 @@ export default function FiadoFormModal({
                               const file = e.target.files?.[0];
                               if (!file) return;
                               if (file.size > 2 * 1024 * 1024) {
-                                setCreateError("La imagen no puede pesar m&aacute;s de 2MB");
+                                setCreateError("La imagen no puede pesar más de 2MB");
                                 return;
                               }
                               const reader = new FileReader();

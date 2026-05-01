@@ -459,10 +459,10 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       {/* ── Editorial Header — presencia tipográfica + contexto ── */}
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 border-b border-[var(--rule-soft)]">
         <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
             Panel de control · {periodLabel}
           </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.02]">
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.02]">
             {greeting}, <span className="text-[var(--accent)]">tu bodega</span>
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -534,7 +534,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 noise-texture-bg">
         <div className="flex items-end justify-between mb-3">
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Margen bruto {periodLabel}
             </p>
             <p className={cn(
@@ -626,10 +626,10 @@ function KPICard({
         )}
       </div>
 
-      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-foreground leading-none tracking-[-0.02em] tabular-nums">
+      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-foreground leading-none tracking-[var(--ls-tight)] tabular-nums">
         {value}
       </p>
-      <p className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)] dark:text-muted leading-tight">
+      <p className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] dark:text-muted leading-tight">
         {label}
       </p>
       {subtitle && (

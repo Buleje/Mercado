@@ -57,7 +57,7 @@ const STATUS_LABEL: Record<Status, string> = {
 const STATUS_COLORS: Record<AdminReview["status"], string> = {
   pending:  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-  rejected: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
+  rejected: "bg-rose-100 text-[var(--data-error)] dark:bg-rose-900/30 dark:text-[var(--data-error)]",
   hidden:   "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
@@ -120,14 +120,14 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
   if (!open && review.adminReply) {
     return (
       <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/20 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
           Tu respuesta · {review.adminReplyDate ? new Date(review.adminReplyDate).toLocaleDateString("es-PE") : ""}
         </p>
         <p className="text-sm text-[var(--text-primary)]">{review.adminReply}</p>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-2 text-[11px] font-bold text-[var(--accent)] hover:underline"
+          className="mt-2 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline"
         >
           Editar respuesta
         </button>
@@ -290,7 +290,7 @@ export default function StoreReviewsAdminModule() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="font-bold text-[var(--text-primary)] truncate">{r.name}</span>
-                  <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", STATUS_COLORS[r.status])}>
+                  <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", STATUS_COLORS[r.status])}>
                     {r.status}
                   </span>
                 </div>

@@ -303,7 +303,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                       style={{ width: `${width}%` }}
                     />
                     <div className="relative flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[10px] font-bold text-[var(--text-tertiary)] shrink-0">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] shrink-0">
                         {i + 1}
                       </span>
                       <span className="text-sm font-semibold text-[var(--text-primary)] truncate">

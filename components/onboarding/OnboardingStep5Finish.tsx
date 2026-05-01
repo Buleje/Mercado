@@ -34,7 +34,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
     <div className="space-y-6">
       <div className="text-center mb-2">
         <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-          &iexcl;Casi listo!
+          ¡Casi listo!
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
           Configura tus preferencias finales
@@ -66,7 +66,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
           />
           <div>
             <p className="font-semibold text-gray-900 dark:text-white">Instalar app en mi celular</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Puedes instalar la app desde el men&uacute; del navegador para acceso r&aacute;pido</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Puedes instalar la app desde el menú del navegador para acceso rápido</p>
           </div>
         </label>
 
@@ -80,14 +80,14 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
           />
           <div className="flex-1">
             <p className="font-semibold text-gray-900 dark:text-white">Recibir resumen diario por WhatsApp</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ventas, stock bajo y m&aacute;s, todos los d&iacute;as a las 8pm</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ventas, stock bajo y más, todos los días a las 8pm</p>
           </div>
         </label>
 
         {data.whatsappResumen && (
           <div className="pl-8">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              N&uacute;mero WhatsApp para resumen
+              Número WhatsApp para resumen
             </label>
             <input
               type="tel"

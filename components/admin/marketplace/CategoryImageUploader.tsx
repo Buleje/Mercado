@@ -113,7 +113,7 @@ export default function CategoryImageUploader({
           </div>
         )}
         {isUsingDefault && (
-          <span className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[10px] font-bold text-white text-center py-0.5">
+          <span className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[length:var(--ts-2xs)] font-bold text-white text-center py-0.5">
             global
           </span>
         )}
@@ -132,7 +132,7 @@ export default function CategoryImageUploader({
           type="button"
           onClick={handleSelect}
           disabled={uploading}
-          className="text-[11px] font-bold text-[var(--accent)] hover:underline disabled:opacity-50"
+          className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline disabled:opacity-50"
         >
           {value ? "Cambiar" : isUsingDefault ? "Reemplazar default" : "Subir"}
         </button>
@@ -140,14 +140,14 @@ export default function CategoryImageUploader({
           <button
             type="button"
             onClick={handleClear}
-            className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--text-tertiary)] hover:text-red-500"
+            className="inline-flex items-center gap-0.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] hover:text-red-500"
             title="Borrar imagen propia (vuelve al default global o sin imagen)"
           >
             <Trash2 className="h-3 w-3" /> Borrar
           </button>
         )}
         {error && (
-          <span className="text-[10px] font-medium text-red-500" title={error}>
+          <span className="text-[length:var(--ts-2xs)] font-medium text-red-500" title={error}>
             Error
           </span>
         )}

@@ -279,7 +279,7 @@ function MembersTab({
                   <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div>

@@ -45,7 +45,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
     <div className="space-y-6">
       <div className="text-center mb-2">
         <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-          &iquest;Tienes un cliente de confianza?
+          ¿Tienes un cliente de confianza?
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
           Los clientes frecuentes pueden pagar con fiado.
@@ -61,7 +61,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             type="text"
             value={form.nombre}
             onChange={e => handleChange('nombre', e.target.value)}
-            placeholder="Ej: Mar&iacute;a L&oacute;pez"
+            placeholder="Ej: María López"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
           />
         </div>
@@ -81,7 +81,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-            L&iacute;mite de fiado (S/)
+            Límite de fiado (S/)
           </label>
           <input
             type="number"
@@ -92,7 +92,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             placeholder="100"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
           />
-          <p className="text-xs text-gray-400 mt-1">Monto m&aacute;ximo que puede deber este cliente</p>
+          <p className="text-xs text-gray-400 mt-1">Monto máximo que puede deber este cliente</p>
         </div>
       </div>
 

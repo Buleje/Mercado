@@ -531,7 +531,7 @@ export default function POSPaymentModal({
           </p>
           {discountAmount > 0 && (
             <p className="text-sm text-[var(--data-error)] font-semibold mt-2">
-              Subtotal {fmt(subtotal)} &mdash; descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}% ` : ""}-{fmt(discountAmount)}
+              Subtotal {fmt(subtotal)} — descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}% ` : ""}-{fmt(discountAmount)}
             </p>
           )}
           <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">

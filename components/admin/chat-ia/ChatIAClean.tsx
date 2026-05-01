@@ -417,7 +417,7 @@ export default function ChatIAClean({
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
                 "bg-[var(--surface-sunken)] dark:bg-surface",
-                "px-5 py-4 pr-14 text-[16px] leading-relaxed",
+                "px-5 py-4 pr-14 text-base leading-relaxed",
                 "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 "focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:border-[var(--text-primary)]/40",
                 "transition-all",
@@ -452,12 +452,12 @@ export default function ChatIAClean({
             )}
           </form>
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-[11px] text-[var(--text-tertiary)]">
-              <kbd className="font-mono text-[10px] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              <kbd className="font-mono text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
                 Enter
               </kbd>{" "}
               enviar ·{" "}
-              <kbd className="font-mono text-[10px] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
+              <kbd className="font-mono text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
                 Shift+Enter
               </kbd>{" "}
               nueva línea
@@ -467,7 +467,7 @@ export default function ChatIAClean({
                 type="button"
                 onClick={handleClear}
                 disabled={streaming}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50"
               >
                 <Trash2 className="h-3 w-3" />
                 Borrar conversación
@@ -491,13 +491,13 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
       <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
         Asistente de tu bodega
       </h2>
-      <p className="text-[16px] text-[var(--text-secondary)] leading-relaxed max-w-xl">
+      <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
         Te ayudo a entender qué pasa en tu negocio, qué hacer ahora y cómo vender más.
         Respondo con ejemplos fáciles y datos reales — sin adornos.
       </p>
 
       <div className="mt-10 w-full">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-4">
+        <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-4">
           Probá con estas preguntas
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -517,10 +517,10 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
                 <q.icon className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-bold text-[var(--text-primary)] leading-tight">
+                <span className="block text-sm font-bold text-[var(--text-primary)] leading-tight">
                   {q.label}
                 </span>
-                <span className="block text-[13px] text-[var(--text-tertiary)] leading-snug mt-1 line-clamp-2">
+                <span className="block text-sm text-[var(--text-tertiary)] leading-snug mt-1 line-clamp-2">
                   {q.prompt}
                 </span>
               </span>
@@ -551,7 +551,7 @@ function MessageRow({
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--text-primary)] text-white px-5 py-3">
-          <p className="text-[16px] leading-relaxed whitespace-pre-wrap break-words">
+          <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>
         </div>
@@ -580,11 +580,11 @@ function MessageRow({
       </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Asistente IA
           </p>
           {isStreaming && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
+            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <Loader2 className="h-3 w-3 animate-spin" />
               escribiendo
             </span>
@@ -598,7 +598,7 @@ function MessageRow({
                 <button
                   type="button"
                   onClick={onCopy}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] px-2 py-1 rounded-md hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] px-2 py-1 rounded-md hover:bg-[var(--surface-sunken)] transition-colors"
                   title="Copiar respuesta"
                 >
                   {copied ? (
@@ -653,7 +653,7 @@ function MarkdownContent({ text }: { text: string }) {
             .split("\n")
             .filter((l) => /^\s*[-*]\s+/.test(l))
             .map((l) => l.replace(/^\s*[-*]\s+/, ""))
-            .map((l) => `<li class="text-[16px] leading-relaxed text-[var(--text-primary)]">${processInline(l)}</li>`)
+            .map((l) => `<li class="text-base leading-relaxed text-[var(--text-primary)]">${processInline(l)}</li>`)
             .join("");
           return `<ul class="space-y-1.5 list-disc pl-5 my-2">${items}</ul>`;
         }
@@ -663,12 +663,12 @@ function MarkdownContent({ text }: { text: string }) {
             .split("\n")
             .filter((l) => /^\s*\d+\.\s+/.test(l))
             .map((l) => l.replace(/^\s*\d+\.\s+/, ""))
-            .map((l) => `<li class="text-[16px] leading-relaxed text-[var(--text-primary)]">${processInline(l)}</li>`)
+            .map((l) => `<li class="text-base leading-relaxed text-[var(--text-primary)]">${processInline(l)}</li>`)
             .join("");
           return `<ol class="space-y-1.5 list-decimal pl-5 my-2">${items}</ol>`;
         }
         // Parrafo
-        return `<p class="text-[16px] leading-relaxed text-[var(--text-primary)] my-2 whitespace-pre-wrap">${processInline(block)}</p>`;
+        return `<p class="text-base leading-relaxed text-[var(--text-primary)] my-2 whitespace-pre-wrap">${processInline(block)}</p>`;
       })
       .join("");
   }, [text]);
@@ -685,7 +685,7 @@ function MarkdownContent({ text }: { text: string }) {
 function processInline(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-extrabold text-[var(--text-primary)]">$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="font-mono text-[14px] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">$1</code>');
+    .replace(/`([^`]+)`/g, '<code class="font-mono text-sm bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">$1</code>');
 }
 
 // ── StreamingDots ────────────────────────────────────────────────────────────

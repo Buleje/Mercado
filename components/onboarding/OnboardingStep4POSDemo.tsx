@@ -66,7 +66,7 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
     <div className="space-y-6">
       <div className="text-center mb-2">
         <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-          As&iacute; vas a cobrar
+          Así vas a cobrar
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
           3 pasos simples para cada venta
@@ -104,7 +104,7 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
         onClick={onNext}
         className="w-full py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-md shadow-[#00B4A6]/20"
       >
-        &iexcl;Entendido, quiero vender! &rarr;
+        ¡Entendido, quiero vender! &rarr;
       </button>
     </div>
   );

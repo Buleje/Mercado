@@ -116,11 +116,11 @@ function KpiCard({
         <Icon className="h-4 w-4" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {label}
         </p>
         <p className="text-2xl font-black text-[var(--text-primary)] tabular-nums leading-tight">{value}</p>
-        {hint && <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
+        {hint && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -151,12 +151,12 @@ function TopProductRow({ row, metric }: { row: TopRow; metric: "views" | "revenu
           // eslint-disable-next-line @next/next/no-img-element
           <img src={row.image} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
-          <span className="text-[var(--text-tertiary)] text-[10px] font-bold">{row.name.slice(0, 2).toUpperCase()}</span>
+          <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] font-bold">{row.name.slice(0, 2).toUpperCase()}</span>
         )}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-[var(--text-primary)] truncate">{row.name}</p>
-        <p className="text-[11px] text-[var(--text-tertiary)] truncate">
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
           {row.category ?? "—"} · {fmtPen.format(row.price)}
         </p>
       </div>
@@ -164,12 +164,12 @@ function TopProductRow({ row, metric }: { row: TopRow; metric: "views" | "revenu
         {metric === "views" ? (
           <>
             <p className="text-sm font-black text-[var(--text-primary)]">{fmtN.format(row.views)}</p>
-            <p className="text-[10px] text-[var(--text-tertiary)]">vistas · {pct(row.conversionRate)} conv</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">vistas · {pct(row.conversionRate)} conv</p>
           </>
         ) : (
           <>
             <p className="text-sm font-black text-[var(--accent)]">{fmtPen.format(row.revenue)}</p>
-            <p className="text-[10px] text-[var(--text-tertiary)]">{fmtN.format(row.conversions)} ventas</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtN.format(row.conversions)} ventas</p>
           </>
         )}
       </div>
@@ -306,7 +306,7 @@ export default function StoreAnalyticsModule() {
           <div className="text-[var(--accent)] h-12 mb-2">
             <Sparkline values={revenueSeries} height={48} />
           </div>
-          <p className="text-[11px] text-[var(--text-tertiary)] tabular-nums">
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
             {dailyTrend[0]?.date ?? "—"} → {dailyTrend[dailyTrend.length - 1]?.date ?? "—"}
           </p>
         </div>

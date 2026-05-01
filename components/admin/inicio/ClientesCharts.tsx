@@ -216,7 +216,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
                     <p className="text-xl font-extrabold text-[var(--text-primary)]">
                       {gastoKpis.total}
                     </p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">clientes</p>
+                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">clientes</p>
                   </div>
                 }
               />

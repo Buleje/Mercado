@@ -379,7 +379,7 @@ export default function ForecastingDashboard() {
             Prediccion de Ventas
           </SectionTitle>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Proyecciones basadas en media móvil ponderada (&uacute;ltimos 30 d&iacute;as)
+            Proyecciones basadas en media móvil ponderada (últimos 30 días)
           </p>
         </div>
         <button

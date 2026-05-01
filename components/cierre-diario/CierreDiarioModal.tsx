@@ -81,7 +81,7 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border bg-white dark:bg-card print:hidden">
           <div>
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-foreground">
-              Cierre del D&iacute;a
+              Cierre del Día
             </h1>
             <p className="text-xs text-gray-400 dark:text-muted">
               {cierre.preview?.fecha ?? "Cargando..."}
@@ -191,10 +191,10 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
             className="relative bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border p-6 w-80 z-10"
           >
             <h3 className="text-base font-bold text-gray-900 dark:text-foreground">
-              &iquest;Cerrar sin guardar?
+              ¿Cerrar sin guardar?
             </h3>
             <p className="text-sm text-gray-500 dark:text-muted mt-2">
-              Tienes datos sin guardar. Si cierras, se perder&aacute;n.
+              Tienes datos sin guardar. Si cierras, se perderán.
             </p>
             <div className="flex gap-2 mt-4">
               <button

@@ -326,7 +326,7 @@ function ComprasDashboard() {
 
       {/* === Compras por Mes (AreaChart) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
-        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (&uacute;ltimos 6 meses)</CardTitle></div>
+        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (últimos 6 meses)</CardTitle></div>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>

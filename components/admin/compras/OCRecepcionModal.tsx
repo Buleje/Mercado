@@ -365,7 +365,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Confirmar recepci&oacute;n
+              Confirmar recepción
             </button>
           )}
         </div>

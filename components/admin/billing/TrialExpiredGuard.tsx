@@ -72,10 +72,10 @@ export function TrialExpiredGuard({ children }: { children: React.ReactNode }) {
 
 function TrialExpiredScreen() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-red-50 dark:from-amber-950/20 dark:via-[var(--surface-canvas)] dark:to-red-950/20">
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-16">
-        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40">
-          <ShieldAlert className="h-8 w-8 text-red-600 dark:text-red-400" strokeWidth={2.25} />
+        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-error)]/10">
+          <ShieldAlert className="h-8 w-8 text-[var(--data-error)]" strokeWidth={2.25} />
         </div>
 
         <PageTitle className="text-center">Tu período de prueba ha terminado</PageTitle>
@@ -169,7 +169,7 @@ function PlanCard({
       <ul className="mt-4 space-y-2">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={2.25} />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success)]" strokeWidth={2.25} />
             {f}
           </li>
         ))}

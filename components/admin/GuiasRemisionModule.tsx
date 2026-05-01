@@ -718,15 +718,15 @@ export default function GuiasRemisionModule() {
       <div class="sep-double"></div>
       <div class="section">
         <div class="section-title">Remitente</div>
-        <div class="row"><span class="row-label">Nombre/Raz&oacute;n Social:</span><span class="row-value">Buleje</span></div>
-        <div class="row"><span class="row-label">Direcci&oacute;n:</span><span class="row-value">${g.puntoPartida}</span></div>
+        <div class="row"><span class="row-label">Nombre/Razón Social:</span><span class="row-value">Buleje</span></div>
+        <div class="row"><span class="row-label">Dirección:</span><span class="row-value">${g.puntoPartida}</span></div>
       </div>
       <div class="sep"></div>
       <div class="section">
         <div class="section-title">Destinatario</div>
-        <div class="row"><span class="row-label">Nombre/Raz&oacute;n Social:</span><span class="row-value">${g.destinatarioNombre}</span></div>
+        <div class="row"><span class="row-label">Nombre/Razón Social:</span><span class="row-value">${g.destinatarioNombre}</span></div>
         ${g.destinatarioRuc ? `<div class="row"><span class="row-label">RUC/DNI:</span><span class="row-value">${g.destinatarioRuc}</span></div>` : ""}
-        ${g.destinatarioDireccion ? `<div class="row"><span class="row-label">Direcci&oacute;n:</span><span class="row-value">${g.destinatarioDireccion}</span></div>` : ""}
+        ${g.destinatarioDireccion ? `<div class="row"><span class="row-label">Dirección:</span><span class="row-value">${g.destinatarioDireccion}</span></div>` : ""}
       </div>
       <div class="sep"></div>
       <div class="section">
@@ -748,7 +748,7 @@ export default function GuiasRemisionModule() {
       </div>
       <div class="sep"></div>
       <table>
-        <thead><tr><th>#</th><th>Descripci&oacute;n</th><th>Unidad</th><th class="right">Cantidad</th><th class="right">Peso unit. (kg)</th><th class="right">Peso total (kg)</th></tr></thead>
+        <thead><tr><th>#</th><th>Descripción</th><th>Unidad</th><th class="right">Cantidad</th><th class="right">Peso unit. (kg)</th><th class="right">Peso total (kg)</th></tr></thead>
         <tbody>
           ${items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.descripcion}</td><td>${it.unidad}</td><td class="right">${it.cantidad}</td><td class="right">${it.pesoUnitario ? it.pesoUnitario.toFixed(2) : "-"}</td><td class="right">${it.pesoUnitario ? (it.cantidad * it.pesoUnitario).toFixed(1) : "-"}</td></tr>`).join("")}
         </tbody>

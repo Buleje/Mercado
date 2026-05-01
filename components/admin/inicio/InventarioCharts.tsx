@@ -295,7 +295,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
                     <p className="text-2xl font-extrabold text-[var(--text-primary)]">
                       {data.totalProductos}
                     </p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">SKUs activos</p>
+                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">SKUs activos</p>
                   </div>
                 }
               />

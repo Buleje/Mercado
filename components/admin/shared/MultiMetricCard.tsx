@@ -116,7 +116,7 @@ export function MultiMetricCard({
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0">
           {eyebrow && (
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {eyebrow}
             </p>
           )}

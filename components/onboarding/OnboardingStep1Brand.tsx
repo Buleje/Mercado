@@ -98,7 +98,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
 
         <div>
           <label htmlFor="ob-brand-direccion" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-            Direcci&oacute;n
+            Dirección
           </label>
           <input
             id="ob-brand-direccion"
@@ -112,7 +112,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
 
         <div>
           <label htmlFor="ob-brand-telefono" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-            Tel&eacute;fono WhatsApp
+            Teléfono WhatsApp
           </label>
           <input
             id="ob-brand-telefono"

@@ -107,7 +107,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center font-bold">
+            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center font-bold">
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>

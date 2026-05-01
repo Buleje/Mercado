@@ -622,7 +622,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
                     {heatmapCatDia.days.map((d) => (
                       <div
                         key={d}
-                        className="text-center text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
+                        className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
                       >
                         {d}
                       </div>
@@ -641,7 +641,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
                           return (
                             <div
                               key={dayIdx}
-                              className="relative m-0.5 rounded-md flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-105 cursor-default"
+                              className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
                               style={{
                                 background: bg,
                                 color: intensity > 0.55 ? "#fff" : "var(--text-secondary)",
@@ -656,7 +656,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
                       </React.Fragment>
                     ))}
                   </div>
-                  <div className="flex items-center justify-end gap-2 mt-3 text-[10px] text-[var(--text-tertiary)]">
+                  <div className="flex items-center justify-end gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     <span>Menos</span>
                     {[0.15, 0.35, 0.6, 0.85, 1].map((i) => (
                       <div

@@ -21,6 +21,10 @@ import { CardTitle, IconBadge } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
+const PlanTierSelector = dynamic(
+  () => import("@/components/admin/PlanTierSelector"),
+  { ssr: false },
+);
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type NavLinkItem = { id: string; visible: boolean };
@@ -42,23 +46,34 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   { id: "beneficios", visible: true }, { id: "contacto", visible: true },
 ];
 
+// Orden de secciones agrupadas por intención del dueño:
+//   1) Negocio + Plan (los 2 más usados al setup inicial)
+//   2) Operación diaria (ventas, inventario, caja, delivery)
+//   3) Comunicación (notificaciones, integraciones)
+//   4) Personalización (apariencia, mi tienda web)
+//   5) Sistema avanzado (seguridad, auditoría, backup, módulos, shortcuts)
 const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
+  // ── Setup inicial ──
   { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
-  { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
+  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambiá cuando quieras", color: "text-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  // ── Operación diaria ──
   { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+  // ── Comunicación ──
   { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+  // ── Personalización ──
   { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
+  // ── Sistema avanzado ──
+  { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
+  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
   { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
   { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
   { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
-  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
 ];
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
@@ -1608,41 +1623,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
     </div>
   );
 
-  const renderSubscription = () => (
-    <div className="space-y-6">
-      <SectionCard title="Plan actual">
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
-          <IconBadge size="xl" shape="square" asDiv><Crown className="h-7 w-7" /></IconBadge>
-          <div className="flex-1">
-            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground capitalize">{planName === "free" ? "Plan Gratuito" : `Plan ${planName}`}</p>
-            {planExpiresAt && <p className="text-xs text-[var(--text-secondary)]">Vence: {new Date(planExpiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>}
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Límites del plan" desc="Uso actual vs. capacidad contratada">
-        <div className="space-y-3">
-          <ProgressBar value={0} max={maxProducts} label="Productos" unit="" />
-          <ProgressBar value={1} max={maxUsers} label="Usuarios" unit="" />
-          <ProgressBar value={1} max={maxBranches} label="Sucursales" unit="" />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Módulos activos" desc="Funcionalidades disponibles en tu plan">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {["inventario", "ventas", "caja", "facturacion", "delivery", "ia", "reportes", "crm"].map(m => {
-            const active = enabledModules.includes(m);
-            return (
-              <div key={m} className={cn("flex items-center gap-2 p-3 rounded-xl border", active ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30" : "bg-gray-50 border-[var(--rule-base)] opacity-50")}>
-                {active ? <CheckCircle className="h-4 w-4 text-[var(--data-success)]" /> : <Lock className="h-4 w-4 text-[var(--text-tertiary)]" />}
-                <span className={cn("text-xs font-semibold capitalize", active ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{m}</span>
-              </div>
-            );
-          })}
-        </div>
-      </SectionCard>
-    </div>
-  );
+  const renderSubscription = () => <PlanTierSelector />;
 
   // ── Section renderer map ────────────────────────────────────────────────────
 

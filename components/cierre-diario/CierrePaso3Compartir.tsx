@@ -91,13 +91,13 @@ export default function CierrePaso3Compartir({
           transition={{ delay: 0.5 }}
           className="text-lg text-gray-500 dark:text-muted mt-2"
         >
-          &iexcl;Buen d&iacute;a de trabajo!
+          ¡Buen día de trabajo!
         </motion.p>
       </div>
 
       {/* Printable summary (hidden on screen, shown on print) */}
       <div className="hidden print:block print-summary space-y-3 p-6">
-        <h1 className="text-2xl font-bold">Cierre del D&iacute;a &mdash; Buleje</h1>
+        <h1 className="text-2xl font-bold">Cierre del Día — Buleje</h1>
         <p className="text-sm text-gray-600">Fecha: {preview.fecha}</p>
         <table className="w-full text-sm border-collapse">
           <tbody>
@@ -162,7 +162,7 @@ export default function CierrePaso3Compartir({
           </div>
           <div className="text-left flex-1">
             <p className="font-bold text-gray-900 dark:text-foreground text-sm">Imprimir</p>
-            <p className="text-xs text-gray-500 dark:text-muted">Imprime el resumen del d&iacute;a</p>
+            <p className="text-xs text-gray-500 dark:text-muted">Imprime el resumen del día</p>
           </div>
         </motion.button>
 
@@ -186,7 +186,7 @@ export default function CierrePaso3Compartir({
       {/* Notes */}
       <div className="print:hidden">
         <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-2">
-          Notas del d&iacute;a (opcional)
+          Notas del día (opcional)
         </label>
         <textarea
           value={notas}
@@ -206,7 +206,7 @@ export default function CierrePaso3Compartir({
         onClick={onFinish}
         className="w-full py-4 rounded-xl text-base font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg print:hidden"
       >
-        Finalizar d&iacute;a &#10003;
+        Finalizar día &#10003;
       </button>
     </motion.div>
   );

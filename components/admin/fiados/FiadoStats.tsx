@@ -197,12 +197,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora 19 (ronda 3): Proyecci&oacute;n de cobro */}
+      {/* Mejora 19 (ronda 3): Proyección de cobro */}
       {!loading && fiados.length > 0 && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" />
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyecci&oacute;n de cobro</p>
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección de cobro</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
             <div className="text-center">
@@ -215,7 +215,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--data-warning)] tabular-nums">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
-              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Promedio/d&iacute;a</p>
+              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Promedio/día</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--data-error)] tabular-nums">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
@@ -228,9 +228,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           </div>
           <p className="text-xs text-[var(--text-secondary)]">
             {proyeccionCobro.promedioDiario > 0 ? (
-              <>Si cobras <span className="font-bold text-[var(--accent)]">{formatCurrency(proyeccionCobro.promedioDiario)}/d&iacute;a</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} d&iacute;as</span></>
+              <>Si cobras <span className="font-bold text-[var(--accent)]">{formatCurrency(proyeccionCobro.promedioDiario)}/día</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} días</span></>
             ) : (
-              <span className="text-[var(--data-warning)] font-bold">A&uacute;n no has cobrado esta semana — &iexcl;empieza hoy!</span>
+              <span className="text-[var(--data-warning)] font-bold">Aún no has cobrado esta semana — ¡empieza hoy!</span>
             )}
           </p>
         </div>

@@ -222,7 +222,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
                     <p className="text-lg font-extrabold text-[var(--text-primary)]">
                       {fmtS(data.deudaPendiente)}
                     </p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">pendiente</p>
+                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">pendiente</p>
                   </div>
                 }
               />

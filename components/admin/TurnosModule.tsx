@@ -618,7 +618,7 @@ export default function TurnosModule() {
                     <div className="flex flex-col items-center justify-center py-10 text-[var(--text-tertiary)] gap-2">
                       <BarChart3 className="h-10 w-10 opacity-40" />
                       <p className="text-base font-semibold">Sin ventas este mes</p>
-                      <p className="text-sm">El gr&aacute;fico se muestra cuando haya ventas registradas</p>
+                      <p className="text-sm">El gráfico se muestra cuando haya ventas registradas</p>
                     </div>
                   )}
                 </div>
@@ -805,7 +805,7 @@ export default function TurnosModule() {
               </div>
             </div>
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos r&aacute;pidos</p>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos rápidos</p>
               <div className="flex flex-wrap gap-2">
                 {[100, 200, 300, 500].map(amount => {
                   const active = parseFloat(efectivoInicial || "0") === amount;
@@ -840,7 +840,7 @@ export default function TurnosModule() {
           </div>
           <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
             <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">&Uacute;ltimo turno cerrado</p>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">Último turno cerrado</p>
               {ultimoTurno ? (
                 <div className="space-y-2.5">
                   <p className="text-lg font-bold text-[var(--text-primary)] truncate">{cajeros.find(c => c.id === ultimoTurno.adminUserId)?.name || "Yo mismo"}</p>
@@ -860,7 +860,7 @@ export default function TurnosModule() {
                   ) : null}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--text-tertiary)]">A&uacute;n no hay turnos cerrados. Este ser&aacute; el primero.</p>
+                <p className="text-sm text-[var(--text-tertiary)]">Aún no hay turnos cerrados. Este será el primero.</p>
               )}
             </div>
             <div className="border-t border-[var(--rule-soft)] pt-4">

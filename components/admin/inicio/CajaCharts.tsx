@@ -242,7 +242,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
                     <p className="text-lg font-extrabold text-[var(--text-primary)]">
                       {(data.metodosPago[0]?.porcentaje ?? 0).toFixed(0)}%
                     </p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">
+                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
                       {data.metodosPago[0]?.metodo ?? ""}
                     </p>
                   </div>

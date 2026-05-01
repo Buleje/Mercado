@@ -432,23 +432,23 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
                 style={{ top: "50%" }}
               />
               {/* Quadrant labels */}
-              <span className="absolute top-2 left-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
+              <span className="absolute top-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
                 ❓ Incógnita
               </span>
-              <span className="absolute top-2 right-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
                 ⭐ Estrella
               </span>
-              <span className="absolute bottom-2 left-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 🐶 Perro
               </span>
-              <span className="absolute bottom-2 right-3 text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
+              <span className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
                 🐄 Vaca
               </span>
               {/* Axis labels */}
-              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[10px] font-semibold text-[var(--text-tertiary)] -rotate-90">
+              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] -rotate-90">
                 Margen →
               </span>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-[var(--text-tertiary)]">
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
                 Volumen →
               </span>
               {/* Dots */}
@@ -483,7 +483,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
                   />
                 );
               })}
-              <p className="absolute bottom-8 right-3 text-[10px] text-[var(--text-tertiary)]">
+              <p className="absolute bottom-8 right-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 Puntos: {Math.min(40, quadrant.rows.length)} · tamaño = ingresos
               </p>
             </div>
@@ -633,7 +633,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
                     {heatmap.days.map((d) => (
                       <div
                         key={d}
-                        className="text-center text-[10px] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
+                        className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
                       >
                         {d}
                       </div>
@@ -652,7 +652,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
                           return (
                             <div
                               key={dayIdx}
-                              className="relative m-0.5 rounded-md flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-105 cursor-default"
+                              className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
                               style={{
                                 background: bg,
                                 color:

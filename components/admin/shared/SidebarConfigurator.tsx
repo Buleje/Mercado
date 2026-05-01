@@ -299,7 +299,7 @@ function ThemePreview({
       style={selected ? { boxShadow: `0 0 0 2px ${accentHex}` } : undefined}
     >
       <div
-        className="text-[10px] px-2 py-1 rounded font-semibold flex items-center gap-1"
+        className="text-[length:var(--ts-2xs)] px-2 py-1 rounded font-semibold flex items-center gap-1"
         style={{
           color: theme === "light" ? accentHex : "#ffffff",
           background:
@@ -313,8 +313,8 @@ function ThemePreview({
         />
         Inicio
       </div>
-      <div className={cn("text-[10px] px-2 py-1 mt-0.5", s.text)}>Ventas</div>
-      <div className={cn("text-[10px] px-2 py-1", s.text)}>Compras</div>
+      <div className={cn("text-[length:var(--ts-2xs)] px-2 py-1 mt-0.5", s.text)}>Ventas</div>
+      <div className={cn("text-[length:var(--ts-2xs)] px-2 py-1", s.text)}>Compras</div>
     </div>
   );
 }
@@ -605,7 +605,7 @@ export default function SidebarConfigurator({
               <span className="tabular-nums">{totalCategories}</span>
               {" módulos visibles · arrastra para reordenar"}
             </p>
-            <p className="text-[10px] text-primary/80 mt-1.5 flex items-center gap-1">
+            <p className="text-[length:var(--ts-2xs)] text-primary/80 mt-1.5 flex items-center gap-1">
               <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden />
               Preview en vivo · Esc para cancelar
             </p>

@@ -152,7 +152,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                   <td className="py-2.5 text-xs">
                     {isLow ? (
                       <span className="text-[var(--data-error)] dark:text-[var(--data-error)]">
-                        Subir precio &mdash; sugerido{" "}
+                        Subir precio — sugerido{" "}
                         {formatCurrency(suggestedPriceAt15(p.costPrice))}
                       </span>
                     ) : isMid ? (

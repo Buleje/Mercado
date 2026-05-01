@@ -76,10 +76,10 @@ export function OrdersDetailPanel({
               {initial}
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-0.5">
+              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
                 Pedido
               </p>
-              <CardTitle className="text-xl font-black tracking-[-0.01em] text-[var(--text-primary)] truncate">
+              <CardTitle className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
                 {order.customer.name}
               </CardTitle>
               <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
@@ -379,7 +379,7 @@ export function OrdersDetailPanel({
               })()}
               <div className="flex justify-between items-center px-3 py-3 bg-[var(--surface-sunken)] font-bold text-base">
                 <span className="text-[var(--text-primary)] uppercase tracking-wider text-sm">Total</span>
-                <span className="text-[var(--text-primary)] text-xl font-black tabular-nums tracking-[-0.02em]">S/{order.total.toFixed(2)}</span>
+                <span className="text-[var(--text-primary)] text-xl font-black tabular-nums tracking-[var(--ls-tight)]">S/{order.total.toFixed(2)}</span>
               </div>
             </div>
           </div>

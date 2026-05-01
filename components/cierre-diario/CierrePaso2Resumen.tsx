@@ -66,7 +66,7 @@ export default function CierrePaso2Resumen({
     >
       <div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">
-          Resumen del d&iacute;a
+          Resumen del día
         </h2>
         <p className="text-sm text-gray-500 dark:text-muted mt-1">
           {preview.fecha}
@@ -89,7 +89,7 @@ export default function CierrePaso2Resumen({
               <p>Mejor hora: {preview.ventas.mejorHora}</p>
             )}
             {preview.ventas.productoTop && (
-              <p>M&aacute;s vendido: {preview.ventas.productoTop}</p>
+              <p>Más vendido: {preview.ventas.productoTop}</p>
             )}
           </div>
         </div>
