@@ -18,6 +18,7 @@ import {
 type FormState = {
   name: string;
   phone: string;
+  email: string;
   zone: string;
   vehicleType: string;
   availability: string;
@@ -38,6 +39,7 @@ export default function RepartidorPage() {
   const [form, setForm] = useState<FormState>({
     name: "",
     phone: "",
+    email: "",
     zone: "",
     vehicleType: "moto",
     availability: "",
@@ -52,10 +54,21 @@ export default function RepartidorPage() {
     setError(null);
 
     try {
+      // CSRF token: el middleware exige x-csrf-token en POST. Lo leemos
+      // del cookie csrf-token que el server setea en cada respuesta.
+      const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
+      const payload = {
+        ...form,
+        ...(form.email.trim() ? { email: form.email.trim() } : {}),
+      };
       const res = await fetch("/api/marketplace/drivers/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrf ? { "x-csrf-token": csrf } : {}),
+        },
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

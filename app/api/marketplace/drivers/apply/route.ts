@@ -12,6 +12,7 @@ import { logger } from "@/lib/logger";
 const DriverApplySchema = z.object({
   name: z.string().min(2).max(100),
   phone: z.string().min(6).max(20),
+  email: z.string().email("Email inválido").optional(),
   zone: z.string().min(1).max(50),
   vehicleType: z.enum(["moto", "bicicleta", "auto", "a_pie"]),
   availability: z.enum(["manana", "tarde", "noche", "full", "fines"]),
@@ -34,13 +35,45 @@ export async function POST(req: NextRequest) {
 
     const { prisma } = await import("@/lib/prisma");
 
-    // Store driver application in DriverApplication or a generic table
-    // Using DeliveryRoute-adjacent pattern — store as a pending application
+    // Crear DeliveryPartner real con isActive=false (pendiente). El admin lo
+    // aprueba desde /admin?tab=delivery-partners. Idempotente por phone.
+    const phoneDigits = parsed.data.phone.replace(/\D/g, "");
+    const existing = await prisma.deliveryPartner.findFirst({
+      where: { phone: phoneDigits, tenantId: "main" },
+      select: { id: true },
+    });
+
+    let partnerId: string;
+    if (existing) {
+      partnerId = existing.id;
+    } else {
+      const created = await prisma.deliveryPartner.create({
+        data: {
+          name: parsed.data.name,
+          phone: phoneDigits,
+          email: parsed.data.email ?? null,
+          zone: parsed.data.zone,
+          vehicleType: parsed.data.vehicleType,
+          isActive: false,
+          rating: 5.0,
+          fee: 5.0,
+          tenantId: "main",
+          notes: JSON.stringify({
+            availability: parsed.data.availability,
+            applicationStatus: "pendiente",
+          }),
+        },
+        select: { id: true },
+      });
+      partnerId = created.id;
+    }
+
+    // Notification al admin para que apruebe.
     await prisma.notification.create({
       data: {
         tenantId: "main",
         title: "Nueva solicitud de repartidor",
-        body: `${parsed.data.name} (${parsed.data.phone}) - Zona: ${parsed.data.zone} - Vehículo: ${parsed.data.vehicleType} - Horario: ${parsed.data.availability}`,
+        body: `${parsed.data.name} (${phoneDigits}) - Zona: ${parsed.data.zone} - Vehículo: ${parsed.data.vehicleType} - Horario: ${parsed.data.availability}`,
         type: "DRIVER_APPLICATION",
         severity: "MEDIUM",
       },
@@ -65,7 +98,7 @@ export async function POST(req: NextRequest) {
         .catch((err) => logger.error("[marketplace/drivers/apply] operation failed", { error: String(err) }));
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, partnerId });
   } catch {
     return NextResponse.json(
       { error: "Error al procesar solicitud" },
