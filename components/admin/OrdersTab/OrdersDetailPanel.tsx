@@ -4,7 +4,7 @@
  * OrdersDetailPanel — Modal lateral con detalle del pedido.
  *
  * Estructura (de arriba a abajo, por prioridad operativa):
- *   1. Header editorial: cliente italic + total + status + acciones
+ *   1. Header: cliente + total + status + acciones
  *   2. Action banner — la acción primaria del estado (Confirmar Yape /
  *      Avanzar a "En camino" / Marcar entregado…)
  *   3. Items + Resumen (lo que vende este pedido)
@@ -15,10 +15,10 @@
  *   8. Timeline (referencia secundaria)
  *   9. Footer sticky: Rechazar · Generar Boleta · Cerrar
  *
- * Reglas DS:
- *   - Tipografía editorial Buleje (font-display italic en hero values)
+ * Reglas DS (sistema admin, sobrio):
+ *   - CardTitle/SectionTitle del DS para headings (NO h1/h2/h3 directos)
+ *   - Sin font-display italic (eso es del sistema marketing/store)
  *   - Tokens del DS — 0 hex hardcoded
- *   - SectionTitle/CardTitle del DS para headings
  */
 
 import { useState } from "react";

@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   /** Pequeña línea arriba, uppercase, tracking amplio. */
   eyebrow?: string;
-  /** Titular editorial — se renderiza en font-display italic. */
+  /** Titular del módulo — usa PageTitle del DS (font-display, sin italic). */
   title: string;
   /** Acento opcional dentro del título (span con color primary). */
   titleAccent?: string;

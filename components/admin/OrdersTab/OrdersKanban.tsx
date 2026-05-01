@@ -10,7 +10,7 @@
  *
  * En mobile colapsa a tabs horizontales (segmented control).
  *
- * Tipografía editorial: total en font-display italic, eyebrow uppercase.
+ * Tipografía: estándar admin (text-base/text-xl font-extrabold), sin italic.
  */
 
 import { useMemo, useState } from "react";
