@@ -18,13 +18,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { m, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import NumberFlow from "@number-flow/react";
-import { ArrowUpRight, Bike, Star } from "@buleje/design-system/icons";
-import {
-  BebidasVarias,
-  LacteosRefresh,
-  VerduraFresca,
-  LimpiezaDomicilio,
-} from "@/components/ui-system/illustrations/categories";
+import { ArrowUpRight, Bike, Star, Plus, MapPin } from "@buleje/design-system/icons";
 import {
   AnimatedSearchBar,
   GeolocationPrompt,
@@ -195,83 +189,173 @@ export default function LandingHero({
   );
 }
 
-/* ── Phone preview con product cards flotantes ──────────────────────── */
+/* ── Product cards mock con gradientes vibrantes ────────────────────── */
+const PRODUCT_CARDS: Array<{
+  kicker: string;
+  name: string;
+  price: string;
+  was?: string;
+  bg: string;
+}> = [
+  {
+    kicker: "Inca",
+    name: "Inca Kola 1.5L",
+    price: "S/ 4.90",
+    was: "S/ 5.50",
+    bg: "bg-linear-to-br from-amber-400 via-yellow-500 to-amber-600",
+  },
+  {
+    kicker: "Pollo",
+    name: "Pollo a la brasa",
+    price: "S/ 28",
+    bg: "bg-linear-to-br from-rose-500 via-red-500 to-orange-500",
+  },
+  {
+    kicker: "Verde",
+    name: "Verduras del día",
+    price: "S/ 6.50",
+    bg: "bg-linear-to-br from-lime-500 via-emerald-500 to-teal-600",
+  },
+  {
+    kicker: "Pilsen",
+    name: "Pilsen 6-pack",
+    price: "S/ 24",
+    was: "S/ 30",
+    bg: "bg-linear-to-br from-sky-500 via-cyan-500 to-blue-600",
+  },
+];
+
+/* ── Phone preview editorial (sin illustrations, type-forward) ──────── */
 function PhoneMockup() {
   return (
-    <div aria-hidden className="relative aspect-[4/5] flex items-center justify-center select-none">
-      {/* Glow accent detrás del teléfono */}
-      <div className="absolute inset-8 rounded-[3rem] bg-linear-to-br from-[var(--accent)]/[0.18] via-transparent to-[var(--accent)]/[0.08] blur-2xl" />
+    <div aria-hidden className="relative h-[520px] sm:h-[580px] lg:h-[640px] flex items-center justify-center select-none">
+      {/* Glow accent multicapa detrás del teléfono */}
+      <div className="absolute inset-x-4 top-8 bottom-4 rounded-[3.5rem] bg-linear-to-br from-[var(--accent)]/[0.22] via-fuchsia-500/[0.08] to-amber-400/[0.12] blur-3xl" />
+      <div className="absolute inset-x-12 top-16 bottom-12 rounded-[3rem] bg-linear-to-tr from-[var(--accent)]/[0.18] to-transparent blur-2xl" />
 
-      {/* Frame del teléfono */}
-      <div className="relative h-[88%] aspect-[10/19] rounded-[2.5rem] bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] shadow-[var(--accent)]/10 overflow-hidden">
-        {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-6 w-28 bg-[var(--text-primary)] rounded-b-2xl z-20" />
+      {/* Frame del teléfono — bezel oscuro, screen integrado */}
+      <div className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20">
+        <div className="relative h-full w-full rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">
+          {/* Dynamic island (notch moderno) */}
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 h-6 w-24 bg-[var(--text-primary)] rounded-full z-20" />
 
-        {/* Header app */}
-        <div className="px-4 pt-10 pb-3 bg-linear-to-b from-[var(--accent)]/10 to-transparent">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Entregar en
-              </p>
-              <p className="text-sm font-extrabold text-[var(--text-primary)]">
-                Av. Centenario · 14
-              </p>
-            </div>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
-              <Bike className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-          </div>
-
-          {/* Search mock */}
-          <div className="mt-3 h-9 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] flex items-center px-3 text-xs text-[var(--text-tertiary)] font-medium">
-            Buscar yogurt, fideos, gaseosa…
-          </div>
-        </div>
-
-        {/* Categorías chips */}
-        <div className="px-3 mt-2 flex gap-1.5 overflow-hidden">
-          {["Bodegas", "Frutería", "Farmacia", "Licor"].map((c, i) => (
-            <span
-              key={c}
-              className={`inline-flex items-center h-6 px-2.5 rounded-full text-xs font-extrabold whitespace-nowrap ${
-                i === 0
-                  ? "bg-[var(--accent)] text-white"
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-soft)]"
-              }`}
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-
-        {/* Product cards mock — grid 2 cols con ilustraciones del DS */}
-        <div className="px-3 mt-3 grid grid-cols-2 gap-2">
-          {[
-            { name: "Inca Kola 1.5L", price: "S/ 5.50", Illu: BebidasVarias, tone: "bg-amber-100" },
-            { name: "Pan francés ×6", price: "S/ 1.80", Illu: LacteosRefresh, tone: "bg-orange-100" },
-            { name: "Plátano isla", price: "S/ 0.50", Illu: VerduraFresca, tone: "bg-lime-100" },
-            { name: "Detergente Bolívar", price: "S/ 12.00", Illu: LimpiezaDomicilio, tone: "bg-sky-100" },
-          ].map((p) => (
-            <div
-              key={p.name}
-              className="rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] p-2.5"
-            >
-              <div className={`aspect-square rounded-lg ${p.tone} flex items-center justify-center mb-1.5 overflow-hidden`}>
-                <p.Illu size={48} className="text-[var(--text-primary)]/80" />
+          {/* Header app */}
+          <div className="px-4 pt-12 pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+                  <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </span>
+                <div>
+                  <p className="text-xs font-extrabold text-[var(--text-primary)] leading-none">
+                    Pucallpa
+                  </p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-tight mt-0.5">
+                    Av. Centenario 14
+                  </p>
+                </div>
               </div>
-              <p className="text-xs font-bold text-[var(--text-primary)] leading-tight line-clamp-2 min-h-[2em]">
-                {p.name}
-              </p>
-              <p className="text-sm font-black text-[var(--accent)] mt-1">{p.price}</p>
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--rule-soft)] text-[var(--text-secondary)]">
+                <Bike className="h-4 w-4" strokeWidth={2.25} />
+              </span>
             </div>
-          ))}
-        </div>
 
-        {/* Footer CTA mock */}
-        <div className="absolute bottom-3 left-3 right-3 h-11 rounded-xl bg-[var(--accent)] text-white flex items-center justify-between px-4 shadow-lg">
-          <span className="text-xs font-extrabold">Ver carrito · 4 items</span>
-          <span className="text-xs font-black">S/ 19.80</span>
+            {/* Search mock */}
+            <div className="mt-3 h-9 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center px-3 text-xs text-[var(--text-tertiary)] font-medium">
+              <span className="mr-2 text-[var(--text-tertiary)]">⌕</span>
+              ¿Qué necesitas?
+            </div>
+          </div>
+
+          {/* Hero offer banner — gradient brand */}
+          <div className="mx-4 rounded-2xl bg-linear-to-br from-[var(--accent)] via-[var(--accent)] to-emerald-600 p-4 text-white relative overflow-hidden">
+            <div className="absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-white/10" />
+            <div className="absolute -right-2 -top-2 h-12 w-12 rounded-full bg-white/10" />
+            <p className="text-xs font-black uppercase tracking-widest opacity-90">
+              Oferta del día
+            </p>
+            <p className="mt-1 text-xl font-black leading-tight">
+              -25% en
+              <br />
+              tu primer pedido
+            </p>
+            <p className="mt-2 text-xs font-bold opacity-90">
+              Entrega gratis · Hoy hasta 9pm
+            </p>
+            <span className="absolute right-3 bottom-3 inline-flex h-7 px-3 items-center rounded-full bg-white text-[var(--accent)] text-xs font-black">
+              YAPE25
+            </span>
+          </div>
+
+          {/* Section title */}
+          <div className="px-4 mt-4 flex items-center justify-between">
+            <p className="text-sm font-black text-[var(--text-primary)]">
+              Más vendidos
+            </p>
+            <p className="text-xs font-bold text-[var(--accent)]">Ver todo</p>
+          </div>
+
+          {/* Product cards — gradient cards typography-forward */}
+          <div className="px-4 mt-2 grid grid-cols-2 gap-2.5">
+            {PRODUCT_CARDS.map((p) => (
+              <div
+                key={p.name}
+                className="relative rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+              >
+                <div className={`relative h-20 ${p.bg} flex items-end p-2`}>
+                  <p className="text-2xl font-black tracking-[-0.03em] text-white drop-shadow-sm leading-none">
+                    {p.kicker}
+                  </p>
+                  <span className="absolute top-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--accent)] shadow">
+                    <Plus className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                </div>
+                <div className="px-2 py-2">
+                  <p className="text-xs font-bold text-[var(--text-primary)] leading-tight line-clamp-1">
+                    {p.name}
+                  </p>
+                  <div className="flex items-baseline gap-1.5 mt-1">
+                    <p className="text-sm font-black text-[var(--text-primary)]">
+                      {p.price}
+                    </p>
+                    {p.was && (
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] line-through">
+                        {p.was}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom: order tracker mini-card (delivery rider en vivo) */}
+          <div className="absolute bottom-3 left-3 right-3 rounded-2xl bg-[var(--text-primary)] text-white p-3 shadow-[var(--shadow-lg)]">
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                  <Bike className="h-4 w-4" strokeWidth={2.5} />
+                </span>
+                <span className="absolute -top-0.5 -right-0.5 inline-flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--brand-success)] border border-[var(--text-primary)]" />
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold opacity-80">
+                  Tu pedido va en camino
+                </p>
+                <p className="text-sm font-black leading-tight">
+                  Marco · Llega en 12 min
+                </p>
+              </div>
+              <span className="text-xs font-black">→</span>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-2.5 h-1 rounded-full bg-white/15 overflow-hidden">
+              <div className="h-full w-3/4 rounded-full bg-linear-to-r from-emerald-400 to-[var(--accent)]" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -291,8 +375,8 @@ function PhoneMockup() {
         </div>
       </div>
 
-      {/* Chip flotante: rating (bottom-left) */}
-      <div className="absolute bottom-4 -left-2 sm:left-0 lg:-left-6 flex items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3.5 py-2.5 shadow-[var(--shadow-lg)]">
+      {/* Chip flotante: rating (mid-left, no tapa tracker) */}
+      <div className="absolute top-1/2 -translate-y-1/2 -left-3 sm:-left-4 lg:-left-8 flex items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3.5 py-2.5 shadow-[var(--shadow-lg)]">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent)]">
           <Star className="h-4 w-4 fill-current" strokeWidth={1.5} />
         </span>
