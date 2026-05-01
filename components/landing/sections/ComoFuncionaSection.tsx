@@ -18,29 +18,29 @@ const PASOS = [
   {
     num: "01",
     icon: Search,
-    title: "Buscás tu bodega",
-    desc: "Las que están abiertas, cerca tuyo, ahora.",
-    tag: "Descubrí",
+    title: "Activás tu negocio",
+    desc: "Logo, catálogo y horarios. Listo en 5 minutos.",
+    tag: "Setup",
   },
   {
     num: "02",
     icon: ShoppingBag,
-    title: "Armás el pedido",
-    desc: "De una o varias tiendas. Sumás todo en un carrito.",
-    tag: "Carrito",
+    title: "Atraés clientes",
+    desc: "Aparecés en buscadores, mapa y app sin pagar publicidad.",
+    tag: "Crecimiento",
   },
   {
     num: "03",
     icon: CreditCard,
-    title: "Pagás cómo querés",
-    desc: "Yape, Plin, efectivo o tarjeta. Cero costos ocultos.",
-    tag: "Checkout",
+    title: "Cobrás al instante",
+    desc: "Yape, Plin, tarjeta o efectivo. Cero comisiones por 90 días.",
+    tag: "Pagos",
   },
   {
     num: "04",
     icon: Bike,
-    title: "Lo tenés en 25 min",
-    desc: "Seguimiento en vivo hasta la puerta de tu casa.",
+    title: "Entregás sin estrés",
+    desc: "Tus repartidores, los nuestros, o ambos. Tracking en vivo.",
     tag: "Delivery",
   },
 ];
@@ -83,8 +83,8 @@ export default function ComoFuncionaSection() {
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            De encontrar la bodega a recibir el pedido — todo desde tu celular,
-            sin llamadas ni filas.
+            De abrir tu negocio online a cobrar el primer pedido —
+            todo en una tarde.
           </p>
         </div>
 
@@ -143,8 +143,8 @@ export default function ComoFuncionaSection() {
         <div className="mt-16 sm:mt-20 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 items-center">
           <div className="grid grid-cols-3 gap-6 sm:gap-8">
             {[
-              { value: "25 min", label: "Delivery promedio" },
-              { value: "S/ 0", label: "Comisión en plan Gratis" },
+              { value: "5 min", label: "Tiempo de setup" },
+              { value: "S/ 0", label: "Comisión 90 días" },
               { value: "24/7", label: "Soporte por WhatsApp" },
             ].map(({ value, label }) => (
               <div
@@ -162,10 +162,10 @@ export default function ComoFuncionaSection() {
           </div>
           <div className="text-center lg:text-right">
             <Link
-              href="/marketplace"
+              href="/abrir-tienda"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-8 py-4 text-base font-bold text-[var(--surface-canvas)] hover:opacity-90 transition-opacity"
             >
-              Explorar marketplace
+              Probá gratis 90 días
               <span aria-hidden>→</span>
             </Link>
           </div>

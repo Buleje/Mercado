@@ -11,23 +11,23 @@ import { Heart, MapPin, Users, Zap } from "@buleje/design-system/icons";
 const VALUES = [
   {
     icon: Heart,
-    title: "Sin intermediarios",
-    desc: "Vos vendes, tú decides. Nosotros sólo facilitamos la tecnología y el delivery.",
+    title: "Tus clientes, tus reglas",
+    desc: "Vendés directo, sin intermediarios. Nosotros ponemos la tecnología; vos decidís precios, promociones y delivery.",
   },
   {
     icon: MapPin,
-    title: "Local primero",
-    desc: "Pucallpa construye para Pucallpa. El software entiende cómo funciona tu barrio.",
+    title: "Llegás a más vecinos",
+    desc: "Tu negocio aparece en el mapa, en buscadores y en el celular de quien necesita lo que vendés.",
   },
   {
     icon: Users,
-    title: "Comunidad real",
-    desc: "Cada bodega que vende aquí conoce a sus clientes por nombre. No somos Amazon.",
+    title: "Conocés a quien te compra",
+    desc: "Historial, reseñas y notas por cliente. Recordás cumpleaños, productos favoritos y los recompensás.",
   },
   {
     icon: Zap,
     title: "Sin burocracia",
-    desc: "Registro en 5 min. Sin contratos, sin mínimos, sin letra chica.",
+    desc: "Registro en 5 minutos. Sin contratos, sin mínimos, sin letra chica.",
   },
 ];
 
@@ -55,14 +55,13 @@ export default function NosotrosSection() {
             Nosotros
           </p>
           <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-            La bodega del barrio,
+            El sistema que pone
             <br />
-            <span className="italic font-serif text-[var(--accent)]">ahora digital.</span>
+            <span className="italic font-serif text-[var(--accent)]">a vender tu negocio.</span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-3xl">
-            Somos una bodega familiar de Pucallpa que decidió construir el software
-            que nos hubiera gustado tener. Hoy esa herramienta la usan 120+ bodegas
-            del Perú.
+            Catálogo, pagos, delivery, repartidores y reportes — en una sola
+            plataforma. Vos vendés, nosotros nos ocupamos de la tecnología.
           </p>
         </div>
 
@@ -72,18 +71,18 @@ export default function NosotrosSection() {
           <div className="lg:sticky lg:top-24 lg:self-start">
             <p className="text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed">
               <span className="text-[var(--text-primary)] font-semibold">
-                No construimos Amazon ni Mercado Libre.
+                No te pedimos que aprendas a programar.
               </span>{" "}
-              Construimos la herramienta para que{" "}
+              Te damos la plataforma lista para que{" "}
               <span className="text-[var(--accent)] font-semibold">
-                la bodega de la esquina
-              </span>{" "}
-              le gane a esos gigantes en su propio barrio.
+                vendés más, gastás menos y atendés mejor
+              </span>
+              .
             </p>
             <p className="mt-6 text-base text-[var(--text-tertiary)] leading-relaxed">
-              Tu cliente es tu vecino. Lo conoces por nombre. Sabes qué compra cada semana.
-              Ese vínculo no lo reemplaza ningún algoritmo — pero sí lo amplificamos con
-              delivery, inventario, reportes y cobros digitales.
+              Cada herramienta — catálogo, Yape, delivery, reportes, fiados — pensada
+              para que tu negocio crezca sin contratar técnicos ni pagar mensualidad.
+              Si querés probarla, son 5 minutos.
             </p>
           </div>
 
@@ -114,7 +113,7 @@ export default function NosotrosSection() {
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
           >
-            Si sos bodega, sumate
+            Probá gratis 90 días
             <span aria-hidden>→</span>
           </Link>
         </div>

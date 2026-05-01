@@ -500,22 +500,22 @@ function FinalCTA() {
           Empieza hoy
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Todo lo que necesitas,
+          Tu negocio merece
           <br />
           <span className="italic font-serif text-[var(--accent)]">
-            en un solo lugar.
+            algo más grande.
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          Pide a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o
-          efectivo al recibir.
+          Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy
+          mismo. Sin tarjeta, sin compromiso.
         </p>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           <Link
-            href="/marketplace"
+            href="/abrir-tienda"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
           >
-            Explorar marketplace
+            Probá gratis 90 días
             <ArrowUpRight
               className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               strokeWidth={2.25}
