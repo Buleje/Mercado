@@ -1261,7 +1261,7 @@ export default function CashRegisterTab() {
                   <Unlock className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Abrir caja</h3>
+                  <CardTitle className="text-lg font-bold">Abrir caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
@@ -1384,7 +1384,7 @@ export default function CashRegisterTab() {
                   <Lock className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Cerrar caja</h3>
+                  <CardTitle className="text-lg font-bold">Cerrar caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
@@ -1558,9 +1558,9 @@ export default function CashRegisterTab() {
                     : <ArrowDown className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                  <CardTitle className="text-lg font-bold">
                     {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
-                  </h3>
+                  </CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">
                     {mvType === "ingreso" ? "Dinero que entra a la caja" : "Dinero que sale de la caja"}
                   </p>
@@ -1678,7 +1678,7 @@ export default function CashRegisterTab() {
                     <Scan className="h-5 w-5 text-[var(--data-success)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo Express</h3>
+                    <CardTitle className="text-lg font-bold">Arqueo Express</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
@@ -1841,7 +1841,7 @@ export default function CashRegisterTab() {
                   <Calculator className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo guiado</h3>
+                  <CardTitle className="text-lg font-bold">Arqueo guiado</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>

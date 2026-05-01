@@ -9,7 +9,7 @@ import {
   UserCheck, TrendingDown, Download, Search, Target, X, type LucideIcon,
   ArrowUp, ArrowDown, Trophy, Edit3,
   Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "@buleje/design-system/icons";
-import { CardTitle, ErrorAlert, WarningAlert } from "@buleje/design-system";
+import { CardTitle, ErrorAlert, SectionTitle, WarningAlert } from "@buleje/design-system";
 import { PeriodFilter } from "@buleje/design-system/dashboard";
 import type { DateRange, Period as DSPeriod } from "@buleje/design-system/dashboard";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -1402,7 +1402,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {/* ── Header ── */}
       <div className="flex items-center justify-between pb-3">
         <div>
-          <h2 className={cn("font-bold text-[var(--text-primary)] dark:text-foreground", fullscreen ? "text-lg" : "text-sm")}>Dashboard</h2>
+          <SectionTitle className={cn(fullscreen ? "text-lg" : "text-sm")}>Dashboard</SectionTitle>
           <p className={cn("text-[var(--text-tertiary)] dark:text-muted", fullscreen ? "text-sm" : "text-xs")}>Buleje</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

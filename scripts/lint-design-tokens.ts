@@ -197,6 +197,19 @@ const RULES: Rule[] = [
     strictUpgrade: true,
   },
   {
+    // ── Endurece la regla anterior: bloquea CUALQUIER <h1-h3 className=> en
+    // components/admin/** y app/admin/**, no solo cuando tiene clases de diseño.
+    // Razón: el panel admin sigue tipografía estándar del DS (PageTitle/
+    // SectionTitle/CardTitle). Ver `docs/typography-system.md`.
+    id: "ds-no-heading-raw-admin",
+    pattern: /<h[1-3]\s+[^>]*className=/g,
+    message:
+      "Sin <h1/h2/h3 className=...> en admin: usa <PageTitle> (h1), <SectionTitle> (h2) o <CardTitle> (h3) del DS. Ver docs/typography-system.md.",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
+  },
+  {
     id: "ds-no-style-inline-any-color",
     // style={{ color|backgroundColor|borderColor|fontSize: cualquier literal }} — incluye var(...) para forzar className.
     // Diferencia con ds-no-style-color-inline: éste incluye var(...) y fontSize.

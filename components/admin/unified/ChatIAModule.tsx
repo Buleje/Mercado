@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { CardTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback } from "react";
 import {
   MessageSquare,
@@ -323,9 +324,9 @@ function SettingsPanel({
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Configuración
           </p>
-          <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+          <CardTitle className="font-extrabold leading-tight">
             Personaliza tu IA
-          </h3>
+          </CardTitle>
         </div>
         <button
           type="button"

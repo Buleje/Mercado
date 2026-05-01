@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import {
   Store,
@@ -685,7 +685,7 @@ function SectionCard({
           <Icon className="h-4.5 w-4.5" />
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+          <CardTitle className="text-sm">{title}</CardTitle>
           {hint && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{hint}</p>}
         </div>
       </header>
@@ -1074,9 +1074,9 @@ function TiendaTab() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-bold text-[var(--text-primary)] truncate">
+            <SectionTitle className="text-lg truncate">
               {store.name || "Tu tienda en el marketplace"}
-            </h2>
+            </SectionTitle>
             <StatusPill isActive={store.isActive} vacationMode={store.vacationMode} />
           </div>
           {store.slug ? (
@@ -1745,9 +1745,9 @@ function MarketplaceQuickActions({
               <Target className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="font-display text-sm font-bold text-[var(--text-primary)] leading-tight">
+              <CardTitle className="font-display text-sm leading-tight">
                 Salud de mi tienda
-              </h3>
+              </CardTitle>
               <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
                 puesto en el marketplace
               </p>
@@ -1803,9 +1803,9 @@ function MarketplaceQuickActions({
               <Zap className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="font-display text-sm font-bold text-[var(--text-primary)] leading-tight">
+              <CardTitle className="font-display text-sm leading-tight">
                 Qué hacer ahora
-              </h3>
+              </CardTitle>
               <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
                 acciones priorizadas para tu puesto
               </p>
@@ -2596,9 +2596,9 @@ function WhatsAppPicker({
       >
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+            <CardTitle className="text-sm">
               WhatsApp a {order.customerName}
-            </h3>
+            </CardTitle>
             <p className="text-xs text-[var(--text-secondary)]">{order.customerPhone}</p>
           </div>
           <button
@@ -2722,7 +2722,7 @@ function OrdenesTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Pipeline de pedidos</h3>
+          <CardTitle className="text-sm">Pipeline de pedidos</CardTitle>
           <p className="text-xs text-[var(--text-secondary)]">
             {orders.length} pedido{orders.length !== 1 ? "s" : ""} · auto-refresh 30s
           </p>
@@ -3052,7 +3052,7 @@ function ComisionesTab() {
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <Calendar className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Próximos pagos</h3>
+            <CardTitle className="text-sm">Próximos pagos</CardTitle>
             <span className="text-xs text-[var(--text-secondary)]">
               · estimado +7 días tras liquidación
             </span>
@@ -3525,7 +3525,7 @@ function CuponesTab() {
       <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Empieza con una plantilla</h3>
+          <CardTitle className="text-sm">Empieza con una plantilla</CardTitle>
           <span className="text-xs text-[var(--text-secondary)]">
             · pre-llena el formulario en 1 clic
           </span>
@@ -3967,7 +3967,7 @@ function FidelidadTab() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Reglas de puntos</h3>
+            <CardTitle className="text-sm">Reglas de puntos</CardTitle>
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">tu tienda</span>
           </div>
           {rulesSaved && (
@@ -4037,7 +4037,7 @@ function FidelidadTab() {
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
           <Star className="h-4 w-4 text-[var(--data-warning)]" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Top 10 clientes frecuentes</h3>
+          <CardTitle className="text-sm">Top 10 clientes frecuentes</CardTitle>
         </div>
         {topLoading ? (
           <div className="space-y-2">
@@ -4090,7 +4090,7 @@ function FidelidadTab() {
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
           <Gift className="h-4 w-4 text-[var(--data-warning)]" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Recompensas canjeables</h3>
+          <CardTitle className="text-sm">Recompensas canjeables</CardTitle>
           <span className="text-xs text-[var(--text-secondary)]">
             · {rewards.filter((r) => r.active).length} activa(s)
           </span>
@@ -5016,9 +5016,9 @@ function OrdenTab() {
             <ArrowUpDown className="h-5 w-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
-            <h3 className="text-[var(--ts-base)] font-bold text-[var(--text-primary)]">
+            <CardTitle>
               Orden de categorías y productos en tu tienda
-            </h3>
+            </CardTitle>
             <p className="text-[var(--ts-sm)] text-[var(--text-secondary)] mt-1 leading-relaxed">
               Decide en qué orden aparecen las categorías cuando un cliente entra a
               {storeSlug ? <> tu storefront <code className="px-1 py-0.5 bg-[var(--surface-sunken)] rounded text-[var(--ts-xs)]">/marketplace/{storeSlug}</code>.</> : " tu storefront."}

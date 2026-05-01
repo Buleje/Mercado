@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import {
   Eye,
   ShoppingCart,
@@ -249,7 +250,7 @@ export default function StoreAnalyticsModule() {
       {/* Header con selector de período */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Analítica de productos</h2>
+          <SectionTitle>Analítica de productos</SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Datos del último período seleccionado · vistas, conversión y ventas por producto
           </p>
@@ -302,7 +303,7 @@ export default function StoreAnalyticsModule() {
       {/* Sparkline + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <h3 className="text-sm font-black text-[var(--text-primary)] mb-3">Ingresos diarios</h3>
+          <CardTitle className="text-sm mb-3">Ingresos diarios</CardTitle>
           <div className="text-[var(--accent)] h-12 mb-2">
             <Sparkline values={revenueSeries} height={48} />
           </div>
@@ -312,7 +313,7 @@ export default function StoreAnalyticsModule() {
         </div>
 
         <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <h3 className="text-sm font-black text-[var(--text-primary)] mb-4">Funnel de conversión</h3>
+          <CardTitle className="text-sm mb-4">Funnel de conversión</CardTitle>
           <div className="space-y-3">
             <FunnelBar label="Vistas" value={kpis.views} max={funnelMax} pctTotal={1} color="bg-[var(--text-secondary)]" />
             <FunnelBar
@@ -336,7 +337,7 @@ export default function StoreAnalyticsModule() {
       {/* Top tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <h3 className="text-sm font-black text-[var(--text-primary)] mb-3">Más vistos</h3>
+          <CardTitle className="text-sm mb-3">Más vistos</CardTitle>
           {topByViews.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
           ) : (
@@ -347,7 +348,7 @@ export default function StoreAnalyticsModule() {
         </div>
 
         <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <h3 className="text-sm font-black text-[var(--text-primary)] mb-3">Más ingresos</h3>
+          <CardTitle className="text-sm mb-3">Más ingresos</CardTitle>
           {topByRevenue.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
           ) : (

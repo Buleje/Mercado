@@ -1237,7 +1237,7 @@ export default function TurnosModule() {
                     <Square className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Cerrar turno</h3>
+                    <CardTitle className="text-lg font-bold">Cerrar turno</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>

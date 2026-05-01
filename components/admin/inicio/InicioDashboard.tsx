@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { PageTitle } from "@buleje/design-system";
 import {
   DollarSign, ShoppingCart, Package, TrendingUp, TrendingDown,
   Minus, AlertTriangle, Truck, RefreshCw,
@@ -411,6 +412,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
     .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, price: p.price, costPrice: p.costPrice, category: p.category }));
 
   // Stock critico con projection
+  // eslint-disable-next-line react-hooks/purity -- Date.now() es intencional para ventana de 30 días
   const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const productSales30 = new Map<number | string, number>();
   orders
@@ -462,9 +464,9 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
             Panel de control · {periodLabel}
           </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.02]">
+          <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05]">
             {greeting}, <span className="text-[var(--accent)]">tu bodega</span>
-          </h1>
+          </PageTitle>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {lastUpdated
               ? `Última actualización: ${new Date(lastUpdated).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`

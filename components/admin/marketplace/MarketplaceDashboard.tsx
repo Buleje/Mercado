@@ -27,7 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { StatCard } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   ShoppingCart,
   DollarSign,
@@ -360,9 +360,9 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-primary mb-2">
               {PRESET_RANGE_LABEL[presetKey]} · mi puesto en el marketplace
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            <SectionTitle className="font-display tracking-tight">
               {PRESET_META_LABEL[presetKey] ?? PRESET_META_LABEL.mensual}
-            </h2>
+            </SectionTitle>
             <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 max-w-xl">
               Solo mide la actividad de tu negocio dentro del marketplace, no tu tienda individual.
             </p>
@@ -462,9 +462,9 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {PRESET_RANGE_LABEL[presetKey]} · 3 series correlacionadas
             </p>
-            <h3 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            <CardTitle className="font-display tracking-tight text-xl sm:text-2xl font-extrabold">
               Mi GMV, Pedidos y Ticket promedio
-            </h3>
+            </CardTitle>
             <p className="text-sm font-medium text-[var(--text-secondary)] mt-1">
               Cómo se mueve tu puesto a lo largo del rango seleccionado.
             </p>
