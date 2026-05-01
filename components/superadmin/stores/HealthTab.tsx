@@ -76,13 +76,13 @@ const STATUS_DOT: Record<CheckStatus, string> = {
 const STATUS_BG: Record<CheckStatus, string> = {
   done: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
   warning: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900",
-  missing: "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900",
+  missing: "bg-rose-50 dark:bg-rose-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border-rose-200 dark:border-rose-900",
 };
 
 function scoreColor(pct: number): { bar: string; text: string; label: string } {
   if (pct >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600", label: "Saludable" };
   if (pct >= 50) return { bar: "bg-amber-500", text: "text-amber-600", label: "Atención" };
-  return { bar: "bg-rose-500", text: "text-rose-600", label: "Crítica" };
+  return { bar: "bg-rose-500", text: "text-[var(--data-error)]", label: "Crítica" };
 }
 
 function whatsAppHref(phone: string | null, tenantName: string) {
@@ -218,7 +218,7 @@ export function HealthTab() {
           sub="Falta detalle"
         />
         <StatCard
-          icon={<XCircle className="h-5 w-5 text-rose-600" />}
+          icon={<XCircle className="h-5 w-5 text-[var(--data-error)]" />}
           label="Críticas (<50%)"
           value={stats?.critical ?? "—"}
           sub="Acción urgente"
@@ -287,7 +287,7 @@ export function HealthTab() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           {error}
         </div>
       )}
@@ -379,16 +379,16 @@ export function HealthTab() {
                       <span className="text-sm font-bold text-[var(--text-primary)] truncate">
                         {item.tenantName}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                         {item.plan}
                       </span>
                       {!item.active && (
-                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-[var(--data-error)]">
                           Inactiva
                         </span>
                       )}
                       {item.store && !item.store.isPublished && (
-                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
                           No publicada
                         </span>
                       )}
@@ -400,7 +400,7 @@ export function HealthTab() {
                       {item.missingCount > 0 && (
                         <>
                           <span>·</span>
-                          <span className="text-rose-600 font-bold">
+                          <span className="text-[var(--data-error)] font-bold">
                             {item.missingCount} faltan
                           </span>
                         </>
@@ -504,12 +504,12 @@ export function HealthTab() {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm font-bold">{c.label}</span>
                                 {c.required === false && (
-                                  <span className="text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">
+                                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">
                                     opcional
                                   </span>
                                 )}
                                 {c.status !== "done" && (
-                                  <span className="ml-auto text-[10px] font-bold uppercase tracking-wider opacity-80">
+                                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-80">
                                     Click para arreglar →
                                   </span>
                                 )}

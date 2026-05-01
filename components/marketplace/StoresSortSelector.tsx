@@ -48,7 +48,7 @@ export default function StoresSortSelector({ value, onChange, className }: Props
         className,
       )}
     >
-      <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mr-0.5">
+      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-0.5">
         Ordenar
       </span>
       <select

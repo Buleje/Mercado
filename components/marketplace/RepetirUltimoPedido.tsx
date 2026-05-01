@@ -77,7 +77,7 @@ export default function RepetirUltimoPedido() {
           <Repeat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
             Tu último pedido
           </p>
           <p className="text-base sm:text-lg font-black text-[var(--text-primary)] truncate">

@@ -110,7 +110,7 @@ export default function StickyCartBar() {
               >
                 <div className="px-3 py-3 max-h-[45vh] overflow-y-auto">
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--surface-canvas)]/70">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-canvas)]/70">
                       Últimos agregados
                     </span>
                     {items.length > PREVIEW_COUNT && (
@@ -202,7 +202,7 @@ export default function StickyCartBar() {
                   </span>
                 </span>
                 <span className="flex flex-col min-w-0">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--surface-canvas)]/70 inline-flex items-center gap-1">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-canvas)]/70 inline-flex items-center gap-1">
                     Tu carrito
                     {expanded ? (
                       <ChevronDown className="h-3 w-3" strokeWidth={2.25} aria-hidden />

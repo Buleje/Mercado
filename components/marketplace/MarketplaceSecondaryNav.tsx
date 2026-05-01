@@ -123,7 +123,7 @@ export default function MarketplaceSecondaryNav() {
               onClick={() => setMenuOpen((o) => !o)}
               onFocus={openMenu}
               className={cn(
-                "inline-flex items-center gap-1.5 text-[15px] font-bold transition-colors h-12",
+                "inline-flex items-center gap-1.5 text-sm font-bold transition-colors h-12",
                 "border-b-[3px]",
                 menuOpen
                   ? "text-[var(--accent)] border-[var(--accent)]"
@@ -169,7 +169,7 @@ export default function MarketplaceSecondaryNav() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "text-[15px] transition-colors h-12 inline-flex items-center border-b-[3px] px-1",
+                    "text-sm transition-colors h-12 inline-flex items-center border-b-[3px] px-1",
                     active
                       ? "font-bold text-[var(--accent)] border-[var(--accent)]"
                       : "font-semibold text-[var(--text-primary)] border-transparent hover:text-[var(--accent)] hover:border-[var(--accent)]",

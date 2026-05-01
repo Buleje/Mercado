@@ -167,7 +167,7 @@ export default function MarketplaceHeroBanner() {
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.05, duration: 0.4 }}
-                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]"
+                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
                 >
                   <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                   {slide.eyebrow}
@@ -177,7 +177,7 @@ export default function MarketplaceHeroBanner() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1, duration: 0.5 }}
-                  className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.02em] leading-[1.1] text-[var(--text-primary)] max-w-2xl"
+                  className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[var(--ls-tight)] leading-[1.1] text-[var(--text-primary)] max-w-2xl"
                 >
                   {slide.title}
                   {slide.titleAccent && <> {slide.titleAccent}</>}
@@ -274,7 +274,7 @@ export default function MarketplaceHeroBanner() {
           {/* Right column — editorial meta card */}
           <aside className="hidden lg:block">
             <div className="relative rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 noise-bg">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
                 Edición actual
               </div>
               <div className="mt-3 text-[120px] leading-none font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tighter">

@@ -87,7 +87,7 @@ const TONE_STYLES: Record<
   },
   hot: {
     section:
-      "relative overflow-hidden bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-red-950/40 dark:via-orange-950/30 dark:to-amber-950/20",
+      "relative overflow-hidden bg-linear-to-br from-red-50 via-orange-50 to-amber-50 dark:from-red-950/40 dark:via-orange-950/30 dark:to-amber-950/20",
     kicker: "text-red-600 dark:text-red-400",
     title: "text-gray-900 dark:text-white",
     border: "border-red-200 dark:border-red-900/40",
@@ -99,7 +99,7 @@ const TONE_STYLES: Record<
   },
   ranking: {
     section:
-      "relative overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/20",
+      "relative overflow-hidden bg-linear-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/20",
     kicker: "text-amber-700 dark:text-amber-400",
     title: "text-gray-900 dark:text-white",
     border: "border-amber-200 dark:border-amber-900/40",
@@ -111,7 +111,7 @@ const TONE_STYLES: Record<
   },
   fresh: {
     section:
-      "relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-gray-950",
+      "relative overflow-hidden bg-linear-to-br from-emerald-50 via-teal-50 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-gray-950",
     kicker: "text-emerald-700 dark:text-emerald-400",
     title: "text-gray-900 dark:text-white",
     border: "border-emerald-200 dark:border-emerald-900/40",
@@ -174,7 +174,7 @@ export default function MarketplaceSection({
                 {toneStyles.accentPill && (
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest shadow-sm animate-pulse",
+                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-widest shadow-sm animate-pulse",
                       toneStyles.accentPill.bg,
                       toneStyles.accentPill.text,
                     )}
@@ -185,7 +185,7 @@ export default function MarketplaceSection({
                 {kicker && (
                   <p
                     className={cn(
-                      "text-[length:var(--ts-xs)] font-bold uppercase tracking-[0.2em]",
+                      "text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]",
                       toneStyles.kicker,
                     )}
                   >
@@ -197,7 +197,7 @@ export default function MarketplaceSection({
             <h2
               id={titleId}
               className={cn(
-                "font-bold tracking-[-0.015em]",
+                "font-bold tracking-[var(--ls-tight)]",
                 isExplosive
                   ? "text-3xl sm:text-4xl lg:text-5xl font-black"
                   : "text-2xl sm:text-3xl lg:text-4xl",

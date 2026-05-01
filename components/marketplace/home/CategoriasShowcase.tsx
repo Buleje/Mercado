@@ -67,10 +67,10 @@ export default function CategoriasShowcase() {
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-6 pb-4 border-b border-[var(--rule-soft)]">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Editorial
           </p>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.015em] text-[var(--text-primary)]">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Categorías destacadas
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -93,7 +93,7 @@ export default function CategoriasShowcase() {
                 )}
               >
                 {/* Visual top — gradient surface sutil + dot accent */}
-                <div className="relative h-44 sm:h-52 flex items-center justify-center bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] overflow-hidden">
+                <div className="relative h-44 sm:h-52 flex items-center justify-center bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] overflow-hidden">
                   {/* Decorative accent blob */}
                   <div
                     aria-hidden
@@ -117,10 +117,10 @@ export default function CategoriasShowcase() {
 
                 {/* Editorial body */}
                 <div className="px-6 py-6 sm:px-7 sm:py-7 border-t border-[var(--rule-soft)]">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
                     {cat.kicker}
                   </p>
-                  <h3 className="text-xl sm:text-2xl font-black tracking-[-0.015em] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                  <h3 className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
                     {cat.title}
                   </h3>
                   <div className="mt-3 flex gap-2">

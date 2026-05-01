@@ -67,7 +67,7 @@ export function MiniHero({
         {/* Izquierda — Texto */}
         <div className="flex-1 min-w-0">
           {kicker && (
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               {kicker}
             </p>
           )}

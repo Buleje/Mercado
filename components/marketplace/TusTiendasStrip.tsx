@@ -68,7 +68,7 @@ export default function TusTiendasStrip({ className }: { className?: string }) {
     >
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1">
+          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
             Tus tiendas
           </p>
           <h2

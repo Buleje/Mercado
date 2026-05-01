@@ -151,7 +151,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
       >
         <Bell className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[11px] font-black text-white shadow-md ring-2 ring-[var(--surface-canvas)]">
+          <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-xs)] font-black text-white shadow-md ring-2 ring-[var(--surface-canvas)]">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -176,10 +176,10 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
             {/* Header editorial */}
             <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-5 py-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Notificaciones
                 </p>
-                <p className="mt-0.5 text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                <p className="mt-0.5 text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   {!isLoggedIn
                     ? "Inicia sesión"
                     : unreadCount > 0
@@ -205,7 +205,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                   <LogIn className="h-6 w-6" strokeWidth={1.5} />
                 </div>
-                <p className="text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                <p className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   Inicia sesión para ver tus notificaciones
                 </p>
                 <p className="mt-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
@@ -270,7 +270,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-black tracking-[-0.01em] text-[var(--text-primary)] leading-snug">
+                            <p className="text-sm font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-snug">
                               {n.title}
                             </p>
                             {n.unread && (
@@ -283,7 +283,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                           <p className="mt-1 text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
                             {n.desc}
                           </p>
-                          <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                          <p className="mt-2 text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                             {meta.label} · {n.timeAgo}
                           </p>
                         </div>

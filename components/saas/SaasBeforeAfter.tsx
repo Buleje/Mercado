@@ -41,7 +41,7 @@ export default function SaasBeforeAfter() {
           <div className="grid grid-cols-2 min-h-[400px]">
             {/* ANTES */}
             <div
-              className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 p-6 sm:p-10 flex flex-col justify-center"
+              className="bg-linear-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 p-6 sm:p-10 flex flex-col justify-center"
               style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)`, position: "absolute", inset: 0, zIndex: 1 }}
             >
               <div className="max-w-xs">
@@ -60,7 +60,7 @@ export default function SaasBeforeAfter() {
             </div>
 
             {/* DESPUES */}
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 p-6 sm:p-10 flex flex-col justify-center col-start-1 col-end-3">
+            <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 p-6 sm:p-10 flex flex-col justify-center col-start-1 col-end-3">
               <div className="max-w-xs ml-auto">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="h-4 w-4 text-emerald-500" />

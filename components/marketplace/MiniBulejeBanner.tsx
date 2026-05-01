@@ -85,7 +85,7 @@ export default function MiniBulejeBanner({
         >
           <Sparkles className="h-3 w-3 text-white" strokeWidth={2} />
         </motion.span>
-        <span className="text-[10px] font-bold uppercase tracking-[0.32em] text-white/85">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.32em] text-white/85">
           Tienda Buleje
         </span>
       </div>
@@ -103,7 +103,7 @@ export default function MiniBulejeBanner({
       </motion.div>
 
       {/* Bottom-right wordmark */}
-      <div className="absolute bottom-2 right-3 text-[9px] font-black uppercase tracking-[0.4em] text-white/40">
+      <div className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-black uppercase tracking-[0.4em] text-white/40">
         Pucallpa
       </div>
     </div>

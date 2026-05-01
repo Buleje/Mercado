@@ -434,7 +434,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
 
   // ─── Render ───────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/40 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-teal-50/40 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center p-4 py-12">
 
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">

@@ -103,7 +103,7 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
             )}
           </div>
           {p.badge && (
-            <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow">
+            <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow">
               {p.badge}
             </span>
           )}
@@ -125,13 +125,13 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
                 {fmtSoles(p.price)}
               </span>
               {p.oldPrice !== null && p.oldPrice > p.price && (
-                <span className={cn("font-bold tabular-nums line-through opacity-50", isLarge ? "text-sm" : "text-[10px]")}>
+                <span className={cn("font-bold tabular-nums line-through opacity-50", isLarge ? "text-sm" : "text-[length:var(--ts-2xs)]")}>
                   {fmtSoles(p.oldPrice)}
                 </span>
               )}
             </div>
           )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2.5 py-1 text-[10px] sm:text-xs font-extrabold whitespace-nowrap self-start mt-1 shadow-sm">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold whitespace-nowrap self-start mt-1 shadow-sm">
             {p.buyLabel || "Comprar"}
             <ChevronRight className="h-3 w-3" />
           </span>
@@ -153,7 +153,7 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
         style={{ backgroundImage: `url(${card.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
         {card.ctaLabel && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-2.5 py-1 text-[10px] sm:text-xs font-extrabold whitespace-nowrap shadow">
+          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-2.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold whitespace-nowrap shadow">
             {card.ctaLabel}
             <ChevronRight className="h-3 w-3" />
           </span>
@@ -196,7 +196,7 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
       <div className="space-y-0.5">
         <h3
           className={cn(
-            "font-black tracking-[-0.02em] leading-[1.05]",
+            "font-black tracking-[var(--ls-tight)] leading-[1.05]",
             isLarge ? "text-2xl sm:text-3xl lg:text-4xl" : "text-base sm:text-lg",
           )}
         >

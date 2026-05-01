@@ -175,7 +175,7 @@ export default function ParaVosSection() {
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6"
     >
       <div className="mb-2">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {customer?.name ? `Hola ${customer.name}` : "Recomendado"}
         </p>
         <h2

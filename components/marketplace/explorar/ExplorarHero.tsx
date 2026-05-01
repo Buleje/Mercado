@@ -46,7 +46,7 @@ export default function ExplorarHero({
             "aspect-[16/9] sm:aspect-[3/1] lg:aspect-[4/1]",
             hasImage
               ? "bg-[var(--surface-sunken)]"
-              : "bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)] border border-dashed border-[var(--accent)]/30",
+              : "bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)] border border-dashed border-[var(--accent)]/30",
           )}
         >
           {hasImage ? (

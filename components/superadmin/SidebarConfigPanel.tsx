@@ -129,8 +129,8 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
 const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
   { id: "light",   label: "Claro",   preview: "bg-white border border-gray-200" },
   { id: "dark",    label: "Oscuro",  preview: "bg-zinc-900 border border-zinc-700" },
-  { id: "cristal", label: "Cristal", preview: "bg-gradient-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
-  { id: "shaded",  label: "Sombra",  preview: "bg-gradient-to-b from-zinc-100 to-zinc-200 border border-zinc-300" },
+  { id: "cristal", label: "Cristal", preview: "bg-linear-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
+  { id: "shaded",  label: "Sombra",  preview: "bg-linear-to-b from-zinc-100 to-zinc-200 border border-zinc-300" },
 ];
 
 const DENSITIES: Density[] = ["compact", "normal", "spacious"];

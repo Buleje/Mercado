@@ -73,7 +73,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
       {/* Toggle header */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 hover:from-primary/10 hover:to-secondary/10 transition-all"
+        className="w-full flex items-center justify-between px-4 py-3 bg-linear-to-r from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 hover:from-primary/10 hover:to-secondary/10 transition-all"
       >
         <div className="flex items-center gap-2">
           <ArrowDownUp className="h-4 w-4 text-primary" />

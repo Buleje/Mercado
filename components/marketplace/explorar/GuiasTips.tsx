@@ -60,12 +60,12 @@ export default function GuiasTips() {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-2">
           Aprende
         </span>
         <h2
           id="guias-heading"
-          className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white"
+          className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white"
         >
           Guias para tu casa
         </h2>
@@ -84,7 +84,7 @@ export default function GuiasTips() {
               </div>
 
               <div className="flex flex-col flex-1 p-5 sm:p-6">
-                <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+                <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-2">
                   <span>{g.kicker}</span>
                   <span aria-hidden="true">&middot;</span>
                   <span>{g.readingTime}</span>

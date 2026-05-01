@@ -86,7 +86,7 @@ export default function CheckoutHero({
               </Link>
             )}
 
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-5">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"

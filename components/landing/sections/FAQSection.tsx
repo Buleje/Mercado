@@ -110,7 +110,7 @@ export default function FAQSection() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-20">
           {/* Columna izquierda — header sticky */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -187,7 +187,7 @@ export default function FAQSection() {
                         <span className="text-xs font-bold tabular-nums text-[var(--text-tertiary)] uppercase tracking-wider mt-1.5">
                           {String(idx + 1).padStart(2, "0")}
                         </span>
-                        <span className="text-lg sm:text-xl font-bold tracking-[-0.01em] text-[var(--text-primary)] group-open:text-[var(--accent)] transition-colors">
+                        <span className="text-lg sm:text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-open:text-[var(--accent)] transition-colors">
                           {item.q}
                         </span>
                       </span>
@@ -207,10 +207,10 @@ export default function FAQSection() {
 
             {/* Ayuda adicional */}
             <div className="mt-10 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 ¿Más preguntas?
               </p>
-              <h3 className="text-xl font-black tracking-[-0.01em] text-[var(--text-primary)]">
+              <h3 className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                 No te quedes con la duda.
               </h3>
               <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">

@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<
 > = {
   assigned:   { label: "Asignado",    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",   next: "picked_up",  nextLabel: "Recogí el pedido", nextColor: "bg-[#33C4B8] hover:bg-teal-700" },
   picked_up:  { label: "Recogido",    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",       next: "in_transit", nextLabel: "En camino",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
-  in_transit: { label: "En camino",   badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300", next: "delivered", nextLabel: "Entregado",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
+  in_transit: { label: "En camino",   badge: "bg-purple-100 text-[var(--accent)] dark:bg-purple-900/30 dark:text-purple-300", next: "delivered", nextLabel: "Entregado",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
   delivered:  { label: "Entregado",   badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
 };
 

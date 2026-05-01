@@ -89,7 +89,7 @@ export default function HeroParallax({
             Pucallpa · Ucayali · Todo el Perú
           </span>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+          <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
             Pide lo que quieras,
             <br className="hidden sm:block" />
             <span className="text-gray-400 dark:text-gray-500">te lo llevamos</span>

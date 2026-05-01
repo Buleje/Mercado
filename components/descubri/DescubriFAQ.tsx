@@ -61,7 +61,7 @@ export function DescubriFAQ() {
     <section className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] py-16 sm:py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <header className="space-y-3 mb-10">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Preguntas frecuentes
           </span>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold">

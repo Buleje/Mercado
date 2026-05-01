@@ -72,8 +72,8 @@ export default function FollowStoreButton({
         className={cn(
           "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
           following
-            ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300"
-            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-rose-200 hover:text-rose-700",
+            ? "border-rose-200 bg-rose-50 text-[var(--data-error)] dark:border-rose-800 dark:bg-rose-950/30 dark:text-[var(--data-error)]"
+            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-rose-200 hover:text-[var(--data-error)]",
           className,
         )}
       >
@@ -96,8 +96,8 @@ export default function FollowStoreButton({
       className={cn(
         "inline-flex h-8 w-8 items-center justify-center rounded-full border bg-[var(--surface-raised)] transition-colors",
         following
-          ? "border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400"
-          : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-rose-200 hover:text-rose-600",
+          ? "border-rose-300 text-[var(--data-error)] hover:bg-rose-50 dark:border-rose-700 dark:text-[var(--data-error)]"
+          : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-rose-200 hover:text-[var(--data-error)]",
         className,
       )}
     >

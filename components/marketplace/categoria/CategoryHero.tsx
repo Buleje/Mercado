@@ -78,7 +78,7 @@ export default function CategoryHero({
         <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-10 lg:gap-16 items-center">
           {/* LEFT — título dramático */}
           <div>
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -111,7 +111,7 @@ export default function CategoryHero({
                 <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
                   {productCount}
                 </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
                   Producto{productCount === 1 ? "" : "s"}
                 </p>
               </div>
@@ -119,7 +119,7 @@ export default function CategoryHero({
                 <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
                   {storeCount}
                 </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
                   Tienda{storeCount === 1 ? "" : "s"}
                 </p>
               </div>
@@ -131,7 +131,7 @@ export default function CategoryHero({
             <div className="relative w-full aspect-[4/3] rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex items-center justify-center">
               <div
                 aria-hidden
-                className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.03]"
+                className="absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.03]"
               />
               <Illustration
                 size={240}

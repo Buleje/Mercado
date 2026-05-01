@@ -46,7 +46,7 @@ export function DescubriCTAFinal() {
         <div className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--text-primary)] px-6 py-12 text-[var(--surface-canvas)] sm:px-12 sm:py-16">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-5">
             <div className="space-y-7 lg:col-span-3">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] opacity-70">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] opacity-70">
                 Empieza a explorar
               </p>
               <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">

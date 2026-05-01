@@ -75,10 +75,10 @@ export default function Testimonials() {
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-6 pb-4 border-b border-[var(--rule-soft)]">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Voces del barrio
           </p>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.015em] text-[var(--text-primary)]">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Lo que dicen tus vecinos
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -91,7 +91,7 @@ export default function Testimonials() {
           className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 lg:gap-10 items-stretch animate-in fade-in slide-in-from-bottom-2 duration-500"
         >
           {/* Avatar editorial column */}
-          <div className="relative overflow-hidden rounded-2xl flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border border-[var(--rule-soft)] aspect-square lg:aspect-auto min-h-[280px]">
+          <div className="relative overflow-hidden rounded-2xl flex flex-col items-center justify-center text-center p-8 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border border-[var(--rule-soft)] aspect-square lg:aspect-auto min-h-[280px]">
             {/* Decorative blobs accent */}
             <div
               aria-hidden
@@ -135,7 +135,7 @@ export default function Testimonials() {
                 strokeWidth={1}
                 aria-hidden
               />
-              <blockquote className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] leading-[1.3] tracking-[-0.01em]">
+              <blockquote className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] leading-[1.3] tracking-[var(--ls-tight)]">
                 &ldquo;{t.quote}&rdquo;
               </blockquote>
             </div>

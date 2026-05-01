@@ -84,7 +84,7 @@ export default function TiendasMarcasStrip() {
       className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-6"
     >
       <div className="flex items-end justify-between mb-3">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+        <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Marcas & bodegas que ya están acá
         </p>
         <Link
@@ -132,7 +132,7 @@ export default function TiendasMarcasStrip() {
                     </span>
                   )}
                 </div>
-                <span className="block w-full text-center text-[11px] font-semibold text-[var(--text-secondary)] truncate leading-tight">
+                <span className="block w-full text-center text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] truncate leading-tight">
                   {s.name}
                 </span>
               </Link>

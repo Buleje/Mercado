@@ -48,7 +48,7 @@ export function OrderTimeline({ timeline, className }: Props) {
       )}
     >
       <div className="mb-5">
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
           Estado del pedido
         </span>
         <h2
@@ -113,7 +113,7 @@ export function OrderTimeline({ timeline, className }: Props) {
                   </p>
                 )}
                 {isCurrent && (
-                  <p className="text-[length:var(--ts-2xs)] font-semibold text-primary mt-0.5 uppercase tracking-[0.14em]">
+                  <p className="text-[length:var(--ts-2xs)] font-semibold text-primary mt-0.5 uppercase tracking-[var(--ls-wider)]">
                     En curso
                   </p>
                 )}

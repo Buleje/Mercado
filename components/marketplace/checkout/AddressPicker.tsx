@@ -40,7 +40,7 @@ export default function AddressPicker({
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 space-y-5">
       <div>
-        <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1.5">
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
           <span
             aria-hidden
             className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]"
@@ -48,7 +48,7 @@ export default function AddressPicker({
           <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
           Direcciones guardadas
         </p>
-        <h2 className="text-xl sm:text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+        <h2 className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           ¿A dónde te lo mandamos?
         </h2>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
@@ -93,7 +93,7 @@ export default function AddressPicker({
                 </span>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold tracking-[-0.01em] text-[var(--text-primary)] truncate">
+                  <p className="text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
                     {addr.address}
                   </p>
                   {addr.zone && (
@@ -155,7 +155,7 @@ export default function AddressPicker({
           <PlusCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-bold tracking-[-0.01em] text-[var(--text-primary)]">
+          <p className="text-sm font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Usar otra dirección
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">

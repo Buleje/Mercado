@@ -31,7 +31,7 @@ export default function ROICalculator() {
     <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-950 border-y border-gray-200 dark:border-gray-800">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
             Calculadora ROI
           </p>
           <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -68,7 +68,7 @@ export default function ROICalculator() {
               value={monthlySales}
               onChange={(e) => setMonthlySales(Number(e.target.value))}
               aria-label="Ventas mensuales"
-              className="mt-6 w-full h-2 rounded-full appearance-none cursor-pointer bg-gradient-to-r from-emerald-400 to-emerald-600 accent-emerald-600"
+              className="mt-6 w-full h-2 rounded-full appearance-none cursor-pointer bg-linear-to-r from-emerald-400 to-emerald-600 accent-emerald-600"
             />
             <div className="mt-2 flex justify-between text-xs text-gray-400 font-bold tabular-nums">
               <span>S/2k</span>
@@ -132,7 +132,7 @@ export default function ROICalculator() {
 
             {/* Total — card editorial dark */}
             <div className="relative rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 p-6 border border-gray-900 dark:border-gray-200">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 dark:text-gray-500">
                 Beneficio neto estimado / mes
               </p>
               <div className="mt-2 flex items-baseline gap-3">

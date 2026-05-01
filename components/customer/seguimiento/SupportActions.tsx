@@ -49,7 +49,7 @@ export function SupportActions({
       )}
     >
       <div className="mb-4">
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
           Ayuda
         </span>
         <h2
@@ -91,7 +91,7 @@ export function SupportActions({
       </div>
 
       <div className="pt-3 border-t border-gray-100 dark:border-card-border">
-        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.14em] text-muted mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-muted mb-2">
           Respuestas rápidas
         </p>
         <div className="flex flex-wrap gap-2">

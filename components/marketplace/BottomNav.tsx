@@ -182,7 +182,7 @@ export default function BottomNav() {
                       "absolute -top-1.5 -right-1.5",
                       "flex h-4 min-w-4 items-center justify-center",
                       "rounded-full bg-[var(--accent)] px-1",
-                      "text-[10px] font-black text-white leading-none",
+                      "text-[length:var(--ts-2xs)] font-black text-white leading-none",
                       "ring-1 ring-[var(--surface-canvas)]",
                     )}
                   >
@@ -192,7 +192,7 @@ export default function BottomNav() {
               </span>
               <span
                 className={cn(
-                  "text-[11px] leading-tight tracking-tight",
+                  "text-[length:var(--ts-xs)] leading-tight tracking-tight",
                   isActive ? "font-bold" : "font-semibold",
                 )}
               >

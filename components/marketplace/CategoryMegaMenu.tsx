@@ -156,7 +156,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
                   onKeyDown={(e) => handleSidebarKeyDown(e, slug)}
                   className={cn(
                     "relative flex w-full items-center justify-between px-6 py-3.5 text-left transition-all",
-                    "text-base font-bold tracking-[-0.01em]",
+                    "text-base font-bold tracking-[var(--ls-tight)]",
                     isActive
                       ? "bg-[var(--surface-canvas)] text-[var(--accent)]"
                       : "text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]/70 hover:text-[var(--accent)]",
@@ -249,7 +249,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
                           />
                           {getInitial(sub)}
                         </span>
-                        <span className="text-xs sm:text-sm font-bold tracking-[-0.01em] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-2">
+                        <span className="text-xs sm:text-sm font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-2">
                           {sub}
                         </span>
                       </Link>

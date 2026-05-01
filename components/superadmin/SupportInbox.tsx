@@ -326,7 +326,7 @@ export default function SupportInbox() {
                         </p>
                       </div>
                       <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5 truncate">
-                        {ticket.tenantName} &mdash; {ticket.senderEmail}
+                        {ticket.tenantName} — {ticket.senderEmail}
                       </p>
                       <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 truncate">
                         {ticket.lastMessage}

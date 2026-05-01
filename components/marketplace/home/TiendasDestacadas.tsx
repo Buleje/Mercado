@@ -92,7 +92,7 @@ export default function TiendasDestacadas() {
               className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_rgba(0,180,166,0.18)] transition-all duration-200 overflow-hidden"
             >
               {/* Logo / banner */}
-              <div className="relative h-28 bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">
+              <div className="relative h-28 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">
                 {store.logo ? (
                   <Image
                     src={store.logo}

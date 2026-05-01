@@ -290,7 +290,7 @@ export function OperationsTab() {
           trend={stats && stats.delayedOrders > 0 ? "down" : "neutral"}
         />
         <StatCard
-          icon={<AlertTriangle className="h-5 w-5 text-rose-600" />}
+          icon={<AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />}
           label="Críticos"
           value={stats?.dangerOrders ?? "—"}
           sub="2x SLA vencido"
@@ -395,7 +395,7 @@ export function OperationsTab() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           {error}
         </div>
       )}
@@ -427,7 +427,7 @@ export function OperationsTab() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-bold truncate">{t.storeName}</p>
-                        <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">
                           {t.delayed} demorados
                           {t.danger > 0 && ` · ${t.danger} críticos`}
                         </p>
@@ -531,7 +531,7 @@ export function OperationsTab() {
                       <p
                         className={`text-sm font-bold tabular-nums ${
                           o.dangerLevel === "danger"
-                            ? "text-rose-700"
+                            ? "text-[var(--data-error)]"
                             : o.dangerLevel === "warn"
                               ? "text-amber-700"
                               : "text-[var(--text-primary)]"
@@ -557,13 +557,13 @@ export function OperationsTab() {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {o.dangerLevel === "danger" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
                           <AlertTriangle className="h-3 w-3" />
                           Crítico
                         </span>
                       )}
                       {o.dangerLevel === "warn" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
                           <Clock className="h-3 w-3" />
                           Demora
                         </span>

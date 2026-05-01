@@ -33,7 +33,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Productos
           </span>
           <h2
@@ -44,7 +44,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </h2>
         </div>
         {paymentMethod && (
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-muted bg-gray-50 dark:bg-surface rounded-full px-2 py-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted bg-gray-50 dark:bg-surface rounded-full px-2 py-1">
             {paymentMethod === "yape" ? "Yape" : "Efectivo"}
           </span>
         )}

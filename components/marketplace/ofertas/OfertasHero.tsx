@@ -39,7 +39,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
         <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-16 items-center">
           {/* ── LEFT — título dramático ────────────────────────────────── */}
           <div>
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -72,7 +72,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
           {/* ── RIGHT — stats vertical + countdown ────────────────────── */}
           <div>
             <div className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 sm:p-10">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-8">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-8">
                 En números — Esta semana
               </p>
               <div className="space-y-8">

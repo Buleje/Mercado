@@ -399,7 +399,7 @@ export default function UnifiedProductCard({
             <div className="flex items-baseline gap-1 flex-wrap">
               <span
                 className={cn(
-                  "text-xl sm:text-2xl font-black leading-none tabular-nums tracking-[-0.02em]",
+                  "text-xl sm:text-2xl font-black leading-none tabular-nums tracking-[var(--ls-tight)]",
                   product.originalPrice && product.originalPrice > product.price
                     ? "text-[var(--accent)]"
                     : "text-[var(--text-primary)]",

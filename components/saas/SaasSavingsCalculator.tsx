@@ -18,7 +18,7 @@ export default function SaasSavingsCalculator() {
   const results = [
     { label: "Horas ahorradas/mes", value: `${hoursSaved}h`, icon: <Clock className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
     { label: "Ahorro en merma/mes", value: `S/ ${wasteSaved.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
-    { label: "Ventas extra con delivery", value: `+S/ ${salesIncrease.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30" },
+    { label: "Ventas extra con delivery", value: `+S/ ${salesIncrease.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "text-[var(--accent)] bg-violet-50 dark:bg-violet-950/30" },
   ];
 
   return (
@@ -113,7 +113,7 @@ export default function SaasSavingsCalculator() {
             ))}
 
             {/* Total */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white">
+            <div className="p-5 rounded-2xl bg-linear-to-r from-teal-500 to-emerald-600 text-white">
               <p className="text-xs font-bold uppercase tracking-wider text-white/70">Beneficio total estimado/mes</p>
               <p className="text-3xl font-extrabold mt-1">
                 S/ {(wasteSaved + salesIncrease).toLocaleString()}

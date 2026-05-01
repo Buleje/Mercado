@@ -174,7 +174,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                 <span className="text-[length:var(--ts-xs)] uppercase tracking-wider">Sin imagen</span>
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" aria-hidden />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/60 to-transparent" aria-hidden />
             <Dialog.Close asChild>
               <button
                 aria-label="Cerrar"

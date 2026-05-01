@@ -81,7 +81,7 @@ export default function TierDiscountBanner({
         <Icon className="h-5 w-5" strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: colors.text }}>
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]" style={{ color: colors.text }}>
           {tier.label} · {count} pedidos
         </p>
         <p className="text-sm font-bold mt-0.5" style={{ color: colors.text }}>

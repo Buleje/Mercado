@@ -136,7 +136,7 @@ export default function NewArrivalsRow() {
                   {item.name}
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+                  <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
                     {pen.format(item.price)}
                   </p>
                   {item.storeId && item.storeSlug && (

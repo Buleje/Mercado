@@ -44,7 +44,7 @@ export default function RegistroSuccess({
         </div>
 
         <div className="space-y-2">
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success)]/30 bg-[var(--data-success)]/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--data-success)]">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success)]/30 bg-[var(--data-success)]/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
             <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
             Solicitud recibida
           </p>
@@ -70,7 +70,7 @@ export default function RegistroSuccess({
 
       {/* Next steps */}
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-        <p className="mb-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+        <p className="mb-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Qué sigue ahora
         </p>
         <ol className="space-y-4">

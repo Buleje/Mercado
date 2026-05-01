@@ -84,17 +84,17 @@ function PromoCardItem({
         className="pointer-events-none absolute -right-4 -bottom-12 h-28 w-28 rounded-full bg-white/5"
       />
 
-      <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] opacity-80 mb-1 sm:mb-2">
+      <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] opacity-80 mb-1 sm:mb-2">
         {eyebrow}
       </p>
-      <h3 className="text-lg sm:text-3xl font-black tracking-[-0.02em] leading-[1.05]">
+      <h3 className="text-lg sm:text-3xl font-black tracking-[var(--ls-tight)] leading-[1.05]">
         {title}
       </h3>
       {/* Subtitle: oculto en mobile para reducir altura del card */}
       <p className="hidden sm:block mt-2 text-sm sm:text-base opacity-90 max-w-[28ch] leading-snug">
         {subtitle}
       </p>
-      <span className="mt-3 sm:mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-3 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold group-hover:gap-2.5 group-hover:bg-white/25 transition-all">
+      <span className="mt-3 sm:mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-3 sm:px-3.5 py-1 sm:py-1.5 text-[length:var(--ts-xs)] sm:text-xs font-bold group-hover:gap-2.5 group-hover:bg-white/25 transition-all">
         {cta}
         <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={2.25} />
       </span>

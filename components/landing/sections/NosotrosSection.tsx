@@ -47,7 +47,7 @@ export default function NosotrosSection() {
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header editorial con título dramático */}
         <div className="max-w-4xl mb-16 sm:mb-24">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -97,7 +97,7 @@ export default function NosotrosSection() {
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </span>
-                <h3 className="text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   {title}
                 </h3>
                 <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">

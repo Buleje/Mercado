@@ -250,10 +250,10 @@ export default function ProductModifierModal({
                     sizes="(max-width: 640px) 100vw, 512px"
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 </div>
               ) : (
-                <div className="h-32 w-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 flex items-center justify-center">
+                <div className="h-32 w-full bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 flex items-center justify-center">
                   <Sparkles className="h-10 w-10 text-white/80" aria-hidden />
                 </div>
               )}
@@ -270,7 +270,7 @@ export default function ProductModifierModal({
 
               {/* Title */}
               <div className="absolute bottom-3 left-4 right-4">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-white/85">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/85">
                   Personalizar
                 </p>
                 <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-md">
@@ -309,7 +309,7 @@ export default function ProductModifierModal({
                         </h3>
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
                           {g.required && (
-                            <span className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-rose-700 dark:text-rose-300">
+                            <span className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
                               Obligatorio
                             </span>
                           )}
@@ -395,7 +395,7 @@ export default function ProductModifierModal({
                       {groupErr && (
                         <p
                           role="alert"
-                          className="mt-2 text-[length:var(--ts-xs)] font-semibold text-rose-700 dark:text-rose-400"
+                          className="mt-2 text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]"
                         >
                           {groupErr.message}
                         </p>

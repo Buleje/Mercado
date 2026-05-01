@@ -125,7 +125,7 @@ export default function BuyAgainStrip() {
                   <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                     {item.name}
                   </p>
-                  <p className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+                  <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
                     {pen.format(item.unitPrice)}
                   </p>
                 </div>

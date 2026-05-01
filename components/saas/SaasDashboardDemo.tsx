@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const KPIS = [
   { label: "Ventas hoy", target: 2450, prefix: "S/ ", suffix: "", icon: <TrendingUp className="h-4 w-4" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30", change: "+18%" },
   { label: "Pedidos", target: 47, prefix: "", suffix: "", icon: <ShoppingCart className="h-4 w-4" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30", change: "+12%" },
-  { label: "Clientes nuevos", target: 8, prefix: "", suffix: "", icon: <Users className="h-4 w-4" />, color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30", change: "+3" },
+  { label: "Clientes nuevos", target: 8, prefix: "", suffix: "", icon: <Users className="h-4 w-4" />, color: "text-[var(--accent)] bg-violet-50 dark:bg-violet-950/30", change: "+3" },
   { label: "Productos activos", target: 342, prefix: "", suffix: "", icon: <Package className="h-4 w-4" />, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30", change: "342" },
 ];
 
@@ -104,7 +104,7 @@ export default function SaasDashboardDemo() {
                 {CHART_DATA.map((val, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className="w-full rounded-t transition-all duration-1000 ease-out bg-gradient-to-t from-teal-500 to-teal-400"
+                      className="w-full rounded-t transition-all duration-1000 ease-out bg-linear-to-t from-teal-500 to-teal-400"
                       style={{
                         height: `${(val / maxBar) * 100}%`,
                         animationDelay: `${i * 100}ms`,

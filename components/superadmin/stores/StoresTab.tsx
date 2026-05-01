@@ -125,7 +125,7 @@ function buildColumns(
           className={[
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
             row.isPublished
-              ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+              ? "border-rose-200 bg-rose-50 text-[var(--data-error)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error)]"
               : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
           ].join(" ")}
           title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}

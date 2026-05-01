@@ -1,16 +1,29 @@
 "use client";
 
 /**
- * StoreHero — hero editorial de la Store Detail Page.
+ * StoreHero — hero profesional Buleje de la Store Detail Page.
  *
- * Left: Kicker + H1 + subtitle + stats strip + CTAs.
- * Right: ilustración DS en card canvas (BodegaAbriendo o DoniaElena).
+ * Diseño:
+ *   - Card prominente con padding generoso, surface-raised + border-2.
+ *   - Layout 2 cols (lg+): identidad (kicker + h1 + tagline italic serif) + meta CTAs.
+ *   - Stats strip: 4 KPIs grandes con dividers (rating, delivery, ubicación, horario).
+ *   - Trust chips: "Yape · Plin · Efectivo · Sin permanencia" con iconos del DS.
+ *   - Drawer "Más datos" sigue disponible para info detallada (no rompe mobile).
  *
- * Diseño: Buleje/Holded — cero emojis, cero saturación, dark-mode completo.
- * Grid: 1 col mobile → 2 col lg (60/40).
+ * Tokens DS — sin colores hex, todo via var(--accent), var(--surface-*).
  */
 
-import { MapPin, Clock, Star, Truck, Phone, Heart } from "@buleje/design-system/icons";
+import {
+  MapPin,
+  Clock,
+  Star,
+  Truck,
+  Phone,
+  Heart,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+} from "@buleje/design-system/icons";
 import StoreInfoPanel from "./StoreInfoPanel";
 
 interface StoreHeroProps {
@@ -37,13 +50,6 @@ interface StoreHeroProps {
   whatsappNumber?: string | null;
 }
 
-const TRUST_CHIPS = [
-  { label: "Verificada", icon: Star },
-  { label: "Delivery incluido", icon: Truck },
-  { label: "Atención WhatsApp", icon: Phone },
-  { label: "Pago en casa", icon: Heart },
-] as const;
-
 export default function StoreHero({
   name,
   category,
@@ -61,39 +67,46 @@ export default function StoreHero({
   whatsappNumber,
 }: StoreHeroProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
+  const locationLabel = zone ?? distanceLabel;
 
-  // Compactación 2026-04: el cliente quiere ver productos primero. Antes el
-  // hero ocupaba ~70vh con kicker grande, H1 a 5xl, subtítulo en 2 líneas,
-  // stats strip y trust chips. Ahora consolido todo en 1 fila densa con los
-  // datos esenciales (nombre, categoría, rating, ubicación, horario) +
-  // CTAs inline. El info panel completo se mueve a un drawer expandible
-  // al pulsar "Más datos" — opt-in en lugar de espacio fijo.
   return (
     <section
       aria-labelledby="store-hero-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
     >
-      <div className="flex flex-col gap-3">
-        {/* ── Fila 1: nombre + CTAs ──────────────────────────────────────── */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-              {category}
+      <div
+        className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"
+      >
+        {/* ── Header — identidad + CTAs ───────────────────────────────── */}
+        <div className="flex flex-col gap-5 p-5 sm:p-7 lg:p-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              Tienda Buleje · {category}
             </span>
             <h1
               id="store-hero-heading"
-              className="text-xl sm:text-2xl font-extrabold tracking-[-0.01em] text-gray-900 dark:text-white leading-tight mt-0.5"
+              className="mt-3 text-3xl sm:text-4xl lg:text-[2.75rem] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]"
             >
               {name}
             </h1>
+            {description && (
+              <p className="mt-2 max-w-2xl text-base sm:text-lg leading-relaxed text-[var(--text-secondary)]">
+                <span className="italic font-serif text-[var(--text-primary)]">
+                  &ldquo;{description}&rdquo;
+                </span>
+              </p>
+            )}
           </div>
 
+          {/* CTAs — derecha en desktop, full-width abajo en mobile */}
           <div className="flex items-center gap-2 shrink-0">
             <a
               href="#catalogo"
-              className="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg"
             >
               Ver catálogo
+              <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </a>
             {whatsappNumber && (
               <a
@@ -101,86 +114,154 @@ export default function StoreHero({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
-                className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                title="Pedí por WhatsApp"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)]/5"
               >
-                <Phone className="h-4 w-4" aria-hidden />
+                <Phone className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </a>
             )}
             <button
               type="button"
               aria-label="Agregar a favoritos"
-              className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+              title="Guardar como favorita"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] transition-all hover:border-[var(--data-error)] hover:text-[var(--data-error)]"
             >
-              <Heart className="h-4 w-4" aria-hidden />
+              <Heart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </button>
           </div>
         </div>
 
-        {/* ── Fila 2: stats inline (rating, delivery, ubicación, horario) — tipografía base */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base font-medium text-[var(--text-secondary)]">
-          {ratingLabel && (
-            <span className="flex items-center gap-1.5">
-              <Star className="h-4 w-4 fill-amber-500 text-amber-500" aria-hidden />
-              <span className="text-[var(--text-primary)] font-bold tabular-nums">
-                {ratingLabel}
+        {/* ── Stats strip — 4 KPIs con dividers ─────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 border-t-2 border-[var(--rule-base)]">
+          {/* Rating */}
+          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
+            <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <Star
+                className="h-3 w-3 fill-amber-500 text-amber-500"
+                aria-hidden
+              />
+              Rating
+            </span>
+            <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+              {ratingLabel ?? "—"}
+              {ratingLabel && (
+                <span className="ml-1 text-sm font-bold text-[var(--text-tertiary)]">
+                  ({reviewCount})
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Delivery */}
+          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
+            <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <Truck className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              Delivery
+            </span>
+            <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+              {deliveryMin}
+              <span className="ml-0.5 text-sm font-bold text-[var(--text-tertiary)]">
+                min
               </span>
-              <span className="text-[var(--text-tertiary)] tabular-nums">({reviewCount})</span>
+              {freeDelivery && (
+                <span className="ml-1.5 text-xs font-black text-[var(--data-success)]">
+                  GRATIS
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Ubicación */}
+          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-[var(--rule-base)]">
+            <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              Zona
             </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Truck className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <span className="font-semibold">{deliveryMin} min</span>
-            {freeDelivery && (
-              <span className="ml-1 text-[var(--data-success)] font-bold">· gratis</span>
-            )}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <span className="font-semibold">{zone ?? distanceLabel}</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <span className={isOpen ? "text-[var(--data-success)] font-bold" : "text-[var(--data-error)] font-bold"}>
-              {isOpen ? "Abierto" : "Cerrado"}
+            <p className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight truncate">
+              {locationLabel}
+            </p>
+          </div>
+
+          {/* Horario / abierto */}
+          <div className="flex flex-col gap-1 p-4 sm:p-5">
+            <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <Clock className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              Estado
             </span>
-            <span className="text-[var(--text-tertiary)]">· {scheduleLabel === "Abierto" ? "6am–11pm" : scheduleLabel}</span>
-          </span>
-          {paymentMethods.length > 0 && (
-            <span className="text-[var(--text-tertiary)] font-medium">
-              {paymentMethods.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" · ")}
-            </span>
-          )}
+            <p className="flex items-center gap-1.5 text-xl sm:text-2xl font-black leading-tight">
+              <span
+                aria-hidden
+                className={`inline-block h-2.5 w-2.5 rounded-full ${
+                  isOpen
+                    ? "bg-[var(--data-success)] shadow-[0_0_0_4px_color-mix(in_oklch,var(--data-success)_25%,transparent)]"
+                    : "bg-[var(--data-error)]"
+                }`}
+              />
+              <span
+                className={
+                  isOpen
+                    ? "text-[var(--data-success)]"
+                    : "text-[var(--data-error)]"
+                }
+              >
+                {isOpen ? "Abierto" : "Cerrado"}
+              </span>
+            </p>
+          </div>
         </div>
 
-        {/* ── Fila 3 (opcional): descripción 1 línea + drawer info detallada — texto base */}
-        {description && (
-          <details className="group">
-            <summary className="cursor-pointer list-none flex items-center gap-2 text-base font-medium text-[var(--text-secondary)] select-none hover:text-[var(--text-primary)]">
-              <span className="line-clamp-1 flex-1">{description}</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)] group-open:hidden shrink-0">
-                Más datos
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)] hidden group-open:inline shrink-0">
-                Ocultar
-              </span>
-            </summary>
-            <div className="mt-3 lg:max-w-md">
-              <StoreInfoPanel
-                name={name}
-                zone={zone}
-                address={address ?? null}
-                scheduleLabel={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel}
-                isOpen={isOpen}
-                rating={rating}
-                reviewCount={reviewCount}
-                deliveryMin={deliveryMin}
-                freeDelivery={freeDelivery}
-                whatsappNumber={whatsappNumber ?? null}
-                paymentMethods={paymentMethods}
-              />
-            </div>
-          </details>
-        )}
+        {/* ── Trust chips strip — payment methods + sello marca ─────── */}
+        <div className="flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success)]">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+            Tienda verificada
+          </span>
+          {paymentMethods.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">
+              Pagás con{" "}
+              <strong className="text-[var(--text-primary)]">
+                {paymentMethods
+                  .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+                  .join(" · ")}
+              </strong>
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">
+            Atención por WhatsApp
+          </span>
+          {description && (
+            <details className="ml-auto group">
+              <summary className="cursor-pointer list-none inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors">
+                <span className="group-open:hidden">Más datos</span>
+                <span className="hidden group-open:inline">Ocultar</span>
+                <ArrowRight
+                  className="h-3 w-3 transition-transform group-open:rotate-90"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              </summary>
+              <div className="mt-3 lg:max-w-md">
+                <StoreInfoPanel
+                  name={name}
+                  zone={zone}
+                  address={address ?? null}
+                  scheduleLabel={
+                    scheduleLabel === "Abierto"
+                      ? "Lun a Dom · 6am – 11pm"
+                      : scheduleLabel
+                  }
+                  isOpen={isOpen}
+                  rating={rating}
+                  reviewCount={reviewCount}
+                  deliveryMin={deliveryMin}
+                  freeDelivery={freeDelivery}
+                  whatsappNumber={whatsappNumber ?? null}
+                  paymentMethods={paymentMethods}
+                />
+              </div>
+            </details>
+          )}
+        </div>
       </div>
     </section>
   );

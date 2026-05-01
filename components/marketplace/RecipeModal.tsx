@@ -141,7 +141,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                 )}
                 <div className="flex-1 min-w-0">
                   {recipe.category && (
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
                       {recipe.category}
                     </span>
                   )}
@@ -185,7 +185,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
               </div>
               <div className="h-1 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden mb-3">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-500"
+                  className="h-full bg-linear-to-r from-primary to-emerald-500 transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>

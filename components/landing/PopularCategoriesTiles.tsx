@@ -67,7 +67,7 @@ export default function PopularCategoriesTiles() {
         {/* Header editorial */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-14 sm:mb-18">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -102,10 +102,10 @@ export default function PopularCategoriesTiles() {
                     <Illustration size={72} strokeWidth={1.5} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                    <p className="text-sm font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                       {cat.label}
                     </p>
-                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+                    <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                       {cat.desc}
                     </p>
                   </div>

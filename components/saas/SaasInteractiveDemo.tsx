@@ -218,8 +218,8 @@ function ReportsMiniApp() {
         <div className="flex items-end gap-1 h-24">
           {data.map((val, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-              <div className="w-full rounded-t bg-gradient-to-t from-violet-500 to-violet-400 transition-all duration-500 hover:from-violet-600 hover:to-violet-500 cursor-pointer relative group" style={{ height: `${Math.max(8, (val / maxVal) * 100)}%` }}>
-                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-600 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="w-full rounded-t bg-linear-to-t from-violet-500 to-violet-400 transition-all duration-500 hover:from-violet-600 hover:to-violet-500 cursor-pointer relative group" style={{ height: `${Math.max(8, (val / maxVal) * 100)}%` }}>
+                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
                   {val}
                 </span>
               </div>
@@ -307,7 +307,7 @@ function AIMiniApp() {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-1">
-        <div className="h-6 w-6 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+        <div className="h-6 w-6 rounded-full bg-linear-to-br from-pink-500 to-rose-500 flex items-center justify-center">
           <Sparkles className="h-3 w-3 text-white" />
         </div>
         <span className="text-xs font-bold text-gray-900 dark:text-white">Sugerencias de IA</span>
@@ -491,7 +491,7 @@ export default function SaasInteractiveDemo() {
             {/* CTA */}
             <a
               href="/registro"
-              className={cn("inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg bg-gradient-to-r", active.gradient)}
+              className={cn("inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg bg-linear-to-r", active.gradient)}
             >
               Crear mi tienda gratis <ChevronRight className="h-4 w-4" />
             </a>
@@ -499,7 +499,7 @@ export default function SaasInteractiveDemo() {
 
           {/* Right: mini-app */}
           <div className="relative">
-            <div className={cn("absolute -inset-4 rounded-3xl opacity-15 blur-2xl bg-gradient-to-br", active.gradient)} />
+            <div className={cn("absolute -inset-4 rounded-3xl opacity-15 blur-2xl bg-linear-to-br", active.gradient)} />
             <div className="relative bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-2xl">
               {/* Status bar */}
               <div className="flex items-center justify-between px-3 py-1.5 mb-3">

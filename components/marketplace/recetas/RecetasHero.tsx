@@ -69,7 +69,7 @@ export default function RecetasHero() {
 
       <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16">
         <div className="max-w-3xl">
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--accent)] mb-4">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
             Recetario peruano
           </p>

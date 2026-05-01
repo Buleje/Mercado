@@ -31,7 +31,7 @@ const DATA_INCLUDED = [
   { icon: <CreditCard className="h-3.5 w-3.5" />, text: "5 fiados activos", color: "text-pink-400" },
   { icon: <BarChart3 className="h-3.5 w-3.5" />, text: "10 gastos operativos", color: "text-amber-400" },
   { icon: <BookOpen className="h-3.5 w-3.5" />, text: "6 lotes con vencimiento", color: "text-cyan-400" },
-  { icon: <Brain className="h-3.5 w-3.5" />, text: "IA + reportes + alertas", color: "text-rose-400" },
+  { icon: <Brain className="h-3.5 w-3.5" />, text: "IA + reportes + alertas", color: "text-[var(--data-error)]" },
   { icon: <Shield className="h-3.5 w-3.5" />, text: "Plan Enterprise completo", color: "text-yellow-400" },
 ];
 
@@ -45,7 +45,7 @@ export default function SaasDemoLauncher() {
   };
 
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-b from-gray-900 to-gray-950 text-white overflow-hidden">
+    <section className="py-20 sm:py-28 bg-linear-to-b from-gray-900 to-gray-950 text-white overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-10">
@@ -133,7 +133,7 @@ export default function SaasDemoLauncher() {
               <p className="text-sm text-gray-400 mb-3">Te gusto? Crea tu propia tienda en 2 minutos.</p>
               <a
                 href="/registro"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-teal-500/20"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-teal-500 to-emerald-600 text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-teal-500/20"
               >
                 Crear mi tienda gratis
               </a>

@@ -102,7 +102,7 @@ export default function StepContacto({
 
         {/* Responsable */}
         <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Responsable del negocio
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr]">

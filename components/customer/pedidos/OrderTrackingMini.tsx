@@ -57,11 +57,11 @@ export function OrderTrackingMini({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               {storeName ? storeName : "Pedido"}
             </span>
             {etaMinutes != null && (
-              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-[0.14em]">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-[var(--ls-wider)]">
                 <Truck className="h-3 w-3" strokeWidth={2} />
                 Llega en {etaMinutes} min
               </span>

@@ -54,7 +54,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
       )}
     >
       <div className="mb-4">
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
           Tu repartidor
         </span>
         <h2

@@ -243,7 +243,7 @@ function AnalyticsMockup() {
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full relative" style={{ height: "72px" }}>
                 <div
-                  className="absolute bottom-0 w-full rounded-t-md bg-gradient-to-t from-primary to-primary/60 transition-all duration-700"
+                  className="absolute bottom-0 w-full rounded-t-md bg-linear-to-t from-primary to-primary/60 transition-all duration-700"
                   style={{ height: `${h}%` }}
                 />
               </div>

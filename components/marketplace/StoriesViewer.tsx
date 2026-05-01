@@ -147,7 +147,7 @@ export default function StoriesViewer({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className={cn(
-                  "absolute inset-0 bg-gradient-to-br flex flex-col justify-end p-10 text-white",
+                  "absolute inset-0 bg-linear-to-br flex flex-col justify-end p-10 text-white",
                   slide.bg,
                 )}
               >
@@ -167,7 +167,7 @@ export default function StoriesViewer({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.55 }}
                   transition={{ delay: 0.3 }}
-                  className="relative text-xs font-bold uppercase tracking-[0.25em]"
+                  className="relative text-xs font-bold uppercase tracking-[var(--ls-wider)]"
                 >
                   {String(slides.findIndex((s) => s.id === slide.id) + 1).padStart(2, "0")}
                   <span className="mx-2 opacity-50">/</span>

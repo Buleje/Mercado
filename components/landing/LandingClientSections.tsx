@@ -260,7 +260,7 @@ export function DiscountBanner() {
     <section className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-b border-gray-900 dark:border-gray-200">
       <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 shrink-0 hidden sm:inline">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 dark:text-gray-500 shrink-0 hidden sm:inline">
             Nuevo cliente
           </span>
           <span className="h-3.5 w-px bg-white/20 dark:bg-gray-300 shrink-0 hidden sm:inline-block" />

@@ -150,7 +150,7 @@ export default function ImageUploader({
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[var(--text-tertiary)] bg-[var(--surface-sunken)]">
             <Upload className="h-4 w-4" strokeWidth={1.75} />
-            <p className="text-[10px] font-bold leading-tight">
+            <p className="text-[length:var(--ts-2xs)] font-bold leading-tight">
               Click, arrastrar
               {enablePaste ? " o Ctrl+V" : ""}
             </p>
@@ -168,19 +168,19 @@ export default function ImageUploader({
         {status === "uploading" && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center gap-1 text-white">
             <RefreshCw className="h-5 w-5 animate-spin" />
-            <span className="text-[10px] font-bold">Optimizando...</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold">Optimizando...</span>
           </div>
         )}
 
         {savedPct != null && savedPct > 0 && status === "idle" && value && (
-          <span className="absolute top-1 right-1 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur text-white px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+          <span className="absolute top-1 right-1 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur text-white px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider">
             -{savedPct}%
           </span>
         )}
 
         {value && status === "idle" && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur text-[var(--text-primary)] px-2 py-0.5 text-[10px] font-bold">
+          <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur text-[var(--text-primary)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
               <Upload className="h-3 w-3" />
               Cambiar
             </span>
@@ -202,7 +202,7 @@ export default function ImageUploader({
       />
 
       {errorMsg && (
-        <div className="mt-1 flex items-start gap-1 text-[10px] text-rose-700">
+        <div className="mt-1 flex items-start gap-1 text-[length:var(--ts-2xs)] text-[var(--data-error)]">
           <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
           <span className="leading-tight">{errorMsg}</span>
         </div>
@@ -212,7 +212,7 @@ export default function ImageUploader({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 hover:underline"
+          className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] hover:underline"
         >
           <Trash2 className="h-3 w-3" />
           Quitar

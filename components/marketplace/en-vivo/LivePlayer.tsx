@@ -39,7 +39,7 @@ export function LivePlayer({ live, large = false, onOpen }: LivePlayerProps) {
         />
 
         {/* Gradient overlay bottom */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">

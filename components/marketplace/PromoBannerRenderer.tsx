@@ -314,7 +314,7 @@ function PromoItemCard({
 
   if (layout === "hero") {
     const badge = item.badge ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
         {item.badge}
       </span>
     ) : null;
@@ -432,7 +432,7 @@ function PromoItemCard({
       </div>
       <div className="flex-1 min-w-0">
         {item.badge && (
-          <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-1.5 py-px text-[9px] font-extrabold uppercase tracking-wider mb-0.5">
+          <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-1.5 py-px text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider mb-0.5">
             {item.badge}
           </span>
         )}
@@ -448,12 +448,12 @@ function PromoItemCard({
             </span>
           )}
           {item.oldPrice !== null && item.oldPrice > (item.price ?? 0) && (
-            <span className="text-[10px] font-bold tabular-nums line-through text-[#0c1015]/40 leading-tight">
+            <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums line-through text-[#0c1015]/40 leading-tight">
               {fmtSoles(item.oldPrice)}
             </span>
           )}
         </div>
-        <span className="inline-flex items-center gap-0.5 mt-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-extrabold">
+        <span className="inline-flex items-center gap-0.5 mt-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold">
           {item.buyLabel || "Comprar"}
           <ChevronRight className="h-2.5 w-2.5" />
         </span>

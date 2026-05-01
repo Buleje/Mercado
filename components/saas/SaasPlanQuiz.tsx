@@ -74,7 +74,7 @@ const PLAN_RESULTS: Record<string, PlanResult> = {
   },
   business: {
     plan: "Business",
-    color: "text-violet-600",
+    color: "text-[var(--accent)]",
     gradient: "from-violet-500 to-purple-600",
     icon: <Zap className="h-6 w-6" />,
     description: "Para negocios serios. Multi-tienda, API, IA predictiva y todo ilimitado.",
@@ -127,7 +127,7 @@ export default function SaasPlanQuiz() {
     <section className="py-20 sm:py-28 bg-white dark:bg-background">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-violet-50 dark:bg-violet-950/30 text-[var(--accent)] dark:text-violet-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <Sparkles className="h-3 w-3" /> Quiz rápido
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -176,7 +176,7 @@ export default function SaasPlanQuiz() {
         ) : (
           /* ── Resultado ── */
           <div className="text-center space-y-6">
-            <div className={cn("inline-flex items-center justify-center h-16 w-16 rounded-2xl text-white mx-auto bg-gradient-to-br", result.gradient)}>
+            <div className={cn("inline-flex items-center justify-center h-16 w-16 rounded-2xl text-white mx-auto bg-linear-to-br", result.gradient)}>
               {result.icon}
             </div>
 
@@ -193,7 +193,7 @@ export default function SaasPlanQuiz() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
                 href="/registro"
-                className={cn("px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg bg-gradient-to-r", result.gradient)}
+                className={cn("px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg bg-linear-to-r", result.gradient)}
               >
                 {result.cta}
               </a>

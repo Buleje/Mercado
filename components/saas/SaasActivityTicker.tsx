@@ -6,7 +6,7 @@ import { Store, ShoppingCart, Users, Zap } from "@buleje/design-system/icons";
 const ACTIVITIES = [
   { icon: <Store className="h-3 w-3" />, text: "Bodega Lima creo su tienda", color: "text-teal-600" },
   { icon: <ShoppingCart className="h-3 w-3" />, text: "Minimarket Ica proceso 12 pedidos hoy", color: "text-emerald-600" },
-  { icon: <Users className="h-3 w-3" />, text: "Abarrotes Trujillo registro 5 clientes nuevos", color: "text-violet-600" },
+  { icon: <Users className="h-3 w-3" />, text: "Abarrotes Trujillo registro 5 clientes nuevos", color: "text-[var(--accent)]" },
   { icon: <Zap className="h-3 w-3" />, text: "Bodega Cusco activo su plan Pro", color: "text-amber-600" },
   { icon: <ShoppingCart className="h-3 w-3" />, text: "Tienda Arequipa vendio S/ 2,450 esta semana", color: "text-emerald-600" },
   { icon: <Store className="h-3 w-3" />, text: "Market Piura configuro su delivery", color: "text-orange-600" },

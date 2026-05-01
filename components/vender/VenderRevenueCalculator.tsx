@@ -46,7 +46,7 @@ export default function VenderRevenueCalculator() {
     <section className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 sm:py-24">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10 max-w-2xl">
-          <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             <Calculator className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
             Calculadora de ingresos
           </p>
@@ -159,7 +159,7 @@ export default function VenderRevenueCalculator() {
 
           {/* Output — ingreso neto */}
           <div className="space-y-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--text-primary)] p-6 text-[var(--surface-canvas)] lg:col-span-2">
-            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] opacity-70">
+            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] opacity-70">
               <TrendingUp className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               Ingreso neto estimado
             </p>

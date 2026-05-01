@@ -286,7 +286,7 @@ function NavScopeSection({
             {icon}
           </span>
           <div>
-            <h3 className="text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
+            <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               {title}
             </h3>
             <p className="text-xs text-[var(--text-tertiary)]">{description}</p>
@@ -324,7 +324,7 @@ function NavScopeSection({
                 </p>
                 <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                   {link.description} ·{" "}
-                  <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]">
+                  <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
                     {link.href}
                   </code>
                 </p>

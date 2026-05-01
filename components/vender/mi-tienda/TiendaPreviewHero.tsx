@@ -19,7 +19,7 @@ export default function TiendaPreviewHero({ nombreNegocio }: TiendaPreviewHeroPr
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
-            <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
               <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
               Panel vendedor
             </p>

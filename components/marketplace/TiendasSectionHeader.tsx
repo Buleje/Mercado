@@ -5,10 +5,15 @@
  * de `/tiendas`. Garantiza coherencia visual: misma altura, mismo
  * tracking del eyebrow, misma escala tipográfica, mismo espaciado.
  *
- * Reemplaza los cabezales inline duplicados que iban variando.
+ * Patrón visual armónico con el hero principal:
+ *   - Eyebrow accent + accent line decorativa (3px x 8w rounded-full)
+ *   - H2 escala 2xl-3xl con tracking apretado y leading 1.05
+ *   - Subtítulo en text-secondary
+ *   - Action a la derecha alineada al baseline
  */
 
 import Link from "next/link";
+import { ArrowRight } from "@buleje/design-system/icons";
 
 interface TiendasSectionHeaderProps {
   eyebrow?: string;
@@ -29,35 +34,43 @@ export default function TiendasSectionHeader({
   action,
 }: TiendasSectionHeaderProps) {
   return (
-    <div className="flex items-end justify-between gap-6 mb-4">
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-5 sm:mb-6">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1.5">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            <span
+              aria-hidden
+              className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]"
+            />
             {eyebrow}
           </p>
         )}
-        <h2 className="text-xl sm:text-2xl font-black tracking-[-0.015em] text-[var(--text-primary)] leading-tight">
+        <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">{subtitle}</p>
+          <p className="mt-2 max-w-2xl text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
+            {subtitle}
+          </p>
         )}
       </div>
       {action &&
         (action.href ? (
           <Link
             href={action.href}
-            className="shrink-0 text-xs font-bold text-[var(--accent)] hover:underline"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
           >
             {action.label}
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           </Link>
         ) : (
           <button
             type="button"
             onClick={action.onClick}
-            className="shrink-0 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
           >
             {action.label}
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           </button>
         ))}
     </div>

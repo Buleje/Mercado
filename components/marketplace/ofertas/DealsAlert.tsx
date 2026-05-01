@@ -31,7 +31,7 @@ export default function DealsAlert() {
       aria-labelledby="deals-alert-heading"
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] p-8 sm:p-12">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] p-8 sm:p-12">
         {/* Decorative blobs */}
         <div
           aria-hidden
@@ -45,13 +45,13 @@ export default function DealsAlert() {
         <div className="relative grid grid-cols-1 lg:grid-cols-[2fr_3fr] items-center gap-8">
           {/* Left — texto editorial */}
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--accent)] mb-3">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
               No te lo pierdas
             </p>
             <h2
               id="deals-alert-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-[1.05]"
+              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]"
             >
               Las mejores ofertas{" "}
               <span className="text-[var(--accent)]">en tu correo</span>

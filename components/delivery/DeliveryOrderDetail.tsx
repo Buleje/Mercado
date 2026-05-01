@@ -536,7 +536,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
         {/* Botón flotante de confirmar entrega */}
         {!delivered && (
           <div
-            className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4 bg-gradient-to-t from-gray-50 dark:from-gray-950 pt-3"
+            className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4 bg-linear-to-t from-gray-50 dark:from-gray-950 pt-3"
             style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
           >
             <div className="max-w-md mx-auto">

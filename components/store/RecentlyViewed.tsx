@@ -50,13 +50,13 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
       {/* Header */}
       <div className="flex items-end justify-between gap-4 mb-6">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-2">
             <Clock className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Vuelve a ver
           </span>
           <h2
             id="recently-viewed-heading"
-            className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white"
+            className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white"
           >
             Productos que miraste
           </h2>

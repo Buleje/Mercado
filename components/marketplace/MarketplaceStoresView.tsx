@@ -167,7 +167,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       )}
       {/* Ofertas activas */}
       {store.activePromos != null && store.activePromos > 0 && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-rose-700 dark:text-rose-300">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
           {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
         </span>
       )}
@@ -323,7 +323,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-sm font-black text-white bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+              <span className="text-sm font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
                 {store.name.trim().charAt(0).toUpperCase()}
               </span>
             )}

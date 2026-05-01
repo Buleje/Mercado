@@ -98,7 +98,7 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
 
       {/* Grid de categorias sugeridas */}
       <div className="mt-10 w-full max-w-xl">
-        <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-4">
+        <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 mb-4">
           Explora categorias
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

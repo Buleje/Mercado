@@ -72,7 +72,7 @@ function UniformCard({ item, rank }: { item: CatalogItem; rank: number }) {
     >
       {/* Badge de ranking — mismo tamaño en todas */}
       <span
-        className={`absolute top-2.5 left-2.5 z-10 inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-[11px] font-black shadow-sm ${
+        className={`absolute top-2.5 left-2.5 z-10 inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-[length:var(--ts-xs)] font-black shadow-sm ${
           rank === 1
             ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
             : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"
@@ -111,7 +111,7 @@ function UniformCard({ item, rank }: { item: CatalogItem; rank: number }) {
           {item.name}
         </p>
         <StarRating rating={item.avgRating ?? 4.8} />
-        <p className="text-xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none mt-0.5">
+        <p className="text-xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none mt-0.5">
           {pen.format(item.price)}
         </p>
       </div>

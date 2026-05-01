@@ -40,7 +40,7 @@ function CartItemRow({
             sizes="56px"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900">
             <svg
               aria-hidden="true"
               className="h-6 w-6 text-gray-300 dark:text-gray-600"
@@ -192,7 +192,7 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
               transition={{ duration: 0.2 }}
               className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
             >
-              <span className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[11px] font-black tabular-nums text-white">
+              <span className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-xs)] font-black tabular-nums text-white">
                 {itemCount > 99 ? "99+" : itemCount}
               </span>
               <span
@@ -626,7 +626,7 @@ export default function MarketplaceCart({
                   animate={{ scale: 1, opacity: 1 }}
                   className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center"
                 >
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/20 shadow-lg shadow-green-200/50 dark:shadow-green-900/30">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-green-100 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/20 shadow-lg shadow-green-200/50 dark:shadow-green-900/30">
                     <svg aria-hidden="true" className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
@@ -979,7 +979,7 @@ export default function MarketplaceCart({
 
                   {/* Datos del cliente */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Nombre</span>
                       <span className="font-medium text-gray-900 dark:text-white">{customerName}</span>
@@ -1002,7 +1002,7 @@ export default function MarketplaceCart({
 
                   {/* Método de pago */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
                         <>
@@ -1026,7 +1026,7 @@ export default function MarketplaceCart({
 
                   {/* Productos por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];

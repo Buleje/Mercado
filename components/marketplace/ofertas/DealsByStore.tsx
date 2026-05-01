@@ -56,7 +56,7 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
                   {initial}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
+                  <h3 className="text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
                     {store.name}
                   </h3>
                   <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
