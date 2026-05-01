@@ -57,10 +57,23 @@ export default function TenantsPage() {
   const loadTenants = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const res = await fetchSuperadmin("/api/superadmin/tenants");
-      if (!res.ok) { setError("Error al cargar tenants"); return; }
-      const data = await res.json() as { tenants: TenantRow[] };
-      setTenants(data.tenants);
+      // Pedidos cacheados (60s) en /tenants. Para que el badge de pendientes
+      // se actualice en vivo, cruzamos con /pending-counts (no cacheado).
+      const [tenantsRes, countsRes] = await Promise.all([
+        fetchSuperadmin("/api/superadmin/tenants"),
+        fetchSuperadmin("/api/superadmin/tenants/pending-counts"),
+      ]);
+      if (!tenantsRes.ok) { setError("Error al cargar tenants"); return; }
+      const data = await tenantsRes.json() as { tenants: TenantRow[] };
+      const counts: Record<string, number> = countsRes.ok
+        ? ((await countsRes.json()) as { counts: Record<string, number> }).counts
+        : {};
+      // Aplicamos pendingOrders fresh sobre el listado cacheado.
+      const merged = data.tenants.map((t) => ({
+        ...t,
+        pendingOrders: (counts[t.id] ?? 0) + (counts[t.slug] ?? 0),
+      }));
+      setTenants(merged);
     } catch { setError("Error de red"); }
     finally { setLoading(false); }
   }, []);

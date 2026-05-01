@@ -28,12 +28,14 @@ async function requirePlatform(req: NextRequest) {
 async function getTenantsData() {
   "use cache";
   cacheLife({ revalidate: 60, stale: 30, expire: 300 });
-  cacheTag("superadmin:tenants");
+  // v2: cuando agregamos pendingOrders necesitamos invalidar el cache.
+  // El cambio del tag fuerza un cache-miss garantizado.
+  cacheTag("superadmin:tenants:v3");
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses] = await Promise.all([
+  const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses, pendingOrders] = await Promise.all([
       prisma.tenant.findMany({
         orderBy: { createdAt: "desc" },
         select: {
@@ -77,6 +79,16 @@ async function getTenantsData() {
         _sum: { total: true },
         _count: { _all: true },
       }),
+      // Pending orders per tenant — pedidos sin entregar/cancelar.
+      // Status del enum OrderStatus: pendiente | confirmado | en_camino.
+      prisma.order.groupBy({
+        by: ["tenantId"],
+        where: {
+          status: { in: ["pendiente", "confirmado", "en_camino"] },
+          deletedAt: null,
+        },
+        _count: { _all: true },
+      }),
       // Expenses this month per tenant (tenantId = slug in Expense model)
       prisma.expense.groupBy({
         by: ["tenantId"],
@@ -101,8 +113,13 @@ async function getTenantsData() {
       monthlyOrders.map((r) => [r.tenantId, { revenue: Number(r._sum?.total ?? 0), orders: r._count?._all ?? 0 }])
     );
     const expenseMap = Object.fromEntries(
-      (monthlyExpenses as Array<{ tenantId: string; _sum: { amount: number | null } }>).map((r) => [r.tenantId, Number(r._sum?.amount ?? 0)])
+      (monthlyExpenses as unknown as Array<{ tenantId: string; _sum: { amount: number | null } }>).map((r) => [r.tenantId, Number(r._sum?.amount ?? 0)])
     );
+    const pendingMap = Object.fromEntries(
+      (pendingOrders as unknown as Array<{ tenantId: string; _count: { _all: number } }>).map((r) => [r.tenantId, r._count?._all ?? 0])
+    );
+    // eslint-disable-next-line no-console
+    console.log("[superadmin/tenants] pendingMap=", pendingMap, "raw rows=", JSON.stringify(pendingOrders));
 
     // Fetch usage for all tenants in parallel (capped at 50 concurrent)
     const usageList = await Promise.all(
@@ -125,6 +142,8 @@ async function getTenantsData() {
       const expenses = (expBySlug && expBySlug > 0 ? expBySlug : expById) ?? expBySlug ?? 0;
       // Admin user count could also be under slug or cuid
       const adminCount = countMap[t.slug] ?? countMap[t.id] ?? 0;
+      // Pending orders — same trick (slug OR cuid)
+      const pendingCount = (pendingMap[t.slug] ?? 0) + (pendingMap[t.id] ?? 0);
       return {
         ...t,
         _count: { AdminUser: adminCount },
@@ -139,6 +158,7 @@ async function getTenantsData() {
         monthOrders: rev.orders,
         monthExpenses: expenses,
         monthProfit: rev.revenue - expenses,
+        pendingOrders: pendingCount,
       };
     });
 

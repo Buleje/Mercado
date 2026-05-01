@@ -6,10 +6,11 @@ import {
   ArrowDownRight, ArrowUpRight,
   Package, Users, Store, ShoppingBag,
   BarChart3, Trash2, Eraser, LogIn,
-  Clock, AlertTriangle,
+  Clock, AlertTriangle, Bell,
 } from "lucide-react";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
+import { PendingOrdersModal } from "./PendingOrdersModal";
 
 interface TenantCardProps {
   tenant: TenantRow;
@@ -60,6 +61,8 @@ export function TenantCard({
   const t = tenant;
   const initials = t.name.slice(0, 2).toUpperCase();
   const health = computeHealth(t);
+  const [pendingModalOpen, setPendingModalOpen] = useState(false);
+  const pendingCount = t.pendingOrders ?? 0;
 
   const pctFn = (u: number, m: number) => (m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100)));
   const totalUsagePct =
@@ -141,6 +144,21 @@ export function TenantCard({
             Plan {planLabel}
           </span>
           <div className="flex items-center gap-1.5">
+            {pendingCount > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingModalOpen(true);
+                }}
+                title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver detalles`}
+                className="relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-red-500 text-white shadow-sm hover:bg-red-600 transition-colors"
+              >
+                <span aria-hidden className="absolute -inset-0.5 rounded-full bg-red-500/40 animate-ping pointer-events-none" />
+                <Bell className="relative w-3 h-3" strokeWidth={2.5} />
+                <span className="relative tabular-nums">{pendingCount}</span>
+              </button>
+            )}
             {trialBadge && (
               <button
                 type="button"
@@ -431,6 +449,14 @@ export function TenantCard({
           </button>
         </div>
       </div>
+
+      {pendingModalOpen && (
+        <PendingOrdersModal
+          tenantSlug={t.slug}
+          tenantName={t.name}
+          onClose={() => setPendingModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
