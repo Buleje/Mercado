@@ -1,12 +1,20 @@
 "use client";
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { X, Printer, Check, Phone, ExternalLink, FileText, UserCheck } from "@buleje/design-system/icons";
+import { X, Printer, Check, Phone, ExternalLink, FileText, UserCheck, Bike } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { formatDate, getOrderTimeline } from "@/lib/admin-helpers";
 import { googleMapsUrl } from "@/lib/order-utils";
 import { STATUS_COLORS, STATUS_LABELS, DRIVERS } from "./types";
+
+// Modal "Asignar repartidor del marketplace" — lazy load (Leaflet inside fetch).
+const ManualAssignModal = dynamic(
+  () => import("@/components/admin/delivery/ManualAssignModal"),
+  { ssr: false },
+);
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -51,6 +59,7 @@ export function OrdersDetailPanel({
 }: OrdersDetailPanelProps) {
   const currentDriver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
+  const [showManualAssign, setShowManualAssign] = useState(false);
 
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
 
@@ -204,7 +213,25 @@ export function OrdersDetailPanel({
                   {savingDriver ? "..." : "Asignar"}
                 </button>
               </div>
+
+              {/* Botón "Asignar repartidor marketplace" — abre modal con
+                  partners online del Rappi-system. Override de cascada. */}
+              <button
+                type="button"
+                onClick={() => setShowManualAssign(true)}
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
+              >
+                <Bike className="h-4 w-4" />
+                Asignar repartidor del marketplace
+              </button>
             </div>
+            {showManualAssign && (
+              <ManualAssignModal
+                orderId={order.id}
+                orderLocation={order.customer.location}
+                onClose={() => setShowManualAssign(false)}
+              />
+            )}
           </div>
 
           {/* Customer */}

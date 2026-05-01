@@ -27,6 +27,13 @@ export async function POST(req: NextRequest) {
 
   const priceId = STRIPE_PRICE_IDS[plan];
   if (!priceId) {
+    // Modo dev: si no hay STRIPE_PRICE_IDS configurado, devolver una URL
+    // mock que simula el checkout (acelera testing local sin secrets reales).
+    // Activado SOLO en NODE_ENV !== "production" para evitar accidentes.
+    if (process.env.NODE_ENV !== "production") {
+      const mockUrl = `${req.headers.get("origin") ?? "http://localhost:3000"}/admin/plan/checkout/mock?plan=${plan}`;
+      return NextResponse.json({ url: mockUrl, mock: true });
+    }
     return NextResponse.json(
       { error: `El plan "${plan}" no tiene un precio de Stripe configurado. Contacta soporte.` },
       { status: 503 }
