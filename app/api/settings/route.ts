@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
+import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
@@ -9,7 +10,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // [SEGURIDAD MULTI-TENANT] JWT > header (ver lib/resolve-tenant.ts).
+    // Sin esto, el branding/businessName del tenant impersonado se mezcla
+    // con el de "main" si el header está stale.
+    const tenantId = await resolveTenantIdForRoute(req);
     const settings = await withDbRetry(() => SettingsDB.get(tenantId));
     // Never expose credentials or security toggles to public callers
      
@@ -167,6 +171,7 @@ export async function PUT(req: NextRequest) {
       ...(body.storeTheme !== undefined && { storeTheme: body.storeTheme }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
+    // eslint-disable-next-line no-restricted-syntax -- activity log fire-and-forget; no debe bloquear la respuesta de Settings
     enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId: effectiveTenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch(() => {});
     return NextResponse.json(await SettingsDB.set(updated, tenantId));
   } catch (e) {

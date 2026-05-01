@@ -24,6 +24,13 @@ import {
   getActiveTenantSlug,
   tenantCacheKey,
 } from "@/lib/tenant-cache";
+import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
+
+// Mock tryAdmin para tests del resolver
+vi.mock("@/lib/require-admin", () => ({
+  tryAdmin: vi.fn(),
+}));
+const { tryAdmin } = await import("@/lib/require-admin");
 
 // Mock de localStorage en jsdom
 class MemoryStorage implements Storage {
@@ -178,5 +185,51 @@ describe("tenant-cache.ts — tenantCacheKey", () => {
   it("devuelve la key sin prefix si no hay slug", () => {
     setCookie(null);
     expect(tenantCacheKey("my-cache")).toBe("my-cache");
+  });
+});
+
+describe("resolve-tenant.ts — resolveTenantIdForRoute (server-side)", () => {
+  function makeRequest(headers: Record<string, string>): { headers: Headers } {
+    return { headers: new Headers(headers) } as never;
+  }
+
+  it("PRIORIDAD: JWT > header — admin autenticado en otro tenant ignora header stale", async () => {
+    // Bug real: superadmin impersona tenant-B, pero el header x-tenant-id viene
+    // como "main" por proxy stale. JWT debe ganar para evitar fuga de "main".
+    vi.mocked(tryAdmin).mockResolvedValueOnce({
+      tenantId: "cmnxxx-tenant-b",
+      role: "admin",
+      username: "superadmin",
+      name: "SuperAdmin",
+    } as never);
+    const req = makeRequest({ "x-tenant-id": "main" });
+    const tid = await resolveTenantIdForRoute(req as never);
+    expect(tid).toBe("cmnxxx-tenant-b");
+  });
+
+  it("Fallback al header si no hay JWT (storefront anónimo)", async () => {
+    vi.mocked(tryAdmin).mockResolvedValueOnce(null);
+    const req = makeRequest({ "x-tenant-id": "tienda-juan" });
+    const tid = await resolveTenantIdForRoute(req as never);
+    expect(tid).toBe("tienda-juan");
+  });
+
+  it("Fallback final 'main' si no hay JWT ni header", async () => {
+    vi.mocked(tryAdmin).mockResolvedValueOnce(null);
+    const req = makeRequest({});
+    const tid = await resolveTenantIdForRoute(req as never);
+    expect(tid).toBe("main");
+  });
+
+  it("Admin con JWT pero sin header sigue funcionando", async () => {
+    vi.mocked(tryAdmin).mockResolvedValueOnce({
+      tenantId: "tenant-a",
+      role: "admin",
+      username: "owner",
+      name: "Owner",
+    } as never);
+    const req = makeRequest({});
+    const tid = await resolveTenantIdForRoute(req as never);
+    expect(tid).toBe("tenant-a");
   });
 });

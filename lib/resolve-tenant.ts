@@ -1,5 +1,7 @@
 import "server-only";
+import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { tryAdmin } from "@/lib/require-admin";
 
 /** Custom-domain prefix injected by edge middleware */
 const CUSTOM_PREFIX = "custom--";
@@ -79,6 +81,42 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
   const id = tenant?.id ?? slugOrId;
   slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });
   return id;
+}
+
+/**
+ * resolveTenantIdForRoute — resolución segura de tenantId para route handlers
+ * que sirven tanto a admin (autenticado) como anónimos (storefront público).
+ *
+ * BUG QUE PREVIENE:
+ *   Endpoints que solo leen `req.headers.get("x-tenant-id") ?? "main"` quedan
+ *   vulnerables a:
+ *     - Header stale (cookie del primer login no actualizada al impersonar)
+ *     - Proxy mal-resolviendo en localhost (host sin subdominio → "main")
+ *     - Stale read del active-tenant cookie cuando la sesión cambió
+ *   Resultado: superadmin entra al tenant A, luego al B, y el B muestra
+ *   datos de "main" porque el header es stale → fuga cross-tenant.
+ *
+ * REGLA:
+ *   1. Si hay sesión admin válida (JWT firmado y vigente) → usar payload.tenantId
+ *      (canonical CUID, fuente de verdad inmutable después del login).
+ *   2. Si no hay JWT (anonymous storefront) → usar header del proxy.
+ *   3. Último fallback "main" solo si ambos faltan.
+ *
+ * Para handlers que YA usan `requireAdmin(req)`, NO llamar este helper —
+ * `requireAdmin` ya devuelve `auth.tenantId` correctamente. Este helper es
+ * para endpoints públicos / soft-auth que SÍ deben servir a admin y anónimo.
+ */
+export async function resolveTenantIdForRoute(req: NextRequest): Promise<string> {
+  // Source 1 (HIGHEST): Admin JWT firmado.
+  const session = await tryAdmin(req);
+  if (session?.tenantId) return session.tenantId;
+
+  // Source 2: header inyectado por proxy.ts (de active-tenant cookie / referer).
+  const header = req.headers.get("x-tenant-id");
+  if (header) return header;
+
+  // Source 3: fallback al tenant principal.
+  return "main";
 }
 
 function getCustomDomainHostname(rawTenantId: string): string | null {
