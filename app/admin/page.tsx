@@ -7,6 +7,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
+import { useTenantCacheGuard } from "@/hooks/use-tenant-cache-guard";
 import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
@@ -83,6 +84,13 @@ function AdminPage() {
 
   const { favoriteTabs, toggleFavorite, recentTabs, addRecent } = useFavoritesAndRecent();
   const { tab, navigateTab } = useAdminTabs(addRecent);
+
+  // [SEGURIDAD MULTI-TENANT] Antes de cualquier prefetch o lectura de cache,
+  // verificar que el cache pertenezca al tenant actual. Si el superadmin entra
+  // a otro tenant (impersonate), el localStorage es compartido entre pestañas
+  // del mismo origen y filtraría datos. assertTenantOwnership() compara la
+  // cookie active-tenant-slug con el owner cacheado y limpia todo si cambia.
+  useTenantCacheGuard();
 
   // Prefetch global de APIs admin más usadas (products, suppliers, customers,
   // sales, dashboard, goals) en background al montar. Resultado: cualquier

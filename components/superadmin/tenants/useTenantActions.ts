@@ -105,6 +105,15 @@ export function useTenantActions({
         body: JSON.stringify({ slug }),
       });
       if (!res.ok) { showToast("Error al impersonar", false); return; }
+      // [SEGURIDAD MULTI-TENANT] Limpiar TODO cache cliente antes de abrir el
+      // panel del tenant target. Sin esto, el localStorage compartido entre
+      // pestañas filtraría datos del tenant anterior al nuevo.
+      // Importación dinámica para evitar pull innecesario en el bundle del
+      // dashboard del superadmin.
+      try {
+        const { clearAllTenantCache } = await import("@/lib/tenant-cache");
+        clearAllTenantCache();
+      } catch { /* fallback: assertTenantOwnership en /admin lo cubrirá */ }
       // Cookies (buleje-sess + active-tenant + active-tenant-slug) ya
       // están seteadas por la respuesta. Vamos directo al panel admin del
       // tenant — sin pasar por el gateway /t/[slug]/admin que solo

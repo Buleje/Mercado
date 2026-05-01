@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { clearAllTenantCache } from "@/lib/tenant-cache";
 
 export type TenantType = "tienda" | "proveedor" | "delivery";
 
@@ -73,6 +74,9 @@ export function useImpersonation(): UseImpersonationResult {
   }, []);
 
   const handleExit = () => {
+    // [SEGURIDAD MULTI-TENANT] Antes de salir, borrar TODO el cache cliente
+    // para que el próximo tenant no herede datos del actual.
+    clearAllTenantCache();
     localStorage.removeItem("superadmin-impersonate-tenant");
     localStorage.removeItem("active-tenant-slug");
     setIsSuperAdminImpersonating(false);
