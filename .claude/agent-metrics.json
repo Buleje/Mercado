@@ -4,17 +4,17 @@
   "startedTracking": "2026-04-26",
   "agents": {
     "unknown": {
-      "dispatches": 1,
+      "dispatches": 17,
       "tokens": 0,
       "successes": 0,
       "failures": 0,
       "avgDurationMs": 0,
-      "lastSeen": "2026-04-29T04:12:53.873Z"
+      "lastSeen": "2026-05-01T02:05:54.718Z"
     }
   },
   "sessions": [],
   "totals": {
-    "totalDispatches": 1,
+    "totalDispatches": 17,
     "totalTokens": 0,
     "totalSuccesses": 0,
     "totalFailures": 0
