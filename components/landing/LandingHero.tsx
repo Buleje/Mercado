@@ -27,7 +27,6 @@ import {
   ArrowUpRight,
   Bike,
   Star,
-  Plus,
   TrendingUp,
   ShoppingBag,
   Banknote,
@@ -143,14 +142,15 @@ export default function LandingHero({
             </m.div>
           </m.div>
 
-          {/* ── RIGHT — phone interactivo ─────────────────────────────── */}
+          {/* ── RIGHT — phone interactivo + ticker debajo ─────────────── */}
           <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="order-2 max-w-md mx-auto lg:max-w-none"
+            className="order-2 min-w-0 max-w-md mx-auto lg:max-w-none w-full"
           >
             <PhoneMockup reducedMotion={!!reducedMotion} />
+            <ProofTicker reducedMotion={!!reducedMotion} />
           </m.div>
         </div>
 
@@ -513,53 +513,6 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
         </div>
       </m.div>
 
-      {/* Chip flotante: ventas del mes (top-right) */}
-      <m.div
-        animate={reducedMotion ? {} : { y: [0, -6, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-4 -right-2 sm:right-0 lg:-right-8 flex items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3.5 py-2.5 shadow-[var(--shadow-lg)]"
-      >
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand-success)]/15 text-[var(--brand-success)]">
-          <TrendingUp className="h-4 w-4" strokeWidth={2.5} />
-        </span>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-            Este mes
-          </p>
-          <p className="text-sm font-black text-[var(--text-primary)] leading-tight">
-            +S/ 12,430
-          </p>
-        </div>
-      </m.div>
-
-      {/* Chip flotante: rating clientes (mid-left) */}
-      <m.div
-        animate={reducedMotion ? {} : { y: [0, 6, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-        className="absolute top-1/2 -translate-y-1/2 -left-3 sm:-left-4 lg:-left-8 flex items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3.5 py-2.5 shadow-[var(--shadow-lg)]"
-      >
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
-          <Star className="h-4 w-4 fill-current" strokeWidth={1.5} />
-        </span>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-            Tus clientes
-          </p>
-          <p className="text-sm font-black text-[var(--text-primary)] leading-tight">
-            4.8 / 5 · +120 reseñas
-          </p>
-        </div>
-      </m.div>
-
-      {/* Chip flotante: + nueva tienda (bottom-right) */}
-      <m.div
-        animate={reducedMotion ? {} : { y: [0, -4, 0] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-12 -right-2 sm:right-0 lg:-right-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-3.5 py-2 shadow-[var(--shadow-lg)] shadow-[var(--accent)]/40"
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
-        <span className="text-xs font-black">Sin código</span>
-      </m.div>
     </div>
   );
 }
@@ -594,6 +547,38 @@ function KpiCard({
         </p>
       </div>
     </m.div>
+  );
+}
+
+/* ── Ticker horizontal de proof points debajo del phone ───────────── */
+const PROOF_POINTS = [
+  { Icon: TrendingUp, label: "+S/ 12,430 este mes", tone: "text-[var(--brand-success)]" },
+  { Icon: Star, label: "4.8/5 · +120 reseñas", tone: "text-amber-500" },
+  { Icon: Bike, label: "25 min entrega promedio", tone: "text-[var(--accent)]" },
+  { Icon: ShoppingBag, label: "+42% ventas en 90 días", tone: "text-fuchsia-500" },
+  { Icon: Heart, label: "73% clientes recurrentes", tone: "text-rose-500" },
+  { Icon: Banknote, label: "S/ 0 comisión 90 días", tone: "text-emerald-500" },
+];
+
+function ProofTicker({ reducedMotion }: { reducedMotion: boolean }) {
+  return (
+    <div className="mt-6 w-full overflow-hidden rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] py-3 [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
+      <m.div
+        animate={reducedMotion ? undefined : { x: ["0%", "-50%"] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+        className="flex gap-8 whitespace-nowrap w-max"
+      >
+        {[...PROOF_POINTS, ...PROOF_POINTS].map(({ Icon, label, tone }, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-2 text-sm font-extrabold text-[var(--text-secondary)]"
+          >
+            <Icon className={`h-4 w-4 ${tone}`} strokeWidth={2.25} />
+            {label}
+          </span>
+        ))}
+      </m.div>
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ const b = await chromium.launch({ executablePath: "/home/usuario/.cache/ms-playw
 const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
 const p = await ctx.newPage();
 await p.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });
-await p.waitForTimeout(4000);
+await p.waitForTimeout(6500);
 await p.screenshot({ path: `${out}/home-desktop-light.png`, fullPage: false });
 console.log("✓", `${out}/home-desktop-light.png`);
 // Scroll a sección "Sumate a Buleje" (PromoBanners) y capturar viewport
@@ -22,7 +22,7 @@ if (promoTop != null) {
 const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 const p2 = await ctx2.newPage();
 await p2.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });
-await p2.waitForTimeout(4000);
+await p2.waitForTimeout(6500);
 await p2.screenshot({ path: `${out}/home-mobile-light.png`, fullPage: false });
 console.log("✓", `${out}/home-mobile-light.png`);
 // /abrir-tienda full
