@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, DollarSign, TrendingUp, Gift, Bike, AlertTriangle } from "@buleje/design-system/icons";
+import { Loader2, DollarSign, TrendingUp, Gift, Bike, AlertTriangle, Printer } from "@buleje/design-system/icons";
 
 interface Earnings {
   period: string;
@@ -41,18 +41,53 @@ export default function GananciasPage() {
 
   const maxFees = data?.byDay.reduce((m, d) => Math.max(m, d.fees + d.tips), 0) ?? 0;
 
+  const periodLabel = PERIODS.find((p) => p.id === period)?.label ?? "";
+
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-4 py-3">
-        <h1 className="font-extrabold text-[var(--text-primary)] flex items-center gap-2 max-w-2xl mx-auto">
-          <DollarSign className="h-5 w-5 text-[var(--accent)]" />
-          Mis ganancias
-        </h1>
+    <main className="min-h-screen bg-[var(--surface-canvas)] earnings-print-root">
+      <style jsx global>{`
+        @media print {
+          body { background: white !important; color: black !important; }
+          .earnings-print-hide { display: none !important; }
+          .earnings-print-root { padding: 1.5cm !important; }
+          .earnings-print-show { display: block !important; }
+          [data-print-card] {
+            border: 1px solid #ccc !important;
+            background: white !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+          }
+        }
+        .earnings-print-show { display: none; }
+      `}</style>
+
+      <header className="sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-4 py-3 earnings-print-hide">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <h1 className="font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-[var(--accent)]" />
+            Mis ganancias
+          </h1>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            aria-label="Imprimir reporte"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimir
+          </button>
+        </div>
       </header>
+
+      <div className="earnings-print-show max-w-2xl mx-auto px-4 py-6 mb-4 border-b-2 border-black/30">
+        <h1 className="text-2xl font-extrabold text-black">Reporte de ganancias — Buleje</h1>
+        <p className="text-sm text-black/70 mt-1">
+          Periodo: <strong>{periodLabel}</strong> · Generado el {new Date().toLocaleDateString("es-PE")}
+        </p>
+      </div>
 
       <section className="mx-auto max-w-2xl px-4 py-6 space-y-6">
         {/* Period selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 earnings-print-hide">
           {PERIODS.map((p) => (
             <button
               key={p.id}
@@ -84,7 +119,7 @@ export default function GananciasPage() {
         {data && !loading && (
           <>
             {/* Totals */}
-            <div className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent)]/5 p-5 text-center">
+            <div data-print-card className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent)]/5 p-5 text-center">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total ganado</p>
               <p className="mt-1 text-4xl font-extrabold text-[var(--accent)]">
                 S/ {data.totals.total.toFixed(2)}
@@ -95,7 +130,7 @@ export default function GananciasPage() {
             </div>
 
             {/* Breakdown */}
-            <div className="grid grid-cols-2 gap-3">
+            <div data-print-card className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Bike className="h-4 w-4 text-[var(--text-secondary)]" />
@@ -113,7 +148,7 @@ export default function GananciasPage() {
             </div>
 
             {/* Chart simple */}
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+            <div data-print-card className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
               <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2 mb-4">
                 <TrendingUp className="h-4 w-4" />
                 Por día
