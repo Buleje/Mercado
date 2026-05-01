@@ -129,9 +129,93 @@ export async function PATCH(
       assignmentId: id,
       newStatus: result.newStatus,
     });
+
+    // Notificar al cliente — fire-and-forget. Crea entry en DeliveryTracking
+    // y envia WhatsApp con CTA al tracking publico.
+    notifyCustomerOfStatusChange(result.orderId, result.newStatus).catch((err) =>
+      logger.warn("[delivery/me/assignment-status] notify failed", {
+        error: String(err),
+        orderId: result.orderId,
+      }),
+    );
+
     return NextResponse.json({ ok: true, status: result.newStatus });
   } catch (err) {
     logger.error("[delivery/me/assignment-status] failed", { error: String(err) });
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+  }
+}
+
+// ── Customer notification helper ─────────────────────────────────────────
+const STATUS_MESSAGE: Record<string, { title: string; body: string }> = {
+  picked_up: {
+    title: "📦 Tu pedido fue recogido",
+    body: "El repartidor pasó a buscar tu pedido y va camino a la tienda.",
+  },
+  in_transit: {
+    title: "🛵 Tu pedido está en camino",
+    body: "El repartidor salió hacia tu dirección. Llega en pocos minutos.",
+  },
+  delivered: {
+    title: "✅ Tu pedido fue entregado",
+    body: "¡Listo! Esperamos que lo disfrutes.",
+  },
+  cancelled: {
+    title: "⚠️ Tu pedido fue cancelado",
+    body: "El repartidor canceló el pedido. Buscamos otra solución.",
+  },
+};
+
+async function notifyCustomerOfStatusChange(
+  orderId: string,
+  status: string,
+): Promise<void> {
+  const msg = STATUS_MESSAGE[status];
+  if (!msg) return;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, customerName: true, customerPhone: true, tenantId: true },
+  });
+  if (!order) return;
+
+  // Idempotency: skip si ya hay tracking entry reciente para este orderId+status.
+  const recent = await prisma.deliveryTracking.findFirst({
+    where: {
+      orderId, status,
+      createdAt: { gt: new Date(Date.now() - 5 * 60_000) },
+    },
+    select: { id: true },
+  });
+
+  if (!recent) {
+    await prisma.deliveryTracking.create({
+      data: {
+        id: `dt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        tenantId: order.tenantId,
+        orderId,
+        status,
+        description: msg.body,
+        actorType: "driver",
+      },
+    });
+  }
+
+  if (order.customerPhone) {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.buleje.pe";
+    const trackUrl = `${baseUrl}/tracking/${orderId}`;
+    const wa = [
+      msg.title,
+      "",
+      `Hola ${order.customerName ?? ""}, ${msg.body}`,
+      "",
+      `Mirá el seguimiento en tiempo real:`,
+      trackUrl,
+    ].join("\n");
+    const { sendWhatsAppQueued } = await import("@/lib/whatsapp");
+    await sendWhatsAppQueued(order.customerPhone, wa, {
+      tenantId: order.tenantId,
+      context: `delivery-status-${status}-${orderId}`,
+    }).catch(() => {});
   }
 }
