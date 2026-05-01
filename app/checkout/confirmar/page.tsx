@@ -35,6 +35,7 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
+import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { setLastOrder } from "@/components/marketplace/RepetirUltimoPedido";
@@ -67,6 +68,7 @@ export default function CheckoutConfirmarPage() {
     couponDiscountTotal,
     loyaltyDiscountTotal,
     reset,
+    hydrated,
   } = useCheckoutData();
   const { customer: loggedCustomer, register: registerCustomer } = useCustomer();
   const { saveAddress: persistAddress } = useSavedAddresses();
@@ -79,11 +81,32 @@ export default function CheckoutConfirmarPage() {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
 
+  // Espera a que el cart + checkout-data estén hidratados antes de redirigir
+  // (fix de la race que mandaba a /datos al avanzar desde /entrega).
+  const [cartReady, setCartReady] = useState(false);
   useEffect(() => {
-    if (itemCount === 0 && results.length === 0) router.replace("/marketplace/carrito");
+    const t = window.setTimeout(() => setCartReady(true), 250);
+    return () => window.clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (!cartReady || !hydrated) return;
+    // CRÍTICO: si ya hay resultados (pedido confirmado), NO redirigir. El
+    // flow de success se encarga del redirect a /tiendas. Sin este guard,
+    // tras confirmar el reset() vacía customer/address y los redirects
+    // de "datos faltantes" disparaban un loop /confirmar → /datos.
+    if (results.length > 0 || submitting) return;
+    if (itemCount === 0) router.replace("/marketplace/carrito");
     else if (!isCustomerValid) router.replace("/checkout/datos");
     else if (!isAddressValid) router.replace("/checkout/entrega");
-  }, [itemCount, isCustomerValid, isAddressValid, router, results.length]);
+  }, [
+    cartReady, hydrated, itemCount, isCustomerValid, isAddressValid,
+    router, results.length, submitting,
+  ]);
+
+  // Prefetch destino post-compra
+  useEffect(() => {
+    router.prefetch("/tiendas");
+  }, [router]);
 
   const storeIds = Object.keys(byStore);
 
@@ -167,10 +190,19 @@ export default function CheckoutConfirmarPage() {
       const g = byStore[sid];
       const r = settled[idx];
       if (r.status === "fulfilled") {
+        // El server responde { data: { orderId, ... } } o (legacy) { id, ... }.
+        // Soportamos ambos formatos.
+        const v = r.value as
+          | { data?: { orderId?: string | number; id?: string | number } }
+          | { id?: string | number; orderId?: string | number }
+          | null
+          | undefined;
         const orderId =
-          r.value && typeof r.value === "object" && "id" in r.value
-            ? (r.value as { id?: string | number }).id
-            : undefined;
+          (v && "data" in v && v.data
+            ? v.data.orderId ?? v.data.id
+            : undefined) ??
+          (v && "orderId" in v ? v.orderId : undefined) ??
+          (v && "id" in v ? v.id : undefined);
         return { storeName: g.storeName, storeSlug: g.storeSlug, success: true, orderId };
       }
       const message = r.reason instanceof Error ? r.reason.message : "Error desconocido";
@@ -252,25 +284,80 @@ export default function CheckoutConfirmarPage() {
     }
 
     if (failed.length === 0) {
-      reset();
+      // NO llamar reset() aquí: vacía customer/address y dispara el useEffect
+      // de redirect que mandaba al usuario de vuelta a /datos. El reset se
+      // hace tras el redirect a /tiendas (más abajo, dentro del setTimeout).
       const first = succeeded[0];
-      // Toast paiche de celebración + redirect con delay para que se vea
+      // Toast paiche de celebración + redirect a /marketplace/tiendas
+      // (preferencia del dueño: tras la compra, mantener al cliente
+      // explorando otras tiendas en lugar de ir a la página de "gracias").
       const storeCount = succeeded.length;
       setToastData({
         title: storeCount === 1 ? "¡Pedido realizado!" : `¡${storeCount} pedidos realizados!`,
         subtitle:
           storeCount === 1
-            ? "Tu bodega te contacta por WhatsApp en minutos."
-            : `Cada una de las ${storeCount} tiendas te contacta por WhatsApp.`,
+            ? "Tu bodega te contacta por WhatsApp en minutos. Sigue explorando."
+            : `Cada una de las ${storeCount} tiendas te contacta por WhatsApp. Sigue explorando.`,
       });
+      // Guardamos snapshot completo del pedido para el modal de éxito que se
+      // abrirá automáticamente en /tiendas (y luego desde el badge del nav).
+      // Si por alguna razón el server no devolvió orderId, igual guardamos el
+      // snapshot para que el modal aparezca — el usuario hizo la compra.
+      if (succeeded.length > 0 && typeof window !== "undefined") {
+        try {
+          // Snapshot de items del cart (antes del reset que vacía el cart)
+          const itemsSnapshot = Object.values(byStore).flatMap((g) =>
+            g.items.map((i) => ({
+              productId: i.productId,
+              name: i.name,
+              price: i.price,
+              quantity: i.quantity,
+              imageUrl: i.image ?? "",
+              storeName: g.storeName,
+              storeSlug: g.storeSlug,
+            })),
+          );
+          localStorage.setItem(
+            "marketplace-last-order",
+            JSON.stringify({
+              orderIds: succeeded
+                .map((s) => s.orderId)
+                .filter((id): id is string | number => id !== undefined)
+                .map(String),
+              ts: Date.now(),
+              autoOpen: true, // dispara apertura del modal en /tiendas
+              customer: {
+                name: customer.name,
+                phone: customer.phone,
+              },
+              address: {
+                line: address.address,
+                district: address.districtName,
+                province: address.provinceName,
+                department: address.departmentName,
+                notes: address.notes,
+              },
+              total: grandTotal,
+              items: itemsSnapshot,
+              storeNames: Array.from(new Set(succeeded.map((s) => s.storeName))),
+            }),
+          );
+        } catch {
+          /* silent */
+        }
+      }
       setToastOpen(true);
       setSubmitting(false);
-      if (first?.orderId) {
-        setTimeout(() => {
-          router.replace(`/pedido/${first.orderId}/gracias`);
-        }, 2800);
-        return;
-      }
+      // Redirect a /tiendas (directorio real). Tras 2.8s para que se vea el toast.
+      // El reset del checkout-data ocurre DESPUÉS del redirect — si lo hacemos
+      // antes, el useEffect de redirect rebotaría a /datos.
+      setTimeout(() => {
+        router.replace("/tiendas");
+        // Pequeño delay extra para asegurar que el unmount de /confirmar ya
+        // pasó antes de limpiar customer/address.
+        window.setTimeout(() => reset(), 300);
+      }, 2800);
+      return;
     } else if (succeeded.length > 0) {
       setErrorMsg(`${succeeded.length} pedidos enviados, ${failed.length} fallaron. Reintentalos.`);
       setSubmitting(false);
@@ -767,6 +854,9 @@ export default function CheckoutConfirmarPage() {
         subtitle={toastData?.subtitle ?? "Gracias por comprar en Buleje."}
         onDismiss={() => setToastOpen(false)}
       />
+
+      {/* Overlay paiche durante el envío del pedido (POST a /api/marketplace/orders) */}
+      <CheckoutTransitionOverlay show={submitting} label="Enviando tu pedido" />
     </>
   );
 }

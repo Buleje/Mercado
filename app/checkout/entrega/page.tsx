@@ -34,6 +34,10 @@ import { useCustomer } from "@/contexts/customer-context";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
+import {
+  CheckoutTransitionOverlay,
+  useCheckoutTransition,
+} from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import { useSavedAddresses, type SavedAddress } from "@/hooks/use-saved-addresses";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -418,10 +422,26 @@ export default function CheckoutEntregaPage() {
     }
   }, [setAddress, address.address, address.zone]);
 
+  const { isPending, pendingLabel, navigateTo } = useCheckoutTransition();
+  const { hydrated } = useCheckoutData();
+
+  // Espera a que el carrito y los datos del checkout estén hidratados antes
+  // de decidir si redirige (fix de la race que mandaba a /datos).
+  const [cartReady, setCartReady] = useState(false);
   useEffect(() => {
+    const t = window.setTimeout(() => setCartReady(true), 250);
+    return () => window.clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (!cartReady || !hydrated) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
     else if (!isCustomerValid) router.replace("/checkout/datos");
-  }, [itemCount, isCustomerValid, router]);
+  }, [cartReady, hydrated, itemCount, isCustomerValid, router]);
+
+  // Prefetch del próximo paso (acelera la navegación a /confirmar)
+  useEffect(() => {
+    router.prefetch("/checkout/confirmar");
+  }, [router]);
 
   const { customer: savedCustomer } = useCustomer();
   useEffect(() => {
@@ -472,9 +492,9 @@ export default function CheckoutEntregaPage() {
       e.preventDefault();
       setTouched(true);
       if (!isAddressValid) return;
-      router.push("/checkout/confirmar");
+      navigateTo("/checkout/confirmar", "Preparando tu resumen");
     },
-    [isAddressValid, router],
+    [isAddressValid, navigateTo],
   );
 
   const validateCoupon = useCallback(
@@ -1090,7 +1110,7 @@ export default function CheckoutEntregaPage() {
           ctaLabel="Revisar pedido"
           onCtaClick={() => {
             setTouched(true);
-            if (isAddressValid) router.push("/checkout/confirmar");
+            if (isAddressValid) navigateTo("/checkout/confirmar", "Preparando tu resumen");
           }}
           ctaDisabled={!isAddressValid}
           couponDiscount={couponDiscountTotal}
@@ -1099,6 +1119,7 @@ export default function CheckoutEntregaPage() {
           helperText="Un paso más para confirmar"
         />
       </div>
+      <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
     </>
   );
 }

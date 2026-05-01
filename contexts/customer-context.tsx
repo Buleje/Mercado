@@ -190,8 +190,14 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       return next;
     });
     setShowModal(false);
-    // Sync to backend if phone is present (fire-and-forget)
-    if (data.phone) {
+    // El POST a /api/customers requiere sesión admin (CRM). Desde el checkout
+    // del marketplace los clientes no son admin → siempre 403. Sólo intentamos
+    // el sync si detectamos cookie de sesión admin presente. El registro local
+    // (localStorage + context) ya quedó hecho.
+    const hasAdminSession =
+      typeof document !== "undefined" &&
+      /(?:^|;\s*)buleje-sess=/.test(document.cookie);
+    if (data.phone && hasAdminSession) {
       fetch("/api/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

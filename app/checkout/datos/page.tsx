@@ -26,6 +26,10 @@ import { useCustomer, isCustomerProfileComplete } from "@/contexts/customer-cont
 import { useCheckoutData } from "@/hooks/use-checkout-data";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import AccountPicker from "@/components/marketplace/checkout/AccountPicker";
+import {
+  CheckoutTransitionOverlay,
+  useCheckoutTransition,
+} from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 
 function pillCls(error?: boolean) {
   return cn(
@@ -43,13 +47,27 @@ export default function CheckoutDatosPage() {
   const router = useRouter();
   const { itemCount } = useMarketplaceCart();
   const { customer: savedCustomer, accounts } = useCustomer();
-  const { customer, setCustomer, setAddress, isCustomerValid } = useCheckoutData();
+  const { customer, setCustomer, setAddress, isCustomerValid, hydrated } = useCheckoutData();
   const [touched, setTouched] = useState({ name: false, phone: false });
+  const { isPending, pendingLabel, navigateTo } = useCheckoutTransition();
 
-  // Auto-redirect si carrito vacio
+  // Auto-redirect si carrito vacio. Esperamos a que el cart context haya
+  // hidratado: el primer render puede mostrar itemCount=0 antes de leer
+  // localStorage.
+  const [cartReady, setCartReady] = useState(false);
   useEffect(() => {
-    if (itemCount === 0) router.replace("/marketplace/carrito");
-  }, [itemCount, router]);
+    const t = window.setTimeout(() => setCartReady(true), 250);
+    return () => window.clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (cartReady && itemCount === 0) router.replace("/marketplace/carrito");
+  }, [cartReady, itemCount, router]);
+
+  // Prefetch del próximo paso
+  useEffect(() => {
+    router.prefetch("/checkout/entrega");
+    router.prefetch("/checkout/confirmar");
+  }, [router]);
 
   // Pre-llenar con datos del customer logged in (siempre sincroniza con el activo)
   useEffect(() => {
@@ -82,8 +100,8 @@ export default function CheckoutDatosPage() {
         .filter(Boolean)
         .join(", "),
     });
-    router.push("/checkout/confirmar");
-  }, [savedCustomer, setCustomer, setAddress, router]);
+    navigateTo("/checkout/confirmar", "Preparando tu resumen");
+  }, [savedCustomer, setCustomer, setAddress, navigateTo]);
 
   const profileComplete = isCustomerProfileComplete(savedCustomer);
 
@@ -92,9 +110,9 @@ export default function CheckoutDatosPage() {
       e.preventDefault();
       setTouched({ name: true, phone: true });
       if (!isCustomerValid) return;
-      router.push("/checkout/entrega");
+      navigateTo("/checkout/entrega", "Calculando tu entrega");
     },
-    [isCustomerValid, router],
+    [isCustomerValid, navigateTo],
   );
 
   const showNameError = touched.name && customer.name.trim().length < 2;
@@ -319,13 +337,14 @@ export default function CheckoutDatosPage() {
           ctaLabel="Continuar a entrega"
           onCtaClick={() => {
             setTouched({ name: true, phone: true });
-            if (isCustomerValid) router.push("/checkout/entrega");
+            if (isCustomerValid) navigateTo("/checkout/entrega", "Calculando tu entrega");
           }}
           ctaDisabled={!isCustomerValid}
           showItems
           helperText="Pago al recibir o por Yape"
         />
       </div>
+      <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
     </>
   );
 }
