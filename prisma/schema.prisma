@@ -2635,6 +2635,8 @@ model DeliveryAssignment {
   partner     DeliveryPartner @relation(fields: [partnerId], references: [id])
   status      String          @default("assigned")
   fee         Decimal         @db.Decimal(12, 2)
+  tipAmount   Decimal         @default(0) @db.Decimal(12, 2)
+  tipMessage  String?
   pickedUpAt  DateTime?
   deliveredAt DateTime?
   notes       String?

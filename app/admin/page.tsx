@@ -30,6 +30,7 @@ import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { TrialCountdownBannerLoader } from "@/components/admin/billing/TrialCountdownBannerLoader";
 import { TrialExpiredGuard } from "@/components/admin/billing/TrialExpiredGuard";
+import AdminAlertsBanner from "@/components/admin/AdminAlertsBanner";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
 
@@ -241,6 +242,9 @@ function AdminPage() {
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />
+
+      {/* ADR-087: alertas operativas (solicitudes pendientes, pedidos sin partner) */}
+      <AdminAlertsBanner />
 
       {/* AdminImpersonationBanner removido — el chip tenant del topbar
           ya indica el negocio administrado. Salir de impersonation se
