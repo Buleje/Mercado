@@ -1,17 +1,16 @@
 "use client";
 
 import { PageTitle } from "@buleje/design-system";
-import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
 import { useDeliveryDriver } from "./hooks/useDeliveryDriver";
 import { useOrderBulkActions } from "./hooks/useOrderBulkActions";
 import { useOrderActions } from "./hooks/useOrderActions";
-import { OrdersList } from "./OrdersList";
+import { OrdersKanban } from "./OrdersKanban";
 import { OrdersFilters } from "./OrdersFilters";
 import { OrdersBulkActions } from "./OrdersBulkActions";
 import { OrdersDetailPanel } from "./OrdersDetailPanel";
@@ -59,8 +58,6 @@ export default function OrdersTab() {
   } = useOrderActions({ orders, setOrders, setDetailOrder, load });
 
   const {
-    deliveryDriver,
-    setDeliveryDriver,
     customDriver,
     setCustomDriver,
     savingDriver,
@@ -85,7 +82,6 @@ export default function OrdersTab() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [ordPage, setOrdPage] = useState(1);
 
   useScrollLock(!!detailOrder || showArchive || !!confirmDeleteId || showAdvancedFilters || showPrintPreview);
 
@@ -142,93 +138,113 @@ export default function OrdersTab() {
     return o.createdAt.slice(0, 10) === today;
   }).length;
 
-  return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — patron estandar AdminModuleHeader (igual que EInvoice, Inventario,
-          Compras, etc). Eyebrow + PageTitle font-display italic + description.
-          Acciones en slot children: filtros, imprimir, archivados. */}
-      <AdminModuleHeader
-        eyebrow="Operaciones · Hoy"
-        title="Pedidos del día"
-        description={`Gestiona pedidos activos, asigna delivery y verifica pagos. ${inDeliveryOrders > 0 ? `${inDeliveryOrders} en preparacion / delivery.` : ""}`}
-        icon={Package}
-      >
-        <button
-          type="button"
-          onClick={() => setFilterByDelivery((prev) => !prev)}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors border",
-            filterByDelivery
-              ? "bg-primary text-white border-primary"
-              : "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent",
-          )}
-        >
-          <Bike className="h-4 w-4" /> Por delivery
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <SlidersHorizontal className="h-4 w-4" /> Filtros
-          {activeFiltersCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-bold bg-primary text-white">
-              {activeFiltersCount}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <Printer className="h-4 w-4" /> Imprimir
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowArchive(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <FileText className="h-4 w-4" /> Archivados
-          {archivedOrders.length > 0 && (
-            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
-              {archivedOrders.length}
-            </span>
-          )}
-        </button>
-      </AdminModuleHeader>
+  // Sparkline 7d — agrupar por día (entregados últimos 7 días)
+  const deliveredSparkline = useMemo(() => {
+    const buckets = new Array(7).fill(0);
+    // eslint-disable-next-line react-hooks/purity -- Date.now() es intencional para calcular ventana de 7 días
+    const now = Date.now();
+    for (const o of orders) {
+      if (o.status !== "entregado") continue;
+      const ageDays = Math.floor((now - new Date(o.createdAt).getTime()) / 86_400_000);
+      if (ageDays >= 0 && ageDays < 7) buckets[6 - ageDays] += 1;
+    }
+    return buckets;
+  }, [orders]);
 
-      {/* KPI stats — patron estandar EInvoice/Inventario/Cierre.
-          Sin iconos, label uppercase tracking-wider, value text-xl font-extrabold,
-          intent en color del valor solo cuando hay alerta. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {([
-          { label: "Activos", value: String(activeOrders.length), intent: "neutral" as const },
-          {
-            label: "Por confirmar",
-            value: String(pendingOrders),
-            intent: pendingOrders > 0 ? ("warning" as const) : ("neutral" as const),
-          },
-          { label: "Entregados hoy", value: String(todayDelivered), intent: "neutral" as const },
-          { label: "Total activo", value: `S/ ${total.toFixed(2)}`, intent: "neutral" as const },
-        ]).map(({ label, value, intent }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+  return (
+    <div className="space-y-5 sm:space-y-7">
+      {/* Header editorial Buleje — eyebrow + título display italic + acciones a la derecha */}
+      <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 pb-2">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+            Operaciones · Hoy
+          </p>
+          <PageTitle className="font-display italic text-4xl sm:text-5xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+            Pedidos del día
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-2xl">
+            {activeOrders.length === 0
+              ? "Tranqui — sin pedidos activos. Cuando llegue uno aparece acá en tiempo real."
+              : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha · ${inDeliveryOrders} en preparación o ruta · S/${total.toFixed(2)} por cobrar.`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <button
+            type="button"
+            onClick={() => setFilterByDelivery((prev) => !prev)}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-11 px-4 rounded-xl text-sm font-bold transition-colors border-2",
+              filterByDelivery
+                ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+            )}
           >
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              {label}
+            <Bike className="h-4 w-4" /> Por motorizado
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFilters(true)}
+            className="relative inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            <SlidersHorizontal className="h-4 w-4" /> Filtros
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-bold bg-[var(--accent)] text-white">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            <Printer className="h-4 w-4" /> Imprimir
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowArchive(true)}
+            className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            <FileText className="h-4 w-4" /> Archivados
+            {archivedOrders.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-6 h-5 px-1.5 rounded-md text-xs font-black bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
+                {archivedOrders.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* KPIs editoriales — número grande italic + sparkline en el último */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Activos", value: activeOrders.length, intent: "neutral" as const, sub: `S/${total.toFixed(0)}` },
+          { label: "Por confirmar", value: pendingOrders, intent: pendingOrders > 0 ? "warning" : "neutral", sub: pendingOrders > 0 ? "Acción urgente" : "Todo al día" },
+          { label: "En preparación · ruta", value: inDeliveryOrders, intent: "neutral" as const, sub: inDeliveryOrders > 0 ? "Cocina + motorizados" : "Sin pendientes" },
+          { label: "Entregados hoy", value: todayDelivered, intent: "neutral" as const, sub: "7 días", sparkline: deliveredSparkline },
+        ].map((kpi) => (
+          <div
+            key={kpi.label}
+            className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
+          >
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              {kpi.label}
             </p>
-            <p
-              className={cn(
-                "text-xl font-extrabold tabular-nums",
-                intent === "warning"
-                  ? "text-[var(--data-warning)]"
-                  : "text-[var(--text-primary)]",
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <p
+                className={cn(
+                  "font-display italic text-4xl sm:text-5xl font-black leading-none tabular-nums tracking-[var(--ls-tight)]",
+                  kpi.intent === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]",
+                )}
+              >
+                {kpi.value}
+              </p>
+              {kpi.sparkline && kpi.sparkline.length > 1 && (
+                <KpiSparkline data={kpi.sparkline} />
               )}
-            >
-              {value}
-            </p>
+            </div>
+            <p className="text-xs font-semibold text-[var(--text-tertiary)] mt-2">{kpi.sub}</p>
           </div>
         ))}
       </div>
@@ -348,14 +364,13 @@ export default function OrdersTab() {
         )}
       </div>
 
-      {/* Orders list */}
-      <OrdersList
+      {/* Orders kanban — 3 columnas operativas */}
+      <OrdersKanban
         activeOrders={activeOrders}
         loading={loading}
         storeLat={storeLat}
         storeLon={storeLon}
         selectedOrderIds={selectedOrderIds}
-        ordPage={ordPage}
         driverColor={driverColor}
         onSelectOrder={setDetailOrder}
         onToggleSelect={toggleOrderSelect}
@@ -364,7 +379,6 @@ export default function OrdersTab() {
         onRejectYape={rejectYape}
         onMarkDeudaPaid={markDeudaPaid}
         onDeleteOrder={setConfirmDeleteId}
-        onPageChange={setOrdPage}
       />
 
       {/* Print-only summary */}
@@ -413,7 +427,6 @@ export default function OrdersTab() {
           order={detailOrder}
           adminNote={adminNote}
           savingNote={savingNote}
-          deliveryDriver={deliveryDriver}
           customDriver={customDriver}
           savingDriver={savingDriver}
           driverColor={driverColor}
@@ -424,9 +437,8 @@ export default function OrdersTab() {
           onRejectYape={rejectYape}
           onMarkDeudaPaid={markDeudaPaid}
           onShowRejectModal={id => { setShowRejectModal(id); setRejectReason(""); }}
-          onDeliveryDriverChange={setDeliveryDriver}
           onCustomDriverChange={setCustomDriver}
-          onSaveDeliveryDriver={saveDeliveryDriver}
+          onSaveCustomDriver={saveDeliveryDriver}
           onPatchOrder={patchOrder}
         />
       )}
@@ -479,5 +491,46 @@ export default function OrdersTab() {
         onShowPrint={() => setShowPrintPreview(true)}
       />
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KpiSparkline — micro chart 7 días para el KPI "Entregados hoy"
+// ─────────────────────────────────────────────────────────────────────────────
+
+function KpiSparkline({ data }: { data: number[] }) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const w = 56;
+  const h = 24;
+  const pts = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - 2 - ((v - min) / range) * (h - 4);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
+  const trendUp = last >= prev;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      className="overflow-visible opacity-80 shrink-0"
+      aria-hidden
+    >
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={trendUp ? "var(--data-success)" : "var(--data-error)"}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

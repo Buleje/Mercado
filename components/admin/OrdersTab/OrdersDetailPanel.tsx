@@ -1,26 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { X, Printer, Check, Phone, ExternalLink, FileText, UserCheck, Bike } from "@buleje/design-system/icons";
+import { X, Printer, Check, Phone, ExternalLink, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { formatDate, getOrderTimeline } from "@/lib/admin-helpers";
 import { googleMapsUrl } from "@/lib/order-utils";
-import { STATUS_COLORS, STATUS_LABELS, DRIVERS } from "./types";
-
-// Modal "Asignar repartidor del marketplace" — lazy load (Leaflet inside fetch).
-const ManualAssignModal = dynamic(
-  () => import("@/components/admin/delivery/ManualAssignModal"),
-  { ssr: false },
-);
+import { STATUS_COLORS, STATUS_LABELS } from "./types";
+import { DespachoSection } from "./DespachoSection";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
   adminNote: string;
   savingNote: boolean;
-  deliveryDriver: string;
   customDriver: string;
   savingDriver: boolean;
   driverColor: (name: string) => string;
@@ -31,9 +23,8 @@ interface OrdersDetailPanelProps {
   onRejectYape: (id: string) => void;
   onMarkDeudaPaid: (id: string) => void;
   onShowRejectModal: (id: string) => void;
-  onDeliveryDriverChange: (v: string) => void;
   onCustomDriverChange: (v: string) => void;
-  onSaveDeliveryDriver: (orderId: string) => void;
+  onSaveCustomDriver: (orderId: string) => void;
   onPatchOrder: (id: string, patch: Partial<DbOrder>) => void;
 }
 
@@ -41,7 +32,6 @@ export function OrdersDetailPanel({
   order,
   adminNote,
   savingNote,
-  deliveryDriver,
   customDriver,
   savingDriver,
   driverColor,
@@ -52,14 +42,11 @@ export function OrdersDetailPanel({
   onRejectYape,
   onMarkDeudaPaid,
   onShowRejectModal,
-  onDeliveryDriverChange,
   onCustomDriverChange,
-  onSaveDeliveryDriver,
+  onSaveCustomDriver,
   onPatchOrder,
 }: OrdersDetailPanelProps) {
-  const currentDriver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
-  const [showManualAssign, setShowManualAssign] = useState(false);
 
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
 
@@ -72,48 +59,71 @@ export function OrdersDetailPanel({
       aria-label={`Detalle del pedido de ${order.customer.name}`}
     >
       <div
-        className="bg-[var(--surface-canvas)] w-full max-w-2xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300"
+        className="bg-[var(--surface-canvas)] w-full max-w-3xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header editorial Holded */}
-        <header className="flex items-start justify-between px-6 py-5 border-b border-[var(--rule-soft)] shrink-0 bg-[var(--surface-raised)]">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Header editorial — eyebrow + cliente en font-display italic + total a la derecha */}
+        <header className="flex items-start justify-between gap-4 px-7 py-6 border-b border-[var(--rule-soft)] shrink-0 bg-[var(--surface-raised)]">
+          <div className="flex items-start gap-4 min-w-0">
             <span
               aria-hidden
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xl font-black tracking-tight"
+              className="inline-flex h-14 w-14 items-center justify-center rounded-2xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-2xl font-black tracking-tight"
             >
               {initial}
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
-                Pedido
+              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                Pedido · #{order.id.slice(-8)}
               </p>
-              <CardTitle className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
+              <CardTitle className="font-display italic text-3xl leading-[1.1] tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
                 {order.customer.name}
               </CardTitle>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-                #{order.id.slice(-8)} · {formatDate(order.createdAt)}
+              <p className="text-sm text-[var(--text-tertiary)] mt-1.5 flex items-center gap-2 flex-wrap">
+                <span>{formatDate(order.createdAt)}</span>
+                <span aria-hidden>·</span>
+                <span className={cn(
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider",
+                  STATUS_COLORS[order.status],
+                )}>
+                  {STATUS_LABELS[order.status]}
+                </span>
+                {order.paymentMethod && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="font-bold text-[var(--text-secondary)]">
+                      {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
-              title="Imprimir ticket / Boleta"
-              aria-label="Imprimir ticket o boleta"
-            >
-              <Printer className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-              aria-label="Cerrar panel"
-            >
-              <X className="h-5 w-5" strokeWidth={2} aria-hidden />
-            </button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Total
+            </p>
+            <p className="font-display italic text-3xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+              S/{order.total.toFixed(2)}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                title="Imprimir ticket / Boleta"
+                aria-label="Imprimir ticket o boleta"
+              >
+                <Printer className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                aria-label="Cerrar panel"
+              >
+                <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -167,72 +177,16 @@ export function OrdersDetailPanel({
             </div>
           </div>
 
-          {/* Delivery Driver Assignment */}
-          <div className="bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-base)]">
-            <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Asignar Delivery</p>
-            {currentDriver && (
-              <div className="flex items-center gap-2 mb-3">
-                <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-white"
-                  style={{ backgroundColor: driverColor(currentDriver) }}
-                >
-                  <UserCheck className="h-4 w-4" /> {currentDriver}
-                </span>
-                <button
-                  onClick={() => onPatchOrder(order.id, { deliveryDriver: "" } as Partial<DbOrder>)}
-                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline"
-                >
-                  Cambiar
-                </button>
-              </div>
-            )}
-            <div className="space-y-2">
-              <select
-                value={deliveryDriver}
-                onChange={(e) => onDeliveryDriverChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
-              >
-                <option value="">Seleccionar delivery...</option>
-                {DRIVERS.map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={customDriver}
-                  onChange={(e) => onCustomDriverChange(e.target.value)}
-                  placeholder="O escribe nombre personalizado..."
-                  className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
-                />
-                <button
-                  onClick={() => onSaveDeliveryDriver(order.id)}
-                  disabled={savingDriver || (!deliveryDriver && !customDriver.trim())}
-                  className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savingDriver ? "..." : "Asignar"}
-                </button>
-              </div>
-
-              {/* Botón "Asignar repartidor marketplace" — abre modal con
-                  partners online del Rappi-system. Override de cascada. */}
-              <button
-                type="button"
-                onClick={() => setShowManualAssign(true)}
-                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
-              >
-                <Bike className="h-4 w-4" />
-                Asignar repartidor del marketplace
-              </button>
-            </div>
-            {showManualAssign && (
-              <ManualAssignModal
-                orderId={order.id}
-                orderLocation={order.customer.location}
-                onClose={() => setShowManualAssign(false)}
-              />
-            )}
-          </div>
+          {/* Despacho — sección unificada de asignación de motorizado */}
+          <DespachoSection
+            order={order}
+            customDriver={customDriver}
+            savingDriver={savingDriver}
+            driverColor={driverColor}
+            onCustomDriverChange={onCustomDriverChange}
+            onSaveCustomDriver={onSaveCustomDriver}
+            onPatchOrder={onPatchOrder}
+          />
 
           {/* Customer */}
           <div className="space-y-1">

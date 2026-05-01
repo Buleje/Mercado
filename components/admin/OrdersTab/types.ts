@@ -51,8 +51,6 @@ export const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
   cancelado: [],
 };
 
-export const DRIVERS = ["Juan", "María", "Carlos", "Delivery 1", "Delivery 2", "Delivery 3"];
-
 export const REJECTION_TEMPLATES = [
   "Producto agotado temporalmente",
   "Dirección fuera de zona de cobertura",
