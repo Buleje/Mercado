@@ -11,12 +11,14 @@
  * RIGHT: phone preview animado con dashboard del negocio.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
 import {
   AnimatePresence,
   m,
+  useMotionValue,
   useScroll,
+  useSpring,
   useTransform,
   useReducedMotion,
 } from "framer-motion";
@@ -222,32 +224,65 @@ const EVENT_META: Record<EventKind, { Icon: typeof ShoppingBag; tone: string }> 
 // Sparkline path: día de ventas (12 puntos)
 const SPARKLINE_POINTS = [22, 28, 24, 35, 30, 42, 38, 48, 52, 60, 68, 75];
 
+// Hourly bars: ventas por hora del día (12 barras, valor relativo)
+const HOURLY_BARS = [12, 18, 24, 30, 35, 28, 42, 55, 68, 75, 82, 90];
+
+const SEARCH_PHRASES = [
+  "agregar producto",
+  "ver pedidos pendientes",
+  "imprimir reporte",
+  "crear cupón",
+];
+
 function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
   const [sales, setSales] = useState(2840);
   const [eventIdx, setEventIdx] = useState(0);
-  const [showToast, setShowToast] = useState(false);
+  const [pulse, setPulse] = useState(0);
   const [progress, setProgress] = useState(45);
-  const [pulse, setPulse] = useState(0); // trigger pulso al entrar evento
+  const [toastStack, setToastStack] = useState<number[]>([]); // últimos 2 event indexes
+  const [searchText, setSearchText] = useState("");
 
-  useEffect(() => {
+  // Mouse tilt 3D
+  const tiltX = useSpring(useMotionValue(0), { stiffness: 120, damping: 18 });
+  const tiltY = useSpring(useMotionValue(0), { stiffness: 120, damping: 18 });
+  const handleMouseMove = (e: ReactMouseEvent<HTMLDivElement>) => {
     if (reducedMotion) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5..0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltY.set(x * 8); // rotateY
+    tiltX.set(-y * 8); // rotateX
+  };
+  const handleMouseLeave = () => {
+    tiltX.set(0);
+    tiltY.set(0);
+  };
+
+  // Eventos rotativos cada 3.4s
+  useEffect(() => {
+    if (reducedMotion) {
+      setToastStack([0]);
+      return;
+    }
     const tick = setInterval(() => {
-      setEventIdx((i) => (i + 1) % EVENT_STREAM.length);
-      setShowToast(true);
+      setEventIdx((i) => {
+        const next = (i + 1) % EVENT_STREAM.length;
+        setToastStack((st) => [next, ...st].slice(0, 2));
+        return next;
+      });
       setPulse((p) => p + 1);
-      setTimeout(() => setShowToast(false), 2600);
     }, 3400);
     return () => clearInterval(tick);
   }, [reducedMotion]);
 
-  // Sumar ventas cuando entra el evento (delta del evento actual)
+  // Sumar ventas cuando cambia evento
   useEffect(() => {
     if (reducedMotion) return;
     const ev = EVENT_STREAM[eventIdx];
     if (ev.delta > 0) setSales((s) => s + ev.delta);
   }, [eventIdx, reducedMotion]);
 
-  // Barra de progreso del tracker (0 → 100% en 3.4s loop)
+  // Tracker progress 0→100% loop
   useEffect(() => {
     if (reducedMotion) { setProgress(75); return; }
     const start = Date.now();
@@ -258,29 +293,66 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
     return () => clearInterval(id);
   }, [reducedMotion]);
 
-  const ev = EVENT_STREAM[eventIdx];
-  const { Icon: EvIcon, tone: evTone } = EVENT_META[ev.kind];
+  // Auto-typing search
+  useEffect(() => {
+    if (reducedMotion) {
+      setSearchText(SEARCH_PHRASES[0]);
+      return;
+    }
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let typing = true;
+    const tick = setInterval(() => {
+      const target = SEARCH_PHRASES[phraseIdx];
+      if (typing) {
+        charIdx++;
+        setSearchText(target.slice(0, charIdx));
+        if (charIdx >= target.length) {
+          typing = false;
+          setTimeout(() => {}, 800);
+        }
+      } else {
+        charIdx--;
+        setSearchText(target.slice(0, charIdx));
+        if (charIdx <= 0) {
+          typing = true;
+          phraseIdx = (phraseIdx + 1) % SEARCH_PHRASES.length;
+        }
+      }
+    }, 90);
+    return () => clearInterval(tick);
+  }, [reducedMotion]);
 
   return (
-    <div aria-hidden className="relative h-[520px] sm:h-[580px] lg:h-[640px] flex items-center justify-center select-none">
+    <div
+      aria-hidden
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative h-[520px] sm:h-[580px] lg:h-[640px] flex items-center justify-center select-none [perspective:1200px]"
+    >
       {/* Glow accent multicapa */}
       <div className="absolute inset-x-4 top-8 bottom-4 rounded-[3.5rem] bg-linear-to-br from-[var(--accent)]/[0.22] via-fuchsia-500/[0.08] to-amber-400/[0.12] blur-3xl" />
       <div className="absolute inset-x-12 top-16 bottom-12 rounded-[3rem] bg-linear-to-tr from-[var(--accent)]/[0.18] to-transparent blur-2xl" />
 
-      {/* Pulso expansivo al entrar evento (sutil) */}
+      {/* Pulso expansivo al entrar evento */}
       {!reducedMotion && (
         <m.div
           key={pulse}
           aria-hidden
           initial={{ scale: 0.92, opacity: 0.55 }}
-          animate={{ scale: 1.18, opacity: 0 }}
+          animate={{ scale: 1.2, opacity: 0 }}
           transition={{ duration: 1.6, ease: "easeOut" }}
           className="absolute inset-x-8 top-12 bottom-8 rounded-[3rem] border-2 border-[var(--accent)]/30 pointer-events-none"
         />
       )}
 
-      {/* Frame del teléfono */}
+      {/* Frame del teléfono con 3D tilt */}
       <m.div
+        style={{
+          rotateX: tiltX,
+          rotateY: tiltY,
+          transformStyle: "preserve-3d",
+        }}
         whileHover={reducedMotion ? undefined : { y: -4, scale: 1.01 }}
         transition={{ type: "spring", stiffness: 220, damping: 20 }}
         className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20"
@@ -307,6 +379,18 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                 </span>
                 <span className="text-xs font-black text-[var(--brand-success)]">LIVE</span>
               </span>
+            </div>
+            {/* Search auto-typing */}
+            <div className="mt-2.5 h-9 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center px-3 text-xs text-[var(--text-secondary)] font-medium">
+              <span className="mr-2 text-[var(--text-tertiary)] text-base">⌕</span>
+              <span className="truncate">{searchText}</span>
+              {!reducedMotion && (
+                <m.span
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="ml-0.5 inline-block w-px h-3 bg-[var(--text-secondary)]"
+                />
+              )}
             </div>
           </div>
 
@@ -338,33 +422,39 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
             <KpiCard kicker="Clientes" value={128 + eventIdx * 2} tone="bg-linear-to-br from-fuchsia-500 to-rose-500" />
           </div>
 
-          {/* Tracker pedido en vivo */}
+          {/* Bar chart "Ventas por hora" */}
           <div className="px-4 mt-3">
-            <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-extrabold text-[var(--text-primary)]">Pedido #2403</p>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-success)]">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand-success)]" />
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-extrabold text-[var(--text-primary)]">Por hora</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)]">12h - 11p</p>
+            </div>
+            <HourlyBars values={HOURLY_BARS} reducedMotion={reducedMotion} />
+          </div>
+
+          {/* Tracker compacto */}
+          <div className="px-4 mt-3">
+            <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-2.5 flex items-center gap-2.5">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-[var(--accent)]">
+                <Bike className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">
+                    Marco · 12 min
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-success)]">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-success)]" />
+                    </span>
                   </span>
-                  En camino
-                </span>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-[var(--accent)]">
-                  <Bike className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </span>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Marco · Llega en{" "}
-                  <span className="font-black text-[var(--text-primary)]">12 min</span>
-                </p>
-              </div>
-              <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-linear-to-r from-emerald-400 to-[var(--accent)] transition-[width] duration-100"
-                  style={{ width: `${progress}%` }}
-                />
+                </div>
+                <div className="mt-1 h-1 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-linear-to-r from-emerald-400 to-[var(--accent)] transition-[width] duration-100"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -375,39 +465,51 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
             <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
           </div>
 
-          {/* Toast multi-evento — animado por kind */}
-          <AnimatePresence mode="wait">
-            {showToast && (
-              <m.div
-                key={eventIdx}
-                initial={{ y: -50, opacity: 0, scale: 0.9 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: -30, opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 360, damping: 24 }}
-                className="absolute top-12 left-3 right-3 rounded-2xl bg-[var(--text-primary)] text-white px-3 py-2.5 shadow-2xl flex items-center gap-2.5 z-30 backdrop-blur"
-              >
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-xl shrink-0 ${evTone}`}>
-                  <EvIcon className="h-4 w-4" strokeWidth={2.5} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold opacity-80 leading-none">{ev.title}</p>
-                  <p className="text-sm font-black leading-tight mt-0.5 truncate">{ev.subtitle}</p>
-                </div>
-                {ev.amount && (
-                  <span className="text-xs font-black text-[var(--brand-success)] shrink-0">
-                    {ev.amount}
-                  </span>
-                )}
-                {ev.kind === "review" && (
-                  <span className="inline-flex items-center gap-0.5 text-amber-400 shrink-0">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-current" strokeWidth={1.5} />
-                    ))}
-                  </span>
-                )}
-              </m.div>
-            )}
-          </AnimatePresence>
+          {/* Toast stack — hasta 2 toasts visibles, el más nuevo arriba */}
+          <div className="absolute top-12 left-3 right-3 z-30 pointer-events-none">
+            <AnimatePresence>
+              {toastStack.map((idx, stackPos) => {
+                const e = EVENT_STREAM[idx];
+                const meta = EVENT_META[e.kind];
+                const ToastIcon = meta.Icon;
+                return (
+                  <m.div
+                    key={`toast-${idx}-${stackPos}`}
+                    initial={{ y: -50, opacity: 0, scale: 0.9 }}
+                    animate={{
+                      y: stackPos * 8,
+                      opacity: stackPos === 0 ? 1 : 0.55,
+                      scale: stackPos === 0 ? 1 : 0.94,
+                    }}
+                    exit={{ y: -30, opacity: 0, scale: 0.92 }}
+                    transition={{ type: "spring", stiffness: 360, damping: 26 }}
+                    style={{ zIndex: 30 - stackPos }}
+                    className="absolute inset-x-0 rounded-2xl bg-[var(--text-primary)] text-white px-3 py-2.5 shadow-2xl flex items-center gap-2.5 backdrop-blur"
+                  >
+                    <span className={`inline-flex h-8 w-8 items-center justify-center rounded-xl shrink-0 ${meta.tone}`}>
+                      <ToastIcon className="h-4 w-4" strokeWidth={2.5} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold opacity-80 leading-none">{e.title}</p>
+                      <p className="text-sm font-black leading-tight mt-0.5 truncate">{e.subtitle}</p>
+                    </div>
+                    {e.amount && (
+                      <span className="text-xs font-black text-[var(--brand-success)] shrink-0">
+                        {e.amount}
+                      </span>
+                    )}
+                    {e.kind === "review" && (
+                      <span className="inline-flex items-center gap-0.5 text-amber-400 shrink-0">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className="h-3 w-3 fill-current" strokeWidth={1.5} />
+                        ))}
+                      </span>
+                    )}
+                  </m.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       </m.div>
 
@@ -492,6 +594,43 @@ function KpiCard({
         </p>
       </div>
     </m.div>
+  );
+}
+
+/* ── Bar chart de ventas por hora ──────────────────────────────────── */
+function HourlyBars({
+  values,
+  reducedMotion,
+}: {
+  values: number[];
+  reducedMotion: boolean;
+}) {
+  const max = Math.max(...values);
+  return (
+    <div className="flex items-end gap-1 h-12">
+      {values.map((v, i) => {
+        const pct = (v / max) * 100;
+        const isPeak = v === max;
+        return (
+          <m.div
+            key={i}
+            initial={reducedMotion ? undefined : { height: 0 }}
+            animate={reducedMotion ? undefined : { height: `${pct}%` }}
+            transition={{
+              duration: 0.5,
+              delay: 0.05 * i,
+              ease: "easeOut",
+            }}
+            style={!reducedMotion ? undefined : { height: `${pct}%` }}
+            className={`flex-1 rounded-sm ${
+              isPeak
+                ? "bg-linear-to-t from-[var(--accent)] to-emerald-400"
+                : "bg-[var(--accent)]/30"
+            }`}
+          />
+        );
+      })}
+    </div>
   );
 }
 
