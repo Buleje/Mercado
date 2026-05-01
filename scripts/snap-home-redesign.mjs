@@ -25,6 +25,47 @@ await p2.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 300
 await p2.waitForTimeout(4000);
 await p2.screenshot({ path: `${out}/home-mobile-light.png`, fullPage: false });
 console.log("✓", `${out}/home-mobile-light.png`);
+// /abrir-tienda full
+const ctxAt = await b.newContext({ viewport: { width: 1440, height: 900 } });
+const pAt = await ctxAt.newPage();
+await pAt.goto("http://localhost:3000/abrir-tienda", { waitUntil: "networkidle", timeout: 30000 });
+await pAt.waitForTimeout(4000);
+await pAt.screenshot({ path: `${out}/abrir-tienda-hero.png`, fullPage: false });
+console.log("✓", `${out}/abrir-tienda-hero.png`);
+// Scroll a ROI
+const roiTop = await pAt.evaluate(() => {
+  const el = Array.from(document.querySelectorAll("section")).find((s) => s.textContent?.includes("Calculá tu ganancia"));
+  return el ? el.getBoundingClientRect().top + window.scrollY : null;
+});
+if (roiTop != null) {
+  await pAt.evaluate((y) => window.scrollTo({ top: y - 30, behavior: "instant" }), roiTop);
+  await pAt.waitForTimeout(1200);
+  await pAt.screenshot({ path: `${out}/abrir-tienda-roi.png`, fullPage: false });
+  console.log("✓", `${out}/abrir-tienda-roi.png`);
+}
+// Scroll a benefits
+const benTop = await pAt.evaluate(() => {
+  const el = Array.from(document.querySelectorAll("section")).find((s) => s.textContent?.includes("Cuatro músculos"));
+  return el ? el.getBoundingClientRect().top + window.scrollY : null;
+});
+if (benTop != null) {
+  await pAt.evaluate((y) => window.scrollTo({ top: y - 30, behavior: "instant" }), benTop);
+  await pAt.waitForTimeout(1200);
+  await pAt.screenshot({ path: `${out}/abrir-tienda-benefits.png`, fullPage: false });
+  console.log("✓", `${out}/abrir-tienda-benefits.png`);
+}
+// Scroll a planes
+const planTop = await pAt.evaluate(() => {
+  const el = document.getElementById("planes");
+  return el ? el.getBoundingClientRect().top + window.scrollY : null;
+});
+if (planTop != null) {
+  await pAt.evaluate((y) => window.scrollTo({ top: y - 30, behavior: "instant" }), planTop);
+  await pAt.waitForTimeout(1200);
+  await pAt.screenshot({ path: `${out}/abrir-tienda-plans.png`, fullPage: false });
+  console.log("✓", `${out}/abrir-tienda-plans.png`);
+}
+
 // Dark mode desktop
 const ctx3 = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
 const p3 = await ctx3.newPage();
