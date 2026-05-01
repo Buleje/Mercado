@@ -18,6 +18,7 @@ import {
   Plus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { AllTabsItem, ResolvedShortcut } from "@/app/admin/_hooks/useSidebarShortcuts";
@@ -111,6 +112,8 @@ export function AdminMobileDrawer({
   clearedDemoTabs,
   onOpenCierreDiario,
 }: AdminMobileDrawerProps) {
+  // Plantilla del superadmin — overlay reactivo (mismo que sidebar desktop).
+  const { isHiddenByTemplate } = useAdminTemplateOverlay();
   return (
     <>
       {/* Mobile nav overlay */}
@@ -204,7 +207,7 @@ export function AdminMobileDrawer({
                 </button>
                 <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
                 {visibleCategories.map(category => {
-                  const count = category.tabs.filter(t => allowedTabs.includes(t)).length;
+                  const count = category.tabs.filter(t => allowedTabs.includes(t) && !isHiddenByTemplate(t)).length;
                   if (count === 0) return null;
                   const CategoryIcon = category.icon;
                   return (

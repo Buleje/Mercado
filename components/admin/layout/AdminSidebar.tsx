@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
 import { useModuleTabs } from "@/contexts/module-tabs-context";
+import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
@@ -169,6 +170,11 @@ export function AdminSidebar({
      - "light": neutro blanco, minimalista.
      - "dark": fondo zinc-900 para uso prolongado / modo oscuro.
      "shaded" se conserva como alias legacy → cristal. */
+  // Plantilla del superadmin — overlay reactivo que oculta módulos y reescribe labels.
+  // Se actualiza solo cuando se dispara el evento custom buleje:admin-template-changed
+  // o el storage event de otra pestaña.
+  const { resolveLabel, isHiddenByTemplate } = useAdminTemplateOverlay();
+
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
     if (typeof window === "undefined") return "cristal";
     try {
@@ -713,7 +719,11 @@ export function AdminSidebar({
           {/* ── Main modules (expanded mode) ── */}
           {!effectiveCompact && orderedVisibleCategories.map((category, catIdx) => {
             const catTabs = category.tabs.filter(
-              t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab) && !hiddenSubTabs.has(t as Tab)
+              t =>
+                allowedTabs.includes(t as Tab) &&
+                !hiddenTabs.has(t as Tab) &&
+                !hiddenSubTabs.has(t as Tab) &&
+                !isHiddenByTemplate(t),
             );
             if (catTabs.length === 0) return null;
             const CategoryIcon = category.icon;
@@ -728,10 +738,10 @@ export function AdminSidebar({
               : (catTabs as string[]).includes(tab as string);
             const totalAlerts = catTabs.reduce((sum, t) => sum + (alerts[t] || 0), 0);
 
-            // Resolve display info
+            // Resolve display info — aplica label custom de la plantilla
             const displayLabel = isSingleTab
-              ? (allTabs.find(t => t.id === catTabs[0])?.label ?? category.label)
-              : category.label;
+              ? resolveLabel(catTabs[0], allTabs.find(t => t.id === catTabs[0])?.label ?? category.label)
+              : resolveLabel(category.id, category.label);
             const DisplayIcon = isSingleTab
               ? (allTabs.find(t => t.id === catTabs[0])?.icon ?? CategoryIcon)
               : CategoryIcon;
@@ -863,6 +873,7 @@ export function AdminSidebar({
                               const subTabInfo = allTabs.find(t => t.id === subTabId);
                               if (!subTabInfo) return null;
                               const SubIcon = subTabInfo.icon;
+                              const subTabLabel = resolveLabel(subTabId, subTabInfo.label);
                               const isSubActive = tab === subTabId;
                               const subAlertCount = alerts[subTabId] ?? 0;
                               return (
@@ -883,7 +894,7 @@ export function AdminSidebar({
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
                                     isSubActive ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
                                   )} />
-                                  <span className="truncate">{subTabInfo.label}</span>
+                                  <span className="truncate">{subTabLabel}</span>
                                   {subAlertCount > 0 && (
                                     <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error)] text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}
@@ -1141,7 +1152,7 @@ export function AdminSidebar({
       {!effectiveCompact && sidebarFlyout && (() => {
         const cat = visibleCategories.find(c => c.id === sidebarFlyout.categoryId);
         if (!cat) return null;
-        const catTabs = cat.tabs.filter(t => allowedTabs.includes(t as Tab));
+        const catTabs = cat.tabs.filter(t => allowedTabs.includes(t as Tab) && !isHiddenByTemplate(t));
         if (catTabs.length <= 1) return null;
         return (
           <m.div
@@ -1170,7 +1181,7 @@ export function AdminSidebar({
                   )}
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />
-                  <span className="truncate flex-1 text-left">{tabInfo.label}</span>
+                  <span className="truncate flex-1 text-left">{resolveLabel(tabId, tabInfo.label)}</span>
                   {tab === tabId && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
                 </button>
               );
@@ -1184,13 +1195,13 @@ export function AdminSidebar({
         const cat = visibleCategories.find(c => c.id === hoveredCategory);
         if (!cat) return null;
         const catTabs = cat.tabs.filter(
-          t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
+          t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab) && !isHiddenByTemplate(t)
         );
         if (catTabs.length <= 1) return null;
         const flyoutTabs = catTabs
           .map(tId => allTabs.find(t => t.id === tId))
           .filter((t): t is typeof allTabs[number] => t != null)
-          .map(t => ({ id: t.id as string, label: t.label, icon: t.icon as React.ComponentType<{ className?: string }> }));
+          .map(t => ({ id: t.id as string, label: resolveLabel(t.id, t.label), icon: t.icon as React.ComponentType<{ className?: string }> }));
         return (
           <SidebarFlyout
             key={hoveredCategory}

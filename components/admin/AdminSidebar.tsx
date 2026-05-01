@@ -40,6 +40,7 @@ import { useTheme } from "@/contexts/theme-context";
 import ModuleTooltip, { useModuleTooltip } from "@/components/admin/ModuleTooltip";
 import { MODULE_DESCRIPTIONS } from "@/lib/module-descriptions";
 import { useModuleTiers } from "@/hooks/useModuleTiers";
+import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -795,6 +796,8 @@ export default function AdminSidebar({
   const rawModules = modules ?? BASIC_SIDEBAR_MODULES;
   const { theme } = useTheme();
   const { tier, isModuleVisible } = useModuleTiers();
+  // Plantilla del superadmin — overlay reactivo (label custom + visibility).
+  const { resolveLabel, isHiddenByTemplate } = useAdminTemplateOverlay();
   const [mobileOpen, setMobileOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
@@ -821,7 +824,9 @@ export default function AdminSidebar({
     return rawModules.map(m => m.id);
   });
 
-  // Reorder modules by saved order, keeping any new modules at the end
+  // Reorder modules by saved order, keeping any new modules at the end.
+  // Aplica overlay de plantilla (superadmin): filtra módulos ocultos y reescribe
+  // labels custom (de módulos y de sub-tabs).
   const basicModules = React.useMemo(() => {
     const moduleMap = new Map(rawModules.map(m => [m.id, m]));
     const ordered: SidebarModule[] = [];
@@ -836,9 +841,20 @@ export default function AdminSidebar({
     for (const mod of moduleMap.values()) {
       ordered.push(mod);
     }
-    // Filter by tier visibility
-    return ordered.filter(m => isModuleVisible(m.id));
-  }, [rawModules, moduleOrder, isModuleVisible]);
+    return ordered
+      // Filtro 1 — tier visibility (plan del usuario)
+      .filter(m => isModuleVisible(m.id))
+      // Filtro 2 — plantilla del superadmin (módulos ocultos por default)
+      .filter(m => !isHiddenByTemplate(m.id))
+      // Map — sobreescribe label del módulo y de sub-tabs si la plantilla los renombra
+      .map(m => ({
+        ...m,
+        label: resolveLabel(m.id, m.label),
+        tabs: m.tabs
+          .filter(t => !isHiddenByTemplate(t.id))
+          .map(t => ({ ...t, label: resolveLabel(t.id, t.label) })),
+      }));
+  }, [rawModules, moduleOrder, isModuleVisible, isHiddenByTemplate, resolveLabel]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
