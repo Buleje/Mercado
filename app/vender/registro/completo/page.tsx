@@ -33,7 +33,7 @@ export default async function RegistroCompletoPage({ searchParams }: PageProps) 
             aria-label="Ir al inicio de Vender en Buleje"
           >
             <BulejeWordmark size={28} strokeWidth={1.75} textSize={16} />
-            <span className="hidden text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] sm:inline">
+            <span className="hidden text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] sm:inline">
               Seller
             </span>
           </Link>

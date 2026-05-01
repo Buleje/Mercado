@@ -453,7 +453,7 @@ function ProductModifierEditor({
       {/* Contenido */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {error && (
-          <div className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-rose-700 dark:text-rose-300">
+          <div className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
             {error}
           </div>
         )}
@@ -522,7 +522,7 @@ function ProductModifierEditor({
 
             {/* Presets */}
             <div className="border-t border-[var(--rule-soft)] pt-4 mt-4">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 Agregar grupo desde preset
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -643,7 +643,7 @@ function GroupCard({
           type="button"
           onClick={onDelete}
           aria-label={`Eliminar grupo ${group.name}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
         >
           <Trash2 className="h-4 w-4" aria-hidden />
         </button>
@@ -908,7 +908,7 @@ function OptionRow({
           type="button"
           onClick={onDelete}
           aria-label={`Eliminar ${option.name}`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-rose-50 dark:hover:bg-rose-950/30"
         >
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />

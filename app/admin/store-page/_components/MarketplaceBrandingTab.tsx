@@ -121,7 +121,7 @@ export default function MarketplaceBrandingTab() {
 
   if (error && !state) {
     return (
-      <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 p-6 text-sm text-rose-700 dark:text-rose-300">
+      <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
         {error}
       </div>
     );
@@ -169,7 +169,7 @@ export default function MarketplaceBrandingTab() {
                   onError={() => setLogoInput("")}
                 />
               ) : (
-                <span className="text-3xl font-black text-white bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+                <span className="text-3xl font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
                   {initial}
                 </span>
               )}
@@ -246,7 +246,7 @@ function PreviewCard({
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
       <div>
-        <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+        <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           <ImageIcon className="h-3 w-3" aria-hidden />
           {label}
         </p>

@@ -146,7 +146,7 @@ export default function DiscountsTab() {
               <button
                 type="button"
                 aria-label={`Eliminar ${d.name}`}
-                className="text-[var(--text-tertiary)] hover:text-rose-600 p-1"
+                className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] p-1"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>

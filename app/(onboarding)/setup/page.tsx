@@ -468,7 +468,7 @@ export default function SetupPage() {
 
   if (isDone) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -526,7 +526,7 @@ export default function SetupPage() {
   // ── Render principal ──────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex flex-col items-center justify-start p-4 pt-8">
+    <div className="min-h-screen bg-linear-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex flex-col items-center justify-start p-4 pt-8">
 
       {/* Encabezado */}
       <div className="w-full max-w-lg mb-6">

@@ -212,10 +212,10 @@ export default function PreferenciasPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40">
                 TU CUENTA
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[-0.02em]">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
                 Preferencias
               </h1>
             </div>
@@ -228,7 +228,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Notificaciones */}
         <section aria-labelledby="notif-heading">
           <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               NOTIFICACIONES
             </span>
           </div>
@@ -267,7 +267,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Apariencia */}
         <section aria-labelledby="appearance-heading">
           <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               APARIENCIA
             </span>
           </div>
@@ -299,7 +299,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Privacidad */}
         <section aria-labelledby="privacy-heading">
           <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               PRIVACIDAD
             </span>
           </div>

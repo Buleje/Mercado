@@ -107,7 +107,7 @@ function WishlistProductCard({
 
         {/* Heart filled indicador */}
         <div className="absolute top-2 left-2 h-5 w-5 flex items-center justify-center">
-          <Heart className="h-3.5 w-3.5 fill-rose-400 text-rose-400" />
+          <Heart className="h-3.5 w-3.5 fill-rose-400 text-[var(--data-error)]" />
         </div>
       </div>
 
@@ -267,7 +267,7 @@ export default function FavoritosPage() {
           <div className="flex items-end justify-between gap-6">
             <div className="flex-1">
               <Kicker className="text-white/40 mb-2">FAVORITOS</Kicker>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[-0.02em]">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
                 Lo que quieres, guardado
               </h1>
               <p className="text-sm text-white/50 mt-2 max-w-sm leading-relaxed">

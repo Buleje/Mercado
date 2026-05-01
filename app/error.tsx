@@ -37,10 +37,10 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           </div>
         </div>
 
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
           Error interno
         </p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Algo pasó en la bodega
         </h1>
         <p className="mt-3 text-[var(--text-secondary)] text-base leading-relaxed max-w-md mx-auto">

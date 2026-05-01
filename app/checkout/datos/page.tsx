@@ -112,7 +112,7 @@ export default function CheckoutDatosPage() {
           <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
           Volver al carrito
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Tus datos
         </h1>
         <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -129,7 +129,7 @@ export default function CheckoutDatosPage() {
 
           {/* ── Fast-track banner ──────────────────────────────────── */}
           {profileComplete && (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-gradient-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div
                 aria-hidden
                 className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[var(--accent)]/[0.12] blur-2xl"
@@ -138,10 +138,10 @@ export default function CheckoutDatosPage() {
                 <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <div className="relative flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Bienvenido de vuelta
                 </p>
-                <p className="text-base sm:text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
+                <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   Hola de nuevo,{" "}
                   <span className="italic font-serif text-[var(--accent)]">
                     {savedCustomer?.name?.split(" ")[0]}.
@@ -186,7 +186,7 @@ export default function CheckoutDatosPage() {
             <div>
               <label
                 htmlFor="ck-name"
-                className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]"
+                className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
               >
                 Nombre completo
               </label>
@@ -220,7 +220,7 @@ export default function CheckoutDatosPage() {
             <div>
               <label
                 htmlFor="ck-phone"
-                className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]"
+                className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
               >
                 Teléfono / WhatsApp
               </label>
@@ -265,11 +265,11 @@ export default function CheckoutDatosPage() {
               <div className="mb-2 flex items-center justify-between">
                 <label
                   htmlFor="ck-email"
-                  className="block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]"
+                  className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
                 >
                   Email
                 </label>
-                <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   Opcional
                 </span>
               </div>
@@ -302,7 +302,7 @@ export default function CheckoutDatosPage() {
                 disabled={!isCustomerValid}
                 className={cn(
                   "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-12",
-                  "text-[length:var(--ts-sm)] font-bold tracking-[-0.01em] transition-all duration-200",
+                  "text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] transition-all duration-200",
                   "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
                   "shadow-[0_6px_20px_-10px_var(--accent)]",
                   "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",

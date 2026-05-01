@@ -42,7 +42,7 @@ function buildVerificationHtml(storeName: string, verifyUrl: string): string {
           ¿Necesitas ayuda? Responde a este correo y te asistimos.
         </p>
         <p style="margin:4px 0 0;font-size:11px;color:#bbb;">
-          Buleje &mdash; Plataforma SaaS para bodegas y tiendas &mdash; Pucallpa, Perú
+          Buleje — Plataforma SaaS para bodegas y tiendas — Pucallpa, Perú
         </p>
       </div>
     </div>`;

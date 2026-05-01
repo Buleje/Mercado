@@ -28,10 +28,10 @@ export default function NotFound() {
           <PaicheMascot size={200} strokeWidth={1.75} animated />
         </div>
 
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
           Error 404
         </p>
-        <h1 className="font-display text-4xl sm:text-5xl font-normal tracking-[-0.02em] text-[var(--text-primary)]">
+        <h1 className="font-display text-4xl sm:text-5xl font-normal tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           El paiche se fue por otro río
         </h1>
         <p className="mt-4 text-lg text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto">

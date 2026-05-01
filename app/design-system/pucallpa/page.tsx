@@ -50,7 +50,7 @@ export default function PucallpaDemoPage() {
         <ShipiboPattern variant="horizontal" opacity={0.1} color="#FAFAF7" height={40} className="absolute bottom-0 left-0 right-0" />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-4">
             ADR-067 · Personalización máxima Buleje · 4 olas O-R
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -66,7 +66,7 @@ export default function PucallpaDemoPage() {
       {/* Story KPI demo */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             Ola Q · BulejeStoryKPI
           </p>
           <h2 className="text-fs-h2 mb-3">Números con historia — no fríos</h2>
@@ -123,7 +123,7 @@ export default function PucallpaDemoPage() {
       {/* Ilustraciones Pucallpa */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             Ola O · 10 ilustraciones auténticas Ucayali
           </p>
           <h2 className="text-fs-h2 mb-6">Doña Elena, Maloca, Río, Shipibo y más</h2>
@@ -147,7 +147,7 @@ export default function PucallpaDemoPage() {
       {/* Paleta amazónica */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             Ola P · Paleta amazónica (7 tokens · 5% del diseño)
           </p>
           <h2 className="text-fs-h2 mb-6">Colores con alma regional</h2>
@@ -171,7 +171,7 @@ export default function PucallpaDemoPage() {
       {/* Micro-details */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             Ola R · Micro-detalles marca
           </p>
           <h2 className="text-fs-h2 mb-6">Touch-points memorables</h2>
@@ -179,7 +179,7 @@ export default function PucallpaDemoPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {/* Shipibo pattern horizontal */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 Shipibo Pattern (horizontal)
               </p>
               <div className="bg-[var(--surface-sunken)] rounded-lg p-4 text-[var(--amazon-earth)]">
@@ -192,7 +192,7 @@ export default function PucallpaDemoPage() {
 
             {/* Shipibo divider */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 Shipibo Divider
               </p>
               <p className="text-sm text-[var(--text-secondary)]">Sección superior</p>
@@ -207,7 +207,7 @@ export default function PucallpaDemoPage() {
 
             {/* Time-aware Mascot */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 md:col-span-2">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 TimeAwareMascot — Salamandra que cambia según la hora del día
               </p>
               <div className="grid grid-cols-4 gap-4 mt-3">
@@ -215,18 +215,18 @@ export default function PucallpaDemoPage() {
                   <div className="bg-[var(--surface-sunken)] rounded-lg p-4 text-[var(--amazon-jungle)]">
                     <TimeAwareMascot size={80} />
                   </div>
-                  <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Actual</p>
+                  <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Actual</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">Mañana 5-11h</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Mañana 5-11h</p>
                   <p className="text-xs text-[var(--text-secondary)]">Bebiendo mate<br/>"Buenos días"</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">Tarde 12-18h</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Tarde 12-18h</p>
                   <p className="text-xs text-[var(--text-secondary)]">Con cuaderno<br/>"Trabajando"</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">Noche 19-4h</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Noche 19-4h</p>
                   <p className="text-xs text-[var(--text-secondary)]">Durmiendo<br/>"Zzz"</p>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function PucallpaDemoPage() {
 
             {/* DiaDelBodeguero — info */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 md:col-span-2">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 DiaDelBodeguero (aparece solo el 20 de agosto)
               </p>
               <p className="text-sm text-[var(--text-secondary)]">

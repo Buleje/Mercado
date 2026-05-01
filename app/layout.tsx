@@ -40,7 +40,6 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 // ServiceWorker + InstallPrompt + ClientEffects). Reducen el bundle
 // del root layout en ~100-150kb.
 import RootDeferredWidgets from "@/components/RootDeferredWidgets";
-import BackNavRefresh from "@/components/marketplace/BackNavRefresh";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -250,7 +249,15 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="152x152" href="/api/pwa-icon/152" />
         <link rel="apple-touch-icon" sizes="167x167" href="/api/pwa-icon/167" />
         <link rel="apple-touch-icon" sizes="120x120" href="/api/pwa-icon/120" />
-        
+
+        {/* Back-nav refresh — script externo, parse-time, antes que React/Next.
+            Recarga la página en cualquier back/forward del browser para que
+            todos los datos, banners y componentes se rehidraten. Cubre:
+            - popstate (back/forward normal)
+            - pageshow persisted=true (bfcache restoration de Safari/iOS/FF)
+            - navType=back_forward al mount (back-nav que cargó este documento)
+            Externo porque el CSP bloquea inline scripts. */}
+        <script src="/back-nav-refresh.js" />
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
         {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}
@@ -262,10 +269,6 @@ export default function RootLayout({
         {/* 5 widgets client-only deferred — SmoothScroll, ClientEffects,
             ServiceWorker, InstallPrompt, CommandPalette. Descarga post-FCP. */}
         <RootDeferredWidgets />
-        {/* BackNavRefresh: detecta back-nav desde detail → listado y recarga
-            la página automáticamente. Montado a nivel root para no remountarse
-            entre layouts hijos (que perdería el state del effect). */}
-        <BackNavRefresh />
         {children}
         <ToastContainer position="bottom-right" />
         <SonnerToaster

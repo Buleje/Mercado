@@ -175,7 +175,7 @@ export default function AbrirTiendaPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-16 items-end">
               {/* Columna izquierda — título dramático */}
               <div>
-                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
                   <span
                     aria-hidden
                     className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -224,7 +224,7 @@ export default function AbrirTiendaPage() {
               {/* Columna derecha — trust stats asimétrico */}
               <div className="relative">
                 <div className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 sm:p-10">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-8">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-8">
                     En números — 2026
                   </p>
                   <div className="space-y-8">
@@ -258,7 +258,7 @@ export default function AbrirTiendaPage() {
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-14 sm:mb-20">
               <div className="max-w-2xl">
-                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
                   <span
                     aria-hidden
                     className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -294,7 +294,7 @@ export default function AbrirTiendaPage() {
                   <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-6">
                     <Icon className="h-6 w-6" strokeWidth={1.75} />
                   </span>
-                  <h3 className="text-xl font-black tracking-[-0.015em] text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+                  <h3 className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
                     {title}
                   </h3>
                   <p className="mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -314,7 +314,7 @@ export default function AbrirTiendaPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-14 sm:mb-18">
               <div className="max-w-2xl">
-                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
                   <span
                     aria-hidden
                     className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -353,7 +353,7 @@ export default function AbrirTiendaPage() {
 
                   {/* Header */}
                   <div className="mb-5">
-                    <h3 className="text-xl font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                    <h3 className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                       {plan.name}
                     </h3>
                     <p className="mt-1 text-sm text-[var(--text-tertiary)]">
@@ -422,7 +422,7 @@ export default function AbrirTiendaPage() {
         <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-20">
             <div className="lg:sticky lg:top-24 lg:self-start">
-              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
                 <span
                   aria-hidden
                   className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -450,7 +450,7 @@ export default function AbrirTiendaPage() {
                           <span className="text-xs font-bold tabular-nums text-[var(--text-tertiary)] uppercase tracking-wider mt-1.5">
                             {String(idx + 1).padStart(2, "0")}
                           </span>
-                          <span className="text-lg sm:text-xl font-bold tracking-[-0.01em] text-[var(--text-primary)] group-open:text-[var(--accent)] transition-colors">
+                          <span className="text-lg sm:text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-open:text-[var(--accent)] transition-colors">
                             {f.q}
                           </span>
                         </span>
@@ -479,7 +479,7 @@ export default function AbrirTiendaPage() {
             className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
           />
           <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"

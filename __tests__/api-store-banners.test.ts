@@ -22,10 +22,13 @@ vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
 // ── prisma (store resolver) ───────────────────────────────────────────────────
 // findFirst — usado por POST/PUT/DELETE (admin path) que resuelven con tenantId.
-// findUnique — usado por GET (cross-tenant marketplace) que solo resuelve por slug.
-const { mockStoreFindFirst, mockStoreFindUnique } = vi.hoisted(() => ({
+// Wave 8 (2026-04-29): GET banners ahora usa MarketplaceStoresDB.getBySlug
+// (filtra isPublished + cache compartido). POST sigue con prisma.store.findFirst
+// porque el admin debe poder editar tiendas no publicadas / draft.
+const { mockStoreFindFirst, mockStoreFindUnique, mockGetBySlug } = vi.hoisted(() => ({
   mockStoreFindFirst: vi.fn(),
   mockStoreFindUnique: vi.fn(),
+  mockGetBySlug: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -34,6 +37,9 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: mockStoreFindUnique,
     },
   },
+}));
+vi.mock("@/lib/db/marketplace.db", () => ({
+  MarketplaceStoresDB: { getBySlug: mockGetBySlug },
 }));
 
 // ── StoreBannersDB ────────────────────────────────────────────────────────────
@@ -125,8 +131,9 @@ function makeBannerParams(slug = "mi-tienda", bannerId = "banner-1") {
 describe("GET /api/marketplace/stores/[slug]/banners", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // GET es cross-tenant: usa findUnique({ where: { slug } }) y obtiene el
-    // tenantId real del store, ignorando el x-tenant-id del header.
+    // Wave 8: GET ahora usa MarketplaceStoresDB.getBySlug (filtra isPublished
+    // y cachea). El tenantId resuelto no depende del header x-tenant-id.
+    mockGetBySlug.mockResolvedValue(STORE);
     mockStoreFindUnique.mockResolvedValue(STORE);
     mockBList.mockResolvedValue([BANNER]);
   });
@@ -149,11 +156,7 @@ describe("GET /api/marketplace/stores/[slug]/banners", () => {
   // 8. Cross-tenant: el GET resuelve store por slug global, no por header
   it("cross-tenant: resuelve store solo por slug ignorando x-tenant-id", async () => {
     await GET(makeGetReq("mi-tienda", "tenant-b"), makeSlugParams());
-    expect(mockStoreFindUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ slug: "mi-tienda" }),
-      }),
-    );
+    expect(mockGetBySlug).toHaveBeenCalledWith("mi-tienda");
     // Despues delega al tenantId REAL del store (tenant-a) no al header (tenant-b)
     expect(mockBList).toHaveBeenCalledWith("tenant-a", "store-1", undefined);
   });
@@ -161,6 +164,7 @@ describe("GET /api/marketplace/stores/[slug]/banners", () => {
   it("devuelve banners vacios resilient cuando la tienda no existe", async () => {
     // El handler GET es resilient (cross-tenant marketplace): si no encuentra
     // el store devuelve { banners: [] } con 200, no 404, para no romper la UI.
+    mockGetBySlug.mockResolvedValue(null);
     mockStoreFindUnique.mockResolvedValue(null);
     const res = await GET(makeGetReq(), makeSlugParams());
     expect(res.status).toBe(200);

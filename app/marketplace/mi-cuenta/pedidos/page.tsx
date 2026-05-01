@@ -42,7 +42,7 @@ const STATUS_LABELS: Record<OrderSummary["status"], string> = {
 const STATUS_STYLES: Record<OrderSummary["status"], string> = {
   pendiente:  "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
   confirmado: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  en_camino:  "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  en_camino:  "bg-purple-50 text-[var(--accent)] dark:bg-purple-900/30 dark:text-purple-400",
   entregado:  "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   cancelado:  "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
 };

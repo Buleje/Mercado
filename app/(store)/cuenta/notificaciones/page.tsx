@@ -466,7 +466,7 @@ export default function NotificacionesPage() {
           </nav>
 
           <Kicker className="text-white/40 mb-2">NOTIFICACIONES</Kicker>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[-0.02em]">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
             Tu centro de avisos
           </h1>
           <p className="text-sm text-white/50 mt-2 max-w-sm leading-relaxed">

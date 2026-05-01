@@ -50,11 +50,15 @@ vi.mock("@/lib/api-error", () => ({
   NotFoundError: MockNotFoundError,
 }));
 
-// ── Mock: prisma ───────────────────────────────────────────────────────────────
-const { mockStoreFindUnique, mockStoreProductFindMany, mockStoreFindUniqueForProducts } = vi.hoisted(() => ({
+// ── Mock: prisma + lib/db/marketplace ─────────────────────────────────────────
+// Wave 8: el endpoint products usa MarketplaceStoresDB.getBySlug (caché +
+// filtro isPublished). El endpoint /stores/[slug] sigue con prisma directo
+// porque necesita columnas pendientes de migration (vacationMode).
+const { mockStoreFindUnique, mockStoreProductFindMany, mockStoreFindUniqueForProducts, mockGetBySlug } = vi.hoisted(() => ({
   mockStoreFindUnique:             vi.fn(),
   mockStoreProductFindMany:        vi.fn(),
   mockStoreFindUniqueForProducts:  vi.fn(),
+  mockGetBySlug:                   vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -66,6 +70,10 @@ vi.mock("@/lib/prisma", () => ({
       findMany: mockStoreProductFindMany,
     },
   },
+}));
+
+vi.mock("@/lib/db/marketplace.db", () => ({
+  MarketplaceStoresDB: { getBySlug: mockGetBySlug },
 }));
 
 import { GET as GETStore }    from "@/app/api/marketplace/stores/[slug]/route";
@@ -211,6 +219,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
   it("retorna productos de tienda publicada (200)", async () => {
     // Primera llamada: verificar tienda existe y está publicada
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
     mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ, PRODUCT_ACEITE]);
 
     const res  = await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
@@ -222,6 +231,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("retorna 404 si la tienda no existe", async () => {
     mockStoreFindUnique.mockResolvedValue(null);
+    mockGetBySlug.mockResolvedValue(null);
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/noexiste/products"), makeParams("noexiste"));
 
@@ -230,6 +240,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("retorna 404 si la tienda no está publicada", async () => {
     mockStoreFindUnique.mockResolvedValue({ id: "store-2", isPublished: false });
+    mockGetBySlug.mockResolvedValue(null);
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/tienda-oculta/products"), makeParams("tienda-oculta"));
 
@@ -238,6 +249,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("filtra por category", async () => {
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
     mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?category=Abarrotes"), makeParams("bodega-san-martin"));
@@ -248,6 +260,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("filtra por search (nombre de producto insensitive)", async () => {
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
     mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?search=arroz"), makeParams("bodega-san-martin"));
@@ -258,6 +271,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("ordena por precio ascendente con sort=price_asc", async () => {
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
     mockStoreProductFindMany.mockResolvedValue([]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
@@ -268,6 +282,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("ordena por precio descendente con sort=price_desc", async () => {
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
     mockStoreProductFindMany.mockResolvedValue([]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));

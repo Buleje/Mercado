@@ -116,7 +116,7 @@ export default function GraciasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
+    <div className="min-h-screen bg-linear-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
       {/* Confetti effect — pieces generated once via useState to satisfy react-hooks/purity */}
       {showConfetti && <ConfettiEffect />}
 

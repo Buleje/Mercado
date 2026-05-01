@@ -341,7 +341,7 @@ const FAQ_ITEMS = [
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 py-20 sm:py-28 lg:py-36 dark:to-primary/10"
+      className="relative overflow-hidden bg-linear-to-br from-background via-background to-primary/5 py-20 sm:py-28 lg:py-36 dark:to-primary/10"
       aria-label="Presentacion de Buleje ERP"
     >
       {/* Decoracion de fondo */}
@@ -910,7 +910,7 @@ function FooterCtaSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={VP}
           transition={{ duration: 0.5 }}
-          className="overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-dark p-10 text-center shadow-xl shadow-primary/20 sm:p-14"
+          className="overflow-hidden rounded-3xl bg-linear-to-br from-primary to-primary-dark p-10 text-center shadow-xl shadow-primary/20 sm:p-14"
         >
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             Listo para modernizar tu bodega?

@@ -41,10 +41,14 @@ vi.mock("@/lib/cache", () => ({
   invalidateByPrefix: vi.fn(),
 }));
 
-// ── Mock: prisma ───────────────────────────────────────────────────────────────
-const { mockStoreFindUnique, mockStoreProductFindMany } = vi.hoisted(() => ({
+// ── Mock: prisma + lib/db/marketplace ─────────────────────────────────────────
+// Wave 8 (2026-04-29): el endpoint ahora usa MarketplaceStoresDB.getBySlug
+// para resolver tienda (filtra isPublished:true + cache compartido).
+// `prisma.storeProduct.findMany` sigue siendo directo (anotado @prisma-direct).
+const { mockStoreFindUnique, mockStoreProductFindMany, mockGetBySlug } = vi.hoisted(() => ({
   mockStoreFindUnique:      vi.fn(),
   mockStoreProductFindMany: vi.fn(),
+  mockGetBySlug:            vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -52,6 +56,10 @@ vi.mock("@/lib/prisma", () => ({
     store:        { findUnique: mockStoreFindUnique },
     storeProduct: { findMany: mockStoreProductFindMany },
   },
+}));
+
+vi.mock("@/lib/db/marketplace.db", () => ({
+  MarketplaceStoresDB: { getBySlug: mockGetBySlug },
 }));
 
 import { GET } from "@/app/api/marketplace/stores/[slug]/products/route";
@@ -94,6 +102,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStoreFindUnique.mockResolvedValue(STORE);
+    mockGetBySlug.mockResolvedValue(STORE);
     mockStoreProductFindMany.mockResolvedValue([SP_ARROZ, SP_ACEITE]);
   });
 
@@ -262,13 +271,16 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
   it("retorna 404 si la tienda no existe", async () => {
     mockStoreFindUnique.mockResolvedValue(null);
+    mockGetBySlug.mockResolvedValue(null);
 
     const res = await GET(makeReq("https://host/"), makeParams("no-existe"));
     expect(res.status).toBe(404);
   });
 
   it("retorna 404 si la tienda no está publicada", async () => {
+    // Wave 8: MarketplaceStoresDB.getBySlug devuelve null cuando isPublished:false
     mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: false });
+    mockGetBySlug.mockResolvedValue(null);
 
     const res = await GET(makeReq("https://host/"), makeParams("tienda-draft"));
     expect(res.status).toBe(404);

@@ -122,7 +122,7 @@ export default function DesignSystemPage() {
         style={{ background: "var(--brand-ink)" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-4">
             Brand System v4 · 7 olas completadas
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -153,19 +153,19 @@ export default function DesignSystemPage() {
           <div id="charts" className="mt-8 grid grid-cols-4 gap-0 border-y border-white/10 py-6 max-w-2xl">
             <div>
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">20</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Iconos</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Iconos</p>
             </div>
             <div className="border-l border-white/10 pl-4">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">12</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Charts</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Charts</p>
             </div>
             <div className="border-l border-white/10 pl-4">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">6</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Motion curves</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Motion curves</p>
             </div>
             <div className="border-l border-white/10 pl-4">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">14</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Primitives</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Primitives</p>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               01 · KPI cards
             </p>
             <h2 className="text-fs-h1">BulejeSparklineKPICard</h2>
@@ -223,7 +223,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               02 · Progreso + composición
             </p>
             <h2 className="text-fs-h1">Gauge + Donut</h2>
@@ -246,7 +246,7 @@ export default function DesignSystemPage() {
               />
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 flex flex-col items-center justify-center">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 Mix de categorías
               </p>
               <BulejeDonutChart
@@ -259,7 +259,7 @@ export default function DesignSystemPage() {
                 label={
                   <div className="text-center">
                     <p className="text-3xl font-extrabold tabular-nums tracking-tight">100%</p>
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mt-1">Total</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mt-1">Total</p>
                   </div>
                 }
               />
@@ -272,14 +272,14 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               03 · Tendencias
             </p>
             <h2 className="text-fs-h1">Line + Bar</h2>
           </header>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
                 Ventas semanales
               </p>
               <h3 className="text-base font-extrabold tracking-tight mb-4">
@@ -294,7 +294,7 @@ export default function DesignSystemPage() {
               />
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
                 Órdenes por día
               </p>
               <h3 className="text-base font-extrabold tracking-tight mb-4">
@@ -315,7 +315,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               04 · Patrones
             </p>
             <h2 className="text-fs-h1">Heatmap hora/día</h2>
@@ -333,7 +333,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               05 · Conversión
             </p>
             <h2 className="text-fs-h1">Funnel</h2>
@@ -350,7 +350,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               06 · Flujo financiero + retención
             </p>
             <h2 className="text-fs-h1">Waterfall + Cohort</h2>
@@ -377,7 +377,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               07 · Micrométricas
             </p>
             <h2 className="text-fs-h1">Sparklines</h2>
@@ -390,7 +390,7 @@ export default function DesignSystemPage() {
               { name: "Accent", data: [10, 18, 14, 22, 20, 28, 24], trend: "neutral" as const },
             ].map((s) => (
               <div key={s.name} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                   {s.name}
                 </p>
                 <BulejeSparkline data={s.data} trend={s.trend} width={200} height={50} />
@@ -404,7 +404,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               08 · Loading states
             </p>
             <h2 className="text-fs-h1">Skeletons v4</h2>
@@ -434,7 +434,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               09 · Icon set Buleje v4
             </p>
             <h2 className="text-fs-h1">20 iconos custom</h2>
@@ -467,7 +467,7 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               10 · Tokens de color
             </p>
             <h2 className="text-fs-h1">Paleta 60-30-10</h2>
@@ -514,30 +514,30 @@ export default function DesignSystemPage() {
       <section className="py-16 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <header className="mb-8">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               11 · Tipografía
             </p>
             <h2 className="text-fs-h1">Escala fluid clamp()</h2>
           </header>
           <div className="space-y-6">
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">text-fs-display</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">text-fs-display</p>
               <p className="text-fs-display">Titular hero.</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">text-fs-h1</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">text-fs-h1</p>
               <p className="text-fs-h1">Title de página.</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">text-fs-h2</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">text-fs-h2</p>
               <p className="text-fs-h2">Section title.</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">text-fs-h3</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">text-fs-h3</p>
               <p className="text-fs-h3">Card title.</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">text-kpi</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">text-kpi</p>
               <p className="text-kpi text-5xl text-[var(--text-primary)]">45,123</p>
             </div>
           </div>

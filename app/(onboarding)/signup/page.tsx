@@ -316,7 +316,7 @@ export default function SignupPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-[#e6f7f6] to-[#f0faf9] dark:from-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
 
         {/* Header + Stepper */}

@@ -255,7 +255,7 @@ export default function DeliveryPage() {
                     </span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       order.paymentMethod === "yape" || order.paymentMethod === "Yape"
-                        ? "bg-purple-100 text-purple-700"
+                        ? "bg-purple-100 text-[var(--accent)]"
                         : "bg-emerald-100 text-emerald-700"
                     }`}>
                       {order.paymentMethod === "yape" || order.paymentMethod === "Yape" ? "Yape" : "Efectivo"}

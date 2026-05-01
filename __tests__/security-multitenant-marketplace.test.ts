@@ -72,6 +72,27 @@ const { mockStoreFindMany, mockStoreFindUnique, mockStoreProductFindMany } = vi.
   mockStoreProductFindMany: vi.fn(),
 }));
 
+// Wave 8 (2026-04-29): el endpoint products usa MarketplaceStoresDB.getBySlug.
+// `getBySlug` filtra `isPublished:true` internamente — devolvemos null si la
+// tienda mockeada está despublicada (replica el contrato real).
+vi.mock("@/lib/db/marketplace.db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/db/marketplace.db")>().catch(() => ({}));
+  return {
+    ...actual,
+    MarketplaceStoresDB: {
+      getBySlug: async (slug: string) => {
+        const store = await mockStoreFindUnique({ where: { slug } });
+        if (!store) return null;
+        if (store.isPublished === false) return null;
+        return store;
+      },
+      getByTenantId: async () => null,
+      list: async () => [],
+      getById: async () => null,
+    },
+  };
+});
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     store: {

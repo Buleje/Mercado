@@ -169,10 +169,10 @@ export default function PuntosPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </Link>
             <div className="flex-1">
-              <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/45 mb-1">
+              <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mb-1">
                 Fidelidad
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-[-0.02em]">Mis Puntos</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-[var(--ls-tight)]">Mis Puntos</h1>
             </div>
           </div>
 
@@ -266,7 +266,7 @@ export default function PuntosPage() {
                         <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
                           <SIcon className="h-4 w-4" strokeWidth={1.5} />
                         </div>
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 tabular-nums">
                           0{i + 1}
                         </span>
                       </div>

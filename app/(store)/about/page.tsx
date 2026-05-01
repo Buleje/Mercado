@@ -59,7 +59,7 @@ const porQueElegirnos: { Icon: LucideIcon; title: string; desc: string }[] = [
 
 function Kicker({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+    <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-3">
       {children}
     </span>
   );
@@ -110,11 +110,11 @@ export default async function AboutPage() {
             <div className="absolute -top-24 -left-24 h-100 w-100 rounded-full bg-white/5 blur-[120px]" />
           </div>
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
-            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-6">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-6">
               <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Powered by Buleje
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-[-0.02em]">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-[var(--ls-tight)]">
               {businessName}
             </h1>
             <p className="mt-5 text-base sm:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
@@ -151,7 +151,7 @@ export default async function AboutPage() {
                 <Heart className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Historia
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
                 Nuestra historia
               </h2>
             </div>
@@ -172,7 +172,7 @@ export default async function AboutPage() {
                     <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tight">
                       {s.value}
                     </p>
-                    <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-400">
+                    <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
                       {s.label}
                     </p>
                   </div>
@@ -190,7 +190,7 @@ export default async function AboutPage() {
                 <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Por qué elegirnos
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
                 Tu bodega, tu confianza
               </h2>
               <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
@@ -229,7 +229,7 @@ export default async function AboutPage() {
                 <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Horarios
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
                 Horarios de atención
               </h2>
             </div>
@@ -261,7 +261,7 @@ export default async function AboutPage() {
                 <Phone className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Contacto
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
                 Estamos para ayudarte
               </h2>
               <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
@@ -283,7 +283,7 @@ export default async function AboutPage() {
                 </div>
                 <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Dirección</h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{address}</p>
-                <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">Google Maps</p>
+                <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Google Maps</p>
               </a>
 
               {phone && (
@@ -301,7 +301,7 @@ export default async function AboutPage() {
                   </div>
                   <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">WhatsApp</h3>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed tabular-nums">{phone}</p>
-                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">Enviar mensaje</p>
+                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Enviar mensaje</p>
                 </a>
               )}
 
@@ -318,7 +318,7 @@ export default async function AboutPage() {
                   </div>
                   <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Email</h3>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{email}</p>
-                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">Enviar correo</p>
+                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Enviar correo</p>
                 </a>
               )}
             </div>
@@ -332,7 +332,7 @@ export default async function AboutPage() {
               <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Ubicación
             </Kicker>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white">
               Encuéntranos
             </h2>
             <p className="mt-4 text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -357,7 +357,7 @@ export default async function AboutPage() {
               <ShoppingCart className="h-3 w-3 text-white/55" strokeWidth={1.75} aria-hidden />
               <span className="text-white/55">Haz tu pedido</span>
             </Kicker>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-white leading-[1.05]">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-white leading-[1.05]">
               Más de 500 productos con delivery
             </h2>
             <p className="mt-4 text-white/60 max-w-xl mx-auto leading-relaxed">

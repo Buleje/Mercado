@@ -475,7 +475,7 @@ export default function SuperadminBannersPage() {
                 <Megaphone className="h-6 w-6" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de banners
                 </p>
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -505,7 +505,7 @@ export default function SuperadminBannersPage() {
           {/* Sidebar — slot navigator agrupado */}
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-5">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2 px-1">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2 px-1">
                 Páginas y slots
               </p>
               <div className="space-y-4">
@@ -517,7 +517,7 @@ export default function SuperadminBannersPage() {
                         style={{ backgroundColor: group.accent }}
                         aria-hidden
                       />
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] truncate">
+                      <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)] truncate">
                         {group.label}
                       </p>
                     </div>
@@ -559,13 +559,13 @@ export default function SuperadminBannersPage() {
                                   />
                                 )}
                               </div>
-                              <p className="text-[11px] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
+                              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
                                 {s.position}
                               </p>
                             </div>
                             <span
                               className={cn(
-                                "shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold tabular-nums",
+                                "shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums",
                                 count === 0
                                   ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                                   : activeCount === count
@@ -593,7 +593,7 @@ export default function SuperadminBannersPage() {
 
             {/* Tip */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
                 Consejo
               </p>
               <p className="text-xs text-[var(--text-secondary)] leading-snug">
@@ -610,7 +610,7 @@ export default function SuperadminBannersPage() {
               <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                       Slot · {meta.id}
                     </p>
                     <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] mb-1">
@@ -811,7 +811,7 @@ function StatPill({
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
       )}
     >
-      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
         {label}
       </p>
       <p
@@ -829,7 +829,7 @@ function StatPill({
 function MetaChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
         {label}
       </p>
       <p className="text-xs font-bold text-[var(--text-primary)] truncate mt-1 leading-tight">
@@ -936,7 +936,7 @@ function BannerCard({
             {banner.title || "(sin título)"}
           </button>
           {inactive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning)]/15 text-[var(--data-warning)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning)]/15 text-[var(--data-warning)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
               <EyeOff className="h-3 w-3" aria-hidden />
               Oculto
             </span>
@@ -1160,7 +1160,7 @@ function BannerCard({
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                   />
                   <div className="rounded-md bg-[var(--accent-soft)]/30 border border-[var(--rule-soft)] px-2.5 py-1.5">
-                    <p className="text-[11px] font-bold text-[var(--text-secondary)]">
+                    <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
                       <span className="text-[var(--accent)]">Recomendado:</span>{" "}
                       <span className="font-mono">1600 × 400 px</span> · 4:1 · &lt;200 KB
                     </p>
@@ -1221,7 +1221,7 @@ function BannerCard({
                         background: `linear-gradient(135deg, ${p.from}, ${p.to})`,
                       }}
                     >
-                      <span className="absolute bottom-0.5 left-1 text-[9px] font-extrabold uppercase tracking-wider text-[#0c1015]/70">
+                      <span className="absolute bottom-0.5 left-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0c1015]/70">
                         {p.label}
                       </span>
                       {active && (
@@ -1238,7 +1238,7 @@ function BannerCard({
                 </summary>
                 <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                    <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
                       Desde
                     </label>
                     <div className="flex items-center gap-2">
@@ -1257,7 +1257,7 @@ function BannerCard({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                    <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
                       Hasta
                     </label>
                     <div className="flex items-center gap-2">
@@ -1421,7 +1421,7 @@ function Field({
     <div>
       <label className="block mb-1.5">
         <span className="text-xs font-extrabold text-[var(--text-primary)]">{label}</span>
-        {hint && <span className="block text-[11px] font-medium text-[var(--text-tertiary)] mt-0.5">{hint}</span>}
+        {hint && <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] mt-0.5">{hint}</span>}
       </label>
       {children}
     </div>

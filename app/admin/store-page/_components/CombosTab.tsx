@@ -155,7 +155,7 @@ export default function CombosTab() {
               <button
                 type="button"
                 aria-label={`Eliminar ${combo.name}`}
-                className="text-[var(--text-tertiary)] hover:text-rose-600 transition-colors p-1"
+                className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors p-1"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
@@ -233,7 +233,7 @@ export default function CombosTab() {
                           items: form.items.filter((_, j) => j !== i),
                         })
                       }
-                      className="text-[var(--text-tertiary)] hover:text-rose-600"
+                      className="text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                     </button>

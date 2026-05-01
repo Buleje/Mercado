@@ -330,7 +330,7 @@ export default function CheckoutConfirmarPage() {
           </div>
 
           <div className="relative">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               {allOk ? "Pedido confirmado" : allFail ? "Algo falló" : "Parcialmente enviado"}
             </p>
             <h1 className="text-[clamp(1.75rem,4vw,3rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
@@ -444,7 +444,7 @@ export default function CheckoutConfirmarPage() {
           <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
           Volver a entrega
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Revisa tu pedido
         </h1>
         <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -458,7 +458,7 @@ export default function CheckoutConfirmarPage() {
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-gradient-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+              className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
             >
               <div
                 aria-hidden
@@ -468,7 +468,7 @@ export default function CheckoutConfirmarPage() {
                 <UserCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <div className="relative flex-1 min-w-0">
-                <p className="text-base sm:text-lg font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   Inicia sesión para{" "}
                   <span className="italic font-serif text-[var(--accent)]">trackearlo.</span>
                 </p>
@@ -537,7 +537,7 @@ export default function CheckoutConfirmarPage() {
               icon={Wallet}
               editHref="/checkout/entrega"
             >
-              <p className="text-base sm:text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] capitalize">
+              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] capitalize">
                 {payment.method}
               </p>
               {payment.method === "efectivo" && payment.cashAmount && (
@@ -556,7 +556,7 @@ export default function CheckoutConfirmarPage() {
               icon={ShoppingBag}
               editHref="/marketplace/carrito"
             >
-              <p className="text-base sm:text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] tabular-nums">
+              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] tabular-nums">
                 {fmt(grandTotal)}
               </p>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
@@ -623,7 +623,7 @@ export default function CheckoutConfirmarPage() {
           <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 space-y-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1.5">
+                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
                   <span
                     aria-hidden
                     className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
@@ -631,7 +631,7 @@ export default function CheckoutConfirmarPage() {
                   <ShoppingBag className="h-3 w-3" strokeWidth={2} aria-hidden />
                   Productos
                 </p>
-                <h2 className="text-lg sm:text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+                <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   Tu pedido en detalle
                 </h2>
               </div>
@@ -670,7 +670,7 @@ export default function CheckoutConfirmarPage() {
                 return (
                   <div key={sid} className="space-y-2 pt-5 first:pt-0">
                     <div className="flex justify-between items-baseline gap-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                         {g.storeName}
                       </p>
                       <p className="text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-primary)]">
@@ -722,7 +722,7 @@ export default function CheckoutConfirmarPage() {
               disabled={submitting}
               className={cn(
                 "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-14",
-                "text-[length:var(--ts-sm)] font-black tracking-[-0.01em] transition-all duration-200",
+                "text-[length:var(--ts-sm)] font-black tracking-[var(--ls-tight)] transition-all duration-200",
                 "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
                 "shadow-[0_8px_24px_-10px_var(--accent)]",
                 "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
@@ -775,7 +775,7 @@ export default function CheckoutConfirmarPage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-3">
-      <dt className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] shrink-0 self-center">
+      <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] shrink-0 self-center">
         {label}
       </dt>
       <dd className="text-right font-semibold text-[var(--text-primary)] truncate">{value}</dd>
@@ -807,7 +807,7 @@ function ReviewCard({
     >
       <div className="flex items-start justify-between mb-3 gap-3">
         <div>
-          <p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-5 rounded-full bg-[var(--accent)]"
@@ -815,7 +815,7 @@ function ReviewCard({
             <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
             {kicker}
           </p>
-          <h3 className="text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
+          <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             {title}
           </h3>
         </div>

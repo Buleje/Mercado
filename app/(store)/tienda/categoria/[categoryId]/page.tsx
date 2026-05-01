@@ -221,7 +221,7 @@ async function CategoryPageContent({ params }: Props) {
           />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <CatIconDisplay categoryId={cat.id} />
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.02em] text-white leading-[1.05] mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[var(--ls-tight)] text-white leading-[1.05] mb-4">
               {cat.label}
             </h1>
             <p className="text-white/55 text-base sm:text-lg max-w-xl mx-auto mb-6 leading-relaxed">
@@ -280,7 +280,7 @@ function CategoryPageSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
-      <section className="bg-gradient-to-br from-indigo-900 to-indigo-950 pt-32 pb-14">
+      <section className="bg-linear-to-br from-indigo-900 to-indigo-950 pt-32 pb-14">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="h-14 w-14 bg-white/20 rounded mx-auto mb-4" />
           <div className="h-10 w-48 bg-white/20 rounded mx-auto mb-4" />

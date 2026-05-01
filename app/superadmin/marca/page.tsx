@@ -165,7 +165,7 @@ export default function SuperadminMarcaPage() {
                 {brand.identity.name.charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de marca
                 </p>
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -207,7 +207,7 @@ export default function SuperadminMarcaPage() {
           {/* Sidebar de secciones */}
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-4">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2 px-1">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2 px-1">
                 Secciones
               </p>
               <div className="space-y-1">
@@ -240,7 +240,7 @@ export default function SuperadminMarcaPage() {
                         )}>
                           {s.label}
                         </p>
-                        <p className="text-[11px] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
+                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
                           {s.description}
                         </p>
                       </div>
@@ -255,12 +255,12 @@ export default function SuperadminMarcaPage() {
 
             {/* Tip */}
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
                 Cómo funciona
               </p>
               <p className="text-xs text-[var(--text-secondary)] leading-snug">
                 Cada cambio que guardás se propaga al instante a las pestañas
-                abiertas vía <code className="text-[10px] bg-[var(--surface-sunken)] px-1 rounded">BroadcastChannel</code>.
+                abiertas vía <code className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1 rounded">BroadcastChannel</code>.
                 Los visitantes nuevos ven los cambios en máx. 5 min (cache CDN).
               </p>
             </div>
@@ -350,7 +350,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <div>
       <label className="block mb-1.5">
         <span className="text-xs font-extrabold text-[var(--text-primary)]">{label}</span>
-        {hint && <span className="block text-[11px] font-medium text-[var(--text-tertiary)] mt-0.5">{hint}</span>}
+        {hint && <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] mt-0.5">{hint}</span>}
       </label>
       {children}
     </div>
@@ -388,7 +388,7 @@ function StatPill({ label, value, accent }: { label: string; value: string | num
       "rounded-xl border px-3.5 py-2 min-w-[88px]",
       isWarn ? "border-[var(--data-warning)]/40 bg-[var(--data-warning)]/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
     )}>
-      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
         {label}
       </p>
       <p className={cn(
@@ -446,7 +446,7 @@ function LogosSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: P
           <div key={s.key} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 space-y-2">
             <div>
               <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
-              <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 leading-snug">{s.hint}</p>
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">{s.hint}</p>
             </div>
             <ImageUploader
               value={brand.logos[s.key]}
@@ -477,7 +477,7 @@ function ColorsSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: 
           <div key={s.key} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 space-y-2.5">
             <div>
               <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
-              <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 leading-snug">{s.hint}</p>
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">{s.hint}</p>
             </div>
             <div
               className="h-16 rounded-lg border border-[var(--rule-base)]"
@@ -532,7 +532,7 @@ function TypographySection({ brand, onPatch }: { brand: PlatformBrand; onPatch: 
         </Field>
       </div>
       <div className="mt-5 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 space-y-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Preview</p>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Preview</p>
         <p className="font-display text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
           Pucallpa entera en una app
         </p>
@@ -597,11 +597,11 @@ function SeoSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: Par
       <div className="grid grid-cols-1 gap-4">
         <Field label="Meta title" hint="Máximo 70 caracteres · aparece en Google">
           <TextInput value={brand.seo.metaTitle} onChange={(e) => onPatch({ metaTitle: e.target.value })} maxLength={70} />
-          <p className="text-[10px] text-[var(--text-tertiary)] mt-1 tabular-nums text-right">{brand.seo.metaTitle.length}/70</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 tabular-nums text-right">{brand.seo.metaTitle.length}/70</p>
         </Field>
         <Field label="Meta description" hint="Máximo 180 caracteres · aparece bajo el título en Google">
           <TextArea value={brand.seo.metaDescription} onChange={(e) => onPatch({ metaDescription: e.target.value })} maxLength={180} />
-          <p className="text-[10px] text-[var(--text-tertiary)] mt-1 tabular-nums text-right">{brand.seo.metaDescription.length}/180</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 tabular-nums text-right">{brand.seo.metaDescription.length}/180</p>
         </Field>
         <Field label="Open Graph title" hint="Cuando comparten link en WhatsApp/Facebook">
           <TextInput value={brand.seo.ogTitle} onChange={(e) => onPatch({ ogTitle: e.target.value })} maxLength={80} />
@@ -613,7 +613,7 @@ function SeoSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: Par
 
       {/* Preview SERP */}
       <div className="mt-5 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 inline-flex items-center gap-1.5">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 inline-flex items-center gap-1.5">
           <Globe className="h-3 w-3" /> Preview Google
         </p>
         <p className="text-xs text-emerald-700">https://buleje.com</p>
@@ -763,10 +763,10 @@ function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="px-3.5 py-2 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           Vista previa en vivo
         </p>
-        <p className="text-[11px] text-[var(--text-tertiary)] leading-tight">
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">
           Cómo se ve en el footer del sitio
         </p>
       </div>
@@ -792,7 +792,7 @@ function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
             <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
               {brand.identity.name || "Sin nombre"}
             </p>
-            <p className="text-[10px] text-[var(--text-tertiary)] truncate">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
               {brand.identity.tagline || "Sin tagline"}
             </p>
           </div>
@@ -800,19 +800,19 @@ function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
 
         {/* Contact rows */}
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
             <Phone className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
             <span className="font-mono truncate">{phone}</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
             <MessageCircle className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
             <span className="font-mono truncate">{wa}</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
             <Mail className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
             <span className="truncate">{email}</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
             <span className="truncate">{address}</span>
           </div>
@@ -820,7 +820,7 @@ function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
 
         {/* Color swatches */}
         <div className="pt-2 border-t border-[var(--rule-soft)]">
-          <p className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
             Paleta
           </p>
           <div className="flex items-center gap-1">

@@ -16,6 +16,7 @@ import { ALL_TABS } from "../_lib/tab-data";
 import type { Tab } from "../_lib/tabs.types";
 import type { TabCategory } from "../_lib/tab-categories";
 import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
+import { usePlanTier } from "@/hooks/use-plan-tier";
 
 type Params = {
   userRole: string;
@@ -44,6 +45,13 @@ export function useAdminTabsDerived(params: Params) {
     fuzzyMatch,
   } = params;
 
+  // ── Plan tier filtering ─────────────────────────────────────────────────
+  // Los tabs se intersectan con los desbloqueados por el plan actual.
+  // Cambiar de plan dispara `buleje-plan-change` y este hook re-rendera
+  // automáticamente — el sidebar se actualiza sin recargar.
+  const { definition: planDefinition } = usePlanTier();
+  const planUnlockedTabs = planDefinition.unlockedTabs;
+
   const allowedTabs = useMemo((): Tab[] => {
     // DEFAULT_ROLE_TABS: base sin overrides guardados.
     // Los casts a Tab[] son intencionales — MODULE_PERMISSIONS usa ModuleId[]
@@ -65,11 +73,16 @@ export function useAdminTabsDerived(params: Params) {
       // admin siempre ve todo — no puede ser restringido por overrides
       admin: ALL_TABS.map(t => t.id),
     };
-    return ROLE_TABS[userRole] ?? ROLE_TABS.admin;
-  }, [userRole, savedRolePerms]);
+    const baseTabs = ROLE_TABS[userRole] ?? ROLE_TABS.admin;
+    // Intersección con plan tier — admin siempre ve todo lo que su plan
+    // permita (no más). Los tabs del módulo Config siempre pasan
+    // (config, plan, mi-perfil, auditoria) para que el dueño pueda
+    // gestionar su suscripción incluso en Básico.
+    return baseTabs.filter((tab) => planUnlockedTabs.has(tab));
+  }, [userRole, savedRolePerms, planUnlockedTabs]);
 
   const filteredTabs = useMemo(() => {
-    // Filtra por permisos de rol + tabs ocultos manualmente
+    // Filtra por permisos de rol + tabs ocultos manualmente + plan tier
     let result = ALL_TABS.filter(
       t => allowedTabs.includes(t.id) && !hiddenTabs.has(t.id),
     );

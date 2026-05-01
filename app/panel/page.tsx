@@ -52,7 +52,7 @@ const SECTIONS: Section[] = [
   {
     title: "SuperAdmin",
     description: "Gestion de la plataforma completa",
-    color: "text-violet-600 dark:text-violet-400",
+    color: "text-[var(--accent)] dark:text-violet-400",
     bgColor: "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800/40",
     links: [
       { label: "Dashboard SuperAdmin", href: "/superadmin", description: "Tenants, metricas, configuracion global", icon: <ShieldCheck className="h-4 w-4" />, badge: "Admin" },
@@ -153,7 +153,7 @@ function LinkCard({ item }: { item: LinkItem }) {
             {item.label}
           </p>
           {item.badge && (
-            <span className="px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400">
+            <span className="px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-900/40 text-[var(--accent)] dark:text-violet-400">
               {item.badge}
             </span>
           )}
@@ -189,7 +189,7 @@ export default function PanelPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Header */}
-      <header className="bg-gradient-to-r from-[#00B4A6] to-[#065f46] text-white">
+      <header className="bg-linear-to-r from-[#00B4A6] to-[#065f46] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-center gap-4 mb-4">
             <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">

@@ -79,7 +79,7 @@ function getStatusMeta(status: OrderStatus): {
       return {
         label: "En camino",
         Icon: Truck,
-        color: "text-purple-700 dark:text-purple-400",
+        color: "text-[var(--accent)] dark:text-purple-400",
         bg: "bg-purple-50 dark:bg-purple-950/30",
         pct: 80,
       };

@@ -61,7 +61,7 @@ function PaymentResultContent() {
       <div className="max-w-md w-full text-center space-y-6">
         {/* Icon */}
         <div
-          className={`mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br ${config.bg} ${config.shadow} shadow-lg`}
+          className={`mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-linear-to-br ${config.bg} ${config.shadow} shadow-lg`}
         >
           {config.icon}
         </div>

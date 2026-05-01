@@ -3,7 +3,7 @@ export default function StoreDetailLoading() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Banner skeleton */}
       <div className="relative h-40 sm:h-52 bg-gray-200 dark:bg-gray-800 animate-pulse">
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 dark:from-gray-950" />
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-gray-50 dark:from-gray-950" />
         {/* Logo circle */}
         <div className="absolute -bottom-8 left-4 sm:left-8 w-20 h-20 rounded-2xl bg-white dark:bg-gray-900 shadow-lg ring-4 ring-white dark:ring-gray-950 animate-pulse" />
       </div>

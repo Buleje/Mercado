@@ -98,7 +98,7 @@ export default function CheckoutAuthGate() {
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
               <ShieldCheck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </span>
-            <p className="text-xl sm:text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+            <p className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               Inicia sesión para continuar
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">

@@ -270,7 +270,7 @@ export default function DireccionesPage() {
                         {loc.location}
                       </p>
                       <span className={cn(
-                        "inline-flex items-center text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5",
+                        "inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider rounded-full px-2 py-0.5",
                         kind.color,
                         "bg-current/10",
                       )}>

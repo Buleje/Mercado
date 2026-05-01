@@ -181,8 +181,10 @@ export default function TenantsPage() {
             <div className="relative">
               <select value={filterPlan} onChange={(e) => setFilterPlan(e.target.value as "all" | PlanId)} className={selectCls}>
                 <option value="all">Todos los planes</option>
-                <option value="free">Free</option><option value="pro">Pro</option>
-                <option value="business">Business</option><option value="enterprise">Enterprise</option>
+                <option value="free">Básico (gratis)</option>
+                <option value="pro">Pro</option>
+                <option value="business">Enterprise</option>
+                <option value="enterprise">Max</option>
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>

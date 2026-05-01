@@ -65,7 +65,7 @@ export default function IllustrationsDemoPage() {
         style={{ background: "var(--brand-ink)" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-4">
             ADR-065 Ola F · Illustration System v2
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -78,15 +78,15 @@ export default function IllustrationsDemoPage() {
           <div className="mt-8 grid grid-cols-3 gap-0 border-y border-white/10 py-6 max-w-md">
             <div>
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">10</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Empty states</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Empty states</p>
             </div>
             <div className="border-l border-white/10 pl-4">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">6</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Success</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Success</p>
             </div>
             <div className="border-l border-white/10 pl-4">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">4</p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">Contextual</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/45 mt-2">Contextual</p>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function IllustrationsDemoPage() {
       {/* IllustrationCard demo */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             ★ · IllustrationCard wrapper
           </p>
           <h2 className="text-fs-h2 mb-6">Uso en empty states</h2>
@@ -134,7 +134,7 @@ export default function IllustrationsDemoPage() {
       {/* 10 Empty States */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             01 · Empty states (10)
           </p>
           <h2 className="text-fs-h2 mb-6">Ilustraciones para estados vacíos</h2>
@@ -158,7 +158,7 @@ export default function IllustrationsDemoPage() {
       {/* 6 Success Moments */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             02 · Success moments (6)
           </p>
           <h2 className="text-fs-h2 mb-6">Ilustraciones para celebraciones</h2>
@@ -182,7 +182,7 @@ export default function IllustrationsDemoPage() {
       {/* 4 Contextual */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             03 · Contextuales (4)
           </p>
           <h2 className="text-fs-h2 mb-6">Ilustraciones para momentos especiales</h2>

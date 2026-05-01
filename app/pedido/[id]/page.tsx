@@ -335,7 +335,7 @@ export default function PedidoPage() {
               <span className="text-gray-500 dark:text-gray-400">Pago</span>
               <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${
                 order.paymentMethod === "yape"
-                  ? "bg-purple-100 text-purple-700"
+                  ? "bg-purple-100 text-[var(--accent)]"
                   : "bg-emerald-100 text-emerald-700"
               }`}>
                 {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}

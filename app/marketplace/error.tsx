@@ -16,7 +16,7 @@ export default function MarketplaceError({
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-200 mb-5">
           <Store className="h-5 w-5" strokeWidth={1.5} />
         </div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
           Error
         </p>
         <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">
