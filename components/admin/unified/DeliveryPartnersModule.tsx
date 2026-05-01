@@ -832,27 +832,95 @@ function PermisosTab() {
 // ─────────────────────────────────────────────
 // Tab: Solicitudes de repartidores
 // ─────────────────────────────────────────────
+interface DriverKycSummary {
+  schemaVersion: 1;
+  applicationStatus: "pendiente" | "aprobada" | "rechazada";
+  availability: string;
+  kyc: {
+    dni: string;
+    birthDate: string;
+    license: { number: string | null; category: string | null; expiresAt: string | null } | null;
+    vehicle: { plate: string | null; soatNumber: string | null; soatExpiresAt: string | null } | null;
+  };
+  consents: {
+    acceptedTerms: boolean;
+    acceptedPrivacy: boolean;
+    confirmAdult: boolean;
+    acceptedAt: string;
+    termsVersion: string;
+    privacyVersion: string;
+  };
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+}
+
 interface DriverApplication {
   id: string;
   title: string;
   body: string;
   readAt: string | null;
   createdAt: string;
+  partner: { id: string; isActive: boolean; vehicleType: string; zone: string } | null;
+  kyc: DriverKycSummary | null;
 }
 
 function parseApplicationBody(body: string) {
-  // Format: "Name (Phone) - Zona: zone - Vehículo: type - Horario: avail"
-  const match = body.match(
-    /^(.+?)\s*\((.+?)\)\s*-\s*Zona:\s*(.+?)\s*-\s*Vehículo:\s*(.+?)\s*-\s*Horario:\s*(.+)$/
+  // Soporta dos formatos:
+  //   v1 legacy:   "Name (Phone) - Zona: zone - Vehículo: type - Horario: avail"
+  //   v2 KYC:      "Name · DNI 12345678 | Tel 999333222 | ... | Horario: full"
+  const v1 = body.match(
+    /^(.+?)\s*\((.+?)\)\s*-\s*Zona:\s*(.+?)\s*-\s*Vehículo:\s*(.+?)\s*-\s*Horario:\s*(.+)$/,
   );
-  if (!match) return { name: body, phone: "", zone: "", vehicle: "", availability: "" };
+  if (v1) {
+    return {
+      name: v1[1].trim(),
+      phone: v1[2].trim(),
+      zone: v1[3].trim(),
+      vehicle: v1[4].trim(),
+      availability: v1[5].trim(),
+      dni: "",
+    };
+  }
+  // v2: extraer por tokens.
+  const nameMatch = body.match(/^([^·|]+)/);
+  const phoneMatch = body.match(/Tel\s+(\d{6,15})/i);
+  const dniMatch = body.match(/DNI\s+(\d{8})/i);
+  const vehicleMatch = body.match(/Vehículo:\s*([^·|]+)/i);
+  const availMatch = body.match(/Horario:\s*([^·|]+)/i);
   return {
-    name: match[1].trim(),
-    phone: match[2].trim(),
-    zone: match[3].trim(),
-    vehicle: match[4].trim(),
-    availability: match[5].trim(),
+    name: nameMatch?.[1]?.trim() ?? body,
+    phone: phoneMatch?.[1] ?? "",
+    zone: "",
+    vehicle: vehicleMatch?.[1]?.trim()?.split(/\s+/)?.[0] ?? "",
+    availability: availMatch?.[1]?.trim() ?? "",
+    dni: dniMatch?.[1] ?? "",
   };
+}
+
+/** Verifica que el KYC esté completo según el tipo de vehículo (gate de aprobación). */
+function isKycComplete(kyc: DriverKycSummary | null, vehicleType: string): { ok: boolean; missing: string[] } {
+  if (!kyc) return { ok: false, missing: ["KYC no enviado (formulario antiguo)"] };
+  const missing: string[] = [];
+  if (!/^\d{8}$/.test(kyc.kyc.dni)) missing.push("DNI inválido");
+  if (!kyc.kyc.birthDate) missing.push("Fecha de nacimiento");
+  if (!kyc.consents.acceptedTerms) missing.push("Términos no aceptados");
+  if (!kyc.consents.acceptedPrivacy) missing.push("Privacidad no aceptada");
+  if (!kyc.consents.confirmAdult) missing.push("Edad no confirmada");
+  const isMotor = vehicleType === "moto" || vehicleType === "auto";
+  if (isMotor) {
+    if (!kyc.kyc.license?.number) missing.push("Licencia");
+    if (!kyc.kyc.license?.category) missing.push("Categoría licencia");
+    if (!kyc.kyc.license?.expiresAt || new Date(kyc.kyc.license.expiresAt) < new Date()) {
+      missing.push("Licencia vigente");
+    }
+    if (!kyc.kyc.vehicle?.plate) missing.push("Placa");
+    if (!kyc.kyc.vehicle?.soatNumber) missing.push("SOAT");
+    if (!kyc.kyc.vehicle?.soatExpiresAt || new Date(kyc.kyc.vehicle.soatExpiresAt) < new Date()) {
+      missing.push("SOAT vigente");
+    }
+  }
+  return { ok: missing.length === 0, missing };
 }
 
 const AVAILABILITY_LABELS: Record<string, string> = {
@@ -1152,38 +1220,68 @@ function SolicitudesTab() {
             const data = parseApplicationBody(app.body);
             const isPending = !app.readAt;
             const isProcessing = processing === app.id;
+            const vehicleType = app.partner?.vehicleType ?? data.vehicle;
+            const kycCheck = isKycComplete(app.kyc, vehicleType);
+            const canApprove = kycCheck.ok;
 
             return (
               <div
                 key={app.id}
                 className={cn(
-                  "bg-white border rounded-xl p-4  transition-all",
-                  isPending ? "border-[var(--data-warning)] bg-[var(--data-warning-50)]/30" : "border-[var(--rule-base)] opacity-70"
+                  "bg-white border-2 rounded-2xl p-4 transition-all",
+                  isPending
+                    ? "border-[var(--data-warning)] bg-[var(--data-warning-50)]/30"
+                    : "border-[var(--rule-base)] opacity-70",
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{data.name}</h4>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h4 className="font-extrabold text-[var(--text-primary)] text-base truncate">
+                        {data.name}
+                      </h4>
                       {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
                           Pendiente
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-[var(--text-secondary)]">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-gray-100 text-[var(--text-secondary)]">
                           Revisado
+                        </span>
+                      )}
+                      {app.kyc ? (
+                        <span
+                          className={cn(
+                            "px-2 py-0.5 rounded-full text-xs font-extrabold",
+                            kycCheck.ok
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                              : "bg-[var(--data-error-100)] text-[var(--data-error)]",
+                          )}
+                        >
+                          {kycCheck.ok ? "KYC completo" : `KYC incompleto (${kycCheck.missing.length})`}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-gray-100 text-[var(--text-secondary)]">
+                          Sin KYC (legacy)
                         </span>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
+                      {data.dni && (
+                        <span className="flex items-center gap-1 font-bold text-[var(--text-primary)]">
+                          DNI {data.dni}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <Phone className="h-3 w-3" /> {data.phone}
                       </span>
+                      {(app.partner?.zone || data.zone) && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {app.partner?.zone || data.zone}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {data.zone}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Truck className="h-3 w-3" /> {VEHICLE_LABELS[data.vehicle] ?? data.vehicle}
+                        <Truck className="h-3 w-3" /> {VEHICLE_LABELS[vehicleType] ?? vehicleType}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
@@ -1191,7 +1289,11 @@ function SolicitudesTab() {
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       {new Date(app.createdAt).toLocaleDateString("es-PE", {
-                        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </p>
                   </div>
@@ -1200,26 +1302,99 @@ function SolicitudesTab() {
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => handleAction(app.id, "approve")}
-                        disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors"
+                        disabled={isProcessing || !canApprove}
+                        title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-3.5 w-3.5" /> Aprobar
                       </button>
                       <button
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--data-error-100)] text-[var(--data-error)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-3.5 w-3.5" /> Rechazar
                       </button>
                     </div>
                   )}
                 </div>
+
+                {/* KYC details */}
+                {app.kyc && (
+                  <div className="mt-3 grid sm:grid-cols-2 gap-3 pt-3 border-t border-[var(--rule-base)]">
+                    <KycSection
+                      title="Identidad"
+                      rows={[
+                        ["DNI", app.kyc.kyc.dni],
+                        ["Fecha nacimiento", app.kyc.kyc.birthDate],
+                      ]}
+                    />
+                    {app.kyc.kyc.license ? (
+                      <KycSection
+                        title="Licencia"
+                        rows={[
+                          ["Categoría", app.kyc.kyc.license.category ?? "—"],
+                          ["Número", app.kyc.kyc.license.number ?? "—"],
+                          ["Vence", app.kyc.kyc.license.expiresAt ?? "—"],
+                        ]}
+                      />
+                    ) : (
+                      <div className="text-xs text-[var(--text-tertiary)]">
+                        Vehículo no motorizado — sin licencia.
+                      </div>
+                    )}
+                    {app.kyc.kyc.vehicle && (
+                      <KycSection
+                        title="Vehículo / SOAT"
+                        rows={[
+                          ["Placa", app.kyc.kyc.vehicle.plate ?? "—"],
+                          ["SOAT", app.kyc.kyc.vehicle.soatNumber ?? "—"],
+                          ["Vence SOAT", app.kyc.kyc.vehicle.soatExpiresAt ?? "—"],
+                        ]}
+                      />
+                    )}
+                    <KycSection
+                      title="Consentimientos"
+                      rows={[
+                        ["Términos", app.kyc.consents.acceptedTerms ? "✔" : "✗"],
+                        ["Privacidad (Ley 29733)", app.kyc.consents.acceptedPrivacy ? "✔" : "✗"],
+                        ["18+ confirmado", app.kyc.consents.confirmAdult ? "✔" : "✗"],
+                        [
+                          "Aceptado el",
+                          new Date(app.kyc.consents.acceptedAt).toLocaleDateString("es-PE"),
+                        ],
+                      ]}
+                    />
+                    {!kycCheck.ok && (
+                      <div className="sm:col-span-2 rounded-xl bg-[var(--data-error-100)] text-[var(--data-error)] px-3 py-2 text-xs font-bold">
+                        Faltan datos para aprobar: {kycCheck.missing.join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function KycSection({ title, rows }: { title: string; rows: [string, string][] }) {
+  return (
+    <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-3 py-2.5">
+      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+        {title}
+      </p>
+      <dl className="space-y-0.5">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-2 text-xs">
+            <dt className="text-[var(--text-tertiary)]">{k}</dt>
+            <dd className="font-bold text-[var(--text-primary)] truncate">{v}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

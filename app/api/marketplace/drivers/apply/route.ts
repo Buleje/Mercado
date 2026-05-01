@@ -1,25 +1,27 @@
 /**
- * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
- * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
- * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
- * dedicada cuando se centralice el patrón.
+ * @prisma-direct ok — operación con scope explícito por `tenantId` "main"
+ * (single-tenant marketplace). Migrar a `lib/db/delivery.db.ts` cuando se
+ * centralice el patrón.
+ *
+ * Cumplimiento legal:
+ *   - Ley 29733 — recoge consentimiento explícito de tratamiento de datos.
+ *   - DS 017-2009-MTC — valida licencia/SOAT vigentes para vehículos motorizados.
+ *   - Edad mínima 18 años (Ley 27261 / Código del Niño y Adolescente).
+ *
+ * Persistencia: KYC estructurado en `DeliveryPartner.notes` como JSON.
+ * Idempotente por (phone, tenantId): re-aplicar actualiza datos.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-
-const DriverApplySchema = z.object({
-  name: z.string().min(2).max(100),
-  phone: z.string().min(6).max(20),
-  email: z.string().email("Email inválido").optional(),
-  zone: z.string().min(1).max(50),
-  vehicleType: z.enum(["moto", "bicicleta", "auto", "a_pie"]),
-  availability: z.enum(["manana", "tarde", "noche", "full", "fines"]),
-});
+import {
+  DriverApplySchema,
+  buildKycNotes,
+  MOTORIZED,
+} from "@/lib/schemas/driver-apply";
 
 export async function POST(req: NextRequest) {
-  // Rate limit: anti-spam aplicar como repartidor (5 / 15min / IP)
+  // Rate limit anti-spam (5 / 15min / IP).
   const rl = applyRateLimit(req, "STRICT", "marketplace-drivers-apply");
   if (rl) return rl;
 
@@ -28,81 +30,123 @@ export async function POST(req: NextRequest) {
     const parsed = DriverApplySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues },
-        { status: 400 }
+        {
+          error: "Datos inválidos",
+          issues: parsed.error.issues.map((i) => ({
+            path: i.path.join("."),
+            message: i.message,
+          })),
+        },
+        { status: 400 },
       );
     }
 
+    const data = parsed.data;
     const { prisma } = await import("@/lib/prisma");
 
-    // Crear DeliveryPartner real con isActive=false (pendiente). El admin lo
-    // aprueba desde /admin?tab=delivery-partners. Idempotente por phone.
-    const phoneDigits = parsed.data.phone.replace(/\D/g, "");
+    const phoneDigits = data.phone.replace(/\D/g, "");
+    const kycNotes = buildKycNotes(data);
+    const isMotor = MOTORIZED.includes(data.vehicleType);
+
+    // Idempotente por phone — re-aplicar refresca datos del KYC.
     const existing = await prisma.deliveryPartner.findFirst({
       where: { phone: phoneDigits, tenantId: "main" },
-      select: { id: true },
+      select: { id: true, isActive: true },
     });
 
     let partnerId: string;
     if (existing) {
+      // No reactivar si ya estaba aprobado: actualizar datos pero conservar isActive.
+      await prisma.deliveryPartner.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name,
+          email: data.email || null,
+          zone: data.zone,
+          vehicleType: data.vehicleType,
+          notes: JSON.stringify(kycNotes),
+        },
+      });
       partnerId = existing.id;
     } else {
       const created = await prisma.deliveryPartner.create({
         data: {
-          name: parsed.data.name,
+          name: data.name,
           phone: phoneDigits,
-          email: parsed.data.email ?? null,
-          zone: parsed.data.zone,
-          vehicleType: parsed.data.vehicleType,
-          isActive: false,
+          email: data.email || null,
+          zone: data.zone,
+          vehicleType: data.vehicleType,
+          isActive: false, // Pendiente de aprobación
           rating: 5.0,
           fee: 5.0,
           tenantId: "main",
-          notes: JSON.stringify({
-            availability: parsed.data.availability,
-            applicationStatus: "pendiente",
-          }),
+          notes: JSON.stringify(kycNotes),
         },
         select: { id: true },
       });
       partnerId = created.id;
     }
 
-    // Notification al admin para que apruebe.
+    // Notification al admin (incluye campos KYC clave para revisión rápida).
+    const summaryLines = [
+      `${data.name} · DNI ${data.dni}`,
+      `Tel ${phoneDigits} · ${data.zone}`,
+      `Vehículo: ${data.vehicleType}${isMotor ? ` · Placa ${data.vehiclePlate}` : ""}`,
+      isMotor ? `Licencia ${data.licenseCategory} ${data.licenseNumber} (vence ${data.licenseExpiresAt})` : "",
+      isMotor ? `SOAT ${data.soatNumber} (vence ${data.soatExpiresAt})` : "",
+      `Horario: ${data.availability}`,
+    ].filter(Boolean);
+
     await prisma.notification.create({
       data: {
         tenantId: "main",
         title: "Nueva solicitud de repartidor",
-        body: `${parsed.data.name} (${phoneDigits}) - Zona: ${parsed.data.zone} - Vehículo: ${parsed.data.vehicleType} - Horario: ${parsed.data.availability}`,
+        body: summaryLines.join(" | "),
         type: "DRIVER_APPLICATION",
         severity: "MEDIUM",
       },
     });
 
-    // Fire-and-forget WhatsApp notification to admin (queued)
+    // Audit log: por ahora persistimos consentimientos dentro del JSON `notes`
+    // (campo `consents.acceptedAt` + versiones T&C/privacidad). Si en el futuro
+    // se introduce un modelo `AuditLog`, replicar acá con resourceId=partnerId.
+    logger.info("[drivers/apply] consent recorded", {
+      partnerId,
+      dni: data.dni,
+      termsVersion: kycNotes.consents.termsVersion,
+      privacyVersion: kycNotes.consents.privacyVersion,
+    });
+
+    // WhatsApp al admin (fire-and-forget).
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
       const msg = [
-        "🛵 *Nueva solicitud de repartidor*",
+        "*Nueva solicitud de repartidor*",
         "",
-        `👤 ${parsed.data.name}`,
-        `📱 ${parsed.data.phone}`,
-        `📍 Zona: ${parsed.data.zone}`,
-        `🚗 Vehículo: ${parsed.data.vehicleType}`,
-        `⏰ Horario: ${parsed.data.availability}`,
+        `Nombre: ${data.name}`,
+        `DNI: ${data.dni}`,
+        `Teléfono: ${data.phone}`,
+        `Zona: ${data.zone}`,
+        `Vehículo: ${data.vehicleType}`,
+        isMotor ? `Licencia ${data.licenseCategory} ${data.licenseNumber}` : "",
+        isMotor ? `Placa ${data.vehiclePlate}` : "",
+        isMotor ? `SOAT ${data.soatNumber}` : "",
+        `Horario: ${data.availability}`,
         "",
         "Revisa el panel admin para aprobar o rechazar.",
-      ].join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
       await (await import("@/lib/whatsapp"))
         .sendWhatsAppQueued(adminPhone, msg, { tenantId: "main", context: "drivers/apply:admin" })
-        .catch((err) => logger.error("[marketplace/drivers/apply] operation failed", { error: String(err) }));
+        .catch((err) =>
+          logger.error("[marketplace/drivers/apply] whatsapp failed", { error: String(err) }),
+        );
     }
 
     return NextResponse.json({ success: true, partnerId });
-  } catch {
-    return NextResponse.json(
-      { error: "Error al procesar solicitud" },
-      { status: 500 }
-    );
+  } catch (err) {
+    logger.error("[marketplace/drivers/apply] unexpected", { error: String(err) });
+    return NextResponse.json({ error: "Error al procesar solicitud" }, { status: 500 });
   }
 }

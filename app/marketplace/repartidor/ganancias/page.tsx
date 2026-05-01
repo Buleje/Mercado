@@ -2,18 +2,20 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Truck,
-  DollarSign,
-  Star,
-  Package,
-  Calendar,
-  TrendingUp,
-  ChevronLeft,
-  ChevronRight,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { Loader2, AlertTriangle } from "@buleje/design-system/icons";
 import Link from "next/link";
+import {
+  MotoIcon,
+  CashIcon,
+  PackageIcon,
+  TrendIcon,
+  CalendarIcon,
+  StarBadge,
+  PinIcon,
+  CheckBadge,
+  TimerIcon,
+  LiveSignal,
+} from "@/components/delivery/icons";
 
 interface Assignment {
   id: string;
@@ -30,6 +32,12 @@ interface DriverStats {
   assignments: Assignment[];
   totals: { earned: number; pending: number; deliveries: number; avgFee: number };
 }
+
+const PERIODS: { id: "hoy" | "semana" | "mes"; label: string }[] = [
+  { id: "hoy", label: "Hoy" },
+  { id: "semana", label: "Esta semana" },
+  { id: "mes", label: "Este mes" },
+];
 
 export default function GananciasRepartidorPage() {
   const searchParams = useSearchParams();
@@ -55,153 +63,245 @@ export default function GananciasRepartidorPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ── Empty / error states ──────────────────────────────────
   if (!partnerId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="text-center">
-          <Truck className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-          <p className="text-gray-500">Enlace inválido.</p>
-          <Link href="/marketplace" className="text-primary text-sm hover:underline mt-2 inline-block">
-            Ir al marketplace
+      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] p-6">
+        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 max-w-md w-full text-center">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
+            <AlertTriangle className="h-8 w-8" strokeWidth={2.25} />
+          </div>
+          <h1 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
+            Enlace inválido
+          </h1>
+          <p className="mt-2 text-base text-[var(--text-secondary)]">
+            El link no contiene tu identificador. Volvé al panel del repartidor.
+          </p>
+          <Link
+            href="/delivery-app"
+            className="mt-5 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white"
+          >
+            Ir al panel
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
+      </main>
     );
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] p-6">
         <div className="text-center">
-          <Truck className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-          <p className="text-gray-500">No se encontraron datos. Verifica tu enlace.</p>
+          <AlertTriangle className="mx-auto h-12 w-12 text-[var(--brand-secondary)]" />
+          <p className="mt-3 text-base text-[var(--text-secondary)]">
+            No pudimos cargar tus datos. Verificá tu enlace.
+          </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   const { partner, assignments, totals } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-primary px-4 pb-10 pt-8 text-white">
-        <div className="mx-auto max-w-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
-              <Truck className="h-6 w-6" />
+    <main className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[var(--accent)] to-[var(--brand-primary-light)] text-white">
+        <div className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+        <div
+          className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12"
+          style={{ paddingTop: "max(32px, env(safe-area-inset-top))" }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+              <MotoIcon className="h-8 w-8 lg:h-9 lg:w-9" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold">{partner.name}</h1>
-              <p className="text-sm text-white/80">{partner.zone} · {partner.vehicleType}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold uppercase tracking-wider text-white/85">
+                Resumen de ganancias
+              </p>
+              <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight truncate">
+                {partner.name}
+              </h1>
+              <p className="text-sm lg:text-base font-semibold text-white/85 flex items-center gap-2 mt-0.5">
+                <PinIcon className="h-4 w-4" />
+                {partner.zone}
+                <span className="text-white/60">·</span>
+                {partner.vehicleType}
+              </p>
             </div>
-            <div className="ml-auto flex items-center gap-1 rounded-full bg-white/20 px-3 py-1">
-              <Star className="h-4 w-4 fill-amber-300 text-amber-300" />
-              <span className="text-sm font-bold">{partner.rating.toFixed(1)}</span>
+            <div className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/15 backdrop-blur text-sm font-extrabold">
+              <StarBadge className="h-4 w-4 text-[var(--brand-secondary)]" />
+              <span className="tabular-nums">{partner.rating.toFixed(1)}</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Stats Cards */}
-      <div className="mx-auto max-w-lg px-4 -mt-6">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-              <DollarSign className="h-3.5 w-3.5" /> Ganado
-            </div>
-            <p className="text-xl font-bold text-gray-900">S/ {totals.earned.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-              <Package className="h-3.5 w-3.5" /> Entregas
-            </div>
-            <p className="text-xl font-bold text-gray-900">{totals.deliveries}</p>
-          </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-              <TrendingUp className="h-3.5 w-3.5" /> Promedio
-            </div>
-            <p className="text-xl font-bold text-gray-900">S/ {totals.avgFee.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 text-amber-500 text-xs mb-1">
-              <Calendar className="h-3.5 w-3.5" /> Pendiente
-            </div>
-            <p className="text-xl font-bold text-amber-600">S/ {totals.pending.toFixed(2)}</p>
-          </div>
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 -mt-6 lg:-mt-10 relative z-10">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <Stat
+            icon={<CashIcon className="h-6 w-6 text-[var(--accent)]" />}
+            label="Ganado"
+            value={`S/ ${totals.earned.toFixed(2)}`}
+            tone="accent"
+          />
+          <Stat
+            icon={<PackageIcon className="h-6 w-6 text-[var(--brand-info)]" />}
+            label="Entregas"
+            value={String(totals.deliveries)}
+            tone="info"
+          />
+          <Stat
+            icon={<TrendIcon className="h-6 w-6 text-[var(--data-success)]" />}
+            label="Promedio"
+            value={`S/ ${totals.avgFee.toFixed(2)}`}
+            tone="success"
+          />
+          <Stat
+            icon={<CalendarIcon className="h-6 w-6 text-[var(--brand-secondary)]" />}
+            label="Pendiente"
+            value={`S/ ${totals.pending.toFixed(2)}`}
+            tone="amber"
+          />
         </div>
 
-        {/* Period Selector */}
-        <div className="mt-6 flex items-center justify-center gap-2">
-          {(["hoy", "semana", "mes"] as const).map((p) => (
+        {/* Period chips */}
+        <div className="mt-8 flex flex-wrap items-center gap-2">
+          {PERIODS.map((p) => (
             <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
-                period === p
-                  ? "bg-primary text-white"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-              )}
+              key={p.id}
+              type="button"
+              onClick={() => setPeriod(p.id)}
+              aria-pressed={period === p.id}
+              className={`h-11 px-5 rounded-2xl text-sm font-extrabold transition-colors ${
+                period === p.id
+                  ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                  : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              }`}
             >
-              {p === "hoy" ? "Hoy" : p === "semana" ? "Esta semana" : "Este mes"}
+              {p.label}
             </button>
           ))}
         </div>
 
-        {/* Assignments List */}
-        <div className="mt-6 space-y-2 pb-8">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+        {/* Historial */}
+        <div className="mt-8 pb-12">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
             Historial de entregas
-          </h3>
+          </h2>
           {assignments.length === 0 ? (
-            <p className="text-center py-8 text-gray-400 text-sm">No hay entregas en este período.</p>
-          ) : (
-            assignments.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-xl bg-white p-4 border border-gray-100 shadow-sm">
-                <div className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                  a.status === "delivered" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
-                )}>
-                  <Package className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {a.order?.customerName || `Pedido #${a.orderId.slice(-6)}`}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {a.deliveredAt
-                      ? new Date(a.deliveredAt).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-                      : a.status === "assigned" ? "Pendiente" : "En camino"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-gray-900">S/ {Number(a.fee).toFixed(2)}</p>
-                  <p className={cn("text-xs font-medium", a.status === "delivered" ? "text-green-600" : "text-amber-500")}>
-                    {a.status === "delivered" ? "Pagado" : "Pendiente"}
-                  </p>
-                </div>
+            <div className="rounded-3xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                <PackageIcon className="h-7 w-7" />
               </div>
-            ))
+              <p className="mt-3 text-base font-semibold text-[var(--text-secondary)]">
+                Sin entregas en este periodo.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] divide-y divide-[var(--rule-base)] overflow-hidden">
+              {assignments.map((a) => {
+                const delivered = a.status === "delivered";
+                return (
+                  <div key={a.id} className="flex items-center gap-3 px-4 sm:px-5 py-4">
+                    <div
+                      className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${
+                        delivered
+                          ? "bg-[var(--data-success)]/10 text-[var(--data-success)]"
+                          : "bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]"
+                      }`}
+                    >
+                      {delivered ? <CheckBadge className="h-5 w-5" /> : <TimerIcon className="h-5 w-5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-extrabold text-[var(--text-primary)] truncate">
+                        {a.order?.customerName ?? `Pedido #${a.orderId.slice(-6)}`}
+                      </p>
+                      <p className="text-sm font-semibold text-[var(--text-tertiary)]">
+                        {a.deliveredAt
+                          ? new Date(a.deliveredAt).toLocaleString("es-PE", {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : a.status === "assigned"
+                          ? "Asignado"
+                          : "En camino"}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
+                        S/ {Number(a.fee).toFixed(2)}
+                      </p>
+                      <p
+                        className={`text-xs font-extrabold uppercase tracking-wider mt-0.5 ${
+                          delivered ? "text-[var(--data-success)]" : "text-[var(--brand-secondary)]"
+                        }`}
+                      >
+                        {delivered ? "Pagado" : "Pendiente"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Back */}
-        <div className="pb-8 text-center">
-          <Link href="/marketplace" className="text-sm text-primary hover:underline">
-            ← Volver al marketplace
+        <div className="text-center pb-10">
+          <Link
+            href="/delivery-app"
+            className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+          >
+            ← Volver al panel del repartidor
           </Link>
         </div>
+      </section>
+    </main>
+  );
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: "accent" | "info" | "success" | "amber";
+}) {
+  const ring: Record<typeof tone, string> = {
+    accent: "bg-[var(--accent-soft)]",
+    info: "bg-[var(--brand-info)]/10",
+    success: "bg-[var(--data-success)]/10",
+    amber: "bg-[var(--brand-secondary)]/10",
+  } as const;
+  return (
+    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-5">
+      <div className={`h-11 w-11 rounded-xl flex items-center justify-center mb-3 ${ring[tone]}`}>
+        {icon}
       </div>
+      <p className="text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+        {value}
+      </p>
+      <p className="mt-1.5 text-xs lg:text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+        {label}
+      </p>
     </div>
   );
 }

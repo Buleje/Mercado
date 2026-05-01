@@ -38,6 +38,8 @@ export interface TenantRow {
   monthOrders?: number;
   monthExpenses?: number;
   monthProfit?: number;
+  /** Pedidos no entregados ni cancelados (pendiente/preparando/asignado/en_camino). */
+  pendingOrders?: number;
 }
 
 export interface CommissionRow {
