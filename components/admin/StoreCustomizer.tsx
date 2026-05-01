@@ -9,7 +9,7 @@ import {
   MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
   Paintbrush, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { LoadingState, PageTitle, PrimaryButton } from "@buleje/design-system";
+import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import dynamic from "next/dynamic";
@@ -666,10 +666,10 @@ export default function StoreCustomizer() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toast de éxito */}
+      {/* Toast de éxito — patrón estándar admin (mismo estilo que plantilla/notificaciones) */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--accent-soft)] text-white text-sm font-bold animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
-          <Check className="h-4 w-4 shrink-0" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold shadow-[var(--shadow-xl)] animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
+          <Check className="h-4 w-4 shrink-0 text-[var(--data-success)]" />
           {toastMsg}
         </div>
       )}
@@ -690,15 +690,15 @@ export default function StoreCustomizer() {
             href={`/t/${activeTenantSlug}?preview=true`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-muted text-xs font-semibold hover:text-foreground hover:border-gray-300 transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
-            <Store className="h-3.5 w-3.5" />
+            <Store className="h-4 w-4" />
             Ver tienda
           </a>
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
           >
             <Eye className="h-4 w-4" />
             Vista previa
@@ -719,7 +719,7 @@ export default function StoreCustomizer() {
 
         {/* ── Sidebar de tabs (desktop: vertical, mobile: horizontal scroll) ── */}
         <div className="lg:w-52 shrink-0">
-          {/* Mobile: horizontal tabs */}
+          {/* Mobile: horizontal tabs — patrón estándar admin (bg-primary cuando activo) */}
           <div className="flex lg:hidden gap-1 overflow-x-auto pb-1 scrollbar-hide">
             {TABS.map((t) => (
               <button
@@ -727,10 +727,10 @@ export default function StoreCustomizer() {
                 type="button"
                 onClick={() => setActiveTab(t.id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all min-h-[44px] shrink-0",
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0",
                   activeTab === t.id
-                    ? "bg-[var(--accent-soft)] text-white "
-                    : "bg-gray-100 dark:bg-surface text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-accent"
+                    ? "bg-primary text-white"
+                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-[var(--text-primary)]",
                 )}
               >
                 {t.icon}
@@ -744,7 +744,7 @@ export default function StoreCustomizer() {
             {TAB_GROUPS.map((group, gi) => (
               <div key={group.group}>
                 {gi > 0 && <div className="border-t border-[var(--rule-soft)] dark:border-card-border my-1.5" />}
-                <p className="text-xs font-bold text-muted/70 px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
                   {group.icon}
                   {group.group}
                 </p>
@@ -754,10 +754,10 @@ export default function StoreCustomizer() {
                     type="button"
                     onClick={() => setActiveTab(t.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all text-left min-h-[40px]",
+                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-colors text-left",
                       activeTab === t.id
-                        ? "bg-[var(--accent-soft)] text-white "
-                        : "text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
+                        ? "bg-primary text-white"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent",
                     )}
                   >
                     {t.icon}
@@ -772,10 +772,10 @@ export default function StoreCustomizer() {
         {/* ── Panel de contenido ────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border  overflow-hidden">
 
-          {/* Tab header with active tab info */}
-          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 shrink-0">
-            <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">{activeTabMeta?.icon}</span>
-            <p className="text-sm font-bold text-foreground">{activeTabMeta?.label}</p>
+          {/* Tab header with active tab info — usa SectionTitle del DS */}
+          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
+            <span className="text-primary">{activeTabMeta?.icon}</span>
+            <SectionTitle className="text-sm">{activeTabMeta?.label}</SectionTitle>
           </div>
 
           {/* Contenido del tab activo */}
