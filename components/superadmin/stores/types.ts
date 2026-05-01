@@ -55,6 +55,7 @@ export type StoreTab =
   | "analytics"
   | "personalizar"
   | "navegacion"
+  | "plantilla"
   | "health"
   | "operations"
   | "categories";

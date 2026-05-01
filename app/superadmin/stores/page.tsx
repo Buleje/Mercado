@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, Package, Ticket, BarChart3, Palette, Menu, ShieldCheck, Activity, Image as ImageIcon } from "@buleje/design-system/icons";
+import { ShoppingBag, Package, Ticket, BarChart3, Palette, Menu, ShieldCheck, Activity, Image as ImageIcon, Layers } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
 // OrdersTab fusionado en OperationsTab
 // import { OrdersTab } from "@/components/superadmin/stores/OrdersTab";
@@ -10,6 +10,7 @@ import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
 // PersonalizarTab fusionado en StoresTab
 // import { PersonalizarTab } from "@/components/superadmin/stores/PersonalizarTab";
 import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
+import { PlantillaPanelTab } from "@/components/superadmin/stores/PlantillaPanelTab";
 import { HealthTab } from "@/components/superadmin/stores/HealthTab";
 import { OperationsTab } from "@/components/superadmin/stores/OperationsTab";
 import { CategoriesTab } from "@/components/superadmin/stores/CategoriesTab";
@@ -27,6 +28,7 @@ const TABS: { key: StoreTab; label: string; icon: React.ReactNode }[] = [
   { key: "coupons", label: "Cupones", icon: <Ticket className="w-4 h-4" /> },
   { key: "analytics", label: "Analítica", icon: <BarChart3 className="w-4 h-4" /> },
   { key: "navegacion", label: "Navegación", icon: <Menu className="w-4 h-4" /> },
+  { key: "plantilla", label: "Plantilla del panel", icon: <Layers className="w-4 h-4" /> },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -102,6 +104,7 @@ export default function StoresPage() {
       {tab === "analytics" && <AnalyticsTab stores={stores} />}
       {/* Personalizar fusionado en Tiendas — la tab "personalizar" ya no existe */}
       {tab === "navegacion" && <NavegacionTab />}
+      {tab === "plantilla" && <PlantillaPanelTab />}
     </AdminTabShell>
   );
 }

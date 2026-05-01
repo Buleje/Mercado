@@ -39,7 +39,6 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import ModuleTooltip, { useModuleTooltip } from "@/components/admin/ModuleTooltip";
 import { MODULE_DESCRIPTIONS } from "@/lib/module-descriptions";
-import TierSelector from "@/components/admin/TierSelector";
 import { useModuleTiers } from "@/hooks/useModuleTiers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -795,7 +794,7 @@ export default function AdminSidebar({
   // Si el padre pasa modulos propios, los usa; si no, usa los defaults
   const rawModules = modules ?? BASIC_SIDEBAR_MODULES;
   const { theme } = useTheme();
-  const { tier, setTier, isModuleVisible, stats: tierStats, overrides, setModuleTier, resetOverrides } = useModuleTiers();
+  const { tier, isModuleVisible } = useModuleTiers();
   const [mobileOpen, setMobileOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
@@ -1055,24 +1054,6 @@ export default function AdminSidebar({
             </m.div>
           )}
         </div>
-
-        {/* Tier Selector */}
-        {!isCollapsed ? (
-          <div className="px-3 pt-2 shrink-0">
-            <TierSelector
-              tier={tier}
-              onTierChange={setTier}
-              stats={{ visible: tierStats.visible, total: tierStats.total }}
-              overrides={overrides}
-              onModuleTierChange={setModuleTier}
-              onResetOverrides={resetOverrides}
-            />
-          </div>
-        ) : (
-          <div className="px-2 pt-2 shrink-0">
-            <TierSelector tier={tier} onTierChange={setTier} collapsed overrides={overrides} onModuleTierChange={setModuleTier} onResetOverrides={resetOverrides} />
-          </div>
-        )}
 
         {/* Ordenar button */}
         {!isCollapsed && (

@@ -11,6 +11,7 @@ import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
   Banknote, History, ArrowRight, Clock, BarChart3, Maximize2, X,
   Brain, Users, AlertTriangle } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import FavStar from "@/components/admin/shared/FavStar";
 import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
@@ -949,8 +950,15 @@ export default function POSCajaModule() {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 sm:space-y-6">
       <OfflineIndicator />
+
+      <AdminModuleHeader
+        eyebrow="Operaciones · Punto de venta"
+        title="Ventas y Caja"
+        description="Vende, cobra, gestiona tu turno y cierra caja. Todo el flujo del mostrador en un solo lugar."
+        icon={ShoppingCart}
+      />
 
       {/* La barra flotante 'Sin turno/Abrir Turno' se movio:
           - Chip de status es ahora rightSlot del AdminTabBar (micro, inline)

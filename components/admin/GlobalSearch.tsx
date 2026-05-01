@@ -561,14 +561,23 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
   let globalIdx = 0;
 
   return (
-    <div
-      className="modal-backdrop flex items-start justify-center pt-[12vh] " style={{ zIndex: 9999 }}
-      onClick={onClose}
-    >
+    <>
+      {/* Backdrop transparente — captura click-fuera sin oscurecer la página */}
       <div
-        className="bg-white dark:bg-card rounded-2xl w-full max-w-2xl mx-4 overflow-hidden border border-[var(--rule-base)] dark:border-card-border shadow-[var(--shadow-xl)]"
-        onClick={e => e.stopPropagation()}
+        className="fixed inset-0 z-[9998]"
+        onClick={onClose}
+        aria-hidden
+      />
+      {/* Popover anclado al search button del topbar (top-14 ~ debajo del header h-14).
+          Mismo ancho max-w-xl + posicionado a la izquierda con margen para alinear
+          con el botón del header. En mobile ocupa todo el ancho. */}
+      <div
+        className="fixed top-14 left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-xl"
       >
+        <div
+          className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shadow-[var(--shadow-xl)]"
+          onClick={e => e.stopPropagation()}
+        >
         {/* ── Input de búsqueda — más prominente, h-14, con eyebrow ── */}
         <div className="px-5 pt-4 pb-2 border-b border-[var(--rule-soft)] dark:border-card-border">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
@@ -746,7 +755,8 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
             <span>abrir/cerrar</span>
           </span>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
