@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import DeliveryAppDashboard from "@/components/delivery/DeliveryAppDashboard";
+import PartnerDashboard from "@/components/delivery/PartnerDashboard";
 
 export const metadata: Metadata = {
-  title: "Buleje Delivery",
-  description: "Portal de repartidores — gestiona pedidos asignados",
+  title: "Buleje Delivery — Repartidor",
+  description: "Gestioná tus pedidos desde la app del repartidor.",
 };
 
 export default function DeliveryAppPage() {
-  return <DeliveryAppDashboard />;
+  return <PartnerDashboard />;
 }
