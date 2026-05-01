@@ -8,6 +8,17 @@ await p.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 3000
 await p.waitForTimeout(4000);
 await p.screenshot({ path: `${out}/home-desktop-light.png`, fullPage: false });
 console.log("✓", `${out}/home-desktop-light.png`);
+// Scroll a sección "Sumate a Buleje" (PromoBanners) y capturar viewport
+const promoTop = await p.evaluate(() => {
+  const el = document.querySelector('section[aria-label="Sumate a Buleje"]');
+  return el ? el.getBoundingClientRect().top + window.scrollY : null;
+});
+if (promoTop != null) {
+  await p.evaluate((y) => window.scrollTo({ top: y - 50, behavior: "instant" }), promoTop);
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: `${out}/home-promobanners.png`, fullPage: false });
+  console.log("✓", `${out}/home-promobanners.png`);
+}
 const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 const p2 = await ctx2.newPage();
 await p2.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });

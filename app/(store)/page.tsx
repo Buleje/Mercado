@@ -192,20 +192,26 @@ function PromoBanners() {
     {
       kicker: "Para dueños",
       icon: Store,
-      titleLine1: "¿Tienes un",
-      titleAccent: "negocio?",
-      desc: "Registra tu bodega, minimarket o tienda y empieza a vender online gratis. Miles de clientes te esperan.",
-      primary: { label: "Abrir mi tienda", href: "/abrir-tienda" },
+      titleLine1: "Vendé sin comisión",
+      titleAccent: "los primeros 90 días.",
+      desc: "Tu bodega online en 5 minutos. Yape, efectivo, delivery propio. Cero costo fijo.",
+      stat: "S/ 0",
+      statLabel: "comisión 90 días",
+      primary: { label: "Abrir mi tienda gratis", href: "/abrir-tienda" },
       secondary: { label: "Ver planes", href: "/abrir-tienda#planes" },
+      tone: "from-[var(--accent)] to-emerald-700",
     },
     {
       kicker: "Para repartidores",
       icon: Bike,
-      titleLine1: "¿Quieres",
-      titleAccent: "repartir?",
-      desc: "Únete como repartidor y genera ingresos extra entregando pedidos en tu zona. Tú eliges tu horario.",
+      titleLine1: "Tu moto, tu horario,",
+      titleAccent: "tu ingreso extra.",
+      desc: "Recibí pedidos cerca tuyo. Cobrás cada viaje + propinas. Sin jefe, sin esperas.",
+      stat: "S/ 6",
+      statLabel: "tarifa base por viaje",
       primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
       secondary: null as { label: string; href: string } | null,
+      tone: "from-orange-500 to-rose-600",
     },
   ];
 
@@ -215,49 +221,66 @@ function PromoBanners() {
       className="py-20 sm:py-28 bg-[var(--surface-canvas)]"
     >
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {banners.map((b, i) => {
             const Icon = b.icon;
             return (
               <div
                 key={i}
-                className="group relative bg-[var(--surface-raised)] p-8 sm:p-12 transition-colors hover:bg-[var(--surface-sunken)]"
+                className="group relative bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-3xl p-8 sm:p-10 transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-lg)] overflow-hidden"
               >
-                <div className="flex items-center gap-3 mb-8">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                    <Icon className="h-5 w-5" strokeWidth={1.75} />
+                {/* Gradient accent decorativo top-right */}
+                <div
+                  aria-hidden
+                  className={`absolute -top-20 -right-20 h-56 w-56 rounded-full bg-linear-to-br ${b.tone} opacity-[0.12] blur-3xl group-hover:opacity-[0.18] transition-opacity`}
+                />
+
+                <div className="relative flex items-center gap-3 mb-6">
+                  <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br ${b.tone} text-white shadow-md`}>
+                    <Icon className="h-5 w-5" strokeWidth={2.25} />
                   </span>
-                  <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                  <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     {b.kicker}
                   </p>
                 </div>
 
-                <h3 className="text-[clamp(2rem,4.5vw,3rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+                <h3 className="relative text-[clamp(1.75rem,3.8vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
                   {b.titleLine1}
                   <br />
                   <span className="italic font-serif text-[var(--accent)]">
                     {b.titleAccent}
                   </span>
                 </h3>
-                <p className="mt-6 text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+
+                <p className="relative mt-5 text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
                   {b.desc}
                 </p>
 
-                <div className="mt-10 flex flex-wrap gap-3">
+                {/* Stat highlight */}
+                <div className="relative mt-6 inline-flex items-baseline gap-2 rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-4 py-2.5">
+                  <span className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent)]">
+                    {b.stat}
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    {b.statLabel}
+                  </span>
+                </div>
+
+                <div className="relative mt-8 flex flex-wrap gap-3">
                   <Link
                     href={b.primary.href}
-                    className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-6 py-3 text-sm font-bold text-[var(--surface-canvas)] hover:bg-[var(--accent)] hover:gap-3 transition-all"
+                    className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-lg transition-all"
                   >
                     {b.primary.label}
                     <ArrowUpRight
                       className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
-                      strokeWidth={2.25}
+                      strokeWidth={2.5}
                     />
                   </Link>
                   {b.secondary && (
                     <Link
                       href={b.secondary.href}
-                      className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-transparent px-6 py-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                      className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-transparent px-6 py-3 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                     >
                       {b.secondary.label}
                     </Link>
