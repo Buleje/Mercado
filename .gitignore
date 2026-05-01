@@ -165,3 +165,4 @@ reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt
 # Visual verify artifacts (transient — solo baselines se commitean)
 reports/visual-verify/
 reports/a11y/
+reports/browser-tour/
