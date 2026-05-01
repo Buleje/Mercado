@@ -24,7 +24,7 @@ export default function UserAccountModal() {
     Bronce: "text-amber-700 bg-amber-50 border-amber-200",
     Plata: "text-gray-600 bg-gray-50 border-gray-200",
     Oro: "text-yellow-700 bg-yellow-50 border-yellow-200",
-    Platino: "text-purple-700 bg-purple-50 border-purple-200",
+    Platino: "text-[var(--accent)] bg-purple-50 border-purple-200",
   };
 
   return (

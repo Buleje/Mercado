@@ -83,7 +83,7 @@ export default function CartIconBtn({
       {hasInCart && !added && (
         <span
           aria-hidden
-          className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black tabular-nums text-[var(--accent)] shadow ring-2 ring-[var(--surface-raised)]"
+          className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--accent)] shadow ring-2 ring-[var(--surface-raised)]"
         >
           {quantityInCart > 99 ? "99+" : quantityInCart}
         </span>

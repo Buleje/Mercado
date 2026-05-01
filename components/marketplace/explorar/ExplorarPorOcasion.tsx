@@ -84,12 +84,12 @@ export default function ExplorarPorOcasion() {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-2">
           Momentos
         </span>
         <h2
           id="ocasiones-heading"
-          className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white"
+          className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white"
         >
           Explora por ocasion
         </h2>
@@ -110,7 +110,7 @@ export default function ExplorarPorOcasion() {
                 <Ill size={120} strokeWidth={1.5} />
               </div>
 
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
                 {oc.kicker}
               </span>
               <h3 className="mt-1 text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">

@@ -89,7 +89,7 @@ export default function CheckoutSummary({
 
   const ctaCls = cn(
     "group inline-flex w-full items-center justify-center rounded-full px-6 h-14",
-    "text-base font-bold tracking-[-0.01em] transition-all duration-200",
+    "text-base font-bold tracking-[var(--ls-tight)] transition-all duration-200",
     "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90",
     "shadow-[0_6px_20px_-10px_var(--accent)] hover:shadow-[0_10px_28px_-10px_var(--accent)]",
     "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
@@ -106,7 +106,7 @@ export default function CheckoutSummary({
     >
       {/* ── Kicker editorial (más grande) ──────────────────────── */}
       <header>
-        <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
           <span
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -114,7 +114,7 @@ export default function CheckoutSummary({
           Resumen
         </p>
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+          <h2 className="text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Tu pedido
           </h2>
           {!isEmpty && (
@@ -130,7 +130,7 @@ export default function CheckoutSummary({
         <ul className="max-h-72 overflow-y-auto -mx-2 px-2 divide-y divide-[var(--rule-soft)]">
           {storeIds.map((sid) => (
             <li key={sid} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">
+              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
                 {byStore[sid].storeName}
               </p>
               <ul className="space-y-1.5 text-sm">
@@ -165,7 +165,7 @@ export default function CheckoutSummary({
       {!isEmpty ? (
         <dl className="space-y-3 text-base border-t border-[var(--rule-soft)] pt-5">
           <div className="flex items-baseline justify-between">
-            <dt className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <dt className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Subtotal
             </dt>
             <dd className="font-black text-[var(--text-primary)] tabular-nums text-lg">
@@ -174,7 +174,7 @@ export default function CheckoutSummary({
           </div>
           {couponDiscount > 0 && (
             <div className="flex items-baseline justify-between text-[var(--accent)]">
-              <dt className="text-[11px] font-bold uppercase tracking-[0.18em]">
+              <dt className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]">
                 Cupones
               </dt>
               <dd className="font-black tabular-nums text-lg">−{fmt(couponDiscount)}</dd>
@@ -182,14 +182,14 @@ export default function CheckoutSummary({
           )}
           {loyaltyDiscount > 0 && (
             <div className="flex items-baseline justify-between text-[var(--accent)]">
-              <dt className="text-[11px] font-bold uppercase tracking-[0.18em]">
+              <dt className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]">
                 Puntos canjeados
               </dt>
               <dd className="font-black tabular-nums text-lg">−{fmt(loyaltyDiscount)}</dd>
             </div>
           )}
           <div className="flex items-baseline justify-between">
-            <dt className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <dt className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Truck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
               <Tooltip content={`Envío gratis desde S/${FREE_SHIPPING_THRESHOLD}`}>
                 <span className="underline decoration-dotted cursor-help">Envío</span>
@@ -197,7 +197,7 @@ export default function CheckoutSummary({
             </dt>
             <dd>
               {shipping === 0 ? (
-                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--accent)]">
+                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Gratis
                 </span>
               ) : (
@@ -217,7 +217,7 @@ export default function CheckoutSummary({
                   </span>{" "}
                   más
                 </p>
-                <p className="font-bold uppercase tracking-[0.14em] text-[10px] text-[var(--accent)]">
+                <p className="font-bold uppercase tracking-[var(--ls-wider)] text-[length:var(--ts-2xs)] text-[var(--accent)]">
                   Envío gratis
                 </p>
               </div>
@@ -253,10 +253,10 @@ export default function CheckoutSummary({
         <div className="relative pt-5">
           <span
             aria-hidden
-            className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-[var(--accent)]/60 to-transparent"
+            className="absolute left-0 top-0 h-px w-full bg-linear-to-r from-transparent via-[var(--accent)]/60 to-transparent"
           />
           <div className="flex items-end justify-between gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-2">
+            <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               Total a pagar
             </span>
             <span className="text-[clamp(2rem,3.5vw,2.75rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--text-primary)] leading-none">
@@ -299,7 +299,7 @@ export default function CheckoutSummary({
           ].map(({ Icon, label }) => (
             <li
               key={label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-2 text-[11px] font-bold text-[var(--text-secondary)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]"
             >
               <Icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
               {label}

@@ -162,17 +162,17 @@ export default function ExplorarRelacionados() {
                           {p.name}
                         </p>
                         {p.storeName && (
-                          <p className="text-[11px] font-semibold text-[var(--text-tertiary)] truncate leading-none">
+                          <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] truncate leading-none">
                             {p.storeName}
                           </p>
                         )}
                         <div className="flex items-center justify-between gap-2 mt-0.5">
                           <div className="flex items-baseline gap-1 min-w-0">
-                            <span className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+                            <span className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
                               {fmt(p.price)}
                             </span>
                             {p.unit && (
-                              <span className="text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums">
+                              <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] tabular-nums">
                                 /{p.unit}
                               </span>
                             )}

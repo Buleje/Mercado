@@ -78,7 +78,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Compartir
           </span>
           <h2
@@ -89,7 +89,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
           </h2>
         </div>
       </div>
-      <p className="text-[13px] text-muted leading-relaxed">
+      <p className="text-sm text-muted leading-relaxed">
         Envíale a quien quieras un link sin login para que vea el estado en tiempo real.
         Vive 72 horas.
       </p>

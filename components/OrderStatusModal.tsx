@@ -582,7 +582,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       {order.customer.name && (
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                            <User className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                            <User className="h-3.5 w-3.5 text-[var(--accent)] dark:text-violet-400" />
                           </div>
                           <div><p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Nombre</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.name}</p></div>
                         </div>

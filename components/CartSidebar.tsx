@@ -564,10 +564,10 @@ export default function CartSidebar() {
                 {/* W2: First order discount banner */}
                 {isFirstOrder && !promo && items.length > 0 && (
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700/30 rounded-xl px-3 py-2.5">
-                    <Gift className="h-4 w-4 text-violet-600 shrink-0" />
+                    <Gift className="h-4 w-4 text-[var(--accent)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-violet-700 dark:text-violet-300">¡Es tu primera compra! 🎉</p>
-                      <p className="text-[length:var(--ts-2xs)] text-violet-600 dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
+                      <p className="text-xs font-bold text-violet-700 dark:text-[var(--accent)]">¡Es tu primera compra! 🎉</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--accent)] dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
                     </div>
                   </div>
                 )}
@@ -634,7 +634,7 @@ export default function CartSidebar() {
                 {customer && finalTotal > 0 && (
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 rounded-xl px-3 py-2.5 border border-violet-100 dark:border-violet-800/30">
                     <span className="text-base leading-none">⭐</span>
-                    <span className="text-xs text-violet-700 dark:text-violet-300">
+                    <span className="text-xs text-violet-700 dark:text-[var(--accent)]">
                       Ganarás ~<span className="font-bold">{Math.floor(finalTotal / 10) * 5} pts</span> con este pedido
                     </span>
                   </div>

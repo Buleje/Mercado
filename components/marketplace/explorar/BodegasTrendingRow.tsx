@@ -68,7 +68,7 @@ function StoreCard({ store }: { store: StoreItem }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-1 leading-tight">
+          <p className="text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-1 leading-tight">
             {store.name}
           </p>
           {store.zone && (
@@ -92,7 +92,7 @@ function StoreCard({ store }: { store: StoreItem }) {
           <span className="text-base font-black tabular-nums text-[var(--text-primary)] leading-none">
             {rating.toFixed(1)}
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
             Rating
           </span>
         </div>
@@ -102,7 +102,7 @@ function StoreCard({ store }: { store: StoreItem }) {
           <span className="text-base font-black tabular-nums text-[var(--text-primary)] leading-none">
             {store.productCount}
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
             SKUs
           </span>
         </div>
@@ -119,7 +119,7 @@ function StoreCard({ store }: { store: StoreItem }) {
           >
             {deliveryFee === 0 ? "Free" : pen.format(deliveryFee).replace("PEN", "")}
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
             Envío
           </span>
         </div>

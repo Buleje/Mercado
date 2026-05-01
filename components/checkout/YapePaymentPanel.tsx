@@ -43,7 +43,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
         <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-          countdown > 120 ? "bg-purple-200 text-purple-700" : "bg-red-100 text-red-600 animate-pulse")}>
+          countdown > 120 ? "bg-purple-200 text-[var(--accent)]" : "bg-red-100 text-red-600 animate-pulse")}>
           <Clock className="h-3 w-3" />
           {minutes}:{seconds.toString().padStart(2, "0")}
         </div>
@@ -66,15 +66,15 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
       <div className="bg-white/70 rounded-xl p-3 space-y-2">
         <div className="flex items-start gap-2">
           <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-          <p className="text-xs text-gray-600">Abre tu app <strong className="text-purple-700">Yape</strong> y escanea el QR o yapea al número</p>
+          <p className="text-xs text-gray-600">Abre tu app <strong className="text-[var(--accent)]">Yape</strong> y escanea el QR o yapea al número</p>
         </div>
         <div className="flex items-start gap-2">
           <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
-          <p className="text-xs text-gray-600">Ingresa el monto <strong className="text-purple-700">exacto</strong> que se muestra abajo</p>
+          <p className="text-xs text-gray-600">Ingresa el monto <strong className="text-[var(--accent)]">exacto</strong> que se muestra abajo</p>
         </div>
         <div className="flex items-start gap-2">
           <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">3</span>
-          <p className="text-xs text-gray-600">Copia el <strong className="text-purple-700">número de operación</strong> e ingrésalo aquí</p>
+          <p className="text-xs text-gray-600">Copia el <strong className="text-[var(--accent)]">número de operación</strong> e ingrésalo aquí</p>
         </div>
       </div>
 
@@ -84,7 +84,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600" />
           </span>
-          <p className="text-xs font-semibold text-purple-700">Esperando tu pago&hellip;</p>
+          <p className="text-xs font-semibold text-[var(--accent)]">Esperando tu pago&hellip;</p>
         </div>
       )}
       {opEntered && (
@@ -107,7 +107,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
             <button
               type="button"
               onClick={() => copyText(yape.phone!, "phone")}
-              className="inline-flex items-center gap-1.5 text-sm font-mono text-purple-700 hover:text-purple-900 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-mono text-[var(--accent)] hover:text-purple-900 transition-colors"
             >
               {yape.phone}
               {copied === "phone" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 opacity-50" />}

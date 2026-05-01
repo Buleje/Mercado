@@ -488,7 +488,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
               B
             </div>
             <div className="text-center">
-              <h2 className="font-display text-3xl font-semibold text-gray-900 dark:text-white tracking-[-0.015em]">
+              <h2 className="font-display text-3xl font-semibold text-gray-900 dark:text-white tracking-[var(--ls-tight)]">
                 {step === "otp"
                   ? "Verificación"
                   : initialName
@@ -599,7 +599,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                     <User className="h-3.5 w-3.5" />
                     Nombre completo
                     {dniVerified && (
-                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:text-green-300">
+                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-green-700 dark:text-green-300">
                         ✓ Autollenado
                       </span>
                     )}
@@ -622,7 +622,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                     ].join(" ")}
                   />
                   {!dniVerified && (
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">
                       Si ya compraste antes, el nombre se llenará solo. Si sos nuevo, escribilo.
                     </p>
                   )}

@@ -93,7 +93,7 @@ export default function StoreInfoPanel({
         <div className="absolute top-3 left-3">
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[0.18em] backdrop-blur-sm border",
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] backdrop-blur-sm border",
               isOpen
                 ? "bg-emerald-500/95 border-emerald-300/40 text-white"
                 : "bg-gray-900/80 border-white/20 text-white",
@@ -110,7 +110,7 @@ export default function StoreInfoPanel({
           </span>
         </div>
         {/* "Ver mapa" hint bottom-right */}
-        <div className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-secondary)] inline-flex items-center gap-1 opacity-0 group-hover/map:opacity-100 transition-opacity">
+        <div className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] inline-flex items-center gap-1 opacity-0 group-hover/map:opacity-100 transition-opacity">
           Ver mapa
         </div>
       </Link>
@@ -120,7 +120,7 @@ export default function StoreInfoPanel({
         {/* Rating + Reseñas */}
         {ratingLabel && (
           <div className="flex items-center justify-between border-b border-[var(--rule-soft)] pb-3">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Calificación
             </span>
             <span className="inline-flex items-center gap-1.5">
@@ -138,7 +138,7 @@ export default function StoreInfoPanel({
         {/* Delivery + Tiempo */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
               <Truck className="h-3 w-3" aria-hidden />
               Delivery
             </p>
@@ -153,7 +153,7 @@ export default function StoreInfoPanel({
             )}
           </div>
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
               <Clock className="h-3 w-3" aria-hidden />
               Horario
             </p>
@@ -165,7 +165,7 @@ export default function StoreInfoPanel({
 
         {/* Ubicación */}
         <div className="border-t border-[var(--rule-soft)] pt-3">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1 inline-flex items-center gap-1">
             <MapPin className="h-3 w-3" aria-hidden />
             Ubicación
           </p>
@@ -184,7 +184,7 @@ export default function StoreInfoPanel({
 
         {/* Métodos de pago */}
         <div className="border-t border-[var(--rule-soft)] pt-3">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2 inline-flex items-center gap-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2 inline-flex items-center gap-1">
             <Wallet className="h-3 w-3" aria-hidden />
             Métodos de pago
           </p>

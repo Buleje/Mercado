@@ -57,7 +57,7 @@ export function OrderStats({
       label: "Completados",
       value: completedOrders.toString(),
       icon: CheckCircle2,
-      color: "text-violet-600 dark:text-violet-400",
+      color: "text-[var(--accent)] dark:text-violet-400",
       bgColor: "bg-violet-50 dark:bg-violet-950/20",
     },
   ];
@@ -78,7 +78,7 @@ export function OrderStats({
         label: "Tasa Conversión",
         value: `${conversionRate.toFixed(1)}%`,
         icon: Users,
-        color: "text-rose-600 dark:text-rose-400",
+        color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
         bgColor: "bg-rose-50 dark:bg-rose-950/20",
       });
     }

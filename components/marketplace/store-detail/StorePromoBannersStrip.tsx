@@ -64,10 +64,10 @@ export default function StorePromoBannersStrip({
     >
       <div className="flex items-end justify-between gap-4 mb-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
             Promociones de la tienda
           </p>
-          <h3 className="text-lg sm:text-xl font-black tracking-[-0.015em] text-[var(--text-primary)]">
+          <h3 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Lo que está en oferta hoy
           </h3>
         </div>
@@ -84,7 +84,7 @@ export default function StorePromoBannersStrip({
                 sizes="(min-width: 1024px) 480px, (min-width: 640px) 420px, 300px"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent" />
               <div className="relative h-full flex flex-col justify-end p-4 sm:p-5 text-white">
                 <p className="text-base sm:text-xl font-black tracking-tight drop-shadow-sm leading-tight">
                   {b.title}

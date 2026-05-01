@@ -135,7 +135,7 @@ export default function ReferralBanner() {
                 padding: "1.5rem 2rem",
                 textAlign: "center",
               }}>
-                <p className="text-4xl sm:text-5xl font-black text-white tracking-[0.18em] font-mono select-all">
+                <p className="text-4xl sm:text-5xl font-black text-white tracking-[var(--ls-wider)] font-mono select-all">
                   {code}
                 </p>
               </div>

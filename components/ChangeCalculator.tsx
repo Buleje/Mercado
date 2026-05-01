@@ -11,7 +11,7 @@ const BILLS: Bill[] = [
   { value: 50, label: "S/50", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: 20, label: "S/20", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
   { value: 10, label: "S/10", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  { value: 5, label: "S/5", color: "bg-purple-100 text-purple-700 border-purple-300" },
+  { value: 5, label: "S/5", color: "bg-purple-100 text-[var(--accent)] border-purple-300" },
   { value: 2, label: "S/2", color: "bg-gray-100 text-gray-700 border-gray-300" },
   { value: 1, label: "S/1", color: "bg-gray-100 text-gray-700 border-gray-300" },
   { value: 0.5, label: "S/0.50", color: "bg-gray-50 text-gray-600 border-gray-200" },

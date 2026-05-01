@@ -44,7 +44,7 @@ export default function GiftCardPreview({
                 {formattedAmount}
               </span>
             </header>
-            <footer className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.2em] text-gray-700">
+            <footer className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-gray-700">
               Tarjeta de regalo
             </footer>
           </div>

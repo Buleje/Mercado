@@ -84,7 +84,7 @@ export default function ErrorPageLayout({
       <div className="w-full max-w-2xl text-center">
         {/* Code display XL */}
         {code && (
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Error {code}
           </p>
         )}

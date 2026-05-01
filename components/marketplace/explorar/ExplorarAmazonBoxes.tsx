@@ -210,10 +210,10 @@ function CompactBox({
       )}
     >
       <header className="mb-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)] mb-2">
+        <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] mb-2">
           {box.kicker}
         </p>
-        <h3 className="text-lg sm:text-xl font-black tracking-[-0.015em] text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+        <h3 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
           {box.title}
         </h3>
         <p className="mt-2 text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">

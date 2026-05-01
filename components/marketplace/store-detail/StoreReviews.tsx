@@ -129,7 +129,7 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
     <section aria-labelledby="store-reviews-heading" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 mb-2">
           Opiniones
         </p>
         <h2

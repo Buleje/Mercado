@@ -163,7 +163,7 @@ export default function PersonalizedRecommendations() {
 
         {/* Gradiente derecho */}
         {canScrollRight && (
-          <div className="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-white dark:from-gray-950 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 h-full w-16 bg-linear-to-l from-white dark:from-gray-950 to-transparent pointer-events-none" />
         )}
       </div>
     </section>

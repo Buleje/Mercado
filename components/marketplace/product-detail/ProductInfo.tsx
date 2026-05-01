@@ -100,7 +100,7 @@ export function ProductInfo({
           className="inline-flex h-1 w-12 rounded-full bg-[var(--accent)]"
         />
         <Store className="h-5 w-5 text-[var(--accent)]" />
-        <span className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--accent)] group-hover:underline">
+        <span className="text-sm font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] group-hover:underline">
           {storeName}
           {storeZone && ` · ${storeZone}`}
           {storeKm && ` · ${storeKm}`}

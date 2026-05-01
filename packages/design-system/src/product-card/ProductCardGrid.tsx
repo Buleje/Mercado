@@ -131,7 +131,7 @@ export function ProductCardGrid({
             size="md"
           />
           {discount != null && !badgeMeta && (
-            <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--data-warning-700)]">
+            <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
               -{discount}%
             </span>
           )}
@@ -201,7 +201,7 @@ export function ProductCardGrid({
               {hasInCart && (
                 <span
                   aria-hidden
-                  className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black tabular-nums text-[var(--accent)] shadow ring-2 ring-[var(--surface-raised)]"
+                  className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--accent)] shadow ring-2 ring-[var(--surface-raised)]"
                 >
                   {quantityInCart > 99 ? "99+" : quantityInCart}
                 </span>

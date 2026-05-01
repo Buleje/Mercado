@@ -79,6 +79,8 @@ type StudioPromoEmbed = {
   buyLabel: string;
   imageAdjust?: ImageAdjust;
   items?: PromoItem[];
+  badgeAnchor?: PromoAnchor | null;
+  buyAnchor?: PromoAnchor | null;
 };
 
 /** Subset editable de Banner que usamos en el Studio (compatible con
@@ -1569,7 +1571,7 @@ function PromoItemEditor({
     <div className={cn("rounded-lg border", dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10")}>
       <div className={cn("flex items-center gap-2 px-2.5 py-2 border-b rounded-t-lg", headerCls)}>
         <span className={cn(
-          "inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-extrabold tabular-nums shrink-0",
+          "inline-flex h-5 w-5 items-center justify-center rounded text-[length:var(--ts-2xs)] font-extrabold tabular-nums shrink-0",
           dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)]" : "bg-black/10 text-black/70",
         )}>
           {index + 1}
@@ -1583,7 +1585,7 @@ function PromoItemEditor({
           {item.productName || "(sin nombre)"}
         </button>
         <span className={cn(
-          "inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[10px] font-extrabold uppercase tracking-wider shrink-0",
+          "inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0",
           item.source === "linked"
             ? "bg-[var(--accent)]/20 text-[var(--accent)]"
             : dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.6)]" : "bg-black/10 text-black/60",
@@ -3132,7 +3134,7 @@ function DraggableHandle({
     >
       <div
         className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-lg ring-2",
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white shadow-lg ring-2",
           palette.bg,
           active ? palette.ring : isFree ? "ring-white/40" : "ring-white/20",
           !isFree && "opacity-70 hover:opacity-100",
@@ -3149,7 +3151,7 @@ function DraggableHandle({
               ev.stopPropagation();
               onChange(null);
             }}
-            className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white text-[10px] leading-none"
+            className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white text-[length:var(--ts-2xs)] leading-none"
             title="Volver a posición por defecto"
             aria-label="Resetear posición"
           >

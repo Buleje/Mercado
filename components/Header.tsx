@@ -778,7 +778,7 @@ export default function Header() {
                   })}
                   {/* Categorías dentro del menú inicio mobile */}
                   <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
-                    <p className="px-1 pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-[0.2em]">Categorías</p>
+                    <p className="px-1 pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-[var(--ls-wider)]">Categorías</p>
                     <div className="grid grid-cols-2 gap-2">
                       {filteredCategories.map((cat) => {
                         const CIcon = cat.icon;

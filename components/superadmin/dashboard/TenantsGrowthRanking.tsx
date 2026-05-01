@@ -70,9 +70,9 @@ const fmtSoles = (n: number) =>
 function PodiumIcon({ position }: { position: number }) {
   // Medallas para top 3
   const styles = [
-    "bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-950 ring-2 ring-yellow-200",
-    "bg-gradient-to-br from-zinc-300 to-zinc-400 text-zinc-900 ring-2 ring-zinc-200",
-    "bg-gradient-to-br from-orange-300 to-orange-400 text-orange-950 ring-2 ring-orange-200",
+    "bg-linear-to-br from-yellow-300 to-yellow-500 text-yellow-950 ring-2 ring-yellow-200",
+    "bg-linear-to-br from-zinc-300 to-zinc-400 text-zinc-900 ring-2 ring-zinc-200",
+    "bg-linear-to-br from-orange-300 to-orange-400 text-orange-950 ring-2 ring-orange-200",
   ];
   return (
     <div className={`h-9 w-9 rounded-full flex items-center justify-center font-extrabold text-base shrink-0 ${styles[position - 1]}`}>
@@ -93,7 +93,7 @@ function DeltaPill({ value }: { value: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-sm font-bold ${
-        positive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+        positive ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
       }`}
     >
       {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}

@@ -106,7 +106,7 @@ export default function MarketplaceWelcomeCoupon() {
         </button>
 
         <div className="p-5">
-          <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
+          <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 dark:text-gray-500">
             <Gift className="h-3 w-3" strokeWidth={2} />
             Cupón · nuevos clientes
           </div>

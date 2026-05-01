@@ -56,7 +56,7 @@ export function ProductBadge({ intent, children, className }: ProductBadgeProps)
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap",
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide whitespace-nowrap",
         INTENT_STYLES[intent],
         className,
       )}
@@ -86,7 +86,7 @@ const SIZE_PRIMARY: Record<NonNullable<ProductPriceProps["size"]>, string> = {
 };
 
 const SIZE_SECONDARY: Record<NonNullable<ProductPriceProps["size"]>, string> = {
-  sm: "text-[10px]",
+  sm: "text-[length:var(--ts-2xs)]",
   md: "text-xs",
   lg: "text-sm",
 };

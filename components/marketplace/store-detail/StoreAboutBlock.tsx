@@ -33,7 +33,7 @@ export default function StoreAboutBlock({
   return (
     <div className="space-y-6">
       {/* Kicker */}
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500">
         Sobre la tienda
       </p>
 

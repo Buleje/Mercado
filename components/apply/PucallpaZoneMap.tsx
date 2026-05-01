@@ -86,7 +86,7 @@ export default function PucallpaZoneMap({ value, onChange, className }: Props) {
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="relative bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl overflow-hidden p-2">
+      <div className="relative bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl overflow-hidden p-2">
         <svg
           viewBox="0 0 340 360"
           className="w-full h-auto max-h-[360px]"

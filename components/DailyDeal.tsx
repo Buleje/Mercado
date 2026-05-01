@@ -105,7 +105,7 @@ export default function DailyDeal() {
   return (
     <section className="py-10 sm:py-16 bg-white dark:bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-gradient-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-lg shadow-secondary/5">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-linear-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-lg shadow-secondary/5">
           {/* Badge */}
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
             <span className="inline-flex items-center gap-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-md">

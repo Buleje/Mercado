@@ -225,13 +225,13 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
               placeholder="Contanos qué te pareció: el servicio, los productos, los tiempos…"
               className="w-full rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-medium focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 resize-none"
             />
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 tabular-nums">
+            <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500 mt-1 tabular-nums">
               {comment.length}/1000 caracteres
             </p>
           </div>
 
           {error && (
-            <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 p-3 flex items-start gap-2 text-sm text-rose-700 dark:text-rose-400">
+            <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 p-3 flex items-start gap-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
               <span>{error}</span>
             </div>

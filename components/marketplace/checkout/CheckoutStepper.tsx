@@ -53,7 +53,7 @@ export default function CheckoutStepper({ current }: { current: CheckoutStep }) 
           );
 
           const labelCls = cn(
-            "text-[length:var(--ts-xs)] font-bold tracking-[-0.01em] whitespace-nowrap transition-colors",
+            "text-[length:var(--ts-xs)] font-bold tracking-[var(--ls-tight)] whitespace-nowrap transition-colors",
             isCurrent && "text-[var(--text-primary)]",
             isDone && "text-[var(--text-secondary)]",
             !isCurrent && !isDone && "text-[var(--text-tertiary)]",
@@ -89,7 +89,7 @@ export default function CheckoutStepper({ current }: { current: CheckoutStep }) 
                   <span
                     className={cn(
                       "absolute inset-0 origin-left transition-transform duration-500 ease-out",
-                      "bg-gradient-to-r from-[var(--accent)] to-[var(--accent)]/70",
+                      "bg-linear-to-r from-[var(--accent)] to-[var(--accent)]/70",
                       isDone ? "scale-x-100" : "scale-x-0",
                     )}
                   />

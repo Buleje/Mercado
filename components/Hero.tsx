@@ -127,7 +127,7 @@ export default function Hero() {
                 color: "#f0f4f1",
               }}>
               {storeTheme?.heroTitle || hp.heroTitle}{" "}
-              <span className="bg-gradient-to-r from-teal-400 via-primary to-secondary bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-teal-400 via-primary to-secondary bg-clip-text text-transparent">
                 {hp.heroTitleAccent}
               </span>
             </h1>
@@ -231,7 +231,7 @@ export default function Hero() {
       </div>
 
       {/* ── Bottom fade transition ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" aria-hidden="true" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-background to-transparent" aria-hidden="true" />
     </section>
   );
 }

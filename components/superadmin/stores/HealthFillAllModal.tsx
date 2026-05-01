@@ -344,7 +344,7 @@ export default function HealthFillAllModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Rellenar datos del tenant
             </p>
             <p className="text-xl font-black text-[var(--text-primary)] mt-0.5">
@@ -374,7 +374,7 @@ export default function HealthFillAllModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700">
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -393,7 +393,7 @@ export default function HealthFillAllModal({
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Logo
                     </label>
                     <ImageUploader
@@ -405,7 +405,7 @@ export default function HealthFillAllModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Banner
                     </label>
                     <ImageUploader
@@ -625,7 +625,7 @@ export default function HealthFillAllModal({
         {/* Progress bar mientras saving — feedback live */}
         {saving && (
           <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-[var(--accent-soft)]/30">
-            <div className="flex items-center justify-between text-[11px] font-bold text-[var(--accent)] mb-1">
+            <div className="flex items-center justify-between text-[length:var(--ts-xs)] font-bold text-[var(--accent)] mb-1">
               <span>Guardando...</span>
               <span className="tabular-nums">{saveProgress}/13</span>
             </div>
@@ -661,7 +661,7 @@ export default function HealthFillAllModal({
             ) : (
               <>
                 Guardar todo
-                <span className="hidden sm:inline ml-1.5 text-[10px] opacity-80">
+                <span className="hidden sm:inline ml-1.5 text-[length:var(--ts-2xs)] opacity-80">
                   Ctrl+S
                 </span>
               </>
@@ -708,12 +708,12 @@ function Section({
             <p className="text-sm font-bold text-[var(--text-primary)]">{title}</p>
             {score && (
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider ${
                   isComplete
                     ? "bg-emerald-100 text-emerald-700"
                     : scorePct >= 50
                       ? "bg-amber-100 text-amber-700"
-                      : "bg-rose-100 text-rose-700"
+                      : "bg-rose-100 text-[var(--data-error)]"
                 }`}
               >
                 {score.ok}/{score.total}
@@ -753,12 +753,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+      <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
         {label}
       </label>
       {children}
       {error && (
-        <p className="mt-1 text-[11px] font-bold text-rose-600">{error}</p>
+        <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-error)]">{error}</p>
       )}
     </div>
   );

@@ -179,7 +179,7 @@ export default function MarketplaceRecipesWidget() {
             >
               {/* Hero: illustration line-art sobre off-white con número editorial */}
               <div className="relative aspect-[4/3] bg-gray-50 dark:bg-gray-950 overflow-hidden">
-                <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
+                <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
                 <span className="absolute top-3 right-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-gray-400">

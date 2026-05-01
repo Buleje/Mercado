@@ -198,7 +198,7 @@ export function ProductCardHero({
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2 py-0.5",
-                "text-[10px] font-bold uppercase tracking-wide",
+                "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
                 variant === "oferta"
                   ? "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"
                   : "bg-[var(--accent-soft)] text-[var(--accent)]",

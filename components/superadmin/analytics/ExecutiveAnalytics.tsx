@@ -96,7 +96,7 @@ function maskPhone(p: string): string {
 function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral"; text: string }) {
   const styles = {
     positive: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40",
-    negative: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/40",
+    negative: "bg-rose-50 text-[var(--data-error)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error)] dark:border-rose-800/40",
     neutral: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30",
   };
   return (
@@ -149,7 +149,7 @@ export default function ExecutiveAnalytics() {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-base text-rose-700">
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-base text-[var(--data-error)]">
         {error ?? "Sin datos"}
       </div>
     );
@@ -204,7 +204,7 @@ export default function ExecutiveAnalytics() {
               return (
                 <li key={step.status}>
                   <div className="flex items-center justify-between gap-3 mb-1">
-                    <span className={`inline-flex items-center gap-2 text-base font-bold ${isOK ? "text-emerald-700 dark:text-emerald-300" : isBad ? "text-rose-700 dark:text-rose-300" : "text-[var(--text-primary)]"}`}>
+                    <span className={`inline-flex items-center gap-2 text-base font-bold ${isOK ? "text-emerald-700 dark:text-emerald-300" : isBad ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)]"}`}>
                       <span className={`h-2.5 w-2.5 rounded-full ${isOK ? "bg-emerald-500" : isBad ? "bg-rose-500" : "bg-[var(--accent)]"}`} />
                       {step.label}
                     </span>
@@ -236,7 +236,7 @@ export default function ExecutiveAnalytics() {
               <p className="text-sm text-[var(--text-secondary)]">Tasa de entrega</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
+              <p className="text-3xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] tabular-nums">
                 {data.cancelRate.toFixed(0)}%
               </p>
               <p className="text-sm text-[var(--text-secondary)]">Tasa de cancelación</p>
@@ -253,7 +253,7 @@ export default function ExecutiveAnalytics() {
           <div className="grid grid-cols-[auto_1fr] gap-x-2 text-xs font-mono">
             {/* Header de horas: 0, 6, 12, 18 */}
             <div />
-            <div className="grid grid-cols-24 gap-px text-[10px] text-[var(--text-tertiary)] mb-1" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
+            <div className="grid grid-cols-24 gap-px text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
               {Array.from({ length: 24 }, (_, h) => (
                 <div key={h} className="text-center">
                   {h % 6 === 0 ? String(h).padStart(2, "0") : ""}
@@ -600,7 +600,7 @@ export default function ExecutiveAnalytics() {
                     ].join(" ")}
                   >
                     <AlertTriangle
-                      className={`h-5 w-5 shrink-0 ${critical ? "text-rose-600" : "text-amber-600"}`}
+                      className={`h-5 w-5 shrink-0 ${critical ? "text-[var(--data-error)]" : "text-amber-600"}`}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-bold text-[var(--text-primary)] truncate">
@@ -611,7 +611,7 @@ export default function ExecutiveAnalytics() {
                       </p>
                     </div>
                     <p
-                      className={`text-2xl font-extrabold tabular-nums shrink-0 ${critical ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"}`}
+                      className={`text-2xl font-extrabold tabular-nums shrink-0 ${critical ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-amber-700 dark:text-amber-300"}`}
                     >
                       {alert.stock === 0 ? "Agotado" : alert.stock}
                     </p>

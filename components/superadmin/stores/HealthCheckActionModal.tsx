@@ -191,7 +191,7 @@ export default function HealthCheckActionModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)]">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {tenantName}
             </p>
             <p className="text-lg font-black text-[var(--text-primary)] mt-0.5">
@@ -245,17 +245,17 @@ export default function HealthCheckActionModal({
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[var(--text-tertiary)] bg-[var(--surface-sunken)]">
                     <Upload className="h-4 w-4" strokeWidth={1.75} />
-                    <p className="text-[11px] font-bold">Click, arrastrar o Ctrl+V</p>
+                    <p className="text-[length:var(--ts-xs)] font-bold">Click, arrastrar o Ctrl+V</p>
                   </div>
                 )}
                 {status === "uploading" && (
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1 text-white">
                     <RefreshCw className="h-5 w-5 animate-spin" />
-                    <span className="text-[11px] font-bold">Optimizando...</span>
+                    <span className="text-[length:var(--ts-xs)] font-bold">Optimizando...</span>
                   </div>
                 )}
                 {savedPct != null && savedPct > 0 && (
-                  <span className="absolute top-1 right-1 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur text-white px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                  <span className="absolute top-1 right-1 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur text-white px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider">
                     -{savedPct}%
                   </span>
                 )}
@@ -275,7 +275,7 @@ export default function HealthCheckActionModal({
                 <button
                   type="button"
                   onClick={() => setImageUrl(null)}
-                  className="mt-1.5 text-[11px] font-bold text-rose-600 inline-flex items-center gap-1 hover:underline"
+                  className="mt-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] inline-flex items-center gap-1 hover:underline"
                 >
                   <Trash2 className="h-3 w-3" />
                   Quitar imagen
@@ -344,7 +344,7 @@ export default function HealthCheckActionModal({
 
           {/* Errores */}
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-[var(--data-error)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>

@@ -50,7 +50,7 @@ export default function PopularCategories() {
               <Link
                 key={cat.id}
                 href={`/tienda?categoria=${cat.id}`}
-                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-gradient-to-b ${cat.gradient} bg-white dark:bg-card border ${cat.border} ${cat.hoverBg} hover:shadow-xl hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
+                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-linear-to-b ${cat.gradient} bg-white dark:bg-card border ${cat.border} ${cat.hoverBg} hover:shadow-xl hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
                   inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
                 }`}
                 style={inView ? { animationDelay: `${100 + i * 70}ms` } : undefined}

@@ -98,16 +98,16 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
+  // Mode: annotation → solo compila componentes con la directiva `'use memo'`
+  // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
+  // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
+  // Next 16: reactCompiler salió de `experimental` y es top-level.
+  reactCompiler: { compilationMode: "annotation" },
+
   experimental: {
     // NOTE: instrumentation.ts is detected automatically since Next.js 15.
     // The `instrumentationHook` flag was removed in Next.js 16.
-
-    // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
-    // Mode: annotation → solo compila componentes con la directiva `'use memo'`
-    // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
-    // Para activar en un componente: agregar `"use memo"` arriba del archivo.
-    // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
-    reactCompiler: { compilationMode: "annotation" },
 
     // ── Router cache TTL (fix back-nav blanco en Next 16) ────────────────
     // Next 15+ default: dynamic=0 → cada navegación back refetcha desde server.

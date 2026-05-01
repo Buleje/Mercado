@@ -102,24 +102,28 @@ export default function RecommendationsStrip({ initialStores }: RecommendationsS
       aria-labelledby="tiendas-cerca-heading"
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
-      <header className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
-        <div>
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+      <header className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6">
+        <div className="min-w-0">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            <span
+              aria-hidden
+              className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]"
+            />
             Cerca tuyo
-          </span>
+          </p>
           <h2
             id="tiendas-cerca-heading"
-            className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]"
+            className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]"
           >
             Tiendas destacadas cerca tuyo
           </h2>
         </div>
         <Link
           href="/marketplace"
-          className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-[var(--accent)] hover:underline shrink-0"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
         >
           Ver todas
-          <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         </Link>
       </header>
 

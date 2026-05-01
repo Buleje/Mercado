@@ -80,7 +80,7 @@ export default function OrderDetailsModal({
         {/* Header sticky con kicker */}
         <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 sm:px-8 py-5 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur-md">
           <div>
-            <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-1">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]"
@@ -89,7 +89,7 @@ export default function OrderDetailsModal({
             </p>
             <h2
               id="order-details-title"
-              className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]"
+              className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]"
             >
               Tu pedido{" "}
               <span className="italic font-serif text-[var(--accent)]">en detalle</span>
@@ -121,19 +121,19 @@ export default function OrderDetailsModal({
                       <Store className="h-5 w-5" strokeWidth={2} aria-hidden />
                     </span>
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                      <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                         Tienda
                       </p>
-                      <h3 className="text-lg sm:text-xl font-black tracking-[-0.01em] text-[var(--text-primary)]">
+                      <h3 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                         {g.storeName}
                       </h3>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                    <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       Subtotal
                     </p>
-                    <p className="text-xl sm:text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                    <p className="text-xl sm:text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                       {fmt(storeTotal)}
                     </p>
                   </div>
@@ -165,7 +165,7 @@ export default function OrderDetailsModal({
                       {/* Info */}
                       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                         <div>
-                          <h4 className="text-base sm:text-lg font-bold tracking-[-0.01em] text-[var(--text-primary)] line-clamp-2">
+                          <h4 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] line-clamp-2">
                             {it.name}
                           </h4>
                           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
@@ -179,14 +179,14 @@ export default function OrderDetailsModal({
                         </div>
 
                         <div className="mt-3 flex items-center gap-3 flex-wrap">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--accent)]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                             ×{it.quantity}
                           </span>
                           <span className="text-xs text-[var(--text-tertiary)] inline-flex items-center gap-1">
                             <ArrowDown className="h-3 w-3" strokeWidth={2} aria-hidden />
                             subtotal
                           </span>
-                          <span className="ml-auto text-lg sm:text-xl font-black tabular-nums tracking-[-0.01em] text-[var(--text-primary)]">
+                          <span className="ml-auto text-lg sm:text-xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                             {fmt(it.price * it.quantity)}
                           </span>
                         </div>
@@ -202,7 +202,7 @@ export default function OrderDetailsModal({
         {/* Footer sticky con total */}
         <footer className="sticky bottom-0 px-6 sm:px-8 py-5 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur-md flex items-center justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Total del pedido
             </p>
             <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--text-primary)] leading-none mt-1">

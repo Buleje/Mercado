@@ -292,7 +292,7 @@ export default function NavbarSearchAutocomplete({
         />
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-[11px] font-bold uppercase tracking-wider text-white shadow hover:opacity-90 active:scale-95 transition-all"
+          className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow hover:opacity-90 active:scale-95 transition-all"
           aria-label="Buscar"
         >
           <Search className="h-3 w-3" strokeWidth={2.5} aria-hidden />
@@ -350,7 +350,7 @@ export default function NavbarSearchAutocomplete({
               for (let k = 0; k < gi; k++) runningIdx += groups[k].items.length;
               return (
                 <div key={g.kind} className="border-b border-[var(--rule-soft)] last:border-b-0">
-                  <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                  <p className="px-4 pt-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     {g.title}
                   </p>
                   <ul>
@@ -405,7 +405,7 @@ export default function NavbarSearchAutocomplete({
                               )}
                             </div>
                             {s.type === "product" && (
-                              <span className="hidden sm:inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100">
+                              <span className="hidden sm:inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100">
                                 Ver similares →
                               </span>
                             )}

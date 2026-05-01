@@ -208,7 +208,7 @@ function CategoriaCard({ def, products, total, loading }: CategoriaCardProps) {
             {def.label}
           </MarketplaceCardTitle>
           {!loading && total > 0 && (
-            <MarketplaceCardBadge tone="neutral" className="text-[11px] px-2 py-0.5 shrink-0">
+            <MarketplaceCardBadge tone="neutral" className="text-[length:var(--ts-xs)] px-2 py-0.5 shrink-0">
               {total >= 99 ? "99+" : total}
             </MarketplaceCardBadge>
           )}

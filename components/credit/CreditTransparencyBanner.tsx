@@ -54,7 +54,7 @@ export function CreditTransparencyBanner({
   const clampedScore = Math.min(1000, Math.max(0, score));
 
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 shadow-sm">
+    <div className="rounded-2xl border border-emerald-200 bg-linear-to-br from-emerald-50 to-teal-50 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
           <TrendingUp className="h-5 w-5 text-emerald-700" aria-hidden />

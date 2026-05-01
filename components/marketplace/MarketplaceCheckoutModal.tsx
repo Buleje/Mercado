@@ -654,7 +654,7 @@ export default function MarketplaceCheckoutModal({
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-950/30 p-4 space-y-2"
+                        className="rounded-2xl border-2 border-primary/30 bg-linear-to-r from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-950/30 p-4 space-y-2"
                       >
                         <div className="flex items-center gap-2">
                           <Zap className="h-4 w-4 text-primary" />
@@ -667,7 +667,7 @@ export default function MarketplaceCheckoutModal({
                         </p>
                         <button
                           onClick={handleQuickBuy}
-                          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-white text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all"
+                          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-linear-to-r from-primary to-emerald-600 text-white text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all"
                         >
                           <Zap className="h-4 w-4" />
                           Comprar con un clic · {fmt(grandTotal)}

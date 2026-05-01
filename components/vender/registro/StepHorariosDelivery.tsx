@@ -69,7 +69,7 @@ export default function StepHorariosDelivery({
       {/* Horarios 7 días */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Horario semanal
           </p>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">

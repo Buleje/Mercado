@@ -131,7 +131,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
         <span className="text-sm font-bold leading-tight">{label}</span>
         <span
           className={cn(
-            "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[11px] font-black tabular-nums",
+            "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-xs)] font-black tabular-nums",
             active
               ? "bg-white/25 text-white"
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",

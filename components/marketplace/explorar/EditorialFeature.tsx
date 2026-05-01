@@ -87,13 +87,13 @@ export default function EditorialFeature() {
           {/* Contenido */}
           <div className="relative z-10">
             {/* Kicker */}
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-3">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               <ChefHat className="h-4 w-4" aria-hidden />
               Receta destacada
             </p>
 
             {/* Titulo compacto */}
-            <h2 className="text-lg sm:text-xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+            <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
               {RECETA.titulo}
             </h2>
 
@@ -141,7 +141,7 @@ export default function EditorialFeature() {
         <div className="flex flex-col">
           {/* Header */}
           <div className="flex items-baseline justify-between mb-4">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
               Ingredientes
             </p>
             <span className="text-sm font-bold text-[var(--text-primary)]">

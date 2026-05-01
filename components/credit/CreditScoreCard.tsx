@@ -47,7 +47,7 @@ function getTier(score: number): Tier {
     return {
       name: "Platinum",
       emoji: "💎",
-      barClass: "bg-gradient-to-r from-cyan-400 to-indigo-500",
+      barClass: "bg-linear-to-r from-cyan-400 to-indigo-500",
       badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
       textClass: "text-indigo-700",
     };
@@ -56,7 +56,7 @@ function getTier(score: number): Tier {
     return {
       name: "Gold",
       emoji: "🥇",
-      barClass: "bg-gradient-to-r from-yellow-400 to-amber-500",
+      barClass: "bg-linear-to-r from-yellow-400 to-amber-500",
       badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
       textClass: "text-amber-700",
     };
@@ -65,7 +65,7 @@ function getTier(score: number): Tier {
     return {
       name: "Silver",
       emoji: "🥈",
-      barClass: "bg-gradient-to-r from-slate-300 to-slate-500",
+      barClass: "bg-linear-to-r from-slate-300 to-slate-500",
       badgeClass: "bg-slate-50 text-slate-700 border-slate-200",
       textClass: "text-slate-700",
     };
@@ -74,7 +74,7 @@ function getTier(score: number): Tier {
     return {
       name: "Bronze",
       emoji: "🥉",
-      barClass: "bg-gradient-to-r from-orange-400 to-orange-600",
+      barClass: "bg-linear-to-r from-orange-400 to-orange-600",
       badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
       textClass: "text-orange-700",
     };
@@ -82,7 +82,7 @@ function getTier(score: number): Tier {
   return {
     name: "Sin crédito",
     emoji: "🔒",
-    barClass: "bg-gradient-to-r from-red-400 to-red-600",
+    barClass: "bg-linear-to-r from-red-400 to-red-600",
     badgeClass: "bg-red-50 text-red-700 border-red-200",
     textClass: "text-red-700",
   };

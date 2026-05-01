@@ -52,12 +52,12 @@ function TrustBadges({ store }: { store: StoreCardData }) {
   if (store.verified)     items.push({ label: "Verificada",   cls: "bg-blue-50 text-blue-700 border-blue-200" });
   if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)]/30" });
   if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30" });
-  if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-purple-700 border-purple-200" });
+  if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-[var(--accent)] border-purple-200" });
   // TS-33: ofertas activas — color rojo para llamar atención
   if (store.activePromos && store.activePromos > 0) {
     items.push({
       label: `${store.activePromos} ${store.activePromos === 1 ? "oferta" : "ofertas"}`,
-      cls: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800",
+      cls: "bg-rose-50 text-[var(--data-error)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error)] dark:border-rose-800",
     });
   }
   if (items.length === 0) return null;

@@ -193,7 +193,7 @@ export default function WriteReviewModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <header className="px-6 py-5 border-b-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent)]/5 to-transparent">
+            <header className="px-6 py-5 border-b-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent)]/5 to-transparent">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)]/10 shrink-0">

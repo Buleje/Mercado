@@ -85,7 +85,7 @@ export default function PaymentMethodCard({
         </span>
         <p
           className={cn(
-            "tracking-[-0.02em] leading-none",
+            "tracking-[var(--ls-tight)] leading-none",
             brandColor ? "text-2xl font-black" : "text-base font-bold text-[var(--text-primary)]",
           )}
           style={brandColor && !selected ? { color: brandColor } : undefined}

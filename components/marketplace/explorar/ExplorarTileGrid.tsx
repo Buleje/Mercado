@@ -68,7 +68,7 @@ function CategoriasTile() {
   return (
     <div className={cn(TILE_BASE, "p-4 sm:p-5")}>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+        <h3 className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Explora por categoría
         </h3>
         <Link
@@ -128,16 +128,16 @@ function OfertasTile() {
   if (isEmpty) return null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-gradient-to-br from-[#fff1e6] via-[#ffe4cc] to-[#ffd4b3]">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-linear-to-br from-[#fff1e6] via-[#ffe4cc] to-[#ffd4b3]">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-black/5 px-5 py-3">
         <div className="flex items-center gap-2.5">
           <Flame className="h-5 w-5 text-[#d9480f]" aria-hidden />
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d9480f]">
+            <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[#d9480f]">
               Solo hoy
             </p>
-            <h3 className="text-lg sm:text-xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+            <h3 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
               Ofertas del día
             </h3>
           </div>
@@ -160,7 +160,7 @@ function OfertasTile() {
             href={`/marketplace/${d.storeSlug ?? "main"}`}
             className="group relative flex flex-col bg-[var(--surface-raised)] p-3 transition-colors hover:bg-white"
           >
-            <span className="absolute top-2 right-2 inline-flex items-center rounded-full bg-[#d9480f] px-2 py-0.5 text-[10px] font-black tracking-wider text-white">
+            <span className="absolute top-2 right-2 inline-flex items-center rounded-full bg-[#d9480f] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black tracking-wider text-white">
               -{d.discountPct}%
             </span>
             <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-[var(--surface-sunken)] mb-2">

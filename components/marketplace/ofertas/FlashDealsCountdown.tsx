@@ -64,7 +64,7 @@ export default function FlashDealsCountdown({ deals }: FlashDealsCountdownProps)
       aria-labelledby="flash-deals-heading"
       className={cn(
         "relative w-full py-10 sm:py-14 overflow-hidden",
-        "bg-gradient-to-r from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]",
+        "bg-linear-to-r from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]",
       )}
     >
       <div
@@ -76,14 +76,14 @@ export default function FlashDealsCountdown({ deals }: FlashDealsCountdownProps)
         {/* Header inline: kicker + h2 + countdown grande */}
         <header className="mb-8 pb-6 border-b border-[var(--rule-soft)] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-2">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
               <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
               <Flame className="h-4 w-4" strokeWidth={2} aria-hidden />
               Ofertas relampago
             </p>
             <h2
               id="flash-deals-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-[1.05]"
+              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]"
             >
               Termina hoy
             </h2>
@@ -143,7 +143,7 @@ export default function FlashDealsCountdown({ deals }: FlashDealsCountdownProps)
                       Ahorra {pen.format(ahorro)}
                     </span>
                   </div>
-                  <p className="text-xl font-black tabular-nums tracking-[-0.02em] text-[var(--accent)] leading-none mt-0.5">
+                  <p className="text-xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--accent)] leading-none mt-0.5">
                     {pen.format(deal.price)}
                   </p>
                   <div className="mt-2 pt-2 border-t border-[var(--rule-soft)]">

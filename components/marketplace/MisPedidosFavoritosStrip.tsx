@@ -103,7 +103,7 @@ export default function MisPedidosFavoritosStrip() {
               <span className="text-base font-black tabular-nums text-[var(--accent)]">
                 {fmtCurrency(o.total)}
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--text-secondary)] group-hover:gap-1.5 transition-all">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] group-hover:gap-1.5 transition-all">
                 Repetir
                 <ArrowRight className="h-3 w-3" strokeWidth={2.25} />
               </span>

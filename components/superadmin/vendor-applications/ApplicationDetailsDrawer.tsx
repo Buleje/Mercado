@@ -117,7 +117,7 @@ export function ApplicationDetailsDrawer({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-900 z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center">
               <Building2 className="h-5 w-5" />
             </div>
             <div>

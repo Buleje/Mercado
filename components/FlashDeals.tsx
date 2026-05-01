@@ -164,7 +164,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
 
           {/* Countdown */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.12em] mr-2">Termina en</span>
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wide)] mr-2">Termina en</span>
             <TimeBox value={pad(time.h)} label="Hrs" />
             <span className="text-lg font-bold text-[var(--text-tertiary)] -mt-3">:</span>
             <TimeBox value={pad(time.m)} label="Min" />

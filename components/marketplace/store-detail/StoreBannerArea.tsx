@@ -52,7 +52,7 @@ export default function StoreBannerArea({
         initial={{ opacity: 0, scale: 1.04 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative h-28 sm:h-36 lg:h-40 w-full"
+        className="relative h-44 sm:h-56 lg:h-64 w-full"
       >
         {hasBanner ? (
           <Image
@@ -69,7 +69,7 @@ export default function StoreBannerArea({
         {/* Gradient overlay — siempre, garantiza contraste del overlay */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent"
+          className="absolute inset-0 bg-linear-to-t from-black/60 via-black/15 to-transparent"
         />
       </motion.div>
 
@@ -80,13 +80,13 @@ export default function StoreBannerArea({
         transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
-        <div className="-mt-12 sm:-mt-14 relative z-10 flex items-end gap-4">
+        <div className="-mt-14 sm:-mt-16 lg:-mt-20 relative z-10 flex items-end gap-4">
           {/* Avatar */}
           <div
             className={cn(
-              "shrink-0 h-24 w-24 sm:h-28 sm:w-28 rounded-2xl overflow-hidden",
+              "shrink-0 h-28 w-28 sm:h-32 sm:w-32 lg:h-36 lg:w-36 rounded-3xl overflow-hidden",
               "bg-[var(--surface-raised)] border-4 border-[var(--surface-canvas)]",
-              "shadow-lg flex items-center justify-center",
+              "shadow-xl flex items-center justify-center",
             )}
           >
             {logo ? (
@@ -98,7 +98,7 @@ export default function StoreBannerArea({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white text-3xl sm:text-4xl font-black">
+              <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white text-3xl sm:text-4xl font-black">
                 {initial}
               </div>
             )}
@@ -180,7 +180,7 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
             Tienda Buleje
           </span>
         </div>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.02em] text-white leading-[1.05] drop-shadow-sm">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[var(--ls-tight)] text-white leading-[1.05] drop-shadow-sm">
           {storeName}
         </h2>
         <p className="mt-2 text-sm sm:text-base font-medium text-white/80 max-w-md">

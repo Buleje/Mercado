@@ -18,7 +18,7 @@
  *   </MarketplaceCard>
  *
  * Jerarquía tipográfica:
- *  - Kicker  : text-[11px] uppercase letter-spacing tracking-wider
+ *  - Kicker  : text-[length:var(--ts-xs)] uppercase letter-spacing tracking-wider
  *  - Title   : text-base / lg / xl según size · font-bold · tight tracking
  *  - Price   : text-xl / 2xl · font-black · tabular-nums · color accent
  *  - Meta    : text-xs · color text-tertiary
@@ -143,7 +143,7 @@ export function MarketplaceCardKicker({
   return (
     <p
       className={cn(
-        "text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)] leading-none",
+        "text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] leading-none",
         className,
       )}
     >
@@ -178,7 +178,7 @@ export function MarketplaceCardTitle({
   return (
     <h3
       className={cn(
-        "font-bold tracking-[-0.01em] text-[var(--text-primary)] leading-snug",
+        "font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-snug",
         sizeCls,
         clampCls,
         interactive && "group-hover/card:text-[var(--accent)] transition-colors",
@@ -216,11 +216,11 @@ export function MarketplaceCardPrice({
     <div className={cn("flex flex-col", className)}>
       {before && before > amount && (
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] text-[var(--text-tertiary)] line-through tabular-nums">
+          <span className="text-sm text-[var(--text-tertiary)] line-through tabular-nums">
             {fmt(before)}
           </span>
           {discountPct > 0 && (
-            <span className="inline-flex items-center rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-xs)] font-bold tabular-nums">
               −{discountPct}%
             </span>
           )}
@@ -228,14 +228,14 @@ export function MarketplaceCardPrice({
       )}
       <p
         className={cn(
-          "font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-tight",
+          "font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight",
           sizeCls,
         )}
       >
         {fmt(amount)}
       </p>
       {savings > 0 && (
-        <p className="text-[11px] font-bold text-[var(--data-success)] tabular-nums">
+        <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] tabular-nums">
           Ahorrás {fmt(savings)}
         </p>
       )}
@@ -288,7 +288,7 @@ export function MarketplaceCardBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-bold tabular-nums leading-none whitespace-nowrap",
+        "inline-flex items-center rounded-md border px-2 py-0.5 text-[length:var(--ts-xs)] font-bold tabular-nums leading-none whitespace-nowrap",
         toneCls,
         className,
       )}

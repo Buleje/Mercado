@@ -113,7 +113,7 @@ export default function DealsOfTheDayStrip() {
   if (items.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
+    <div className="bg-linear-to-r from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
         {/* Header inline */}
@@ -121,7 +121,7 @@ export default function DealsOfTheDayStrip() {
           <div className="flex items-center gap-3 min-w-0">
             <Flame className="h-6 w-6 text-[var(--accent)] shrink-0" aria-hidden />
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-[1.05]">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
                 Ofertas del dia
               </h2>
               <p className="text-[length:var(--ts-sm)] text-[var(--text-tertiary)] mt-0.5">
@@ -184,15 +184,15 @@ export default function DealsOfTheDayStrip() {
                 <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                   {item.name}
                 </p>
-                <span className="text-[13px] text-[var(--text-tertiary)] line-through tabular-nums leading-none">
+                <span className="text-sm text-[var(--text-tertiary)] line-through tabular-nums leading-none">
                   {pen.format(item.price / 0.7)}
                 </span>
                 <div className="flex items-end justify-between gap-2 mt-0.5">
                   <div className="min-w-0 flex-1">
-                    <p className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--accent)] leading-none">
+                    <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--accent)] leading-none">
                       {pen.format(item.price)}
                     </p>
-                    <p className="mt-1 text-[11px] font-bold text-[var(--data-success)] tabular-nums leading-none">
+                    <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] tabular-nums leading-none">
                       Ahorrás {pen.format(item.price / 0.7 - item.price)}
                     </p>
                   </div>

@@ -123,7 +123,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
             <div className="flex-1 min-w-0 text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
                 <Tag className="w-3.5 h-3.5 text-[var(--accent)]" />
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                <span className="text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--accent)]">
                   Oferta de Temporada
                 </span>
               </div>

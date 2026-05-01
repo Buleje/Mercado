@@ -98,7 +98,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
         )}
 
         <div className="flex items-center justify-between gap-1 pt-0.5">
-          <span className="text-[13px] font-extrabold text-primary dark:text-primary-light leading-none">
+          <span className="text-sm font-extrabold text-primary dark:text-primary-light leading-none">
             S/{product.price.toFixed(2)}
           </span>
 
@@ -281,7 +281,7 @@ export default function RecommendedProducts({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="h-4 w-4 text-secondary shrink-0" aria-hidden="true" />
-        <h3 className="text-[13px] font-bold text-gray-800 dark:text-foreground tracking-tight">
+        <h3 className="text-sm font-bold text-gray-800 dark:text-foreground tracking-tight">
           También te puede interesar
         </h3>
         <ShoppingCart

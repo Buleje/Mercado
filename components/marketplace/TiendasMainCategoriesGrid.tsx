@@ -65,11 +65,16 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 interface TiendasMainCategoriesGridProps {
   selected: string;
   onSelect: (categoryId: string) => void;
+  /** Tiendas reales del marketplace. Solo se muestran las categorías que
+   *  tengan ≥1 tienda asociada — si no, ocultamos la categoría (y la sección
+   *  entera si no queda ninguna). Evita filtros muertos. */
+  stores?: ReadonlyArray<{ category?: string | null }>;
 }
 
 export default function TiendasMainCategoriesGrid({
   selected,
   onSelect,
+  stores = [],
 }: TiendasMainCategoriesGridProps) {
   const [categories, setCategories] = useState<MainCategory[]>(DEFAULT_CATEGORIES);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -175,14 +180,35 @@ export default function TiendasMainCategoriesGrid({
     });
   }, []);
 
+  // Filtrar categorías a las que están vinculadas a ≥1 tienda real.
+  // Si stores aún no cargó (length=0), mostramos todo para no parpadear.
+  // Comparación case-insensitive (la DB puede tener "Bodega" / "bodega").
+  const visibleCategories = (() => {
+    if (stores.length === 0) return categories;
+    const used = new Set(
+      stores
+        .map((s) => (s.category ?? "").toString().trim().toLowerCase())
+        .filter(Boolean),
+    );
+    return categories.filter((c) => used.has(c.id.toLowerCase()));
+  })();
+
+  // Si no hay categorías con tiendas, ocultamos la sección entera —
+  // un filtro vacío es ruido visual sin acción posible.
+  if (visibleCategories.length === 0) return null;
+
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
-      <div className="flex items-end justify-between gap-6 mb-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-1.5">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-5 sm:mb-6">
+        <div className="min-w-0">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            <span
+              aria-hidden
+              className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]"
+            />
             Categorías
           </p>
-          <h2 className="text-xl sm:text-2xl font-black tracking-[-0.015em] text-[var(--text-primary)]">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
             ¿Qué necesitás hoy?
           </h2>
         </div>
@@ -190,7 +216,7 @@ export default function TiendasMainCategoriesGrid({
           <button
             type="button"
             onClick={() => onSelect("todos")}
-            className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
           >
             Ver todas
           </button>
@@ -244,7 +270,7 @@ export default function TiendasMainCategoriesGrid({
         onMouseMove={onMouseMove}
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1 scroll-smooth cursor-grab"
       >
-        {categories.map((c) => {
+        {visibleCategories.map((c) => {
           const isActive = selected === c.id;
           return (
             <button
@@ -316,7 +342,7 @@ function CategoryPlaceholder({
     <div
       className={[
         "absolute inset-0 flex items-center justify-center",
-        "bg-gradient-to-br from-[var(--surface-raised)] via-[var(--surface-sunken)] to-[var(--surface-raised)]",
+        "bg-linear-to-br from-[var(--surface-raised)] via-[var(--surface-sunken)] to-[var(--surface-raised)]",
       ].join(" ")}
     >
       <div

@@ -93,7 +93,7 @@ export function DeliveryMapMock({
     >
       <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
         <div>
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Ubicación en vivo
           </span>
           <h2

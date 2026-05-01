@@ -165,7 +165,7 @@ export default function InstallPrompt() {
                 Instalar y obtener cupon
               </button>
             ) : (
-              <p className="mt-4 text-[11px] text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+              <p className="mt-4 text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400 text-center leading-relaxed">
                 Abre Buleje en Chrome o Safari para instalar desde tu navegador.
               </p>
             )}
@@ -194,7 +194,7 @@ export default function InstallPrompt() {
             </div>
 
             <div className="mt-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Tu cupon
               </p>
               <div className="mt-1 flex items-center gap-2">
@@ -210,7 +210,7 @@ export default function InstallPrompt() {
                   {copied ? "Copiado" : "Copiar"}
                 </button>
               </div>
-              <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">
                 Valido por 10% de descuento en tu proxima compra.
               </p>
             </div>

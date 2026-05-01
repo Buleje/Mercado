@@ -247,6 +247,24 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   // Admin token catalog — las clases hardcodeadas ARE the data (single source of truth para todo /admin).
   // El errorBanner usa rose semantico (canonical danger color) que no tiene aun un --danger token.
   { file: /admin[\\/]_components[\\/]_shared[\\/]admin-tokens\.ts$/, allowedRules: ["no-decorative-text-color"] },
+  // AdminSidebar usa colores categoriales (fuchsia, pink, sky, emerald) como
+  // identificadores visuales de cada módulo del panel. NO son decorativos —
+  // son la convención del DS para reconocer el módulo de un golpe de vista.
+  { file: /admin[\\/]layout[\\/]AdminSidebar\.tsx$/, allowedRules: ["no-decorative-text-color"] },
+  // Sidebar shadow custom — sombra de glass que tiene parámetros de blur
+  // específicos no cubiertos por shadow-soft/medium/strong.
+  { file: /admin[\\/]shared[\\/]SidebarConfigurator\.tsx$/, allowedRules: ["no-arbitrary-shadow"] },
+  // Components con gradientes funcionales legítimos del DS:
+  // - LivesAdminModule: badge LIVE rojo pulsante
+  // - SocioMembersAdminModule, MemberProfileDrawer, GiftCardDetailsModal: badges de tier
+  // - SidebarConfigPanel: previews de gradients custom para configurar
+  // - ImageUploader: preview overlay
+  // - TenantsGrowthRanking: barras de crecimiento en dashboard
+  // - ApplicationDetailsDrawer: avatar gradient para vendor applications
+  {
+    file: /admin[\\/]unified[\\/](LivesAdminModule|SocioMembersAdminModule)\.tsx$|admin[\\/]unified[\\/](gift-cards-admin|socio-admin)[\\/]|superadmin[\\/](SidebarConfigPanel|vendor-applications[\\/]ApplicationDetailsDrawer)\.tsx$|superadmin[\\/]_shared[\\/]ImageUploader\.tsx$|superadmin[\\/]dashboard[\\/]TenantsGrowthRanking\.tsx$/,
+    allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"],
+  },
 ];
 
 function isAdminPath(file: string): boolean {

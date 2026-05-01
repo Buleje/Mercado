@@ -88,7 +88,7 @@ export default function PaicheSuccessToast({
       <div
         className={cn(
           "relative overflow-hidden rounded-3xl border-2 border-[var(--accent)]/40",
-          "bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-raised)]",
+          "bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-raised)]",
           "shadow-[0_24px_64px_-16px_var(--accent)]",
           "pl-4 pr-6 py-4 flex items-start gap-4",
         )}
@@ -113,11 +113,11 @@ export default function PaicheSuccessToast({
             >
               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.75} />
             </span>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Listo
             </p>
           </div>
-          <p className="text-base sm:text-lg font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+          <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
             {title.includes(" ") ? (
               <>
                 {title.split(" ").slice(0, -1).join(" ")}{" "}

@@ -57,7 +57,7 @@ export default function SectionPlaceholder({
             className="group relative rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-md"
           >
             {/* Image placeholder */}
-            <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 flex items-center justify-center">
+            <div className="relative aspect-square bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2 opacity-40">
                 <ShoppingBag className="h-8 w-8 text-gray-400" />
                 {i === 0 && (
@@ -65,7 +65,7 @@ export default function SectionPlaceholder({
                 )}
               </div>
               {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
             </div>
 
             {/* Content placeholder */}

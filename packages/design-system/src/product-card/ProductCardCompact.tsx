@@ -69,13 +69,13 @@ export function ProductCardCompact({
             size="sm"
           />
           {discount != null && (
-            <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--data-warning-700)]">
+            <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
               -{discount}%
             </span>
           )}
         </div>
         {outOfStock && (
-          <span className="mt-1 inline-flex w-max items-center rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[var(--text-tertiary)]">
+          <span className="mt-1 inline-flex w-max items-center rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-[var(--text-tertiary)]">
             Agotado
           </span>
         )}
@@ -167,7 +167,7 @@ export function ProductCardCompact({
               : `Agregar ${product.name} al carrito`
           }
           className={cn(
-            "mx-2 mb-2 mt-1 inline-flex items-center justify-center rounded-lg py-1.5 text-[11px] font-semibold",
+            "mx-2 mb-2 mt-1 inline-flex items-center justify-center rounded-lg py-1.5 text-[length:var(--ts-xs)] font-semibold",
             "transition-opacity duration-[var(--dur-fast)]",
             outOfStock
               ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"

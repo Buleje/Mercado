@@ -76,7 +76,7 @@ export default function ExplorarHeroSearch() {
 
       <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <div className="max-w-3xl">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-4">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
             <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
             Hub de descubrimiento
           </p>
@@ -176,7 +176,7 @@ export default function ExplorarHeroSearch() {
                 <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className="text-lg font-black tabular-nums tracking-[-0.01em] text-[var(--text-primary)] leading-tight">
+                <p className="text-lg font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                   {value}
                 </p>
                 <p className="text-xs font-semibold text-[var(--text-tertiary)] leading-tight">

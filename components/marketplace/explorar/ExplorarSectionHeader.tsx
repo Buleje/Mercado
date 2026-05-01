@@ -38,7 +38,7 @@ export default function ExplorarSectionHeader({
     <header className="flex items-end justify-between gap-4 mb-7 pb-5 border-b border-[var(--rule-soft)]">
       <div className="min-w-0 flex-1">
         {kicker && (
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent)] mb-3">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]"

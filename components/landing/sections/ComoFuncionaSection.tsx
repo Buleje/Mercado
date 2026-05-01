@@ -67,7 +67,7 @@ export default function ComoFuncionaSection() {
         {/* Header editorial */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16 sm:mb-20">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -112,16 +112,16 @@ export default function ComoFuncionaSection() {
 
               {/* Tag numérico */}
               <div className="relative flex items-center gap-2 mb-3">
-                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+                <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Paso {num}
                 </span>
                 <span className="h-px flex-1 bg-[var(--rule-soft)]" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                <span className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
                   {tag}
                 </span>
               </div>
 
-              <h3 className="relative text-xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+              <h3 className="relative text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 {title}
               </h3>
               <p className="relative mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -154,7 +154,7 @@ export default function ComoFuncionaSection() {
                 <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
                   {value}
                 </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
                   {label}
                 </p>
               </div>

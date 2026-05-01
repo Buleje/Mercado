@@ -270,7 +270,7 @@ export function CheckoutPaymentSection({
         )}
         {tierDiscount > 0 && loyaltyTier && (
           <div className="flex justify-between px-4 py-2.5 text-sm bg-purple-50/50 dark:bg-purple-900/10">
-            <span className="text-purple-700 dark:text-purple-400 font-semibold flex items-center gap-1">
+            <span className="text-[var(--accent)] dark:text-purple-400 font-semibold flex items-center gap-1">
               <Award className="h-3.5 w-3.5" /> Tier {loyaltyTier} (
               {tierDiscountPct}%)
             </span>
@@ -410,7 +410,7 @@ export function CheckoutPaymentSection({
               <span
                 className={cn(
                   "relative z-10 text-sm font-bold",
-                  paymentMethod === "yape" ? "text-purple-700" : "text-gray-500"
+                  paymentMethod === "yape" ? "text-[var(--accent)]" : "text-gray-500"
                 )}
               >
                 Yape
@@ -525,7 +525,7 @@ export function CheckoutPaymentSection({
             <span className="text-xl leading-none">⭐</span>
           </div>
           <div>
-            <p className="text-sm font-extrabold text-violet-800 dark:text-violet-300">
+            <p className="text-sm font-extrabold text-violet-800 dark:text-[var(--accent)]">
               +{Math.floor(finalTotal / 10) * 5} puntos
             </p>
             <p className="text-[length:var(--ts-2xs)] text-violet-500 dark:text-violet-400">

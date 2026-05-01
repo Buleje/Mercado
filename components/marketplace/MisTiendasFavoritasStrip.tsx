@@ -111,12 +111,12 @@ export default function MisTiendasFavoritasStrip() {
     >
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Para vos
           </p>
           <h2
             id="mis-favoritas-heading"
-            className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]"
+            className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]"
           >
             Tus tiendas favoritas
           </h2>
@@ -195,7 +195,7 @@ function FavoriteStoreCard({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-base font-black text-white bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+              <span className="text-base font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
                 {initial}
               </span>
             )}

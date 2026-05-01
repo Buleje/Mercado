@@ -47,11 +47,11 @@ function FirstPurchaseBanner() {
       style={{ zIndex: 61, padding: "8px 16px" }}
     >
       <div className="relative mx-auto max-w-7xl flex items-center justify-center gap-3 flex-wrap">
-        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] hidden sm:inline">
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--accent)] hidden sm:inline">
           Nuevo cliente
         </span>
         <span className="h-3.5 w-px bg-white/20 shrink-0 hidden sm:inline-block" />
-        <span className="text-[13px] font-medium text-[var(--surface-canvas)]">
+        <span className="text-sm font-medium text-[var(--surface-canvas)]">
           Primera compra con <strong className="font-semibold">10% de descuento</strong>
           <span className="mx-2 text-white/40">·</span>
           Código <code className="font-mono text-[length:var(--ts-2xs)] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
