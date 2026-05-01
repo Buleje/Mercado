@@ -877,40 +877,51 @@ interface RankingEntry {
   id: string;
   name: string;
   phone: string;
-  zone: string;
   vehicleType: string;
   rating: number;
-  isActive: boolean;
-  baseFee: number;
-  deliveries: number;
-  pending: number;
-  avgFee: number;
-  avgTimeMin: number;
-  score: number;
+  acceptanceRate: number;
+  delivered: number;
+  cancelled: number;
+  inProgress: number;
+  totalAssignments: number;
+  totalEarnings: number;
+  completionRate: number;
+  avgDeliveryMin: number | null;
+}
+
+interface RankingSummary {
+  totalPartners: number;
+  totalDelivered: number;
+  totalEarnings: number;
+  avgCompletionRate: number;
 }
 
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 function RankingTab() {
   const [data, setData] = useState<RankingEntry[]>([]);
+  const [summary, setSummary] = useState<RankingSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<"semana" | "mes" | "todo">("mes");
+  const [period, setPeriod] = useState<"week" | "month" | "all">("month");
 
   const fetchRanking = useCallback((p: string) => {
     setLoading(true);
-    fetch(`/api/delivery/ranking?period=${p}`)
-      .then((r) => (r.ok ? r.json() : { ranking: [] }))
-      .then((d) => setData(d.ranking ?? []))
-      .catch(() => setData([]))
+    fetch(`/api/admin/delivery/ranking?period=${p}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { ranking: [], summary: null }))
+      .then((d) => {
+        setData(d.ranking ?? []);
+        setSummary(d.summary ?? null);
+      })
+      .catch(() => { setData([]); setSummary(null); })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchRanking(period); }, [fetchRanking, period]);
 
-  const PERIODS: { id: "semana" | "mes" | "todo"; label: string }[] = [
-    { id: "semana", label: "Esta semana" },
-    { id: "mes",    label: "Este mes" },
-    { id: "todo",   label: "Todo" },
+  const PERIODS: { id: "week" | "month" | "all"; label: string }[] = [
+    { id: "week",  label: "Esta semana" },
+    { id: "month", label: "Este mes" },
+    { id: "all",   label: "Todo" },
   ];
 
   return (
@@ -933,6 +944,27 @@ function RankingTab() {
         ))}
       </div>
 
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidores</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{summary.totalPartners}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Entregados</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--data-success)]">{summary.totalDelivered}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pagado a riders</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--accent)]">S/ {summary.totalEarnings.toFixed(0)}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Completion</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{Math.round(summary.avgCompletionRate * 100)}%</p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <TableSkeleton />
       ) : data.length === 0 ? (
@@ -947,12 +979,13 @@ function RankingTab() {
               <tr className="border-b border-[var(--rule-soft)] text-left text-xs text-[var(--text-secondary)]">
                 <th className="pb-2 pr-2">#</th>
                 <th className="pb-2 pr-3">Repartidor</th>
-                <th className="pb-2 pr-3">Zona</th>
                 <th className="pb-2 pr-3 text-center">Rating</th>
-                <th className="pb-2 pr-3 text-center">Entregas</th>
-                <th className="pb-2 pr-3 text-center">Prom. min</th>
-                <th className="pb-2 pr-3 text-center">Prom. tarifa</th>
-                <th className="pb-2 text-center">Score</th>
+                <th className="pb-2 pr-3 text-center">Aceptación</th>
+                <th className="pb-2 pr-3 text-center">Entregados</th>
+                <th className="pb-2 pr-3 text-center">Cancelados</th>
+                <th className="pb-2 pr-3 text-center">Avg min</th>
+                <th className="pb-2 pr-3 text-center">Ganado</th>
+                <th className="pb-2 text-center">Completion</th>
               </tr>
             </thead>
             <tbody>
@@ -969,25 +1002,14 @@ function RankingTab() {
                   </td>
                   <td className="py-2.5 pr-3">
                     <div className="flex items-center gap-2">
-                      <div
-                        className={cn(
-                          "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0",
-                          entry.isActive ? "bg-primary" : "bg-gray-300"
-                        )}
-                      >
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-primary">
                         {entry.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <p className="font-semibold text-[var(--text-primary)] text-xs">{entry.name}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">{entry.vehicleType}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{entry.vehicleType} · {entry.phone}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="py-2.5 pr-3">
-                    <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {entry.zone}
-                    </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center">
                     <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-[var(--data-warning)]">
@@ -995,35 +1017,39 @@ function RankingTab() {
                       {entry.rating.toFixed(1)}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-3 text-center">
-                    <span className="text-xs font-semibold text-[var(--text-primary)]">{entry.deliveries}</span>
-                    {entry.pending > 0 && (
-                      <span className="ml-1 text-xs text-[var(--data-warning)]">+{entry.pending} pen.</span>
+                  <td className="py-2.5 pr-3 text-center text-xs text-[var(--text-secondary)]">
+                    {Math.round(entry.acceptanceRate * 100)}%
+                  </td>
+                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--data-success)]">
+                    {entry.delivered}
+                    {entry.inProgress > 0 && (
+                      <span className="ml-1 text-[var(--text-tertiary)] font-normal">+{entry.inProgress}</span>
                     )}
+                  </td>
+                  <td className="py-2.5 pr-3 text-center text-xs text-[var(--text-tertiary)]">
+                    {entry.cancelled || "—"}
                   </td>
                   <td className="py-2.5 pr-3 text-center">
                     <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
                       <Clock className="h-3 w-3" />
-                      {entry.avgTimeMin > 0 ? `${entry.avgTimeMin} min` : "—"}
+                      {entry.avgDeliveryMin != null ? `${Math.round(entry.avgDeliveryMin)}` : "—"}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-3 text-center">
-                    <span className="text-xs font-medium text-[var(--text-primary)]">
-                      S/ {entry.avgFee.toFixed(2)}
-                    </span>
+                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--accent)]">
+                    S/ {entry.totalEarnings.toFixed(0)}
                   </td>
                   <td className="py-2.5 text-center">
                     <span
                       className={cn(
-                        "inline-flex items-center justify-center h-7 w-12 rounded-full text-xs font-extrabold",
-                        entry.score >= 70
+                        "inline-flex items-center justify-center h-7 px-2.5 rounded-full text-xs font-extrabold",
+                        entry.completionRate >= 0.85
                           ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                          : entry.score >= 40
+                          : entry.completionRate >= 0.5
                             ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                       )}
                     >
-                      {entry.score}
+                      {Math.round(entry.completionRate * 100)}%
                     </span>
                   </td>
                 </tr>
