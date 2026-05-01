@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import dynamic from "next/dynamic";
 import StorefrontEditor from "./StorefrontEditor";
@@ -282,45 +283,21 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
 const inputCls =
   "w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all min-h-[44px]";
 
-// ── Tabs del panel ─────────────────────────────────────────────────────────────
+// ── Tabs del panel — formato AdminTabBar (horizontal, draggable como otros módulos) ──
 
-const TAB_GROUPS: { group: string; icon: React.ReactNode; tabs: { id: Tab; label: string; icon: React.ReactNode }[] }[] = [
-  {
-    group: "Apariencia",
-    icon: <Palette className="h-3.5 w-3.5" />,
-    tabs: [
-      { id: "identidad", label: "Identidad", icon: <Store className="h-4 w-4" /> },
-      { id: "colores", label: "Colores", icon: <Palette className="h-4 w-4" /> },
-      { id: "estilos", label: "Estilos", icon: <Paintbrush className="h-4 w-4" /> },
-    ],
-  },
-  {
-    group: "Contenido",
-    icon: <FileText className="h-3.5 w-3.5" />,
-    tabs: [
-      { id: "hero", label: "Hero", icon: <ImageIcon className="h-4 w-4" /> },
-      { id: "secciones", label: "Secciones", icon: <Layout className="h-4 w-4" /> },
-      { id: "catalogo", label: "Catálogo", icon: <Package className="h-4 w-4" /> },
-      { id: "contenido", label: "Textos y Popup", icon: <FileText className="h-4 w-4" /> },
-    ],
-  },
-  {
-    group: "Negocio",
-    icon: <Phone className="h-3.5 w-3.5" />,
-    tabs: [
-      { id: "contacto", label: "Contacto", icon: <Phone className="h-4 w-4" /> },
-    ],
-  },
-  {
-    group: "Avanzado",
-    icon: <Settings2 className="h-3.5 w-3.5" />,
-    tabs: [
-      { id: "avanzado", label: "Avanzado", icon: <Settings2 className="h-4 w-4" /> },
-    ],
-  },
-];
+const MODULE_ID = "store-customizer";
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = TAB_GROUPS.flatMap((g) => g.tabs);
+const TABS = [
+  { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
+  { id: "colores" as Tab, label: "Colores", icon: Palette },
+  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
+  { id: "hero" as Tab, label: "Hero", icon: ImageIcon },
+  { id: "secciones" as Tab, label: "Secciones", shortLabel: "Sec.", icon: Layout },
+  { id: "catalogo" as Tab, label: "Catálogo", shortLabel: "Cat.", icon: Package },
+  { id: "contenido" as Tab, label: "Textos y popup", shortLabel: "Textos", icon: FileText },
+  { id: "contacto" as Tab, label: "Contacto", icon: Phone },
+  { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
+] as const;
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
@@ -687,7 +664,7 @@ export default function StoreCustomizer() {
       >
         <div className="flex items-center gap-2">
           <a
-            href={`/t/${activeTenantSlug}?preview=true`}
+            href={`/t/${activeTenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
@@ -714,72 +691,30 @@ export default function StoreCustomizer() {
         </div>
       </AdminModuleHeader>
 
-      {/* ── Layout: sidebar tabs + contenido ──────────────────────── */}
-      <div className="flex flex-col lg:flex-row flex-1 gap-5 min-h-0">
+      {/* ── AdminTabBar (horizontal arriba, draggable, mismo patrón que POSCajaModule/Compras) ── */}
+      <AdminTabBar
+        tabs={TABS.map((t) => ({
+          id: t.id,
+          label: t.label,
+          shortLabel: "shortLabel" in t ? t.shortLabel : undefined,
+          icon: t.icon,
+        }))}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as Tab)}
+        moduleId={MODULE_ID}
+      />
 
-        {/* ── Sidebar de tabs (desktop: vertical, mobile: horizontal scroll) ── */}
-        <div className="lg:w-52 shrink-0">
-          {/* Mobile: horizontal tabs — patrón estándar admin (bg-primary cuando activo) */}
-          <div className="flex lg:hidden gap-1 overflow-x-auto pb-1 scrollbar-hide">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors shrink-0",
-                  activeTab === t.id
-                    ? "bg-primary text-white"
-                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-[var(--text-primary)]",
-                )}
-              >
-                {t.icon}
-                {t.label}
-              </button>
-            ))}
-          </div>
+      {/* ── Panel de contenido ──────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border overflow-hidden">
 
-          {/* Desktop: grouped vertical sidebar */}
-          <nav className="hidden lg:flex flex-col gap-1 bg-gray-50/50 dark:bg-surface/50 rounded-xl p-2.5 border border-[var(--rule-soft)] dark:border-card-border">
-            {TAB_GROUPS.map((group, gi) => (
-              <div key={group.group}>
-                {gi > 0 && <div className="border-t border-[var(--rule-soft)] dark:border-card-border my-1.5" />}
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
-                  {group.icon}
-                  {group.group}
-                </p>
-                {group.tabs.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setActiveTab(t.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-colors text-left",
-                      activeTab === t.id
-                        ? "bg-primary text-white"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent",
-                    )}
-                  >
-                    {t.icon}
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </nav>
+        {/* Tab header with active tab info — usa SectionTitle del DS */}
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
+          {activeTabMeta && <activeTabMeta.icon className="h-4 w-4 text-primary" />}
+          <SectionTitle className="text-sm">{activeTabMeta?.label}</SectionTitle>
         </div>
 
-        {/* ── Panel de contenido ────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border  overflow-hidden">
-
-          {/* Tab header with active tab info — usa SectionTitle del DS */}
-          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
-            <span className="text-primary">{activeTabMeta?.icon}</span>
-            <SectionTitle className="text-sm">{activeTabMeta?.label}</SectionTitle>
-          </div>
-
-          {/* Contenido del tab activo */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Contenido del tab activo */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
             {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
             {activeTab === "identidad" && (
@@ -1414,7 +1349,6 @@ export default function StoreCustomizer() {
             </button>
           </div>
         </div>
-      </div>
 
       {/* ── Modal fullscreen de preview ──────────────────────────── */}
       {showPreview && (
