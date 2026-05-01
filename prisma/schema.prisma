@@ -385,6 +385,7 @@ model Order {
   guiasRemision       GuiaRemision[]
   notasCredito        NotaCredito[]
   deliveryAssignment  DeliveryAssignment?
+  deliveryOffers      DeliveryOffer[]
   deliveryTracking    DeliveryTracking[]
   deliveryRouteStops  DeliveryRouteStop[]
   conversationThreads ConversationThread[]
@@ -2580,10 +2581,49 @@ model DeliveryPartner {
   rating      Float                @default(5.0)
   fee         Decimal              @default(5.0) @db.Decimal(12, 2)
   notes       String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
+  // ── Rappi-style realtime fields (ADR-087) ─────────────────────────────
+  passwordHash    String? // bcrypt — null hasta que el partner active login
+  lat             Float? // GPS actual
+  lng             Float?
+  lastPingAt      DateTime? // heartbeat — ping cada 30s desde la app
+  isOnline        Boolean   @default(false) // si recibe ofertas
+  currentOrderId  String? // si está atendiendo, no recibe más ofertas
+  acceptanceRate  Float     @default(1.0) // % accept histórico (0..1)
+  maxRadiusKm     Float     @default(5.0) // radio max para ofertas
+  totalOffers     Int       @default(0)
+  totalAccepted   Int       @default(0)
+  // ──────────────────────────────────────────────────────────────────────
   tenantId    String
   createdAt   DateTime             @default(now())
   assignments DeliveryAssignment[]
+  offers      DeliveryOffer[]
 
+  @@index([tenantId])
+  @@index([tenantId, isOnline, currentOrderId])
+}
+
+// ─── Rappi-style cascading offer system (ADR-087) ─────────────────────
+// Cada DeliveryOffer es una "invitación" a un partner. Si rechaza/expira,
+// el cron crea otra para el siguiente más cercano. Cuando 1 acepta, se
+// crea el DeliveryAssignment y se cancelan todas las offers pending.
+model DeliveryOffer {
+  id          String          @id @default(cuid())
+  orderId     String
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  partnerId   String
+  partner     DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  status      String          @default("pending") // pending | accepted | rejected | expired | cancelled
+  offeredAt   DateTime        @default(now())
+  expiresAt   DateTime // offeredAt + 2 min (configurable)
+  respondedAt DateTime?
+  distanceKm  Float
+  feeOffered  Decimal         @db.Decimal(12, 2)
+  attempt     Int             @default(1) // 1 = primer candidato, 2 = segundo, etc
+  tenantId    String
+
+  @@index([orderId, status])
+  @@index([partnerId, status])
+  @@index([status, expiresAt])
   @@index([tenantId])
 }
 

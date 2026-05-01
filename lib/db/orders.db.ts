@@ -353,6 +353,24 @@ export const OrdersDB = {
       })
       .catch((err) => logger.error("[orders.db] notifyOwnerNewOrder failed", { error: String(err), orderId: row.id }));
 
+    // Rappi-style: crear primera oferta de delivery cuando hay ubicación.
+    // Fire-and-forget — no bloquea la creación del pedido.
+    // El cron delivery-offer-cascade se encargará de la cascada si nadie acepta.
+    if (order.customer.location) {
+      import("@/lib/delivery/offer-cascade")
+        .then(({ createNextOffer }) => {
+          // Pucallpa default — TODO geocode real cuando customer tenga lat/lng.
+          const orderLat = -8.379;
+          const orderLng = -74.553;
+          return createNextOffer(
+            { id: row.id, tenantId, customerLocation: row.customerLocation },
+            orderLat,
+            orderLng,
+          );
+        })
+        .catch((err) => logger.error("[orders.db] delivery offer cascade failed", { error: String(err), orderId: row.id }));
+    }
+
     // Auto-coupon triggers — fire-and-forget (Mejora #6)
     const mappedOrder = mapOrder(row);
     const customerForCoupons = row.customerPhone

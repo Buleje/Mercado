@@ -64,6 +64,10 @@
       "schedule": "30 14 * * *"
     },
     {
+      "path": "/api/cron/delivery-offer-cascade",
+      "schedule": "*/1 * * * *"
+    },
+    {
       "path": "/api/billing/webhook-replay",
       "schedule": "0 4 * * *"
     },

@@ -1,3 +1,4 @@
+// generated client refresh marker: 2026-05-01 delivery-offers schema
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { trackQuery } from "@/lib/query-monitor";
