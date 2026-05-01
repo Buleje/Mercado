@@ -27,6 +27,7 @@ import {
   FileCheck,
   ImageIcon,
   Sparkles,
+  Layers,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -54,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Repartidores",    icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"    },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"     },
   { label: "Marca",           icon: <Sparkles        className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
+  { label: "Plantilla panel", icon: <Layers          className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
   { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
@@ -73,6 +75,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/marketplace/category-images": "Marketplace · Imágenes de categorías",
   "/superadmin/stores":          "Tiendas publicadas",
   "/superadmin/marca":           "Marca de la plataforma",
+  "/superadmin/plantilla":       "Plantilla del panel admin",
   "/superadmin/banners":         "Banners promocionales",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
