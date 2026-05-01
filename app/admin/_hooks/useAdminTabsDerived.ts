@@ -17,6 +17,7 @@ import type { Tab } from "../_lib/tabs.types";
 import type { TabCategory } from "../_lib/tab-categories";
 import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import { usePlanTier } from "@/hooks/use-plan-tier";
+import { useAdminTemplateOverlay } from "./useAdminTemplateOverlay";
 
 type Params = {
   userRole: string;
@@ -52,6 +53,18 @@ export function useAdminTabsDerived(params: Params) {
   const { definition: planDefinition } = usePlanTier();
   const planUnlockedTabs = planDefinition.unlockedTabs;
 
+  // ── Plantilla del superadmin (overlay) ──────────────────────────────────
+  // Sobreescribe labels y filtra módulos marcados como no-visibles.
+  // Se actualiza reactivamente vía buleje:admin-template-changed.
+  const templateOverlay = useAdminTemplateOverlay();
+  const { resolveLabel, isHiddenByTemplate } = templateOverlay;
+
+  // Aplica labels custom a ALL_TABS sin mutar el array original.
+  const enhancedTabs = useMemo(
+    () => ALL_TABS.map((t) => ({ ...t, label: resolveLabel(t.id, t.label) })),
+    [resolveLabel],
+  );
+
   const allowedTabs = useMemo((): Tab[] => {
     // DEFAULT_ROLE_TABS: base sin overrides guardados.
     // Los casts a Tab[] son intencionales — MODULE_PERMISSIONS usa ModuleId[]
@@ -82,9 +95,13 @@ export function useAdminTabsDerived(params: Params) {
   }, [userRole, savedRolePerms, planUnlockedTabs]);
 
   const filteredTabs = useMemo(() => {
-    // Filtra por permisos de rol + tabs ocultos manualmente + plan tier
-    let result = ALL_TABS.filter(
-      t => allowedTabs.includes(t.id) && !hiddenTabs.has(t.id),
+    // Filtra por permisos de rol + tabs ocultos manualmente + plan tier +
+    // plantilla del superadmin (módulos marcados como invisibles por default).
+    let result = enhancedTabs.filter(
+      t =>
+        allowedTabs.includes(t.id) &&
+        !hiddenTabs.has(t.id) &&
+        !isHiddenByTemplate(t.id),
     );
 
     // Filtra por categoría seleccionada en el sidebar
@@ -100,14 +117,17 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [allowedTabs, hiddenTabs, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
 
   const favoriteTabItems = useMemo(
     () =>
-      ALL_TABS.filter(
-        t => favoriteTabs.has(t.id) && allowedTabs.includes(t.id),
+      enhancedTabs.filter(
+        t =>
+          favoriteTabs.has(t.id) &&
+          allowedTabs.includes(t.id) &&
+          !isHiddenByTemplate(t.id),
       ),
-    [favoriteTabs, allowedTabs],
+    [enhancedTabs, favoriteTabs, allowedTabs, isHiddenByTemplate],
   );
 
   const recentTabItems = useMemo(
@@ -117,12 +137,13 @@ export function useAdminTabsDerived(params: Params) {
           id =>
             id !== currentTab &&
             !favoriteTabs.has(id) &&
-            allowedTabs.includes(id),
+            allowedTabs.includes(id) &&
+            !isHiddenByTemplate(id),
         )
-        .map(id => ALL_TABS.find(t => t.id === id)!)
+        .map(id => enhancedTabs.find(t => t.id === id)!)
         .filter(Boolean)
         .slice(0, 5),
-    [recentTabs, currentTab, favoriteTabs, allowedTabs],
+    [enhancedTabs, recentTabs, currentTab, favoriteTabs, allowedTabs, isHiddenByTemplate],
   );
 
   return { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems };
