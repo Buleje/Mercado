@@ -33,6 +33,7 @@ export default function SuperAdminLoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // bot trap — humano lo deja vacío
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | false>(false);
@@ -64,14 +65,17 @@ export default function SuperAdminLoginPage() {
       const res = await fetch("/api/superadmin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, honeypot }),
       });
       const data = await res.json();
       if (data.requires2FA && data.challengeId) {
         setChallengeId(data.challengeId);
         setTimeout(() => codeRef.current?.focus(), 100);
       } else if (res.ok) {
-        router.push("/superadmin");
+        // Hard navigation — el layout `/superadmin` debe re-ejecutar
+        // SuperAdminAuthGate con la nueva cookie para renderizar el shell
+        // (sidebar). `router.push` reusa el layout cacheado sin sesión.
+        window.location.assign("/superadmin/dashboard");
       } else {
         setError(data.error || "Credenciales inválidas");
         setTimeout(() => setError(false), 2500);
@@ -94,7 +98,7 @@ export default function SuperAdminLoginPage() {
         body: JSON.stringify({ challengeId, code }),
       });
       if (res.ok) {
-        router.push("/superadmin");
+        window.location.assign("/superadmin/dashboard");
       } else {
         setError("Código inválido o expirado");
         setTimeout(() => setError(false), 2500);
@@ -256,6 +260,21 @@ export default function SuperAdminLoginPage() {
           {/* Form login */}
           {!challengeId && (
             <form onSubmit={handleLogin} className="mt-7 space-y-4">
+              {/* Honeypot — escondido visualmente y para a11y. Bots que
+                  rellenan todos los inputs caen aquí y el server los tira
+                  con error genérico. Humanos jamás lo ven ni tabulan. */}
+              <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+                <label htmlFor="su-website">Website (no completar)</label>
+                <input
+                  id="su-website"
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
               <div className="space-y-1.5">
                 <label htmlFor="su-username" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/60">
                   Usuario

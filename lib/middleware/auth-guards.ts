@@ -47,7 +47,8 @@ const ADMIN_ENDPOINTS_ALLOWED_FOR_PLATFORM = ["/api/admin/health"] as const;
 async function hasValidPlatformSession(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return false;
-  const session = await getPlatformSession(token);
+  const ua = req.headers.get("user-agent");
+  const session = await getPlatformSession(token, { ua });
   return !!session;
 }
 
@@ -79,7 +80,8 @@ export async function guardSuperadminApi(
     return json401("Unauthorized — platform session required");
   }
 
-  const session = await getPlatformSession(platformToken);
+  const ua = req.headers.get("user-agent");
+  const session = await getPlatformSession(platformToken, { ua });
   if (!session) {
     return json401("Unauthorized — invalid or expired token");
   }
@@ -111,9 +113,13 @@ export async function guardSuperadminPages(
     return NextResponse.redirect(new URL("/superadmin/login", req.url));
   }
 
-  const session = await getPlatformSession(platformToken);
+  const ua = req.headers.get("user-agent");
+  const session = await getPlatformSession(platformToken, { ua });
   if (!session) {
-    // Invalid or expired — clear the cookie and redirect with reason
+    // Invalid, expired, idle-timeout, or UA mismatch — clear the cookie
+    // and redirect with reason. UA mismatch implica posible robo de cookie
+    // (otro navegador / curl). El mensaje genérico "expired" no revela el
+    // mecanismo de detección al atacante.
     const loginUrl = new URL("/superadmin/login", req.url);
     loginUrl.searchParams.set("reason", "expired");
     const response = NextResponse.redirect(loginUrl);
@@ -138,6 +144,16 @@ export async function guardAdminPages(
   if (!pathname.startsWith("/admin")) return null;
 
   if (await hasValidAdminSession(req)) return null;
+
+  // Si viene del superadmin (cookie de plataforma válida) pero todavía no
+  // impersonó ningún tenant, lo mandamos al listado de tenants donde un
+  // clic basta para entrar al admin de cualquier negocio sin loguearse.
+  if (await hasValidPlatformSession(req)) {
+    const url = new URL("/superadmin/tenants", req.url);
+    url.searchParams.set("reason", "pick-tenant");
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
 
   const loginUrl = new URL("/admin/login", req.url);
   loginUrl.searchParams.set("from", pathname);

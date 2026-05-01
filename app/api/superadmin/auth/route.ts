@@ -68,9 +68,26 @@ function notifyLoginWhatsApp(user: string, ip: string): void {
   sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "superadmin-login-alert" }).catch((err) => logger.error("[superadmin/auth] login alert failed", { error: String(err) }));
 }
 
+// Mensaje de error genérico para login/2FA. NO diferencia "usuario inexistente"
+// vs "password incorrecto" vs "código 2FA inválido". Esto bloquea ataques de
+// enumeración de usuarios y reduce la información que un atacante obtiene en
+// cada intento.
+const GENERIC_AUTH_ERROR = "Credenciales inválidas";
+
+// Padding constante en login fallido para mitigar timing attacks que
+// distinguen entre "usuario inexistente" (rápido) y "usuario válido +
+// password incorrecto" (lento, bcrypt). Forzamos siempre ≥350 ms.
+async function constantTimeFloor(start: number, minMs = 350): Promise<void> {
+  const elapsed = Date.now() - start;
+  if (elapsed < minMs) {
+    await new Promise((r) => setTimeout(r, minMs - elapsed));
+  }
+}
+
 // POST /api/superadmin/auth  – login { username, password } or verify 2FA { challengeId, code }
 // DELETE /api/superadmin/auth – logout
 export async function POST(req: NextRequest) {
+  const startTs = Date.now();
   const limited = applyRateLimit(req, "AUTH", "superadmin:login");
   if (limited) return limited;
 
@@ -78,6 +95,7 @@ export async function POST(req: NextRequest) {
   // BSM_QA_NO_LOCKOUT=1 → bypass del lockout (solo dev/QA, NUNCA en prod).
   const qaBypass = process.env.BSM_QA_NO_LOCKOUT === "1" && process.env.NODE_ENV !== "production";
   const ip = getLockoutKey(req);
+  const userAgent = req.headers.get("user-agent");
   const lockout = qaBypass ? { locked: false, remainingMinutes: 0 } : checkLockout(ip);
   if (lockout.locked) {
     logActivity("login_locked", "superadmin", `IP bloqueada por ${lockout.remainingMinutes} min: ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
@@ -87,8 +105,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { username?: string; password?: string; challengeId?: string; code?: string };
+  let body: { username?: string; password?: string; challengeId?: string; code?: string; honeypot?: string };
   try { body = await req.json(); } catch { body = {}; }
+
+  // ── Honeypot: el form humano deja `honeypot` vacío. Si llega con valor,
+  // es un bot — devolvemos error genérico tras delay para no revelar el
+  // mecanismo de detección.
+  if (typeof body.honeypot === "string" && body.honeypot.trim() !== "") {
+    logActivity("login_honeypot", "superadmin", `Bot detectado vía honeypot desde IP ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+    recordFailedAttempt(ip);
+    await constantTimeFloor(startTs);
+    return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
+  }
 
   // ── Step 2: Verify 2FA code ──────────────────────────────────────────────
   if (body.challengeId && body.code) {
@@ -96,16 +124,17 @@ export async function POST(req: NextRequest) {
     if (!result.valid || !result.username) {
       const lockResult = recordFailedAttempt(ip);
       logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+      await constantTimeFloor(startTs);
       if (lockResult.locked) {
         return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
       }
-      return NextResponse.json({ error: "Código inválido o expirado" }, { status: 401 });
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
     clearFailedAttempts(ip);
-    const token = await createPlatformToken(result.username);
+    const token = await createPlatformToken(result.username, userAgent);
     const res = NextResponse.json({ ok: true });
     res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username} desde IP ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username} desde IP ${ip} ua="${(userAgent ?? "").slice(0, 80)}"`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     notifyLoginWhatsApp(result.username, ip);
     return res;
   }
@@ -124,10 +153,11 @@ export async function POST(req: NextRequest) {
   ) {
     const lockResult = recordFailedAttempt(ip);
     logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+    await constantTimeFloor(startTs);
     if (lockResult.locked) {
       return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
     }
-    return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
+    return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
   }
 
   // Credentials valid — clear lockout counter
@@ -141,10 +171,10 @@ export async function POST(req: NextRequest) {
   }
 
   // No 2FA — grant session directly
-  const token = await createPlatformToken(username);
+  const token = await createPlatformToken(username, userAgent);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-  logActivity("login_success", "superadmin", `Login exitoso: ${username} desde IP ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+  logActivity("login_success", "superadmin", `Login exitoso: ${username} desde IP ${ip} ua="${(userAgent ?? "").slice(0, 80)}"`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
   notifyLoginWhatsApp(username, ip);
   return res;
 }
@@ -161,13 +191,14 @@ export async function DELETE() {
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ ok: false }, { status: 401 });
-  const session = await getPlatformSession(token);
+  const ua = req.headers.get("user-agent");
+  const session = await getPlatformSession(token, { ua });
   if (!session) return NextResponse.json({ ok: false }, { status: 401 });
 
   const res = NextResponse.json({ ok: true, username: session.username });
 
   // Rotate token if past halfway point (silent refresh)
-  const freshToken = await maybeRotateToken(token);
+  const freshToken = await maybeRotateToken(token, { ua });
   if (freshToken) {
     res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, freshToken, {
       httpOnly: true,

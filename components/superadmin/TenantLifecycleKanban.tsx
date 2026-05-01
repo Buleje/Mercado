@@ -169,13 +169,34 @@ export default function TenantLifecycleKanban() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleAction = useCallback((action: string, tenant: TenantCard) => {
+  const handleAction = useCallback(async (action: string, tenant: TenantCard) => {
     if (action === "whatsapp" && tenant.ownerPhone) {
       window.open(`https://wa.me/${tenant.ownerPhone.replace(/\D/g, "")}`, "_blank");
     } else if (action === "email" && tenant.ownerEmail) {
       window.open(`mailto:${tenant.ownerEmail}`, "_blank");
     } else if (action === "impersonate") {
-      window.open(`/${tenant.slug}/admin`, "_blank");
+      // Setear cookies admin del tenant target ANTES de abrir /admin.
+      // Sin este POST, /admin usaría la cookie admin previa → siempre el
+      // mismo tenant. Y la URL `/${slug}/admin` no existía como ruta.
+      try {
+        const res = await fetch("/api/superadmin/impersonate", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug: tenant.slug }),
+        });
+        if (!res.ok) {
+          setError("No se pudo impersonar el tenant.");
+          return;
+        }
+        try {
+          const { clearAllTenantCache } = await import("@/lib/tenant-cache");
+          clearAllTenantCache();
+        } catch { /* fallback gestionado por assertTenantOwnership */ }
+        window.open("/admin", "_blank");
+      } catch {
+        setError("Error de red al impersonar.");
+      }
     }
   }, []);
 

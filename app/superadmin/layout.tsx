@@ -53,12 +53,13 @@ function SuperAdminSkeleton() {
  */
 async function SuperAdminAuthGate({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
+  const headerStore = await headers();
   const token = cookieStore.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  const session = token ? await getPlatformSession(token) : null;
+  const ua = headerStore.get("user-agent");
+  const session = token ? await getPlatformSession(token, { ua }) : null;
 
   // No session → for login page render bare, for other pages redirect
   if (!session || !token) {
-    const headerStore = await headers();
     const pathname = headerStore.get("x-next-pathname") ?? headerStore.get("x-invoke-path") ?? "";
     const isLoginPage = pathname === "/superadmin/login" || pathname.startsWith("/superadmin/login/");
     if (!isLoginPage) {
@@ -67,9 +68,10 @@ async function SuperAdminAuthGate({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  // Detect if token rotation is needed (past halfway of 8h lifetime)
-  // Cookie writing happens in the client shell via a Server Action
-  const freshToken = await maybeRotateToken(token);
+  // Detect if token rotation is needed (past halfway of 8h lifetime, or
+  // refresh `lastSeen` for idle timeout). Cookie writing happens in the
+  // client shell via a Server Action.
+  const freshToken = await maybeRotateToken(token, { ua });
 
   return (
     <SuperAdminShell username={session.username} freshToken={freshToken}>

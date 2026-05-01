@@ -54,17 +54,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // AdminProviders contiene su propio Suspense boundary interno alrededor
   // de useSearchParams (ver providers.tsx). Requerido por Next 16 para no
   // marcar /admin como blocking-route.
+  //
+  // El <script> se emite FUERA del subárbol cliente (AdminProviders) para
+  // que React 19 lo serialice como HTML en el server render y el browser
+  // lo ejecute nativamente antes de hidratar. Si va dentro del provider
+  // cliente, React 19 emite el warning "Encountered a script tag while
+  // rendering React component" y no lo ejecuta en navegaciones cliente.
   return (
-    <AdminProviders>
+    <>
       {/* Guard sincrónico anti-fuga cross-tenant — corre antes de cualquier
           componente React (incluso antes de que se monte AdminProviders). */}
       <script
         // eslint-disable-next-line react/no-danger -- script blocking pre-hidratación, contenido constante
         dangerouslySetInnerHTML={{ __html: TENANT_CACHE_GUARD_SCRIPT }}
       />
-      {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
-      <SkipLink />
-      {children}
-    </AdminProviders>
+      <AdminProviders>
+        {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
+        <SkipLink />
+        {children}
+      </AdminProviders>
+    </>
   );
 }
