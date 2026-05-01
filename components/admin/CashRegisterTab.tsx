@@ -560,7 +560,7 @@ export default function CashRegisterTab() {
               onClick={() => setView("reconcile")}
               className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
-              Reconciliaci&oacute;n
+              Reconciliación
             </button>
           </div>
         </div>
@@ -579,7 +579,7 @@ export default function CashRegisterTab() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
-                    <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre una caja para registrar ventas en efectivo del d&iacute;a.</p>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre una caja para registrar ventas en efectivo del día.</p>
                   </div>
                 </div>
                 <div className="flex justify-end">
@@ -594,9 +594,9 @@ export default function CashRegisterTab() {
               </div>
               <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Qu&eacute; es la caja</p>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Qué es la caja</p>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                    Registro del efectivo f&iacute;sico del d&iacute;a. Abres con un monto inicial, registras ingresos y egresos durante el turno, y al cerrar comparas lo contado con lo esperado.
+                    Registro del efectivo físico del día. Abres con un monto inicial, registras ingresos y egresos durante el turno, y al cerrar comparas lo contado con lo esperado.
                   </p>
                 </div>
                 <div className="border-t border-[var(--rule-soft)] pt-4">
@@ -1262,7 +1262,7 @@ export default function CashRegisterTab() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Abrir caja</h3>
-                  <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del d&iacute;a</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
               <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1307,7 +1307,7 @@ export default function CashRegisterTab() {
                     );
                   })}
                 </div>
-                <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el d&iacute;a.</p>
+                <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el día.</p>
               </div>
 
               <div>
@@ -1385,7 +1385,7 @@ export default function CashRegisterTab() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Cerrar caja</h3>
-                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el d&iacute;a</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
               <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1404,7 +1404,7 @@ export default function CashRegisterTab() {
               </p>
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-sm text-[var(--text-tertiary)]">Duraci&oacute;n</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Duración</p>
                   <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{durationStr}</p>
                 </div>
                 <div>
@@ -1615,7 +1615,7 @@ export default function CashRegisterTab() {
 
               <div>
                 <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                  Descripci&oacute;n <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span>
+                  Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span>
                 </label>
                 <textarea
                   value={mvDescription}
@@ -1679,7 +1679,7 @@ export default function CashRegisterTab() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo Express</h3>
-                    <p className="text-sm text-[var(--text-tertiary)]">Verificaci&oacute;n r&aacute;pida sin cerrar caja</p>
+                    <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
                 <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1801,7 +1801,7 @@ export default function CashRegisterTab() {
                       Nota importante
                     </p>
                     <p className="text-sm text-[var(--data-warning)] mt-0.5">
-                      El arqueo express NO cierra la caja. Solo registra una verificaci&oacute;n intermedia para control.
+                      El arqueo express NO cierra la caja. Solo registra una verificación intermedia para control.
                     </p>
                   </div>
                 </div>
@@ -1842,7 +1842,7 @@ export default function CashRegisterTab() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo guiado</h3>
-                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y m&eacute;todos de pago</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>
               <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">

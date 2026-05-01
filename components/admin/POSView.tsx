@@ -578,7 +578,7 @@ function SaleCompleteModal({
             transition={{ delay: 0.15 }}
             className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4"
           >
-            &iexcl;Venta completada!
+            ¡Venta completada!
           </m.h3>
           <m.p
             initial={{ opacity: 0, y: 6 }}
@@ -648,7 +648,7 @@ function SaleCompleteModal({
                     type="tel"
                     value={manualPhone}
                     onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                    placeholder="N&uacute;mero del cliente"
+                    placeholder="Número del cliente"
                     className="w-full pl-12 pr-3 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-base text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
@@ -716,7 +716,7 @@ function SaleCompleteModal({
               }}
               className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-gray-100 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
-              <Printer className="h-4 w-4" /> Ticket t&eacute;rmico (ESC/POS)
+              <Printer className="h-4 w-4" /> Ticket térmico (ESC/POS)
             </button>
           )}
         </div>

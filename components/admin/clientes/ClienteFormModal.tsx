@@ -416,7 +416,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
-                      {t === 'natural' ? 'Natural' : 'Jur&iacute;dica'}
+                      {t === 'natural' ? 'Natural' : 'Jurídica'}
                     </button>
                   ))}
                 </div>
@@ -430,7 +430,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                 <input
                   value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                   onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
-                  placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan P&eacute;rez'}
+                  placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan Pérez'}
                   className={inputCls}
                 />
               </div>
@@ -471,7 +471,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   )}
                 </div>
                 <div>
-                  <label className={labelCls}>Tel&eacute;fono *</label>
+                  <label className={labelCls}>Teléfono *</label>
                   <input
                     value={form.phone}
                     onChange={e => set('phone', e.target.value)}
@@ -484,7 +484,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
               {/* Direccion */}
               <div>
-                <label className={labelCls}>Direcci&oacute;n</label>
+                <label className={labelCls}>Dirección</label>
                 <textarea
                   value={form.direccion}
                   onChange={e => set('direccion', e.target.value)}
@@ -516,7 +516,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                             : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
-                        {t === 'natural' ? 'Natural' : 'Jur&iacute;dica'}
+                        {t === 'natural' ? 'Natural' : 'Jurídica'}
                       </button>
                     ))}
                   </div>
@@ -571,7 +571,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   <input
                     value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                     onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
-                    placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan P&eacute;rez'}
+                    placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan Pérez'}
                     className={inputCls}
                   />
                 </div>
@@ -652,7 +652,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>Direcci&oacute;n</label>
+                  <label className={labelCls}>Dirección</label>
                   <textarea
                     value={form.direccion}
                     onChange={e => set('direccion', e.target.value)}

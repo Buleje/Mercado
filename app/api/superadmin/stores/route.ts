@@ -5,6 +5,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
+import { sendWelcomeTenant } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 
 /**
@@ -111,15 +112,19 @@ export async function PATCH(req: NextRequest) {
     data: updateData,
   });
 
-  // Notify store owner via WhatsApp when their store gets published
+  // Notify store owner via WhatsApp + email when their store gets published.
+  // Ambos canales son fire-and-forget: el HTTP response no espera el envio.
   if (data.isPublished === true) {
     (async () => {
       try {
         const tenant = await prisma.tenant.findUnique({
           where: { id: store.tenantId },
-          select: { ownerPhone: true, name: true },
+          select: { ownerPhone: true, ownerEmail: true, name: true, slug: true },
         });
         const ownerPhone = tenant?.ownerPhone;
+        const ownerEmail = tenant?.ownerEmail;
+
+        // WhatsApp — canal primario en Peru.
         if (ownerPhone) {
           const msg = [
             `🎉 *¡Tu tienda fue aprobada!*`,
@@ -137,8 +142,14 @@ export async function PATCH(req: NextRequest) {
           ].join("\n");
           await sendWhatsAppQueued(ownerPhone, msg, { tenantId: store.tenantId, context: "store-published-notify" });
         }
+
+        // Email — registro persistente con CTAs clickeables. Solo si tiene
+        // ownerEmail configurado (no se pide en el form de registro).
+        if (ownerEmail && tenant) {
+          await sendWelcomeTenant(ownerEmail, { name: tenant.name, slug: tenant.slug });
+        }
       } catch (e) {
-        logger.warn("[superadmin/stores] WhatsApp notification failed", { error: String(e) });
+        logger.warn("[superadmin/stores] post-approval notification failed", { error: String(e) });
       }
     })().catch((err) => logger.error("[superadmin/stores] operation failed", { error: String(err) }));
   }
