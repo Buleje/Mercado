@@ -2,24 +2,24 @@
 
 /**
  * PartnerDashboard — pantalla principal del repartidor tras login.
- *
- * Funciones:
- *   - Toggle online/offline (con permiso de geolocation)
- *   - Auto-ping cada 30s mientras online (heartbeat GPS)
- *   - Lista de offers pending — al click va a /delivery-app/oferta/[id]
- *   - Stats: rating, acceptance rate, totales
- *   - Logout
- *
- * Usa la cookie buleje-partner-sess. Si no hay sesión, redirige a /login.
+ * Online toggle vive en el shell. Esta vista muestra ofertas + pedido activo + stats.
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Loader2, ArrowRight, RefreshCw, AlertTriangle } from "@buleje/design-system/icons";
 import {
-  Bike, Wifi, WifiOff, Star, CheckCircle2, Clock, MapPin,
-  Loader2, ArrowRight, LogOut, AlertTriangle, RefreshCw,
-} from "@buleje/design-system/icons";
+  MotoIcon,
+  PackageIcon,
+  PinIcon,
+  TimerIcon,
+  StarBadge,
+  CheckBadge,
+  CashIcon,
+  EmptyRoadIllustration,
+  LiveSignal,
+} from "./icons";
 
 interface MeResp {
   partner: {
@@ -67,11 +67,9 @@ export default function PartnerDashboard() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toggling, setToggling] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const lastCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
 
-  // Cargar perfil
   const loadMe = useCallback(async () => {
     try {
       const res = await fetch("/api/delivery/me/me", { credentials: "include" });
@@ -95,14 +93,11 @@ export default function PartnerDashboard() {
       if (!res.ok) return;
       const data: { offers: Offer[] } = await res.json();
       setOffers(data.offers);
-    } catch {
-      // Silencioso — el polling seguirá.
-    }
+    } catch { /* silent */ }
   }, []);
 
   useEffect(() => { loadMe(); }, [loadMe]);
 
-  // Polling de offers cada 10s mientras online.
   useEffect(() => {
     if (!me?.isOnline) return;
     loadOffers();
@@ -110,7 +105,6 @@ export default function PartnerDashboard() {
     return () => clearInterval(id);
   }, [me?.isOnline, loadOffers]);
 
-  // Auto-ping GPS cada 30s mientras online.
   useEffect(() => {
     if (!me?.isOnline) return;
     const sendPing = () => {
@@ -124,9 +118,9 @@ export default function PartnerDashboard() {
             credentials: "include",
             headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
             body: JSON.stringify({ lat: latitude, lng: longitude }),
-          }).catch(() => {});
+          }).catch(() => { /* ping fire-and-forget: si la red falla, el siguiente tick reintenta */ });
         },
-        () => setGeoError("No pudimos leer tu ubicación. Verificá permisos."),
+        () => setGeoError("No pudimos leer tu ubicación. Verifica los permisos."),
         { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
       );
     };
@@ -135,47 +129,9 @@ export default function PartnerDashboard() {
     return () => clearInterval(id);
   }, [me?.isOnline]);
 
-  const handleToggleOnline = async () => {
-    if (toggling) return;
-    setToggling(true);
-    setGeoError(null);
-    try {
-      const goingOnline = !me?.isOnline;
-      let coords: { lat: number; lng: number } | null = lastCoordsRef.current;
-      if (goingOnline && !coords) {
-        coords = await new Promise((resolve) => {
-          if (!navigator.geolocation) { resolve(null); return; }
-          navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => resolve(null),
-            { enableHighAccuracy: true, timeout: 10_000 },
-          );
-        });
-      }
-      if (goingOnline && !coords) {
-        setGeoError("Necesitamos tu ubicación para activar el modo online.");
-        return;
-      }
-      const body: Record<string, unknown> = { isOnline: goingOnline };
-      if (coords) Object.assign(body, coords);
-      const res = await fetch("/api/delivery/me/online", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("toggle failed");
-      await loadMe();
-    } catch {
-      setError("No pudimos cambiar tu estado. Intenta de nuevo.");
-    } finally {
-      setToggling(false);
-    }
-  };
-
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
+      <main className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       </main>
     );
@@ -183,20 +139,22 @@ export default function PartnerDashboard() {
 
   if (!me) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
-        <p className="text-[var(--text-secondary)]">No pudimos cargar tu cuenta. {error}</p>
+      <main className="min-h-screen flex items-center justify-center px-4">
+        <p className="text-[var(--text-secondary)] text-base">No pudimos cargar tu cuenta. {error}</p>
       </main>
     );
   }
 
   if (!me.isActive) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
+      <main className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <AlertTriangle className="h-16 w-16 mx-auto text-amber-500" strokeWidth={2.25} />
-          <h1 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">Cuenta pendiente</h1>
-          <p className="mt-2 text-[var(--text-secondary)]">
-            Tu inscripción está en revisión. Te avisaremos por WhatsApp cuando esté lista.
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
+            <AlertTriangle className="h-10 w-10" strokeWidth={2.25} />
+          </div>
+          <h1 className="mt-5 text-3xl font-extrabold text-[var(--text-primary)]">Cuenta pendiente</h1>
+          <p className="mt-2 text-base text-[var(--text-secondary)]">
+            Tu inscripción está en revisión. Te avisamos por WhatsApp cuando esté lista.
           </p>
         </div>
       </main>
@@ -204,153 +162,254 @@ export default function PartnerDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur">
-        <div className="mx-auto max-w-2xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bike className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.25} />
-            <span className="font-extrabold text-[var(--text-primary)]">Hola, {me.name}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              fetch("/api/delivery/me/online", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
-                body: JSON.stringify({ isOnline: false }),
-              }).finally(() => router.push("/delivery-app/login"));
-            }}
-            className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] flex items-center gap-1"
-          >
-            <LogOut className="h-4 w-4" /> Salir
-          </button>
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-8">
+      {/* ── Hero status (solo desktop) ───────────────────────── */}
+      <header className="hidden lg:flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Panel del repartidor
+          </p>
+          <h1 className="mt-1 text-3xl font-extrabold text-[var(--text-primary)]">
+            {me.isOnline ? "Estás disponible" : "Conéctate para empezar a ganar"}
+          </h1>
+          <p className="mt-1 text-base text-[var(--text-secondary)] flex items-center gap-2">
+            <LiveSignal className="h-2.5 w-2.5" active={me.isOnline} />
+            {me.isOnline
+              ? "Recibes ofertas en tiempo real cuando hay pedidos cerca de ti."
+              : "Activa el modo en línea desde la barra lateral."}
+          </p>
         </div>
       </header>
 
-      <section className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-        {/* Toggle online — botón grande, color cambia con estado */}
-        <button
-          type="button"
-          onClick={handleToggleOnline}
-          disabled={toggling}
-          className={`w-full h-20 rounded-2xl text-lg font-extrabold text-white shadow-lg transition-all ${
-            me.isOnline ? "bg-[var(--data-success)]" : "bg-[var(--text-tertiary)]"
-          } disabled:opacity-50 hover:scale-[1.01]`}
-        >
-          {toggling ? (
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" strokeWidth={2.5} />
-          ) : me.isOnline ? (
-            <span className="inline-flex items-center gap-2">
-              <Wifi className="h-6 w-6" strokeWidth={2.5} />
-              Estás en línea — recibiendo pedidos
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2">
-              <WifiOff className="h-6 w-6" strokeWidth={2.5} />
-              Tocá para empezar a recibir pedidos
-            </span>
-          )}
-        </button>
-
-        {geoError && (
-          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-300">
-            <AlertTriangle className="inline h-4 w-4 mr-1.5 mb-0.5" />
-            {geoError}
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <Stat label="Rating" value={me.rating.toFixed(1)} icon={<Star className="h-4 w-4 text-amber-500" />} />
-          <Stat label="Aceptación" value={`${Math.round(me.acceptanceRate * 100)}%`} icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} />
-          <Stat label="Pedidos" value={String(me.totalAccepted)} icon={<Bike className="h-4 w-4 text-[var(--accent)]" />} />
+      {geoError && (
+        <div role="alert" className="rounded-2xl bg-[var(--brand-secondary)]/10 border-2 border-[var(--brand-secondary)]/30 px-4 py-3 text-base font-bold text-[var(--brand-secondary)] flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          {geoError}
         </div>
+      )}
 
-        {/* Pedido activo */}
-        {me.currentOrderId && (
-          <div className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent)]/5 p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Pedido en curso</p>
-            <p className="mt-1 font-extrabold text-[var(--text-primary)]">#{me.currentOrderId.slice(-8)}</p>
-            <Link
-              href={`/delivery-app/pedido/${me.currentOrderId}`}
-              className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white"
-            >
-              Ver detalles
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        )}
-
-        {/* Lista offers pending */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-[var(--text-primary)]">
-              {offers.length === 0 ? "Esperando pedidos cerca tuyo" : `${offers.length} pedido${offers.length !== 1 ? "s" : ""} para vos`}
-            </h2>
-            <button
-              type="button"
-              onClick={loadOffers}
-              className="text-xs text-[var(--text-tertiary)] inline-flex items-center gap-1 hover:text-[var(--text-primary)]"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Actualizar
-            </button>
-          </div>
-
-          {!me.isOnline && (
-            <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">
-                Activá el modo en línea arriba para empezar a recibir ofertas.
-              </p>
-            </div>
-          )}
-
-          {me.isOnline && offers.length === 0 && (
-            <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center">
-              <Clock className="h-6 w-6 mx-auto text-[var(--text-tertiary)] mb-2" />
-              <p className="text-sm text-[var(--text-secondary)]">
-                Estás disponible. Te avisaremos cuando llegue un pedido cerca tuyo.
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {offers.map((o) => {
-              const expSec = Math.max(0, Math.floor((new Date(o.expiresAt).getTime() - Date.now()) / 1000));
-              return (
-                <Link
-                  key={o.id}
-                  href={`/delivery-app/oferta/${o.id}`}
-                  className="block rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-4 hover:scale-[1.01] transition-transform"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-2xl font-extrabold text-[var(--text-primary)]">S/ {o.feeOffered.toFixed(0)}</p>
-                    <span className={`text-sm font-bold tabular-nums ${expSec <= 30 ? "text-red-600" : "text-[var(--accent)]"}`}>
-                      <Clock className="inline h-4 w-4 mr-1 mb-0.5" />
-                      {Math.floor(expSec / 60)}:{String(expSec % 60).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {o.distanceKm.toFixed(1)} km · {o.order.customerLocation ?? "—"}
-                  </div>
-                  <p className="mt-1 text-xs font-bold text-[var(--accent)]">Tocá para ver y aceptar →</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+      {/* ── Stats responsive grid ───────────────────────────── */}
+      <section className="grid grid-cols-3 gap-3 lg:gap-4">
+        <Stat
+          icon={<StarBadge className="h-5 w-5 text-[var(--brand-secondary)]" />}
+          value={me.rating.toFixed(1)}
+          label="Rating"
+          tone="amber"
+        />
+        <Stat
+          icon={<CheckBadge className="h-5 w-5 text-[var(--data-success)]" />}
+          value={`${Math.round(me.acceptanceRate * 100)}%`}
+          label="Aceptación"
+          tone="success"
+        />
+        <Stat
+          icon={<MotoIcon className="h-5 w-5 text-[var(--accent)]" />}
+          value={String(me.totalAccepted)}
+          label="Pedidos"
+          tone="accent"
+        />
       </section>
-    </main>
+
+      {/* ── Pedido activo (callout) ─────────────────────────── */}
+      {me.currentOrderId && (
+        <Link
+          href={`/delivery-app/pedido/${me.currentOrderId}`}
+          className="block group rounded-3xl border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--accent-soft)] to-transparent p-5 lg:p-6 transition-transform hover:translate-y-[-2px]"
+        >
+          <div className="flex items-start gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+              <PackageIcon className="h-7 w-7" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                Pedido en curso
+              </p>
+              <p className="mt-1 text-xl font-extrabold text-[var(--text-primary)]">
+                #{me.currentOrderId.slice(-8)}
+              </p>
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">
+                Tocá para continuar la entrega
+              </p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-[var(--accent)] mt-2 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+          </div>
+        </Link>
+      )}
+
+      {/* ── Ofertas ─────────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg lg:text-xl font-extrabold text-[var(--text-primary)]">
+            {offers.length === 0
+              ? "Esperando pedidos cerca de ti"
+              : `${offers.length} pedido${offers.length !== 1 ? "s" : ""} disponible${offers.length !== 1 ? "s" : ""}`}
+          </h2>
+          <button
+            type="button"
+            onClick={loadOffers}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualizar
+          </button>
+        </div>
+
+        {!me.isOnline && (
+          <EmptyState
+            illustrationTone="muted"
+            title="Estás desconectado"
+            text="Activa el modo en línea para empezar a recibir ofertas."
+          />
+        )}
+
+        {me.isOnline && offers.length === 0 && (
+          <EmptyState
+            illustrationTone="accent"
+            title="Sin pedidos por ahora"
+            text="Te avisamos cuando llegue uno cerca de tu zona."
+          />
+        )}
+
+        {offers.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-3 lg:gap-4">
+            {offers.map((o) => (
+              <OfferCard key={o.id} offer={o} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
-function Stat({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function OfferCard({ offer }: { offer: Offer }) {
+  const [secs, setSecs] = useState(() =>
+    Math.max(0, Math.floor((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)),
+  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSecs(Math.max(0, Math.floor((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [offer.expiresAt]);
+
+  const urgent = secs <= 30;
+  const mins = Math.floor(secs / 60);
+  const ss = secs % 60;
+
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
-      <div className="flex items-center justify-center gap-1 mb-1">{icon}</div>
-      <div className="text-lg font-extrabold text-[var(--text-primary)]">{value}</div>
-      <div className="text-xs font-semibold text-[var(--text-tertiary)]">{label}</div>
+    <Link
+      href={`/delivery-app/oferta/${offer.id}`}
+      className={`group block rounded-3xl border-2 bg-[var(--surface-raised)] p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
+        urgent ? "border-[var(--brand-danger)]" : "border-[var(--accent)]"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Pago al repartidor
+          </p>
+          <p className="mt-1 text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] tabular-nums">
+            S/ {offer.feeOffered.toFixed(2)}
+          </p>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm font-extrabold tabular-nums ${
+            urgent
+              ? "bg-[var(--brand-danger)] text-white"
+              : "bg-[var(--accent-soft)] text-[var(--accent)]"
+          }`}
+        >
+          <TimerIcon className="h-4 w-4" />
+          {String(mins).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+        </span>
+      </div>
+
+      <div className="space-y-1.5 mb-3">
+        <div className="flex items-start gap-2 text-sm">
+          <PinIcon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+          <span className="text-[var(--text-primary)] font-semibold line-clamp-2">
+            {offer.order.customerLocation ?? "Sin dirección"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+          <MotoIcon className="h-4 w-4 shrink-0" />
+          <span className="font-semibold">{offer.distanceKm.toFixed(1)} km</span>
+          <span className="text-[var(--text-tertiary)]">·</span>
+          <span className="font-semibold">{offer.order.customerName}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--rule-base)]">
+        <span className="text-sm font-bold text-[var(--text-secondary)]">
+          Total cliente: S/ {offer.order.total.toFixed(2)}
+        </span>
+        <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--accent)] group-hover:translate-x-1 transition-transform">
+          Aceptar
+          <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function Stat({
+  icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  tone: "accent" | "success" | "amber";
+}) {
+  const toneRing: Record<typeof tone, string> = {
+    accent: "bg-[var(--accent-soft)]",
+    success: "bg-[var(--data-success)]/10",
+    amber: "bg-[var(--brand-secondary)]/10",
+  } as const;
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-5 text-center">
+      <div className={`mx-auto h-10 w-10 rounded-xl flex items-center justify-center mb-2 ${toneRing[tone]}`}>
+        {icon}
+      </div>
+      <div className="text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
+        {value}
+      </div>
+      <div className="mt-0.5 text-xs lg:text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  illustrationTone,
+  title,
+  text,
+}: {
+  illustrationTone: "muted" | "accent";
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-3xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 lg:p-12 text-center">
+      <div
+        className={`mx-auto ${
+          illustrationTone === "accent"
+            ? "text-[var(--accent)]"
+            : "text-[var(--text-tertiary)]"
+        }`}
+      >
+        <EmptyRoadIllustration className="h-32 w-32 lg:h-40 lg:w-40 mx-auto" />
+      </div>
+      <h3 className="mt-4 text-lg lg:text-xl font-extrabold text-[var(--text-primary)]">
+        {title}
+      </h3>
+      <p className="mt-2 text-base text-[var(--text-secondary)] max-w-sm mx-auto">
+        {text}
+      </p>
     </div>
   );
 }

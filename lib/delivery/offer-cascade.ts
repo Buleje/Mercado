@@ -59,10 +59,14 @@ export async function createNextOffer(
   });
   if (assigned) return null;
 
-  // 2. Cargar partners online del tenant.
+  // 2. Cargar partners online — pool híbrido:
+  //    - partners del tenant de la tienda (vendor con flota propia)
+  //    - partners del tenant "main" (red global Buleje, compartida)
+  //    Si la tienda tiene flota propia se prefiere; sino usa la red Buleje.
+  //    Cliente final ve un único pool: el que esté online y más cerca.
   const partners = await prisma.deliveryPartner.findMany({
     where: {
-      tenantId: order.tenantId,
+      tenantId: { in: Array.from(new Set([order.tenantId, "main"])) },
       isActive: true,
       isOnline: true,
       currentOrderId: null,

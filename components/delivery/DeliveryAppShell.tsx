@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { LogOut } from "@buleje/design-system/icons";
 import {
-  Truck,
-  Map,
-  User,
-  Wifi,
-  WifiOff,
-} from "@buleje/design-system/icons";
-
-// ── Tipos ────────────────────────────────────────────────────────────────────
+  MotoIcon,
+  PinIcon,
+  MapBadge,
+  CashIcon,
+  PackageIcon,
+  LiveSignal,
+} from "./icons";
 
 interface NavItem {
   href: string;
@@ -21,40 +21,43 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/delivery-app", label: "Pedidos", icon: Truck, exact: true },
-  { href: "/delivery-app/mapa", label: "Mapa", icon: Map },
-  { href: "/delivery-app/perfil", label: "Perfil", icon: User },
+  { href: "/delivery-app", label: "Pedidos", icon: PackageIcon, exact: true },
+  { href: "/delivery-app/mapa", label: "Mapa", icon: MapBadge },
+  { href: "/delivery-app/ganancias", label: "Ganancias", icon: CashIcon },
+  { href: "/delivery-app/perfil", label: "Perfil", icon: PinIcon },
 ];
 
-// ── Shell principal ──────────────────────────────────────────────────────────
+function csrf(): string {
+  if (typeof document === "undefined") return "";
+  return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
+}
 
-export default function DeliveryAppShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DeliveryAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Estado online/offline del repartidor (toggle manual)
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const [toggling, setToggling] = useState(false);
-
-  // Nombre del repartidor desde localStorage (seteado en el login)
   const [riderName, setRiderName] = useState("Repartidor");
   const [partnerId, setPartnerId] = useState<string | null>(null);
-
-  // Estado de conexión a internet del dispositivo
   const [networkOnline, setNetworkOnline] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setRiderName(localStorage.getItem("delivery-rider-name") ?? "Repartidor");
-    setPartnerId(localStorage.getItem("delivery-partner-id"));
-    const online = localStorage.getItem("delivery-is-online");
-    if (online !== null) setIsOnline(online === "true");
 
-    function handleOnline() { setNetworkOnline(true); }
-    function handleOffline() { setNetworkOnline(false); }
+    fetch("/api/delivery/me/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.partner) {
+          setRiderName(data.partner.name ?? "Repartidor");
+          setPartnerId(data.partner.id);
+          setIsOnline(Boolean(data.partner.isOnline));
+        }
+      })
+      .catch(() => { /* probe silencioso: si falla, sigue como guest */ });
+
+    const handleOnline = () => setNetworkOnline(true);
+    const handleOffline = () => setNetworkOnline(false);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     setNetworkOnline(navigator.onLine);
@@ -64,152 +67,209 @@ export default function DeliveryAppShell({
     };
   }, []);
 
-  async function handleToggleOnline() {
-    if (!partnerId) {
-      // Sin partnerId no podemos hacer la llamada — solo cambiamos estado local
-      const next = !isOnline;
-      setIsOnline(next);
-      localStorage.setItem("delivery-is-online", String(next));
+  const handleToggleOnline = useCallback(async () => {
+    if (!partnerId || toggling) {
+      setIsOnline((v) => !v);
       return;
     }
-
     setToggling(true);
     const next = !isOnline;
     try {
-      const res = await fetch("/api/delivery/toggle-online", {
+      const res = await fetch("/api/delivery/me/online", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partnerId, isOnline: next }),
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
+        body: JSON.stringify({ isOnline: next }),
       });
-      if (res.ok) {
-        setIsOnline(next);
-        localStorage.setItem("delivery-is-online", String(next));
-      }
+      if (res.ok) setIsOnline(next);
     } catch {
-      // Fallo silencioso — actualizar estado local de todas formas
       setIsOnline(next);
-      localStorage.setItem("delivery-is-online", String(next));
     } finally {
       setToggling(false);
     }
-  }
+  }, [partnerId, toggling, isOnline]);
 
-  // Ocultar bottom nav en la pantalla de pedido individual (tiene su propio header)
-  const hideBottomNav = pathname.includes("/delivery-app/pedido/");
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("/api/delivery/me/online", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
+        body: JSON.stringify({ isOnline: false }),
+      });
+    } catch { /* noop */ }
+    document.cookie = "buleje-partner-sess=; Max-Age=0; path=/";
+    router.push("/delivery-app/login");
+  }, [router]);
 
-  function isActive(item: NavItem): boolean {
+  const isActive = (item: NavItem) => {
     if (item.exact) return pathname === item.href;
     return pathname.startsWith(item.href) && item.href !== "/delivery-app";
+  };
+
+  // Pantallas que ocultan chrome (login, detalle de pedido a pantalla completa)
+  const isLogin = pathname === "/delivery-app/login";
+  const hideChrome = isLogin || pathname.includes("/delivery-app/pedido/") || pathname.includes("/delivery-app/oferta/");
+
+  if (hideChrome) {
+    return (
+      <>
+        {!networkOnline && <NetworkBanner />}
+        {children}
+      </>
+    );
   }
 
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto">
-      {/* Banner sin conexión a internet */}
-      {!networkOnline && (
-        <div className="bg-red-500 text-white text-center text-xs font-bold py-2 px-4">
-          Sin conexion a internet — los cambios se enviaran al reconectar
-        </div>
-      )}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--surface-canvas)]">
+      {!networkOnline && <NetworkBanner />}
 
-      {/* Header — solo visible fuera del detalle de pedido */}
-      {!hideBottomNav && (
-        <header
-          className="sticky top-0 z-30 bg-[#00B4A6] text-white px-4 shadow-md"
-          style={{ paddingTop: "max(12px, env(safe-area-inset-top))", paddingBottom: "12px" }}
-        >
+      {/* ── Desktop sidebar ─────────────────────────────────────────── */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 border-r border-[var(--rule-base)] bg-[var(--surface-raised)] z-40">
+        <div className="px-6 py-6 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
-            {/* Logo + nombre */}
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Truck className="h-5 w-5 shrink-0" />
-              <div className="min-w-0">
-                <p className="font-extrabold text-sm leading-tight">Buleje Delivery</p>
-                <p className="text-xs text-white/70 truncate leading-tight">{riderName}</p>
-              </div>
+            <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+              <MotoIcon className="h-7 w-7" />
             </div>
-
-            {/* Toggle Online/Offline */}
-            <button
-              type="button"
-              onClick={handleToggleOnline}
-              disabled={toggling}
-              aria-label={isOnline ? "Pasar a offline" : "Pasar a online"}
-              className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                text-xs font-bold border-2 border-white/30
-                transition-all active:scale-95
-                disabled:opacity-60 disabled:cursor-not-allowed
-                min-h-[36px]
-                ${isOnline
-                  ? "bg-white/20 text-white"
-                  : "bg-red-500/30 text-red-200 border-red-300/50"
-                }
-              `}
-            >
-              {isOnline
-                ? <Wifi className="h-3.5 w-3.5" />
-                : <WifiOff className="h-3.5 w-3.5" />
-              }
-              {isOnline ? "Online" : "Offline"}
-            </button>
+            <div className="min-w-0">
+              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">
+                {riderName}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] font-semibold">
+                Repartidor Buleje
+              </p>
+            </div>
           </div>
-        </header>
-      )}
 
-      {/* Contenido principal */}
-      <main className="flex-1 overflow-y-auto">
+          <button
+            type="button"
+            onClick={handleToggleOnline}
+            disabled={toggling}
+            aria-pressed={isOnline}
+            className={`mt-4 w-full h-12 rounded-2xl border-2 inline-flex items-center justify-center gap-2 text-sm font-extrabold transition-colors disabled:opacity-60 ${
+              isOnline
+                ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+                : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)]"
+            }`}
+          >
+            <LiveSignal className="h-2.5 w-2.5" active={isOnline} />
+            {isOnline ? "En línea — recibiendo pedidos" : "Toca para conectarte"}
+          </button>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 px-4 h-12 rounded-xl text-base font-bold transition-colors ${
+                  active
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="px-3 pb-6 pt-2 border-t border-[var(--rule-base)]">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--brand-danger)] inline-flex items-center gap-2 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Mobile top header ───────────────────────────────────────── */}
+      <header
+        className="lg:hidden sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="px-4 py-3 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+            <MotoIcon className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight truncate">
+              Hola, {riderName}
+            </p>
+            <p className="text-xs font-semibold text-[var(--text-tertiary)] leading-tight">
+              {isOnline ? "En línea — recibiendo pedidos" : "Estás desconectado"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleOnline}
+            disabled={toggling}
+            aria-pressed={isOnline}
+            className={`h-10 px-3.5 rounded-full inline-flex items-center gap-2 text-sm font-extrabold border-2 transition-colors disabled:opacity-60 ${
+              isOnline
+                ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+                : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)]"
+            }`}
+          >
+            <LiveSignal className="h-2.5 w-2.5" active={isOnline} />
+            {isOnline ? "Online" : "Offline"}
+          </button>
+        </div>
+      </header>
+
+      {/* ── Contenido principal ─────────────────────────────────────── */}
+      <main className="flex-1 lg:pl-72 pb-24 lg:pb-0 min-w-0">
         {children}
       </main>
 
-      {/* Bottom navigation */}
-      {!hideBottomNav && (
-        <nav
-          className="
-            fixed bottom-0 left-0 right-0 z-30
-            max-w-md mx-auto
-            bg-white dark:bg-gray-900
-            border-t border-gray-200 dark:border-gray-800
-            shadow-lg
-          "
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <div className="flex">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(item);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`
-                    flex-1 flex flex-col items-center justify-center gap-1
-                    min-h-[60px] py-2 px-1
-                    transition-colors
-                    ${active
-                      ? "text-[#00B4A6]"
-                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
-                    }
-                  `}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <Icon
-                    className={`h-5 w-5 transition-transform ${active ? "scale-110" : ""}`}
-                  />
-                  <span
-                    className={`text-[length:var(--ts-2xs)] font-bold leading-none ${
-                      active ? "text-[#00B4A6]" : ""
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                  {active && (
-                    <span className="absolute bottom-0 w-8 h-0.5 rounded-full bg-[#00B4A6]" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      )}
+      {/* ── Mobile bottom nav ───────────────────────────────────────── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--surface-raised)] border-t border-[var(--rule-base)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="grid grid-cols-4">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex flex-col items-center justify-center gap-1 min-h-[64px] py-2 transition-colors ${
+                  active
+                    ? "text-[var(--accent)]"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                <Icon className={`h-6 w-6 ${active ? "scale-110" : ""} transition-transform`} />
+                <span className={`text-xs font-extrabold leading-none ${active ? "" : "font-bold"}`}>
+                  {item.label}
+                </span>
+                {active && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 h-1 w-10 rounded-b-full bg-[var(--accent)]" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+function NetworkBanner() {
+  return (
+    <div className="bg-[var(--brand-danger)] text-white text-center text-sm font-bold py-2 px-4 sticky top-0 z-50">
+      Sin conexión — los cambios se enviarán al volver
     </div>
   );
 }

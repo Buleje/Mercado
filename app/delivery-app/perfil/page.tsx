@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Mail, Lock, Star, CheckCircle2, Bike,
-  LogOut, Loader2, AlertTriangle, Save, MapPin,
+  Phone, Mail, Lock, LogOut, Loader2, AlertTriangle, Save,
 } from "@buleje/design-system/icons";
+import {
+  MotoIcon, PinIcon, StarBadge, CheckBadge, PackageIcon,
+} from "@/components/delivery/icons";
 
 interface Me {
   id: string;
@@ -31,7 +33,6 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Password change
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
@@ -92,17 +93,14 @@ export default function PerfilPage() {
         headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
         body: JSON.stringify({ isOnline: false }),
       });
-    } catch {
-      // noop — logout sigue
-    }
-    // Borrar cookie partner.
+    } catch { /* noop */ }
     document.cookie = "buleje-partner-sess=; Max-Age=0; path=/";
     router.push("/delivery-app/login");
   };
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
+      <main className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       </main>
     );
@@ -110,53 +108,75 @@ export default function PerfilPage() {
 
   if (!me) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
+      <main className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto text-amber-500" />
-          <p className="mt-3 text-[var(--text-secondary)]">{error}</p>
+          <AlertTriangle className="h-12 w-12 mx-auto text-[var(--brand-secondary)]" />
+          <p className="mt-3 text-base text-[var(--text-secondary)]">{error}</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-4 py-3">
-        <h1 className="font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-          <User className="h-5 w-5 text-[var(--accent)]" />
-          Mi perfil
-        </h1>
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-6">
+      {/* Hero perfil */}
+      <header className="rounded-3xl border-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-raised)] p-5 lg:p-7 flex items-center gap-4 lg:gap-6">
+        <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-3xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+          <MotoIcon className="h-9 w-9 lg:h-11 lg:w-11" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs lg:text-sm font-extrabold uppercase tracking-wider text-[var(--accent)]">
+            Repartidor Buleje
+          </p>
+          <h1 className="mt-1 text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)] truncate">
+            {me.name}
+          </h1>
+          <p className="text-sm lg:text-base font-semibold text-[var(--text-secondary)]">
+            Zona {me.zone} · {me.vehicleType}
+          </p>
+        </div>
       </header>
 
-      <section className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-        {/* Info personal */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+      {/* Stats grid */}
+      <section className="grid grid-cols-3 gap-3 lg:gap-4">
+        <Stat
+          icon={<StarBadge className="h-6 w-6 text-[var(--brand-secondary)]" />}
+          value={me.rating.toFixed(1)}
+          label="Rating"
+          tone="amber"
+        />
+        <Stat
+          icon={<CheckBadge className="h-6 w-6 text-[var(--data-success)]" />}
+          value={`${Math.round(me.acceptanceRate * 100)}%`}
+          label="Aceptación"
+          tone="success"
+        />
+        <Stat
+          icon={<PackageIcon className="h-6 w-6 text-[var(--accent)]" />}
+          value={String(me.totalAccepted)}
+          label="Pedidos"
+          tone="accent"
+        />
+      </section>
+
+      {/* Two-col en desktop: datos + password */}
+      <div className="grid lg:grid-cols-2 gap-5 lg:gap-6">
+        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6">
+          <h2 className="text-base lg:text-lg font-extrabold text-[var(--text-primary)] mb-4">
             Datos personales
           </h2>
-          <Field icon={<User className="h-4 w-4" />} label="Nombre" value={me.name} />
-          <Field icon={<Phone className="h-4 w-4" />} label="WhatsApp" value={me.phone} />
-          <Field icon={<Mail className="h-4 w-4" />} label="Email" value={me.email ?? "—"} />
-          <Field icon={<MapPin className="h-4 w-4" />} label="Zona" value={me.zone} />
-          <Field icon={<Bike className="h-4 w-4" />} label="Vehículo" value={me.vehicleType} last />
+          <Field icon={<Phone className="h-5 w-5" strokeWidth={2.25} />} label="WhatsApp" value={me.phone} />
+          <Field icon={<Mail className="h-5 w-5" strokeWidth={2.25} />} label="Email" value={me.email ?? "—"} />
+          <Field icon={<PinIcon className="h-5 w-5" />} label="Zona" value={me.zone} />
+          <Field icon={<MotoIcon className="h-5 w-5" />} label="Vehículo" value={me.vehicleType} last />
         </div>
 
-        {/* Stats */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
-            Tu rendimiento
-          </h2>
-          <div className="grid grid-cols-3 gap-3">
-            <StatBox icon={<Star className="h-4 w-4 text-amber-500" />} value={me.rating.toFixed(1)} label="Rating" />
-            <StatBox icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} value={`${Math.round(me.acceptanceRate * 100)}%`} label="Aceptación" />
-            <StatBox icon={<Bike className="h-4 w-4 text-[var(--accent)]" />} value={String(me.totalAccepted)} label="Pedidos" />
-          </div>
-        </div>
-
-        {/* Cambio de contraseña */}
-        <form onSubmit={handleChangePwd} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
-            <Lock className="inline h-4 w-4 mr-1.5" />
+        <form
+          onSubmit={handleChangePwd}
+          className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6"
+        >
+          <h2 className="text-base lg:text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2 mb-4">
+            <Lock className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.25} />
             Cambiar contraseña
           </h2>
           <input
@@ -166,69 +186,106 @@ export default function PerfilPage() {
             placeholder="Contraseña actual"
             required
             autoComplete="current-password"
-            className="w-full h-12 mb-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+            className="w-full h-12 mb-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-colors"
           />
           <input
             type="password"
             value={newPwd}
             onChange={(e) => setNewPwd(e.target.value)}
-            placeholder="Nueva contraseña (min 6)"
+            placeholder="Nueva contraseña (mín. 6)"
             required
             minLength={6}
             autoComplete="new-password"
-            className="w-full h-12 mb-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+            className="w-full h-12 mb-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-colors"
           />
           {pwdMsg && (
-            <div className={`rounded-xl px-4 py-3 text-sm font-semibold mb-3 ${
-              pwdMsg.type === "ok"
-                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
-                : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300"
-            }`}>
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm font-bold mb-3 border-2 ${
+                pwdMsg.type === "ok"
+                  ? "bg-[var(--data-success)]/10 border-[var(--data-success)]/30 text-[var(--data-success)]"
+                  : "bg-[var(--brand-danger)]/10 border-[var(--brand-danger)]/30 text-[var(--brand-danger)]"
+              }`}
+            >
               {pwdMsg.text}
             </div>
           )}
           <button
             type="submit"
             disabled={pwdLoading}
-            className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-extrabold text-white disabled:opacity-50"
+            className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-md shadow-[var(--accent)]/20 disabled:opacity-50"
           >
-            {pwdLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-4 w-4" />}
+            {pwdLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" strokeWidth={2.25} />}
             Guardar contraseña
           </button>
         </form>
+      </div>
 
-        {/* Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-red-300 dark:border-red-800 bg-[var(--surface-raised)] text-base font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-        >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
-        </button>
-      </section>
-    </main>
+      {/* Logout */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="w-full lg:w-auto lg:px-8 h-12 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--brand-danger)]/30 bg-[var(--surface-raised)] text-base font-extrabold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 transition-colors"
+      >
+        <LogOut className="h-5 w-5" strokeWidth={2.25} />
+        Cerrar sesión
+      </button>
+    </div>
   );
 }
 
-function Field({ icon, label, value, last }: { icon: React.ReactNode; label: string; value: string; last?: boolean }) {
+function Field({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   return (
     <div className={`flex items-center gap-3 py-3 ${!last ? "border-b border-[var(--rule-base)]" : ""}`}>
-      <span className="text-[var(--text-tertiary)]">{icon}</span>
+      <span className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">
+        {icon}
+      </span>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-        <p className="text-base font-semibold text-[var(--text-primary)] truncate">{value}</p>
+        <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          {label}
+        </p>
+        <p className="text-base font-bold text-[var(--text-primary)] truncate">{value}</p>
       </div>
     </div>
   );
 }
 
-function StatBox({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+function Stat({
+  icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  tone: "accent" | "success" | "amber";
+}) {
+  const ring: Record<typeof tone, string> = {
+    accent: "bg-[var(--accent-soft)]",
+    success: "bg-[var(--data-success)]/10",
+    amber: "bg-[var(--brand-secondary)]/10",
+  } as const;
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-center">
-      <div className="flex items-center justify-center mb-1">{icon}</div>
-      <div className="text-lg font-extrabold text-[var(--text-primary)]">{value}</div>
-      <div className="text-xs font-semibold text-[var(--text-tertiary)]">{label}</div>
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-5 text-center">
+      <div className={`mx-auto h-11 w-11 rounded-xl flex items-center justify-center mb-2 ${ring[tone]}`}>
+        {icon}
+      </div>
+      <div className="text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
+        {value}
+      </div>
+      <div className="mt-0.5 text-xs lg:text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+        {label}
+      </div>
     </div>
   );
 }

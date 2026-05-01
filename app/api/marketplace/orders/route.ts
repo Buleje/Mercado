@@ -179,6 +179,26 @@ export async function POST(req: NextRequest) {
       items,
     });
 
+    // Fire-and-forget: dispara la primera DeliveryOffer al repartidor más cercano
+    // (geocoding + matchmaking). Si falla o no hay partners, el cron
+    // `delivery-offer-cascade` actúa como red de seguridad cada 30s.
+    void (async () => {
+      try {
+        const { triggerDeliveryOfferOnOrder } = await import(
+          "@/lib/delivery/trigger-offer-on-order"
+        );
+        await triggerDeliveryOfferOnOrder({
+          orderId: order.id,
+          tenantId: order.sellerTenantId,
+          customerLocation: order.customerAddress ?? null,
+        });
+      } catch (err) {
+        logger.error("[marketplace/orders] trigger delivery offer failed", {
+          error: String(err),
+        });
+      }
+    })();
+
     // Fire-and-forget: notify customer via WhatsApp (with retries)
     sendWhatsAppNotificationWithRetry({
       id:            order.id,

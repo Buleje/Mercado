@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, AlertTriangle } from "@buleje/design-system/icons";
+import { Loader2, AlertTriangle, ArrowRight } from "@buleje/design-system/icons";
+import { PinIcon, MapBadge, LiveSignal } from "@/components/delivery/icons";
 
-// Lazy-load del mapa para evitar SSR (Leaflet usa window).
 const PartnerMap = dynamic(() => import("@/components/delivery/PartnerMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-[400px] rounded-xl bg-[var(--surface-sunken)]">
+    <div className="flex items-center justify-center h-[400px] rounded-3xl bg-[var(--surface-sunken)]">
       <Loader2 className="h-6 w-6 animate-spin text-[var(--accent)]" />
     </div>
   ),
@@ -46,10 +46,10 @@ export default function MapaPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
+      <main className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto text-amber-500" />
-          <p className="mt-3 text-[var(--text-secondary)]">{error}</p>
+          <AlertTriangle className="h-12 w-12 mx-auto text-[var(--brand-secondary)]" />
+          <p className="mt-3 text-base text-[var(--text-secondary)]">{error}</p>
         </div>
       </main>
     );
@@ -57,7 +57,7 @@ export default function MapaPage() {
 
   if (!partner) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
+      <main className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       </main>
     );
@@ -65,21 +65,24 @@ export default function MapaPage() {
 
   if (partner.lat == null || partner.lng == null) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
-        <div className="text-center max-w-sm">
-          <MapPin className="h-12 w-12 mx-auto text-[var(--text-tertiary)]" />
-          <h1 className="mt-3 text-xl font-extrabold text-[var(--text-primary)]">
-            Activá tu ubicación
+      <main className="min-h-[80vh] flex items-center justify-center px-4 py-10">
+        <div className="text-center max-w-md">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <PinIcon className="h-10 w-10" />
+          </div>
+          <h1 className="mt-5 text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)]">
+            Activa tu ubicación
           </h1>
-          <p className="mt-2 text-[var(--text-secondary)] text-sm">
-            Volvé al panel y prendé el modo en línea para que detectemos tu posición.
+          <p className="mt-2 text-base text-[var(--text-secondary)]">
+            Vuelve al panel y enciende el modo en línea para que detectemos tu posición.
           </p>
           <button
             type="button"
             onClick={() => router.push("/delivery-app")}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 font-bold text-white"
+            className="mt-6 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] font-extrabold text-white shadow-lg shadow-[var(--accent)]/25"
           >
             Ir al panel
+            <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
           </button>
         </div>
       </main>
@@ -87,37 +90,75 @@ export default function MapaPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-4 py-3">
-        <div className="mx-auto max-w-2xl flex items-center justify-between">
-          <h1 className="font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-[var(--accent)]" />
-            Mapa de pedidos
-          </h1>
-          <span className={`text-xs font-bold uppercase tracking-wider ${
-            partner.isOnline ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
-          }`}>
-            {partner.isOnline ? "En línea" : "Offline"}
-          </span>
-        </div>
-      </header>
-
-      <section className="flex-1 p-4 max-w-3xl mx-auto w-full">
-        <PartnerMap partnerLat={partner.lat} partnerLng={partner.lng} />
-
-        <div className="mt-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-3">
-          <div className="flex items-center gap-3 text-xs">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-[var(--accent)]"></span>
-              Tu ubicación
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-4 w-4 rounded-full bg-amber-400 text-[8px] flex items-center justify-center font-extrabold text-black">S/</span>
-              Pedido disponible — tocá para aceptar
-            </span>
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+      <header className="flex items-start justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+            <MapBadge className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-extrabold text-[var(--text-primary)] leading-tight">
+              Mapa de pedidos
+            </h1>
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">
+              Tu posición en tiempo real
+            </p>
           </div>
         </div>
-      </section>
-    </main>
+        <span
+          className={`inline-flex items-center gap-2 h-9 px-3 rounded-full text-sm font-extrabold ${
+            partner.isOnline
+              ? "bg-[var(--data-success)]/10 text-[var(--data-success)]"
+              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+          }`}
+        >
+          <LiveSignal className="h-2.5 w-2.5" active={partner.isOnline} />
+          {partner.isOnline ? "En línea" : "Offline"}
+        </span>
+      </header>
+
+      <div className="rounded-3xl overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="h-[60vh] lg:h-[70vh] min-h-[420px]">
+          <PartnerMap partnerLat={partner.lat} partnerLng={partner.lng} />
+        </div>
+      </div>
+
+      <div className="mt-5 grid sm:grid-cols-2 gap-3">
+        <Legend
+          dot={<span className="inline-block h-3 w-3 rounded-full bg-[var(--accent)]" />}
+          title="Tu ubicación"
+          subtitle="Se actualiza cada 30 segundos"
+        />
+        <Legend
+          dot={
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-white text-[10px] font-extrabold">
+              S/
+            </span>
+          }
+          title="Pedido disponible"
+          subtitle="Toca el marcador para aceptar"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Legend({
+  dot,
+  title,
+  subtitle,
+}: {
+  dot: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      <div className="shrink-0">{dot}</div>
+      <div className="min-w-0">
+        <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{title}</p>
+        <p className="text-sm text-[var(--text-secondary)] leading-tight">{subtitle}</p>
+      </div>
+    </div>
   );
 }

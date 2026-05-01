@@ -2,13 +2,19 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { Loader2, AlertTriangle, ArrowRight } from "@buleje/design-system/icons";
 import {
-  Package, CheckCircle, Truck, MapPin, Phone,
-  Clock, DollarSign, RefreshCw, Navigation, ChevronRight,
-  AlertCircle,
-} from "@buleje/design-system/icons";
-
-// ── Types ──────────────────────────────────────────────────────────────────
+  MotoIcon,
+  PinIcon,
+  PackageIcon,
+  CheckBadge,
+  CashIcon,
+  PhoneRing,
+  RouteIcon,
+  TimerIcon,
+  LiveSignal,
+  EmptyRoadIllustration,
+} from "@/components/delivery/icons";
 
 interface Assignment {
   id: string;
@@ -32,13 +38,19 @@ interface DriverData {
   assignments: Assignment[];
 }
 
-// ── Status config ──────────────────────────────────────────────────────────
+const STATUS_CFG: Record<string, { label: string; tone: "amber" | "blue" | "accent" | "success" | "muted"; icon: React.ComponentType<{ className?: string }>; next?: string; nextLabel?: string }> = {
+  assigned:   { label: "Asignado",  tone: "amber",   icon: TimerIcon,   next: "picked_up",  nextLabel: "Recogí el pedido" },
+  picked_up:  { label: "Recogido",  tone: "blue",    icon: PackageIcon, next: "in_transit", nextLabel: "Estoy en camino" },
+  in_transit: { label: "En camino", tone: "accent",  icon: MotoIcon,    next: "delivered",  nextLabel: "Entregué el pedido" },
+  delivered:  { label: "Entregado", tone: "success", icon: CheckBadge },
+};
 
-const STATUS_CFG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType; next?: string; nextLabel?: string }> = {
-  assigned:   { label: "Asignado",  color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/30",    icon: Clock,       next: "picked_up",  nextLabel: "Recogí el pedido" },
-  picked_up:  { label: "Recogido",  color: "text-emerald-600",    bg: "bg-emerald-50 dark:bg-emerald-950/30",      icon: Package,     next: "in_transit", nextLabel: "Estoy en camino" },
-  in_transit: { label: "En camino", color: "text-teal-600",    bg: "bg-teal-50 dark:bg-teal-950/30",      icon: Navigation,  next: "delivered",  nextLabel: "Entregué el pedido" },
-  delivered:  { label: "Entregado", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
+const TONE_BG: Record<NonNullable<typeof STATUS_CFG[string]["tone"]>, string> = {
+  amber: "bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]",
+  blue: "bg-[var(--brand-info)]/10 text-[var(--brand-info)]",
+  accent: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  success: "bg-[var(--data-success)]/10 text-[var(--data-success)]",
+  muted: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
 
 function getStatus(s: string) {
@@ -53,8 +65,6 @@ function timeAgo(iso: string) {
   const hrs = Math.floor(mins / 60);
   return `hace ${hrs}h ${mins % 60}m`;
 }
-
-// ── Component ──────────────────────────────────────────────────────────────
 
 export default function DriverDashboardPage() {
   const params = useParams<{ partnerId: string }>();
@@ -73,7 +83,7 @@ export default function DriverDashboardPage() {
         setError(body.error ?? "Error al cargar datos");
         return;
       }
-      const json = await res.json() as DriverData;
+      const json = (await res.json()) as DriverData;
       setData(json);
       setError(null);
     } catch {
@@ -85,7 +95,7 @@ export default function DriverDashboardPage() {
 
   useEffect(() => {
     void fetchData();
-    const timer = setInterval(fetchData, 30_000); // Poll every 30s
+    const timer = setInterval(fetchData, 30_000);
     return () => clearInterval(timer);
   }, [fetchData]);
 
@@ -97,36 +107,35 @@ export default function DriverDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assignmentId, status: newStatus }),
       });
-      if (res.ok) {
-        await fetchData();
-      }
+      if (res.ok) await fetchData();
     } catch { /* silent */ }
     setUpdatingId(null);
   };
 
-  // ── Loading ────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="h-10 w-10 text-teal-500 animate-spin" />
-          <p className="text-gray-500 font-medium">Cargando entregas…</p>
+          <Loader2 className="h-10 w-10 text-[var(--accent)] animate-spin" />
+          <p className="text-base font-bold text-[var(--text-secondary)]">Cargando entregas…</p>
         </div>
       </div>
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6">
-        <div className="max-w-sm w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">¡Ups!</h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{error ?? "No se encontró el repartidor"}</p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] p-6">
+        <div className="max-w-md w-full bg-[var(--surface-raised)] rounded-3xl border-2 border-[var(--rule-base)] p-8 text-center">
+          <AlertTriangle className="h-14 w-14 text-[var(--brand-secondary)] mx-auto mb-3" />
+          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">¡Ups!</h2>
+          <p className="text-base text-[var(--text-secondary)] mt-1">
+            {error ?? "No se encontró el repartidor"}
+          </p>
           <button
+            type="button"
             onClick={() => { setLoading(true); setError(null); fetchData(); }}
-            className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-xl text-sm font-semibold"
+            className="mt-5 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white"
           >
             Reintentar
           </button>
@@ -139,181 +148,234 @@ export default function DriverDashboardPage() {
   const completed = data.assignments.filter((a) => a.status === "delivered");
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* ── Header ───────────────────────────────────────────── */}
-      <div className="bg-linear-to-r from-teal-600 to-teal-500 text-white px-4 py-5 sticky top-0 z-10 shadow-lg">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-              <Truck className="h-5 w-5" />
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* ── Hero header ─────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-[var(--accent)] to-[var(--brand-primary-light)] text-white relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+        <div
+          className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 relative"
+          style={{ paddingTop: "max(24px, env(safe-area-inset-top))" }}
+        >
+          <div className="flex items-center gap-3 lg:gap-4 mb-5">
+            <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+              <MotoIcon className="h-8 w-8 lg:h-9 lg:w-9" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold">Hola, {data.partner.name}</h1>
-              <p className="text-teal-100 text-xs">Panel de entregas</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold uppercase tracking-wider text-white/80">
+                Panel de entregas
+              </p>
+              <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight truncate">
+                Hola, {data.partner.name}
+              </h1>
             </div>
+            <span className="hidden sm:inline-flex items-center gap-2 h-9 px-3 rounded-full bg-white/15 backdrop-blur text-sm font-extrabold">
+              <LiveSignal className="h-2.5 w-2.5" active />
+              En vivo
+            </span>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">{data.stats.pending}</p>
-              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Pendientes</p>
-            </div>
-            <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">{data.stats.todayDelivered}</p>
-              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Entregados hoy</p>
-            </div>
-            <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">S/{data.stats.todayEarnings.toFixed(0)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Ganado hoy</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3 lg:gap-4">
+            <HeroStat
+              icon={<TimerIcon className="h-5 w-5" />}
+              value={String(data.stats.pending)}
+              label="Pendientes"
+            />
+            <HeroStat
+              icon={<CheckBadge className="h-5 w-5" />}
+              value={String(data.stats.todayDelivered)}
+              label="Entregados hoy"
+            />
+            <HeroStat
+              icon={<CashIcon className="h-5 w-5" />}
+              value={`S/ ${data.stats.todayEarnings.toFixed(0)}`}
+              label="Ganado hoy"
+            />
           </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* ── Active deliveries ────────────────────────────── */}
-        {active.length > 0 && (
+      {/* ── Body ────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-8">
+        {active.length > 0 ? (
           <section>
-            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
               Entregas activas ({active.length})
             </h2>
-            <div className="space-y-3">
-              {active.map((a) => {
-                const cfg = getStatus(a.status);
-                const Icon = cfg.icon;
-                return (
-                  <div
-                    key={a.id}
-                    className={`rounded-2xl shadow-sm overflow-hidden border ${
-                      a.status === "assigned"
-                        ? "border-amber-200 dark:border-amber-800"
-                        : "border-gray-200 dark:border-gray-800"
-                    } bg-white dark:bg-gray-900`}
-                  >
-                    {/* Status badge + order info */}
-                    <div className="p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>
-                          <Icon className="h-3.5 w-3.5" />
-                          {cfg.label}
-                        </span>
-                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{timeAgo(a.createdAt)}</span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                          {a.customerName}
-                        </p>
-                        {a.customerLocation && (
-                          <div className="flex items-start gap-1.5 text-xs text-gray-500">
-                            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-red-400" />
-                            <span>{a.customerLocation}</span>
-                          </div>
-                        )}
-                        <p className="text-xs text-gray-400">
-                          {a.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Total: S/{a.orderTotal.toFixed(2)}
-                        </span>
-                        <span className="font-bold text-teal-600">
-                          Comisión: S/{a.fee.toFixed(2)}
-                        </span>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-2">
-                        {a.customerPhone && (
-                          <a
-                            href={`tel:${a.customerPhone}`}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold"
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                            Llamar
-                          </a>
-                        )}
-                        {a.customerLocation && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.customerLocation)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 text-xs font-semibold"
-                          >
-                            <Navigation className="h-3.5 w-3.5" />
-                            Mapa
-                          </a>
-                        )}
-                        {cfg.next && (
-                          <button
-                            onClick={() => updateStatus(a.id, cfg.next!)}
-                            disabled={updatingId === a.id}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white text-xs font-bold transition-colors"
-                          >
-                            {updatingId === a.id ? (
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <>
-                                {cfg.nextLabel}
-                                <ChevronRight className="h-3.5 w-3.5" />
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {active.map((a) => (
+                <ActiveCard
+                  key={a.id}
+                  a={a}
+                  updating={updatingId === a.id}
+                  onAdvance={(next) => updateStatus(a.id, next)}
+                />
+              ))}
             </div>
           </section>
-        )}
-
-        {active.length === 0 && (
-          <div className="text-center py-12">
-            <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">¡Todo al día!</h3>
-            <p className="text-sm text-gray-400 mt-1">No tienes entregas pendientes</p>
+        ) : (
+          <div className="rounded-3xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+            <div className="text-[var(--accent)]">
+              <EmptyRoadIllustration className="h-32 w-32 mx-auto" />
+            </div>
+            <h3 className="mt-4 text-xl font-extrabold text-[var(--text-primary)]">¡Todo al día!</h3>
+            <p className="mt-1 text-base text-[var(--text-secondary)]">
+              No tienes entregas pendientes en este momento.
+            </p>
           </div>
         )}
 
-        {/* ── Completed deliveries ─────────────────────────── */}
         {completed.length > 0 && (
           <section>
-            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
               Completadas ({completed.length})
             </h2>
-            <div className="space-y-2">
+            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] divide-y divide-[var(--rule-base)] overflow-hidden">
               {completed.map((a) => (
-                <div
-                  key={a.id}
-                  className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3 flex items-center gap-3"
-                >
-                  <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
+                <div key={a.id} className="flex items-center gap-4 px-5 py-3">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success)]/10 text-[var(--data-success)] flex items-center justify-center shrink-0">
+                    <CheckBadge className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{a.customerName}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-base font-bold text-[var(--text-primary)] truncate">
+                      {a.customerName}
+                    </p>
+                    <p className="text-sm font-semibold text-[var(--text-tertiary)]">
                       {a.deliveredAt
-                        ? new Date(a.deliveredAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })
+                        ? new Date(a.deliveredAt).toLocaleTimeString("es-PE", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                         : "—"}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-emerald-600">+S/{a.fee.toFixed(2)}</span>
+                  <span className="text-base font-extrabold text-[var(--data-success)] tabular-nums shrink-0">
+                    +S/ {a.fee.toFixed(2)}
+                  </span>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        <p className="text-center text-xs text-gray-400 pb-6">
-          Se actualiza automáticamente cada 30 segundos
+        <p className="text-center text-sm font-semibold text-[var(--text-tertiary)] pb-4">
+          Se actualiza cada 30 segundos
         </p>
+      </div>
+    </div>
+  );
+}
+
+function HeroStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white/15 backdrop-blur p-3 lg:p-4">
+      <div className="flex items-center gap-2 mb-1 text-white/85">
+        {icon}
+        <span className="text-xs font-extrabold uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-2xl lg:text-3xl font-extrabold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function ActiveCard({
+  a,
+  updating,
+  onAdvance,
+}: {
+  a: Assignment;
+  updating: boolean;
+  onAdvance: (next: string) => void;
+}) {
+  const cfg = getStatus(a.status);
+  const Icon = cfg.icon;
+  return (
+    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-extrabold uppercase tracking-wider ${TONE_BG[cfg.tone]}`}>
+            <Icon className="h-4 w-4" />
+            {cfg.label}
+          </span>
+          <span className="text-xs font-bold text-[var(--text-tertiary)]">
+            {timeAgo(a.createdAt)}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-lg font-extrabold text-[var(--text-primary)]">
+            {a.customerName}
+          </p>
+          {a.customerLocation && (
+            <div className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+              <PinIcon className="h-4 w-4 text-[var(--brand-danger)] shrink-0 mt-0.5" />
+              <span className="font-semibold">{a.customerLocation}</span>
+            </div>
+          )}
+          {a.items.length > 0 && (
+            <p className="text-sm font-semibold text-[var(--text-tertiary)] line-clamp-2">
+              {a.items.map((i) => `${i.quantity}x ${i.name}`).join(" · ")}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-base">
+          <span className="font-bold text-[var(--text-secondary)]">
+            Total: S/ {a.orderTotal.toFixed(2)}
+          </span>
+          <span className="font-extrabold text-[var(--accent)]">
+            Comisión: S/ {a.fee.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {a.customerPhone && (
+            <a
+              href={`tel:${a.customerPhone}`}
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)]"
+            >
+              <PhoneRing className="h-4 w-4" />
+              Llamar
+            </a>
+          )}
+          {a.customerLocation && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.customerLocation)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--accent-soft)] text-sm font-extrabold text-[var(--accent)]"
+            >
+              <RouteIcon className="h-4 w-4" />
+              Mapa
+            </a>
+          )}
+          {cfg.next && (
+            <button
+              type="button"
+              onClick={() => onAdvance(cfg.next!)}
+              disabled={updating}
+              className="ml-auto inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--brand-primary-light)] disabled:opacity-50 text-white text-sm font-extrabold transition-colors"
+            >
+              {updating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {cfg.nextLabel}
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

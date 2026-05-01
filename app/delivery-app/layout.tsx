@@ -21,7 +21,7 @@ export default function DeliveryAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans">
+    <div className="min-h-screen bg-[var(--surface-canvas)] font-sans">
       <DeliveryAppShell>{children}</DeliveryAppShell>
     </div>
   );

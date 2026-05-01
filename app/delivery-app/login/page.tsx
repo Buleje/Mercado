@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Phone, Lock, ArrowRight, Bike } from "@buleje/design-system/icons";
+import { Loader2, ArrowRight } from "@buleje/design-system/icons";
+import { HeroDeliveryIllustration, MotoIcon } from "@/components/delivery/icons";
 
 export default function DeliveryLoginPage() {
   const router = useRouter();
@@ -41,85 +42,143 @@ export default function DeliveryLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)]/10 mb-4">
-            <Bike className="h-8 w-8 text-[var(--accent)]" strokeWidth={2.25} />
+    <main className="min-h-screen bg-[var(--surface-canvas)] grid lg:grid-cols-2">
+      {/* ── Hero pane (solo desktop) ──────────────────────── */}
+      <aside className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-[var(--accent)] to-[var(--brand-primary-light)] text-white relative overflow-hidden">
+        <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-10 right-10 h-64 w-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+
+        <div className="flex items-center gap-3 relative">
+          <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
+            <MotoIcon className="h-7 w-7" />
           </div>
-          <h1 className="text-3xl font-extrabold text-[var(--text-primary)]">
-            Repartidor Buleje
-          </h1>
-          <p className="mt-2 text-base text-[var(--text-secondary)]">
-            Ingresá con tu teléfono para empezar a recibir pedidos
+          <div>
+            <p className="text-lg font-extrabold leading-tight">Buleje Delivery</p>
+            <p className="text-sm text-white/80">Pucallpa · Perú</p>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="text-white/90">
+            <HeroDeliveryIllustration className="h-64 w-auto" />
+          </div>
+          <h2 className="mt-8 text-4xl font-extrabold leading-tight">
+            Maneja tu tiempo,<br />gana más por viaje.
+          </h2>
+          <p className="mt-4 text-lg text-white/85 max-w-md leading-relaxed">
+            Recibe pedidos cerca de ti, navega con un toque y cobra tu propina al instante.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-          <div>
-            <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-              <Phone className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
-              Tu teléfono
-            </label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="9XXXXXXXX"
-              autoComplete="tel"
-              className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none"
-            />
-          </div>
+        <div className="grid grid-cols-3 gap-4 relative">
+          <Highlight value="2 km" label="Promedio por viaje" />
+          <Highlight value="S/ 6" label="Tarifa base" />
+          <Highlight value="24/7" label="Soporte WhatsApp" />
+        </div>
+      </aside>
 
-          <div>
-            <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-              <Lock className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
-              Contraseña
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tu contraseña"
-              autoComplete="current-password"
-              className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none"
-            />
-            <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
-              Si es tu primera vez, usá tu número de teléfono como contraseña.
+      {/* ── Form pane ──────────────────────────────────────── */}
+      <section className="flex items-center justify-center px-4 py-10 lg:px-12">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+              <MotoIcon className="h-9 w-9" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-[var(--text-primary)]">
+              Buleje Delivery
+            </h1>
+            <p className="mt-2 text-base text-[var(--text-secondary)]">
+              Ingresa con tu teléfono para empezar a recibir pedidos
             </p>
           </div>
 
-          {error && (
-            <div className="rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
-              {error}
-            </div>
-          )}
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-4xl font-extrabold text-[var(--text-primary)]">
+              Iniciar sesión
+            </h1>
+            <p className="mt-2 text-base text-[var(--text-secondary)]">
+              Ingresa con el número de WhatsApp con el que te inscribiste.
+            </p>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-extrabold text-white shadow-md transition-all hover:scale-[1.01] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5 rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 lg:p-8"
           >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />
-            ) : (
-              <>
-                Ingresar
-                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-              </>
-            )}
-          </button>
-        </form>
+            <div>
+              <label htmlFor="login-phone" className="mb-2 block text-sm font-extrabold text-[var(--text-primary)]">
+                Tu número de WhatsApp
+              </label>
+              <input
+                id="login-phone"
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9XX XXX XXX"
+                autoComplete="tel"
+                className="w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none transition-colors"
+              />
+            </div>
 
-        <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
-          ¿Aún no sos repartidor?{" "}
-          <Link href="/marketplace/repartidor" className="font-bold text-[var(--accent)]">
-            Inscribite acá
-          </Link>
-        </p>
-      </div>
+            <div>
+              <label htmlFor="login-pwd" className="mb-2 block text-sm font-extrabold text-[var(--text-primary)]">
+                Contraseña
+              </label>
+              <input
+                id="login-pwd"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tu contraseña"
+                autoComplete="current-password"
+                className="w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none transition-colors"
+              />
+              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+                Primera vez: usa tu número de teléfono como contraseña.
+              </p>
+            </div>
+
+            {error && (
+              <div role="alert" className="rounded-2xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-4 py-3 text-sm font-bold text-[var(--brand-danger)]">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex w-full h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/25 transition-all hover:translate-y-[-1px] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />
+              ) : (
+                <>
+                  Entrar
+                  <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+            ¿Aún no eres repartidor?{" "}
+            <Link href="/marketplace/repartidor" className="font-extrabold text-[var(--accent)]">
+              Inscríbete aquí
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function Highlight({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-2xl bg-white/15 backdrop-blur px-4 py-3">
+      <p className="text-2xl font-extrabold leading-none">{value}</p>
+      <p className="mt-1 text-xs font-semibold text-white/80 leading-tight">{label}</p>
+    </div>
   );
 }

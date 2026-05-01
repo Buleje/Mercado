@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Loader2, ArrowRight, X, Check, AlertTriangle } from "@buleje/design-system/icons";
 import {
-  CheckCircle2, XCircle, MapPin, Phone, Clock, Loader2,
-  ArrowRight, AlertTriangle,
-} from "@buleje/design-system/icons";
+  TimerIcon,
+  PinIcon,
+  CashIcon,
+  PackageIcon,
+  PhoneRing,
+  CheckBadge,
+  HeroDeliveryIllustration,
+} from "@/components/delivery/icons";
 
 interface OfferData {
   id: string;
@@ -39,7 +45,6 @@ export default function OfferPage() {
   const [outcome, setOutcome] = useState<"none" | "accepted" | "rejected" | "expired" | "lost">("none");
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar oferta del partner
   useEffect(() => {
     if (!offerId) return;
     let cancelled = false;
@@ -55,16 +60,11 @@ export default function OfferPage() {
         }
         setOffer(target);
       })
-      .catch(() => {
-        if (!cancelled) setError("No pudimos cargar la oferta. Intenta de nuevo.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .catch(() => { if (!cancelled) setError("No pudimos cargar la oferta. Intenta de nuevo."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [offerId]);
 
-  // Countdown
   useEffect(() => {
     if (!offer || outcome !== "none") return;
     const tick = () => {
@@ -92,10 +92,7 @@ export default function OfferPage() {
       const res = await fetch(`/api/delivery/offers/${offerId}/accept`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrf(),
-        },
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
       });
       const data = await res.json();
       if (!res.ok) {
@@ -124,10 +121,7 @@ export default function OfferPage() {
       await fetch(`/api/delivery/offers/${offerId}/reject`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrf(),
-        },
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
       });
       setOutcome("rejected");
       setTimeout(() => router.push("/delivery-app"), 800);
@@ -148,11 +142,15 @@ export default function OfferPage() {
 
   if (outcome === "accepted") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--data-success)]/5 px-4">
+      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
         <div className="text-center">
-          <CheckCircle2 className="h-20 w-20 mx-auto text-[var(--data-success)]" strokeWidth={2.25} />
-          <h1 className="mt-4 text-3xl font-extrabold text-[var(--text-primary)]">¡Pedido aceptado!</h1>
-          <p className="mt-2 text-[var(--text-secondary)]">Llevándote al panel…</p>
+          <div className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
+            <CheckBadge className="h-14 w-14" />
+          </div>
+          <h1 className="mt-5 text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)]">
+            ¡Pedido aceptado!
+          </h1>
+          <p className="mt-2 text-base text-[var(--text-secondary)]">Llevándote al panel…</p>
         </div>
       </main>
     );
@@ -162,21 +160,24 @@ export default function OfferPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
         <div className="text-center max-w-md">
-          <AlertTriangle className="h-20 w-20 mx-auto text-amber-500" strokeWidth={2.25} />
-          <h1 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
+            <AlertTriangle className="h-10 w-10" strokeWidth={2.25} />
+          </div>
+          <h1 className="mt-5 text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)]">
             {outcome === "expired" && "La oferta venció"}
             {outcome === "lost" && "Otro repartidor lo tomó"}
             {outcome === "rejected" && "Pedido rechazado"}
           </h1>
-          <p className="mt-2 text-[var(--text-secondary)]">
+          <p className="mt-2 text-base text-[var(--text-secondary)]">
             {error ?? "Te avisaremos cuando llegue el próximo pedido cerca tuyo."}
           </p>
           <button
+            type="button"
             onClick={() => router.push("/delivery-app")}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3 font-bold text-white"
+            className="mt-6 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] font-extrabold text-white shadow-lg shadow-[var(--accent)]/25"
           >
             Volver al panel
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
           </button>
         </div>
       </main>
@@ -190,96 +191,196 @@ export default function OfferPage() {
   const urgent = secondsLeft <= 30;
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] flex flex-col">
-      {/* Countdown sticky top — color cambia con urgencia */}
+    <main className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* Countdown sticky */}
       <div
-        className={`sticky top-0 z-50 px-4 py-3 text-center text-white font-extrabold text-2xl tabular-nums shadow-md ${
-          urgent ? "bg-red-600" : "bg-[var(--accent)]"
+        className={`sticky top-0 z-50 px-4 py-3 text-center text-white font-extrabold tabular-nums shadow-md transition-colors ${
+          urgent ? "bg-[var(--brand-danger)]" : "bg-[var(--accent)]"
         }`}
+        role="timer"
+        aria-live="polite"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
-        <Clock className="inline h-5 w-5 mr-2 mb-0.5" strokeWidth={2.5} />
-        {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
-        <span className="text-sm font-bold ml-2 opacity-80">para aceptar</span>
+        <div className="max-w-3xl mx-auto flex items-center justify-center gap-3">
+          <TimerIcon className="h-6 w-6" />
+          <span className="text-2xl lg:text-3xl">
+            {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </span>
+          <span className="text-sm lg:text-base font-bold opacity-90">para aceptar</span>
+        </div>
       </div>
 
-      <section className="flex-1 px-4 pt-6 pb-32 max-w-2xl mx-auto w-full">
-        <div className="text-center mb-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-            Oferta nueva · Intento #{offer.attempt}
-          </span>
-          <h1 className="mt-3 text-3xl font-extrabold text-[var(--text-primary)]">
-            S/ {offer.feeOffered.toFixed(0)} <span className="text-base font-semibold text-[var(--text-tertiary)]">de envío</span>
-          </h1>
-          <p className="mt-1 text-[var(--text-secondary)]">
-            <MapPin className="inline h-4 w-4 mb-1 mr-1" />
-            {offer.distanceKm.toFixed(1)} km de distancia
-          </p>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 pb-40 lg:pb-10 grid lg:grid-cols-[1.1fr_1fr] gap-6 lg:gap-10">
+        {/* ── Info principal ─────────────────────────────── */}
+        <section className="space-y-5">
+          <header>
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 h-8 text-xs font-extrabold uppercase tracking-wider">
+              Oferta nueva · Intento #{offer.attempt}
+            </span>
+            <h1 className="mt-3 text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums">
+              S/ {offer.feeOffered.toFixed(2)}
+              <span className="ml-3 text-base lg:text-lg font-bold text-[var(--text-tertiary)] align-middle">
+                tu pago
+              </span>
+            </h1>
+            <p className="mt-2 text-base lg:text-lg text-[var(--text-secondary)] flex items-center gap-2">
+              <PinIcon className="h-5 w-5 text-[var(--accent)]" />
+              <span className="font-bold text-[var(--text-primary)]">
+                {offer.distanceKm.toFixed(1)} km
+              </span>
+              <span className="text-[var(--text-tertiary)]">de distancia</span>
+            </p>
+          </header>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cliente</p>
-            <p className="mt-1 text-base font-bold text-[var(--text-primary)]">{offer.order.customerName}</p>
-            {offer.order.customerPhone && (
-              <p className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5" /> {offer.order.customerPhone}
-              </p>
-            )}
+          <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] divide-y divide-[var(--rule-base)]">
+            <Block
+              icon={<PinIcon className="h-6 w-6" />}
+              title="Cliente"
+              big={offer.order.customerName}
+              extras={[
+                offer.order.customerPhone
+                  ? { icon: <PhoneRing className="h-4 w-4" />, text: offer.order.customerPhone }
+                  : null,
+              ]}
+            />
+            <Block
+              icon={<PinIcon className="h-6 w-6" />}
+              title="Dirección de entrega"
+              big={offer.order.customerLocation ?? "Sin dirección"}
+              extras={[
+                offer.order.customerReference
+                  ? { icon: null, text: `Referencia: ${offer.order.customerReference}` }
+                  : null,
+              ]}
+            />
+            <Block
+              icon={<CashIcon className="h-6 w-6" />}
+              title="Total del pedido"
+              big={`S/ ${offer.order.total.toFixed(2)}`}
+              extras={[
+                offer.order.notes ? { icon: null, text: offer.order.notes } : null,
+              ]}
+            />
           </div>
 
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Dirección</p>
-            <p className="mt-1 text-base text-[var(--text-primary)]">{offer.order.customerLocation ?? "—"}</p>
-            {offer.order.customerReference && (
-              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                Referencia: {offer.order.customerReference}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pedido</p>
-            <p className="mt-1 text-base font-bold text-[var(--text-primary)]">S/ {offer.order.total.toFixed(2)}</p>
-            {offer.order.notes && (
-              <p className="mt-1 text-sm text-[var(--text-tertiary)]">{offer.order.notes}</p>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="mt-4 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
-            {error}
-          </div>
-        )}
-      </section>
-
-      {/* Botones sticky bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] p-4 flex gap-3 max-w-2xl mx-auto w-full">
-        <button
-          type="button"
-          onClick={handleReject}
-          disabled={submitting}
-          className="inline-flex h-14 flex-[1] items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-strong)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-primary)] disabled:opacity-50"
-        >
-          <XCircle className="h-5 w-5" />
-          Rechazar
-        </button>
-        <button
-          type="button"
-          onClick={handleAccept}
-          disabled={submitting || secondsLeft === 0}
-          className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-xl bg-[var(--data-success)] text-base font-extrabold text-white shadow-lg disabled:opacity-50"
-        >
-          {submitting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <>
-              <CheckCircle2 className="h-5 w-5" />
-              Aceptar pedido
-            </>
+          {error && (
+            <div role="alert" className="rounded-2xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-4 py-3 text-base font-bold text-[var(--brand-danger)]">
+              {error}
+            </div>
           )}
-        </button>
+        </section>
+
+        {/* ── Lateral: ilustración + acciones (desktop) ──── */}
+        <aside className="hidden lg:flex lg:flex-col gap-5">
+          <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent-soft)] to-transparent p-8 text-center text-[var(--accent)]">
+            <HeroDeliveryIllustration className="h-48 w-auto mx-auto" />
+            <p className="mt-4 text-base font-bold text-[var(--text-primary)]">
+              {offer.distanceKm.toFixed(1)} km hasta {offer.order.customerName}
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Tu base + propina llegan al instante a tu cuenta.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <ActionButtons
+              onAccept={handleAccept}
+              onReject={handleReject}
+              submitting={submitting}
+              expired={secondsLeft === 0}
+              fee={offer.feeOffered}
+            />
+          </div>
+        </aside>
+      </div>
+
+      {/* Botones sticky bottom (mobile) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] p-4">
+        <div className="max-w-3xl mx-auto">
+          <ActionButtons
+            onAccept={handleAccept}
+            onReject={handleReject}
+            submitting={submitting}
+            expired={secondsLeft === 0}
+            fee={offer.feeOffered}
+          />
+        </div>
       </div>
     </main>
+  );
+}
+
+function ActionButtons({
+  onAccept,
+  onReject,
+  submitting,
+  expired,
+  fee,
+}: {
+  onAccept: () => void;
+  onReject: () => void;
+  submitting: boolean;
+  expired: boolean;
+  fee: number;
+}) {
+  return (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={onReject}
+        disabled={submitting}
+        className="inline-flex h-14 flex-[1] items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-extrabold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+      >
+        <X className="h-5 w-5" strokeWidth={2.5} />
+        Rechazar
+      </button>
+      <button
+        type="button"
+        onClick={onAccept}
+        disabled={submitting || expired}
+        className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-2xl bg-[var(--data-success)] text-base lg:text-lg font-extrabold text-white shadow-lg shadow-[var(--data-success)]/30 disabled:opacity-50"
+      >
+        {submitting ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <>
+            <Check className="h-5 w-5" strokeWidth={2.5} />
+            Aceptar · S/ {fee.toFixed(2)}
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function Block({
+  icon,
+  title,
+  big,
+  extras,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  big: string;
+  extras: ({ icon: React.ReactNode | null; text: string } | null)[];
+}) {
+  return (
+    <div className="p-5 lg:p-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[var(--accent)]">{icon}</span>
+        <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          {title}
+        </p>
+      </div>
+      <p className="text-lg lg:text-xl font-extrabold text-[var(--text-primary)]">{big}</p>
+      {extras
+        .filter((e): e is { icon: React.ReactNode | null; text: string } => Boolean(e))
+        .map((e, i) => (
+          <p key={i} className="mt-1 text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+            {e.icon && <span className="text-[var(--text-tertiary)]">{e.icon}</span>}
+            {e.text}
+          </p>
+        ))}
+    </div>
   );
 }
