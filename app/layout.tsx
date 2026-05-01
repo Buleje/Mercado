@@ -163,6 +163,7 @@ async function getCachedReviewStats() {
   cacheTag("review-stats");
   cacheLife("hours");
   try {
+    // eslint-disable-next-line no-restricted-properties -- query global cross-tenant para schema.org del root layout
     const agg = await prisma.review.aggregate({ _avg: { rating: true }, _count: { rating: true } });
     if (agg._count.rating > 0) {
       return {
@@ -250,6 +251,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="167x167" href="/api/pwa-icon/167" />
         <link rel="apple-touch-icon" sizes="120x120" href="/api/pwa-icon/120" />
 
+        {/* Workaround del bug turbopack RSC en dev: negative time stamp en
+            flushComponentPerformance. Patchea performance.measure parse-time,
+            antes de que el runtime turbopack lo invoque. No afecta producción. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/perf-measure-patch.js" />
+
         {/* Back-nav refresh — script externo, parse-time, antes que React/Next.
             Recarga la página en cualquier back/forward del browser para que
             todos los datos, banners y componentes se rehidraten. Cubre:
@@ -257,6 +264,7 @@ export default function RootLayout({
             - pageshow persisted=true (bfcache restoration de Safari/iOS/FF)
             - navType=back_forward al mount (back-nav que cargó este documento)
             Externo porque el CSP bloquea inline scripts. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/back-nav-refresh.js" />
       </head>
       <body className={`antialiased ${GeistSans.className}`}>

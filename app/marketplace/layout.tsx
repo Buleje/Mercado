@@ -10,6 +10,7 @@ import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSeconda
 import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
 import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import BottomNav from "@/components/marketplace/BottomNav";
+import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
@@ -65,12 +66,12 @@ export default function MarketplaceLayout({
               <MainWithBackKey>{children}</MainWithBackKey>
               {/* Footer persistente — evita flash / remount al navegar. */}
               <Footer />
-              {/* 4 widgets floating (compare, quick-add, storage doctor)
-                  lazy-loadeados — descarga diferida post-FCP. */}
-              <MarketplaceFloatingWidgets />
-              {/* Sticky cart bar — solo mobile/tablet, aparece cuando hay items. */}
-              <StickyCartBar />
-              <BottomNav />
+              {/* Widgets de compra — ocultos en rutas de inscripción/onboarding. */}
+              <ConditionalShoppingChrome>
+                <MarketplaceFloatingWidgets />
+                <StickyCartBar />
+                <BottomNav />
+              </ConditionalShoppingChrome>
               {/* Toast de cambio de modo nav — solo aparece al detectar cambio */}
               <NavModeToast />
             </div>

@@ -11,20 +11,30 @@
  */
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Clock } from "@buleje/design-system/icons";
 import QuickActionsDock from "@/components/ui-system/QuickActionsDock";
 import RecentlyViewedDrawer from "@/components/ui-system/RecentlyViewedDrawer";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 
+// Rutas del marketplace donde el dock NO aplica (no son flujo de compra).
+const HIDE_ON = [
+  "/marketplace/repartidor",
+  "/marketplace/aplicar",
+  "/marketplace/onboarding",
+];
+
 /**
  * FloatingDockController — Sólo deja la acción "Productos recientes"
- * cuando hay historial. Removidos por feedback del usuario:
- *   - "Volver arriba" (scroll-top): poco usado; ocupa espacio en mobile
- *   - "Atajos de teclado": no aplica a mobile, distraía
+ * cuando hay historial Y el usuario está en flujo de compra.
  */
 export default function FloatingDockController() {
+  const pathname = usePathname() ?? "";
   const [historyOpen, setHistoryOpen] = useState(false);
   const { items } = useRecentlyViewed();
+
+  // Skip en rutas de inscripción/onboarding (no son shopping).
+  if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
 
   // Sin historial → no rendear nada (libera la zona derecha del viewport
   // para el chat flotante y el sticky cart bar).

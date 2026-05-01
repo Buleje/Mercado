@@ -14,7 +14,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import {
   Trash2,
@@ -127,11 +128,21 @@ export default function CarritoPage() {
   const { byStore, totalByStore, grandTotal, itemCount, updateQuantity, removeItem, clearAll } =
     useMarketplaceCart();
   const { customer: loggedCustomer } = useCustomer();
+  const router = useRouter();
   const storeIds = Object.keys(byStore);
   const isEmpty = storeIds.length === 0;
   const [couponDiscount, setCouponDiscount] = useState(0);
   // Si no hay sesión, mandamos al gate auth que fuerza el modal con fondo vacío
   const continueHref = loggedCustomer ? "/checkout/datos" : "/checkout/auth";
+
+  // Prefetch del próximo paso para que la transición sea instantánea
+  useEffect(() => {
+    if (!isEmpty) {
+      router.prefetch(continueHref);
+      // Si va a auth, también precachear datos para el siguiente click
+      if (!loggedCustomer) router.prefetch("/checkout/datos");
+    }
+  }, [isEmpty, continueHref, loggedCustomer, router]);
 
   const handleQty = useCallback(
     (item: CartItem, qty: number) => updateQuantity(item.storeId, item.productId, qty),

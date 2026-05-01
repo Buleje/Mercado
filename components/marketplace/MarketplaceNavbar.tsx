@@ -51,6 +51,7 @@ const NotificationsMenu = dynamic(
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
+import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
@@ -428,6 +429,10 @@ export default function MarketplaceNavbar() {
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
               {/* Currency + Locale switchers removidos — default: Soles (PEN) + Español (es-PE) */}
 
+              {/* Order tracker badge — visible cuando hay pedido reciente,
+                  reabre el OrderSuccessModal con animación pulse. */}
+              <OrderTrackerNavBadge variant="compact" />
+
               {/* Notif bell dropdown */}
               <NotificationsMenu />
 
@@ -598,6 +603,8 @@ export default function MarketplaceNavbar() {
 
             {/* ── Mobile: cart + hamburger ── */}
             <div className="flex md:hidden items-center gap-1 ml-auto">
+              {/* Order tracker badge mobile */}
+              <OrderTrackerNavBadge variant="compact" />
               <span data-tour="cart" className="inline-flex">
                 <CartBadge onClick={handleOpenCart} />
               </span>

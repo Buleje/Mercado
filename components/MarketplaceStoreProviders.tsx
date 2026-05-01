@@ -27,7 +27,9 @@ import { TenantSlugProvider } from "@/contexts/tenant-context";
 import { WishlistProvider } from "@/contexts/wishlist-context";
 import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
+import { LastOrderProvider } from "@/contexts/last-order-context";
 import ThemeInjector from "@/components/store/ThemeInjector";
+import OrderSuccessModal from "@/components/marketplace/order-success/OrderSuccessModal";
 
 export default function MarketplaceStoreProviders({
   children,
@@ -47,7 +49,15 @@ export default function MarketplaceStoreProviders({
                 <CompareProvider>
                   <SocioBulejeProvider>
                     <SubscriptionProvider>
-                      <CustomerProvider>{children}</CustomerProvider>
+                      <CustomerProvider>
+                        <LastOrderProvider>
+                          {children}
+                          {/* Modal global de éxito post-pedido. Se monta una
+                              sola vez aquí (raíz del marketplace + tiendas +
+                              checkout) para que sobreviva a navegaciones. */}
+                          <OrderSuccessModal />
+                        </LastOrderProvider>
+                      </CustomerProvider>
                     </SubscriptionProvider>
                   </SocioBulejeProvider>
                 </CompareProvider>
