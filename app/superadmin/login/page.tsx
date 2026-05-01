@@ -3,10 +3,10 @@
 /**
  * /superadmin/login — Login para dueños de la plataforma Buleje.
  *
- * Identidad visual distinta del admin: paleta sobria (zinc-950 + amber para
- * "warning de privilegio"), eyebrow "Plataforma Buleje · Acceso restringido",
- * mensajes que dejan claro que esto NO es para dueños de tienda. Soporta el
- * flujo 2FA (TOTP) si el superadmin lo tiene activo.
+ * Identidad visual: violeta del proyecto (`--brand-purple`) sobre fondo zinc-950.
+ * Distintivo del admin (teal) y del delivery (orange/teal). El violeta indica
+ * "plataforma" / "admin de admins" — patrón estándar de SaaS (Stripe, Linear).
+ * Soporta flujo 2FA TOTP.
  */
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
@@ -14,14 +14,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import {
   Loader2, Lock, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff, User,
-  AlertTriangle, Building2, ArrowRight, Crown, Server, Activity,
+  AlertTriangle, Building2, ArrowRight, Crown, Server, Activity, Bike, Store,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const PLATFORM_FEATURES: Array<{ icon: typeof Server; label: string; desc: string }> = [
   { icon: Building2, label: "Gestión de tenants", desc: "Crear, suspender e impersonar tiendas." },
-  { icon: Server, label: "Salud del sistema", desc: "Monitoreo, crons, salud de la plataforma." },
-  { icon: Activity, label: "Audit log Ley 29733", desc: "Trazabilidad completa de accesos a datos." },
+  { icon: Server, label: "Salud del sistema", desc: "Crons, monitoreo, deploys, capacidad." },
+  { icon: Activity, label: "Audit log Ley 29733", desc: "Trazabilidad completa de accesos." },
 ];
 
 export default function SuperAdminLoginPage() {
@@ -38,11 +38,9 @@ export default function SuperAdminLoginPage() {
   const [error, setError] = useState<string | false>(false);
   const [shaking, setShaking] = useState(false);
 
-  // 2FA state
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
 
-  // Si ya tiene cookie de sesión, redirigir al dashboard
   useEffect(() => {
     if (document.cookie.includes("buleje-platform-sess")) {
       router.replace("/superadmin/dashboard");
@@ -116,16 +114,22 @@ export default function SuperAdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 grid lg:grid-cols-[1.05fr_1fr]">
-      {/* ─── Hero — solo desktop, paleta oscura plataforma ──────────────── */}
+      {/* ─── Hero — paleta violeta del proyecto ─────────────────────────── */}
       <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-zinc-900 text-white">
-        {/* Gradient overlay con tinte ámbar (warning privilegio) */}
+        {/* Glow violeta */}
         <div
           aria-hidden
-          className="absolute inset-0 opacity-50 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(at 20% 0%, rgba(245,158,11,0.18) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(0,180,166,0.12) 0px, transparent 50%)",
+              "radial-gradient(at 25% 0%, rgba(139,92,246,0.30) 0px, transparent 55%), radial-gradient(at 75% 100%, rgba(139,92,246,0.18) 0px, transparent 50%)",
           }}
+        />
+        {/* Mesh blob */}
+        <div
+          aria-hidden
+          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-40 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, var(--brand-purple) 0%, transparent 70%)" }}
         />
         {/* Pattern */}
         <div
@@ -133,36 +137,57 @@ export default function SuperAdminLoginPage() {
           className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
             backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
+            backgroundSize: "32px 32px",
           }}
         />
 
-        <header className="relative z-10 flex items-center gap-3">
-          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 border border-amber-500/30">
-            <Crown className="h-5 w-5 text-amber-400" strokeWidth={2.25} />
+        {/* Top */}
+        <header className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg"
+              style={{ background: "var(--brand-purple)", boxShadow: "0 12px 32px -8px rgba(139,92,246,0.5)" }}
+            >
+              <Crown className="h-6 w-6" strokeWidth={2.25} />
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]" style={{ color: "var(--brand-purple)" }}>
+                Buleje · Plataforma
+              </p>
+              <p className="text-base font-extrabold leading-tight">Superadmin</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-amber-400">
-              Plataforma · Acceso restringido
-            </p>
-            <p className="text-base font-extrabold leading-tight">Superadmin Buleje</p>
-          </div>
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[length:var(--ts-2xs)] font-bold"
+            style={{
+              background: "rgba(139,92,246,0.12)",
+              borderColor: "rgba(139,92,246,0.35)",
+              color: "rgb(196,181,253)",
+            }}
+          >
+            <Lock className="h-3 w-3" strokeWidth={2.5} />
+            Acceso restringido
+          </span>
         </header>
 
-        <div className="relative z-10 max-w-sm">
+        {/* Middle */}
+        <div className="relative z-10 max-w-md">
           <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05] text-white">
-            Plataforma Buleje. Sólo para administradores.
+            Plataforma Buleje. Sólo para dueños.
           </PageTitle>
           <p className="mt-4 text-sm text-white/70 leading-relaxed">
-            Acceso de plataforma. Si sos dueño de una bodega, este NO es tu panel —
-            usá el Panel del Negocio.
+            Acceso a operaciones de plataforma. Si tenés una bodega, este NO es
+            tu panel — usá el Panel del Negocio.
           </p>
 
           <ul className="mt-8 space-y-4">
             {PLATFORM_FEATURES.map((f) => (
               <li key={f.label} className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 shrink-0">
-                  <f.icon className="h-4 w-4 text-amber-400" strokeWidth={2} />
+                <span
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border shrink-0"
+                  style={{ background: "rgba(139,92,246,0.10)", borderColor: "rgba(139,92,246,0.25)" }}
+                >
+                  <f.icon className="h-4 w-4" strokeWidth={2} style={{ color: "var(--brand-purple)" }} />
                 </span>
                 <div>
                   <p className="text-sm font-bold">{f.label}</p>
@@ -173,63 +198,77 @@ export default function SuperAdminLoginPage() {
           </ul>
         </div>
 
-        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/50 max-w-sm">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-400" />
-          <span>
-            Cada acceso queda registrado en el audit log (Ley 29733 · Protección de Datos).
+        {/* Bottom */}
+        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/55 max-w-sm">
+          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
+          <span className="leading-relaxed">
+            Cada acceso queda registrado en el audit log. Ley 29733 PE ·
             Sesión 12h · 2FA recomendado.
           </span>
         </footer>
       </aside>
 
-      {/* ─── Form ───────────────────────────────────────────────────────── */}
-      <main className="flex items-center justify-center p-6 sm:p-12 bg-zinc-950">
+      {/* ─── Form — fondo zinc-950 ──────────────────────────────────────── */}
+      <main className="flex items-center justify-center p-6 sm:p-12">
         <div className={cn("w-full max-w-sm text-white", shaking && "animate-[shake_0.45s_ease-out]")}>
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30">
-              <Crown className="h-5 w-5 text-amber-400" strokeWidth={2.25} />
+            <div
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ background: "var(--brand-purple)" }}
+            >
+              <Crown className="h-5 w-5" strokeWidth={2.25} />
             </div>
             <p className="font-extrabold text-white text-lg tracking-tight">Plataforma Buleje</p>
           </div>
 
           {/* Eyebrow + título */}
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-amber-400 mb-2">
-            {challengeId ? "Verificación de 2 pasos" : "Plataforma · Superadmin"}
+          <p
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
+            style={{ color: "var(--brand-purple)" }}
+          >
+            {challengeId ? "Verificación 2 pasos" : "Plataforma · Superadmin"}
           </p>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold text-white leading-tight">
-            {challengeId ? "Confirmá tu identidad" : "Acceso restringido"}
+            {challengeId ? "Confirmá tu identidad" : "Acceso a la plataforma"}
           </SectionTitle>
           <p className="text-sm text-white/60 mt-2">
             {challengeId
               ? "Ingresá el código de 6 dígitos de tu app autenticadora."
-              : "Sólo dueños de la plataforma. ¿Tenés una bodega? Usá el panel del negocio."}
+              : "Sólo dueños de Buleje. ¿Tenés una bodega? Usá el Panel del Negocio abajo."}
           </p>
 
           {/* Aviso sesión expirada */}
           {sessionExpired && !challengeId && (
-            <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm font-semibold text-amber-300">
+            <div
+              className="mt-5 flex items-start gap-2 p-3 rounded-xl text-sm font-semibold"
+              style={{
+                background: "rgba(139,92,246,0.10)",
+                border: "1px solid rgba(139,92,246,0.30)",
+                color: "rgb(196,181,253)",
+              }}
+            >
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               Tu sesión expiró por seguridad. Volvé a ingresar.
             </div>
           )}
 
-          {/* Form login (paso 1) */}
+          {/* Form login */}
           {!challengeId && (
-            <form onSubmit={handleLogin} className="mt-8 space-y-5">
+            <form onSubmit={handleLogin} className="mt-7 space-y-4">
               <div className="space-y-1.5">
-                <label htmlFor="su-username" className="text-xs font-bold uppercase tracking-wider text-white/60">
+                <label htmlFor="su-username" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/60">
                   Usuario
                 </label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" strokeWidth={2} />
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" strokeWidth={2} />
                   <input
                     ref={usernameRef}
                     id="su-username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-white/10 bg-zinc-900 text-sm font-semibold text-white placeholder:text-white/30 outline-none focus:border-amber-400 transition-colors"
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-white/10 bg-zinc-900 text-sm font-semibold text-white placeholder:text-white/30 outline-none focus:border-[var(--brand-purple)] focus:ring-4 focus:ring-[var(--brand-purple)]/20 transition-all"
                     placeholder="superadmin"
                     autoComplete="username"
                     required
@@ -238,17 +277,17 @@ export default function SuperAdminLoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="su-password" className="text-xs font-bold uppercase tracking-wider text-white/60">
+                <label htmlFor="su-password" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/60">
                   Contraseña
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" strokeWidth={2} />
+                <div className="relative group">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" strokeWidth={2} />
                   <input
                     id="su-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-12 pl-10 pr-11 rounded-xl border-2 border-white/10 bg-zinc-900 text-sm font-semibold text-white placeholder:text-white/30 outline-none focus:border-amber-400 transition-colors"
+                    className="w-full h-12 pl-10 pr-11 rounded-xl border-2 border-white/10 bg-zinc-900 text-sm font-semibold text-white placeholder:text-white/30 outline-none focus:border-[var(--brand-purple)] focus:ring-4 focus:ring-[var(--brand-purple)]/20 transition-all"
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
@@ -257,7 +296,7 @@ export default function SuperAdminLoginPage() {
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/5 transition-colors"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={showPassword ? "Ocultar" : "Mostrar"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -265,7 +304,7 @@ export default function SuperAdminLoginPage() {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   {error}
                 </div>
@@ -274,7 +313,11 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading || !username || !password}
-                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-amber-500 text-zinc-950 text-sm font-extrabold uppercase tracking-wider hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-white text-sm font-extrabold uppercase tracking-[var(--ls-wider)] transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] shadow-lg"
+                style={{
+                  background: "var(--brand-purple)",
+                  boxShadow: "0 12px 32px -8px rgba(139,92,246,0.45)",
+                }}
               >
                 {loading ? (
                   <>
@@ -291,15 +334,19 @@ export default function SuperAdminLoginPage() {
             </form>
           )}
 
-          {/* Form 2FA (paso 2) */}
+          {/* Form 2FA */}
           {challengeId && (
-            <form onSubmit={handleVerify2FA} className="mt-8 space-y-5">
+            <form onSubmit={handleVerify2FA} className="mt-7 space-y-4">
               <div className="space-y-1.5">
-                <label htmlFor="su-code" className="text-xs font-bold uppercase tracking-wider text-white/60">
+                <label htmlFor="su-code" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/60">
                   Código TOTP
                 </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400" strokeWidth={2} />
+                  <KeyRound
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+                    strokeWidth={2}
+                    style={{ color: "var(--brand-purple)" }}
+                  />
                   <input
                     ref={codeRef}
                     id="su-code"
@@ -309,7 +356,10 @@ export default function SuperAdminLoginPage() {
                     maxLength={6}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="w-full h-14 pl-10 pr-4 rounded-xl border-2 border-amber-500/30 bg-zinc-900 text-center text-2xl font-mono font-bold text-white tracking-[0.5em] placeholder:text-white/20 outline-none focus:border-amber-400 transition-colors"
+                    className="w-full h-14 pl-10 pr-4 rounded-xl border-2 bg-zinc-900 text-center text-2xl font-mono font-bold text-white tracking-[0.5em] placeholder:text-white/20 outline-none transition-all"
+                    style={{
+                      borderColor: "rgba(139,92,246,0.30)",
+                    }}
                     placeholder="000000"
                     autoComplete="one-time-code"
                     required
@@ -319,7 +369,7 @@ export default function SuperAdminLoginPage() {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   {error}
                 </div>
@@ -328,7 +378,8 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-amber-500 text-zinc-950 text-sm font-extrabold uppercase tracking-wider hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-white text-sm font-extrabold uppercase tracking-[var(--ls-wider)] transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+                style={{ background: "var(--brand-purple)" }}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                 Verificar y acceder
@@ -345,26 +396,74 @@ export default function SuperAdminLoginPage() {
             </form>
           )}
 
-          {/* Switch al panel del negocio */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <a
+          {/* Switches a otros paneles */}
+          <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
+              ¿Buscás otro panel?
+            </p>
+            <SwitchChipDark
               href="/admin/login"
-              className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
-            >
-              <div className="flex items-center gap-2.5">
-                <Building2 className="h-4 w-4 text-white/60" strokeWidth={2} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-white/50">
-                    ¿Tenés una bodega?
-                  </p>
-                  <p className="text-sm font-bold text-white">Acceder al Panel del Negocio</p>
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-amber-400 transition-colors" />
-            </a>
+              icon={<Store className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Negocio"
+              title="Panel de tu bodega"
+              accent="teal"
+            />
+            <SwitchChipDark
+              href="/delivery-app/login"
+              icon={<Bike className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Repartidor"
+              title="Acceso Delivery"
+              accent="orange"
+            />
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SwitchChipDark — variante para tema oscuro (superadmin/delivery dark form).
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SwitchChipDark({
+  href,
+  icon,
+  eyebrow,
+  title,
+  accent,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  accent: "teal" | "orange" | "violet";
+}) {
+  const accentBg =
+    accent === "teal"   ? { bg: "rgba(0,180,166,0.10)",   border: "rgba(0,180,166,0.30)",   color: "rgb(94,234,212)" } :
+    accent === "orange" ? { bg: "rgba(249,115,22,0.10)",  border: "rgba(249,115,22,0.30)",  color: "rgb(253,186,116)" } :
+                          { bg: "rgba(139,92,246,0.10)",  border: "rgba(139,92,246,0.30)",  color: "rgb(196,181,253)" };
+
+  return (
+    <a
+      href={href}
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 transition-all group"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border"
+          style={{ background: accentBg.bg, borderColor: accentBg.border, color: accentBg.color }}
+        >
+          {icon}
+        </span>
+        <div>
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40">
+            {eyebrow}
+          </p>
+          <p className="text-sm font-extrabold text-white">{title}</p>
+        </div>
+      </div>
+      <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+    </a>
   );
 }

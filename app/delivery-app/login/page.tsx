@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowRight } from "@buleje/design-system/icons";
+import { Loader2, ArrowRight, Store, Crown, Bike } from "@buleje/design-system/icons";
 import { HeroDeliveryIllustration, MotoIcon } from "@/components/delivery/icons";
+import { cn } from "@/lib/utils";
 
 export default function DeliveryLoginPage() {
   const router = useRouter();
@@ -168,9 +169,65 @@ export default function DeliveryLoginPage() {
               Inscríbete aquí
             </Link>
           </p>
+
+          {/* Switches a otros paneles */}
+          <div className="mt-8 pt-6 border-t border-[var(--rule-soft)] space-y-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+              ¿Buscás otro panel?
+            </p>
+            <DeliverySwitchChip
+              href="/admin/login"
+              icon={<Store className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Negocio"
+              title="Panel de la bodega"
+              accent="teal"
+            />
+            <DeliverySwitchChip
+              href="/superadmin/login"
+              icon={<Crown className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Plataforma"
+              title="Acceso Superadmin"
+              accent="violet"
+            />
+          </div>
         </div>
       </section>
     </main>
+  );
+}
+
+function DeliverySwitchChip({
+  href, icon, eyebrow, title, accent,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  accent: "teal" | "violet" | "orange";
+}) {
+  const styles =
+    accent === "violet" ? "bg-[var(--brand-purple)]/10 border-[var(--brand-purple)]/30 text-[var(--brand-purple)]" :
+    accent === "orange" ? "bg-[var(--brand-secondary)]/10 border-[var(--brand-secondary)]/30 text-[var(--brand-secondary)]" :
+    "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]";
+
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]/60 border border-transparent hover:border-[var(--rule-base)] transition-all group"
+    >
+      <div className="flex items-center gap-3">
+        <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-lg border", styles)}>
+          {icon}
+        </span>
+        <div>
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            {eyebrow}
+          </p>
+          <p className="text-sm font-extrabold text-[var(--text-primary)]">{title}</p>
+        </div>
+      </div>
+      <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all" />
+    </Link>
   );
 }
 

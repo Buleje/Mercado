@@ -3,9 +3,9 @@
 /**
  * /admin/login — Login para dueños y staff de tienda.
  *
- * Identidad visual: "Para tu bodega · Buleje". Acento primary (teal del DS),
- * lateral hero con bullets de beneficios operativos. Distinto del login de
- * superadmin (que usa color sobrio + identidad "Plataforma Buleje").
+ * Identidad visual: "Para tu bodega · Buleje". Acento primary (teal del DS).
+ * Hero lateral con bullets de beneficios operativos. Distinto del login de
+ * superadmin (violeta/plataforma) y del de delivery (teal+orange/repartidor).
  */
 
 import { PageTitle, SectionTitle } from "@buleje/design-system";
@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
   Store, Zap, ArrowRight, ShoppingCart, Package, Wallet, ShieldCheck,
+  Bike, Crown,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +29,6 @@ export default function AdminLoginPage() {
   const fromRef = useRef<string | null>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
-  // Detect tenant prefix from URL so navigations preserve /t/slug/
   const tenantPrefix = useMemo(() => {
     if (typeof window === "undefined") return "";
     const match = window.location.pathname.match(/^(\/t\/[^/]+)\/admin/);
@@ -46,7 +46,6 @@ export default function AdminLoginPage() {
   const [activeTenant, setActiveTenant] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
 
-  /* Inicialización */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
@@ -71,7 +70,6 @@ export default function AdminLoginPage() {
       setRememberMe(true);
     }
 
-    // SuperAdmin auto-fill: ?tenant=slug&auto=1
     if (tenantParam && autoParam === "1") {
       try {
         const credKey = `sa-cred-${tenantParam}`;
@@ -176,52 +174,66 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] grid lg:grid-cols-[1.05fr_1fr]">
-      {/* ─── Hero — solo desktop ────────────────────────────────────────── */}
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-[var(--text-primary)] text-[var(--surface-canvas)]">
-        {/* Gradient overlay sutil */}
+      {/* ─── Hero — desktop. Gradient teal + pattern + features ────────── */}
+      <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-[var(--text-primary)] text-white">
+        {/* Gradient overlay */}
         <div
           aria-hidden
-          className="absolute inset-0 opacity-60 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(at 20% 0%, rgba(0,180,166,0.35) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(0,180,166,0.18) 0px, transparent 50%)",
+              "radial-gradient(at 25% 0%, rgba(0,180,166,0.45) 0px, transparent 55%), radial-gradient(at 80% 100%, rgba(51,196,184,0.25) 0px, transparent 50%)",
           }}
         />
-        {/* Pattern de puntos */}
+        {/* Mesh gradient blob */}
         <div
           aria-hidden
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-40 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
+        />
+        {/* Pattern */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
             backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
+            backgroundSize: "32px 32px",
           }}
         />
 
-        <header className="relative z-10 flex items-center gap-3">
-          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]">
-            <Store className="h-5 w-5" strokeWidth={2.25} />
+        {/* Top: brand */}
+        <header className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] shadow-lg shadow-[var(--accent)]/30">
+              <Store className="h-6 w-6" strokeWidth={2.25} />
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                Buleje · Negocio
+              </p>
+              <p className="text-base font-extrabold leading-tight">Panel del dueño</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-              Buleje · Para tu bodega
-            </p>
-            <p className="text-base font-extrabold leading-tight">Panel del negocio</p>
-          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[length:var(--ts-2xs)] font-bold text-white/80">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+            En línea
+          </span>
         </header>
 
-        <div className="relative z-10 max-w-sm">
+        {/* Middle: hero copy + features */}
+        <div className="relative z-10 max-w-md">
           <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05] text-white">
             Tu bodega, organizada en un solo lugar.
           </PageTitle>
           <p className="mt-4 text-sm text-white/70 leading-relaxed">
-            Inventario, ventas, fiados, delivery y reportes. Todo lo que necesitas
+            Inventario, ventas, fiados, delivery y reportes — todo lo que necesitás
             para vender más sin perder el control.
           </p>
 
           <ul className="mt-8 space-y-4">
             {FEATURES.map((f) => (
               <li key={f.label} className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 shrink-0">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/10 shrink-0">
                   <f.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} />
                 </span>
                 <div>
@@ -233,29 +245,33 @@ export default function AdminLoginPage() {
           </ul>
         </div>
 
-        <footer className="relative z-10 flex items-center gap-3 text-xs text-white/50">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-          <span>Tus datos están aislados — solo tú accedes a tu tienda.</span>
+        {/* Bottom: trust */}
+        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/55">
+          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" />
+          <span className="leading-relaxed">
+            Tus datos están aislados. Solo vos accedés a tu tienda. Cumplimiento
+            Ley 29733 PE.
+          </span>
         </footer>
       </aside>
 
-      {/* ─── Form ───────────────────────────────────────────────────────── */}
+      {/* ─── Form ──────────────────────────────────────────────────────── */}
       <main className="flex items-center justify-center p-6 sm:p-12">
         <div className={cn("w-full max-w-sm", shaking && "animate-[shake_0.45s_ease-out]")}>
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--text-primary)]">
-              <Store className="h-5 w-5 text-[var(--surface-canvas)]" strokeWidth={2.25} />
+              <Store className="h-5 w-5 text-white" strokeWidth={2.25} />
             </div>
             <p className="font-extrabold text-[var(--text-primary)] text-lg tracking-tight">Buleje</p>
           </div>
 
           {/* Eyebrow + título */}
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Panel del negocio
           </p>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold text-[var(--text-primary)] leading-tight">
-            Iniciar sesión
+            Bienvenido
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2">
             {activeTenant
@@ -264,40 +280,38 @@ export default function AdminLoginPage() {
           </p>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            {/* Usuario */}
+          <form onSubmit={handleSubmit} className="mt-7 space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="username" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <label htmlFor="username" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Usuario
               </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2} />
+              <div className="relative group">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors" strokeWidth={2} />
                 <input
                   ref={usernameRef}
                   id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15 transition-all"
                   placeholder="qaadmin"
                   autoComplete="username"
                 />
               </div>
             </div>
 
-            {/* Contraseña */}
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <label htmlFor="password" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Contraseña
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2} />
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors" strokeWidth={2} />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
-                  className="w-full h-12 pl-10 pr-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
+                  className="w-full h-12 pl-10 pr-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
@@ -313,8 +327,7 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {/* Remember + recovery */}
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-sm pt-1">
               <label className="inline-flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -334,19 +347,17 @@ export default function AdminLoginPage() {
               </a>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading || !pw}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-[var(--ls-wider)] hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent)]/20"
             >
               {loading ? (
                 <>
@@ -361,7 +372,6 @@ export default function AdminLoginPage() {
               )}
             </button>
 
-            {/* Bypass — solo si está habilitado */}
             <button
               type="button"
               onClick={handleBypass}
@@ -373,26 +383,71 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Switch to platform */}
-          <div className="mt-8 pt-6 border-t border-[var(--rule-soft)]">
-            <a
+          {/* Switches a otros paneles */}
+          <div className="mt-8 pt-6 border-t border-[var(--rule-soft)] space-y-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+              ¿Buscás otro panel?
+            </p>
+            <SwitchChip
               href="/superadmin/login"
-              className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]/70 transition-colors group"
-            >
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    ¿Sos dueño de la plataforma?
-                  </p>
-                  <p className="text-sm font-bold text-[var(--text-primary)]">Acceder al Superadmin</p>
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors" />
-            </a>
+              icon={<Crown className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Plataforma"
+              title="Acceso Superadmin"
+              accent="violet"
+            />
+            <SwitchChip
+              href="/delivery-app/login"
+              icon={<Bike className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Repartidor"
+              title="Acceso Delivery"
+              accent="orange"
+            />
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SwitchChip — link a otro panel de auth con identidad visual diferenciada.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SwitchChip({
+  href,
+  icon,
+  eyebrow,
+  title,
+  accent,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  accent: "violet" | "orange" | "teal";
+}) {
+  const accentBg =
+    accent === "violet" ? "bg-[var(--brand-purple)]/10 border-[var(--brand-purple)]/30 text-[var(--brand-purple)]" :
+    accent === "orange" ? "bg-[var(--brand-secondary)]/10 border-[var(--brand-secondary)]/30 text-[var(--brand-secondary)]" :
+    "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]";
+
+  return (
+    <a
+      href={href}
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]/60 border border-transparent hover:border-[var(--rule-base)] transition-all group"
+    >
+      <div className="flex items-center gap-3">
+        <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-lg border", accentBg)}>
+          {icon}
+        </span>
+        <div>
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            {eyebrow}
+          </p>
+          <p className="text-sm font-extrabold text-[var(--text-primary)]">{title}</p>
+        </div>
+      </div>
+      <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all" />
+    </a>
   );
 }
