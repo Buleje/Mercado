@@ -14,6 +14,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight,
 } from "@buleje/design-system/icons";
@@ -328,9 +329,9 @@ function KanbanColumn({
           <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {description}
           </p>
-          <h2 className="font-display italic text-2xl font-black leading-tight tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <SectionTitle className="font-display italic text-2xl font-black leading-tight tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             {label}
-          </h2>
+          </SectionTitle>
         </div>
         <div className="text-right shrink-0">
           <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">

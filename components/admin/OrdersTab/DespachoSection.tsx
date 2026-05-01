@@ -236,7 +236,7 @@ export function DespachoSection({
                   </div>
                   <p className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] tabular-nums">
                     <span className="inline-flex items-center gap-0.5">
-                      <Star className="h-3 w-3 text-amber-500" strokeWidth={2.5} aria-hidden />
+                      <Star className="h-3 w-3 text-[var(--data-warning)]" strokeWidth={2.5} aria-hidden />
                       {p.rating.toFixed(1)}
                     </span>
                     <span aria-hidden>·</span>
