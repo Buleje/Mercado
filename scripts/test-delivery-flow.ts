@@ -52,7 +52,7 @@ async function main() {
 
   // 2. Buscar una order existente del tenant main (cualquiera con location)
   const order = await prisma.order.findFirst({
-    where: { tenantId: TENANT, customerLocation: { not: null } },
+    where: { tenantId: TENANT },
     select: { id: true, tenantId: true, customerLocation: true },
     orderBy: { createdAt: "desc" },
   });
