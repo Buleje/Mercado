@@ -2,6 +2,13 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
+
+// Lazy-load del mapa Leaflet — usa window, sin esto rompe en SSR.
+const DeliveryPartnersLiveMap = dynamic(
+  () => import("@/components/admin/delivery/DeliveryPartnersLiveMap"),
+  { ssr: false, loading: () => <div className="h-[600px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando mapa…</div> },
+);
 import {
   Truck,
   Users,
@@ -105,6 +112,7 @@ const PERMISSION_TYPES = ["view", "edit", "admin", "delivery"];
 const MODULE_ID = "delivery-partners";
 
 const TABS = [
+  { id: "live",          label: "En vivo",       icon: MapPin },
   { id: "repartidores",  label: "Repartidores",  icon: Users },
   { id: "solicitudes",   label: "Solicitudes",   icon: FileText },
   { id: "asignaciones",  label: "Asignaciones",  icon: ClipboardList },
@@ -1262,6 +1270,7 @@ export default function DeliveryPartnersModule() {
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
       >
+        {tab === "live"         && <DeliveryPartnersLiveMap />}
         {tab === "repartidores" && <RepartidoresTab />}
         {tab === "solicitudes"  && <SolicitudesTab />}
         {tab === "asignaciones" && <AsignacionesTab />}
