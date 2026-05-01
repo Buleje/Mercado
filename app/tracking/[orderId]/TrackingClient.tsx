@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MapPin } from "@buleje/design-system/icons";
 
@@ -17,14 +18,51 @@ const DeliveryTrackingMap = dynamic(
   }
 );
 
+const TipWidget = dynamic(() => import("@/components/tracking/TipWidget"), {
+  ssr: false,
+});
+
 interface Props {
   orderId: string;
 }
 
+interface TrackingMeta {
+  status: string;
+  partnerName: string;
+}
+
 export default function TrackingClient({ orderId }: Props) {
+  const [meta, setMeta] = useState<TrackingMeta | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/delivery/tracking/${orderId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setMeta({ status: data.status, partnerName: data.partnerName });
+        }
+      } catch {
+        /* poll silencioso */
+      }
+    };
+    load();
+    const id = setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [orderId]);
+
   return (
     <div className="space-y-6">
       <DeliveryTrackingMap orderId={orderId} />
+
+      {meta?.status === "delivered" && (
+        <TipWidget orderId={orderId} partnerName={meta.partnerName} />
+      )}
 
       {/* Footer informativo */}
       <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-4 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
