@@ -1,0 +1,24 @@
+import { chromium } from "playwright";
+const out = "reports/landing-redesign";
+import fs from "fs"; fs.mkdirSync(out, { recursive: true });
+const b = await chromium.launch({ executablePath: "/home/usuario/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome", headless: true });
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+const p = await ctx.newPage();
+await p.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });
+await p.waitForTimeout(4000);
+await p.screenshot({ path: `${out}/home-desktop-light.png`, fullPage: false });
+console.log("✓", `${out}/home-desktop-light.png`);
+const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const p2 = await ctx2.newPage();
+await p2.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });
+await p2.waitForTimeout(4000);
+await p2.screenshot({ path: `${out}/home-mobile-light.png`, fullPage: false });
+console.log("✓", `${out}/home-mobile-light.png`);
+// Dark mode desktop
+const ctx3 = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
+const p3 = await ctx3.newPage();
+await p3.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 30000 });
+await p3.waitForTimeout(4000);
+await p3.screenshot({ path: `${out}/home-desktop-dark.png`, fullPage: false });
+console.log("✓", `${out}/home-desktop-dark.png`);
+await b.close();
