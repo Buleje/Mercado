@@ -8,8 +8,11 @@ const LandingHeader = dynamic(
   { ssr: true },
 );
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-const RoiCalculator = dynamic(
-  () => import("@/components/landing/abrir-tienda/RoiCalculator"),
+// RoiCalculator REMOVIDO (Brandon mayo 2026): prometía cifras que no
+// se pueden garantizar. Reemplazado por HowItChanges — comparación
+// concreta del día a día sin uplifts mágicos.
+const HowItChanges = dynamic(
+  () => import("@/components/landing/abrir-tienda/HowItChanges"),
   { loading: () => <SectionSkeleton h="600px" /> },
 );
 const BenefitsTabs = dynamic(
@@ -169,8 +172,8 @@ export default function AbrirTiendaPage() {
           </div>
         </section>
 
-        {/* ── ROI Calculator interactiva ─────────────────────────────── */}
-        <RoiCalculator />
+        {/* ── Cómo cambia tu día con Buleje (sin promesas mágicas) ──── */}
+        <HowItChanges />
 
         {/* ── Beneficios con tabs interactivas ───────────────────────── */}
         <BenefitsTabs />

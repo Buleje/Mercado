@@ -42,8 +42,10 @@ const CATEGORIES: Category[] = [
       "Promociones y cupones automáticos",
       "Notificaciones push a tus clientes",
     ],
-    metric: { value: "+42%", label: "ventas promedio en 90 días" },
-    bg: "from-amber-400 via-orange-500 to-rose-500",
+    // Brandon mayo 2026: quitar métricas inventadas + paleta consistente
+    // (no naranja/rosa). Ahora un beneficio real verificable.
+    metric: { value: "24/7", label: "disponible para tus clientes" },
+    bg: "from-[var(--accent)] via-[var(--accent)] to-emerald-700",
   },
   {
     id: "cobrar",
@@ -57,8 +59,8 @@ const CATEGORIES: Category[] = [
       "Fiado digital con recordatorios automáticos",
       "Facturación SUNAT integrada",
     ],
-    metric: { value: "0%", label: "comisión los primeros 90 días" },
-    bg: "from-emerald-500 via-teal-500 to-cyan-600",
+    metric: { value: "Yape · Plin · Tarjeta", label: "todos los métodos del país" },
+    bg: "from-[var(--accent)] via-teal-600 to-emerald-700",
   },
   {
     id: "entregar",
@@ -72,8 +74,8 @@ const CATEGORIES: Category[] = [
       "Zonas de delivery con tarifas dinámicas",
       "Cobertura cross-vendor compartida",
     ],
-    metric: { value: "25 min", label: "tiempo promedio de entrega" },
-    bg: "from-sky-500 via-blue-500 to-indigo-600",
+    metric: { value: "GPS en vivo", label: "vos y el cliente lo ven en el mapa" },
+    bg: "from-[var(--accent)] via-cyan-700 to-slate-800",
   },
   {
     id: "fidelizar",
@@ -87,8 +89,8 @@ const CATEGORIES: Category[] = [
       "Cumpleaños y promociones personalizadas",
       "Reseñas y reputación pública",
     ],
-    metric: { value: "73%", label: "clientes recurrentes en 60 días" },
-    bg: "from-fuchsia-500 via-pink-500 to-rose-500",
+    metric: { value: "CRM completo", label: "cada cliente, cada compra, en un lugar" },
+    bg: "from-[var(--accent)] via-emerald-600 to-emerald-800",
   },
 ];
 
