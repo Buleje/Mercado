@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DollarSign, Download, Search, Eye, X,
   Phone, Clock, Calendar,
@@ -91,23 +91,34 @@ export default function CollectionCenterTab() {
   const [filterBucket, setFilterBucket] = useState<AgeBucket | "todos">("todos");
   const [detail, setDetail] = useState<DebtRecord | null>(null);
 
-  const load = () => {
+  const inflightRef = useRef<AbortController | null>(null);
+  const load = useCallback(() => {
+    inflightRef.current?.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
     setLoading(true);
     setError(false);
-    fetch("/api/orders")
+    fetch("/api/orders", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: OrderRecord[] | { orders?: OrderRecord[] }) => {
+        if (inflightRef.current !== ctrl) return;
         const list = Array.isArray(data) ? data : (data?.orders ?? []);
         setOrders(list);
         setLoading(false);
       })
-      .catch(() => {
-        setError(true);
-        setLoading(false);
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (inflightRef.current === ctrl) {
+          setError(true);
+          setLoading(false);
+        }
       });
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    return () => { inflightRef.current?.abort(); };
+  }, [load]);
 
   const debts = useMemo(() => ordersToDebts(orders), [orders]);
 

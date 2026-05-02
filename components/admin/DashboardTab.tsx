@@ -200,12 +200,20 @@ export default function DashboardTab() {
   const knownOrderIdsRef = useRef<Set<string> | null>(null);
   const autoRefreshRef = useRef(autoRefresh);
   autoRefreshRef.current = autoRefresh;
+  // Guard de inflight: si un poll está en vuelo y empieza otro, abortamos el anterior
+  // — evita state updates en componente desmontado y queues en 3G (Pucallpa).
+  const inflightRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
+    // Cancelar request anterior si todavía está vivo
+    inflightRef.current?.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
+
     setLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch("/api/admin/dashboard");
+      const res = await fetch("/api/admin/dashboard", { signal: ctrl.signal });
       if (res.ok) {
         const data = await res.json();
         const freshOrders: Order[] = data.orders ?? [];
@@ -255,13 +263,27 @@ export default function DashboardTab() {
         }
       }
     } catch (err) {
+      // Aborts esperados (cleanup o nuevo poll que canceló este) — no son errores
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setFetchError(err instanceof Error ? err.message : "Error al cargar el dashboard. Revisa tu conexión.");
+    } finally {
+      // Solo actualizar UI si este request sigue siendo el actual
+      if (inflightRef.current === ctrl) {
+        setLoading(false);
+        setLastUpdated(new Date());
+        inflightRef.current = null;
+      }
     }
-    setLoading(false);
-    setLastUpdated(new Date());
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Cleanup en unmount: cancelar cualquier request inflight
+  useEffect(() => {
+    return () => {
+      inflightRef.current?.abort();
+    };
+  }, []);
 
   // Auto-refresh interval
   useEffect(() => {

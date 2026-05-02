@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Target, Download, Loader2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -97,28 +97,39 @@ export default function BreakEvenTab() {
   const [customPrice, setCustomPrice] = useState("");
   const [customCost, setCustomCost] = useState("");
 
-  const load = () => {
+  const inflightRef = useRef<AbortController | null>(null);
+  const load = useCallback(() => {
+    inflightRef.current?.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
     setLoading(true);
     setError(false);
     Promise.all([
-      fetch("/api/products?limit=200").then((r) => (r.ok ? r.json() : [])),
-      fetch("/api/expenses").then((r) => (r.ok ? r.json() : [])),
-      fetch("/api/sales").then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/products?limit=200", { signal: ctrl.signal }).then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/expenses", { signal: ctrl.signal }).then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/sales", { signal: ctrl.signal }).then((r) => (r.ok ? r.json() : [])),
     ])
       .then(([prods, exps, sls]) => {
+        if (inflightRef.current !== ctrl) return;
         const rawProds = Array.isArray(prods) ? prods : (prods?.products ?? prods?.data ?? []);
         setProducts(rawProds);
         setExpenses(Array.isArray(exps) ? exps : []);
         setSales(Array.isArray(sls) ? sls : []);
         setLoading(false);
       })
-      .catch(() => {
-        setError(true);
-        setLoading(false);
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (inflightRef.current === ctrl) {
+          setError(true);
+          setLoading(false);
+        }
       });
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    return () => { inflightRef.current?.abort(); };
+  }, [load]);
 
   /* Productos enriquecidos con ventas mensuales */
   const enrichedProducts = useMemo(

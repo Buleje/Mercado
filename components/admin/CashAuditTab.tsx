@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { useState, useMemo, useEffect, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import {
   Calculator, Download, X, Eye,
   CheckCircle2, AlertTriangle, TrendingDown, TrendingUp,
@@ -318,10 +318,15 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   const [audits, setAudits] = useState<CashAudit[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadAudits = () => {
-    fetch("/api/cash-registers")
+  const inflightRef = useRef<AbortController | null>(null);
+  const loadAudits = useCallback(() => {
+    inflightRef.current?.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
+    fetch("/api/cash-registers", { signal: ctrl.signal })
       .then(r => r.ok ? r.json() : [])
       .then((registers: CashRegisterRaw[]) => {
+        if (inflightRef.current !== ctrl) return;
         const mapped = registers.map(mapRegisterToAudit);
         mapped.sort((a, b) => b.id.localeCompare(a.id));
         startTransition(() => {
@@ -329,10 +334,16 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           setLoading(false);
         });
       })
-      .catch(() => startTransition(() => setLoading(false)));
-  };
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (inflightRef.current === ctrl) startTransition(() => setLoading(false));
+      });
+  }, []);
 
-  useEffect(() => { loadAudits(); }, []);
+  useEffect(() => {
+    loadAudits();
+    return () => { inflightRef.current?.abort(); };
+  }, [loadAudits]);
 
   const stats = useMemo(() => {
     const totalAudits = audits.length;

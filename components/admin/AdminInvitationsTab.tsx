@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   UserPlus, Send, Loader2, X, Copy, Check,
   Phone, Trash2,
@@ -43,17 +43,34 @@ export default function AdminInvitationsTab() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
 
-  const load = async () => {
+  const inflightRef = useRef<AbortController | null>(null);
+  const load = useCallback(async () => {
+    inflightRef.current?.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
     try {
-      const res = await fetch("/api/admin/invitations", { credentials: "include" });
+      const res = await fetch("/api/admin/invitations", {
+        credentials: "include",
+        signal: ctrl.signal,
+      });
       if (!res.ok) return;
       const data = await res.json();
-      setRows(data.invitations ?? []);
-    } catch { /* noop */ }
-    finally { setLoading(false); }
-  };
+      if (inflightRef.current === ctrl) setRows(data.invitations ?? []);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      /* otros errores: silencioso */
+    } finally {
+      if (inflightRef.current === ctrl) {
+        setLoading(false);
+        inflightRef.current = null;
+      }
+    }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+    return () => { inflightRef.current?.abort(); };
+  }, [load]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
