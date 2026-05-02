@@ -106,33 +106,33 @@ export default function MorningSummaryModal() {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3">
+                <div className="rounded-xl p-3 border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Ventas ayer</span>
+                    <TrendingUp className="h-4 w-4 text-[var(--data-success)]" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Ventas ayer</span>
                   </div>
-                  <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(data.ventasAyer)}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(data.ventasAyer)}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3">
+                <div className="rounded-xl p-3 border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                   <div className="flex items-center gap-2 mb-1">
-                    <ShoppingCart className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Pedidos pendientes</span>
+                    <ShoppingCart className="h-4 w-4 text-primary" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Pedidos pendientes</span>
                   </div>
-                  <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.pedidosPendientes}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{data.pedidosPendientes}</p>
                 </div>
-                <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 rounded-xl p-3">
+                <div className="rounded-xl p-3 border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                   <div className="flex items-center gap-2 mb-1">
-                    <Package className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Stock bajo</span>
+                    <Package className="h-4 w-4 text-[var(--data-warning)]" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Stock bajo</span>
                   </div>
-                  <p className="text-lg font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{data.stockBajo} productos</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{data.stockBajo} productos</p>
                 </div>
-                <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-xl p-3">
+                <div className="rounded-xl p-3 border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                   <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] uppercase">Fiados vencidos</span>
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)]" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Fiados vencidos</span>
                   </div>
-                  <p className="text-lg font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">{data.fiadosVencidos}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{data.fiadosVencidos}</p>
                 </div>
               </div>
 

@@ -1577,10 +1577,16 @@ export default function POSView() {
 
               {/* Acciones POS — badge caja + entrada + opciones + expandir */}
               {cashRegisterOpen === false && (
-                <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)] px-2.5 py-1.5 rounded-lg">Sin caja</span>
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-warning)] border border-[var(--data-warning)]/30 px-2.5 py-1.5 rounded-lg">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
+                  Sin caja
+                </span>
               )}
               {cashRegisterOpen === true && (
-                <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30 px-2.5 py-1.5 rounded-lg">Caja abierta</span>
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-success)] border border-[var(--data-success)]/30 px-2.5 py-1.5 rounded-lg">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+                  Caja abierta
+                </span>
               )}
               {lastSaleInfo && (
                 <a
@@ -1601,16 +1607,16 @@ export default function POSView() {
               />
               <button
                 onClick={() => setShowScanner(true)}
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
                 title="Escanear codigo de barras"
               >
-                <ScanBarcode className="h-4 w-4" /> <span className="hidden sm:inline">Escanear</span>
+                <ScanBarcode className="h-4 w-4 text-primary" /> <span className="hidden sm:inline">Escanear</span>
               </button>
               <label
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors cursor-pointer"
                 title="Escanear producto con camara"
               >
-                &#128247; <span className="hidden sm:inline">Foto</span>
+                <span className="text-primary">&#128247;</span> <span className="hidden sm:inline">Foto</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1736,10 +1742,10 @@ export default function POSView() {
 
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
                 title={expanded ? "Reducir" : "Expandir"}
               >
-                {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                {expanded ? <Minimize2 className="h-4 w-4 text-[var(--text-secondary)]" /> : <Maximize2 className="h-4 w-4 text-[var(--text-secondary)]" />}
                 <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
               </button>
             </div>

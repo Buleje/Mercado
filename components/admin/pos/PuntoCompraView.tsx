@@ -662,28 +662,23 @@ export default function PuntoCompraView() {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="print-area">
-      {/* Header minimalista — sin subtítulo, el tab indica la función */}
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <div className="min-w-0">
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
-            Punto de Compra
-          </SectionTitle>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
-            {products.length} productos
-          </span>
-          {needsReorderCount > 0 && (
-            <button
-              type="button"
-              onClick={() => { setSoloReponer(true); setPage(1); }}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] px-2 py-1 rounded-full transition-colors"
-              title="Ver solo los productos que necesitan reponerse"
-            >
-              {needsReorderCount} a reponer
-            </button>
-          )}
-        </div>
+      {/* Toolbar — el header del módulo (Compras) lo da el padre ComprasModule.
+          Aquí solo contadores + acción rápida. */}
+      <div className="flex items-center justify-end gap-2 mb-4 flex-wrap">
+        <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
+          {products.length} productos
+        </span>
+        {needsReorderCount > 0 && (
+          <button
+            type="button"
+            onClick={() => { setSoloReponer(true); setPage(1); }}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error)] border border-[var(--data-error)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error)]/5 px-2.5 py-1 rounded-full transition-colors"
+            title="Ver solo los productos que necesitan reponerse"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
+            {needsReorderCount} a reponer
+          </button>
+        )}
       </div>
 
       {/* Aviso reposición destacado */}

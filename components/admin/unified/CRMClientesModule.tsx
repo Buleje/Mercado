@@ -66,13 +66,12 @@ export default function CRMClientesModule() {
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
+        eyebrow="Relaciones · CRM"
         title="Mis Clientes"
-        description="CRM, segmentación y fidelización"
+        description="Gestiona tu base de clientes, segmentación, fidelización y opiniones."
         icon={Users}
-        bgTint="bg-[var(--surface-sunken)]"
-        iconColorClass="text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
       />
 
       <AdminTabBar

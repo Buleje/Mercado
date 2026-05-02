@@ -229,10 +229,10 @@ export default function MassMessageSender({
                   key={s}
                   onClick={() => setSegment(s)}
                   className={cn(
-                    "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
+                    "rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors",
                     segment === s
-                      ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                   )}
                 >
                   {label}
@@ -285,10 +285,10 @@ export default function MassMessageSender({
                 key={key}
                 onClick={() => handleTemplateKey(key)}
                 className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize transition",
+                  "rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors",
                   selectedTemplateKey === key
-                    ? "border-primary bg-primary text-white"
-                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                 )}
               >
                 {key}
@@ -350,10 +350,9 @@ export default function MassMessageSender({
             )}
           </div>
 
-          {/* WhatsApp-style bubble */}
-          {/* TODO(#1): non-standard — #e8f5e9 is WhatsApp chat bg, no token equivalent */}
-          <div className="rounded-xl bg-[#e8f5e9] p-4">
-            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-white px-4 py-3">
+          {/* Preview bubble — bg neutro DS, no verde WhatsApp saturado */}
+          <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-soft)]">
+            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-[var(--surface-raised)] px-4 py-3 border border-[var(--rule-soft)] shadow-sm">
               <p className="text-sm leading-relaxed text-[var(--text-primary)]">
                 {previewCustomer ? previewText : template}
               </p>
@@ -392,9 +391,10 @@ export default function MassMessageSender({
             onClick={generateList}
             disabled={filtered.length === 0 || !template.trim()}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition",
-              // TODO(#1): non-standard — hover:#245a40 is a dark forest green, no token equivalent
-              copied ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-[#245a40]",
+              "flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors min-h-[44px]",
+              copied
+                ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
+                : "bg-primary text-white hover:bg-primary/90",
               "disabled:opacity-40"
             )}
           >
@@ -410,13 +410,12 @@ export default function MassMessageSender({
               </>
             )}
           </button>
-          {/* Mejora 8 nueva: Generar links WhatsApp */}
           <button
             onClick={() => setShowWaLinks(!showWaLinks)}
             disabled={filtered.length === 0 || !template.trim()}
-            className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors min-h-[44px] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40"
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4 text-[var(--data-success)]" />
             Links WhatsApp
           </button>
         </div>
@@ -424,12 +423,12 @@ export default function MassMessageSender({
 
       {/* Mejora 8 nueva: WhatsApp links list */}
       {showWaLinks && filtered.length > 0 && (
-        <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-5">
-          <CardTitle className="text-sm font-bold text-[var(--data-success)] mb-3 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
+        <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-[var(--data-success)]" />
             Links de WhatsApp ({filtered.length} clientes)
           </CardTitle>
-          <p className="text-xs text-[var(--data-success)] mb-3">
+          <p className="text-xs text-[var(--text-secondary)] mb-3">
             Haz click en cada link para abrir WhatsApp con el mensaje personalizado.
           </p>
           <div className="space-y-1.5 max-h-60 overflow-y-auto">

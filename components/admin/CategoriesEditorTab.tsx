@@ -227,35 +227,29 @@ export default function CategoriesEditorTab() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            Gestión de Categorías
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
-            Reordena, renombra y oculta categorías del catálogo
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Toolbar — encabezado lo da el módulo padre */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-sm text-[var(--text-secondary)]">
+          Reordena, renombra y oculta categorías del catálogo.
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={bulkGenerateSeo}
-            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors min-h-[44px]"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Sparkles className="h-4 w-4" />
             Auto-generar SEO
           </button>
           <button
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
-              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
+              "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors min-h-[44px]",
+              saved ? "bg-[var(--data-success)]" : "bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             {saved ? "¡Guardado!" : "Guardar orden"}
           </button>
         </div>
@@ -290,18 +284,18 @@ export default function CategoriesEditorTab() {
                 />
                 <span className="text-xs text-muted font-mono">{cat.id}</span>
                 
-                {/* SEO Score Indicator */}
+                {/* SEO Score Indicator — bg neutro, color solo en icono + dot */}
                 <button
                   onClick={() => toggleSeoExpanded(cat.id)}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors",
-                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-                    seoScore === "warning" && "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-                    seoScore === "error" && "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
-                  )}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold transition-colors border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                   title="Click para editar SEO"
                 >
-                  <Search className="h-3 w-3" />
+                  <span className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    seoScore === "good" && "bg-[var(--data-success)]",
+                    seoScore === "warning" && "bg-[var(--data-warning)]",
+                    seoScore === "error" && "bg-[var(--data-error)]"
+                  )} />
                   SEO
                 </button>
 

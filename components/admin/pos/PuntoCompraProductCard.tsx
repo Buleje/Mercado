@@ -47,19 +47,21 @@ export default memo(function PuntoCompraProductCard({
           : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
       )}
     >
-      {/* Badge AGOTADO / REPONER */}
+      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto */}
       {(product.stock ?? 0) === 0 ? (
         <span
           aria-label="Producto agotado"
-          className="absolute top-2 left-2 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error)] text-white z-10"
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error)]/30 text-[var(--data-error)] z-10"
         >
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
         <span
           aria-label="Necesita reposición"
-          className="absolute top-2 left-2 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] z-10"
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning)]/30 text-[var(--data-warning)] z-10"
         >
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
           REPONER
         </span>
       ) : null}

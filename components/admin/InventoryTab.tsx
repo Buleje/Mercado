@@ -10,7 +10,6 @@ import {
   Warehouse, Maximize2, Copy, Sliders,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -835,23 +834,17 @@ export default function InventoryTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header — formato editorial con acciones primarias + menu de más acciones */}
-      <AdminModuleHeader
-        icon={Warehouse}
-        eyebrow="Inventario · Catálogo y stock"
-        title="Tu stock"
-        description="Productos, movimientos y alertas de reposición. Saber qué hay y qué falta en tu bodega."
-      >
-        {/* View toggle — segmented control */}
-        <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5 overflow-x-auto">
+      {/* Toolbar de acciones — el header del módulo lo da el padre InventarioAlmacenesModule */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <div className="flex bg-[var(--surface-sunken)] rounded-xl p-1 overflow-x-auto">
           {(["productos", "kanban"] as const).map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
                 view === v
-                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)]"
+                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
@@ -860,15 +853,13 @@ export default function InventoryTab() {
           ))}
         </div>
 
-        {/* Acción primaria — "Nuevo producto" destacado */}
         <button
           onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors min-h-[44px]"
         >
           <Plus className="h-4 w-4" strokeWidth={2} /> Nuevo
         </button>
 
-        {/* Acciones secundarias — agrupadas en dropdown */}
         <ModuleActionMenu
           items={[
             {
@@ -888,7 +879,7 @@ export default function InventoryTab() {
             },
           ]}
         />
-      </AdminModuleHeader>
+      </div>
 
       {/* Toolbar — busqueda + filtros + acciones en UNA barra */}
       <div className="flex flex-wrap items-center gap-2">

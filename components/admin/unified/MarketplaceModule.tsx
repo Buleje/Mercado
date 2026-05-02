@@ -1698,29 +1698,33 @@ function MarketplaceQuickActions({
     });
   }
 
-  // Tonos: borde lateral fuerte + fondo sutil + icono coloreado
+  /* Tonos unificados: bg surface-raised + border rule-soft (neutros).
+     El color del tono va SOLO en:
+     - barra lateral (3px) — señal direccional
+     - icono dentro del chip (con bg suave del tono)
+     Esto evita la saturación cromática de tener fondos rosa/amarillo grandes. */
   const toneStyles: Record<QuickAction["tone"], { bar: string; bg: string; iconBg: string; iconFg: string }> = {
     danger: {
       bar: "before:bg-[var(--data-error)]",
-      bg: "bg-[var(--data-error-50)]/60 border-[var(--data-error)]/30 hover:bg-[var(--data-error-50)]",
+      bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
       iconBg: "bg-[var(--data-error)]/10",
       iconFg: "text-[var(--data-error)]",
     },
     warning: {
       bar: "before:bg-[var(--data-warning)]",
-      bg: "bg-[var(--data-warning-50)]/60 border-[var(--data-warning)]/30 hover:bg-[var(--data-warning-50)]",
+      bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
       iconBg: "bg-[var(--data-warning)]/10",
       iconFg: "text-[var(--data-warning)]",
     },
     info: {
-      bar: "before:bg-blue-500",
-      bg: "bg-blue-50/60 border-blue-200/60 hover:bg-blue-50",
-      iconBg: "bg-blue-500/10",
-      iconFg: "text-blue-600",
+      bar: "before:bg-primary",
+      bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+      iconBg: "bg-primary/10",
+      iconFg: "text-primary",
     },
     success: {
       bar: "before:bg-[var(--data-success)]",
-      bg: "bg-[var(--accent-soft)]/60 border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)]",
+      bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
       iconBg: "bg-[var(--data-success)]/10",
       iconFg: "text-[var(--data-success)]",
     },

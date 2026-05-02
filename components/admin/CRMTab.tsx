@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -364,80 +364,74 @@ export default function CRMTab() {
   return (
     <div className="space-y-6">
 
-      {/* ── Header estandar ──────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--surface-sunken)] shrink-0">
-          <Heart className="w-5 h-5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <PageTitle className="text-xl font-bold text-[var(--text-primary)] truncate">Mis Clientes</PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">CRM, fidelización y seguimiento</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button onClick={() => setShowNewClientModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-white transition-colors bg-primary" style={{ backgroundColor: "#00B4A6" }}>
-            <UserPlus className="h-4 w-4" /> Nuevo cliente
-          </button>
-          <button
-            onClick={() => exportToCSV(
-              customers.map(c => ({ nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "", gastado: c.totalSpent ?? 0, segmento: c._segment ?? "nuevo" })),
-              "crm-clientes"
-            )}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-          >
-            <Download className="h-4 w-4" /> CSV
-          </button>
-          <button
-            onClick={() => {
-              if (filtered.length === 0) return;
-              const rows = filtered.map(c => ({
-                Nombre: c.name,
-                "Teléfono": c.phone,
-                "Categoría": c.loyaltyTier ?? "—",
-                Tags: (c._tags ?? []).join(", ") || "—",
-                "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
-                "Última compra": c._lastOrder ? new Date(c._lastOrder).toLocaleDateString("es-PE") : "Sin compras",
-                Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
-              }));
-              const fecha = new Date().toISOString().slice(0, 10);
-              exportToExcel(rows, `clientes-${fecha}`, "Clientes");
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
-          >
-            <Download className="h-4 w-4" /> Excel
-          </button>
-          <button
-            onClick={() => { setCompareMode(!compareMode); if (compareMode) { setComparePhones(new Set()); } }}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors",
-              compareMode
-                ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]"
-                : "border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent"
-            )}
-          >
-            <BarChart3 className="h-4 w-4" /> {compareMode ? "Cancelar" : "Comparar"}
-          </button>
-        </div>
+      {/* ── Toolbar: acciones del módulo (header lo da el padre CRMClientesModule) ─ */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <button
+          onClick={() => setShowNewClientModal(true)}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+        >
+          <UserPlus className="h-4 w-4" /> Nuevo cliente
+        </button>
+        <button
+          onClick={() => exportToCSV(
+            customers.map(c => ({ nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "", gastado: c.totalSpent ?? 0, segmento: c._segment ?? "nuevo" })),
+            "crm-clientes"
+          )}
+          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
+        >
+          <Download className="h-4 w-4" /> CSV
+        </button>
+        <button
+          onClick={() => {
+            if (filtered.length === 0) return;
+            const rows = filtered.map(c => ({
+              Nombre: c.name,
+              "Teléfono": c.phone,
+              "Categoría": c.loyaltyTier ?? "—",
+              Tags: (c._tags ?? []).join(", ") || "—",
+              "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
+              "Última compra": c._lastOrder ? new Date(c._lastOrder).toLocaleDateString("es-PE") : "Sin compras",
+              Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
+            }));
+            const fecha = new Date().toISOString().slice(0, 10);
+            exportToExcel(rows, `clientes-${fecha}`, "Clientes");
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
+        >
+          <Download className="h-4 w-4" /> Excel
+        </button>
+        <button
+          onClick={() => { setCompareMode(!compareMode); if (compareMode) { setComparePhones(new Set()); } }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[44px]",
+            compareMode
+              ? "bg-primary text-white hover:bg-primary/90"
+              : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          )}
+        >
+          <BarChart3 className="h-4 w-4" /> {compareMode ? "Cancelar" : "Comparar"}
+        </button>
       </div>
 
-      {/* ── KPIs estandar ─────────────────────────────────────────── */}
+      {/* ── KPIs neutros — bg unificado, color solo en el icono ──────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total clientes",   value: String(stats.total),   icon: Users,       color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Activos (30d)",    value: String(stats.activos), icon: UserCheck,   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Nuevos",           value: String(stats.nuevos),  icon: UserPlus,    color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
-          { label: "CLV promedio",     value: fmt(stats.clvProm),    icon: TrendingUp,  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Total clientes", value: String(stats.total),   icon: Users,      color: "text-[var(--data-success)]" },
+          { label: "Activos (30d)",  value: String(stats.activos), icon: UserCheck,  color: "text-[var(--data-success)]" },
+          { label: "Nuevos",         value: String(stats.nuevos),  icon: UserPlus,   color: "text-primary" },
+          { label: "CLV promedio",   value: fmt(stats.clvProm),    icon: TrendingUp, color: "text-[var(--text-secondary)]" },
         ].map(k => (
           <m.div
             key={k.label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn("rounded-xl p-4", k.bg)}
+            className="rounded-xl p-4 border border-[var(--rule-soft)] bg-[var(--surface-raised)]"
           >
             <div className="flex items-center gap-1.5 mb-1">
               <k.icon className={cn("h-4 w-4", k.color)} />
-              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{k.label}</p>
             </div>
-            <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums">{k.value}</p>
           </m.div>
         ))}
       </div>
