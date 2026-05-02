@@ -1,3 +1,32 @@
+// ─── Kill-switch en localhost ───────────────────────────────────────────────
+// Si el SW arranca en localhost, se autodesregistra y limpia TODAS sus caches
+// antes de hacer cualquier otra cosa. Esto evita que una versión vieja del SW
+// (que sí interceptaba localhost) deje 404s cacheadas tras un fix de runtime.
+//
+// Patrón: el guard funciona ya en `fetch`, pero si el `install` o `activate`
+// de una versión PREVIA cacheó entries, esas entries sobreviven hasta que
+// limpiemos. Acá lo hacemos explícito en cada arranque del worker en local.
+if (self.location && self.location.hostname === "localhost") {
+  self.addEventListener("install", () => self.skipWaiting());
+  self.addEventListener("activate", (event) => {
+    event.waitUntil(
+      (async () => {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+          await self.registration.unregister();
+          const clients = await self.clients.matchAll({ type: "window" });
+          for (const client of clients) client.navigate(client.url);
+        } catch (err) {
+          console.log("[SW] localhost kill-switch failed (non-fatal):", err);
+        }
+      })(),
+    );
+  });
+  // Pasthrough — no interceptar fetches
+  self.addEventListener("fetch", () => {});
+} else {
+
 const CACHE_NAME = "buleje-v12";
 const CATALOG_CACHE = "buleje-catalog-v2";
 const STATIC_URLS = [
@@ -298,3 +327,5 @@ function getAllFromStore(store) {
     req.onerror = () => reject(req.error);
   });
 }
+
+} // ─── end localhost-kill-switch else branch ─────────────────────────────────
