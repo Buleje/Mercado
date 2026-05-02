@@ -17,7 +17,8 @@
 
 import { useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { X, Plus, Trash2 } from "@buleje/design-system/icons";
+import { X, Plus, Trash2, BookOpen } from "@buleje/design-system/icons";
+import VariantCatalogPicker from "./VariantCatalogPicker";
 
 type Option = {
   id?: string;
@@ -47,6 +48,14 @@ export default function ProductModifiersEditor({ productId, productName, onClose
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCatalog, setShowCatalog] = useState(false);
+
+  const reloadGroups = () => {
+    fetch(`/api/products/${productId}/modifiers`)
+      .then((r) => (r.ok ? r.json() : { groups: [] }))
+      .then((d) => setGroups(d.groups ?? []))
+      .catch(() => setError("No se pudieron cargar los modificadores"));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -289,12 +298,29 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             ))}
 
           {!loading && (
-            <button
-              onClick={addGroup}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
-            >
-              <Plus className="h-4 w-4" /> Agregar grupo
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={addGroup}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              >
+                <Plus className="h-4 w-4" /> Agregar grupo
+              </button>
+              <button
+                onClick={() => setShowCatalog(true)}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/10"
+                title="Importar una plantilla de variaciones del catálogo global"
+              >
+                <BookOpen className="h-4 w-4" /> Importar del catálogo
+              </button>
+            </div>
+          )}
+
+          {showCatalog && (
+            <VariantCatalogPicker
+              productId={productId}
+              onClose={() => setShowCatalog(false)}
+              onImported={() => { setShowCatalog(false); reloadGroups(); }}
+            />
           )}
 
           {error && (
