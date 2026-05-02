@@ -28,6 +28,7 @@
 import { useEffect, useState } from "react";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
 import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -70,6 +71,14 @@ export function BulejeLoader({
     }, 400);
     return () => clearInterval(id);
   }, []);
+
+  // Paiche variant: delegamos al nuevo PaicheLoading (waves + pulse + dots
+  // de gran formato). El size lg/md/sm mapea a page/section/inline para que
+  // las llamadas existentes hereden el look mejorado sin tocar 13 archivos.
+  if (variant === "paiche" && !inline) {
+    const v = size === "lg" ? "page" : size === "md" ? "section" : "inline";
+    return <PaicheLoading variant={v} label={label} className={className} />;
+  }
 
   return (
     <div

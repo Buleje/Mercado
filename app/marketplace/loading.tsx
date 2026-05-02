@@ -1,12 +1,5 @@
-import { BulejeLoader } from "@/components/ui-system/BulejeLoader";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 
 export default function MarketplaceLoading() {
-  // Paiche grande (lg) — identidad amazónica visible mientras carga.
-  return (
-    <BulejeLoader
-      variant="paiche"
-      size="lg"
-      label="Buscando en las bodegas"
-    />
-  );
+  return <PaicheLoading variant="page" label="Buscando en las bodegas…" />;
 }
