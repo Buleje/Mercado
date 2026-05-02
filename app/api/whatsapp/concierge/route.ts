@@ -59,15 +59,23 @@ type MetaWebhookBody = z.infer<typeof MetaWebhookBodySchema>;
 
 // ─── Signature verification ───────────────────────────────────────────────────
 
+/**
+ * Verify Meta's X-Hub-Signature-256 header. Uses crypto.timingSafeEqual to
+ * prevent timing-attack inference of the signature byte-by-byte.
+ */
 async function verifyHubSignature(
   rawBody: string,
   signatureHeader: string | null,
   secret: string,
 ): Promise<boolean> {
-  const { createHmac } = await import("crypto");
+  if (!signatureHeader) return false;
+  const { createHmac, timingSafeEqual } = await import("crypto");
   const expected =
     "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
-  return signatureHeader === expected;
+  const sigBuf = Buffer.from(signatureHeader);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length) return false;
+  return timingSafeEqual(sigBuf, expBuf);
 }
 
 // ─── Tenant resolution ────────────────────────────────────────────────────────
@@ -189,9 +197,25 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
-  // Signature verification (ADR-046 security requirement)
+  // Signature verification (ADR-046 security requirement).
+  // Fail-closed in production: if WHATSAPP_WEBHOOK_SECRET is missing, refuse
+  // every POST. Without this guard, a missing env in prod would leave the
+  // endpoint wide open — anyone could trigger the bot and bill metering.
   const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
-  if (webhookSecret) {
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === "production") {
+      logger.error(
+        "[whatsapp/concierge] WHATSAPP_WEBHOOK_SECRET missing in production — refusing",
+      );
+      return NextResponse.json(
+        { error: "Service misconfigured" },
+        { status: 503 },
+      );
+    }
+    logger.warn(
+      "[whatsapp/concierge] WHATSAPP_WEBHOOK_SECRET not set — accepting unsigned (dev only)",
+    );
+  } else {
     const signature = req.headers.get("x-hub-signature-256");
     const valid = await verifyHubSignature(rawBody, signature, webhookSecret);
     if (!valid) {
