@@ -3,22 +3,17 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
-import {
-  DiscountBanner,
-  ReviewsCarousel,
-} from "@/components/landing/LandingClientSections";
+import { ReviewsCarousel } from "@/components/landing/LandingClientSections";
 import LandingHero from "@/components/landing/LandingHero";
 import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
 import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
 import LandingHeader from "@/components/landing/LandingHeader";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import { Reveal } from "@/components/landing/Reveal";
-import { StatsMarquee } from "@/components/landing/StatsMarquee";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import T from "@/components/T";
 import {
   Store,
-  Bike,
   ArrowUpRight,
   Smartphone,
   Send,
@@ -184,45 +179,63 @@ async function HeroSection() {
   );
 }
 
-// ── Stats marquee — números grandes inspirados en beastphilanthropy.org ──
-async function StatsSection() {
-  const stats = await getMarketplaceStats();
-  return (
-    <StatsMarquee
-      kicker="Buleje en números"
-      headline={
-        <>
-          Un marketplace,
-          <br />
-          <span className="italic font-serif text-[var(--accent)]">
-            miles de historias.
-          </span>
-        </>
-      }
-      description="Cada bodega es una familia, cada pedido un paso adelante. Estos son los números que ya construimos juntos en Pucallpa y Ciudad Constitución."
-      stats={[
-        { value: stats.storeCount, label: "Tiendas activas", suffix: "+", tone: "primary" },
-        { value: stats.productCount, label: "Productos", suffix: "+", tone: "deep" },
-        { value: stats.avgRating, label: "Rating promedio", decimals: 1, tone: "light" },
-        { value: 100, label: "Cobertura local", suffix: "%", tone: "ink" },
-      ]}
-    />
-  );
-}
+// StatsMarquee section eliminada (mayo 2026): mostraba "6+ tiendas / 147+
+// productos" como métricas prominentes — números bajos minan credibilidad.
+// La home volverá a tener una sección "en números" cuando superemos 500
+// tiendas activas. Mientras tanto: diferenciador regional honesto en hero.
 
-// ── Reviews section (real DB data → animated carousel) ──
-// UX Strategy P1-5 fix 2026-04-30: ANTES caía a fallbackReviews con 6 nombres
-// inventados (Maria L., Carlos R., Ana P., etc.) cuando la DB estaba vacía
-// — contenido engañoso. AHORA: si no hay reviews reales, la sección NO se
-// renderiza (return null) — evita mostrar testimonios falsos al cliente.
+// ── Reviews section (real DB data) o placeholder honesto pre-launch ──
+// UX Strategy P1-5 fix 2026-04-30: si no hay reviews reales, NO mostramos
+// fallbackReviews falsos. Mayo 2026: agregamos un placeholder honesto
+// "Únete a los primeros 10 negocios" cuando la sección está vacía.
 async function ReviewsSection() {
   const reviews = await getMarketplaceReviews();
-  if (reviews.length === 0) return null;
-  return <ReviewsCarousel reviews={reviews} />;
+  if (reviews.length > 0) return <ReviewsCarousel reviews={reviews} />;
+  return <EarlyAdopterPlaceholder />;
+}
+
+// ── Placeholder honesto para fase pre-launch ──
+function EarlyAdopterPlaceholder() {
+  return (
+    <section
+      aria-label="Únete a los primeros negocios"
+      className="bg-[var(--surface-canvas)] py-20 sm:py-28"
+    >
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+          <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+          Pre-launch
+        </p>
+        <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[1.05]">
+          Sé de los primeros 10 negocios.
+        </h2>
+        <p className="mt-6 text-lg text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto">
+          Estamos arrancando con bodegas seleccionadas en Pucallpa. Te
+          contactamos personalmente, configuramos tu tienda contigo y te
+          acompañamos los primeros 90 días. Sin costo.
+        </p>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/abrir-tienda"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-md hover:gap-3 transition-all"
+          >
+            Quiero abrir mi tienda
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
+          </Link>
+        </div>
+        <p className="mt-6 text-sm text-[var(--text-tertiary)]">
+          Acompañamiento 1-a-1 los primeros 90 días · Sin tarjeta · Sin permanencia
+        </p>
+      </div>
+    </section>
+  );
 }
 
 // ── Business + Driver CTA banners — editorial asimétrico ──
 function PromoBanners() {
+  // Mayo 2026: home solo muestra el banner de bodegueros (vendedores).
+  // El de repartidores se movió a su propia landing /repartidores para
+  // mantener la home 100% enfocada en la audiencia primaria.
   const banners = [
     {
       keyKicker: "landing.promo.business.kicker",
@@ -234,23 +247,9 @@ function PromoBanners() {
       keyStatLabel: "landing.promo.business.statLabel",
       keyPrimary: "landing.promo.business.cta",
       primaryHref: "/abrir-tienda",
-      keySecondary: "landing.promo.business.cta2" as string | null,
-      secondaryHref: "/abrir-tienda#planes",
-      tone: "from-[var(--accent)] to-emerald-700",
-    },
-    {
-      keyKicker: "landing.promo.driver.kicker",
-      icon: Bike,
-      keyTitle1: "landing.promo.driver.title1",
-      keyTitleAccent: "landing.promo.driver.titleAccent",
-      keyDesc: "landing.promo.driver.desc",
-      keyStat: "landing.promo.driver.stat",
-      keyStatLabel: "landing.promo.driver.statLabel",
-      keyPrimary: "landing.promo.driver.cta",
-      primaryHref: "/marketplace/repartidor",
       keySecondary: null as string | null,
       secondaryHref: "",
-      tone: "from-orange-500 to-rose-600",
+      tone: "from-[var(--accent)] to-emerald-700",
     },
   ];
 
@@ -260,7 +259,7 @@ function PromoBanners() {
       className="py-20 sm:py-28 bg-[var(--surface-canvas)]"
     >
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5">
           {banners.map((b, i) => {
             const Icon = b.icon;
             return (
@@ -286,7 +285,7 @@ function PromoBanners() {
                 <h3 className="relative text-[clamp(1.75rem,3.8vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
                   <T k={b.keyTitle1} />
                   <br />
-                  <span className="italic font-serif text-[var(--accent)]">
+                  <span className="text-[var(--accent)]">
                     <T k={b.keyTitleAccent} />
                   </span>
                 </h3>
@@ -410,7 +409,7 @@ function PaymentMethods() {
             <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               <T k="landing.payment.title" fallback="Pagas como" />
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 <T k="landing.payment.titleAccent" fallback="tú quieras." />
               </span>
             </h2>
@@ -471,25 +470,22 @@ function FinalCTA() {
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
           <T k="landing.finalCta.description" fallback="Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso." />
         </p>
-        <div className="mt-12 flex flex-wrap justify-center gap-3">
+        {/* CTA único — antes había 2 botones idénticos hacia /abrir-tienda. */}
+        <div className="mt-12 flex justify-center">
           <Link
             href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-10 py-5 text-lg font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
           >
-            <T k="landing.finalCta.tryFree" fallback="Probá gratis 90 días" />
+            Abrir mi tienda gratis
             <ArrowUpRight
-              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              strokeWidth={2.25}
+              className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              strokeWidth={2.5}
             />
           </Link>
-          <Link
-            href="/abrir-tienda"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-          >
-            <T k="landing.finalCta.openStore" fallback="Abre tu tienda" />
-            <span aria-hidden>→</span>
-          </Link>
         </div>
+        <p className="mt-6 text-sm text-[var(--text-tertiary)]">
+          Sin tarjeta · Setup en 5 minutos · Cancelás cuando quieras
+        </p>
       </div>
     </section>
   );
@@ -506,16 +502,12 @@ export default async function Home() {
     <main id="main-content">
       <BulejeJsonLd />
       <LandingHeader />
-      <DiscountBanner />
+      {/* DiscountBanner (10% nuevos compradores) movido a /marketplace —
+          no debe aparecer en la home de vendedores. */}
 
       {/* Hero — presentación del marketplace */}
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
-      </Suspense>
-
-      {/* Stats marquee — números grandes estilo beastphilanthropy.org */}
-      <Suspense fallback={null}>
-        <StatsSection />
       </Suspense>
 
       {/* Categorías populares — grid unico 6 categorias con ilustraciones */}

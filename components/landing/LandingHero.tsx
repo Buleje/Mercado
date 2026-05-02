@@ -61,12 +61,9 @@ export default function LandingHero({
   );
   const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0.4]);
 
-  const heroStats = [
-    { value: storeCount || 240, label: "Negocios vendiendo", suffix: "+", decimals: false },
-    { value: productCount || 18000, label: "Productos en catálogo", suffix: "+", decimals: false },
-    { value: 5, label: "Min de setup", suffix: "", decimals: false },
-    { value: avgRating || 4.8, label: "Valoración clientes", suffix: "", decimals: true },
-  ];
+  // heroStats array eliminado: las métricas falsas (storeCount || 240) eran
+  // engañosas mientras crecemos. Reemplazadas abajo por diferenciadores cualitativos.
+  void storeCount; void productCount; void avgRating;
 
   return (
     <section
@@ -124,7 +121,7 @@ export default function LandingHero({
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
               </Link>
               <Link
-                href="#como-funciona"
+                href="/marketplace/main"
                 className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-4 text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
                 {t("landing.hero.ctaSecondary")}
@@ -155,38 +152,38 @@ export default function LandingHero({
           </m.div>
         </div>
 
-        {/* Stats strip */}
+        {/* Differentiator strip — honest qualitative claim mientras crecemos */}
         <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
           className="mt-16 sm:mt-20 pt-8 border-t border-[var(--rule-soft)]"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
-            {heroStats.map((stat, idx) => (
-              <div
-                key={idx}
-                className={`${idx > 0 ? "md:border-l md:border-[var(--rule-soft)] md:pl-6" : ""}`}
-              >
-                <p className="text-[clamp(2rem,4vw,3rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--text-primary)] leading-none">
-                  <NumberFlow
-                    value={stat.value}
-                    format={
-                      stat.decimals
-                        ? { minimumFractionDigits: 1, maximumFractionDigits: 1 }
-                        : { maximumFractionDigits: 0 }
-                    }
-                    locales="es-PE"
-                  />
-                  {stat.suffix && (
-                    <span className="text-[var(--accent)]">{stat.suffix}</span>
-                  )}
-                </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
+            <div>
+              <p className="text-base font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                Primer marketplace de bodegas
+              </p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                en Pucallpa, Ucayali
+              </p>
+            </div>
+            <div className="md:border-l md:border-[var(--rule-soft)] md:pl-6">
+              <p className="text-base font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                Setup en 5 minutos
+              </p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Sin tarjeta, sin permanencia
+              </p>
+            </div>
+            <div className="md:border-l md:border-[var(--rule-soft)] md:pl-6">
+              <p className="text-base font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                Yape, Plin y efectivo
+              </p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Cobrás como ya cobrás
+              </p>
+            </div>
           </div>
         </m.div>
       </div>

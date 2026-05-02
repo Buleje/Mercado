@@ -614,12 +614,7 @@ export default function Footer() {
                 <span className="mx-0.5">·</span>
                 <a href="/terminos" className="hover:text-white/60 transition-colors">Términos</a>
               </p>
-              <a
-                href="/about"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                v1.0 beta
-              </a>
+              {/* "v1.0 beta" eliminado en producción pública — proyecta inseguridad. */}
             </div>
           </div>
         </div>

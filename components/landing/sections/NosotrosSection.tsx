@@ -42,7 +42,7 @@ export default function NosotrosSection() {
           <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
             <T k="about.headline1" fallback="El sistema que pone" />
             <br />
-            <span className="italic font-serif text-[var(--accent)]">
+            <span className="text-[var(--accent)]">
               <T k="about.headlineAccent" fallback="a vender tu negocio." />
             </span>
           </h2>

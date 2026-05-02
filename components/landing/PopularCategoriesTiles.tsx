@@ -96,7 +96,7 @@ export default function PopularCategoriesTiles() {
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               {t("landing.categories.title")}
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 {t("landing.categories.titleAccent")}
               </span>
             </h2>

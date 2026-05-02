@@ -82,7 +82,7 @@ export default function FAQSection() {
             <h2 className="text-[clamp(2.5rem,6vw,4.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               {t("faq.title")}
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 {t("faq.titleAccent")}
               </span>
             </h2>
