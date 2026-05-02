@@ -31,6 +31,7 @@ export type ConversationState =
   | "cart"
   | "checkout"
   | "awaiting_payment"
+  | "awaiting_payment_capture" // multi-vendor: esperando foto Yape del cliente
   | "completed";
 
 export type ProcessResult = {
@@ -311,12 +312,18 @@ export async function processMessage(
       );
     }
 
-    // ── Estado: awaiting_payment / completed ──────────────────────────────
-    if (state === "awaiting_payment" || state === "completed") {
+    // ── Estado: awaiting_payment / awaiting_payment_capture / completed ──────
+    if (
+      state === "awaiting_payment" ||
+      state === "awaiting_payment_capture" ||
+      state === "completed"
+    ) {
+      const msg =
+        state === "awaiting_payment_capture"
+          ? "Estamos esperando la captura de tu pago Yape. Por favor envíala al número indicado.\n\nEscribe *hola* si deseas hacer otro pedido."
+          : "Tu pedido ya fue registrado. Te contactaremos pronto.\n\nEscribe *hola* si deseas hacer otro pedido.";
       return {
-        reply:
-          `Tu pedido ya fue registrado. Te contactaremos pronto.\n\n` +
-          `Escribe *hola* si deseas hacer otro pedido.`,
+        reply: msg,
         newState: state,
       };
     }

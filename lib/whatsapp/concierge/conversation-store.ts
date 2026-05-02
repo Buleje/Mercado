@@ -136,6 +136,7 @@ export function extractState(
     "cart",
     "checkout",
     "awaiting_payment",
+    "awaiting_payment_capture",
     "completed",
   ];
   return valid.includes(conversation.state as ConversationState)

@@ -8,6 +8,7 @@ import {
   fallbackHandler,
   orderCreateHandler,
   orderCancelHandler,
+  recommendHandler,
 } from "./handlers";
 import { extractState } from "./conversation-store";
 import { formatError } from "../message-templates";
@@ -49,10 +50,14 @@ const TRANSITIONS: Map<string, TransitionEntry> = new Map([
   ["cart:pago",            { handler: orderCreateHandler }],  // "pago" in cart → move to checkout
 
   // ── Estado del pedido ─────────────────────────────────────────────────────
-  ["cart:estado",          { handler: orderStatusHandler }],
-  ["checkout:estado",      { handler: orderStatusHandler }],
-  ["awaiting_payment:estado", { handler: orderStatusHandler }],
-  ["completed:estado",     { handler: orderStatusHandler }],
+  ["cart:estado",                       { handler: orderStatusHandler }],
+  ["checkout:estado",                   { handler: orderStatusHandler }],
+  ["awaiting_payment:estado",           { handler: orderStatusHandler }],
+  ["awaiting_payment_capture:estado",   { handler: orderStatusHandler }],
+  ["completed:estado",                  { handler: orderStatusHandler }],
+
+  // ── Recomendaciones IA cross-tenant ───────────────────────────────────────
+  ["*:recomendar",         { handler: recommendHandler }],
 
   // ── Escalada a humano ─────────────────────────────────────────────────────
   ["*:humano",             { handler: humanEscalationHandler }],

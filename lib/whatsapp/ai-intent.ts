@@ -13,6 +13,7 @@ export const WhatsappIntent = z.enum([
   "estado",
   "pago",
   "humano",
+  "recomendar",
   "desconocido",
 ]);
 export type WhatsappIntent = z.infer<typeof WhatsappIntent>;
@@ -33,23 +34,27 @@ export type Classification = z.infer<typeof ClassificationSchema>;
 
 const FALLBACK: Classification = { intent: "desconocido", confidence: 0 };
 
-const SYSTEM_PROMPT = `Eres un clasificador de intenciones para una bodega peruana en WhatsApp.
+const SYSTEM_PROMPT = `Eres un clasificador de intenciones para un marketplace peruano (Pucallpa) en WhatsApp.
 Recibes un mensaje del cliente y devuelves SOLO un JSON valido con esta forma:
 {
-  "intent": "saludo" | "catalogo" | "precio" | "pedido" | "confirmar" | "estado" | "pago" | "humano" | "desconocido",
+  "intent": "saludo" | "catalogo" | "precio" | "pedido" | "confirmar" | "estado" | "pago" | "humano" | "recomendar" | "desconocido",
   "confidence": 0.0-1.0,
   "items": [{"name":"arroz","quantity":2,"unit":"kg"}],
   "productQuery": "texto del producto consultado"
 }
 
 Reglas:
-- "pedido" solo si el cliente pide productos concretos ("quiero", "dame", "mandame")
-- "confirmar" si dice "si", "confirmo", "dale", "ok confirmo"
-- "estado" si pregunta por su orden actual ("donde esta mi pedido", "ya llego")
-- "pago" si pregunta como pagar o menciona yape/efectivo
-- "humano" si pide hablar con una persona real
+- "saludo" si dice "hola", "buenas", "hey", "ola"
+- "catalogo" si pregunta que venden, que hay, ver productos, ver tiendas, mostrar menu
+- "precio" si pregunta cuanto cuesta o busca un producto especifico ("tienen leche?", "cuanto la coca cola")
+- "pedido" solo si pide productos concretos ("quiero", "dame", "mandame", "pidame 2 kilos de arroz")
+- "confirmar" si dice "si", "confirmo", "dale", "ok confirmo", "ya pe"
+- "estado" si pregunta por su orden actual ("donde esta mi pedido", "ya llego", "que paso con mi pedido")
+- "pago" si pregunta como pagar o menciona yape/efectivo/tarjeta
+- "humano" si pide hablar con una persona real / asesor / vendedor
+- "recomendar" si pide consejo o sugerencia ("que me recomiendas", "algo barato para la cena", "que sirve para una parrilla", "que tienen rico", "necesito algo para gripe", "ideas para regalo")
 - items SOLO si intent == "pedido"
-- productQuery SOLO si intent == "precio"
+- productQuery SOLO si intent == "precio" o "recomendar"
 - Si no estas seguro: "desconocido" con confidence < 0.4
 - Ningun texto fuera del JSON`;
 

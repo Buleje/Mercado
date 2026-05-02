@@ -14,9 +14,23 @@ export type ConversationState =
   | "cart"
   | "checkout"
   | "awaiting_payment"
+  | "awaiting_payment_capture" // multi-vendor: esperando foto Yape del cliente
   | "completed";
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
+
+/**
+ * A single modifier selection (e.g. "Sin crema", "Extra queso").
+ * Mirrors the modifier shape used in CheckoutModal — added here for
+ * WhatsApp concierge multi-vendor support.
+ */
+export interface SelectedModifier {
+  modifierGroupId: string;
+  modifierGroupName: string;
+  optionId: string;
+  optionName: string;
+  priceAdjustment: number; // 0 if no extra charge
+}
 
 export interface CartItem {
   productId: number;
@@ -24,6 +38,20 @@ export interface CartItem {
   quantity: number;
   price: number;
   unit: string;
+  // ── Multi-vendor fields (added for multi-vendor checkout support) ──────────
+  // Optional during transition: legacy single-tenant handlers (cart-add,
+  // order-status) don't yet populate these. Multi-vendor checkout requires
+  // them — see multi-vendor-checkout.ts for the runtime contract.
+  /** tenantId of the store this product belongs to */
+  storeId?: string;
+  /** Human-readable slug used to identify the store (e.g. "bodega-san-martin") */
+  storeSlug?: string;
+  /** Display name of the store shown to the customer */
+  storeName?: string;
+  /** SHA-256 hash of serialized modifiers — used for idempotency dedup */
+  modifierHash?: string;
+  /** Selected modifier options (cremas, variaciones, toppings, etc.) */
+  modifiers?: SelectedModifier[];
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────

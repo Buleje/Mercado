@@ -8,6 +8,7 @@ import {
 } from "../../message-templates";
 import type { ConversationContext, ActionResult, Classification, CartItem } from "../types";
 import { extractCartItems } from "../conversation-store";
+import { checkoutMultiVendor } from "../multi-vendor-checkout";
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,19 @@ export async function orderCreateHandler(
     };
   }
 
+  // ── Detect multi-vendor cart ─────────────────────────────────────────────
+  // A cart is multi-vendor when items carry storeId AND there are 2+ distinct
+  // storeIds.  Single-vendor carts (all same storeId or storeId missing) fall
+  // through to the legacy /api/orders path.
+  const distinctStores = new Set(
+    items.map((i) => i.storeId).filter((s): s is string => Boolean(s)),
+  );
+
+  if (distinctStores.size >= 2 && ctx.conversation?.id) {
+    return await handleMultiVendorCheckout(ctx, items, deliveryAddress);
+  }
+
+  // ── Legacy single-store path ─────────────────────────────────────────────
   // Call internal API to create the order (avoids danger-zone direct DB access)
   try {
     const baseUrl =
@@ -101,6 +115,66 @@ export async function orderCreateHandler(
     });
     return {
       reply: "No pude procesar tu pedido en este momento. Intenta en un momento o escribe *hablar con humano*.",
+      newState: "cart",
+    };
+  }
+}
+
+// ─── Multi-vendor checkout handler ────────────────────────────────────────────
+
+async function handleMultiVendorCheckout(
+  ctx: ConversationContext,
+  items: CartItem[],
+  deliveryAddress: string,
+): Promise<ActionResult> {
+  // ctx.conversation!.id guaranteed non-null — caller checks it
+  const conversationId = ctx.conversation!.id;
+
+  try {
+    const result = await checkoutMultiVendor(
+      conversationId,
+      items,
+      deliveryAddress,
+      ctx.phone,
+      ctx.tenantId,
+    );
+
+    const storeNames = result.orders.map((o) => o.storeName);
+    const uniqueStoreNames = [...new Set(storeNames)];
+    const yapeNumber =
+      process.env.YAPE_NUMBER ?? process.env.NEXT_PUBLIC_YAPE_NUMBER ?? "";
+
+    // Build grouped cart summary per store
+    const storeLines = result.orders
+      .map(
+        (o) =>
+          `• *${o.storeName}*: S/ ${o.subtotal.toFixed(2)}`,
+      )
+      .join("\n");
+
+    const reply =
+      `✅ *¡Pedido confirmado en ${result.orders.length} tienda${result.orders.length > 1 ? "s" : ""}!*\n\n` +
+      `${storeLines}\n\n` +
+      `*Total a pagar: S/ ${result.totalAmount.toFixed(2)}*\n\n` +
+      `📲 Por favor, envía la captura de tu pago Yape al número *${yapeNumber || "[número Yape no configurado]"}*.\n` +
+      `Referencia de pago: \`${result.paymentApprovalId.slice(0, 8).toUpperCase()}\`\n\n` +
+      `🏪 Tu pedido se preparará en: ${uniqueStoreNames.join(", ")}.\n` +
+      `Dirección de entrega: ${deliveryAddress}`;
+
+    return {
+      reply,
+      newState: "awaiting_payment_capture",
+      updatedCartItems: [], // clear cart after checkout
+    };
+  } catch (err) {
+    logger.error("[order-create-handler] multi-vendor checkout failed", {
+      tenantId: ctx.tenantId,
+      conversationId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      reply:
+        "Hubo un problema al procesar tu pedido multi-tienda. Intenta de nuevo o escribe *hablar con humano*.",
       newState: "cart",
     };
   }
