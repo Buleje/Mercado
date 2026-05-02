@@ -955,7 +955,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
         {/* Listado de tiendas */}
         {viewMode === "map" ? (
-          <TiendasMap stores={finalStores} />
+          <TiendasMap stores={finalStores} userCoords={userCoords} />
         ) : (
           <MarketplaceStoresView
             stores={stores}
