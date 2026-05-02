@@ -124,6 +124,9 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/billing/mp-webhook",
     "/api/cron/",
     "/api/health",
+    // WhatsApp endpoints: protegidos por X-Hub-Signature-256 (HMAC) en /webhook
+    // y /concierge; el subpath /test sólo responde en NODE_ENV != production.
+    "/api/whatsapp/",
     "/api/admin/log-error", // error boundary, dispara antes del login
     // Beacon público de pageview de la tienda individual: navigator.sendBeacon
     // no permite headers custom — no puede enviar X-CSRF-Token. El endpoint
