@@ -24,6 +24,7 @@ import {
   monthlyEquivalentAnnual,
   annualSavings,
 } from "@/lib/billing/plan-tiers";
+import { useLocale } from "@/contexts/locale-context";
 
 type Billing = "mensual" | "anual";
 
@@ -34,16 +35,17 @@ const PLAN_HREF: Record<PlanTier, string> = {
   max: "/marketplace/registrar?plan=max",
 };
 
-const PLAN_CTA: Record<PlanTier, string> = {
-  basico: "Probar gratis 1 mes",
-  pro: "Empezar con Pro",
-  enterprise: "Contactar a ventas",
-  max: "Hablar con un experto",
+const PLAN_CTA_KEYS: Record<PlanTier, string> = {
+  basico: "plans.cta.basico",
+  pro: "plans.cta.pro",
+  enterprise: "plans.cta.enterprise",
+  max: "plans.cta.max",
 };
 
 export default function PlansToggle() {
   const [billing, setBilling] = useState<Billing>("mensual");
   const isAnnual = billing === "anual";
+  const { t } = useLocale();
 
   return (
     <section
@@ -54,17 +56,16 @@ export default function PlansToggle() {
         <div className="text-center mb-12">
           <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-            Planes hechos para crecer
+            {t("plans.kicker")}
           </p>
           <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-            Probá un mes,{" "}
+            {t("landing.plans.title")}{" "}
             <span className="italic font-serif text-[var(--accent)]">
-              pagá solo si te conviene.
+              {t("landing.plans.titleAccent")}
             </span>
           </h2>
           <p className="mt-6 text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
-            Sin contrato, sin permanencia y sin letra chica. Elegí cualquier plan
-            y cambiate cuando quieras — tus datos se quedan con vos.
+            {t("landing.plans.description")}
           </p>
         </div>
 
@@ -86,11 +87,11 @@ export default function PlansToggle() {
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  {b === "mensual" ? "Mensual" : "Anual"}
+                  {b === "mensual" ? t("plans.monthly") : t("plans.annual")}
                   {b === "anual" && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-xs font-black">
                       <Sparkles className="h-3 w-3" strokeWidth={2.5} />
-                      Hasta -25%
+                      {t("plans.upTo25off")}
                     </span>
                   )}
                 </button>
@@ -107,8 +108,7 @@ export default function PlansToggle() {
         </div>
 
         <p className="mt-10 text-center text-sm text-[var(--text-tertiary)]">
-          Todos los planes incluyen actualizaciones, soporte y backups
-          diarios · Cancelás en 1 click sin preguntas.
+          {t("plans.allInclude")}
         </p>
       </div>
     </section>
@@ -122,13 +122,14 @@ function PlanCard({
   plan: PlanDefinition;
   isAnnual: boolean;
 }) {
+  const { t } = useLocale();
   const recommended = plan.recommended === true;
   const monthlyShown = isAnnual ? monthlyEquivalentAnnual(plan) : plan.monthlyPrice;
   const showFirstMonthBanner = !isAnnual && plan.firstMonthDiscount > 0;
   const firstMonth = firstMonthPrice(plan);
   const savings = annualSavings(plan);
   const href = PLAN_HREF[plan.id];
-  const cta = PLAN_CTA[plan.id];
+  const cta = t(PLAN_CTA_KEYS[plan.id]);
 
   return (
     <m.div
@@ -142,7 +143,7 @@ function PlanCard({
     >
       {recommended && (
         <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--accent)] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-          Más elegido
+          {t("plans.mostChosen")}
         </span>
       )}
 
@@ -160,7 +161,7 @@ function PlanCard({
             recommended ? "text-[var(--surface-canvas)]/75" : "text-[var(--text-tertiary)]"
           }`}
         >
-          {plan.tagline}
+          {t(`plans.tagline.${plan.id}`)}
         </p>
       </div>
 
@@ -178,7 +179,7 @@ function PlanCard({
               S/ {plan.monthlyPrice}
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
-              {plan.firstMonthDiscount === 100 ? "1er mes gratis" : `−${plan.firstMonthDiscount}%`}
+              {plan.firstMonthDiscount === 100 ? t("plans.firstMonthFree") : `−${plan.firstMonthDiscount}%`}
             </span>
           </div>
         )}
@@ -223,7 +224,7 @@ function PlanCard({
                 recommended ? "text-[var(--surface-canvas)]/60" : "text-[var(--text-tertiary)]"
               }`}
             >
-              {showFirstMonthBanner ? "1er mes" : "/mes"}
+              {showFirstMonthBanner ? t("plans.firstMonth") : `/${t("common.month")}`}
             </span>
           </m.div>
         </AnimatePresence>
@@ -231,17 +232,19 @@ function PlanCard({
         {/* Sub-mensaje persuasivo */}
         {showFirstMonthBanner && plan.firstMonthDiscount < 100 && (
           <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
-            Después <strong>S/ {plan.monthlyPrice}/mes</strong> · cancelás cuando quieras
+            {t("plans.afterMonthly").split("·")[0]?.trim()} <strong>S/ {plan.monthlyPrice}/{t("common.month")}</strong> ·{" "}
+            {t("plans.afterMonthly").split("·")[1]?.trim()}
           </p>
         )}
         {plan.firstMonthDiscount === 100 && !isAnnual && (
           <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
-            <strong>Sin tarjeta</strong> · después S/ {plan.monthlyPrice}/mes si te gusta
+            <strong>{t("common.noCard")}</strong> ·{" "}
+            {t("plans.noCardAfter").split("·")[1]?.trim()} S/ {plan.monthlyPrice}/{t("common.month")}
           </p>
         )}
         {isAnnual && (
           <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
-            Ahorrás <strong>S/ {savings}</strong> al año (≈ {Math.round(savings / plan.monthlyPrice)} meses gratis)
+            {t("plans.savings")} <strong>S/ {savings}</strong> (≈ {Math.round(savings / plan.monthlyPrice)} {t("common.month")})
           </p>
         )}
       </div>

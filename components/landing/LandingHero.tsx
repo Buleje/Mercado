@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   Heart,
 } from "@buleje/design-system/icons";
+import { useLocale } from "@/contexts/locale-context";
 
 interface Props {
   storeCount: number;
@@ -45,6 +46,7 @@ export default function LandingHero({
   productCount,
   avgRating,
 }: Props) {
+  const { t } = useLocale();
   const ref = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -92,20 +94,19 @@ export default function LandingHero({
           >
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              Plataforma todo-en-uno
+              {t("landing.hero.kicker")}
             </p>
 
             <h1 className="text-[clamp(2.5rem,6.5vw,4.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.95] text-balance">
-              Más clientes. Más pedidos.
+              {t("landing.hero.title1")} {t("landing.hero.title2")}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                Cero tecnología.
+                {t("landing.hero.titleAccent")}
               </span>
             </h1>
 
             <p className="mt-6 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-xl">
-              Catálogo, pagos Yape, delivery y reportes — todo listo en 5
-              minutos. Vos te enfocás en vender.
+              {t("landing.hero.description")}
             </p>
 
             {/* CTA primaria + secundaria */}
@@ -119,14 +120,14 @@ export default function LandingHero({
                 href="/abrir-tienda"
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
-                Probá el primer mes sin pagar
+                {t("landing.hero.ctaPrimary")}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
               </Link>
               <Link
                 href="#como-funciona"
                 className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-4 text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
-                Ver demo
+                {t("landing.hero.ctaSecondary")}
               </Link>
             </m.div>
 
@@ -137,7 +138,7 @@ export default function LandingHero({
               transition={{ delay: 0.45 }}
               className="mt-8 flex items-center gap-2 text-sm text-[var(--text-tertiary)]"
             >
-              <span aria-hidden className="inline-flex h-2 w-2 rounded-full bg-[var(--brand-success)]" />
+              <span aria-hidden className="inline-flex h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
               Sin tarjeta · Cero comisión los primeros 90 días
             </m.div>
           </m.div>
@@ -215,7 +216,7 @@ const EVENT_STREAM: LiveEvent[] = [
 ];
 
 const EVENT_META: Record<EventKind, { Icon: typeof ShoppingBag; tone: string }> = {
-  order: { Icon: ShoppingBag, tone: "bg-[var(--brand-success)]/25 text-[var(--brand-success)]" },
+  order: { Icon: ShoppingBag, tone: "bg-[var(--data-success-500)]/25 text-[var(--data-success-500)]" },
   payment: { Icon: Banknote, tone: "bg-emerald-500/25 text-emerald-400" },
   review: { Icon: Heart, tone: "bg-rose-500/25 text-rose-400" },
   delivery: { Icon: CheckCircle2, tone: "bg-sky-500/25 text-sky-400" },
@@ -356,6 +357,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
         whileHover={reducedMotion ? undefined : { y: -4, scale: 1.01 }}
         transition={{ type: "spring", stiffness: 220, damping: 20 }}
         className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20"
+        data-no-translate
       >
         <div className="relative h-full w-full rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">
           {/* Dynamic island */}
@@ -372,12 +374,12 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                   Estás vendiendo
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-success)]/15 px-2 py-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-1">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-success)]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                 </span>
-                <span className="text-xs font-black text-[var(--brand-success)]">LIVE</span>
+                <span className="text-xs font-black text-[var(--data-success-500)]">LIVE</span>
               </span>
             </div>
             {/* Search auto-typing */}
@@ -398,18 +400,18 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
           <div className="px-4 mt-1">
             <m.p
               key={Math.floor(sales / 100)}
-              initial={{ y: -2, color: "var(--brand-success)" }}
-              animate={{ y: 0, color: "var(--text-primary)" }}
+              initial={{ y: -2 }}
+              animate={{ y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-[2.5rem] font-black tabular-nums tracking-[-0.04em] leading-none"
+              className="text-[2.5rem] font-black tabular-nums tracking-[-0.04em] leading-none text-[var(--text-primary)]"
             >
               S/{" "}
               <NumberFlow value={sales} format={{ maximumFractionDigits: 0 }} locales="es-PE" />
             </m.p>
             <div className="mt-1 flex items-center justify-between">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-success)]/12 px-2 py-0.5">
-                <TrendingUp className="h-3 w-3 text-[var(--brand-success)]" strokeWidth={2.5} />
-                <span className="text-xs font-extrabold text-[var(--brand-success)]">+18% vs ayer</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-500)]/12 px-2 py-0.5">
+                <TrendingUp className="h-3 w-3 text-[var(--data-success-500)]" strokeWidth={2.5} />
+                <span className="text-xs font-extrabold text-[var(--data-success-500)]">+18% vs ayer</span>
               </div>
               {/* Sparkline */}
               <Sparkline points={SPARKLINE_POINTS} reducedMotion={reducedMotion} />
@@ -442,10 +444,10 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                   <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">
                     Marco · 12 min
                   </p>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-success)]">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)]">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-success)]" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                     </span>
                   </span>
                 </div>
@@ -494,7 +496,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                       <p className="text-sm font-black leading-tight mt-0.5 truncate">{e.subtitle}</p>
                     </div>
                     {e.amount && (
-                      <span className="text-xs font-black text-[var(--brand-success)] shrink-0">
+                      <span className="text-xs font-black text-[var(--data-success-500)] shrink-0">
                         {e.amount}
                       </span>
                     )}
@@ -538,7 +540,7 @@ function KpiCard({
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
             {kicker}
           </p>
-          <span className="inline-flex items-center gap-0.5 text-xs font-black text-[var(--brand-success)]">
+          <span className="inline-flex items-center gap-0.5 text-xs font-black text-[var(--data-success-500)]">
             <TrendingUp className="h-2.5 w-2.5" strokeWidth={3} />
           </span>
         </div>
@@ -552,7 +554,7 @@ function KpiCard({
 
 /* ── Ticker horizontal de proof points debajo del phone ───────────── */
 const PROOF_POINTS = [
-  { Icon: TrendingUp, label: "+S/ 12,430 este mes", tone: "text-[var(--brand-success)]" },
+  { Icon: TrendingUp, label: "+S/ 12,430 este mes", tone: "text-[var(--data-success-500)]" },
   { Icon: Star, label: "4.8/5 · +120 reseñas", tone: "text-amber-500" },
   { Icon: Bike, label: "25 min entrega promedio", tone: "text-[var(--accent)]" },
   { Icon: ShoppingBag, label: "+42% ventas en 90 días", tone: "text-fuchsia-500" },
@@ -651,7 +653,7 @@ function Sparkline({
     >
       <defs>
         <linearGradient id="spark-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="var(--brand-success)" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="var(--data-success-500)" stopOpacity="0.6" />
           <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
       </defs>

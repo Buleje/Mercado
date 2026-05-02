@@ -13,36 +13,13 @@ import {
   CreditCard,
   Bike,
 } from "@buleje/design-system/icons";
+import T from "@/components/T";
 
 const PASOS = [
-  {
-    num: "01",
-    icon: Search,
-    title: "Activás tu negocio",
-    desc: "Logo, catálogo y horarios. Listo en 5 minutos.",
-    tag: "Setup",
-  },
-  {
-    num: "02",
-    icon: ShoppingBag,
-    title: "Atraés clientes",
-    desc: "Aparecés en buscadores, mapa y app sin pagar publicidad.",
-    tag: "Crecimiento",
-  },
-  {
-    num: "03",
-    icon: CreditCard,
-    title: "Cobrás al instante",
-    desc: "Yape, Plin, tarjeta o efectivo. Cero comisiones por 90 días.",
-    tag: "Pagos",
-  },
-  {
-    num: "04",
-    icon: Bike,
-    title: "Entregás sin estrés",
-    desc: "Tus repartidores, los nuestros, o ambos. Tracking en vivo.",
-    tag: "Delivery",
-  },
+  { num: "01", icon: Search,      keyTitle: "landing.how.step1.title", keyDesc: "landing.how.step1.desc", keyTag: "landing.how.step1.tag" },
+  { num: "02", icon: ShoppingBag, keyTitle: "landing.how.step2.title", keyDesc: "landing.how.step2.desc", keyTag: "landing.how.step2.tag" },
+  { num: "03", icon: CreditCard,  keyTitle: "landing.how.step3.title", keyDesc: "landing.how.step3.desc", keyTag: "landing.how.step3.tag" },
+  { num: "04", icon: Bike,        keyTitle: "landing.how.step4.title", keyDesc: "landing.how.step4.desc", keyTag: "landing.how.step4.tag" },
 ];
 
 export default function ComoFuncionaSection() {
@@ -72,25 +49,24 @@ export default function ComoFuncionaSection() {
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
               />
-              Cómo funciona
+              <T k="landing.how.kicker" fallback="Cómo funciona" />
             </p>
             <h2 className="text-[clamp(2.5rem,6.5vw,4.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Cuatro pasos.
+              <T k="landing.how.title" fallback="Cuatro pasos." />
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                Cero fricción.
+                <T k="landing.how.titleAccent" fallback="Cero fricción." />
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            De abrir tu negocio online a cobrar el primer pedido —
-            todo en una tarde.
+            <T k="landing.how.description" fallback="De abrir tu negocio online a cobrar el primer pedido — todo en una tarde." />
           </p>
         </div>
 
         {/* Grid de 4 pasos — asimétrico */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
-          {PASOS.map(({ num, icon: Icon, title, desc, tag }, idx) => (
+          {PASOS.map(({ num, icon: Icon, keyTitle, keyDesc, keyTag }, idx) => (
             <article
               key={num}
               className="group relative bg-[var(--surface-canvas)] p-8 lg:p-10 transition-colors hover:bg-[var(--surface-sunken)]"
@@ -113,19 +89,19 @@ export default function ComoFuncionaSection() {
               {/* Tag numérico */}
               <div className="relative flex items-center gap-2 mb-3">
                 <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                  Paso {num}
+                  <T k="landing.how.step" fallback="Paso" /> {num}
                 </span>
                 <span className="h-px flex-1 bg-[var(--rule-soft)]" />
                 <span className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-                  {tag}
+                  <T k={keyTag} />
                 </span>
               </div>
 
               <h3 className="relative text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                {title}
+                <T k={keyTitle} />
               </h3>
               <p className="relative mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">
-                {desc}
+                <T k={keyDesc} />
               </p>
 
               {/* Linker visual entre pasos (solo desktop, no último) */}
@@ -143,19 +119,19 @@ export default function ComoFuncionaSection() {
         <div className="mt-16 sm:mt-20 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 items-center">
           <div className="grid grid-cols-3 gap-6 sm:gap-8">
             {[
-              { value: "5 min", label: "Tiempo de setup" },
-              { value: "S/ 0", label: "Comisión 90 días" },
-              { value: "24/7", label: "Soporte por WhatsApp" },
-            ].map(({ value, label }) => (
+              { keyVal: "landing.how.stat1.value", keyLab: "landing.how.stat1.label" },
+              { keyVal: "landing.how.stat2.value", keyLab: "landing.how.stat2.label" },
+              { keyVal: "landing.how.stat3.value", keyLab: "landing.how.stat3.label" },
+            ].map(({ keyVal, keyLab }) => (
               <div
-                key={label}
+                key={keyLab}
                 className="border-l-2 border-[var(--accent)] pl-4"
               >
                 <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
-                  {value}
+                  <T k={keyVal} />
                 </p>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
-                  {label}
+                  <T k={keyLab} />
                 </p>
               </div>
             ))}
@@ -165,7 +141,7 @@ export default function ComoFuncionaSection() {
               href="/abrir-tienda"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-8 py-4 text-base font-bold text-[var(--surface-canvas)] hover:opacity-90 transition-opacity"
             >
-              Probá el primer mes sin pagar
+              <T k="landing.how.cta" fallback="Probá el primer mes sin pagar" />
               <span aria-hidden>→</span>
             </Link>
           </div>

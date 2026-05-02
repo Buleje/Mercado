@@ -27,6 +27,9 @@ import BrandLogo from "@/components/branding/BrandLogo";
 import PromoBannerTop from "@/components/landing/PromoBannerTop";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
+import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLocale } from "@/contexts/locale-context";
 
 // ── Nav links canónicos (mission spec) ──────────────────────────────────────
 type NavLink = {
@@ -36,15 +39,13 @@ type NavLink = {
 };
 
 // Nav links de la landing — todos dentro del contexto pre-auth.
-// Brandon mayo 2026: reducidos de 6 a 4. "Inicio" se quita porque el logo
-// ya lleva ahí. "Nosotros" se saca porque era el anchor menos transitado.
-// El superadmin sigue pudiendo ocultar individualmente vía
-// /superadmin/stores → tab Navegación (useNavVisibility).
-const NAV_LINKS: readonly NavLink[] = [
-  { id: "como-funciona", label: "Cómo funciona", href: "/#como-funciona" },
-  { id: "planes", label: "Planes", href: "/#planes" },
-  { id: "faq", label: "FAQ", href: "/#faq" },
-  { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda" },
+// Brandon mayo 2026: reducidos de 6 a 4. Las labels ahora vienen del
+// diccionario i18n para que cambien con el LanguageSwitcher.
+const NAV_LINK_DEFS: ReadonlyArray<{ id: string; tKey: string; href: string }> = [
+  { id: "como-funciona", tKey: "landing.nav.howItWorks", href: "/#como-funciona" },
+  { id: "planes", tKey: "landing.nav.plans", href: "/#planes" },
+  { id: "faq", tKey: "landing.nav.faq", href: "/#faq" },
+  { id: "abrir-tienda", tKey: "landing.nav.openStore", href: "/abrir-tienda" },
 ] as const;
 
 // ── Active-state matcher (rutas exactas, / solo matchea en root) ────────────
@@ -68,10 +69,22 @@ export default function LandingHeader({
   // alwaysOpaque seeds initial state so we don't trigger a cascading render.
   const [scrolled, setScrolled] = useState<boolean>(alwaysOpaque);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Año de copyright: SSR-safe (Next 16 prerender-current-time). Se hidrata en cliente.
+  const [currentYear, setCurrentYear] = useState(2026);
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   // Visibilidad controlada desde superadmin. Durante SSR muestra todos;
   // el hook sincroniza con localStorage tras mount.
   const visibility = useNavVisibility("landing");
+  const { t } = useLocale();
+  // Construye los nav-links con labels traducidas según el locale activo.
+  const NAV_LINKS: readonly NavLink[] = NAV_LINK_DEFS.map((d) => ({
+    id: d.id,
+    label: t(d.tKey),
+    href: d.href,
+  }));
   const visibleLinks = NAV_LINKS.filter(
     (l) => visibility[l.id] !== false,
   );
@@ -141,6 +154,7 @@ export default function LandingHeader({
             href="/"
             aria-label="Buleje — Ir al inicio"
             className="flex shrink-0 items-center gap-2 text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
+            data-no-translate
           >
             <BrandLogo
               variant="wordmark"
@@ -187,19 +201,22 @@ export default function LandingHeader({
           </nav>
 
           {/* ── CTAs derecha (desktop) ── */}
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="hidden items-center gap-1.5 lg:flex">
+            <LanguageSwitcher />
+            <ThemeToggle className="!h-10 !w-10" />
+            <div className="mx-1 h-6 w-px bg-[var(--rule-base)]" aria-hidden />
             <PrimaryButton
               variant="ghost"
               size="md"
               onClick={handleLogin}
-              aria-label="Ingresar a tu cuenta"
+              aria-label={t("landing.nav.signin")}
             >
-              Ingresar
+              {t("landing.nav.signin")}
             </PrimaryButton>
             <button
               type="button"
               onClick={handleSignup}
-              aria-label="Empezar mi tienda"
+              aria-label={t("landing.nav.startStore")}
               className={cn(
                 "group inline-flex items-center gap-2 h-10 px-5 rounded-full",
                 "bg-[var(--accent)] text-white text-sm font-extrabold",
@@ -209,7 +226,7 @@ export default function LandingHeader({
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}
             >
-              Empezar mi tienda
+              {t("landing.nav.startStore")}
               <ArrowRight
                 className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
                 strokeWidth={2.75}
@@ -218,7 +235,11 @@ export default function LandingHeader({
             </button>
           </div>
 
-          {/* ── Hamburger animado (mobile) ── */}
+          {/* ── Language + Theme + Hamburger (mobile) ── */}
+          <div className="flex items-center gap-1 lg:hidden">
+            <LanguageSwitcher />
+            <ThemeToggle className="!h-10 !w-10" />
+          </div>
           <button
             type="button"
             className={cn(
@@ -285,7 +306,13 @@ interface MobileSheetProps {
 
 function useVisibleLinks() {
   const visibility = useNavVisibility("landing");
-  return NAV_LINKS.filter((l) => visibility[l.id] !== false);
+  const { t } = useLocale();
+  const links: readonly NavLink[] = NAV_LINK_DEFS.map((d) => ({
+    id: d.id,
+    label: t(d.tKey),
+    href: d.href,
+  }));
+  return links.filter((l) => visibility[l.id] !== false);
 }
 
 function MobileSheet({
@@ -296,6 +323,11 @@ function MobileSheet({
   onSignup,
 }: MobileSheetProps) {
   const visibleLinks = useVisibleLinks();
+  // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
+  const [currentYear, setCurrentYear] = useState(2026);
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
   if (!open) return null;
 
   return (
@@ -430,7 +462,7 @@ function MobileSheet({
         {/* Footer sutil con copyright + WhatsApp */}
         <div className="border-t border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-            <span>© Buleje {new Date().getFullYear()}</span>
+            <span>© Buleje {currentYear}</span>
             <a
               href="https://wa.me/51999999999"
               target="_blank"

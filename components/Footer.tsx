@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useLocale } from "@/contexts/locale-context";
 import {
   Store,
   MapPin,
@@ -105,6 +106,9 @@ function WhatsAppContactSection({
 }) {
   const pathname = usePathname();
   const [showPulse, setShowPulse] = useState(false);
+  // SSR-safe (Next 16 prerender-current-time): se calcula en cliente tras mount.
+  const [todayDow, setTodayDow] = useState<number | null>(null);
+  const [nowMins, setNowMins] = useState<number | null>(null);
 
   useEffect(() => {
     const visits = parseInt(sessionStorage.getItem("buleje-wa-visits") ?? "0", 10);
@@ -112,6 +116,9 @@ function WhatsAppContactSection({
       setShowPulse(true);
       sessionStorage.setItem("buleje-wa-visits", String(visits + 1));
     }
+    const d = new Date();
+    setTodayDow(d.getDay());
+    setNowMins(d.getHours() * 60 + d.getMinutes());
   }, []);
 
   const phone = storeTheme?.whatsapp?.replace(/\D/g, "") || storeTheme?.phone?.replace(/\D/g, "") || WHATSAPP_PHONE;
@@ -119,15 +126,13 @@ function WhatsAppContactSection({
   const waUrl = `https://wa.me/${phone}?text=${message}`;
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const todayName = DAY_NAMES[new Date().getDay()];
-  const todayEntry = deliveryConfig.hours.find((h) => h.day === todayName);
+  const todayName = todayDow !== null ? DAY_NAMES[todayDow] : null;
+  const todayEntry = todayName ? deliveryConfig.hours.find((h) => h.day === todayName) : undefined;
   const isOpenNow = (() => {
-    if (!todayEntry?.enabled) return false;
-    const now = new Date();
+    if (!todayEntry?.enabled || nowMins === null) return false;
     const [oh, om] = todayEntry.open.split(":").map(Number);
     const [ch, cm] = todayEntry.close.split(":").map(Number);
-    const mins = now.getHours() * 60 + now.getMinutes();
-    return mins >= oh * 60 + om && mins <= ch * 60 + cm;
+    return nowMins >= oh * 60 + om && nowMins <= ch * 60 + cm;
   })();
 
   const hoursLabel = todayEntry?.enabled
@@ -236,7 +241,16 @@ const storeModeLinks = [
 ];
 
 export default function Footer() {
-  const year = new Date().getFullYear();
+  const { t } = useLocale();
+  // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
+  const [year, setYear] = useState(2026);
+  const [todayDow, setTodayDow] = useState<number | null>(null);
+  useEffect(() => {
+    const d = new Date();
+    setYear(d.getFullYear());
+    setTodayDow(d.getDay());
+  }, []);
+
   const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const pathname = usePathname();
   const isStoreMode = isStoreModePath(pathname);
@@ -255,8 +269,8 @@ export default function Footer() {
   const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const todayName = DAY_NAMES[new Date().getDay()];
-  const todayEntry = deliveryConfig.hours.find((h) => h.day === todayName);
+  const todayName = todayDow !== null ? DAY_NAMES[todayDow] : null;
+  const todayEntry = todayName ? deliveryConfig.hours.find((h) => h.day === todayName) : undefined;
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
   const perks = [
@@ -329,7 +343,7 @@ export default function Footer() {
           {/* ── Columna 1: Marketplace ── */}
           <nav aria-label="Marketplace">
             <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              Marketplace
+              {t("footer.marketplace")}
             </h3>
             <ul className="space-y-2.5">
               {marketplaceLinks.map((link) => (
@@ -344,7 +358,7 @@ export default function Footer() {
               ))}
             </ul>
             <h4 className="mt-6 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
-              Categorías
+              {t("footer.categories")}
             </h4>
             <ul className="space-y-2">
               {categoryLinks.map((link) => (
@@ -363,7 +377,7 @@ export default function Footer() {
           {/* ── Columna 2: Mi cuenta ── */}
           <nav aria-label="Mi cuenta">
             <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              Mi cuenta
+              {t("footer.myAccount")}
             </h3>
             <ul className="space-y-2.5">
               {cuentaLinks.map((link) => (
@@ -382,7 +396,7 @@ export default function Footer() {
           {/* ── Columna 3: Vendé en Buleje ── */}
           <nav aria-label="Vendé en Buleje">
             <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              Vendé en Buleje
+              {t("footer.sellOnBuleje")}
             </h3>
             <ul className="space-y-2.5">
               {businessLinks.map((link) => (
@@ -401,14 +415,14 @@ export default function Footer() {
               className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
             >
               <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              Abrí tu tienda
+              {t("footer.openYourStore")}
             </a>
           </nav>
 
           {/* ── Columna 4: Ayuda ── */}
           <nav aria-label="Ayuda">
             <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              Ayuda
+              {t("footer.help")}
             </h3>
             <ul className="space-y-2.5">
               {helpLinks.map((link) => (

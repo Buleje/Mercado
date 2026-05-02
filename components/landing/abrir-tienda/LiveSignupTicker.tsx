@@ -28,12 +28,12 @@ export default function LiveSignupTicker({ start = 247 }: { start?: number }) {
       transition={{ delay: 0.6, duration: 0.5 }}
       className="inline-flex items-center gap-2.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-2 pr-4 py-1.5 shadow-sm"
     >
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-success)]/15 text-[var(--brand-success)]">
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
         <TrendingUp className="h-3.5 w-3.5" strokeWidth={2.5} />
       </span>
       <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-success)] opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand-success)]" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
       </span>
       <span className="text-sm font-bold text-[var(--text-secondary)]">
         <span className="font-black tabular-nums text-[var(--text-primary)]">

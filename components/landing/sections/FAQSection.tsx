@@ -11,88 +11,46 @@
 import { useState } from "react";
 import Link from "next/link";
 import { HelpCircle, MessageCircle, Plus } from "@buleje/design-system/icons";
+import { useLocale } from "@/contexts/locale-context";
 
-type FAQ = {
-  q: string;
-  a: string;
-};
-
-type Category = {
-  id: string;
-  label: string;
-  items: FAQ[];
-};
+type FAQ = { keyQ: string; keyA: string };
+type Category = { id: string; keyLabel: string; items: FAQ[] };
 
 const CATEGORIES: Category[] = [
   {
     id: "negocio",
-    label: "Vendé más",
+    keyLabel: "faq.cat1.label",
     items: [
-      {
-        q: "¿Cómo me ayuda Buleje a atraer clientes?",
-        a: "Tu negocio aparece en buscadores, mapa local y app. Cupones, ofertas del día y notificaciones push automáticas. Tus clientes te encuentran sin que pagues publicidad.",
-      },
-      {
-        q: "¿Qué pasa si ya tengo clientes fieles?",
-        a: "Buleje los retiene mejor: historial de compras, recordatorios, cumpleaños y promociones personalizadas. Convertís compradores ocasionales en habituales.",
-      },
-      {
-        q: "¿Qué herramientas vienen incluidas?",
-        a: "Catálogo, inventario, caja, cobros Yape/Plin/tarjeta, repartidores, reportes, reseñas, fiados, cupones, multi-sucursal. Todo en una sola app.",
-      },
-      {
-        q: "¿Funciona en cualquier ciudad del Perú?",
-        a: "Sí. Cualquier negocio del Perú puede activar su tienda en 5 minutos y empezar a recibir pedidos hoy.",
-      },
+      { keyQ: "faq.cat1.q1", keyA: "faq.cat1.a1" },
+      { keyQ: "faq.cat1.q2", keyA: "faq.cat1.a2" },
+      { keyQ: "faq.cat1.q3", keyA: "faq.cat1.a3" },
+      { keyQ: "faq.cat1.q4", keyA: "faq.cat1.a4" },
     ],
   },
   {
     id: "costos",
-    label: "Precios y planes",
+    keyLabel: "faq.cat2.label",
     items: [
-      {
-        q: "¿Cuánto cuesta usar Buleje?",
-        a: "Plan Gratis con 0% de comisión por 90 días. Plan Pro S/ 49/mes con herramientas avanzadas. Plan Enterprise a medida. Sin contratos, cancelás cuando quieras.",
-      },
-      {
-        q: "¿Hay comisión por venta?",
-        a: "No durante los primeros 90 días. Después depende del plan que elijas — siempre transparente y sin sorpresas en la factura.",
-      },
-      {
-        q: "¿Qué pasa si dejo de usarlo?",
-        a: "Cancelás con un click. Te llevás todos tus datos exportados (clientes, pedidos, productos) en CSV. No hay permanencia.",
-      },
-      {
-        q: "¿Necesito tarjeta de crédito para registrarme?",
-        a: "No. Empezás con Yape o efectivo y migras a tarjeta cuando quieras.",
-      },
+      { keyQ: "faq.cat2.q1", keyA: "faq.cat2.a1" },
+      { keyQ: "faq.cat2.q2", keyA: "faq.cat2.a2" },
+      { keyQ: "faq.cat2.q3", keyA: "faq.cat2.a3" },
+      { keyQ: "faq.cat2.q4", keyA: "faq.cat2.a4" },
     ],
   },
   {
     id: "tecnico",
-    label: "Setup y soporte",
+    keyLabel: "faq.cat3.label",
     items: [
-      {
-        q: "¿Cuánto demora el setup?",
-        a: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si querés.",
-      },
-      {
-        q: "¿Necesito saber de tecnología?",
-        a: "Cero. La app está hecha para que la maneje cualquier persona. Si ya usás WhatsApp, podés usar Buleje.",
-      },
-      {
-        q: "¿Tienen soporte humano?",
-        a: "Sí. Respondemos en menos de 2 horas por WhatsApp. Sin bots, sin formularios largos. Personas reales.",
-      },
-      {
-        q: "¿Puedo conectar mi sistema actual?",
-        a: "Sí. Tenemos API y webhooks abiertos para sincronizar con tu ERP, contabilidad o e-commerce existente.",
-      },
+      { keyQ: "faq.cat3.q1", keyA: "faq.cat3.a1" },
+      { keyQ: "faq.cat3.q2", keyA: "faq.cat3.a2" },
+      { keyQ: "faq.cat3.q3", keyA: "faq.cat3.a3" },
+      { keyQ: "faq.cat3.q4", keyA: "faq.cat3.a4" },
     ],
   },
 ];
 
 export default function FAQSection() {
+  const { t } = useLocale();
   const [activeCategory, setActiveCategory] = useState<string>(CATEGORIES[0].id);
   const currentCategory =
     CATEGORIES.find((c) => c.id === activeCategory) ?? CATEGORIES[0];
@@ -119,17 +77,17 @@ export default function FAQSection() {
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
               />
-              Preguntas
+              {t("faq.kicker")}
             </p>
             <h2 className="text-[clamp(2.5rem,6vw,4.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Todo lo que
+              {t("faq.title")}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                quieres saber.
+                {t("faq.titleAccent")}
               </span>
             </h2>
             <p className="mt-6 text-lg text-[var(--text-secondary)] leading-relaxed">
-              Si no encontrás tu respuesta, escríbenos — somos humanos, no bots.
+              {t("faq.subhead")}
             </p>
 
             {/* Tabs de categoría */}
@@ -155,7 +113,7 @@ export default function FAQSection() {
                       <span
                         className={`text-sm font-bold ${active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                       >
-                        {cat.label}
+                        {t(cat.keyLabel)}
                       </span>
                     </span>
                     <span
@@ -176,7 +134,7 @@ export default function FAQSection() {
               className="mt-6 inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
-              Escríbenos por WhatsApp
+              {t("faq.writeWhatsapp")}
             </a>
           </div>
 
@@ -192,7 +150,7 @@ export default function FAQSection() {
                           {String(idx + 1).padStart(2, "0")}
                         </span>
                         <span className="text-lg sm:text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-open:text-[var(--accent)] transition-colors">
-                          {item.q}
+                          {t(item.keyQ)}
                         </span>
                       </span>
                       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--rule-soft)] text-[var(--text-secondary)] group-open:rotate-45 group-open:border-[var(--accent)] group-open:text-[var(--accent)] transition-all duration-200">
@@ -201,7 +159,7 @@ export default function FAQSection() {
                     </summary>
                     <div className="pb-6 pl-12 pr-8">
                       <p className="text-base text-[var(--text-secondary)] leading-relaxed">
-                        {item.a}
+                        {t(item.keyA)}
                       </p>
                     </div>
                   </details>
@@ -212,14 +170,13 @@ export default function FAQSection() {
             {/* Ayuda adicional */}
             <div className="mt-10 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-                ¿Más preguntas?
+                {t("faq.moreQuestions")}
               </p>
               <h3 className="text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                No te quedes con la duda.
+                {t("faq.dontDoubt")}
               </h3>
               <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
-                Nuestro equipo responde personalmente en menos de 2 horas.
-                Sin bots, sin formularios largos.
+                {t("faq.teamResponds")}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
@@ -229,13 +186,13 @@ export default function FAQSection() {
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
                 >
                   <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
-                  WhatsApp directo
+                  {t("faq.directWhatsapp")}
                 </a>
                 <Link
                   href="/abrir-tienda"
                   className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
                 >
-                  Ver planes
+                  {t("landing.plans.compare")}
                   <span aria-hidden>→</span>
                 </Link>
               </div>

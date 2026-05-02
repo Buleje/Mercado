@@ -56,6 +56,8 @@ import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import { useLocale } from "@/contexts/locale-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // MarketplaceCheckoutModal y MarketplaceCart sidebar fueron deprecados —
 // ahora el flujo es 100% pages: /marketplace/carrito -> /checkout/datos ->
@@ -431,7 +433,13 @@ export default function MarketplaceNavbar() {
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              {/* Currency + Locale switchers removidos — default: Soles (PEN) + Español (es-PE) */}
+              {/* Language + Theme — siempre arrancan en español + light */}
+              <LanguageSwitcher />
+              <ThemeToggle className="!h-10 !w-10" />
+              <div
+                className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"
+                aria-hidden="true"
+              />
 
               {/* Order tracker badge — visible cuando hay pedido reciente,
                   reabre el OrderSuccessModal con animación pulse. */}

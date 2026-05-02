@@ -15,6 +15,7 @@ import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import { Reveal } from "@/components/landing/Reveal";
 import { StatsMarquee } from "@/components/landing/StatsMarquee";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
+import T from "@/components/T";
 import {
   Store,
   Bike,
@@ -224,27 +225,31 @@ async function ReviewsSection() {
 function PromoBanners() {
   const banners = [
     {
-      kicker: "Para dueños",
+      keyKicker: "landing.promo.business.kicker",
       icon: Store,
-      titleLine1: "Vendé sin comisión",
-      titleAccent: "los primeros 90 días.",
-      desc: "Tu bodega online en 5 minutos. Yape, efectivo, delivery propio. Cero costo fijo.",
-      stat: "S/ 0",
-      statLabel: "comisión 90 días",
-      primary: { label: "Abrir mi tienda gratis", href: "/abrir-tienda" },
-      secondary: { label: "Ver planes", href: "/abrir-tienda#planes" },
+      keyTitle1: "landing.promo.business.title1",
+      keyTitleAccent: "landing.promo.business.titleAccent",
+      keyDesc: "landing.promo.business.desc",
+      keyStat: "landing.promo.business.stat",
+      keyStatLabel: "landing.promo.business.statLabel",
+      keyPrimary: "landing.promo.business.cta",
+      primaryHref: "/abrir-tienda",
+      keySecondary: "landing.promo.business.cta2" as string | null,
+      secondaryHref: "/abrir-tienda#planes",
       tone: "from-[var(--accent)] to-emerald-700",
     },
     {
-      kicker: "Para repartidores",
+      keyKicker: "landing.promo.driver.kicker",
       icon: Bike,
-      titleLine1: "Tu moto, tu horario,",
-      titleAccent: "tu ingreso extra.",
-      desc: "Recibí pedidos cerca tuyo. Cobrás cada viaje + propinas. Sin jefe, sin esperas.",
-      stat: "S/ 6",
-      statLabel: "tarifa base por viaje",
-      primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
-      secondary: null as { label: string; href: string } | null,
+      keyTitle1: "landing.promo.driver.title1",
+      keyTitleAccent: "landing.promo.driver.titleAccent",
+      keyDesc: "landing.promo.driver.desc",
+      keyStat: "landing.promo.driver.stat",
+      keyStatLabel: "landing.promo.driver.statLabel",
+      keyPrimary: "landing.promo.driver.cta",
+      primaryHref: "/marketplace/repartidor",
+      keySecondary: null as string | null,
+      secondaryHref: "",
       tone: "from-orange-500 to-rose-600",
     },
   ];
@@ -274,49 +279,49 @@ function PromoBanners() {
                     <Icon className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    {b.kicker}
+                    <T k={b.keyKicker} />
                   </p>
                 </div>
 
                 <h3 className="relative text-[clamp(1.75rem,3.8vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
-                  {b.titleLine1}
+                  <T k={b.keyTitle1} />
                   <br />
                   <span className="italic font-serif text-[var(--accent)]">
-                    {b.titleAccent}
+                    <T k={b.keyTitleAccent} />
                   </span>
                 </h3>
 
                 <p className="relative mt-5 text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
-                  {b.desc}
+                  <T k={b.keyDesc} />
                 </p>
 
                 {/* Stat highlight */}
                 <div className="relative mt-6 inline-flex items-baseline gap-2 rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-4 py-2.5">
                   <span className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent)]">
-                    {b.stat}
+                    <T k={b.keyStat} />
                   </span>
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    {b.statLabel}
+                    <T k={b.keyStatLabel} />
                   </span>
                 </div>
 
                 <div className="relative mt-8 flex flex-wrap gap-3">
                   <Link
-                    href={b.primary.href}
+                    href={b.primaryHref}
                     className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-lg transition-all"
                   >
-                    {b.primary.label}
+                    <T k={b.keyPrimary} />
                     <ArrowUpRight
                       className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
                       strokeWidth={2.5}
                     />
                   </Link>
-                  {b.secondary && (
+                  {b.keySecondary && (
                     <Link
-                      href={b.secondary.href}
+                      href={b.secondaryHref}
                       className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-transparent px-6 py-3 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                     >
-                      {b.secondary.label}
+                      <T k={b.keySecondary} />
                     </Link>
                   )}
                 </div>
@@ -346,19 +351,18 @@ function AboutAndPricingSnapshot() {
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              Planes
+              <T k="landing.plans.kicker" fallback="Planes" />
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Probá un mes,
+              <T k="landing.plans.title" fallback="Probá un mes," />
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                pagá solo si te conviene.
+                <T k="landing.plans.titleAccent" fallback="pagá solo si te conviene." />
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Cambiás de plan cuando quieras. Sin contratos, sin permanencia,
-            sin sorpresas en la factura.
+            <T k="landing.plans.description" fallback="Cambiás de plan cuando quieras. Sin contratos, sin permanencia, sin sorpresas en la factura." />
           </p>
         </div>
 
@@ -371,7 +375,7 @@ function AboutAndPricingSnapshot() {
             href="/abrir-tienda#planes"
             className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
           >
-            Ver comparativa completa
+            <T k="landing.plans.compare" fallback="Ver comparativa completa" />
             <span aria-hidden>→</span>
           </Link>
         </div>
@@ -382,11 +386,11 @@ function AboutAndPricingSnapshot() {
 
 // ── Popular payment methods — editorial wordmark list ──
 function PaymentMethods() {
-  const methods: Array<{ name: string; desc: string; Icon: LucideIcon }> = [
-    { name: "Yape", desc: "Transferencia al instante", Icon: Smartphone },
-    { name: "Plin", desc: "Desde tu app del banco", Icon: Send },
-    { name: "Efectivo", desc: "Contra entrega", Icon: Banknote },
-    { name: "Tarjeta", desc: "Débito y crédito", Icon: CreditCard },
+  const methods: Array<{ keyName: string; keyDesc: string; Icon: LucideIcon }> = [
+    { keyName: "landing.payment.yape", keyDesc: "landing.payment.yapeDesc", Icon: Smartphone },
+    { keyName: "landing.payment.plin", keyDesc: "landing.payment.plinDesc", Icon: Send },
+    { keyName: "landing.payment.cash", keyDesc: "landing.payment.cashDesc", Icon: Banknote },
+    { keyName: "landing.payment.card", keyDesc: "landing.payment.cardDesc", Icon: CreditCard },
   ];
   return (
     <section
@@ -401,19 +405,18 @@ function PaymentMethods() {
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
               />
-              Formas de pago
+              <T k="landing.payment.kicker" fallback="Formas de pago" />
             </p>
             <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Pagas como
+              <T k="landing.payment.title" fallback="Pagas como" />
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                tú quieras.
+                <T k="landing.payment.titleAccent" fallback="tú quieras." />
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Cuatro maneras de pagar sin complicaciones. Eliges al momento del
-            checkout — no hay cargos ocultos.
+            <T k="landing.payment.description" fallback="Cuatro maneras de pagar sin complicaciones. Eliges al momento del checkout — no hay cargos ocultos." />
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl bg-[var(--surface-raised)] overflow-hidden">
@@ -421,17 +424,17 @@ function PaymentMethods() {
             const Icon = m.Icon;
             return (
               <div
-                key={m.name}
+                key={m.keyName}
                 className="group relative bg-[var(--surface-raised)] px-6 py-8 sm:py-10 transition-colors hover:bg-[var(--surface-canvas)]"
               >
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] mb-5 transition-colors group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]">
                   <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-none">
-                  {m.name}
+                  <T k={m.keyName} />
                 </p>
                 <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                  {m.desc}
+                  <T k={m.keyDesc} />
                 </p>
               </div>
             );
@@ -456,25 +459,24 @@ function FinalCTA() {
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
           />
-          Empieza hoy
+          <T k="landing.finalCta.kicker" fallback="Empieza hoy" />
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Tu negocio merece
+          <T k="landing.finalCta.title1" fallback="Tu negocio merece" />
           <br />
           <span className="italic font-serif text-[var(--accent)]">
-            algo más grande.
+            <T k="landing.finalCta.titleAccent" fallback="algo más grande." />
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy
-          mismo. Sin tarjeta, sin compromiso.
+          <T k="landing.finalCta.description" fallback="Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso." />
         </p>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           <Link
             href="/abrir-tienda"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
           >
-            Probá gratis 90 días
+            <T k="landing.finalCta.tryFree" fallback="Probá gratis 90 días" />
             <ArrowUpRight
               className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               strokeWidth={2.25}
@@ -484,7 +486,7 @@ function FinalCTA() {
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
-            Abre tu tienda
+            <T k="landing.finalCta.openStore" fallback="Abre tu tienda" />
             <span aria-hidden>→</span>
           </Link>
         </div>

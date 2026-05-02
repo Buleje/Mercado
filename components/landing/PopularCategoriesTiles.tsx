@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
+import { useLocale } from "@/contexts/locale-context";
 import {
   VerduraFresca,
   CarniceriaFresca,
@@ -75,6 +76,7 @@ const POPULAR_CATEGORIES = [
 ] as const;
 
 export default function PopularCategoriesTiles() {
+  const { t } = useLocale();
   return (
     <section
       aria-label="Categorías populares"
@@ -89,19 +91,18 @@ export default function PopularCategoriesTiles() {
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
               />
-              Categorías populares
+              {t("landing.categories.kicker")}
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Pide lo que
+              {t("landing.categories.title")}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                necesitas.
+                {t("landing.categories.titleAccent")}
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Productos de todas las bodegas, organizados para que los encuentres
-            al toque.
+            {t("landing.categories.description")}
           </p>
         </div>
 
