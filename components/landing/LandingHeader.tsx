@@ -18,12 +18,13 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PrimaryButton, cn } from "@buleje/design-system";
-import { Menu, X, MessageCircle } from "@buleje/design-system/icons";
+import { X, MessageCircle, ArrowRight } from "@buleje/design-system/icons";
 import {
   BulejeMark,
   BulejeWordmark,
 } from "@/components/ui-system/illustrations";
 import BrandLogo from "@/components/branding/BrandLogo";
+import PromoBannerTop from "@/components/landing/PromoBannerTop";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 
@@ -35,14 +36,12 @@ type NavLink = {
 };
 
 // Nav links de la landing — todos dentro del contexto pre-auth.
-// Nosotros, Cómo funciona y FAQ ahora son anchors de la landing consolidada.
-// `id` debe coincidir con `NAV_LINK_CATALOG.landing[*].id` en
-// `lib/nav-visibility.ts` — el superadmin puede ocultar cualquiera desde
-// /superadmin/stores → tab Navegación.
+// Brandon mayo 2026: reducidos de 6 a 4. "Inicio" se quita porque el logo
+// ya lleva ahí. "Nosotros" se saca porque era el anchor menos transitado.
+// El superadmin sigue pudiendo ocultar individualmente vía
+// /superadmin/stores → tab Navegación (useNavVisibility).
 const NAV_LINKS: readonly NavLink[] = [
-  { id: "inicio", label: "Inicio", href: "/" },
   { id: "como-funciona", label: "Cómo funciona", href: "/#como-funciona" },
-  { id: "nosotros", label: "Nosotros", href: "/#nosotros" },
   { id: "planes", label: "Planes", href: "/#planes" },
   { id: "faq", label: "FAQ", href: "/#faq" },
   { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda" },
@@ -124,6 +123,9 @@ export default function LandingHeader({
 
   return (
     <>
+      {/* Banner promocional dismissible — no-sticky, sale del viewport con scroll. */}
+      <PromoBannerTop />
+
       <header
         className={cn(
           "sticky top-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-200",
@@ -134,23 +136,34 @@ export default function LandingHeader({
         aria-label="Nav comercial — Buleje"
       >
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* ── Logo izquierda ── */}
+          {/* ── Logo + tagline (desktop) ── */}
           <Link
             href="/"
             aria-label="Buleje — Ir al inicio"
-            className="flex shrink-0 items-center text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
+            className="flex shrink-0 items-center gap-2 text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
           >
             <BrandLogo
               variant="wordmark"
               height={32}
               fallback={<BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />}
             />
+            <span
+              aria-hidden
+              className="hidden lg:inline-flex flex-col leading-none border-l border-[var(--rule-base)] pl-2 ml-1"
+            >
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                Tienda online
+              </span>
+              <span className="text-[10px] font-medium tracking-tight text-[var(--text-tertiary)]">
+                en 5 minutos
+              </span>
+            </span>
           </Link>
 
-          {/* ── Links centrales (desktop ≥ lg) ── */}
+          {/* ── Pill nav central (desktop ≥ lg) ── */}
           <nav
             aria-label="Navegación principal"
-            className="hidden items-center gap-1 lg:flex"
+            className="hidden lg:inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 backdrop-blur-md p-1 shadow-sm"
           >
             {visibleLinks.map((link) => {
               const active = isActiveLink(pathname, link.href);
@@ -159,21 +172,15 @@ export default function LandingHeader({
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-3 py-2 text-sm font-medium transition-colors",
-                    "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] focus-visible:rounded-sm",
+                    "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                     active
-                      ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--accent)]",
+                      ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
                   )}
                   aria-current={active ? "page" : undefined}
                 >
                   {link.label}
-                  {active ? (
-                    <span
-                      aria-hidden
-                      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"
-                    />
-                  ) : null}
                 </Link>
               );
             })}
@@ -189,17 +196,29 @@ export default function LandingHeader({
             >
               Ingresar
             </PrimaryButton>
-            <PrimaryButton
-              variant="primary"
-              size="md"
+            <button
+              type="button"
               onClick={handleSignup}
               aria-label="Empezar mi tienda"
+              className={cn(
+                "group inline-flex items-center gap-2 h-10 px-5 rounded-full",
+                "bg-[var(--accent)] text-white text-sm font-extrabold",
+                "shadow-md shadow-[var(--accent)]/25",
+                "hover:gap-3 hover:shadow-lg hover:shadow-[var(--accent)]/35 hover:bg-[var(--accent)]/95",
+                "active:scale-[0.98] transition-all duration-200",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+              )}
             >
               Empezar mi tienda
-            </PrimaryButton>
+              <ArrowRight
+                className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                strokeWidth={2.75}
+                aria-hidden
+              />
+            </button>
           </div>
 
-          {/* ── Hamburger (mobile) ── */}
+          {/* ── Hamburger animado (mobile) ── */}
           <button
             type="button"
             className={cn(
@@ -213,11 +232,26 @@ export default function LandingHeader({
             aria-controls="landing-mobile-sheet"
             onClick={() => setMobileOpen((prev) => !prev)}
           >
-            {mobileOpen ? (
-              <X className="h-5 w-5" aria-hidden />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden />
-            )}
+            <span aria-hidden className="relative flex h-4 w-5 flex-col justify-between">
+              <span
+                className={cn(
+                  "block h-[2px] w-full rounded-full bg-current transition-all duration-200 origin-center",
+                  mobileOpen ? "translate-y-[7px] rotate-45" : "",
+                )}
+              />
+              <span
+                className={cn(
+                  "block h-[2px] w-full rounded-full bg-current transition-opacity duration-150",
+                  mobileOpen ? "opacity-0" : "opacity-100",
+                )}
+              />
+              <span
+                className={cn(
+                  "block h-[2px] w-full rounded-full bg-current transition-all duration-200 origin-center",
+                  mobileOpen ? "-translate-y-[7px] -rotate-45" : "",
+                )}
+              />
+            </span>
           </button>
         </div>
       </header>
@@ -326,12 +360,12 @@ function MobileSheet({
           </button>
         </div>
 
-        {/* Ilustración identidad (refuerzo mobile) */}
-        <div className="flex items-center justify-center border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] py-6">
+        {/* Header decorativo del sheet — gradient sutil con identidad */}
+        <div className="flex items-center justify-center border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--accent-soft)] to-[var(--surface-sunken)] py-6">
           <BulejeMark
             size={72}
             strokeWidth={1.4}
-            className="text-[var(--text-secondary)]"
+            className="text-[var(--accent)]"
           />
         </div>
 
@@ -349,10 +383,10 @@ function MobileSheet({
                     href={link.href}
                     onClick={onClose}
                     className={cn(
-                      "flex h-12 items-center rounded-lg px-3 text-lg font-medium transition-colors",
+                      "flex h-12 items-center rounded-xl px-3.5 text-lg font-semibold transition-colors",
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                       active
-                        ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                     )}
                     aria-current={active ? "page" : undefined}
