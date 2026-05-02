@@ -295,15 +295,31 @@ describe("buildCSP", () => {
     expect(buildCSP("/")).toContain("'unsafe-inline'");
   });
 
-  it("with nonce: script-src contains nonce and NOT unsafe-inline", () => {
-    const csp = buildCSP("/", "abc123");
-    expect(csp).toContain("'nonce-abc123'");
-    // Only the script-src directive should drop unsafe-inline; style-src keeps it for Tailwind
-    const scriptSrc = csp.split(";").find(d => d.trim().startsWith("script-src")) ?? "";
-    expect(scriptSrc).not.toContain("'unsafe-inline'");
+  it("with nonce in production: script-src contains nonce + strict-dynamic, NOT unsafe-inline", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const csp = buildCSP("/", "abc123");
+      expect(csp).toContain("'nonce-abc123'");
+      expect(csp).toContain("'strict-dynamic'");
+      const scriptSrc = csp.split(";").find(d => d.trim().startsWith("script-src")) ?? "";
+      expect(scriptSrc).not.toContain("'unsafe-inline'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
-  it("with nonce: still contains unsafe-eval (Next.js hydration)", () => {
+  it("with nonce in dev: script-src has unsafe-inline (HMR scripts inline sin nonce)", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    try {
+      const csp = buildCSP("/", "abc123");
+      const scriptSrc = csp.split(";").find(d => d.trim().startsWith("script-src")) ?? "";
+      expect(scriptSrc).toContain("'unsafe-inline'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("script-src always contains unsafe-eval (Next.js hydration)", () => {
     expect(buildCSP("/", "abc123")).toContain("'unsafe-eval'");
   });
 

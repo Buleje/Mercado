@@ -190,10 +190,20 @@ export function __resetEdgeLimiterForTests(): void {
 export function buildCSP(pathname: string, nonce?: string): string {
   const isAdminRoute =
     pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+  const isDev = process.env.NODE_ENV !== "production";
 
-  const scriptSrc = nonce
-    ? `'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`
-    : `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+  /* En dev (Next.js/Turbopack HMR): forzamos 'unsafe-inline' aunque haya nonce.
+     CSP3 ignora 'unsafe-inline' cuando hay nonce, por eso lo incluimos sin
+     nonce — HMR inyecta scripts inline sin nonce y los necesita aprobados.
+     En prod: nonce + strict-dynamic para máxima seguridad. */
+  let scriptSrc: string;
+  if (isDev) {
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+  } else if (nonce) {
+    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+  } else {
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+  }
 
   const directives: Record<string, string> = {
     "default-src":               "'self'",

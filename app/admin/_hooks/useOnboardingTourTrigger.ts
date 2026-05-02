@@ -33,8 +33,15 @@ export function useOnboardingTourTrigger(onboarding: OnboardingApi): void {
     try {
       if (localStorage.getItem("superadmin-impersonate-tenant")) return;
     } catch {}
-    if (typeof window !== "undefined" && /\/t\/[^/]+\/admin/.test(window.location.pathname)) {
-      return;
+    if (typeof window !== "undefined") {
+      if (/\/t\/[^/]+\/admin/.test(window.location.pathname)) return;
+      /* Si el usuario llegó por deep-link a un tab específico (?tab=...
+         o #...), respetar su intención — no auto-iniciar el tour, que
+         sobrescribiría el tab destino con el step inicial "asistente-ia". */
+      const hasDeepLink =
+        new URLSearchParams(window.location.search).has("tab") ||
+        window.location.hash.length > 1;
+      if (hasDeepLink) return;
     }
     if (onboarding.isFirstVisit && !onboarding.isTourActive) {
       const t = setTimeout(() => onboarding.startTour(), TOUR_DELAY_MS);
