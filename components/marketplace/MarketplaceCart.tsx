@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart } from "@buleje/design-system/icons";
-import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
 import ShareCartButton from "@/components/marketplace/ShareCartButton";
 import WhatsAppOrderButton from "@/components/marketplace/WhatsAppOrderButton";
 import { cn } from "@/lib/utils";
@@ -1036,12 +1036,20 @@ export default function MarketplaceCart({
                             <span className="font-medium text-gray-700 dark:text-gray-300">{g.storeName}</span>
                             <span className="font-bold text-gray-900 dark:text-white">{fmt(totalByStore[sid]?.total ?? 0)}</span>
                           </div>
-                          {g.items.map((item) => (
-                            <div key={`${item.storeId}-${item.productId}`} className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pl-2">
-                              <span>{item.quantity}x {item.name}</span>
-                              <span>{fmt(item.price * item.quantity)}</span>
-                            </div>
-                          ))}
+                          {g.items.map((item) => {
+                            const h = item.modifierHash ?? modifierHashOf(item.modifiers);
+                            return (
+                              <div
+                                key={`${item.storeId}-${item.productId}-${h}`}
+                                className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pl-2"
+                              >
+                                <span>
+                                  {item.quantity}x {item.name}
+                                </span>
+                                <span>{fmt(item.price * item.quantity)}</span>
+                              </div>
+                            );
+                          })}
                           {couponR?.valid && (
                             <p className="text-xs text-green-600 dark:text-green-400 pl-2 mt-0.5">✓ Cupón: -{fmt(couponR.discount)}</p>
                           )}
@@ -1107,19 +1115,22 @@ export default function MarketplaceCart({
 
                         {/* items */}
                         <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-gray-50/50 px-4 dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-800/30">
-                          {group.items.map((item) => (
-                            <CartItemRow
-                              key={`${item.storeId}-${item.productId}`}
-                              item={item}
-                              onIncrease={() =>
-                                updateQuantity(item.storeId, item.productId, item.quantity + 1)
-                              }
-                              onDecrease={() =>
-                                updateQuantity(item.storeId, item.productId, item.quantity - 1)
-                              }
-                              onRemove={() => removeItem(item.storeId, item.productId)}
-                            />
-                          ))}
+                          {group.items.map((item) => {
+                            const h = item.modifierHash ?? modifierHashOf(item.modifiers);
+                            return (
+                              <CartItemRow
+                                key={`${item.storeId}-${item.productId}-${h}`}
+                                item={item}
+                                onIncrease={() =>
+                                  updateQuantity(item.storeId, item.productId, item.quantity + 1, h)
+                                }
+                                onDecrease={() =>
+                                  updateQuantity(item.storeId, item.productId, item.quantity - 1, h)
+                                }
+                                onRemove={() => removeItem(item.storeId, item.productId, h)}
+                              />
+                            );
+                          })}
                         </div>
 
                         {/* subtotal tienda */}

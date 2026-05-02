@@ -24,7 +24,7 @@ import {
   ArrowLeft,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
 import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
@@ -145,11 +145,22 @@ export default function CarritoPage() {
   }, [isEmpty, continueHref, loggedCustomer, router]);
 
   const handleQty = useCallback(
-    (item: CartItem, qty: number) => updateQuantity(item.storeId, item.productId, qty),
+    (item: CartItem, qty: number) =>
+      updateQuantity(
+        item.storeId,
+        item.productId,
+        qty,
+        item.modifierHash ?? modifierHashOf(item.modifiers),
+      ),
     [updateQuantity],
   );
   const handleRemove = useCallback(
-    (item: CartItem) => removeItem(item.storeId, item.productId),
+    (item: CartItem) =>
+      removeItem(
+        item.storeId,
+        item.productId,
+        item.modifierHash ?? modifierHashOf(item.modifiers),
+      ),
     [removeItem],
   );
 
@@ -277,14 +288,20 @@ export default function CarritoPage() {
                   </header>
                   <div className="px-6">
                     <AnimatePresence initial={false} mode="popLayout">
-                    {group.items.map((item) => (
-                      <ItemRow
-                        key={`${item.storeId}-${item.productId}`}
-                        item={item}
-                        onQty={(qty) => handleQty(item, qty)}
-                        onRemove={() => handleRemove(item)}
-                      />
-                    ))}
+                    {group.items.map((item) => {
+                      // Mismo producto con modifiers distintos = línea
+                      // distinta. La key debe incluir el hash o el cliente
+                      // ve "Encountered two children with the same key".
+                      const hash = item.modifierHash ?? modifierHashOf(item.modifiers);
+                      return (
+                        <ItemRow
+                          key={`${item.storeId}-${item.productId}-${hash}`}
+                          item={item}
+                          onQty={(qty) => handleQty(item, qty)}
+                          onRemove={() => handleRemove(item)}
+                        />
+                      );
+                    })}
                     </AnimatePresence>
                   </div>
                 </article>

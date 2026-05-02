@@ -31,7 +31,7 @@ import {
   Minus,
   Trash2,
 } from "@buleje/design-system/icons";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -122,7 +122,7 @@ export default function StickyCartBar() {
                   <ul className="flex flex-col gap-2.5" role="list">
                     {recentItems.map((it) => (
                       <li
-                        key={`${it.storeId}-${it.productId}`}
+                        key={`${it.storeId}-${it.productId}-${it.modifierHash ?? modifierHashOf(it.modifiers)}`}
                         className="flex items-center gap-3 rounded-xl bg-white/5 px-2.5 py-2"
                       >
                         <div className="shrink-0 h-12 w-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">

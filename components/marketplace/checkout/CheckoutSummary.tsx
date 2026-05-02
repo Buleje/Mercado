@@ -23,7 +23,7 @@ import {
   CheckCircle2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import Tooltip from "@/components/ui-system/Tooltip";
 
 const FREE_SHIPPING_THRESHOLD = 50;
@@ -136,7 +136,7 @@ export default function CheckoutSummary({
               <ul className="space-y-1.5 text-sm">
                 {byStore[sid].items.map((it) => (
                   <li
-                    key={`${it.storeId}-${it.productId}`}
+                    key={`${it.storeId}-${it.productId}-${it.modifierHash ?? modifierHashOf(it.modifiers)}`}
                     className="flex justify-between gap-3 text-[var(--text-secondary)]"
                   >
                     <span className="truncate">

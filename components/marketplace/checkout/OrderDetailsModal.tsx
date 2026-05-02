@@ -15,7 +15,7 @@ import Image from "next/image";
 import { useEffect } from "react";
 import { X, ShoppingCart, Store, ArrowDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import type { CartItem } from "@/hooks/use-marketplace-cart";
+import { modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -142,7 +142,7 @@ export default function OrderDetailsModal({
                 <ul className="space-y-3">
                   {g.items.map((it) => (
                     <li
-                      key={`${it.storeId}-${it.productId}`}
+                      key={`${it.storeId}-${it.productId}-${it.modifierHash ?? modifierHashOf(it.modifiers)}`}
                       className="flex gap-4 sm:gap-5 items-start rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5"
                     >
                       {/* Imagen GRANDE */}
