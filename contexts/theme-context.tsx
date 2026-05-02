@@ -20,7 +20,12 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
-const STORAGE_KEY = "buleje-theme";
+// Brandon decisión 2026-05-02: cada page-load arranca SIEMPRE en light
+// independientemente del sistema o de la elección previa. El toggle se
+// preserva durante la SPA-session vía sessionStorage (sobrevive a
+// navegación cliente Next App Router) pero se reinicia en hard reload
+// y nuevas pestañas.
+const SESSION_KEY = "buleje-theme-session";
 
 function getSystemTheme(): Resolved {
   if (typeof window === "undefined") return "light";
@@ -44,15 +49,17 @@ function applyDom(resolved: Resolved) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  // Default light SIEMPRE — no respeta system ni localStorage al cargar.
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<Resolved>("light");
 
-  // Hydrate from localStorage on mount
+  // Hydrate desde sessionStorage (sobrevive a navegación SPA pero se
+  // reinicia en hard reload — exactamente lo que Brandon pidió).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let stored: Theme = "system";
+    let stored: Theme = "light";
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.sessionStorage.getItem(SESSION_KEY);
       if (raw === "light" || raw === "dark" || raw === "system") {
         stored = raw;
       }
@@ -80,8 +87,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
+    // sessionStorage en vez de localStorage — la elección dura solo lo
+    // que la pestaña esté abierta. En hard reload vuelve a light.
     try {
-      window.localStorage.setItem(STORAGE_KEY, t);
+      window.sessionStorage.setItem(SESSION_KEY, t);
     } catch {
       /* ignore */
     }
@@ -91,10 +100,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggle = useCallback(() => {
-    // Cycle: light → dark → system → light
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
-    else setTheme("light");
+    // Toggle simple light ↔ dark (sin "system" — Brandon prefirió binary).
+    setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
 
   return (
