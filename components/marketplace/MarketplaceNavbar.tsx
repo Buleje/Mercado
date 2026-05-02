@@ -384,8 +384,11 @@ export default function MarketplaceNavbar() {
               />
             </div>
 
-            {/* ── Nav links transaccionales (lg+) ── */}
-            <div className="hidden lg:flex items-center gap-0.5">
+            {/* ── Nav links transaccionales (lg+).
+                Brandon mayo 2026: misma capsula pill que LandingHeader
+                para consistencia entre pre-auth y post-auth.
+                Active state = pill bg sólido (no más underline). */}
+            <div className="hidden lg:inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 backdrop-blur-md p-1 shadow-sm">
               {renderedLinks.map((link) => {
                 if (link.discover) {
                   return <DiscoverMegaMenu key="discover" variant="desktop" />;
@@ -398,10 +401,11 @@ export default function MarketplaceNavbar() {
                     href={link.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative rounded-lg px-3 py-2 text-sm font-semibold transition-colors inline-flex items-center gap-1.5",
+                      "rounded-full px-3 py-1.5 text-sm font-semibold transition-all inline-flex items-center gap-1.5",
+                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                       active
-                        ? "text-gray-900 dark:text-white after:content-[''] after:absolute after:left-3 after:right-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[var(--accent)]"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
                     )}
                   >
                     <LinkIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
@@ -594,7 +598,13 @@ export default function MarketplaceNavbar() {
                 <button
                   onClick={openAuthModal}
                   data-tour="user-menu"
-                  className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[var(--accent)] min-h-[40px]"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 h-10 text-sm font-extrabold text-white",
+                    "shadow-md shadow-[var(--accent)]/25",
+                    "hover:bg-[var(--accent)]/95 hover:shadow-lg hover:shadow-[var(--accent)]/35",
+                    "active:scale-[0.98] transition-all duration-200",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                  )}
                 >
                   {t("nav.login")}
                 </button>
