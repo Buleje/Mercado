@@ -102,21 +102,28 @@ async function createPaymentApproval(params: {
   expectedAmount: number;
   orderIds: string[];
 }): Promise<string> {
-  const id: string =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+  const id: string = crypto.randomUUID();
 
+  // Audit 2026-05-02 #7: do NOT swallow INSERT failures. Returning a
+  // ghost approvalId silently meant Orders linked to a row that did not
+  // exist — customer pays, Orders orphaned with no approval to review.
+  // Throw → caller (checkoutMultiVendor) propagates the error so the
+  // conversation handler can show a friendly "intentá de nuevo" message
+  // and the customer is NOT told the order is confirmed.
   // TODO F3: switch to prisma.paymentApproval.create(...)
-  await prisma.$executeRaw`
-    INSERT INTO "PaymentApproval" (id, status, "expectedAmount", "customerPhone", "conversationId", "createdAt", "updatedAt")
-    VALUES (${id}, 'pending', ${params.expectedAmount}, ${params.customerPhone}, ${params.conversationId}, NOW(), NOW())
-  `.catch((err) => {
-    logger.warn("[multi-vendor-checkout] createPaymentApproval insert failed", {
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "PaymentApproval" (id, status, "expectedAmount", "customerPhone", "conversationId", "createdAt", "updatedAt")
+      VALUES (${id}, 'pending', ${params.expectedAmount}, ${params.customerPhone}, ${params.conversationId}, NOW(), NOW())
+    `;
+  } catch (err) {
+    logger.error("[multi-vendor-checkout] createPaymentApproval insert failed", {
       error: err instanceof Error ? err.message : String(err),
+      conversationId: params.conversationId,
+      customerPhone: params.customerPhone.slice(-6),
     });
-    // Non-fatal: approval ID is still returned so the flow continues.
-  });
+    throw new Error("createPaymentApproval-insert-failed");
+  }
 
   // Link each orderId to this approval via a junction or direct column update.
   // TODO F3: if PaymentApproval has a one-to-many relation with Order, update

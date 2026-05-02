@@ -197,10 +197,15 @@ export const PaymentApprovalDb = {
     customerPhone: string,
   ): Promise<PaymentApproval | null> {
     await bootstrap();
+    // Audit 2026-05-02 #4: include 'review_required' in the dedupe lookup.
+    // Otherwise a customer reshooting the photo while we're still waiting
+    // for human review creates a SECOND approval, double-billing Vision IA
+    // and confusing the dashboard queue.
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentApproval"
-        WHERE "customerPhone" = $1 AND status = 'pending'
+        WHERE "customerPhone" = $1
+          AND status IN ('pending', 'review_required')
         ORDER BY "createdAt" DESC
         LIMIT 1`,
       customerPhone,
