@@ -209,6 +209,44 @@ model ProductModifierOption {
   @@index([tenantId])
 }
 
+// ─── Variant Catalog (Superadmin global, expand-only) ─────────────────────────
+// Repositorio global de plantillas de variaciones que el superadmin mantiene
+// (ej: "Cremas para pollo", "Presas", "Toppings de pizza"). Los tenants pueden
+// importar plantillas a sus productos vía POST /api/admin/products/[id]/import-from-catalog
+// que clona el template + options en ProductModifierGroup + ProductModifierOption.
+// NO multi-tenant — es global del SaaS.
+model VariantCatalogTemplate {
+  id          String                 @id @default(cuid())
+  category    String                 // "Pollería" | "Pizzería" | "Heladería" | etc.
+  name        String                 // "Cremas para pollo" | "Presas" | "Toppings"
+  description String?
+  required    Boolean                @default(false)
+  minSelect   Int                    @default(0)
+  maxSelect   Int                    @default(1)
+  position    Int                    @default(0)
+  isPublished Boolean                @default(true)
+  options     VariantCatalogOption[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+}
+
+model VariantCatalogOption {
+  id          String                 @id @default(cuid())
+  templateId  String
+  template    VariantCatalogTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name        String                 // "Crema huancaína", "Pierna", "Pecho"
+  imageUrl    String?
+  priceDelta  Decimal                @default(0) @db.Decimal(12, 2)
+  position    Int                    @default(0)
+  isDefault   Boolean                @default(false)
+  createdAt   DateTime               @default(now())
+
+  @@index([templateId])
+}
+
 // ─── Batches: see "Inventory Batches (Lotes)" section below (line ~969)
 
 // ─── Customers ──────────────────────────────────────────

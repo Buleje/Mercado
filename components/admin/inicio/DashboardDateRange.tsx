@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Calendar, ChevronDown } from "@buleje/design-system/icons";
+import { Calendar, CalendarDays, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type DatePreset = "diario" | "semanal" | "mensual" | "anual" | "personalizado";
+export type DatePreset =
+  | "diario"
+  | "semanal"
+  | "mensual"
+  | "anual"
+  | "especifica"
+  | "personalizado";
 
 export interface DateRange {
   preset: DatePreset;
@@ -14,9 +20,31 @@ export interface DateRange {
   to: Date;
 }
 
+/** Etiqueta humana legible de un rango — para empty-states y headers. */
+export function describeRange(r: DateRange): string {
+  const fmtDay = (d: Date) =>
+    d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  switch (r.preset) {
+    case "diario":
+      return "hoy";
+    case "semanal":
+      return "esta semana";
+    case "mensual":
+      return "este mes";
+    case "anual":
+      return "este año";
+    case "especifica":
+      return `el ${fmtDay(r.from)}`;
+    case "personalizado":
+      return `del ${fmtDay(r.from)} al ${fmtDay(r.to)}`;
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function computeRange(preset: Exclude<DatePreset, "personalizado">): { from: Date; to: Date } {
+function computeRange(
+  preset: Exclude<DatePreset, "personalizado" | "especifica">,
+): { from: Date; to: Date } {
   const now = new Date();
   const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   switch (preset) {
@@ -48,7 +76,7 @@ export function getDefaultRange(): DateRange {
 
 // ── Presets ───────────────────────────────────────────────────────────────────
 
-const PRESETS: { id: Exclude<DatePreset, "personalizado">; label: string; short: string }[] = [
+const PRESETS: { id: Exclude<DatePreset, "personalizado" | "especifica">; label: string; short: string }[] = [
   { id: "diario",  label: "Hoy",     short: "Hoy" },
   { id: "semanal", label: "Semana",   short: "Sem" },
   { id: "mensual", label: "Mes",      short: "Mes" },
@@ -67,52 +95,93 @@ function toInputDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+type CustomMode = "none" | "specific" | "range";
+
 export default function DashboardDateRange({ value, onChange, className }: DashboardDateRangeProps) {
-  const [showCustom, setShowCustom] = useState(value.preset === "personalizado");
+  const initialMode: CustomMode =
+    value.preset === "especifica"
+      ? "specific"
+      : value.preset === "personalizado"
+        ? "range"
+        : "none";
+  const [mode, setMode] = useState<CustomMode>(initialMode);
 
-  const handlePreset = useCallback((preset: Exclude<DatePreset, "personalizado">) => {
-    setShowCustom(false);
-    const { from, to } = computeRange(preset);
-    onChange({ preset, from, to });
-  }, [onChange]);
+  const handlePreset = useCallback(
+    (preset: Exclude<DatePreset, "personalizado" | "especifica">) => {
+      setMode("none");
+      const { from, to } = computeRange(preset);
+      onChange({ preset, from, to });
+    },
+    [onChange],
+  );
 
-  const handleCustomToggle = useCallback(() => {
-    setShowCustom(prev => !prev);
-    if (!showCustom) {
+  const handleSpecificToggle = useCallback(() => {
+    setMode((prev) => (prev === "specific" ? "none" : "specific"));
+    if (mode !== "specific") {
+      const today = new Date();
+      const from = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      onChange({ preset: "especifica", from, to });
+    }
+  }, [mode, onChange]);
+
+  const handleRangeToggle = useCallback(() => {
+    setMode((prev) => (prev === "range" ? "none" : "range"));
+    if (mode !== "range") {
       onChange({ ...value, preset: "personalizado" });
     }
-  }, [showCustom, onChange, value]);
+  }, [mode, onChange, value]);
 
-  const handleCustomFrom = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const from = new Date(e.target.value + "T00:00:00");
-    if (!isNaN(from.getTime())) {
-      onChange({ preset: "personalizado", from, to: value.to });
-    }
-  }, [onChange, value.to]);
+  const handleSpecific = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const d = new Date(e.target.value + "T00:00:00");
+      if (isNaN(d.getTime())) return;
+      const from = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const to = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      onChange({ preset: "especifica", from, to });
+    },
+    [onChange],
+  );
 
-  const handleCustomTo = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const to = new Date(e.target.value + "T23:59:59");
-    if (!isNaN(to.getTime())) {
-      onChange({ preset: "personalizado", from: value.from, to });
-    }
-  }, [onChange, value.from]);
+  const handleCustomFrom = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const from = new Date(e.target.value + "T00:00:00");
+      if (!isNaN(from.getTime())) {
+        onChange({ preset: "personalizado", from, to: value.to });
+      }
+    },
+    [onChange, value.to],
+  );
 
-  const rangeLabel = value.preset !== "personalizado"
-    ? null
-    : `${value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })} — ${value.to.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}`;
+  const handleCustomTo = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const to = new Date(e.target.value + "T23:59:59");
+      if (!isNaN(to.getTime())) {
+        onChange({ preset: "personalizado", from: value.from, to });
+      }
+    },
+    [onChange, value.from],
+  );
+
+  const summaryLabel =
+    value.preset === "especifica"
+      ? value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })
+      : value.preset === "personalizado"
+        ? `${value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })} — ${value.to.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}`
+        : null;
 
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {/* Preset pills */}
       <div className="flex items-center gap-0.5 bg-[var(--surface-sunken)] rounded-lg p-0.5">
-        {PRESETS.map(p => (
+        {PRESETS.map((p) => (
           <button
             key={p.id}
             onClick={() => handlePreset(p.id)}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
-              value.preset === p.id && !showCustom
-                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+              value.preset === p.id && mode === "none"
+                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
                 : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
             )}
           >
@@ -120,29 +189,64 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             <span className="sm:hidden">{p.short}</span>
           </button>
         ))}
+        {/* Específica (un solo día) */}
         <button
-          onClick={handleCustomToggle}
+          onClick={handleSpecificToggle}
           className={cn(
             "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-            showCustom
-              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+            mode === "specific" || value.preset === "especifica"
+              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
+              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
+          )}
+          title="Día específico"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Día</span>
+        </button>
+        {/* Rango personalizado */}
+        <button
+          onClick={handleRangeToggle}
+          className={cn(
+            "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+            mode === "range" || value.preset === "personalizado"
+              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
               : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
           )}
           title="Rango personalizado"
         >
-          <Calendar className="h-3.5 w-3.5" />
-          <ChevronDown className={cn("h-3 w-3 transition-transform", showCustom && "rotate-180")} />
+          <CalendarDays className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Rango</span>
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 transition-transform",
+              (mode === "range" || mode === "specific") && "rotate-180",
+            )}
+          />
         </button>
       </div>
 
+      {/* Specific date input */}
+      {mode === "specific" && (
+        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]">
+          <input
+            type="date"
+            value={toInputDate(value.from)}
+            onChange={handleSpecific}
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            aria-label="Fecha específica"
+          />
+        </div>
+      )}
+
       {/* Custom range inputs */}
-      {showCustom && (
+      {mode === "range" && (
         <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]">
           <input
             type="date"
             value={toInputDate(value.from)}
             onChange={handleCustomFrom}
             className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            aria-label="Fecha desde"
           />
           <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium">a</span>
           <input
@@ -150,13 +254,16 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             value={toInputDate(value.to)}
             onChange={handleCustomTo}
             className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            aria-label="Fecha hasta"
           />
         </div>
       )}
 
-      {/* Range label for custom */}
-      {rangeLabel && !showCustom && (
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{rangeLabel}</span>
+      {/* Summary label en modo idle */}
+      {summaryLabel && mode === "none" && (
+        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-semibold">
+          {summaryLabel}
+        </span>
       )}
     </div>
   );
