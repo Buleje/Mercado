@@ -26,6 +26,7 @@ import {
   type MarketplaceStore,
 } from "@/components/marketplace/useMarketplaceGeo";
 import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
+import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
@@ -637,10 +638,19 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       {/* ── Pedidos favoritos del cliente (localStorage) ──────────────── */}
       <MisPedidosFavoritosStrip />
 
+      {/* ── Tiendas destacadas cerca de ti (personalizado por GPS) ────
+          Solo aparece si el cliente compartió su ubicación. Top 6
+          dentro del radio (default 50 km — radio actúa como filtro
+          automático multi-ciudad CC↔Pucallpa). Hover → drawer con
+          productos destacados + comprar rápido. */}
+      <div className="pt-12 sm:pt-16">
+        <FeaturedStoresNearby userCoords={userCoords} />
+      </div>
+
       {/* ── Recomendadas / destacadas (carrusel) ─────────────────────── */}
-      {/* Sin TiendasSectionHeader extra — RecommendationsStrip ya tiene
-          su propio header "Tiendas destacadas cerca tuyo". Spacing
-          armonizado con el resto de secciones (pt-12 sm:pt-16). */}
+      {/* Fallback / discovery secundario: tiendas top-rated del
+          marketplace. Se muestra siempre — útil para usuarios sin GPS
+          y como descubrimiento adicional para quienes sí lo activaron. */}
       <div className="pt-12 sm:pt-16">
         <RecommendationsStrip initialStores={initialStores.slice(0, 6) as never} />
       </div>
