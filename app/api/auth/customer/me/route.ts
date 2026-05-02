@@ -2,10 +2,26 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getCustomerPayload,
+  maybeRotateCustomerToken,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { logger } from "@/lib/logger";
+
+/**
+ * Setea (o re-emite) el cookie `buleje-customer-sess` con la config
+ * estándar de seguridad. Rotación automática (sliding expiration):
+ * basta con visitar el sitio una vez cada 6 meses para no salir nunca.
+ */
+function setSessionCookie(res: NextResponse, token: string): void {
+  res.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: CUSTOMER_SESSION.MAX_AGE,
+    path: "/",
+  });
+}
 
 /**
  * GET /api/auth/customer/me
@@ -39,12 +55,16 @@ export async function GET(req: NextRequest) {
     return response;
   }
 
+  // Sliding expiration — si el token pasó la mitad de su vida útil,
+  // re-emitimos uno fresco con +365 días. El usuario activo nunca sale.
+  const rotatedToken = await maybeRotateCustomerToken(token);
+
   // Enriquecer con datos frescos de DB si el customerId esta disponible
   if (payload.customerId) {
     try {
       const customer = await CustomersDB.getByPhone(payload.customerId);
       if (customer) {
-        return NextResponse.json({
+        const res = NextResponse.json({
           authenticated: true,
           customer: {
             id: customer.phone,
@@ -55,6 +75,8 @@ export async function GET(req: NextRequest) {
           },
           tenantId: payload.tenantId,
         });
+        if (rotatedToken) setSessionCookie(res, rotatedToken);
+        return res;
       }
     } catch (err) {
       // Si la DB falla, devolver datos del token (degradacion graceful)
@@ -66,7 +88,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Fallback: datos del token
-  return NextResponse.json({
+  const res = NextResponse.json({
     authenticated: true,
     customer: {
       id: payload.customerId ?? null,
@@ -75,4 +97,6 @@ export async function GET(req: NextRequest) {
     },
     tenantId: payload.tenantId,
   });
+  if (rotatedToken) setSessionCookie(res, rotatedToken);
+  return res;
 }

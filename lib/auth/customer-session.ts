@@ -12,7 +12,14 @@
  */
 
 const CUSTOMER_COOKIE = "buleje-customer-sess";
-const CUSTOMER_SESSION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// 365 días — sesión "remember me forever". Pero la seguridad real viene
+// de la rotación: cada visita autenticada re-emite el token con un
+// nuevo exp 365 días en el futuro (sliding expiration). Un usuario
+// activo nunca tiene que volver a loguearse; uno que no vuelve en >1
+// año entra de nuevo. Patrón usado por Amazon/Mercado Libre/Stripe.
+const CUSTOMER_SESSION_MS = 365 * 24 * 60 * 60 * 1000;
+/** Si pasó >50 % de la vida útil, rotamos al siguiente request. */
+const ROTATE_THRESHOLD_MS = CUSTOMER_SESSION_MS / 2;
 
 export interface CustomerPayload {
   customerId?: string; // Customer.phone — may be undefined if not yet linked
@@ -129,6 +136,35 @@ export async function getCustomerPayload(
       tenantId: raw.tenantId,
       provider: raw.provider,
     };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Si el token pasó la mitad de su vida útil, devuelve un token fresco
+ * (mismo payload pero con `exp` reseteado). Si no hace falta rotar,
+ * devuelve `null` y el caller mantiene el cookie actual.
+ *
+ * El effect compuesto: cualquier usuario que entra al storefront una
+ * vez cada 6 meses se queda logueado para siempre. Sólo expira si no
+ * vuelve en >365 días.
+ */
+export async function maybeRotateCustomerToken(
+  token: string,
+): Promise<string | null> {
+  try {
+    const dotIdx = token.lastIndexOf(".");
+    if (dotIdx < 0) return null;
+    const encoded = token.slice(0, dotIdx);
+    const raw = JSON.parse(b64Decode(encoded)) as { exp?: number };
+    if (typeof raw.exp !== "number") return null;
+    const remaining = raw.exp - Date.now();
+    if (remaining > ROTATE_THRESHOLD_MS) return null;
+
+    const payload = await getCustomerPayload(token);
+    if (!payload) return null;
+    return createCustomerToken(payload);
   } catch {
     return null;
   }
