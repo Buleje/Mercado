@@ -56,13 +56,14 @@ export function OrdersBarChart({
   description = "Últimos 30 días",
 }: Props) {
   const tokens = useChartTokens();
+  const purple = "#8b5cf6";
   const avg =
     data.length > 0 ? data.reduce((sum, d) => sum + d.orders, 0) / data.length : 0;
 
   return (
     <ChartWrapper title={title} description={description}>
-      <div style={{ height: 300 }}>
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <div style={{ width: "100%", height: 300, minHeight: 220 }}>
+        <ResponsiveContainer width="99%" height="99%" debounce={50}>
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid
               strokeDasharray="3 3"
@@ -87,26 +88,33 @@ export function OrdersBarChart({
             />
             <Tooltip
               content={<OrdersTooltip />}
-              cursor={{ fill: tokens.grid, opacity: 0.35 }}
+              cursor={{ fill: purple, opacity: 0.08 }}
             />
             <ReferenceLine
               y={avg}
-              stroke={tokens.axis}
+              stroke={purple}
               strokeDasharray="4 4"
-              strokeWidth={1}
+              strokeWidth={1.5}
+              opacity={0.7}
               label={{
                 value: `Prom. ${avg.toFixed(0)}`,
                 position: "right",
-                fill: tokens.axis,
-                fontSize: 13,
-                fontWeight: 600,
+                fill: purple,
+                fontSize: 12,
+                fontWeight: 700,
               }}
             />
+            <defs>
+              <linearGradient id="ordersBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={purple} stopOpacity={1} />
+                <stop offset="100%" stopColor={purple} stopOpacity={0.55} />
+              </linearGradient>
+            </defs>
             <Bar
               dataKey="orders"
-              fill={tokens.stroke}
-              radius={[3, 3, 0, 0]}
-              maxBarSize={18}
+              fill="url(#ordersBarGrad)"
+              radius={[5, 5, 0, 0]}
+              maxBarSize={22}
             />
           </BarChart>
         </ResponsiveContainer>

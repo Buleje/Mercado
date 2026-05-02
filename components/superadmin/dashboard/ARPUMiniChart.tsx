@@ -45,6 +45,7 @@ function ARPUTooltip({
  */
 export function ARPUMiniChart({ data, currentARPU }: Props) {
   const tokens = useChartTokens();
+  const amber = "#f59e0b";
   const first = data[0]?.arpu ?? currentARPU;
   const last = data[data.length - 1]?.arpu ?? currentARPU;
   const deltaPct = first > 0 ? ((last - first) / first) * 100 : 0;
@@ -53,7 +54,10 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
     <ChartWrapper title="ARPU" description="Promedio por tenant pagante">
       <div className="mb-4">
         <Kicker>Valor actual</Kicker>
-        <div className="mt-1 text-[length:var(--ts-2xl)] font-extrabold tabular-nums leading-[var(--lh-tight)] text-[var(--text-primary)]">
+        <div
+          className="mt-1 text-[length:clamp(1.75rem,2.5vw,2.25rem)] font-black tabular-nums leading-none tracking-tight"
+          style={{ color: amber }}
+        >
           {fmtSoles(currentARPU)}
         </div>
         <Caption
@@ -71,8 +75,8 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
           {deltaPct.toFixed(1)}% vs 6 meses atrás
         </Caption>
       </div>
-      <div style={{ height: 110 }}>
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <div style={{ width: "100%", height: 110, minHeight: 90 }}>
+        <ResponsiveContainer width="99%" height="99%" debounce={50}>
           <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
             <XAxis
               dataKey="month"
@@ -89,10 +93,10 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
             <Line
               type="monotone"
               dataKey="arpu"
-              stroke={tokens.stroke}
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: tokens.stroke, strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: tokens.stroke, strokeWidth: 2, stroke: "var(--surface-canvas)" }}
+              stroke={amber}
+              strokeWidth={3}
+              dot={{ r: 3, fill: amber, strokeWidth: 0 }}
+              activeDot={{ r: 6, fill: amber, strokeWidth: 2, stroke: "var(--surface-canvas)" }}
             />
           </LineChart>
         </ResponsiveContainer>

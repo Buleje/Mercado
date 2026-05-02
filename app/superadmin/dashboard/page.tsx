@@ -25,6 +25,10 @@ import { ConversionFunnel } from "@/components/superadmin/dashboard/ConversionFu
 import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
 import { LatestActiveTenantsTable } from "@/components/superadmin/dashboard/LatestActiveTenantsTable";
 import { TenantGrowthChart } from "@/components/superadmin/dashboard/TenantGrowthChart";
+import { MonthlyOverviewChart } from "@/components/superadmin/dashboard/MonthlyOverviewChart";
+import { PlanDistributionDonut } from "@/components/superadmin/dashboard/PlanDistributionDonut";
+import { BusinessHealthRadial } from "@/components/superadmin/dashboard/BusinessHealthRadial";
+import { KPIHeroCard } from "@/components/superadmin/dashboard/KPIHeroCard";
 import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
 import {
   buildSparkline,
@@ -40,6 +44,8 @@ interface AnalyticsData {
     mrr: number;
     arr: number;
     arpu: number;
+    churnRate?: number;
+    trialConversionRate?: number;
   };
   growth: {
     tenantsThisMonth: number;
@@ -52,6 +58,10 @@ interface AnalyticsData {
     totalProducts: number;
     totalAdminUsers: number;
   };
+  planDistribution?: { free: number; pro: number; business: number; enterprise: number };
+  monthlySignups?: Array<{ month: string; count: number }>;
+  monthlyRevenue?: Array<{ month: string; revenue: number }>;
+  atRiskCount?: number;
 }
 
 interface WidgetsData {
@@ -129,19 +139,39 @@ export default function DashboardPage() {
     [widgets, data],
   );
 
-  // ── Sparklines hero KPIs ────────────────────────────────────────────────────
+  // ── Series mensual combinada (revenue + signups) ────────────────────────
+  const monthlyOverview = useMemo(() => {
+    if (!data?.monthlyRevenue || !data?.monthlySignups) return [];
+    const revMap = new Map(data.monthlyRevenue.map((r) => [r.month, r.revenue]));
+    const signMap = new Map(data.monthlySignups.map((r) => [r.month, r.count]));
+    const months = Array.from(new Set([...revMap.keys(), ...signMap.keys()]));
+    return months.map((m) => ({
+      month: m,
+      revenue: revMap.get(m) ?? 0,
+      signups: signMap.get(m) ?? 0,
+    }));
+  }, [data]);
+
+  // ── Sparklines hero KPIs (series REALES del endpoint widgets) ─────────────
+  // Audit P0-B 2026-05-02: antes usábamos `buildSparkline()` que generaba
+  // curvas sintéticas alrededor del valor actual — engañaba al superadmin
+  // con tendencias falsas. Ahora derivamos las series del endpoint widgets
+  // (revenueSeries 30d, ordersSeries 30d, monthlyRevenue 6m, monthlySignups
+  // 6m). Si una serie está vacía o tiene <2 puntos, omitimos el sparkline
+  // (el StatCard no renderiza nada — más honesto que mostrar tendencia falsa).
   const sparks = useMemo(() => {
     if (!data) return null;
+    const revSeries = widgets?.revenueSeries.map((p) => p.revenue) ?? [];
+    const ordSeries = widgets?.ordersSeries.map((p) => p.count) ?? [];
+    const monthlyRev = data.monthlyRevenue?.map((r) => r.revenue) ?? [];
+    const monthlySign = data.monthlySignups?.map((r) => r.count) ?? [];
     return {
-      mrr: buildSparkline(data.overview.mrr, "up"),
-      arr: buildSparkline(data.overview.arr, "up"),
-      tenants: buildSparkline(data.overview.activeTenants, "up"),
-      orders: buildSparkline(
-        data.growth.ordersThisMonth,
-        data.growth.orderGrowthPct >= 0 ? "up" : "down",
-      ),
+      mrr: monthlyRev.length >= 2 ? monthlyRev : revSeries,
+      arr: monthlyRev.length >= 2 ? monthlyRev : revSeries,
+      tenants: monthlySign.length >= 2 ? monthlySign : [],
+      orders: ordSeries,
     };
-  }, [data]);
+  }, [data, widgets]);
 
   return (
     <AdminTabShell
@@ -190,44 +220,44 @@ export default function DashboardPage() {
       {/* ── Loading ──────────────────────────────────────────────────────── */}
       {loading && !data && <LoadingState message="Cargando indicadores..." />}
 
-      {/* ── Fila 1: 4 KPIs hero con sparklines ───────────────────────────── */}
+      {/* ── Fila 1: 4 KPIs hero con sparklines + paleta diferenciada ──── */}
       {data && sparks && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
-          <StatCard
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
+          <KPIHeroCard
             label="MRR"
             value={fmtSoles(data.overview.mrr)}
             icon={TrendingUp}
-            density="comfortable"
+            tone="teal"
             delta={data.growth.tenantGrowthPct}
             deltaLabel="vs mes anterior"
-            sparkline={{ data: sparks.mrr, color: "var(--accent, var(--text-primary))" }}
+            sparkline={sparks.mrr}
           />
-          <StatCard
+          <KPIHeroCard
             label="ARR estimado"
             value={fmtSoles(data.overview.arr)}
             icon={Banknote}
-            density="comfortable"
+            tone="sky"
             subValue={`${data.overview.payingTenants} tenants de pago`}
-            sparkline={{ data: sparks.arr, color: "var(--accent, var(--text-primary))" }}
+            sparkline={sparks.arr}
           />
-          <StatCard
+          <KPIHeroCard
             label="Tiendas activas"
             value={data.overview.activeTenants}
             icon={Building2}
-            density="comfortable"
+            tone="amber"
             delta={data.growth.tenantGrowthPct}
             deltaLabel="vs mes anterior"
             subValue={`${data.overview.totalTenants} totales`}
-            sparkline={{ data: sparks.tenants, color: "var(--accent, var(--text-primary))" }}
+            sparkline={sparks.tenants}
           />
-          <StatCard
+          <KPIHeroCard
             label="Pedidos este mes"
             value={data.growth.ordersThisMonth.toLocaleString("es-PE")}
             icon={ShoppingBag}
-            density="comfortable"
+            tone="purple"
             delta={data.growth.orderGrowthPct}
             deltaLabel="vs mes anterior"
-            sparkline={{ data: sparks.orders, color: "var(--accent, var(--text-primary))" }}
+            sparkline={sparks.orders}
           />
         </div>
       )}
@@ -253,8 +283,40 @@ export default function DashboardPage() {
               ),
             },
             {
+              id: "monthly-overview",
+              label: "Visión mensual",
+              description: "Ingresos + nuevas tiendas por mes (composed chart)",
+              section: "Indicadores clave",
+              component: monthlyOverview.length > 0 ? (
+                <MonthlyOverviewChart data={monthlyOverview} />
+              ) : null,
+            },
+            {
+              id: "plan-health",
+              label: "Distribución y salud",
+              description: "Plan donut + radial de salud + ARPU",
+              section: "Indicadores clave",
+              component: (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-6">
+                  <PlanDistributionDonut
+                    distribution={
+                      data.planDistribution ?? { free: 0, pro: 0, business: 0, enterprise: 0 }
+                    }
+                  />
+                  <BusinessHealthRadial
+                    trialConversionRate={data.overview.trialConversionRate ?? 0}
+                    churnRate={data.overview.churnRate ?? 0}
+                    activeTenants={data.overview.activeTenants}
+                    totalTenants={data.overview.totalTenants}
+                    atRiskCount={data.atRiskCount ?? 0}
+                  />
+                  <ARPUMiniChart data={arpuSeries} currentARPU={data.overview.arpu} />
+                </div>
+              ),
+            },
+            {
               id: "revenue-orders",
-              label: "Ingresos & pedidos",
+              label: "Detalle diario",
               description: "Revenue area + orders bar (últimos 30 días)",
               section: "Indicadores clave",
               component: (
@@ -276,12 +338,12 @@ export default function DashboardPage() {
               ),
             },
             {
-              id: "top-funnel-arpu",
-              label: "Top tiendas, funnel y ARPU",
-              description: "Tres widgets compactos lado a lado",
+              id: "top-funnel",
+              label: "Top tiendas y funnel",
+              description: "Top 5 + conversión por paso",
               section: "Operación",
               component: (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-6">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
                   <TopStoresList
                     stores={widgets.topStores.map((s) => ({
                       id: s.tenantId,
@@ -308,7 +370,6 @@ export default function DashboardPage() {
                       value: f.value,
                     }))}
                   />
-                  <ARPUMiniChart data={arpuSeries} currentARPU={data.overview.arpu} />
                 </div>
               ),
             },

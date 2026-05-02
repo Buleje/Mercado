@@ -57,16 +57,17 @@ export function RevenueAreaChart({
   description = "Últimos 12 meses",
 }: Props) {
   const tokens = useChartTokens();
+  const teal = "var(--brand-primary, #00B4A6)";
 
   return (
     <ChartWrapper title={title} description={description}>
-      <div style={{ height: 300 }}>
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <div style={{ width: "100%", height: 300, minHeight: 220 }}>
+        <ResponsiveContainer width="99%" height="99%" debounce={50}>
           <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="mrrGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={tokens.stroke} stopOpacity={0.28} />
-                <stop offset="95%" stopColor={tokens.stroke} stopOpacity={0} />
+                <stop offset="0%" stopColor={teal} stopOpacity={0.45} />
+                <stop offset="95%" stopColor={teal} stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid
@@ -77,13 +78,13 @@ export function RevenueAreaChart({
             <XAxis
               dataKey="month"
               stroke={tokens.axis}
-              tick={{ fontSize: 13, fill: tokens.axis }}
+              tick={{ fontSize: 13, fill: tokens.axis, fontWeight: 600 }}
               tickLine={false}
               axisLine={{ stroke: tokens.grid }}
             />
             <YAxis
               stroke={tokens.axis}
-              tick={{ fontSize: 13, fill: tokens.axis }}
+              tick={{ fontSize: 12, fill: tokens.axis }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => `S/${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
@@ -91,15 +92,20 @@ export function RevenueAreaChart({
             />
             <Tooltip
               content={<RevenueTooltip />}
-              cursor={{ stroke: tokens.grid, strokeWidth: 1 }}
+              cursor={{ stroke: teal, strokeWidth: 1, strokeDasharray: "4 4" }}
             />
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke={tokens.stroke}
-              strokeWidth={2}
+              stroke={teal}
+              strokeWidth={2.5}
               fill="url(#mrrGradient)"
-              activeDot={{ r: 4, fill: tokens.stroke, strokeWidth: 0 }}
+              activeDot={{
+                r: 6,
+                fill: teal,
+                stroke: "var(--surface-canvas)",
+                strokeWidth: 2,
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>

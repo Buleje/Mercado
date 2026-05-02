@@ -41,10 +41,17 @@ export function ConversionFunnel({ steps }: Props) {
                   </span>
                 </div>
               </div>
-              <div className="relative h-9 rounded-md bg-[var(--surface-sunken)] overflow-hidden">
+              <div className="relative h-10 rounded-lg bg-[var(--surface-sunken)] overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 rounded-md bg-[var(--text-primary)] transition-all"
-                  style={{ width: `${pct}%`, opacity: 0.85 - i * 0.15 }}
+                  className="absolute inset-y-0 left-0 rounded-lg transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${
+                      ["#00B4A6", "#0ea5e9", "#8b5cf6", "#f59e0b"][i] ?? "#00B4A6"
+                    } 0%, ${
+                      ["#34d4be", "#38bdf8", "#a78bfa", "#fbbf24"][i] ?? "#34d4be"
+                    } 100%)`,
+                  }}
                   aria-hidden
                 />
               </div>

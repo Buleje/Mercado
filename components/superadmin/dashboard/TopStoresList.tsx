@@ -64,12 +64,16 @@ export function TopStoresList({ stores }: Props) {
               </div>
               <div className="flex items-center gap-3 pl-8">
                 <div
-                  className="h-2 flex-1 rounded-full bg-[var(--surface-sunken)] overflow-hidden"
+                  className="h-2.5 flex-1 rounded-full bg-[var(--surface-sunken)] overflow-hidden"
                   aria-hidden
                 >
                   <div
-                    className="h-full rounded-full bg-[var(--text-primary)] transition-all"
-                    style={{ width: `${pct}%` }}
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${pct}%`,
+                      background:
+                        "linear-gradient(90deg, var(--brand-primary, #00B4A6) 0%, #34d4be 100%)",
+                    }}
                   />
                 </div>
                 <span className="text-[length:var(--ts-sm)] shrink-0 tabular-nums font-semibold text-[var(--text-tertiary)]">

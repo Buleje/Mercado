@@ -102,9 +102,22 @@ export function buildOrdersSeries(targetTotal: number): OrdersSeriesPoint[] {
 
 /**
  * Construye sparkline de 6 puntos a partir del valor actual.
- * Útil para StatCard.sparkline sin backend de series.
+ *
+ * @deprecated 2026-05-02 (audit P0-B): genera curvas sintéticas que engañan
+ * al superadmin con tendencias falsas. Usar series REALES del endpoint
+ * `/api/superadmin/dashboard/widgets` (revenueSeries / ordersSeries) y
+ * `/api/superadmin/analytics` (monthlyRevenue / monthlySignups). Solo
+ * retenido para retrocompatibilidad de tests; si lo llamás en producción,
+ * vas a ver una curva inventada que no refleja datos reales.
  */
 export function buildSparkline(current: number, trend: "up" | "flat" | "down" = "up"): number[] {
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[buildSparkline] DEPRECATED: usá series reales del endpoint widgets. " +
+        "Esta función fabrica curvas sintéticas que engañan con tendencias falsas.",
+    );
+  }
   if (trend === "up") {
     return [current * 0.75, current * 0.82, current * 0.86, current * 0.9, current * 0.95, current];
   }
