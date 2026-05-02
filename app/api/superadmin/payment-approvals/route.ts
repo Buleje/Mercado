@@ -4,7 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
 /**
  * GET /api/superadmin/payment-approvals

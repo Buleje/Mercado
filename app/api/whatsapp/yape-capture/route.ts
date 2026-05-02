@@ -28,7 +28,7 @@ import { logger } from "@/lib/logger";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { extractYapePayment } from "@/lib/ai/yape-vision";
 
-export const dynamic = "force-dynamic";
+// Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { getActiveProvider } from "@/lib/ai/provider";
 
-export const dynamic = "force-dynamic";
+// Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
 // Dev-only test endpoint: invokes the concierge engine directly without
 // going through Meta's webhook. Returns the AI reply as JSON so you can

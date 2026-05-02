@@ -7,7 +7,7 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { notifyYapeApproved } from "@/lib/whatsapp/notify-yape-result";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
 /**
  * POST /api/superadmin/payment-approvals/[id]/approve

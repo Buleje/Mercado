@@ -8,7 +8,7 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { notifyYapeRejected } from "@/lib/whatsapp/notify-yape-result";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
 const BodySchema = z.object({
   reason: z.string().min(5).max(500),

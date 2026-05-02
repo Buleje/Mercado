@@ -19,11 +19,19 @@ export const groqProvider = createOpenAI({
   baseURL: "https://api.groq.com/openai/v1",
 });
 
-export type AIProviderName = "anthropic" | "groq" | "openai" | "none";
+// xAI Grok via OpenAI-compatible endpoint
+// Get a key at https://console.x.ai/
+export const xaiProvider = createOpenAI({
+  apiKey: process.env.XAI_API_KEY ?? "",
+  baseURL: "https://api.x.ai/v1",
+});
+
+export type AIProviderName = "anthropic" | "groq" | "xai" | "openai" | "none";
 
 export function getActiveProvider(): AIProviderName {
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
   if (process.env.GROQ_API_KEY) return "groq";
+  if (process.env.XAI_API_KEY) return "xai";
   if (process.env.OPENAI_API_KEY) return "openai";
   return "none";
 }
@@ -39,6 +47,9 @@ function pickChatModel() {
   if (process.env.GROQ_API_KEY) {
     return groqProvider("llama-3.3-70b-versatile");
   }
+  if (process.env.XAI_API_KEY) {
+    return xaiProvider("grok-4-fast-non-reasoning");
+  }
   if (process.env.OPENAI_API_KEY) {
     return openaiProvider("gpt-4o-mini");
   }
@@ -53,6 +64,9 @@ function pickSmartModel() {
   }
   if (process.env.GROQ_API_KEY) {
     return groqProvider("llama-3.3-70b-versatile");
+  }
+  if (process.env.XAI_API_KEY) {
+    return xaiProvider("grok-4");
   }
   if (process.env.OPENAI_API_KEY) {
     return openaiProvider("gpt-4o");

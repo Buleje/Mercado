@@ -5,7 +5,8 @@ import { logger } from "@/lib/logger";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 
-export const dynamic = "force-dynamic";
+// Next 16 con cacheComponents:true rechaza `export const dynamic`. El handler
+// es dinámico por naturaleza (req.text/headers/etc), no necesita la flag.
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
