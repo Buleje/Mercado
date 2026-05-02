@@ -12,6 +12,7 @@
 
 import { ShoppingBag } from "@buleje/design-system/icons";
 import { useLastOrder } from "@/contexts/last-order-context";
+import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 
 export default function OrderTrackerNavBadge({
   variant = "compact",
@@ -19,8 +20,13 @@ export default function OrderTrackerNavBadge({
   variant?: "compact" | "expanded";
 }) {
   const { order, hydrated, modalOpen, openModal } = useLastOrder();
+  // Brandon, mayo 2026: el badge "Tu pedido" leía localStorage y aparecía
+  // a usuarios deslogueados con data de sesiones previas. Source-of-truth
+  // server-side ahora bloquea ese leak.
+  const { authenticated } = useCustomerAuthStatus();
 
   if (!hydrated || !order) return null;
+  if (authenticated !== true) return null;
   if (modalOpen) return null; // no mostrar el badge mientras el modal está abierto
 
   const itemsCount = order.items.reduce((acc, i) => acc + i.quantity, 0);

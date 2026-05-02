@@ -27,7 +27,7 @@ import {
 } from "@/components/marketplace/useMarketplaceGeo";
 import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
 import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby";
-import { useCustomer } from "@/contexts/customer-context";
+import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
@@ -106,11 +106,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
   // ── Auth gate — secciones personalizadas (mis pedidos, destacadas
   // cerca tuyo, repetir último) sólo se muestran al cliente logueado.
-  // Sin login mostrábamos data del localStorage de sesiones previas, lo
-  // que confundía a usuarios deslogueados que veían "Mis pedidos" sin
-  // estar logueados (Brandon, mayo 2026).
-  const { customer } = useCustomer();
-  const isLoggedIn = customer != null && Boolean(customer.phone);
+  // Usamos `useCustomerAuthStatus` (consulta server-side) en vez de
+  // `useCustomer().customer` porque el customer-context se hidrata
+  // primero desde localStorage; tokens viejos seguían "logueando" al
+  // usuario aunque la cookie `buleje-customer-sess` (httpOnly, fuente
+  // real de auth) ya no existiera. Brandon, mayo 2026.
+  const { authenticated } = useCustomerAuthStatus();
+  const isLoggedIn = authenticated === true;
 
   const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
   const [loading, setLoading] = useState(initialStores.length === 0);
