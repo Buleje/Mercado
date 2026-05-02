@@ -68,6 +68,29 @@ Plataforma completa de e-commerce para abarrotes con delivery, construida con Ne
 - **Sitemap dinámico** con next-sitemap
 - **Canonical URLs** y hreflang ready
 
+### 💬 **WhatsApp Concierge AI** (mayo 2026)
+- **Cross-tenant marketplace search** desde un solo número de WhatsApp
+- **Multi-vendor checkout** — cliente arma carrito con productos de varias tiendas
+- **IA recomienda productos** según contexto ("qué me recomiendas para una parrilla")
+- **Yape Vision pipeline** — Claude Sonnet 4.6 lee la captura del Yape, monto, código y last4
+- **Superadmin aprueba en bulk** desde `/superadmin/pagos-yape` con polling 30s + optimistic UI
+- **AI provider fallback chain** — Anthropic > Groq (free 14k/d) > OpenAI
+- **Notificación al cliente** automática cuando se aprueba/rechaza
+- 📖 [Setup guide](./WHATSAPP_SETUP.md) · [ADR-088](./docs/adr/088-whatsapp-concierge-multi-vendor-yape-pipeline.md)
+
+### 🛵 **Delivery Dashboard 2.0** (mayo 2026)
+- **EarningsTodayHero** — ganancias del día con goal progress
+- **RiderScoreCard** — score gamificado 0-1000 con tier rookie/pro/elite
+- **HotZonesPanel** — zonas calientes en Pucallpa (Yarinacocha, Centro, Manantay, etc.)
+- **StreaksAndBonusCard** — racha diaria + weekly goal + bonos
+- **ChatAndSOSPanel** — emergencia geo + chat con cliente
+
+### 🌐 **i18n 4 idiomas** (mayo 2026)
+- Español · English · Shipibo-Konibo · **Runa Simi (Quechua chanka)**
+- Auto-translator DOM-walker (3 capas: dict + cache + MyMemory API)
+- `<T>` wrapper inline + `<AutoTranslator>` global
+- Diferencial cultural Pucallpa + alcance andino
+
 ---
 
 ## 🚀 Inicio Rápido
