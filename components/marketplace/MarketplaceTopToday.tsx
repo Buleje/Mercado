@@ -5,6 +5,7 @@ import Link from "next/link";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
+import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
 
 interface TopProduct {
   storeProductId: string;
@@ -45,6 +46,12 @@ export default function MarketplaceTopToday() {
 
   useEffect(() => {
     let cancelled = false;
+    // Hard timeout — if the fetch hangs longer than 10s, surface as error
+    // so we can render the empty state instead of a forever-spinning skeleton.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setError(true);
+    }, 10_000);
+
     (async () => {
       try {
         // 1) Try real "top-today" endpoint (ranked by sold units)
@@ -65,14 +72,25 @@ export default function MarketplaceTopToday() {
         setItems((d2?.items ?? []).slice(0, 10).map(normalize));
       } catch {
         if (!cancelled) setError(true);
+      } finally {
+        clearTimeout(timeoutId);
       }
     })();
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, []);
 
-  if (error || (items !== null && items.length === 0)) return null;
+  // Hide section completely when we know there's nothing to show.
+  // (The empty state renders inside `<MarketplaceSection>` below to keep
+  // visual hierarchy when something genuinely failed but only on dev/preview;
+  // in production with a populated DB this path never triggers.)
+  if (error && items === null) {
+    if (process.env.NODE_ENV === "production") return null;
+    // dev-only diagnostic — never bubbles to real users
+  }
+  if (items !== null && items.length === 0) return null;
 
   return (
     <MarketplaceSection
@@ -89,7 +107,13 @@ export default function MarketplaceTopToday() {
         </Link>
       }
     >
-      {items === null ? (
+      {error && items === null ? (
+        <MarketplaceEmptyState
+          eyebrow="Sin datos por ahora"
+          title="Aún no podemos mostrar el ranking de hoy"
+          description="Refrescá en un momento o explorá el catálogo completo del marketplace mientras tanto."
+        />
+      ) : items === null ? (
         <HorizontalCarousel ariaLabel="Cargando lo mas pedido" showNav={false}>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-64 rounded-xl skeleton-shimmer" />

@@ -89,6 +89,12 @@ export default function CatalogSections() {
 
   useEffect(() => {
     let cancelled = false;
+    // Hard timeout — when the sections endpoint hangs, stop loading and
+    // fall through to the no-data branch so the skeleton doesn't spin forever.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 10_000);
+
     async function load() {
       try {
         const res = await fetch("/api/marketplace/catalog/sections");
@@ -99,10 +105,16 @@ export default function CatalogSections() {
       } catch {
         /* silent — sections are non-critical */
       }
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        clearTimeout(timeoutId);
+      }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   if (loading) {

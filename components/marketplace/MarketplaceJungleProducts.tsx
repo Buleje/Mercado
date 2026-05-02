@@ -62,6 +62,12 @@ export default function MarketplaceJungleProducts() {
 
   useEffect(() => {
     let cancelled = false;
+    // Hard timeout to avoid forever-spinning skeleton when one of the
+    // 6 parallel requests hangs.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setItems(FALLBACK_ITEMS);
+    }, 10_000);
+
     (async () => {
       try {
         // Fetch by keyword matching (one search per keyword, taking first few)
@@ -101,10 +107,13 @@ export default function MarketplaceJungleProducts() {
         setItems(allItems.length > 0 ? allItems.slice(0, 8) : FALLBACK_ITEMS);
       } catch {
         if (!cancelled) setItems(FALLBACK_ITEMS);
+      } finally {
+        clearTimeout(timeoutId);
       }
     })();
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, []);
 
