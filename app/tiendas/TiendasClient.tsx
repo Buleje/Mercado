@@ -1015,6 +1015,41 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         </div>
       </section>
 
+      {/* ── CTA repartidores — banda paralela al CTA de bodegueros ──── */}
+      <section className="border-t border-[var(--rule-soft)] bg-gradient-to-r from-[var(--brand-purple)]/8 via-[var(--brand-purple)]/4 to-transparent">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="max-w-xl">
+              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--brand-purple)] mb-1.5">
+                Para repartidores
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                ¿Tenés moto o bici? <span className="text-[var(--brand-purple)]">Trabajá con Buleje.</span>
+              </h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Hacé delivery de pedidos en tu zona, decidí tu horario y cobrá por entrega + propinas.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2.5 shrink-0">
+              <Link
+                href="/marketplace/repartidor"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--brand-purple)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md hover:shadow-[var(--brand-purple)]/30 transition-all"
+              >
+                <span aria-hidden>🛵</span>
+                Quiero ser repartidor
+                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+              </Link>
+              <Link
+                href="/delivery-app/login"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--brand-purple)] hover:text-[var(--brand-purple)] transition-colors"
+              >
+                Ya soy repartidor · Ingresar
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>
   );

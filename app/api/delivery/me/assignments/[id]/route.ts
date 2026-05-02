@@ -18,6 +18,7 @@ export async function GET(
   if (session instanceof NextResponse) return session;
 
   const { id } = await params;
+  // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryAssignmentsDB
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { id },
     include: {
@@ -83,10 +84,11 @@ export async function PATCH(
   }
 
   try {
+    // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryAssignmentsDB
     const result = await prisma.$transaction(async (tx) => {
       const assignment = await tx.deliveryAssignment.findUnique({
         where: { id },
-        select: { id: true, partnerId: true, orderId: true, status: true, tenantId: true },
+        select: { id: true, partnerId: true, orderId: true, status: true, tenantId: true, notes: true },
       });
       if (!assignment) return { error: "Assignment no encontrado", code: 404 };
       if (assignment.partnerId !== session.partnerId) {
@@ -99,6 +101,27 @@ export async function PATCH(
           error: `No podés pasar de ${assignment.status} a ${parsed.data.status}`,
           code: 409,
         };
+      }
+
+      // Gate "delivered" — exige photo proof guardado en notes.proofPhotoUrl.
+      // Brandon mayo 2026: anti-fraude, repartidor debe entregar la foto
+      // ANTES de marcar como entregado (mismo flujo que Rappi/PedidosYa).
+      if (parsed.data.status === "delivered") {
+        let hasProof = false;
+        if (assignment.notes) {
+          try {
+            const parsedNotes = JSON.parse(assignment.notes);
+            hasProof = typeof parsedNotes?.proofPhotoUrl === "string" && parsedNotes.proofPhotoUrl.length > 0;
+          } catch {
+            // Notes no era JSON — sin proof.
+          }
+        }
+        if (!hasProof) {
+          return {
+            error: "Tomá la foto de entrega antes de marcar como entregado.",
+            code: 400,
+          };
+        }
       }
 
       const data: Record<string, unknown> = { status: parsed.data.status };
@@ -173,6 +196,7 @@ async function notifyCustomerOfStatusChange(
   const msg = STATUS_MESSAGE[status];
   if (!msg) return;
 
+  // eslint-disable-next-line no-restricted-properties -- TODO: extraer a OrdersDB
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: { id: true, customerName: true, customerPhone: true, tenantId: true },
@@ -180,6 +204,7 @@ async function notifyCustomerOfStatusChange(
   if (!order) return;
 
   // Idempotency: skip si ya hay tracking entry reciente para este orderId+status.
+  // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryTrackingDB
   const recent = await prisma.deliveryTracking.findFirst({
     where: {
       orderId, status,
@@ -189,6 +214,7 @@ async function notifyCustomerOfStatusChange(
   });
 
   if (!recent) {
+    // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryTrackingDB
     await prisma.deliveryTracking.create({
       data: {
         id: `dt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -216,6 +242,8 @@ async function notifyCustomerOfStatusChange(
     await sendWhatsAppQueued(order.customerPhone, wa, {
       tenantId: order.tenantId,
       context: `delivery-status-${status}-${orderId}`,
-    }).catch(() => {});
+    }).catch((err) =>
+      logger.warn("[delivery/status-notify] whatsapp failed", { error: String(err), orderId }),
+    );
   }
 }

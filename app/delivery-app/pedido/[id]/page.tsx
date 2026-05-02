@@ -22,6 +22,8 @@ interface Assignment {
   fee: number;
   pickedUpAt: string | null;
   deliveredAt: string | null;
+  /** JSON serializado: { proofPhotoUrl?, proofTakenAt?, text? }. */
+  notes: string | null;
   order: {
     id: string;
     customerName: string;
@@ -32,6 +34,17 @@ interface Assignment {
     notes: string | null;
     items: { name: string; quantity: number; unit: string }[];
   };
+}
+
+/** Extrae la URL de la foto de prueba si está guardada en `notes` JSON. */
+function getProofUrl(notes: string | null): string | null {
+  if (!notes) return null;
+  try {
+    const parsed = JSON.parse(notes) as { proofPhotoUrl?: string };
+    return typeof parsed.proofPhotoUrl === "string" ? parsed.proofPhotoUrl : null;
+  } catch {
+    return null;
+  }
 }
 
 const STEPS: { key: Assignment["status"]; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -70,6 +83,7 @@ export default function PedidoPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
 
   const load = useCallback(async () => {
     if (!assignmentId) return;
@@ -88,6 +102,32 @@ export default function PedidoPage() {
   }, [assignmentId, router]);
 
   useEffect(() => { load(); }, [load]);
+
+  const uploadProof = async (file: File) => {
+    if (!assignmentId || uploadingProof) return;
+    setUploadingProof(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/delivery/me/assignments/${assignmentId}/proof`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-csrf-token": csrf() },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "No pudimos subir la foto.");
+        return;
+      }
+      await load();
+    } catch {
+      setError("Error de red al subir la foto.");
+    } finally {
+      setUploadingProof(false);
+    }
+  };
 
   const advance = async (nextStatus: string) => {
     if (submitting || !assignmentId) return;
@@ -144,6 +184,12 @@ export default function PedidoPage() {
   const action = NEXT_ACTION[assignment.status];
   const isDone = assignment.status === "delivered" || assignment.status === "cancelled";
   const stepIndex = STATUS_INDEX[assignment.status];
+  const proofUrl = getProofUrl(assignment.notes);
+  // Photo proof requerido para marcar entregado. Se muestra/edita
+  // a partir de "in_transit" — ya estás cerca del cliente.
+  const showProofCapture =
+    assignment.status === "in_transit" || assignment.status === "picked_up";
+  const needsProofToDeliver = action?.nextStatus === "delivered" && !proofUrl;
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
@@ -217,16 +263,29 @@ export default function PedidoPage() {
               </p>
             )}
             {assignment.order.customerLocation && (
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(assignment.order.customerLocation)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white"
-              >
-                <RouteIcon className="h-5 w-5" />
-                Abrir en Maps
-                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-              </a>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {/* "Iniciar ruta" — turn-by-turn navigation. En Android/iOS
+                    abre la app de Google Maps en modo navegación; en
+                    desktop abre el sitio web en mismo modo. */}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(assignment.order.customerLocation)}&travelmode=driving`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.98] transition-all"
+                >
+                  <RouteIcon className="h-5 w-5" />
+                  Iniciar ruta
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </a>
+                <a
+                  href={`https://maps.google.com/?q=${encodeURIComponent(assignment.order.customerLocation)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)]"
+                >
+                  Ver punto
+                </a>
+              </div>
             )}
           </Card>
         </div>
@@ -276,6 +335,84 @@ export default function PedidoPage() {
           </div>
         )}
 
+        {/* ── Photo proof — gate de "delivered" ─────────────────── */}
+        {(showProofCapture || proofUrl) && !isDone && (
+          <Card
+            title="Foto de entrega"
+            icon={<CheckBadge className="h-5 w-5 text-[var(--accent)]" />}
+          >
+            {proofUrl ? (
+              <div className="space-y-3">
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[var(--data-success)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={proofUrl}
+                    alt="Foto de entrega"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    Lista
+                  </span>
+                </div>
+                <label
+                  htmlFor="proof-input"
+                  className={`block text-sm font-extrabold text-[var(--accent)] cursor-pointer ${uploadingProof ? "opacity-50 pointer-events-none" : ""}`}
+                >
+                  {uploadingProof ? "Subiendo…" : "Reemplazar foto"}
+                </label>
+                <input
+                  id="proof-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadProof(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-3">
+                  Tomá una foto del pedido en la puerta del cliente.
+                  <strong className="text-[var(--text-primary)]"> Es obligatoria</strong> para
+                  marcar como entregado.
+                </p>
+                <label
+                  htmlFor="proof-input"
+                  className={`inline-flex items-center justify-center gap-2 h-14 px-6 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 cursor-pointer hover:shadow-xl active:scale-[0.98] transition-all ${uploadingProof ? "opacity-60 pointer-events-none" : ""}`}
+                >
+                  {uploadingProof ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Subiendo…
+                    </>
+                  ) : (
+                    <>
+                      📸 Tomar foto de entrega
+                    </>
+                  )}
+                </label>
+                <input
+                  id="proof-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadProof(f);
+                    e.target.value = "";
+                  }}
+                />
+              </>
+            )}
+          </Card>
+        )}
+
         {error && (
           <div role="alert" className="rounded-2xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-4 py-3 text-base font-bold text-[var(--brand-danger)]">
             {error}
@@ -306,12 +443,23 @@ export default function PedidoPage() {
           <div className="max-w-3xl mx-auto space-y-2">
             <button
               type="button"
-              onClick={() => advance(action.nextStatus)}
+              onClick={() => {
+                if (needsProofToDeliver) {
+                  setError("Tomá la foto de entrega antes de marcar como entregado.");
+                  document.getElementById("proof-input")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  return;
+                }
+                advance(action.nextStatus);
+              }}
               disabled={submitting}
-              className="w-full h-14 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--data-success)] text-base lg:text-lg font-extrabold text-white shadow-lg shadow-[var(--data-success)]/30 disabled:opacity-50"
+              className={`w-full h-14 inline-flex items-center justify-center gap-2 rounded-2xl text-base lg:text-lg font-extrabold text-white shadow-lg disabled:opacity-50 transition-all ${
+                needsProofToDeliver
+                  ? "bg-[var(--text-tertiary)] cursor-not-allowed"
+                  : "bg-[var(--data-success)] shadow-[var(--data-success)]/30"
+              }`}
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
-              {action.label}
+              {needsProofToDeliver ? "Tomá la foto primero" : action.label}
             </button>
             {assignment.status !== "delivered" && (
               <button
