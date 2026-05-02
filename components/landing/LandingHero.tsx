@@ -119,7 +119,7 @@ export default function LandingHero({
                 href="/abrir-tienda"
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
-                Probá gratis 90 días
+                Probá el primer mes sin pagar
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
               </Link>
               <Link

@@ -164,8 +164,39 @@ function PlanCard({
         </p>
       </div>
 
-      {/* Precio */}
+      {/* Precio — con tachado del original cuando hay descuento.
+          Brandon mayo 2026: pidió tachados + persuasión visible. */}
       <div className={`mb-5 pb-5 border-b ${recommended ? "border-white/15" : "border-[var(--rule-soft)]"}`}>
+        {/* Línea con precio anterior tachado + badge de descuento */}
+        {showFirstMonthBanner && (
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className={`text-base font-bold tabular-nums line-through decoration-2 ${
+                recommended ? "text-white/45" : "text-[var(--text-tertiary)]"
+              }`}
+            >
+              S/ {plan.monthlyPrice}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
+              {plan.firstMonthDiscount === 100 ? "1er mes gratis" : `−${plan.firstMonthDiscount}%`}
+            </span>
+          </div>
+        )}
+        {isAnnual && (
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className={`text-base font-bold tabular-nums line-through decoration-2 ${
+                recommended ? "text-white/45" : "text-[var(--text-tertiary)]"
+              }`}
+            >
+              S/ {plan.monthlyPrice}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
+              −{plan.annualDiscount}%
+            </span>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           <m.div
             key={`${plan.id}-${isAnnual ? "anual" : "mensual"}`}
@@ -176,34 +207,41 @@ function PlanCard({
             className="flex items-baseline gap-1"
           >
             <span
-              className={`text-[clamp(2rem,4vw,2.75rem)] font-black tabular-nums tracking-[-0.025em] leading-none ${
+              className={`text-[clamp(2.25rem,4.5vw,3rem)] font-black tabular-nums tracking-[-0.025em] leading-none ${
                 recommended ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
               }`}
             >
               S/{" "}
-              <NumberFlow value={monthlyShown} format={{ maximumFractionDigits: 0 }} locales="es-PE" />
+              <NumberFlow
+                value={showFirstMonthBanner ? firstMonth : monthlyShown}
+                format={{ maximumFractionDigits: 0 }}
+                locales="es-PE"
+              />
             </span>
             <span
               className={`text-sm font-semibold ${
                 recommended ? "text-[var(--surface-canvas)]/60" : "text-[var(--text-tertiary)]"
               }`}
             >
-              /mes
+              {showFirstMonthBanner ? "1er mes" : "/mes"}
             </span>
           </m.div>
         </AnimatePresence>
 
-        {isAnnual && (
-          <p className={`mt-2 text-xs font-extrabold ${recommended ? "text-[var(--accent)]" : "text-[var(--data-success)]"}`}>
-            Ahorrás S/ {savings} al año (≈ {Math.round(savings / plan.monthlyPrice)} meses gratis)
+        {/* Sub-mensaje persuasivo */}
+        {showFirstMonthBanner && plan.firstMonthDiscount < 100 && (
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+            Después <strong>S/ {plan.monthlyPrice}/mes</strong> · cancelás cuando quieras
           </p>
         )}
-
-        {showFirstMonthBanner && (
-          <p className={`mt-2 text-xs font-extrabold ${recommended ? "text-[var(--accent)]" : "text-[var(--data-success)]"}`}>
-            {plan.firstMonthDiscount === 100
-              ? "Primer mes GRATIS · sin tarjeta"
-              : `Primer mes a S/ ${firstMonth} (-${plan.firstMonthDiscount}%)`}
+        {plan.firstMonthDiscount === 100 && !isAnnual && (
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+            <strong>Sin tarjeta</strong> · después S/ {plan.monthlyPrice}/mes si te gusta
+          </p>
+        )}
+        {isAnnual && (
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+            Ahorrás <strong>S/ {savings}</strong> al año (≈ {Math.round(savings / plan.monthlyPrice)} meses gratis)
           </p>
         )}
       </div>

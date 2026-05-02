@@ -113,7 +113,7 @@ export default function NosotrosSection() {
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
           >
-            Probá gratis 90 días
+            Probá el primer mes sin pagar
             <span aria-hidden>→</span>
           </Link>
         </div>

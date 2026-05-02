@@ -17,7 +17,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Chip, PrimaryButton, cn } from "@buleje/design-system";
+import { PrimaryButton, cn } from "@buleje/design-system";
 import { Menu, X, MessageCircle } from "@buleje/design-system/icons";
 import {
   BulejeMark,
@@ -114,9 +114,13 @@ export default function LandingHeader({
     openAuthModal();
   }, [openAuthModal]);
 
+  // Nav rediseñado mayo 2026 (Brandon: "muy plana y fea"):
+  //   - Antes: transparente al inicio, sutil al scroll → se sentía vacío.
+  //   - Ahora: siempre con leve elevación (backdrop blur + shadow + ring),
+  //     y al hacer scroll el contraste sube (más opacidad + shadow más fuerte).
   const headerBg = scrolled
-    ? "bg-[var(--surface-canvas)]/85 backdrop-blur-md border-b border-[var(--rule-base)]"
-    : "bg-transparent border-b border-transparent";
+    ? "bg-[var(--surface-canvas)]/95 backdrop-blur-xl border-b border-[var(--rule-base)] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.12)]"
+    : "bg-[var(--surface-canvas)]/75 backdrop-blur-lg border-b border-[var(--rule-soft)] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]";
 
   return (
     <>
@@ -185,19 +189,14 @@ export default function LandingHeader({
             >
               Ingresar
             </PrimaryButton>
-            <div className="flex items-center gap-2">
-              <PrimaryButton
-                variant="primary"
-                size="md"
-                onClick={handleSignup}
-                aria-label="Registrarse gratis"
-              >
-                Registrarse
-              </PrimaryButton>
-              <Chip size="sm" className="hidden xl:inline-flex">
-                Gratis
-              </Chip>
-            </div>
+            <PrimaryButton
+              variant="primary"
+              size="md"
+              onClick={handleSignup}
+              aria-label="Empezar mi tienda"
+            >
+              Empezar mi tienda
+            </PrimaryButton>
           </div>
 
           {/* ── Hamburger (mobile) ── */}
@@ -389,7 +388,7 @@ function MobileSheet({
                 onSignup();
               }}
             >
-              Registrarse gratis
+              Empezar mi tienda
             </PrimaryButton>
           </div>
         </div>

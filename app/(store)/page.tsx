@@ -38,6 +38,11 @@ const FAQSection = dynamic(
   { ssr: true, loading: () => <SectionSkeleton /> },
 );
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
+// Brandon mayo 2026: home y /abrir-tienda muestran los 4 planes
+// idénticos (Estándar/Pro/Enterprise/Max) — fuente única plan-tiers.
+const HomePlansToggle = dynamic(
+  () => import("@/components/landing/abrir-tienda/PlansToggle"),
+);
 
 export const metadata: Metadata = {
   title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Más",
@@ -295,48 +300,12 @@ function PromoBanners() {
   );
 }
 
-// ── Planes snapshot — sección editorial con 3 planes destacados ──
-// Nota: el bloque "Nosotros" ahora vive en NosotrosSection (arriba en el flujo).
+// ── Planes snapshot — fuente única plan-tiers.ts ──
+// Brandon mayo 2026: antes la home tenía 3 planes hardcoded distintos a
+// los de /abrir-tienda. Ahora ambos leen de PLANS y los 4 planes
+// coinciden: Estándar (S/39 con primer mes gratis), Pro (S/99), Enterprise
+// (S/159), Max (S/199).
 function AboutAndPricingSnapshot() {
-  const planes = [
-    {
-      name: "Gratis",
-      price: "S/ 0",
-      tagline: "Probá sin riesgo",
-      perks: [
-        "Catálogo ilimitado",
-        "Cobros Yape, Plin y efectivo",
-        "Hasta 50 pedidos/mes",
-        "Soporte por WhatsApp",
-      ],
-      tone: "neutral" as const,
-    },
-    {
-      name: "Pro",
-      price: "S/ 49",
-      tagline: "El más elegido",
-      perks: [
-        "Pedidos ilimitados",
-        "Inventario, caja y reportes",
-        "Cupones y promociones",
-        "Tu propio repartidor",
-      ],
-      tone: "primary" as const,
-    },
-    {
-      name: "Enterprise",
-      price: "A medida",
-      tagline: "Para escalar fuerte",
-      perks: [
-        "Multi-sucursal en tiempo real",
-        "API + webhooks",
-        "Integración con tu ERP",
-        "Soporte dedicado",
-      ],
-      tone: "neutral" as const,
-    },
-  ];
-
   return (
     <section
       id="planes"
@@ -344,84 +313,29 @@ function AboutAndPricingSnapshot() {
       className="relative overflow-hidden bg-[var(--surface-canvas)] py-20 sm:py-28 scroll-mt-20"
     >
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header editorial */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-16">
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-              <span
-                aria-hidden
-                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-              />
+              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
               Planes
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Empezá gratis.
+              Probá un mes,
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                Pagás solo si crecés.
+                pagá solo si te conviene.
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Cambiás de plan cuando quieras. Sin contratos, sin mínimos, sin
-            sorpresas en la factura.
+            Cambiás de plan cuando quieras. Sin contratos, sin permanencia,
+            sin sorpresas en la factura.
           </p>
         </div>
 
-        {/* Grid 3 planes — Pro destacado */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
-          {planes.map((p) => {
-            const isPrimary = p.tone === "primary";
-            return (
-              <div
-                key={p.name}
-                className={`relative rounded-2xl p-8 sm:p-10 ${
-                  isPrimary
-                    ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] md:scale-[1.02] md:shadow-xl"
-                    : "border border-[var(--rule-soft)] bg-[var(--surface-raised)]"
-                }`}
-              >
-                {isPrimary && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-white">
-                    Más popular
-                  </span>
-                )}
-                <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
-                  {p.tagline}
-                </p>
-                <h3 className="mt-2 text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                  {p.name}
-                </h3>
-                <p
-                  className={`mt-3 text-[clamp(2rem,4vw,2.75rem)] font-black tabular-nums tracking-[-0.03em] leading-none ${
-                    isPrimary
-                      ? "text-[var(--accent)]"
-                      : "text-[var(--text-primary)]"
-                  }`}
-                >
-                  {p.price}
-                  <span className="ml-2 text-sm font-semibold text-[var(--text-tertiary)]">
-                    /mes
-                  </span>
-                </p>
-                <ul className="mt-6 space-y-2">
-                  {p.perks.map((perk) => (
-                    <li
-                      key={perk}
-                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
-                    >
-                      <span
-                        aria-hidden
-                        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--accent)]"
-                      />
-                      {perk}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+        {/* Mismo PlansToggle que /abrir-tienda — cero duplicación,
+            cero desincronización. */}
+        <HomePlansToggle />
 
         <div className="mt-12 text-center">
           <Link
