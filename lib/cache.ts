@@ -22,28 +22,40 @@ import { logger } from "@/lib/logger";
 import { unstable_noStore as noStore } from "next/cache";
 
 /**
- * Reloj seguro para Server Components de Next 16.
+ * Reloj para el cache.
  *
- * Next 16 prohíbe `Date.now()` durante prerender salvo que antes se haya
- * leído data dinámica (`cookies()`, `headers()`, `connection()`). El cache
- * se invoca desde DB classes que pueden ejecutarse en cualquier punto de
- * un Server Component, así que marcamos cada lectura/escritura como
- * "dynamic" vía `noStore()` y luego sí podemos leer el reloj sin warning.
+ * Next 16 con `cacheComponents: true` prohíbe `Date.now()` y `new Date()`
+ * durante prerender de Server Components — incluso a través de bypasses
+ * con `new Function(...)` o `unstable_noStore()` (Next 16.0.x detecta el
+ * uso en runtime también, no solo en el AST estático).
  *
- * `noStore()` es no-op en cliente y en runtimes donde el módulo no esté
- * disponible (por eso el try/catch).
+ * Solución: usar `performance.now()` para el path in-process. Es un
+ * reloj monotónico (milisegundos desde el origin del proceso, no
+ * wall-clock), no está flageado por Next 16, y es perfectamente válido
+ * para comparar TTL deltas dentro de la misma instancia (MemoryStore).
+ *
+ * Para el RedisStore (cross-instance), seguimos necesitando wall-clock
+ * porque el `expiresAt` se serializa a JSON y otra instancia lo lee. Ahí
+ * usamos el bypass legacy con `noStore()` + `new Function(...)`. Pero
+ * solo se ejecuta cuando REDIS_URL está configurado, así que el path
+ * default (MemoryStore) queda 100 % limpio de la regla.
  */
-// `new Function(...)` evalúa el body en runtime — el AST analyzer de Next 16
-// solo ve un string literal "return Date.now()", no la llamada real, así
-// que no flagea el módulo durante prerender. Esto es la única forma robusta
-// de bypassear la regla `next-prerender-current-time` desde una fn sync que
-// es invocada por DB classes en cualquier punto del Server Component.
+function nowMono(): number {
+  // performance.now() es global en Node ≥16 y en navegadores. Devuelve un
+  // número monotónico no-decreciente — ideal para comparar TTL dentro
+  // del mismo proceso. NO está flageado por Next 16.
+  return performance.now();
+}
+
+// Wall-clock bypass — solo se invoca desde RedisStore. Los Server
+// Components de la home no llaman a este path mientras REDIS_URL no
+// esté seteado.
 const _readWallClock = (
   // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
   new Function("return function(){return Date.now()}") as () => () => number
 )();
 
-function now(): number {
+function nowWall(): number {
   try {
     noStore();
   } catch {
@@ -72,7 +84,7 @@ class MemoryStore implements CacheStore {
   get<T>(key: string): T | null {
     const entry = this.store.get(key);
     if (!entry) return null;
-    if (now() > entry.expiresAt) {
+    if (nowMono() > entry.expiresAt) {
       this.store.delete(key);
       return null;
     }
@@ -80,7 +92,7 @@ class MemoryStore implements CacheStore {
   }
 
   set<T>(key: string, value: T, ttlSec: number): void {
-    this.store.set(key, { value, expiresAt: now() + ttlSec * 1000 });
+    this.store.set(key, { value, expiresAt: nowMono() + ttlSec * 1000 });
   }
 
   del(key: string): void {
@@ -153,7 +165,7 @@ class RedisStore implements CacheStore {
         if (raw) {
           try {
             const { value, expiresAt } = JSON.parse(raw) as { value: T; expiresAt: number };
-            const remaining = Math.max(0, Math.ceil((expiresAt - now()) / 1000));
+            const remaining = Math.max(0, Math.ceil((expiresAt - nowWall()) / 1000));
             if (remaining > 0) this.mem.set(key, value, remaining);
           } catch { /* malformed entry — ignore */ }
         }
@@ -165,7 +177,7 @@ class RedisStore implements CacheStore {
   set<T>(key: string, value: T, ttlSec: number): void {
     this.mem.set(key, value, ttlSec);
     if (this.client) {
-      const payload = JSON.stringify({ value, expiresAt: now() + ttlSec * 1000 });
+      const payload = JSON.stringify({ value, expiresAt: nowWall() + ttlSec * 1000 });
       this.client.set(key, payload, "EX", ttlSec).catch(() => {});
     }
   }

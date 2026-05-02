@@ -8,9 +8,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Manually advance time for TTL tests. */
+/** Manually advance time for TTL tests.
+ *
+ * Note: lib/cache.ts uses performance.now() (monotonic clock) inside the
+ * MemoryStore — Date.now() is no longer touched on the in-process path
+ * to keep Next 16's next-prerender-current-time happy. We move BOTH
+ * clocks forward so the test stays semantically correct regardless of
+ * which one the cache reads. */
 function advanceTime(ms: number) {
   vi.setSystemTime(Date.now() + ms);
+  vi.advanceTimersByTime(ms);
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -23,7 +30,12 @@ describe("lib/cache — MemoryStore via getOrSet/invalidate", () => {
   let cacheStore: typeof import("@/lib/cache").cacheStore;
 
   beforeEach(async () => {
-    vi.useFakeTimers();
+    // toFake: include 'performance' so performance.now() advances when we
+    // call vi.advanceTimersByTime() — required since lib/cache.ts moved
+    // from Date.now() to performance.now() on the MemoryStore path.
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date", "performance"],
+    });
     vi.resetModules();
     // Reset the global singleton so each test starts cold
     (global as Record<string, unknown>).__bsmCache = undefined;
