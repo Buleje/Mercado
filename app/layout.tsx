@@ -182,6 +182,26 @@ async function CachedSchemaMarkup() {
   return <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />;
 }
 
+async function BrandRuntimeOverrides() {
+  // Brandon mayo 2026: inyecta colores y favicon configurados en
+  // /superadmin/configuracion. Si el cliente no cambió nada, este
+  // fragmento queda vacío (no overrides).
+  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
+  const cfg = await getPlatformConfigSSR();
+  const css = brandColorOverridesCss(cfg);
+  return (
+    <>
+      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+      {cfg.brand.faviconUrl && (
+        <>
+          <link rel="icon" type="image/png" href={cfg.brand.faviconUrl} />
+          <link rel="shortcut icon" href={cfg.brand.faviconUrl} />
+        </>
+      )}
+    </>
+  );
+}
+
 async function DynamicHeadContent() {
   const reqHeaders = await headers();
   const requestId = reqHeaders.get("x-request-id") ?? undefined;
@@ -220,6 +240,9 @@ export default function RootLayout({
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />
+        </Suspense>
+        <Suspense>
+          <BrandRuntimeOverrides />
         </Suspense>
         <Suspense fallback={<SchemaMarkup />}>
           <CachedSchemaMarkup />

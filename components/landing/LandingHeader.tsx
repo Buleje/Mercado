@@ -23,6 +23,7 @@ import {
   BulejeMark,
   BulejeWordmark,
 } from "@/components/ui-system/illustrations";
+import BrandLogo from "@/components/branding/BrandLogo";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 
@@ -135,7 +136,11 @@ export default function LandingHeader({
             aria-label="Buleje — Ir al inicio"
             className="flex shrink-0 items-center text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
           >
-            <BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />
+            <BrandLogo
+              variant="wordmark"
+              height={32}
+              fallback={<BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />}
+            />
           </Link>
 
           {/* ── Links centrales (desktop ≥ lg) ── */}
@@ -292,13 +297,21 @@ function MobileSheet({
             aria-label="Buleje — Ir al inicio"
             className="flex items-center gap-2 text-[var(--text-primary)]"
           >
-            <BulejeMark size={32} strokeWidth={1.75} />
-            <span
-              id="landing-mobile-sheet-title"
-              className="text-base font-bold tracking-tight"
-            >
-              Buleje
-            </span>
+            <BrandLogo
+              variant="wordmark"
+              height={32}
+              fallback={
+                <>
+                  <BulejeMark size={32} strokeWidth={1.75} />
+                  <span
+                    id="landing-mobile-sheet-title"
+                    className="text-base font-bold tracking-tight"
+                  >
+                    Buleje
+                  </span>
+                </>
+              }
+            />
           </Link>
           <button
             type="button"
