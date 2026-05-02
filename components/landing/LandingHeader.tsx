@@ -60,8 +60,8 @@ export interface LandingHeaderProps {
   alwaysOpaque?: boolean;
   /**
    * Modo minimal para páginas de conversión (e.g. /abrir-tienda):
-   * oculta los nav links que llevan a la home y deja solo logo + CTA.
-   * Convención de landing pages de alta conversión.
+   * oculta el PromoBannerTop superior (que duplica el mensaje del hero).
+   * Brandon mayo 2026: el nav de navegación SE MANTIENE visible.
    */
   minimal?: boolean;
   className?: string;
@@ -92,12 +92,9 @@ export default function LandingHeader({
     label: t(d.tKey),
     href: d.href,
   }));
-  // En modo minimal (páginas de conversión), no mostramos nav links — solo
-  // el logo y el CTA principal. Esto evita que el usuario salga de la página
-  // siguiendo "Cómo funciona" o "Planes" hacia la home.
-  const visibleLinks = minimal
-    ? []
-    : NAV_LINKS.filter((l) => visibility[l.id] !== false);
+  const visibleLinks = NAV_LINKS.filter(
+    (l) => visibility[l.id] !== false,
+  );
 
   // AuthModal state — primary CTA abre modal "register", ghost "login"
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
