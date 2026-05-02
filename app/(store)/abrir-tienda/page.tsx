@@ -27,7 +27,7 @@ const LiveSignupTicker = dynamic(
 export const metadata: Metadata = {
   title: "Activá tu tienda online | Buleje — Plataforma todo-en-uno",
   description:
-    "Más clientes, más pedidos, cero tecnología. Probá Buleje gratis 90 días. Sin tarjeta, sin contrato.",
+    "Más clientes, más pedidos, cero tecnología. Plan Estándar con primer mes gratis · Sin tarjeta · Sin contrato. Cancelás cuando quieras.",
   alternates: { canonical: "/abrir-tienda" },
   openGraph: {
     title: "Activá tu tienda online | Buleje",
@@ -118,7 +118,7 @@ export default function AbrirTiendaPage() {
                     href="/marketplace/registrar"
                     className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
                   >
-                    Probá gratis 90 días
+                    Probá el primer mes sin pagar
                     <ArrowUpRight
                       className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                       strokeWidth={2.5}
@@ -266,7 +266,7 @@ export default function AbrirTiendaPage() {
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
                 <Store className="h-4 w-4" strokeWidth={2.25} />
-                Empezar gratis ahora
+                Activar mi tienda hoy
                 <ArrowUpRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   strokeWidth={2.5}

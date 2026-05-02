@@ -1,15 +1,21 @@
 /**
  * lib/billing/plan-tiers.ts
  *
- * Sistema de tiers del plan vendor de Buleje.
+ * Sistema de tiers del plan vendor de Buleje. FUENTE ÚNICA DE VERDAD —
+ * /abrir-tienda, superadmin y el panel del negocio leen de acá.
  *
- * 4 planes — cada uno desbloquea progresivamente más tabs/features
- * del panel admin del negocio:
+ * 4 planes (Brandon mayo 2026 — sin tier gratis, charm pricing):
  *
- *   - basico     · S/0/mes  · Lo esencial para vender el día a día
- *   - pro        · S/49/mes · Crece con SUNAT, compras, analytics, marketplace
- *   - enterprise · S/149/mes · Cadenas: forecasting, IA avanzada, multi-sucursal
- *   - max        · S/299/mes · Todo: lives, white-label, IA premium, soporte 24/7
+ *   - basico     · S/ 39/mes  · "Estándar" — primer mes 100% off
+ *   - pro        · S/ 99/mes  · "Pro"     — 1er mes 50% off
+ *   - enterprise · S/ 159/mes · "Enterprise" — 1er mes 50% off
+ *   - max        · S/ 199/mes · "Max"     — 1er mes 50% off
+ *
+ * Anual: 20% descuento sobre 12 meses (≈ 2.4 meses gratis).
+ *
+ * El id interno (`basico`/`pro`/...) NO cambió por compatibilidad con
+ * cientos de archivos que lo referencian. Sólo cambió el LABEL visible
+ * ("Básico" → "Estándar") y los precios.
  *
  * El plan se persiste en localStorage (key `buleje:vendor-plan-tier`).
  * En producción debería leerse del campo `tenant.plan` de la DB y
@@ -29,10 +35,16 @@ export interface PlanDefinition {
   label: string;
   /** Tagline corto para el selector. */
   tagline: string;
-  /** Precio formateado (incluye moneda). */
+  /** Precio mensual en PEN como número (sin formato). */
+  monthlyPrice: number;
+  /** Precio formateado para mostrar (ej: "S/ 39"). */
   price: string;
-  /** Frecuencia legible (ej: "/mes", "/año"). Vacío en "Gratis". */
+  /** Frecuencia legible (ej: "/mes", "/año"). */
   period: string;
+  /** Descuento del primer mes en porcentaje (0..100). 100 = primer mes gratis. */
+  firstMonthDiscount: number;
+  /** Descuento sobre el plan anual (vs 12× mensual). */
+  annualDiscount: number;
   /** Token de color del DS para el accent. */
   accent: "muted" | "primary" | "indigo" | "amber";
   /** Tabs desbloqueados en este plan. Cualquier tab fuera de aquí
@@ -43,8 +55,12 @@ export interface PlanDefinition {
   features: ReadonlySet<PlanFeature>;
   /** Limits cuantitativos (productos, sucursales, etc.). */
   limits: PlanLimits;
-  /** Stripe Price ID para checkout. `null` para tier gratis (no requiere pago). */
+  /** Stripe Price ID para checkout. `null` mientras se regenera. */
   stripePriceId: string | null;
+  /** Beneficios destacados (5 max) para mostrar en la card de pricing. */
+  highlights: readonly string[];
+  /** True si es el plan recomendado (badge "Más elegido"). */
+  recommended?: boolean;
 }
 
 /** Stripe Price IDs generados por scripts/setup-stripe-plans.mjs (modo TEST).
@@ -86,11 +102,21 @@ export interface PlanLimits {
 
 export const PLAN_BASICO: PlanDefinition = {
   id: "basico",
-  label: "Básico",
-  tagline: "Lo esencial para vender",
-  price: "S/ 0",
+  label: "Estándar",
+  tagline: "Empezá a vender online sin complicarte",
+  monthlyPrice: 39,
+  price: "S/ 39",
   period: "/mes",
+  firstMonthDiscount: 100, // primer mes gratis (100% off)
+  annualDiscount: 20,
   accent: "muted",
+  highlights: [
+    "Tu tienda online lista en minutos",
+    "Hasta 50 productos cargados",
+    "Pedidos por WhatsApp y caja registradora",
+    "Inventario y clientes con fiados",
+    "Primer mes gratis · sin tarjeta",
+  ],
   unlockedTabs: new Set<Tab>([
     // Inicio (limitado: solo dashboard + asistente)
     "vendor-dashboard",
@@ -126,10 +152,21 @@ export const PLAN_BASICO: PlanDefinition = {
 export const PLAN_PRO: PlanDefinition = {
   id: "pro",
   label: "Pro",
-  tagline: "Crece sin frenos",
-  price: "S/ 49",
+  tagline: "Para negocios que ya venden y quieren escalar",
+  monthlyPrice: 99,
+  price: "S/ 99",
   period: "/mes",
+  firstMonthDiscount: 50,
+  annualDiscount: 20,
   accent: "primary",
+  recommended: true,
+  highlights: [
+    "Productos ilimitados · 3 repartidores propios",
+    "Facturación electrónica SUNAT incluida",
+    "Compras, cotizaciones y notas de crédito",
+    "Promos, fidelización y chat con clientes",
+    "Aparece destacado en el marketplace",
+  ],
   unlockedTabs: new Set<Tab>([
     // Todo Básico
     ...PLAN_BASICO.unlockedTabs,
@@ -175,10 +212,20 @@ export const PLAN_PRO: PlanDefinition = {
 export const PLAN_ENTERPRISE: PlanDefinition = {
   id: "enterprise",
   label: "Enterprise",
-  tagline: "Para cadenas y operaciones grandes",
-  price: "S/ 149",
+  tagline: "Cadenas y operaciones de varias sucursales",
+  monthlyPrice: 159,
+  price: "S/ 159",
   period: "/mes",
+  firstMonthDiscount: 50,
+  annualDiscount: 20,
   accent: "indigo",
+  highlights: [
+    "Hasta 10 sucursales con stock independiente",
+    "Forecasting con IA y panel de auditoría",
+    "Membresías, gift cards y suscripciones",
+    "20 repartidores y 25 admins del panel",
+    "API y webhooks para integrar tus sistemas",
+  ],
   unlockedTabs: new Set<Tab>([
     // Todo Pro
     ...PLAN_PRO.unlockedTabs,
@@ -219,10 +266,20 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
 export const PLAN_MAX: PlanDefinition = {
   id: "max",
   label: "Max",
-  tagline: "Todo desbloqueado · sin límites",
-  price: "S/ 299",
+  tagline: "Todo desbloqueado · sin límites · soporte 24/7",
+  monthlyPrice: 199,
+  price: "S/ 199",
   period: "/mes",
+  firstMonthDiscount: 50,
+  annualDiscount: 25,
   accent: "amber",
+  highlights: [
+    "Lives streaming + ventas en vivo",
+    "White-label completo (tu marca, tu dominio)",
+    "IA premium: comandos por voz y sugerencias",
+    "Sucursales y repartidores ilimitados",
+    "Soporte prioritario 24/7 con tu account manager",
+  ],
   unlockedTabs: new Set<Tab>([
     // Todo Enterprise + lives streaming exclusivo
     ...PLAN_ENTERPRISE.unlockedTabs,
@@ -311,4 +368,32 @@ export function minTierForFeature(feature: PlanFeature): PlanTier | null {
     if (PLANS[tier].features.has(feature)) return tier;
   }
   return null;
+}
+
+// ── Pricing helpers (Brandon mayo 2026) ──────────────────────────────────
+
+/** Formatea un número como S/ X. */
+export function formatPEN(n: number): string {
+  return `S/ ${Math.round(n)}`;
+}
+
+/** Precio del primer mes aplicando `firstMonthDiscount`. */
+export function firstMonthPrice(plan: PlanDefinition): number {
+  if (plan.firstMonthDiscount >= 100) return 0;
+  return Math.round(plan.monthlyPrice * (1 - plan.firstMonthDiscount / 100));
+}
+
+/** Precio anual con descuento (12 meses × precio − descuento%). */
+export function annualPrice(plan: PlanDefinition): number {
+  return Math.round(plan.monthlyPrice * 12 * (1 - plan.annualDiscount / 100));
+}
+
+/** Equivalente mensual del plan anual (para mostrar "≈ S/ X /mes"). */
+export function monthlyEquivalentAnnual(plan: PlanDefinition): number {
+  return Math.round(annualPrice(plan) / 12);
+}
+
+/** Cuánto ahorra el usuario en un año vs pagar mensual. */
+export function annualSavings(plan: PlanDefinition): number {
+  return Math.round(plan.monthlyPrice * 12 - annualPrice(plan));
 }

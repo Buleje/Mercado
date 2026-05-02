@@ -16,7 +16,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Store, MapPin, ArrowUpRight, List, Map as MapIcon } from "@buleje/design-system/icons";
+import { Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
@@ -1015,33 +1015,35 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         </div>
       </section>
 
-      {/* ── CTA repartidores — banda paralela al CTA de bodegueros ──── */}
-      <section className="border-t border-[var(--rule-soft)] bg-gradient-to-r from-[var(--brand-purple)]/8 via-[var(--brand-purple)]/4 to-transparent">
+      {/* ── CTA repartidores — banda paralela al CTA de bodegueros.
+          Misma paleta accent del proyecto (no introduce colores nuevos
+          que rompan la consistencia visual). */}
+      <section className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
             <div className="max-w-xl">
-              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--brand-purple)] mb-1.5">
+              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
                 Para repartidores
               </p>
               <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                ¿Tenés moto o bici? <span className="text-[var(--brand-purple)]">Trabajá con Buleje.</span>
+                ¿Tenés moto o bicicleta? <span className="text-[var(--accent)]">Trabajá con Buleje.</span>
               </h2>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Hacé delivery de pedidos en tu zona, decidí tu horario y cobrá por entrega + propinas.
+                Hacé entregas en tu zona, manejás tu horario y cobrás por pedido + propinas del cliente.
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5 shrink-0">
               <Link
                 href="/marketplace/repartidor"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--brand-purple)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md hover:shadow-[var(--brand-purple)]/30 transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
               >
-                <span aria-hidden>🛵</span>
+                <Bike className="h-4 w-4" strokeWidth={2} />
                 Quiero ser repartidor
                 <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
               </Link>
               <Link
                 href="/delivery-app/login"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--brand-purple)] hover:text-[var(--brand-purple)] transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
                 Ya soy repartidor · Ingresar
               </Link>
