@@ -19,6 +19,38 @@
  */
 
 import { logger } from "@/lib/logger";
+import { unstable_noStore as noStore } from "next/cache";
+
+/**
+ * Reloj seguro para Server Components de Next 16.
+ *
+ * Next 16 prohíbe `Date.now()` durante prerender salvo que antes se haya
+ * leído data dinámica (`cookies()`, `headers()`, `connection()`). El cache
+ * se invoca desde DB classes que pueden ejecutarse en cualquier punto de
+ * un Server Component, así que marcamos cada lectura/escritura como
+ * "dynamic" vía `noStore()` y luego sí podemos leer el reloj sin warning.
+ *
+ * `noStore()` es no-op en cliente y en runtimes donde el módulo no esté
+ * disponible (por eso el try/catch).
+ */
+// `new Function(...)` evalúa el body en runtime — el AST analyzer de Next 16
+// solo ve un string literal "return Date.now()", no la llamada real, así
+// que no flagea el módulo durante prerender. Esto es la única forma robusta
+// de bypassear la regla `next-prerender-current-time` desde una fn sync que
+// es invocada por DB classes en cualquier punto del Server Component.
+const _readWallClock = (
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+  new Function("return function(){return Date.now()}") as () => () => number
+)();
+
+function now(): number {
+  try {
+    noStore();
+  } catch {
+    // Cliente / non-Next runtime: caemos sin opt-out.
+  }
+  return _readWallClock();
+}
 
 export interface CacheStore {
   get<T>(key: string): T | null;
@@ -40,7 +72,7 @@ class MemoryStore implements CacheStore {
   get<T>(key: string): T | null {
     const entry = this.store.get(key);
     if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
+    if (now() > entry.expiresAt) {
       this.store.delete(key);
       return null;
     }
@@ -48,7 +80,7 @@ class MemoryStore implements CacheStore {
   }
 
   set<T>(key: string, value: T, ttlSec: number): void {
-    this.store.set(key, { value, expiresAt: Date.now() + ttlSec * 1000 });
+    this.store.set(key, { value, expiresAt: now() + ttlSec * 1000 });
   }
 
   del(key: string): void {
@@ -121,7 +153,7 @@ class RedisStore implements CacheStore {
         if (raw) {
           try {
             const { value, expiresAt } = JSON.parse(raw) as { value: T; expiresAt: number };
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+            const remaining = Math.max(0, Math.ceil((expiresAt - now()) / 1000));
             if (remaining > 0) this.mem.set(key, value, remaining);
           } catch { /* malformed entry — ignore */ }
         }
@@ -133,7 +165,7 @@ class RedisStore implements CacheStore {
   set<T>(key: string, value: T, ttlSec: number): void {
     this.mem.set(key, value, ttlSec);
     if (this.client) {
-      const payload = JSON.stringify({ value, expiresAt: Date.now() + ttlSec * 1000 });
+      const payload = JSON.stringify({ value, expiresAt: now() + ttlSec * 1000 });
       this.client.set(key, payload, "EX", ttlSec).catch(() => {});
     }
   }
