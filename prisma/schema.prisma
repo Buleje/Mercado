@@ -2630,6 +2630,7 @@ model DeliveryPartner {
   maxRadiusKm     Float     @default(5.0) // radio max para ofertas
   totalOffers     Int       @default(0)
   totalAccepted   Int       @default(0)
+  score           Int       @default(0)
   // ──────────────────────────────────────────────────────────────────────
   tenantId    String
   createdAt   DateTime             @default(now())
@@ -2687,7 +2688,22 @@ model DeliveryAssignment {
   @@index([tenantId])
 }
 
+// ─── SOS Alerts (repartidor en peligro) ──────────────────────────────────────
+model DeliverySOSAlert {
+  id         String    @id @default(cuid())
+  partnerId  String
+  lat        Float
+  lng        Float
+  message    String?
+  status     String    @default("active") // active | resolved | false_alarm
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([partnerId])
+  @@index([status])
+}
 // ─── Bloque D1 — Delivery vivo ────────────────────────────
+
 // Schema alineado con MANUAL-marketplace-bloque-d1.sql aplicado 2026-04-08 (Supabase us-east-2).
 // Los modelos usan nombres en PascalCase que matchean la tabla real (no se agrega @map
 // porque el SQL ya creó las tablas con esos nombres exactos).

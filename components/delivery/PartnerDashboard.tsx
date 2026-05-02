@@ -20,6 +20,11 @@ import {
   EmptyRoadIllustration,
   LiveSignal,
 } from "./icons";
+import EarningsTodayHero from "./EarningsTodayHero";
+import ChatAndSOSPanel from "./ChatAndSOSPanel";
+import StreaksAndBonusCard from "./StreaksAndBonusCard";
+import HotZonesPanel from "./HotZonesPanel";
+import RiderScoreCard from "./RiderScoreCard";
 
 interface MeResp {
   partner: {
@@ -69,6 +74,16 @@ export default function PartnerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const lastCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  // Captura el momento en que se conectó hoy — para "horas online hoy"
+  // en el EarningsTodayHero. Se mantiene durante la sesión del cliente.
+  const [onlineSinceMs, setOnlineSinceMs] = useState<number | null>(null);
+  useEffect(() => {
+    if (me?.isOnline && onlineSinceMs === null) {
+      setOnlineSinceMs(Date.now());
+    } else if (!me?.isOnline && onlineSinceMs !== null) {
+      setOnlineSinceMs(null);
+    }
+  }, [me?.isOnline, onlineSinceMs]);
 
   const loadMe = useCallback(async () => {
     try {
@@ -188,25 +203,57 @@ export default function PartnerDashboard() {
         </div>
       )}
 
-      {/* ── Stats responsive grid ───────────────────────────── */}
-      <section className="grid grid-cols-3 gap-3 lg:gap-4">
-        <Stat
-          icon={<StarBadge className="h-5 w-5 text-[var(--brand-secondary)]" />}
-          value={me.rating.toFixed(1)}
-          label="Rating"
-          tone="amber"
+      {/* ══════════════════════════════════════════════════════════════════
+          SECCIÓN 1 — HOY · datos del momento
+          ══════════════════════════════════════════════════════════════ */}
+      <section className="space-y-4">
+        {/* Hero ganancias — full-width, lo más visible */}
+        <EarningsTodayHero
+          isOnline={me.isOnline}
+          onlineSinceMs={onlineSinceMs}
+          goal={80}
         />
-        <Stat
-          icon={<CheckBadge className="h-5 w-5 text-[var(--data-success)]" />}
-          value={`${Math.round(me.acceptanceRate * 100)}%`}
-          label="Aceptación"
-          tone="success"
+
+        {/* Chat + SOS — solo si hay pedido activo (acción inmediata) */}
+        {me.currentOrderId && <ChatAndSOSPanel currentOrderId={me.currentOrderId} />}
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          SECCIÓN 2 — OPORTUNIDADES · dónde ganar más
+          ══════════════════════════════════════════════════════════════ */}
+      <section className="space-y-4">
+        <SectionHeader
+          eyebrow="Oportunidades"
+          title="Maximizá tus ganancias"
+          desc="Bonus activos y zonas con más demanda"
         />
-        <Stat
-          icon={<MotoIcon className="h-5 w-5 text-[var(--accent)]" />}
-          value={String(me.totalAccepted)}
-          label="Pedidos"
-          tone="accent"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+          <div className="lg:col-span-7">
+            <StreaksAndBonusCard isOnline={me.isOnline} />
+          </div>
+          <div className="lg:col-span-5">
+            <HotZonesPanel
+              isOnline={me.isOnline}
+              currentLat={me.lat}
+              currentLng={me.lng}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          SECCIÓN 3 — PROGRESO · tu carrera como repartidor
+          ══════════════════════════════════════════════════════════════ */}
+      <section className="space-y-4">
+        <SectionHeader
+          eyebrow="Tu progreso"
+          title="Score y logros"
+          desc="Subí de nivel completando viajes a tiempo"
+        />
+        <RiderScoreCard
+          rating={me.rating}
+          totalAccepted={me.totalAccepted}
+          acceptanceRate={me.acceptanceRate}
         />
       </section>
 
@@ -410,6 +457,36 @@ function EmptyState({
       <p className="mt-2 text-base text-[var(--text-secondary)] max-w-sm mx-auto">
         {text}
       </p>
+    </div>
+  );
+}
+
+// ─── SectionHeader — eyebrow + title + descripción ────────────────────────
+function SectionHeader({
+  eyebrow,
+  title,
+  desc,
+}: {
+  eyebrow: string;
+  title: string;
+  desc?: string;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-3 pb-1">
+      <div>
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
+          <span aria-hidden className="inline-flex h-[2px] w-6 rounded-full bg-[var(--accent)]" />
+          {eyebrow}
+        </p>
+        <h2 className="mt-1.5 text-xl lg:text-2xl font-black tracking-tight text-[var(--text-primary)]">
+          {title}
+        </h2>
+        {desc && (
+          <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+            {desc}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
