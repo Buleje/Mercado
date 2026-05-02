@@ -25,9 +25,9 @@ import {
   useMarketplaceGeo,
   type MarketplaceStore,
 } from "@/components/marketplace/useMarketplaceGeo";
-import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
 import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby";
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
+import { useCustomer } from "@/contexts/customer-context";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
@@ -113,6 +113,17 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   // real de auth) ya no existiera. Brandon, mayo 2026.
   const { authenticated } = useCustomerAuthStatus();
   const isLoggedIn = authenticated === true;
+
+  // Profile del customer — sólo lo usamos para mostrar su ubicación
+  // real cuando ya lo gateamos por isLoggedIn. NO decide auth.
+  const { customer } = useCustomer();
+  const customerCity = isLoggedIn
+    ? (customer?.districtName ?? customer?.provinceName ?? null)
+    : null;
+  const customerRegion = isLoggedIn
+    ? (customer?.departmentName ?? null)
+    : null;
+  const hasLocation = isLoggedIn && Boolean(customerCity || customerRegion);
 
   const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
   const [loading, setLoading] = useState(initialStores.length === 0);
@@ -477,7 +488,9 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             <div className="min-w-0">
               <p className="inline-flex items-center gap-1.5 mb-3 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                 <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-                Directorio · Pucallpa
+                {hasLocation
+                  ? `Directorio · ${customerCity ?? customerRegion}`
+                  : "Directorio de tiendas"}
               </p>
               <h1 className="text-[clamp(2rem,5vw,3.25rem)] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                 Las mejores tiendas de tu{" "}
@@ -488,21 +501,28 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 con delivery rápido y pago al recibir.
               </p>
 
-              {/* Ubicación + buscador en linea */}
+              {/* Ubicación + buscador en linea.
+                  Brandon, mayo 2026: la card "Tu ubicación · Pucallpa"
+                  estaba hardcodeada y aparecía a usuarios deslogueados
+                  o de otras ciudades (CC). Ahora sólo se muestra si el
+                  cliente está logueado Y completó departamento/distrito
+                  en su perfil. Sin login → directo al buscador. */}
               <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2.5 shrink-0 shadow-sm">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                    <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </span>
-                  <div className="min-w-0 leading-tight">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Tu ubicación
-                    </p>
-                    <p className="text-sm font-black text-[var(--text-primary)]">
-                      Pucallpa · Ucayali
-                    </p>
+                {hasLocation && (
+                  <div className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2.5 shrink-0 shadow-sm">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    </span>
+                    <div className="min-w-0 leading-tight">
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                        Tu ubicación
+                      </p>
+                      <p className="text-sm font-black text-[var(--text-primary)]">
+                        {[customerCity, customerRegion].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <SearchAutocomplete
                     onSearch={setSearch}
@@ -531,7 +551,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     { value: stores.length || "—", label: "Tiendas activas" },
                     { value: zoneCount > 0 ? String(zoneCount) : "—", label: "Zonas con cobertura" },
                     { value: avgRating ?? "—", suffix: avgRating ? "★" : undefined, label: "Rating promedio" },
-                    { value: "Pucallpa", label: "Ciudad principal" },
+                    // Stat dinámica: si el cliente cargó su ubicación,
+                    // mostramos su ciudad; sino "Perú" como neutral
+                    // (Brandon expandirá CC + Pucallpa).
+                    {
+                      value: customerCity ?? customerRegion ?? "Perú",
+                      label: hasLocation ? "Tu ciudad" : "Cobertura",
+                    },
                   ];
                 })().map((s) => (
                   <div key={s.label}>
@@ -615,7 +641,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       {s.name}
                     </p>
                     <p className="text-xs text-[var(--text-tertiary)] truncate">
-                      {(s as { zone?: string }).zone ?? s.category ?? "Pucallpa"}
+                      {(s as { zone?: string }).zone ?? s.category ?? "Tienda local"}
                     </p>
                   </div>
                   <ArrowUpRight
@@ -666,13 +692,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         </>
       )}
 
-      {/* ── Recomendadas / destacadas (carrusel) ─────────────────────── */}
-      {/* Fallback / discovery secundario: tiendas top-rated del
-          marketplace. Se muestra siempre — útil para usuarios sin GPS
-          y como descubrimiento adicional para quienes sí lo activaron. */}
-      <div className="pt-12 sm:pt-16">
-        <RecommendationsStrip initialStores={initialStores.slice(0, 6) as never} />
-      </div>
+      {/* RecommendationsStrip eliminado (Brandon, mayo 2026): la
+          sección "Tiendas destacadas cerca tuyo" ahora la cubre
+          FeaturedStoresNearby — personalizada y condicional al login.
+          Mantener ambas creaba duplicación visual y mostraba data
+          a deslogueados. */}
 
       {/* ── Grid de Categorías principales (cajas grandes con imagen) ─
            Click filtra el grid de "Todas las tiendas" más abajo.
@@ -968,7 +992,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 ¿Tenés una tienda? <span className="text-[var(--accent)]">Sumate gratis.</span>
               </h2>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Publicá productos, recibí pedidos y llegá a miles de clientes en Pucallpa.
+                Publicá productos, recibí pedidos y llegá a miles de clientes en tu ciudad.
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5 shrink-0">
