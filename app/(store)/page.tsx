@@ -15,11 +15,8 @@ import T from "@/components/T";
 import {
   Store,
   ArrowUpRight,
-  Smartphone,
-  Send,
   Banknote,
   CreditCard,
-  type LucideIcon,
 } from "@buleje/design-system/icons";
 // Below-fold — dynamic con skeleton para reducir initial bundle en prod y
 // parallelizar compile en dev. Combinacion warm-routes (ver scripts/) +
@@ -383,62 +380,65 @@ function AboutAndPricingSnapshot() {
   );
 }
 
-// ── Popular payment methods — editorial wordmark list ──
+// ── Formas de pago — chip horizontal compacto con colores de marca ──
+// Mayo 2026: antes era una sección gigante de 4 cards con iconos genéricos.
+// Ahora un strip horizontal sobrio con colores oficiales (Yape morado #722EAB,
+// Plin azul #00BFB3) — más rápido de procesar, ocupa menos espacio vertical.
 function PaymentMethods() {
-  const methods: Array<{ keyName: string; keyDesc: string; Icon: LucideIcon }> = [
-    { keyName: "landing.payment.yape", keyDesc: "landing.payment.yapeDesc", Icon: Smartphone },
-    { keyName: "landing.payment.plin", keyDesc: "landing.payment.plinDesc", Icon: Send },
-    { keyName: "landing.payment.cash", keyDesc: "landing.payment.cashDesc", Icon: Banknote },
-    { keyName: "landing.payment.card", keyDesc: "landing.payment.cardDesc", Icon: CreditCard },
-  ];
   return (
     <section
       aria-label="Formas de pago"
-      className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]"
+      className="py-12 sm:py-16 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]"
     >
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-14">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-              <span
-                aria-hidden
-                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-              />
-              <T k="landing.payment.kicker" fallback="Formas de pago" />
-            </p>
-            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              <T k="landing.payment.title" fallback="Pagas como" />
-              <br />
-              <span className="text-[var(--accent)]">
-                <T k="landing.payment.titleAccent" fallback="tú quieras." />
-              </span>
-            </h2>
-          </div>
-          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            <T k="landing.payment.description" fallback="Cuatro maneras de pagar sin complicaciones. Eliges al momento del checkout — no hay cargos ocultos." />
-          </p>
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-6 lg:px-8">
+        <p className="text-center text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-6">
+          <T k="landing.payment.kicker" fallback="Tus clientes pagan como ya saben pagar" />
+        </p>
+        <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4">
+          {/* Yape — morado oficial #722EAB */}
+          <span
+            className="inline-flex items-center gap-2.5 rounded-full bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] px-5 py-3 shadow-sm"
+          >
+            <span
+              aria-hidden
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white font-black text-[length:var(--ts-2xs)]"
+              style={{ background: "#722EAB" }}
+            >
+              Y
+            </span>
+            <span className="text-base font-extrabold text-[var(--text-primary)]">Yape</span>
+          </span>
+          {/* Plin — turquesa oficial #00BFB3 */}
+          <span
+            className="inline-flex items-center gap-2.5 rounded-full bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] px-5 py-3 shadow-sm"
+          >
+            <span
+              aria-hidden
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white font-black text-[length:var(--ts-2xs)]"
+              style={{ background: "#00BFB3" }}
+            >
+              P
+            </span>
+            <span className="text-base font-extrabold text-[var(--text-primary)]">Plin</span>
+          </span>
+          {/* Efectivo */}
+          <span className="inline-flex items-center gap-2.5 rounded-full bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] px-5 py-3 shadow-sm">
+            <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[var(--data-success-50)] text-[var(--data-success-600)]">
+              <Banknote className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span className="text-base font-extrabold text-[var(--text-primary)]">Efectivo</span>
+          </span>
+          {/* Tarjeta */}
+          <span className="inline-flex items-center gap-2.5 rounded-full bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] px-5 py-3 shadow-sm">
+            <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+              <CreditCard className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span className="text-base font-extrabold text-[var(--text-primary)]">Tarjeta</span>
+          </span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl bg-[var(--surface-raised)] overflow-hidden">
-          {methods.map((m) => {
-            const Icon = m.Icon;
-            return (
-              <div
-                key={m.keyName}
-                className="group relative bg-[var(--surface-raised)] px-6 py-8 sm:py-10 transition-colors hover:bg-[var(--surface-canvas)]"
-              >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] mb-5 transition-colors group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]">
-                  <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                </span>
-                <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-none">
-                  <T k={m.keyName} />
-                </p>
-                <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                  <T k={m.keyDesc} />
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        <p className="mt-6 text-center text-sm text-[var(--text-tertiary)]">
+          Sin comisiones para vos · Cobrás como ya cobrás
+        </p>
       </div>
     </section>
   );

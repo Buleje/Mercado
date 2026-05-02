@@ -56,7 +56,7 @@ export default function HowItChanges() {
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
             Lo mismo que ya hacés,
             <br />
-            <span className="italic font-serif text-[var(--accent)]">
+            <span className="text-[var(--accent)]">
               pero sin perder tiempo ni plata.
             </span>
           </h2>

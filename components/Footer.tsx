@@ -254,6 +254,14 @@ export default function Footer() {
   const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const pathname = usePathname();
   const isStoreMode = isStoreModePath(pathname);
+  // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
+  // (Marketplace / Mi Cuenta / Vendé en Buleje / Ayuda / Más) era aspiracional
+  // para el tamaño actual del negocio y proyectaba desconfianza.
+  const isLandingMode =
+    pathname === "/" ||
+    pathname.startsWith("/repartidores") ||
+    pathname.startsWith("/abrir-tienda") ||
+    pathname.startsWith("/vender");
   // Marca de la plataforma (gestionada en /superadmin/marca).
   // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
   const { brand } = usePlatformBrand();
@@ -336,8 +344,91 @@ export default function Footer() {
         </div>
       )}
 
-      {/* Main Footer — Mega footer rediseñado (5 columnas ricas) */}
-      {!isStoreMode && (
+      {/* Landing mode — footer minimalista 2 columnas honesto pre-launch */}
+      {isLandingMode && (
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-16">
+            {/* Empresa */}
+            <nav aria-label="Empresa">
+              <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
+                Empresa
+              </h3>
+              <ul className="space-y-2.5">
+                <li><a href="/about" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Nosotros</a></li>
+                <li><a href="/abrir-tienda" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Abrir mi tienda</a></li>
+                <li><a href="/repartidores" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Para repartidores</a></li>
+                <li><a href="/terminos" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Términos</a></li>
+                <li><a href="/privacidad" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Privacidad</a></li>
+              </ul>
+            </nav>
+
+            {/* Contacto */}
+            <nav aria-label="Contacto">
+              <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
+                Contacto
+              </h3>
+              <ul className="space-y-2.5">
+                {platformWa && (
+                  <li>
+                    <a
+                      href={`https://wa.me/${platformWa.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-white/75 hover:text-white text-sm font-semibold transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      WhatsApp
+                    </a>
+                  </li>
+                )}
+                {platformPhone && (
+                  <li>
+                    <a
+                      href={`tel:${platformPhone.replace(/\s/g, "")}`}
+                      className="inline-flex items-center gap-2 text-white/75 hover:text-white text-sm font-semibold transition-colors"
+                    >
+                      <Phone className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      {platformPhone}
+                    </a>
+                  </li>
+                )}
+                {igUrl && (
+                  <li>
+                    <a
+                      href={igUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-white/75 hover:text-white text-sm font-semibold transition-colors"
+                    >
+                      <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      Instagram
+                    </a>
+                  </li>
+                )}
+                {fbUrl && (
+                  <li>
+                    <a
+                      href={fbUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-white/75 hover:text-white text-sm font-semibold transition-colors"
+                    >
+                      <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      Facebook
+                    </a>
+                  </li>
+                )}
+                <li className="pt-2 text-xs text-white/50">
+                  {platformCity}, {platformRegion} · Perú
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Main Footer — Mega footer rediseñado (5 columnas ricas) — solo fuera de landing */}
+      {!isStoreMode && !isLandingMode && (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* ── Columna 1: Marketplace ── */}
@@ -522,8 +613,8 @@ export default function Footer() {
       </div>
       )}
 
-      {/* Newsletter — solo en modo marketplace global. */}
-      {!isStoreMode && (
+      {/* Newsletter — solo en modo marketplace global, NO en landing pages. */}
+      {!isStoreMode && !isLandingMode && (
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

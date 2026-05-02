@@ -42,7 +42,7 @@ export default function RepartidoresPage() {
             <h1 className="text-[clamp(2.5rem,6.5vw,4.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.95] text-balance">
               Manejá tu propia ruta.
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 Cobrá lo que te toca.
               </span>
             </h1>

@@ -549,25 +549,29 @@ function KpiCard({
   );
 }
 
-/* ── Ticker horizontal de proof points debajo del phone ───────────── */
-const PROOF_POINTS = [
-  { Icon: TrendingUp, label: "+S/ 12,430 este mes", tone: "text-[var(--data-success-500)]" },
-  { Icon: Star, label: "4.8/5 · +120 reseñas", tone: "text-amber-500" },
-  { Icon: Bike, label: "25 min entrega promedio", tone: "text-[var(--accent)]" },
-  { Icon: ShoppingBag, label: "+42% ventas en 90 días", tone: "text-fuchsia-500" },
-  { Icon: Heart, label: "73% clientes recurrentes", tone: "text-rose-500" },
-  { Icon: Banknote, label: "S/ 0 comisión 90 días", tone: "text-emerald-500" },
+/* ── Feature ticker debajo del phone ──────────────────────────────────
+ * Mayo 2026: las métricas falsas ("+S/ 12,430 este mes", "+120 reseñas",
+ * "25 min entrega") se reemplazaron por features reales del producto.
+ * Cuando crucemos los 500 negocios reales podremos volver a métricas. */
+const FEATURE_POINTS = [
+  { Icon: ShoppingBag, label: "Catálogo con fotos", tone: "text-[var(--accent)]" },
+  { Icon: Banknote, label: "Yape, Plin, efectivo", tone: "text-emerald-500" },
+  { Icon: Bike, label: "Delivery propio o tuyo", tone: "text-fuchsia-500" },
+  { Icon: TrendingUp, label: "Reportes diarios", tone: "text-[var(--data-success-500)]" },
+  { Icon: CheckCircle2, label: "Sin comisión 90 días", tone: "text-amber-500" },
+  { Icon: Heart, label: "Soporte WhatsApp 1-a-1", tone: "text-rose-500" },
 ];
 
 function ProofTicker({ reducedMotion }: { reducedMotion: boolean }) {
   return (
-    <div className="mt-6 w-full overflow-hidden rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] py-3 [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
+    <div className="mt-6 w-full overflow-hidden rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] py-3 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
       <m.div
         animate={reducedMotion ? undefined : { x: ["0%", "-50%"] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-        className="flex gap-8 whitespace-nowrap w-max"
+        transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+        className="flex gap-8 whitespace-nowrap w-max pr-8"
       >
-        {[...PROOF_POINTS, ...PROOF_POINTS].map(({ Icon, label, tone }, i) => (
+        {/* Doble para loop perfecto a -50%; gap-8 + pr-8 evita "cut" visual al final */}
+        {[...FEATURE_POINTS, ...FEATURE_POINTS].map(({ Icon, label, tone }, i) => (
           <span
             key={i}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-[var(--text-secondary)]"

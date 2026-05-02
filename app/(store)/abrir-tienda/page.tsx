@@ -107,7 +107,7 @@ export default function AbrirTiendaPage() {
                 <h1 className="text-[clamp(2.75rem,7.5vw,5.5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
                   Activá tu tienda
                   <br />
-                  <span className="italic font-serif text-[var(--accent)]">
+                  <span className="text-[var(--accent)]">
                     online en 5 minutos.
                   </span>
                 </h1>
@@ -195,7 +195,7 @@ export default function AbrirTiendaPage() {
               <h2 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                 Resuelve tus dudas
                 <br />
-                <span className="italic font-serif text-[var(--accent)]">
+                <span className="text-[var(--accent)]">
                   antes de empezar.
                 </span>
               </h2>
@@ -252,7 +252,7 @@ export default function AbrirTiendaPage() {
             <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
               Tu negocio merece
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 vender más, no esperar.
               </span>
             </h2>

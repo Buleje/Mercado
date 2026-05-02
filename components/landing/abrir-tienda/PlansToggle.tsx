@@ -60,7 +60,7 @@ export default function PlansToggle() {
           </p>
           <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
             {t("landing.plans.title")}{" "}
-            <span className="italic font-serif text-[var(--accent)]">
+            <span className="text-[var(--accent)]">
               {t("landing.plans.titleAccent")}
             </span>
           </h2>

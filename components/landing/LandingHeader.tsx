@@ -28,7 +28,7 @@ import PromoBannerTop from "@/components/landing/PromoBannerTop";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import ThemeToggle from "@/components/ThemeToggle";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+// LanguageSwitcher removido del landing header (mayo 2026) — producto 100% peruano
 import { useLocale } from "@/contexts/locale-context";
 
 // ── Nav links canónicos (mission spec) ──────────────────────────────────────
@@ -202,7 +202,8 @@ export default function LandingHeader({
 
           {/* ── CTAs derecha (desktop) ── */}
           <div className="hidden items-center gap-1.5 lg:flex">
-            <LanguageSwitcher />
+            {/* LanguageSwitcher oculto en landing — producto 100% peruano en español.
+                Volverá cuando expandamos a otros mercados de habla no-hispana. */}
             <ThemeToggle className="!h-10 !w-10" />
             <div className="mx-1 h-6 w-px bg-[var(--rule-base)]" aria-hidden />
             <PrimaryButton
@@ -235,9 +236,8 @@ export default function LandingHeader({
             </button>
           </div>
 
-          {/* ── Language + Theme + Hamburger (mobile) ── */}
+          {/* ── Theme + Hamburger (mobile) — language switcher oculto, ver desktop ── */}
           <div className="flex items-center gap-1 lg:hidden">
-            <LanguageSwitcher />
             <ThemeToggle className="!h-10 !w-10" />
           </div>
           <button

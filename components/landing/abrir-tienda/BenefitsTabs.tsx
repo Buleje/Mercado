@@ -113,7 +113,7 @@ export default function BenefitsTabs() {
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               Cuatro músculos
               <br />
-              <span className="italic font-serif text-[var(--accent)]">
+              <span className="text-[var(--accent)]">
                 en una sola plataforma.
               </span>
             </h2>
@@ -166,7 +166,7 @@ export default function BenefitsTabs() {
               </span>
               <h3 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
                 {headlineParts[0]}
-                <span className="italic font-serif text-[var(--accent)]">
+                <span className="text-[var(--accent)]">
                   {cat.highlight}
                 </span>
                 {headlineParts[1]}
