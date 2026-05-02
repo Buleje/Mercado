@@ -29,8 +29,14 @@ import {
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
-import { TrialCountdownBannerLoader } from "@/components/admin/billing/TrialCountdownBannerLoader";
+// TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
+// panel cuando el trial expiró; lazy-loadear introduciría flash sin guard.
 import { TrialExpiredGuard } from "@/components/admin/billing/TrialExpiredGuard";
+// TrialCountdownBannerLoader es solo banner informativo — safe de diferir.
+const TrialCountdownBannerLoader = dynamic(
+  () => import("@/components/admin/billing/TrialCountdownBannerLoader").then((m) => ({ default: m.TrialCountdownBannerLoader })),
+  { loading: () => null, ssr: false },
+);
 import AdminAlertsBanner from "@/components/admin/AdminAlertsBanner";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
