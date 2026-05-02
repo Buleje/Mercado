@@ -12,6 +12,22 @@ interface BreadcrumbSchemaProps {
   visible?: boolean;
 }
 
+/**
+ * Convert an absolute URL (https://www.buleje.pe/foo) to a path-only ("/foo")
+ * for client-side navigation. Schema.org JSON-LD still uses the absolute form
+ * because Google requires it, but visible <Link href> must be relative so the
+ * navigation works in localhost / staging / preview deployments.
+ */
+function toPath(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    // Already a path or malformed — return as-is.
+    return url;
+  }
+}
+
 export default function BreadcrumbSchema({ items, visible = true }: BreadcrumbSchemaProps) {
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -46,7 +62,7 @@ export default function BreadcrumbSchema({ items, visible = true }: BreadcrumbSc
                   {isLast ? (
                     <span className="font-medium text-foreground truncate max-w-48">{item.name}</span>
                   ) : (
-                    <Link href={item.url} className="hover:text-primary transition-colors truncate max-w-36">
+                    <Link href={toPath(item.url)} className="hover:text-primary transition-colors truncate max-w-36">
                       {item.name}
                     </Link>
                   )}
