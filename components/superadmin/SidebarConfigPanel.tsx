@@ -46,7 +46,7 @@ import {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type SidebarTheme = "light" | "dark" | "cristal" | "shaded";
+export type SidebarTheme = "light" | "dark" | "cristal" | "shaded" | "buleje";
 export type AccentColor = "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
 export type Density = "compact" | "normal" | "spacious";
 export type IconStyle = "colored" | "monochrome";
@@ -83,10 +83,10 @@ const KEYS = {
 const DEFAULTS: SidebarPrefs = {
   hidden: [],
   order: [],
-  theme: "cristal",
+  theme: "buleje",
   accent: "teal",
   density: "normal",
-  iconStyle: "colored",
+  iconStyle: "monochrome",
 };
 
 function readPrefs(): SidebarPrefs {
@@ -127,6 +127,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
 ];
 
 const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
+  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00B4A6_100%)] border border-[#00B4A6]/40" },
   { id: "light",   label: "Claro",   preview: "bg-white border border-gray-200" },
   { id: "dark",    label: "Oscuro",  preview: "bg-zinc-900 border border-zinc-700" },
   { id: "cristal", label: "Cristal", preview: "bg-linear-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
@@ -136,29 +137,36 @@ const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
 const DENSITIES: Density[] = ["compact", "normal", "spacious"];
 const ICON_STYLES: IconStyle[] = ["colored", "monochrome"];
 
-const PRESETS: Array<{ id: string; label: string; description: string; prefs: Partial<SidebarPrefs> }> = [
+const PRESETS: Array<{ id: string; label: string; description: string; swatch: string; prefs: Partial<SidebarPrefs> }> = [
   {
     id: "buleje",
     label: "Buleje",
-    description: "Marca, cristal, normal",
-    prefs: { theme: "cristal", accent: "teal", density: "normal", iconStyle: "colored" },
+    description: "Editorial slate-deep · teal vibrante · branded total",
+    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00B4A6 100%)",
+    // Theme dedicado "buleje" — sidebar branded SIEMPRE oscuro editorial con
+    // teal #00B4A6 (color de marca real), independiente del light/dark del shell.
+    // Render en SuperAdminShell.tsx → sidebarBgClass case isBuleje.
+    prefs: { theme: "buleje", accent: "teal", density: "normal", iconStyle: "monochrome" },
   },
   {
     id: "ejecutivo",
     label: "Ejecutivo",
-    description: "Oscuro, ámbar, compacto",
+    description: "Oscuro · ámbar · compacto",
+    swatch: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
     prefs: { theme: "dark", accent: "amber", density: "compact", iconStyle: "monochrome" },
   },
   {
     id: "sereno",
     label: "Sereno",
-    description: "Claro, cielo, amplio",
+    description: "Claro · cielo · amplio",
+    swatch: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
     prefs: { theme: "light", accent: "sky", density: "spacious", iconStyle: "colored" },
   },
   {
     id: "vibrante",
     label: "Vibrante",
-    description: "Cristal, rosa, normal",
+    description: "Cristal · rosa · normal",
+    swatch: "linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%)",
     prefs: { theme: "cristal", accent: "rose", density: "normal", iconStyle: "colored" },
   },
 ];
@@ -312,23 +320,51 @@ export default function SidebarConfigPanel({ items }: Props) {
         </button>
       </div>
 
-      {/* Presets */}
+      {/* Presets — con swatch visual de cada estilo */}
       <div>
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
           <Sparkles className="h-3 w-3" /> Diseños rápidos
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => applyPreset(p.id)}
-              className="text-left rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
-            >
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{p.label}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{p.description}</p>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {PRESETS.map((p) => {
+            const isActive =
+              prefs.theme === p.prefs.theme &&
+              prefs.accent === p.prefs.accent &&
+              prefs.density === p.prefs.density &&
+              prefs.iconStyle === p.prefs.iconStyle;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p.id)}
+                aria-pressed={isActive}
+                className={[
+                  "group text-left rounded-xl border-2 p-3 transition-all",
+                  isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-0.5",
+                ].join(" ")}
+              >
+                <div
+                  aria-hidden
+                  className="h-12 w-full rounded-lg mb-2.5 ring-1 ring-inset ring-black/5 dark:ring-white/10 flex items-end p-1.5"
+                  style={{ background: p.swatch }}
+                >
+                  <span className="flex gap-1">
+                    <span className="h-1.5 w-6 rounded-full bg-white/80" />
+                    <span className="h-1.5 w-3 rounded-full bg-white/50" />
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{p.label}</p>
+                  {isActive && <Check className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={3} />}
+                </div>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">
+                  {p.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 

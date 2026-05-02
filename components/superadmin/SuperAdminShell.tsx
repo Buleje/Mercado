@@ -30,6 +30,7 @@ import {
   Layers,
   CreditCard,
   Sliders,
+  BookOpen,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -57,6 +58,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Pagos pendientes", icon: <CreditCard     className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
   { label: "Repartidores",    icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"    },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"     },
+  { label: "Pagos Yape",           icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"      },
+  { label: "Catálogo variaciones", icon: <BookOpen   className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
   { label: "Marca",           icon: <Sparkles        className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
   { label: "Plantilla panel", icon: <Layers          className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
   { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
@@ -78,6 +81,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/marketplace":     "Marketplace",
   "/superadmin/marketplace/suppliers": "Marketplace · Proveedores",
   "/superadmin/marketplace/category-images": "Marketplace · Imágenes de categorías",
+  "/superadmin/pagos-yape":       "Pagos Yape · Aprobación con vision IA",
+  "/superadmin/variant-catalog": "Catálogo de variaciones · Plantillas globales",
   "/superadmin/stores":          "Tiendas publicadas",
   "/superadmin/marca":           "Marca de la plataforma",
   "/superadmin/plantilla":       "Plantilla del panel admin",
@@ -98,7 +103,7 @@ const STORAGE_KEY_DENSITY = "superadmin-nav-density";
 const STORAGE_KEY_ICON_STYLE = "superadmin-nav-icon-style";
 
 type SidebarVisualPrefs = {
-  theme: "light" | "dark" | "cristal" | "shaded";
+  theme: "light" | "dark" | "cristal" | "shaded" | "buleje";
   accent: "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
   density: "compact" | "normal" | "spacious";
   iconStyle: "colored" | "monochrome";
@@ -255,14 +260,39 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // Densidad: padding/altura de los items del sidebar.
   const navItemPadding =
     visual.density === "compact" ? "px-2.5 py-1.5" : visual.density === "spacious" ? "px-3 py-3" : "px-3 py-2";
-  const sidebarBgClass =
-    visual.theme === "dark"
+
+  // Theme "buleje" — identidad de marca real, sidebar branded slate-deep + teal vibrante.
+  // IMPORTANTE: cristal/shaded ahora COMPARTEN el render con buleje — los users que
+  // tenían cristal o shaded guardado en localStorage ven el nuevo look automáticamente,
+  // sin necesidad de re-aplicar preset. Era lo que cristal "intentaba ser" según comentarios
+  // legacy del código ("paleta de marca Buleje") pero el render anterior era washed-out.
+  const isBuleje =
+    visual.theme === "buleje" || visual.theme === "cristal" || visual.theme === "shaded";
+
+  const sidebarBgClass = isBuleje
+    ? // Slate-deep editorial gradient + border teal hairline + text-white. Paleta real del proyecto.
+      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0,180,166,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,180,166,0.06)]"
+    : visual.theme === "dark"
       ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
-      : visual.theme === "shaded"
-        ? "bg-linear-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)] border-r border-[var(--rule-base)]"
-        : visual.theme === "cristal"
-          ? "bg-[var(--surface-canvas)]/85 backdrop-blur-md border-r border-[var(--rule-base)]"
-          : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
+      : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
+
+  // Override de clases para items cuando es theme buleje — paleta cohesiva, contraste AAA.
+  const navItemActiveClass = isBuleje
+    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#34d4be]"
+    : "bg-[var(--accent-soft)] text-[var(--accent)]";
+  const navItemIdleClass = isBuleje
+    ? "text-white/65 hover:bg-white/[0.06] hover:text-white"
+    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  const logoBoxClass = isBuleje
+    ? "bg-[linear-gradient(135deg,#00B4A6_0%,#0d9488_100%)] text-white shadow-lg shadow-[#00B4A6]/30"
+    : "bg-[var(--accent)] text-white";
+  const logoLabelClass = isBuleje ? "text-white" : "text-[var(--text-primary)]";
+  const logoSubLabelClass = isBuleje ? "text-[#5eead4]" : "text-[var(--accent)]";
+  const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-[var(--rule-base)]";
+  const collapseBtnClass = isBuleje
+    ? "text-white/45 hover:bg-white/[0.06] hover:text-white/85"
+    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]";
+
   const iconClassName =
     visual.iconStyle === "monochrome" ? "opacity-70 grayscale" : "";
 
@@ -373,19 +403,20 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         {/* Logo */}
         <div
           className={[
-            "flex items-center gap-3 px-4 py-5 border-b border-[var(--rule-base)] shrink-0",
+            "flex items-center gap-3 px-4 py-5 border-b shrink-0",
+            logoBorderClass,
             collapsed ? "justify-center" : "",
           ].join(" ")}
         >
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
             <BulejeMark size={20} strokeWidth={1.75} />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <div className="text-sm font-bold text-[var(--text-primary)] leading-none">
+              <div className={["text-sm font-black tracking-tight leading-none", logoLabelClass].join(" ")}>
                 Buleje
               </div>
-              <div className="text-[length:var(--ts-2xs)] font-medium text-[var(--accent)] uppercase tracking-widest mt-0.5">
+              <div className={["text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mt-1", logoSubLabelClass].join(" ")}>
                 Platform
               </div>
             </div>
@@ -407,9 +438,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
                   navItemPadding,
                   collapsed ? "justify-center" : "",
-                  active
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  active ? navItemActiveClass : navItemIdleClass,
                 ].join(" ")}
                 title={collapsed ? item.label : undefined}
               >
@@ -426,8 +455,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             className={[
-              "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs text-[var(--text-tertiary)]",
-              "hover:bg-[var(--surface-sunken)] transition-colors",
+              "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-colors",
+              collapseBtnClass,
               collapsed ? "justify-center" : "",
             ].join(" ")}
           >
@@ -448,21 +477,21 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         <aside
           className={[
             "fixed top-0 left-0 h-full z-40 flex flex-col w-60 md:hidden",
-            "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]",
+            sidebarBgClass,
             impersonating ? "pt-8" : "",
           ].join(" ")}
         >
           {/* Logo */}
-          <div className="flex items-center justify-between px-4 py-5 border-b border-[var(--rule-base)] shrink-0">
+          <div className={["flex items-center justify-between px-4 py-5 border-b shrink-0", logoBorderClass].join(" ")}>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+              <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
                 <BulejeMark size={20} strokeWidth={1.75} />
               </div>
               <div>
-                <div className="text-sm font-bold text-[var(--text-primary)] leading-none">
+                <div className={["text-sm font-black tracking-tight leading-none", logoLabelClass].join(" ")}>
                   Buleje
                 </div>
-                <div className="text-[length:var(--ts-2xs)] font-medium text-[var(--accent)] uppercase tracking-widest mt-0.5">
+                <div className={["text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mt-1", logoSubLabelClass].join(" ")}>
                   Platform
                 </div>
               </div>
@@ -470,7 +499,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              className={["p-1 rounded transition-colors", isBuleje ? "text-white/55 hover:text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"].join(" ")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -489,9 +518,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   onClick={() => setMobileOpen(false)}
                   className={[
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                    active ? navItemActiveClass : navItemIdleClass,
                   ].join(" ")}
                 >
                   {item.icon}

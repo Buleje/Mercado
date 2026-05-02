@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Eye, EyeOff, Sparkles, RotateCcw, CheckCircle2, Crown, Lock, Layers,
-  ChevronDown, ChevronRight, Edit3, Save, X, ExternalLink, Zap,
+  ChevronDown, ChevronRight, Edit3, Save, X, ExternalLink, Zap, Palette,
 } from "@buleje/design-system/icons";
 import {
   ADMIN_MODULE_CATALOG,
@@ -29,7 +29,60 @@ import {
   type AdminPlan,
   type AdminTemplate,
   type AdminModuleEntry,
+  type DefaultSidebarStyle,
 } from "@/lib/admin-template";
+
+// ─── Catálogo de estilos de sidebar para tenants nuevos ────────────────────
+interface SidebarStyleOption {
+  id: DefaultSidebarStyle;
+  label: string;
+  description: string;
+  /** Gradient/color preview para el swatch visual. */
+  swatch: string;
+  /** Color de acento de marca del estilo. */
+  accentHex: string;
+  /** Indica si requiere configuración custom posterior. */
+  requiresCustom?: boolean;
+}
+
+const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
+  {
+    id: "buleje",
+    label: "Buleje",
+    description: "Editorial slate · teal de marca · íconos limpios. Default recomendado.",
+    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00B4A6 100%)",
+    accentHex: "#00B4A6",
+  },
+  {
+    id: "ejecutivo",
+    label: "Ejecutivo",
+    description: "Oscuro elegante con ámbar. Compacto y profesional.",
+    swatch: "linear-gradient(135deg, #18181b 0%, #F59E0B 100%)",
+    accentHex: "#F59E0B",
+  },
+  {
+    id: "sereno",
+    label: "Sereno",
+    description: "Claro y descansado. Ideal para sesiones largas.",
+    swatch: "linear-gradient(135deg, #f0f9ff 0%, #0EA5E9 100%)",
+    accentHex: "#0EA5E9",
+  },
+  {
+    id: "vibrante",
+    label: "Vibrante",
+    description: "Cristal con rosa. Para tiendas de moda y belleza.",
+    swatch: "linear-gradient(135deg, #fff1f2 0%, #F43F5E 100%)",
+    accentHex: "#F43F5E",
+  },
+  {
+    id: "personalizado",
+    label: "Personalizado",
+    description: "El cliente lo configura desde su panel admin (Personalizar navegación).",
+    swatch: "linear-gradient(135deg, #71717a 0%, #d4d4d8 50%, #71717a 100%)",
+    accentHex: "#71717a",
+    requiresCustom: true,
+  },
+];
 
 const PLAN_LABEL: Record<AdminPlan, string> = {
   free: "Gratis",
@@ -181,6 +234,25 @@ export function PlantillaPanelTab() {
     }
   }, [showToast]);
 
+  const setDefaultSidebarStyle = useCallback((style: DefaultSidebarStyle) => {
+    const opt = SIDEBAR_STYLE_OPTIONS.find((s) => s.id === style);
+    setTpl((prev) => {
+      if (!prev) return prev;
+      const next: AdminTemplate = { ...prev, defaultSidebarStyle: style };
+      writeAdminTemplate(next);
+      return next;
+    });
+    if (opt) {
+      showToast(
+        `Estilo "${opt.label}" aplicado por defecto`,
+        opt.requiresCustom
+          ? "Los nuevos clientes verán el sidebar default y podrán personalizarlo."
+          : `Los nuevos clientes heredarán este diseño en su panel admin.`,
+        "success",
+      );
+    }
+  }, [showToast]);
+
   const applyPreset = useCallback((preset: PresetMode) => {
     let visibleCount = 0;
     setTpl((prev) => {
@@ -318,31 +390,114 @@ export function PlantillaPanelTab() {
         </div>
       )}
 
-      {/* Header explicativo + CTA permanente */}
-      <header className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <Layers className="h-6 w-6 text-[var(--accent)] shrink-0 mt-0.5" strokeWidth={1.75} />
+      {/* Header editorial — banner premium con gradient sutil de marca */}
+      <header className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full bg-[var(--accent)]/10 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 -left-12 h-48 w-48 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+        />
+        <div className="relative flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white shadow-lg shadow-[var(--accent)]/30 shrink-0">
+              <Layers className="h-6 w-6" strokeWidth={2} />
+            </span>
             <div className="min-w-0">
-              <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                Configuración global · Plantilla
+              </p>
+              <h2 className="text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
                 Plantilla del Panel Admin
               </h2>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
-                Define qué módulos ven los dueños de tienda al cargar su panel admin por primera vez.
-                Cambios <strong className="text-[var(--text-primary)]">se aplican en vivo</strong> a todos los tenants abiertos.
+              <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed max-w-2xl">
+                Define qué módulos y qué <strong className="text-[var(--text-primary)]">estilo de sidebar</strong> heredan
+                los dueños de tienda al abrir su negocio en la plataforma.
+                Los cambios <strong className="text-[var(--text-primary)]">se aplican en vivo</strong> a todos los tenants abiertos.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={openAdminPanelInNewTab}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)]/90 transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)]/90 hover:shadow-lg hover:shadow-[var(--accent)]/30 transition-all shrink-0"
           >
-            <ExternalLink className="h-4 w-4" strokeWidth={2} />
+            <ExternalLink className="h-4 w-4" strokeWidth={2.25} />
             Abrir panel admin
           </button>
         </div>
       </header>
+
+      {/* Estilo por defecto del sidebar — qué hereda cada cliente nuevo */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+        <div className="flex items-start gap-3 mb-5">
+          <Palette className="h-5 w-5 text-[var(--accent)] shrink-0 mt-0.5" strokeWidth={2} />
+          <div className="min-w-0">
+            <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+              Estilo por defecto del sidebar
+            </h3>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+              Cuando un nuevo cliente abre su tienda, su panel admin arranca con este diseño.
+              Cada tenant puede luego personalizarlo desde <em className="not-italic font-semibold text-[var(--text-primary)]">&quot;Personaliza tu navegación&quot;</em>.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {SIDEBAR_STYLE_OPTIONS.map((opt) => {
+            const isActive = (tpl.defaultSidebarStyle ?? "buleje") === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setDefaultSidebarStyle(opt.id)}
+                aria-pressed={isActive}
+                className={[
+                  "group relative text-left rounded-xl border-2 p-3 transition-all",
+                  isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-0.5 hover:shadow-md",
+                ].join(" ")}
+              >
+                {/* Badge "Por defecto" cuando está activo */}
+                {isActive && (
+                  <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
+                    <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
+                    Default
+                  </span>
+                )}
+
+                {/* Swatch visual del estilo */}
+                <div
+                  aria-hidden
+                  className="h-16 w-full rounded-lg mb-3 ring-1 ring-inset ring-black/5 dark:ring-white/10 flex flex-col justify-end p-2"
+                  style={{ background: opt.swatch }}
+                >
+                  {/* Mini items simulados del sidebar */}
+                  <div className="space-y-1">
+                    <span className="block h-1.5 w-12 rounded-full bg-white/85" />
+                    <span className="block h-1.5 w-8 rounded-full bg-white/60" />
+                    <span className="block h-1.5 w-10 rounded-full bg-white/50" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 mb-1">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{opt.label}</p>
+                  {opt.requiresCustom && (
+                    <span className="inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      · custom
+                    </span>
+                  )}
+                </div>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
+                  {opt.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

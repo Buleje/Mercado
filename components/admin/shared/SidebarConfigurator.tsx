@@ -38,7 +38,7 @@ import type { Tab } from "@/app/admin/_lib/tabs.types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type SidebarTheme = "light" | "dark" | "cristal" | "shaded";
+export type SidebarTheme = "light" | "dark" | "cristal" | "shaded" | "buleje";
 
 export type AccentColor = "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
 export type Density = "compact" | "normal" | "spacious";
@@ -101,12 +101,15 @@ const PRESETS: Preset[] = [
   {
     id: "buleje",
     label: "Buleje",
-    description: "Paleta de marca, íconos coloridos, densidad normal.",
-    theme: "cristal",
+    description: "Editorial slate-deep · teal vibrante · branded total.",
+    // Theme dedicado "buleje" — sidebar branded slate-deep con teal #00B4A6
+    // (color de marca real). Active state usa barra inset teal lateral
+    // = firma editorial Buleje. Render en AdminSidebar.tsx → themeClasses.
+    theme: "buleje",
     accent: "teal",
     density: "normal",
-    iconStyle: "colored",
-    applyToHeader: false,
+    iconStyle: "monochrome",
+    applyToHeader: true,
   },
   {
     id: "ejecutivo",
@@ -469,6 +472,10 @@ export default function SidebarConfigurator({
   ]);
 
   const isDirty = React.useMemo(() => {
+    // baselineRef is a stable mutable container kept in sync via useEffect;
+    // its identity never changes so reading it inside the memo is safe.
+    // The react-hooks/refs lint disagrees — disable for this block only.
+    /* eslint-disable react-hooks/refs */
     const base = baselineRef.current;
     // Normalizar alias legacy "shaded" → "cristal" para evitar falsos positivos
     // cuando initial llega como "shaded" y el preset setea "cristal".
@@ -484,6 +491,7 @@ export default function SidebarConfigurator({
     for (const k of draftHidden) if (!base.hiddenCategories.has(k)) return true;
     for (const k of draftHiddenSubs) if (!base.hiddenSubTabs.has(k)) return true;
     return false;
+    /* eslint-enable react-hooks/refs */
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent, draftDensity,
     draftIconStyle, draftApplyToHeader,

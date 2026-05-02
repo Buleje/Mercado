@@ -109,22 +109,28 @@ export interface ModuleOverride {
 /** Mapa completo: tabId → override. */
 export type AdminTemplateOverrides = Record<string, ModuleOverride>;
 
+/** Estilo por defecto del sidebar que hereda cada tenant nuevo. */
+export type DefaultSidebarStyle = "buleje" | "ejecutivo" | "sereno" | "vibrante" | "personalizado";
+
 export interface AdminTemplate {
   /** Override por módulo. */
   overrides: AdminTemplateOverrides;
   /** Orden custom de tab ids (si vacío, usa orden del catálogo). */
   order: string[];
+  /** Estilo por defecto del sidebar para nuevos tenants. */
+  defaultSidebarStyle?: DefaultSidebarStyle;
   /** Versión del schema — para migrar configs viejos. */
   version: number;
 }
 
 const STORAGE_KEY = "buleje-admin-template";
 const EVENT_NAME = "buleje:admin-template-changed";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const EMPTY_TEMPLATE: AdminTemplate = {
   overrides: {},
   order: [],
+  defaultSidebarStyle: "buleje",
   version: SCHEMA_VERSION,
 };
 
@@ -139,6 +145,7 @@ export function readAdminTemplate(): AdminTemplate {
     return {
       overrides: parsed.overrides ?? {},
       order: parsed.order ?? [],
+      defaultSidebarStyle: parsed.defaultSidebarStyle ?? "buleje",
       version: parsed.version ?? SCHEMA_VERSION,
     };
   } catch {
