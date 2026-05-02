@@ -300,28 +300,28 @@ export default function ProductModifierModal({
                   const groupErr = validation.find((v) => v.groupId === g.id);
                   return (
                     <section key={g.id} aria-labelledby={`group-${g.id}`}>
-                      <header className="flex items-center justify-between gap-3 mb-2">
+                      <header className="flex items-center justify-between gap-3 mb-3">
                         <h3
                           id={`group-${g.id}`}
-                          className="text-base font-bold text-[var(--text-primary)]"
+                          className="text-[length:var(--ts-lg)] font-black text-[var(--text-primary)] tracking-tight"
                         >
                           {g.name}
                         </h3>
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                           {g.required && (
-                            <span className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+                            <span className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-200 dark:border-rose-800 px-2.5 py-1 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--data-error)]">
                               Obligatorio
                             </span>
                           )}
                           {isMulti && (
-                            <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+                            <span className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-secondary)] tabular-nums">
                               {count}/{g.maxSelect}
                             </span>
                           )}
                         </div>
                       </header>
 
-                      <ul className="space-y-1.5" role="listbox" aria-multiselectable={isMulti}>
+                      <ul className="space-y-2" role="listbox" aria-multiselectable={isMulti}>
                         {g.options.map((opt) => {
                           const isSel = selected.includes(opt.id);
                           const disabled = !isSel && isFull;
@@ -334,48 +334,48 @@ export default function ProductModifierModal({
                                 aria-selected={isSel}
                                 role="option"
                                 className={cn(
-                                  "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
+                                  "w-full flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all",
                                   isSel
-                                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                                    : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
+                                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md shadow-[var(--accent)]/10"
+                                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--surface-sunken)]",
                                   disabled && "opacity-40 cursor-not-allowed",
                                 )}
                               >
-                                {/* Selector visual */}
+                                {/* Selector visual — más grande */}
                                 <span
                                   aria-hidden
                                   className={cn(
-                                    "shrink-0 inline-flex h-6 w-6 items-center justify-center transition-all",
-                                    isMulti ? "rounded-md" : "rounded-full",
+                                    "shrink-0 inline-flex h-7 w-7 items-center justify-center transition-all",
+                                    isMulti ? "rounded-lg" : "rounded-full",
                                     isSel
-                                      ? "bg-[var(--accent)] text-white"
-                                      : "border-2 border-[var(--rule-base)]",
+                                      ? "bg-[var(--accent)] text-white shadow-sm"
+                                      : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]",
                                   )}
                                 >
-                                  {isSel && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                                  {isSel && <Check className="h-4 w-4" strokeWidth={3} />}
                                 </span>
 
-                                {/* Image */}
+                                {/* Image — más grande para que se vea bien */}
                                 {opt.imageUrl && (
-                                  <span className="shrink-0 h-10 w-10 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
+                                  <span className="shrink-0 h-14 w-14 rounded-xl overflow-hidden bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]">
                                     <Image
                                       src={opt.imageUrl}
                                       alt={opt.name}
-                                      width={40}
-                                      height={40}
+                                      width={56}
+                                      height={56}
                                       className="object-cover w-full h-full"
                                     />
                                   </span>
                                 )}
 
                                 <span className="flex-1 min-w-0">
-                                  <span className="block text-sm font-bold text-[var(--text-primary)]">
+                                  <span className="block text-[length:var(--ts-base)] font-extrabold text-[var(--text-primary)] leading-tight">
                                     {opt.name}
                                   </span>
                                   {opt.priceDelta !== 0 && (
                                     <span
                                       className={cn(
-                                        "block text-[length:var(--ts-xs)] font-bold tabular-nums",
+                                        "block mt-0.5 text-[length:var(--ts-sm)] font-bold tabular-nums",
                                         opt.priceDelta > 0
                                           ? "text-[var(--accent)]"
                                           : "text-emerald-600 dark:text-emerald-400",
@@ -395,7 +395,7 @@ export default function ProductModifierModal({
                       {groupErr && (
                         <p
                           role="alert"
-                          className="mt-2 text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]"
+                          className="mt-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--data-error)]"
                         >
                           {groupErr.message}
                         </p>
@@ -407,10 +407,10 @@ export default function ProductModifierModal({
             </div>
 
             {/* Notas para este producto */}
-            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-6 py-3">
+            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-6 py-4">
               <label
                 htmlFor="modifier-note"
-                className="text-sm font-bold text-[var(--text-primary)]"
+                className="text-[length:var(--ts-base)] font-extrabold text-[var(--text-primary)]"
               >
                 Notas para este producto
               </label>
@@ -418,37 +418,37 @@ export default function ProductModifierModal({
                 id="modifier-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value.slice(0, 100))}
-                placeholder="Comentarios sobre tu pedido"
+                placeholder="Ej: sin cebolla, bien tostado, en porciones…"
                 rows={2}
-                className="mt-1.5 block w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="mt-2 block w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
               />
-              <div className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              <div className="mt-1 text-right text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] tabular-nums">
                 {note.length} / 100
               </div>
             </div>
 
-            {/* Footer fijo */}
-            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3 flex items-center gap-3">
-              {/* Quantity stepper */}
-              <div className="flex items-center gap-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+            {/* Footer fijo — cantidad grande + CTA prominente */}
+            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 sm:px-6 py-4 flex items-center gap-3">
+              {/* Quantity stepper — h-12 legible */}
+              <div className="flex items-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shrink-0">
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   aria-label="Disminuir cantidad"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-colors"
                 >
-                  <Minus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                  <Minus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 </button>
-                <span className="min-w-[2rem] text-center text-base font-black tabular-nums text-[var(--text-primary)]">
+                <span className="min-w-[2.5rem] text-center text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)]">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(99, q + 1))}
                   aria-label="Aumentar cantidad"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-colors"
                 >
-                  <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                  <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 </button>
               </div>
 
@@ -457,14 +457,21 @@ export default function ProductModifierModal({
                 onClick={handleConfirm}
                 disabled={!isValid}
                 className={cn(
-                  "flex-1 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-black transition-all",
+                  "flex-1 inline-flex items-center justify-center gap-2 rounded-2xl h-12 px-4 text-[length:var(--ts-base)] font-black transition-all",
                   isValid
-                    ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 active:scale-[0.99] shadow-md"
+                    ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 active:scale-[0.99] shadow-lg shadow-[var(--accent)]/30"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                 )}
               >
-                <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                {isValid ? `Agregar · ${fmt(totalPrice)}` : "Completá las opciones"}
+                <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                {isValid ? (
+                  <>
+                    <span>Agregar al carrito</span>
+                    <span className="tabular-nums opacity-90">· {fmt(totalPrice)}</span>
+                  </>
+                ) : (
+                  "Elegí las opciones"
+                )}
               </button>
             </div>
           </motion.div>

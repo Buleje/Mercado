@@ -37,6 +37,7 @@ import {
   ArrowRight,
   Store,
   ExternalLink,
+  Pencil,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
@@ -204,9 +205,9 @@ export function AddedToCartDrawerProvider({
                 aria-modal="true"
                 className={cn(
                   "relative pointer-events-auto",
-                  // Antes max-w-2xl (672px) era demasiado ancho — Brandon mayo 2026
-                  // dijo "muy confuso". Ahora max-w-sm (384px) compacto vertical.
-                  "w-full max-w-sm flex flex-col",
+                  // max-w-md (~448px) — equilibrio entre legibilidad (textos
+                  // y botones grandes) y compactness (no abruma).
+                  "w-full max-w-md flex flex-col",
                   "bg-[var(--surface-raised)]",
                   "rounded-3xl shadow-2xl overflow-hidden",
                   "ring-1 ring-black/5",
@@ -223,9 +224,9 @@ export function AddedToCartDrawerProvider({
                     <X className="h-4 w-4" strokeWidth={2.25} />
                   </button>
 
-                  <div className="flex items-center gap-2.5 pr-10">
+                  <div className="flex items-center gap-3 pr-10">
                     {/* Check con doble pulse para feedback visual */}
-                    <span className="relative inline-flex h-9 w-9 items-center justify-center shrink-0">
+                    <span className="relative inline-flex h-11 w-11 items-center justify-center shrink-0">
                       <m.span
                         aria-hidden
                         className="absolute inset-0 rounded-full bg-[var(--data-success)]/30"
@@ -233,17 +234,17 @@ export function AddedToCartDrawerProvider({
                         animate={{ scale: 1.6, opacity: 0 }}
                         transition={{ duration: 0.9, ease: "easeOut" }}
                       />
-                      <span className="relative h-9 w-9 rounded-full bg-[var(--data-success)] inline-flex items-center justify-center shadow-md">
-                        <Check className="h-4.5 w-4.5 text-white" strokeWidth={3} aria-hidden />
+                      <span className="relative h-11 w-11 rounded-full bg-[var(--data-success)] inline-flex items-center justify-center shadow-md">
+                        <Check className="h-5 w-5 text-white" strokeWidth={3} aria-hidden />
                       </span>
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[0.1em] text-[var(--data-success)]">
                         ¡Listo!
                       </p>
                       <h2
                         id="added-modal-title"
-                        className="text-sm font-extrabold text-[var(--text-primary)] leading-tight"
+                        className="text-[length:var(--ts-lg)] font-black text-[var(--text-primary)] leading-tight tracking-tight"
                       >
                         Agregado al carrito
                       </h2>
@@ -251,11 +252,11 @@ export function AddedToCartDrawerProvider({
                   </div>
                 </div>
 
-                {/* ── Producto: layout horizontal compacto ──────────────── */}
-                <div className="flex-1 overflow-y-auto px-5 py-4">
-                  <div className="flex gap-3">
-                    {/* Imagen 80x80 — gradient brand cuando no hay imagen */}
-                    <div className="relative h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/15 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
+                {/* ── Producto: layout horizontal con jerarquía clara ─── */}
+                <div className="flex-1 overflow-y-auto px-5 py-5">
+                  <div className="flex gap-4">
+                    {/* Imagen 96x96 — gradient brand cuando no hay imagen */}
+                    <div className="relative h-24 w-24 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/15 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
                       {product.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -265,7 +266,7 @@ export function AddedToCartDrawerProvider({
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-2xl font-black text-[var(--brand-primary)]/60">
+                          <span className="text-3xl font-black text-[var(--brand-primary)]/60">
                             {product.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -277,21 +278,21 @@ export function AddedToCartDrawerProvider({
                       {product.storeName && (
                         <Link
                           href={`/marketplace/${product.storeSlug}`}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
+                          className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[0.06em] text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
                         >
-                          <Store className="h-3 w-3" strokeWidth={2} aria-hidden />
+                          <Store className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                           <span className="truncate">{product.storeName}</span>
                         </Link>
                       )}
 
-                      <h3 className="mt-0.5 text-sm font-extrabold leading-tight text-[var(--text-primary)] line-clamp-2">
+                      <h3 className="mt-1 text-[length:var(--ts-base)] font-black leading-tight text-[var(--text-primary)] line-clamp-2 tracking-tight">
                         {product.name}
                       </h3>
 
-                      <p className="mt-1 text-xl font-black text-[var(--brand-primary)] tabular-nums leading-none">
+                      <p className="mt-1.5 text-[length:clamp(1.375rem,3vw,1.625rem)] font-black text-[var(--brand-primary)] tabular-nums leading-none">
                         {fmt(product.price)}
                         {product.unit && (
-                          <span className="ml-1 text-[10px] font-semibold text-[var(--text-tertiary)]">
+                          <span className="ml-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
                             / {product.unit}
                           </span>
                         )}
@@ -299,23 +300,23 @@ export function AddedToCartDrawerProvider({
                     </div>
                   </div>
 
-                  {/* Selector de cantidad — fila completa con subtotal alineado */}
-                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  {/* Selector de cantidad — más alto y legible */}
+                  <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+                    <span className="text-[length:var(--ts-sm)] font-extrabold text-[var(--text-secondary)]">
                       Cantidad
                     </span>
-                    <div className="flex items-center rounded-lg bg-[var(--surface-raised)] ring-1 ring-[var(--rule-base)]">
+                    <div className="flex items-center rounded-xl bg-[var(--surface-raised)] ring-1 ring-[var(--rule-base)] overflow-hidden">
                       <button
                         type="button"
                         onClick={handleDec}
                         aria-label={qty <= 1 ? "Quitar del carrito" : "Reducir cantidad"}
-                        className="h-8 w-8 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-l-lg transition-colors active:scale-95"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95"
                       >
-                        <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        <Minus className="h-4 w-4" strokeWidth={2.5} />
                       </button>
                       <span
                         aria-live="polite"
-                        className="min-w-[2rem] text-center text-sm font-extrabold tabular-nums"
+                        className="min-w-[2.5rem] text-center text-[length:var(--ts-base)] font-black tabular-nums"
                       >
                         {qty}
                       </span>
@@ -323,22 +324,22 @@ export function AddedToCartDrawerProvider({
                         type="button"
                         onClick={handleInc}
                         aria-label="Aumentar cantidad"
-                        className="h-8 w-8 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-r-lg transition-colors active:scale-95"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95"
                       >
-                        <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        <Plus className="h-4 w-4" strokeWidth={2.5} />
                       </button>
                     </div>
-                    <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
+                    <span className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)]">
                       {fmt(product.price * qty)}
                     </span>
                   </div>
 
-                  {/* Variaciones — chips compactos */}
+                  {/* Variaciones — bloque legible (no chips diminutos) */}
                   {product.variations && product.variations.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                          Variaciones
+                    <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+                          Lo que elegiste
                         </p>
                         <button
                           type="button"
@@ -355,22 +356,27 @@ export function AddedToCartDrawerProvider({
                             }
                             close();
                           }}
-                          className="text-[10px] font-extrabold text-[var(--accent)] hover:underline"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft,rgba(0,180,166,0.08))] px-3 h-8 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)]/15 transition-colors"
                         >
+                          <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} />
                           Editar
                         </button>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <ul className="space-y-1.5">
                         {product.variations.map((v, i) => (
-                          <span
+                          <li
                             key={`${v.label}-${i}`}
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-2 py-1 text-[11px]"
+                            className="flex items-center justify-between gap-3 text-[length:var(--ts-sm)]"
                           >
-                            <span className="text-[var(--text-tertiary)]">{v.label}:</span>
-                            <span className="font-bold text-[var(--text-primary)]">{v.value}</span>
-                          </span>
+                            <span className="font-semibold text-[var(--text-tertiary)]">
+                              {v.label}
+                            </span>
+                            <span className="font-extrabold text-[var(--text-primary)] text-right">
+                              {v.value}
+                            </span>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
 
@@ -378,51 +384,59 @@ export function AddedToCartDrawerProvider({
                   <Link
                     href={productDetailHref}
                     onClick={close}
-                    className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--accent)] hover:underline"
+                    className="mt-3 inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:underline"
                   >
                     Ver ficha completa
-                    <ExternalLink className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
+                    <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                   </Link>
 
-                  {/* Resumen carrito — pill compacto */}
-                  <div className="mt-4 rounded-2xl bg-gradient-to-r from-[var(--brand-primary)]/8 to-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]/15 px-4 py-3 flex items-center justify-between">
+                  {/* Resumen carrito — pill prominente */}
+                  <div className="mt-4 rounded-2xl bg-gradient-to-r from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]/20 px-4 py-3.5 flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--brand-primary)]">
-                        <ShoppingCart className="h-3 w-3" strokeWidth={2.5} />
+                      <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[0.08em] text-[var(--brand-primary)]">
+                        <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2.5} />
                         Tu carrito
                       </p>
-                      <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
-                        {cartCount} {cartCount === 1 ? "producto" : "productos"}
+                      <p className="mt-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)]">
+                        {cartCount} {cartCount === 1 ? "producto" : "productos"} en total
                       </p>
                     </div>
-                    <p className="text-lg font-black tabular-nums text-[var(--text-primary)]">
+                    <p className="text-[length:clamp(1.25rem,2.5vw,1.5rem)] font-black tabular-nums text-[var(--text-primary)]">
                       {fmt(subtotal)}
                     </p>
                   </div>
                 </div>
 
-                {/* ── Footer ───────────────────────────────────────────── */}
-                <div className="px-5 pb-5 pt-1 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={close}
-                    className="inline-flex items-center justify-center rounded-xl border-2 border-[var(--rule-base)] px-3 h-11 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    Seguir comprando
-                  </button>
+                {/* ── Footer ─ jerarquía clara: pagar primero, seguir abajo */}
+                <div className="px-5 pb-5 pt-2 space-y-2.5">
+                  {/* Primario — ir al carrito (con total visible) */}
                   <button
                     type="button"
                     onClick={handleGoToCart}
                     className={cn(
-                      "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 h-11",
-                      "text-xs font-extrabold uppercase tracking-wider",
+                      "w-full inline-flex items-center justify-between gap-2 rounded-2xl px-5 h-14",
+                      "text-[length:var(--ts-base)] font-extrabold",
                       "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30",
                       "hover:bg-[var(--accent)]/90 hover:shadow-xl hover:shadow-[var(--accent)]/40",
-                      "active:scale-[0.98] transition-all",
+                      "active:scale-[0.985] transition-all",
                     )}
                   >
-                    Ver mi carrito
-                    <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                    <span className="inline-flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                      Ir al carrito y pagar
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="tabular-nums">{fmt(subtotal)}</span>
+                      <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    </span>
+                  </button>
+                  {/* Secundario — seguir comprando (ghost) */}
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 h-12 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] hover:border-[var(--rule-strong)] transition-colors"
+                  >
+                    Agregar y seguir comprando
                   </button>
                 </div>
               </m.div>
