@@ -12,10 +12,11 @@
  * elegís cómo pagás.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Loader2, CheckCircle, CreditCard, Smartphone, Upload, Copy, Check } from "@buleje/design-system/icons";
 import { PLANS, firstMonthPrice, type PlanTier } from "@/lib/billing/plan-tiers";
+import { PLATFORM_CONFIG_DEFAULTS, type PlatformConfig } from "@/lib/platform-config";
 
 export interface RegistrationPayload {
   tenantSlug: string;
@@ -37,10 +38,6 @@ interface Props {
   onSuccess: () => void;
 }
 
-const YAPE_NUMBER = process.env.NEXT_PUBLIC_YAPE_NUMBER ?? "987 654 321";
-const PLIN_NUMBER = process.env.NEXT_PUBLIC_PLIN_NUMBER ?? "987 654 321";
-const YAPE_QR = process.env.NEXT_PUBLIC_YAPE_QR_URL ?? null;
-
 const fmt = (n: number) => `S/ ${Math.round(n)}`;
 
 type Tab = "stripe" | "yape" | "plin" | "transfer";
@@ -48,6 +45,25 @@ type Tab = "stripe" | "yape" | "plin" | "transfer";
 export default function PaymentStep({ data, onSuccess }: Props) {
   const plan = PLANS[data.planTier];
   const [tab, setTab] = useState<Tab>("yape");
+
+  // Brandon mayo 2026: los datos de Yape/Plin/banco se administran
+  // desde /superadmin/configuracion. Este endpoint público no requiere
+  // auth y trae el config global con cache 60s.
+  const [platformCfg, setPlatformCfg] = useState<PlatformConfig>(PLATFORM_CONFIG_DEFAULTS);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/platform-config/public", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { config?: PlatformConfig } | null) => {
+        if (!cancelled && d?.config) setPlatformCfg(d.config);
+      })
+      .catch(() => {
+        // fallback silencioso: si la red falla, usamos los defaults.
+        // No hace falta loggear porque el usuario ve el error visual
+        // ("método no configurado") si llega a tocar la sección.
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const totalToPay = data.billingCycle === "anual"
     ? Math.round(plan.monthlyPrice * 12 * (1 - plan.annualDiscount / 100))
@@ -100,6 +116,7 @@ export default function PaymentStep({ data, onSuccess }: Props) {
           data={data}
           amount={totalToPay}
           onSuccess={onSuccess}
+          platformCfg={platformCfg}
         />
       )}
     </div>
@@ -194,11 +211,13 @@ function ManualPane({
   data,
   amount,
   onSuccess,
+  platformCfg,
 }: {
   method: "yape" | "plin" | "transfer";
   data: RegistrationPayload;
   amount: number;
   onSuccess: () => void;
+  platformCfg: PlatformConfig;
 }) {
   const [reference, setReference] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -213,7 +232,27 @@ function ManualPane({
     if (f) setPreview(URL.createObjectURL(f));
   };
 
-  const target = method === "yape" ? YAPE_NUMBER : method === "plin" ? PLIN_NUMBER : "Cuenta BCP 191-1234567-0-89";
+  // Datos del destinatario según método — leídos del PlatformConfig.
+  const yapeNum = platformCfg.payment.yapeNumber ?? "—";
+  const plinNum = platformCfg.payment.plinNumber ?? "—";
+  const bankSummary = platformCfg.payment.bankAccount
+    ? `${platformCfg.payment.bankName ?? "Banco"} ${platformCfg.payment.bankAccount}`
+    : "—";
+  const target = method === "yape" ? yapeNum : method === "plin" ? plinNum : bankSummary;
+  const holder =
+    method === "yape" ? platformCfg.payment.yapeHolder
+    : method === "plin" ? platformCfg.payment.plinHolder
+    : platformCfg.payment.bankHolder;
+  const qrUrl =
+    method === "yape" ? platformCfg.payment.yapeQrUrl
+    : method === "plin" ? platformCfg.payment.plinQrUrl
+    : null;
+  const cciHint = method === "transfer" && platformCfg.payment.bankAccountCCI
+    ? platformCfg.payment.bankAccountCCI
+    : null;
+  const targetMissing = (method === "yape" && !platformCfg.payment.yapeNumber)
+    || (method === "plin" && !platformCfg.payment.plinNumber)
+    || (method === "transfer" && !platformCfg.payment.bankAccount);
 
   const copy = async () => {
     try {
@@ -292,33 +331,47 @@ function ManualPane({
         <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-2">
           {method === "yape" ? "Yapeá a este número" : method === "plin" ? "Plin a este número" : "Transferí a esta cuenta"}
         </p>
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-2xl font-black tabular-nums text-[var(--text-primary)] break-all">
-              {target}
-            </p>
-            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-              A nombre de <strong>Buleje S.A.C.</strong>
-            </p>
+        {targetMissing ? (
+          <div className="rounded-2xl border-2 border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+            Este método de pago todavía no está configurado. Elegí Yape, Plin o
+            transferencia (la opción que sí esté activa).
           </div>
-          <button
-            onClick={copy}
-            className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--accent)] hover:text-[var(--accent)]"
-          >
-            {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success)]" strokeWidth={3} /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Copiado" : "Copiar"}
-          </button>
-        </div>
+        ) : (
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-2xl font-black tabular-nums text-[var(--text-primary)] break-all">
+                {target}
+              </p>
+              {holder && (
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                  A nombre de <strong>{holder}</strong>
+                </p>
+              )}
+              {cciHint && (
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] font-mono">
+                  CCI: {cciHint}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={copy}
+              className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success)]" strokeWidth={3} /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+        )}
         <p className="mt-2 text-sm">
           Monto a pagar:{" "}
           <strong className="text-[var(--accent)] text-lg tabular-nums">{fmt(amount)}</strong>
         </p>
       </div>
 
-      {/* QR Yape (si está configurado) */}
-      {method === "yape" && YAPE_QR && (
+      {/* QR (Yape o Plin, si está configurado en el panel) */}
+      {qrUrl && (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] p-3 inline-block">
-          <Image src={YAPE_QR} alt="QR Yape Buleje" width={200} height={200} className="rounded-lg" unoptimized />
+          <Image src={qrUrl} alt={`QR ${method}`} width={200} height={200} className="rounded-lg" unoptimized />
         </div>
       )}
 
