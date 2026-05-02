@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { m as motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
-import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
+import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
 import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
 
 // ---------- constantes de categorías sugeridas ----------
@@ -772,12 +771,14 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const [errorProducts, setErrorProducts]   = useState<string | null>(null);
   const [toastMsg, setToastMsg]             = useState<string | null>(null);
   const [customerPhone, setCustomerPhone]   = useState<string | null>(null);
-  const [cartOpen, setCartOpen]             = useState(false);
   const [followed, setFollowed]             = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
 
   // Cart info for this specific store
-  const { byStore, totalByStore } = useMarketplaceCart();
+  // useMarketplaceCart antes leía byStore/totalByStore para la sticky
+  // bar; ahora MarketplaceMiniCart maneja todo eso. Mantengo el hook
+  // por si lo necesita la lógica de UnifiedProductCard descendente.
+  useMarketplaceCart();
 
   // Registrar visita para el contador de live-viewers (fire-and-forget)
   useEffect(() => {
@@ -1306,46 +1307,14 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       )}
 
-      {/* Sticky cart bar — only when this store has items */}
-      {store && byStore[store.id] && (
-        <AnimatePresence>
-          <motion.div
-            key="sticky-cart"
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 24, stiffness: 280 }}
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-primary/20 bg-white/95 dark:bg-card/95 backdrop-blur-md px-4 py-3 sm:px-6 shadow-2xl"
-          >
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-muted">
-                  {byStore[store.id].items.reduce((s, i) => s + i.quantity, 0)} producto
-                  {byStore[store.id].items.reduce((s, i) => s + i.quantity, 0) !== 1 ? "s" : ""} en tu carrito
-                </p>
-                <p className="text-base font-extrabold text-gray-900 dark:text-foreground">
-                  Total:{" "}
-                  <span className="text-primary">
-                    {fmt(totalByStore[store.id]?.total ?? 0)}
-                  </span>
-                </p>
-              </div>
-              <button
-                onClick={() => setCartOpen(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-white text-sm font-bold hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
-              >
-                Ver carrito
-                <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
-
-      {/* Cart drawer */}
-      <MarketplaceCart isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      {/* Cart UX — Brandon mayo 2026: la sticky bar + el drawer
+          MarketplaceCart (1270 LOC con WhatsApp/Share/upsells) confundía
+          al cliente. Reemplazado por MarketplaceMiniCart: pill premium
+          flotante en desktop + bottom sheet en mobile, drawer 380px
+          slim con free-shipping bar y CTA único "Pagar S/X". El
+          carrito completo (cupones, delivery, etc) vive en
+          /marketplace/carrito como flujo de páginas. */}
+      <MarketplaceMiniCart />
 
       {/* Chat floating widget */}
       {store && customerPhone && (
