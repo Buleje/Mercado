@@ -166,3 +166,12 @@ reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt
 reports/visual-verify/
 reports/a11y/
 reports/browser-tour/
+# Audit / snapshot outputs from scripts/audit-*.mjs and scripts/snap-*.mjs.
+# Solo `reports/visual-baselines/` se versiona (referencia para regresiones).
+reports/audit-final/
+reports/i18n-audit/
+reports/sidebar-buleje/
+reports/forecasting/
+
+# Claude Code session metrics — JSON regenerado en cada agente run.
+.claude/agent-metrics.json
