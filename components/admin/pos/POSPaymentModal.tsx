@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   X,
   Plus,
@@ -333,14 +333,8 @@ export default function POSPaymentModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // UX Mejora 13: Cerrar modal con Escape
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !processing) onCancel();
-    };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [onCancel, processing]);
+  // UX Mejora 13: Escape ahora lo provee AdminModal vía Radix Dialog.
+  // Bloqueamos el cierre durante `processing` gateando onClose abajo.
 
   // Mejora 2: Discount inside modal
   const [showDiscount, setShowDiscount] = useState(false);
@@ -501,15 +495,14 @@ export default function POSPaymentModal({
 
   if (!mounted) return null;
 
-  return createPortal(
-    <div
-      className="modal-backdrop p-4"
-      onClick={onCancel}
+  return (
+    <AdminModal
+      open
+      onClose={() => { if (!processing) onCancel(); }}
+      variant="wide"
+      hideCloseButton
     >
-      <div
-        className="relative bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative flex flex-col">
         {/* Customer list overlay (Mejora 3) */}
         {showCustomerList && (
           <CustomerListPanel
@@ -1278,7 +1271,6 @@ export default function POSPaymentModal({
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </AdminModal>
   );
 }

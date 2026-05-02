@@ -1,14 +1,13 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 import type { Dispatch, SetStateAction } from "react";
-import { m } from "@/components/admin/providers";
 import {
   X, DollarSign, Calendar, User, FileText,
   Camera, Loader2, Plus,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
@@ -61,42 +60,17 @@ export default function FiadoFormModal({
   clienteResumenLoading,
   clienteEsNuevo,
 }: FiadoFormModalProps) {
-  if (!showNew) return null;
   return (
-    <m.div
-      key="new-backdrop"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="modal-backdrop p-4"
-      onClick={e => e.target === e.currentTarget && setShowNew(false)}
+    <AdminModal
+      open={showNew}
+      onClose={() => setShowNew(false)}
+      title="Nuevo fiado"
+      description="Registra una venta al crédito"
+      variant="default"
     >
-      <m.div
-        key="new-modal"
-        initial={{ scale: 0.95, y: 10 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-      >
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/15 flex items-center justify-center shrink-0">
-              <Plus className="h-5 w-5 text-[var(--data-warning)]" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">Nuevo fiado</h3>
-              <p className="text-sm text-[var(--text-tertiary)]">Registra una venta al crédito</p>
-            </div>
-          </div>
-          <button onClick={() => setShowNew(false)} aria-label="Cerrar" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
-        </div>
-
+      <div className="flex flex-col">
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(nombre o teléfono)</span></label>
                     <div className="relative">
@@ -278,7 +252,7 @@ export default function FiadoFormModal({
             Crear fiado
           </button>
         </div>
-      </m.div>
-    </m.div>
+      </div>
+    </AdminModal>
   );
 }

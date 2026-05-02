@@ -1,10 +1,9 @@
 'use client';
 
-import { CardTitle } from "@buleje/design-system";
-
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Search } from "@buleje/design-system/icons";
+import { Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Search } from "@buleje/design-system/icons";
 import { cn } from '@/lib/utils';
+import AdminModal from '@/components/admin/shared/AdminModal';
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
 
@@ -347,8 +346,6 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
     }
   };
 
-  if (!isOpen) return null;
-
   // ── Input helpers ───────────────────────────────────────────────────────
 
   const inputCls = "w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base transition-all placeholder:text-[var(--text-tertiary)]";
@@ -356,18 +353,13 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
   const selectCls = cn(inputCls, "appearance-none");
 
   return (
-    <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-card w-full sm:max-w-2xl rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] overflow-y-auto max-h-[92dvh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
-            {isEdit ? 'Editar cliente' : 'Nuevo cliente'}
-          </CardTitle>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
-          </button>
-        </div>
-
+    <AdminModal
+      open={isOpen}
+      onClose={onClose}
+      title={isEdit ? 'Editar cliente' : 'Nuevo cliente'}
+      variant="wide"
+    >
+      <div>
         {/* Format toggle */}
         <div className="px-5 pt-4 pb-2 flex gap-2">
           <button
@@ -828,6 +820,6 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
           </div>
         </form>
       </div>
-    </div>
+    </AdminModal>
   );
 }
