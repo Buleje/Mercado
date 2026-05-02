@@ -21,6 +21,16 @@ const SmoothScrollProvider = dynamic(
   {},
 );
 
+const ScrollProgressBar = dynamic(
+  () => import("@/components/ScrollProgressBar"),
+  {},
+);
+
+const AutoTranslator = dynamic(
+  () => import("@/components/AutoTranslator"),
+  {},
+);
+
 const ClientEffects = dynamic(() => import("@/components/ui/ClientEffects"), {
   
 });
@@ -42,6 +52,8 @@ export default function RootDeferredWidgets() {
   return (
     <>
       <SmoothScrollProvider />
+      <ScrollProgressBar />
+      <AutoTranslator />
       <ClientEffects />
       <ServiceWorkerRegistrar />
       <InstallPrompt />
