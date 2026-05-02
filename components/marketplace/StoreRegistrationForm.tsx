@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PaymentStep, { type RegistrationPayload } from "@/components/marketplace/PaymentStep";
+import type { PlanTier } from "@/lib/billing/plan-tiers";
 import {
   Store,
   User,
@@ -36,16 +39,28 @@ const CATEGORIES = [
   { value: "otro", label: "Otro" },
 ];
 
-type FormStep = "info" | "details" | "success";
+type FormStep = "info" | "details" | "payment" | "success";
+
+const VALID_PLANS: ReadonlySet<PlanTier> = new Set(["basico", "pro", "enterprise", "max"]);
+const VALID_CYCLES = new Set(["mensual", "anual"]);
 
 const INPUT_BASE =
   "w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal transition-all focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15 outline-none";
 
 export default function StoreRegistrationForm() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<FormStep>("info");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storeName, setStoreName] = useState("");
+
+  // Plan + ciclo persistidos desde /abrir-tienda#planes (URL ?plan=&cycle=).
+  // Brandon mayo 2026: cuando el cliente clickea un plan, el plan elegido
+  // viaja por URL hasta acá y termina en el cobro — sin reselecciones.
+  const planParam = (searchParams?.get("plan") ?? "basico") as PlanTier;
+  const cycleParam = searchParams?.get("cycle") === "anual" ? "anual" : "mensual";
+  const [planTier] = useState<PlanTier>(VALID_PLANS.has(planParam) ? planParam : "basico");
+  const [billingCycle] = useState<"mensual" | "anual">(VALID_CYCLES.has(cycleParam) ? (cycleParam as "mensual" | "anual") : "mensual");
 
   // Step 1: Owner info
   const [ownerName, setOwnerName] = useState("");
@@ -177,51 +192,53 @@ export default function StoreRegistrationForm() {
 
     setLoading(true);
     try {
-      // Componer dirección legible para el sistema legacy. Mantener `zone`
-      // como nombre del distrito para compatibilidad con la API actual.
-      const distritoName = distritos.find((d) => d.code === distrito)?.nombre ?? "";
-      const provinciaName = provincias.find((p) => p.code === provincia)?.nombre ?? "";
-      const fullAddress = [direccion.trim(), distritoName, provinciaName]
-        .filter(Boolean)
-        .join(", ");
-      // CSRF double-submit cookie: el middleware exige x-csrf-token en
-      // mutations. Lo leemos del cookie csrf-token que el server setea en
-      // cada respuesta (ver lib/csrf.ts → ensureCsrfCookie).
-      const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
-      const res = await fetch("/api/marketplace/stores/apply", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrf ? { "x-csrf-token": csrf } : {}),
-        },
-        body: JSON.stringify({
-          ownerName: ownerName.trim(),
-          ownerPhone: ownerPhone.trim(),
-          ownerEmail: ownerEmail.trim() || undefined,
-          storeName: storeNameInput.trim(),
-          description: description.trim() || undefined,
-          category,
-          zone: distritoName || undefined,
-          address: fullAddress || undefined,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Error al registrar. Intenta de nuevo.");
-        setLoading(false);
-        return;
-      }
-
-      setStoreName(data.data?.name || storeNameInput);
-      setStep("success");
+      // Brandon mayo 2026: el flujo viejo creaba una "application" via
+      // /api/marketplace/stores/apply. Ahora la creación del tenant se
+      // dispara recién cuando el superadmin aprueba el pago — por eso
+      // saltamos el apply y vamos directo al paso de pago. El
+      // PaymentProof persiste TODOS los datos del registro.
+      setStoreName(storeNameInput);
+      setStep("payment");
     } catch {
       setError("Sin conexión. Revisa tu internet e intenta de nuevo.");
     }
     setLoading(false);
   }, [ownerName, ownerPhone, ownerEmail, storeNameInput, description, category, departamento, provincia, distrito, direccion, distritos, provincias]);
+
+  // ── Payment step — Yape/Plin/Transfer/Stripe ──────────────────────────
+  if (step === "payment") {
+    const distritoName = distritos.find((d) => d.code === distrito)?.nombre ?? null;
+    const provinciaName = provincias.find((p) => p.code === provincia)?.nombre ?? null;
+    const departamentoName = departamentos.find((d) => d.code === departamento)?.nombre ?? null;
+    // Slug auto-derivado del nombre de la tienda. El superadmin puede
+    // editarlo después si choca con otro tenant.
+    const tenantSlug = storeNameInput
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 48);
+    const payload: RegistrationPayload = {
+      tenantSlug: tenantSlug || `tienda-${Date.now()}`,
+      ownerName: ownerName.trim(),
+      ownerPhone: ownerPhone.trim(),
+      ownerEmail: ownerEmail.trim() || null,
+      storeName: storeNameInput.trim(),
+      category,
+      departamento: departamentoName,
+      provincia: provinciaName,
+      distrito: distritoName,
+      direccion: direccion.trim() || null,
+      planTier,
+      billingCycle,
+    };
+    return (
+      <div className="min-h-screen bg-[var(--surface-sunken)] py-10">
+        <PaymentStep data={payload} onSuccess={() => setStep("success")} />
+      </div>
+    );
+  }
 
   // ── Success screen ─────────────────────────────────────────────────────
   if (step === "success") {
