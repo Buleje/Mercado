@@ -18,42 +18,59 @@ import {
 } from "@/components/ui-system/illustrations/categories";
 import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
 
+// Cada categoría tiene su propia "personalidad cromática" — un acento sutil
+// del verde-naturaleza para frutas, rojo cálido para carnes, azul fresco
+// para lácteos, etc. Mantiene cohesión con la marca al usar el teal en
+// estados hover/active y kickers; los acentos por categoría sólo aportan
+// pulsación visual al ilustración y al fondo soft.
 const POPULAR_CATEGORIES = [
   {
     slug: "frutas-verduras",
     label: "Frutas y verduras",
     desc: "Frescas del mercado",
     Illustration: VerduraFresca,
+    accent: "#16a34a", // green-600
+    soft: "rgba(22,163,74,0.08)",
   },
   {
     slug: "carnes",
     label: "Carnicería",
     desc: "Pollo, res, cerdo",
     Illustration: CarniceriaFresca,
+    accent: "#dc2626", // red-600
+    soft: "rgba(220,38,38,0.07)",
   },
   {
     slug: "lacteos",
     label: "Lácteos",
     desc: "Leche, queso, yogurt",
     Illustration: LacteosRefresh,
+    accent: "#0ea5e9", // sky-500
+    soft: "rgba(14,165,233,0.08)",
   },
   {
     slug: "bebidas",
     label: "Bebidas",
     desc: "Gaseosas, agua, jugos",
     Illustration: BebidasVarias,
+    accent: "#0891b2", // cyan-600
+    soft: "rgba(8,145,178,0.08)",
   },
   {
     slug: "limpieza",
     label: "Limpieza",
     desc: "Todo para tu hogar",
     Illustration: LimpiezaDomicilio,
+    accent: "#7c3aed", // violet-600
+    soft: "rgba(124,58,237,0.07)",
   },
   {
     slug: "abarrotes",
     label: "Abarrotes",
     desc: "Arroz, fideos, aceite",
     Illustration: BodegaAbriendo,
+    accent: "#d97706", // amber-600
+    soft: "rgba(217,119,6,0.08)",
   },
 ] as const;
 
@@ -88,27 +105,66 @@ export default function PopularCategoriesTiles() {
           </p>
         </div>
 
-        {/* Grid px-spaced — mismo patrón que ComoFuncionaSection y Beneficios */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
+        {/* Grid de cards independientes — cada tile tiene personalidad
+            cromática propia (no es ya el grid uniforme blanco). */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {POPULAR_CATEGORIES.map((cat, i) => {
             const Illustration = cat.Illustration;
             return (
-              <RevealOnScroll key={cat.slug} delayMs={i * 50}>
+              <RevealOnScroll key={cat.slug} delayMs={i * 60}>
                 <Link
                   href={`/marketplace?categoria=${cat.slug}`}
-                  className="group relative flex h-full flex-col items-center gap-3 bg-[var(--surface-raised)] px-4 py-7 transition-colors hover:bg-[var(--surface-canvas)]"
+                  className="group relative flex h-full flex-col items-center gap-4 overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-7 transition-all hover:-translate-y-1 hover:shadow-xl"
+                  style={
+                    {
+                      ["--cat-accent" as never]: cat.accent,
+                      ["--cat-soft" as never]: cat.soft,
+                    } as React.CSSProperties
+                  }
                 >
-                  <div className="h-20 w-20 flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">
-                    <Illustration size={72} strokeWidth={1.5} />
+                  {/* Background tinted que aparece al hover */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{
+                      background:
+                        "radial-gradient(circle at 50% 0%, var(--cat-soft) 0%, transparent 70%)",
+                    }}
+                  />
+                  {/* Border tonal lateral izquierdo en hover */}
+                  <div
+                    aria-hidden
+                    className="absolute left-0 top-0 h-full w-1 origin-bottom scale-y-0 transition-transform duration-300 group-hover:scale-y-100"
+                    style={{ backgroundColor: "var(--cat-accent)" }}
+                  />
+                  {/* Ilustración con bg circle tonal */}
+                  <div
+                    className="relative h-24 w-24 flex items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110"
+                    style={{ backgroundColor: "var(--cat-soft)" }}
+                  >
+                    <span
+                      className="transition-colors"
+                      style={{ color: "var(--cat-accent)" }}
+                    >
+                      <Illustration size={64} strokeWidth={1.75} />
+                    </span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                  <div className="relative text-center">
+                    <p className="text-[length:var(--ts-base)] font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                       {cat.label}
                     </p>
-                    <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                    <p className="mt-1 text-[length:var(--ts-sm)] font-medium text-[var(--text-tertiary)]">
                       {cat.desc}
                     </p>
                   </div>
+                  {/* Badge "Ver →" que aparece al hover */}
+                  <span
+                    className="relative inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{ color: "var(--cat-accent)" }}
+                  >
+                    Ver
+                    <span aria-hidden>→</span>
+                  </span>
                 </Link>
               </RevealOnScroll>
             );

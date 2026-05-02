@@ -12,6 +12,9 @@ import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles"
 import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
 import LandingHeader from "@/components/landing/LandingHeader";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
+import { Reveal } from "@/components/landing/Reveal";
+import { StatsMarquee } from "@/components/landing/StatsMarquee";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import {
   Store,
   Bike,
@@ -176,6 +179,32 @@ async function HeroSection() {
       storeCount={stats.storeCount}
       productCount={stats.productCount}
       avgRating={stats.avgRating}
+    />
+  );
+}
+
+// ── Stats marquee — números grandes inspirados en beastphilanthropy.org ──
+async function StatsSection() {
+  const stats = await getMarketplaceStats();
+  return (
+    <StatsMarquee
+      kicker="Buleje en números"
+      headline={
+        <>
+          Un marketplace,
+          <br />
+          <span className="italic font-serif text-[var(--accent)]">
+            miles de historias.
+          </span>
+        </>
+      }
+      description="Cada bodega es una familia, cada pedido un paso adelante. Estos son los números que ya construimos juntos en Pucallpa y Ciudad Constitución."
+      stats={[
+        { value: stats.storeCount, label: "Tiendas activas", suffix: "+", tone: "primary" },
+        { value: stats.productCount, label: "Productos", suffix: "+", tone: "deep" },
+        { value: stats.avgRating, label: "Rating promedio", decimals: 1, tone: "light" },
+        { value: 100, label: "Cobertura local", suffix: "%", tone: "ink" },
+      ]}
     />
   );
 }
@@ -482,37 +511,62 @@ export default async function Home() {
         <HeroSection />
       </Suspense>
 
+      {/* Stats marquee — números grandes estilo beastphilanthropy.org */}
+      <Suspense fallback={null}>
+        <StatsSection />
+      </Suspense>
+
       {/* Categorías populares — grid unico 6 categorias con ilustraciones */}
-      <PopularCategoriesTiles />
+      <Reveal>
+        <PopularCategoriesTiles />
+      </Reveal>
 
       {/* Cómo funciona — 4 pasos + stats + CTA (reemplaza /como-funciona) */}
-      <ComoFuncionaSection />
+      <Reveal>
+        <ComoFuncionaSection />
+      </Reveal>
 
       {/* Conoce a tu bodeguero — humanos detrás (movida desde /tiendas) */}
-      <BodegueroSpotlight />
+      <Reveal>
+        <BodegueroSpotlight />
+      </Reveal>
 
       {/* Nosotros — historia + valores (stats viven en hero, no se duplican) */}
-      <NosotrosSection />
+      <Reveal>
+        <NosotrosSection />
+      </Reveal>
 
       {/* Voz de la comunidad — reviews reales de DB */}
       <Suspense fallback={<SectionSkeleton />}>
-        <ReviewsSection />
+        <Reveal>
+          <ReviewsSection />
+        </Reveal>
       </Suspense>
 
       {/* Planes snapshot (el bloque de Nosotros ya vive arriba en NosotrosSection) */}
-      <AboutAndPricingSnapshot />
+      <Reveal>
+        <AboutAndPricingSnapshot />
+      </Reveal>
 
       {/* FAQ — sección editorial consolidada (reemplaza /faq) */}
-      <FAQSection />
+      <Reveal>
+        <FAQSection />
+      </Reveal>
 
       {/* Ser parte — negocio + repartidor */}
-      <PromoBanners />
+      <Reveal>
+        <PromoBanners />
+      </Reveal>
 
       {/* Info confianza */}
-      <PaymentMethods />
+      <Reveal>
+        <PaymentMethods />
+      </Reveal>
 
       {/* CTA final */}
-      <FinalCTA />
+      <Reveal>
+        <FinalCTA />
+      </Reveal>
 
       <Footer />
       <StickyMobileCTA />
@@ -521,28 +575,9 @@ export default async function Home() {
 }
 
 function HeroSkeleton() {
-  return (
-    <div className="py-16 sm:py-20 bg-white dark:bg-gray-950">
-      <div className="mx-auto max-w-5xl px-4 text-center">
-        <div className="h-12 w-80 bg-gray-200 dark:bg-gray-800 rounded-xl mx-auto mb-4 animate-pulse" />
-        <div className="h-6 w-96 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
-        <div className="h-14 max-w-xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
-      </div>
-    </div>
-  );
+  return <PaicheLoading variant="page" label="Preparando tu marketplace…" />;
 }
 
 function SectionSkeleton() {
-  return (
-    <div className="py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="h-8 w-64 bg-gray-200 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <PaicheLoading variant="section" />;
 }
