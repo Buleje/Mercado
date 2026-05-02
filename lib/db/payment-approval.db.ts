@@ -222,6 +222,17 @@ export const PaymentApprovalDb = {
       return;
     }
 
+    // BUG-1 fix (audit 2026-05-02): if the superadmin already approved
+    // or rejected this record, a late Vision callback would otherwise
+    // overwrite the final status. Skip silently with a warn log.
+    if (existing.status === "approved" || existing.status === "rejected") {
+      logger.warn(
+        "[payment-approval] setVisionResult: record already finalized, skipping",
+        { id, currentStatus: existing.status },
+      );
+      return;
+    }
+
     // Compute next status from delta
     let nextStatus: PaymentApprovalStatus = "pending";
     let rejectionReason: string | null = null;
@@ -255,7 +266,8 @@ export const PaymentApprovalDb = {
             "status"          = $7,
             "rejectionReason" = COALESCE($8, "rejectionReason"),
             "updatedAt"       = NOW()
-        WHERE id = $1`,
+        WHERE id = $1
+          AND status IN ('pending', 'review_required')`,
       id,
       result.detectedAmount,
       result.yapeOpCode,
