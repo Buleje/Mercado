@@ -28,19 +28,22 @@ interface Props {
 const NEXT_LOCALE: Record<Locale, Locale> = {
   es: "en",
   en: "shi",
-  shi: "es",
+  shi: "qu",
+  qu: "es",
 };
 
 const LABEL: Record<Locale, string> = {
   es: "ES",
   en: "EN",
   shi: "SHI",
+  qu: "QU",
 };
 
 const FULL_NAME: Record<Locale, string> = {
   es: "Español",
   en: "English",
   shi: "Shipibo",
+  qu: "Quechua",
 };
 
 const HEIGHT_CLASSES = {
