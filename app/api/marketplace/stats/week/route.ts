@@ -26,9 +26,15 @@ interface WeekStats {
   source: "db" | "fallback";
 }
 
+// Fallback usado SOLO en cold-start (primera request, antes de que el
+// background revalidate haya completado). NO se usa como floor de datos
+// reales — un counter de "1.247 entregas" cuando la DB tiene 0 es
+// engañoso. Cuando la DB responde con cifras genuinas, esas se devuelven
+// tal cual y el componente cliente decide cómo presentarlas (típicamente
+// se oculta debajo de un threshold, ver LiveOrderCounter.tsx).
 const FALLBACK_STATS: WeekStats = {
-  deliveredOrders: 1247,
-  activeStores: 28,
+  deliveredOrders: 0,
+  activeStores: 0,
   source: "fallback",
 };
 
@@ -62,10 +68,12 @@ function revalidateInBackground() {
         }),
       ]);
       if (deliveredOrders == null || activeStores == null) return;
+      // Devolvemos los conteos reales tal cual — el fallback ya NO funciona
+      // como floor (ver comentario arriba). Cliente decide presentación.
       cache = {
         value: {
-          deliveredOrders: Math.max(deliveredOrders, FALLBACK_STATS.deliveredOrders),
-          activeStores: activeStores || FALLBACK_STATS.activeStores,
+          deliveredOrders,
+          activeStores,
           source: "db",
         },
         ts: Date.now(),

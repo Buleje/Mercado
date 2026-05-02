@@ -92,7 +92,10 @@ export function StatsMarquee({ stats, kicker, headline, description }: Props) {
                       value={s.value}
                       decimals={s.decimals ?? 0}
                       prefix={s.prefix ?? ""}
-                      suffix={s.suffix ?? ""}
+                      // Suprimir el suffix cuando value === 0 — "0+" o "0%"
+                      // se siente fake / vacío. Mostrar "0" plano deja claro
+                      // que arrancamos pero sin inflar la cifra.
+                      suffix={s.value === 0 ? "" : (s.suffix ?? "")}
                       delay={i * 80}
                       duration={1600}
                     />

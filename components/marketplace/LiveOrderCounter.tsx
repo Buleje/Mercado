@@ -20,7 +20,16 @@ interface WeekStats {
 }
 
 const POLL_MS = 5 * 60 * 1000;
-const FALLBACK: WeekStats = { deliveredOrders: 1247, activeStores: 28 };
+// Fallback SOLO para evitar undefined antes del primer fetch — ya NO usamos
+// los 1.247 / 28 hardcoded como social proof inflado. Si la DB devuelve
+// menos del threshold (50 pedidos / 5 tiendas), ocultamos el counter
+// completamente: mejor no mostrar nada que mostrar "3 pedidos esta semana"
+// que se siente poco creíble.
+const FALLBACK: WeekStats = { deliveredOrders: 0, activeStores: 0 };
+
+// Thresholds — abajo de estos números, el counter NO renderiza nada.
+const MIN_ORDERS_TO_SHOW = 50;
+const MIN_STORES_TO_SHOW = 5;
 
 interface Props {
   variant?: "footer" | "inline";
@@ -54,6 +63,12 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  // Threshold guard: si los números reales son demasiado bajos, ocultar el
+  // counter en vez de mostrar social proof anémico ("3 pedidos esta semana").
+  // En cold-start (loading=true) tampoco mostramos hasta saber el dato real.
+  if (loading) return null;
+  if (stats.deliveredOrders < MIN_ORDERS_TO_SHOW) return null;
+
   if (variant === "footer") {
     return (
       <div className={cn("flex items-center justify-center gap-3 py-6 text-center", className)}>
@@ -62,9 +77,16 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
           <strong className="text-[var(--text-primary)] tabular-nums">
             {stats.deliveredOrders.toLocaleString("es-PE")}
           </strong>
-          {" "}pedidos entregados esta semana en Pucallpa ·{" "}
-          <strong className="text-[var(--text-primary)] tabular-nums">{stats.activeStores}</strong>
-          {" "}bodegas activas
+          {" "}pedidos entregados esta semana en Pucallpa
+          {stats.activeStores >= MIN_STORES_TO_SHOW && (
+            <>
+              {" · "}
+              <strong className="text-[var(--text-primary)] tabular-nums">
+                {stats.activeStores}
+              </strong>
+              {" "}bodegas activas
+            </>
+          )}
         </p>
       </div>
     );
@@ -84,7 +106,6 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
         <span className="tabular-nums">{stats.deliveredOrders.toLocaleString("es-PE")}</span>
         {" "}pedidos esta semana
       </span>
-      {loading && <span className="sr-only">cargando</span>}
     </div>
   );
 }
