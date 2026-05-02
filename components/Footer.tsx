@@ -290,9 +290,15 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#060a0d] text-white border-t border-white/10">
-      <WhatsAppContactSection deliveryConfig={deliveryConfig} storeTheme={storeTheme} businessName={hp.footerWhatsApp} />
+      {/* WhatsApp contact + Perks bar son del marketplace (Delivery Gratis,
+          horarios, Pago con Yape). En landing pages SaaS confunden al
+          visitante (¿Buleje es bodega o plataforma?). Ocultos en isLandingMode. */}
+      {!isLandingMode && (
+        <WhatsAppContactSection deliveryConfig={deliveryConfig} storeTheme={storeTheme} businessName={hp.footerWhatsApp} />
+      )}
 
       {/* Perks */}
+      {!isLandingMode && (
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -313,6 +319,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Modo tienda: footer reducido — links pertinentes a la tienda actual.
           NO muestra Explorar / Recetas / Asistente IA / Buleje en Vivo

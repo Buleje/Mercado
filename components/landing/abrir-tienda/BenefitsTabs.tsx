@@ -206,21 +206,26 @@ export default function BenefitsTabs() {
                 </p>
               </div>
 
-              <div className="relative mt-8 grid grid-cols-3 gap-2">
-                {cat.features.slice(0, 3).map((f, i) => (
-                  <m.div
+              {/* Lista vertical de features con texto completo (antes:
+                  3-col grid con texto truncado .split.slice(0,3) que dejaba
+                  "Tu negocio en…", "Catálogo ilimitado con…" — daba la
+                  sensación de panel placeholder inacabado). */}
+              <ul className="relative mt-8 space-y-2">
+                {cat.features.map((f, i) => (
+                  <m.li
                     key={f}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * i + 0.2 }}
-                    className="rounded-xl bg-white/15 backdrop-blur p-3"
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.08 * i + 0.2 }}
+                    className="flex items-start gap-3 rounded-xl bg-white/12 backdrop-blur px-4 py-2.5"
                   >
-                    <p className="text-xs font-extrabold leading-tight">
-                      {f.split(" ").slice(0, 3).join(" ")}…
-                    </p>
-                  </m.div>
+                    <span className="inline-flex h-5 w-5 mt-0.5 shrink-0 items-center justify-center rounded-full bg-white/25">
+                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                    </span>
+                    <span className="text-sm font-bold leading-snug">{f}</span>
+                  </m.li>
                 ))}
-              </div>
+              </ul>
             </div>
           </m.div>
         </AnimatePresence>

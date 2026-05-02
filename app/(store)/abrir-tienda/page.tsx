@@ -80,7 +80,7 @@ function SectionSkeleton({ h = "400px" }: { h?: string }) {
 export default function AbrirTiendaPage() {
   return (
     <>
-      <LandingHeader />
+      <LandingHeader minimal />
       <main id="main-content">
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]">
@@ -104,14 +104,16 @@ export default function AbrirTiendaPage() {
                   <Store className="h-4 w-4" strokeWidth={2} />
                   Plataforma todo-en-uno
                 </p>
-                <h1 className="text-[clamp(2.75rem,7.5vw,5.5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+                {/* H1 reducido: antes clamp(2.75,7.5vw,5.5rem) aplastaba la
+                    jerarquía y dejaba el subtítulo sin aire. Bajo a 4rem max. */}
+                <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                   Activá tu tienda
                   <br />
                   <span className="text-[var(--accent)]">
                     online en 5 minutos.
                   </span>
                 </h1>
-                <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
+                <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.45] max-w-2xl">
                   Catálogo, pagos Yape, delivery y reportes — todo listo para
                   que vendás hoy. Sin código, sin técnicos, sin contratos.
                 </p>
@@ -121,7 +123,7 @@ export default function AbrirTiendaPage() {
                     href="/marketplace/registrar"
                     className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
                   >
-                    Probá el primer mes sin pagar
+                    Activar gratis por 1 mes
                     <ArrowUpRight
                       className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                       strokeWidth={2.5}
@@ -150,7 +152,10 @@ export default function AbrirTiendaPage() {
                     {[
                       { value: "S/ 0", label: "Comisión los primeros 90 días" },
                       { value: "5 min", label: "Estás vendiendo desde el registro" },
-                      { value: "+42%", label: "Ventas promedio en 90 días" },
+                      // Mayo 2026: "+42% ventas promedio" eliminado tras
+                      // designer audit. No tenemos datos reales para sustentarlo;
+                      // reemplazado por feature concreta y verificable.
+                      { value: "Yape · Plin", label: "Cobrás como ya cobrás" },
                       { value: "24/7", label: "Soporte humano por WhatsApp" },
                     ].map(({ value, label }, idx) => (
                       <div
@@ -249,19 +254,17 @@ export default function AbrirTiendaPage() {
               />
               Última llamada
             </p>
-            <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-              Tu negocio merece
-              <br />
-              <span className="text-[var(--accent)]">
-                vender más, no esperar.
-              </span>
+            {/* Heading reducido: antes 5rem en 3 líneas competía con el CTA.
+                Ahora clamp 4rem max + 2 líneas exactas. */}
+            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
+              Tu negocio merece <span className="text-[var(--accent)]">vender más</span>.
             </h2>
-            <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+            <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
               5 minutos para activarlo. Sin tarjeta, sin compromiso. En la primera
               semana ya estás vendiendo.
             </p>
-            <div className="mt-10 flex justify-center">
-              <LiveSignupTicker start={251} />
+            <div className="mt-8 flex justify-center">
+              <LiveSignupTicker />
             </div>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Link
@@ -269,7 +272,7 @@ export default function AbrirTiendaPage() {
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
                 <Store className="h-4 w-4" strokeWidth={2.25} />
-                Activar mi tienda hoy
+                Activar gratis por 1 mes
                 <ArrowUpRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   strokeWidth={2.5}

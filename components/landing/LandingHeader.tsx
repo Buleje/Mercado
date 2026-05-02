@@ -58,11 +58,18 @@ function isActiveLink(pathname: string | null, href: string): boolean {
 export interface LandingHeaderProps {
   /** Force el variant "opaque" (útil en rutas internas donde no queremos transparencia). */
   alwaysOpaque?: boolean;
+  /**
+   * Modo minimal para páginas de conversión (e.g. /abrir-tienda):
+   * oculta los nav links que llevan a la home y deja solo logo + CTA.
+   * Convención de landing pages de alta conversión.
+   */
+  minimal?: boolean;
   className?: string;
 }
 
 export default function LandingHeader({
   alwaysOpaque = false,
+  minimal = false,
   className,
 }: LandingHeaderProps) {
   const pathname = usePathname();
@@ -85,9 +92,12 @@ export default function LandingHeader({
     label: t(d.tKey),
     href: d.href,
   }));
-  const visibleLinks = NAV_LINKS.filter(
-    (l) => visibility[l.id] !== false,
-  );
+  // En modo minimal (páginas de conversión), no mostramos nav links — solo
+  // el logo y el CTA principal. Esto evita que el usuario salga de la página
+  // siguiendo "Cómo funciona" o "Planes" hacia la home.
+  const visibleLinks = minimal
+    ? []
+    : NAV_LINKS.filter((l) => visibility[l.id] !== false);
 
   // AuthModal state — primary CTA abre modal "register", ghost "login"
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
@@ -136,8 +146,9 @@ export default function LandingHeader({
 
   return (
     <>
-      {/* Banner promocional dismissible — no-sticky, sale del viewport con scroll. */}
-      <PromoBannerTop />
+      {/* Banner promocional dismissible — oculto en modo minimal (páginas
+          de conversión) porque duplica el mensaje del hero. */}
+      {!minimal && <PromoBannerTop />}
 
       <header
         className={cn(
