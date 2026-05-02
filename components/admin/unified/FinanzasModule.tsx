@@ -1,5 +1,6 @@
 "use client";
-import { CardTitle, PageTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { m } from "@/components/admin/providers";
@@ -1812,16 +1813,12 @@ export default function FinanzasModule() {
 
   return (
     <div className="space-y-6">
-      {/* Header — ADR-074 Phase 3 */}
-      <div>
-        <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas</p>
-        <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Wallet className="h-5 w-5 currentColor" />
-          Mi Plata
-        </PageTitle>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">Pérdidas y ganancias, gastos, flujo de caja y reportes financieros</p>
-      </div>
-      <div className="flex items-center justify-end gap-2 flex-wrap">
+      <AdminModuleHeader
+        eyebrow="Finanzas · Reportes"
+        title="Mi Plata"
+        description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros."
+        icon={Wallet}
+      >
         {sub === "dashboard" && (
           <AutoRefreshControl
             secondsLeft={autoRefresh.secondsLeft}
@@ -1833,11 +1830,11 @@ export default function FinanzasModule() {
         )}
         <button
           onClick={generarReporteBancario}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
         >
           Reporte Bancario
         </button>
-      </div>
+      </AdminModuleHeader>
 
       <AdminTabBar
         tabs={TABS}

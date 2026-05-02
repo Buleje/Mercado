@@ -7,7 +7,8 @@ import {
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
   Trash2, Hash, Bookmark, Copy, List, Clock, MessageCircle, RefreshCw, BarChart3 } from "@buleje/design-system/icons";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { CardTitle, ErrorAlert, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
@@ -579,25 +580,20 @@ export default function CotizacionesModule() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      {/* Header — ADR-074 Phase 3 */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Documentos / Ventas</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <FileText className="h-5 w-5 currentColor" />
-            Cotizaciones
-            {!loading && cotizaciones.length > 0 && (() => {
-              const pendientes = cotizaciones.filter(c => c.status === "BORRADOR" || c.status === "ENVIADA").length;
-              return pendientes > 0 ? (
-                <span className="ml-2 text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)] px-2 py-0.5 rounded-full align-middle">{pendientes} pendientes</span>
-              ) : null;
-            })()}
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Presupuestos profesionales para tus clientes</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Documentos · Ventas"
+        title="Cotizaciones"
+        description="Presupuestos profesionales para tus clientes."
+        icon={FileText}
+      >
+        {!loading && cotizaciones.length > 0 && (() => {
+          const pendientes = cotizaciones.filter(c => c.status === "BORRADOR" || c.status === "ENVIADA").length;
+          return pendientes > 0 ? (
+            <span className="text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)] px-2.5 py-1 rounded-full">{pendientes} pendientes</span>
+          ) : null;
+        })()}
+      </AdminModuleHeader>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">

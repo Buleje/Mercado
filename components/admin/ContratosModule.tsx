@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -1254,26 +1255,24 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header — ADR-074 Phase 3 */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Legal / Documentos</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <FileSignature className="h-5 w-5 currentColor" />
-            Contratos
-            {contratos.length > 0 && <span className="bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full font-semibold text-[var(--text-secondary)]">{contratos.length}</span>}
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Gestión legal de contratos con plantillas peruanas</p>
-        </div>
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Legal · Documentos"
+        title="Contratos"
+        description="Gestión legal de contratos con plantillas peruanas."
+        icon={FileSignature}
+      >
+        {contratos.length > 0 && (
+          <span className="bg-[var(--surface-sunken)] text-xs px-2.5 py-1 rounded-full font-semibold text-[var(--text-secondary)]">{contratos.length}</span>
+        )}
         <button
           onClick={() => setActiveTab("plantillas")}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
         >
           <Plus className="h-4 w-4" />
           Nuevo Contrato
         </button>
-      </div>
+      </AdminModuleHeader>
 
       {/* Tabs */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">

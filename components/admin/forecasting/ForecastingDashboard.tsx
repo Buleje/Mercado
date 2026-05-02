@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminCard from "@/components/admin/shared/AdminCard";
 /**
  * ForecastingDashboard.tsx
  *
@@ -26,7 +27,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
  *   - Refresco manual con botón "Actualizar"
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { z } from "zod";
 import {
   TrendingUp,
@@ -237,12 +238,29 @@ export default function ForecastingDashboard() {
       errors: { forecast: null, reorder: null, prices: null },
     }));
 
-    // Lanzar los 3 fetches en paralelo
+    /* Resolver el productId del primer producto activo del tenant.
+       Antes hardcodeábamos productId=1 que devolvía 404 si el tenant no
+       tenía un producto con id 1 (ej: tenant nuevo, IDs auto-incrementales
+       arrancan en 1252382). Ahora el ID se descubre dinámicamente. */
+    let sampleProductId: number | null = null;
+    try {
+      const r = await fetch("/api/products?limit=1");
+      if (r.ok) {
+        const products = await r.json();
+        if (Array.isArray(products) && products.length > 0 && typeof products[0]?.id === "number") {
+          sampleProductId = products[0].id;
+        }
+      }
+    } catch { /* sigue como null — forecast quedará en empty */ }
+
+    // Lanzar los 3 fetches en paralelo (forecast solo si hay producto)
     const [forecastRes, reorderRes, pricesRes] = await Promise.allSettled([
-      fetch("/api/inventory/forecast?productId=1").then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }),
+      sampleProductId
+        ? fetch(`/api/inventory/forecast?productId=${sampleProductId}`).then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
+        : Promise.reject(new Error("no-products")),
       fetch("/api/forecasting/reorder-suggestions").then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -263,6 +281,9 @@ export default function ForecastingDashboard() {
       } else {
         errorForecast = "Datos de pronóstico inválidos";
       }
+    } else if (sampleProductId === null) {
+      // No hay productos en el tenant — empty state, no error
+      errorForecast = null;
     } else {
       errorForecast = "No se pudo cargar el pronóstico";
     }
@@ -365,53 +386,37 @@ export default function ForecastingDashboard() {
     ? Math.max(...dailyBreakdown.map((d) => d.rev), 1)
     : 1;
 
+  // Auto-cargar al montar (no esperar click manual — UX inmediata)
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5 p-4 md:p-6">
-
-      {/* ── Header con botón Actualizar ──────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Prediccion de Ventas
-          </SectionTitle>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Proyecciones basadas en media móvil ponderada (últimos 30 días)
-          </p>
-        </div>
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Inteligencia · Inventario"
+        title="Predicción de Ventas"
+        description="Proyecciones basadas en media móvil ponderada (últimos 30 días). Reorden automático y sugerencias de precio listos para aplicar."
+        icon={TrendingUp}
+      >
         <button
           onClick={cargarDatos}
           disabled={state.loading}
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold",
-            "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] active:bg-[var(--accent-muted)]",
-            "dark:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-soft)]",
-            "text-white transition-colors",
-            "disabled:opacity-60 disabled:cursor-not-allowed",
-            "min-h-[44px] min-w-[44px]", // touch target
+            "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors",
+            "bg-primary text-white hover:bg-primary/90",
+            "disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]",
           )}
-          aria-label="Actualizar datos de prediccion"
+          aria-label="Actualizar datos de predicción"
         >
           <RefreshCw className={cn("w-4 h-4", state.loading && "animate-spin")} />
-          <span className="hidden sm:inline">
-            {state.loading ? "Cargando..." : "Actualizar"}
-          </span>
+          {state.loading ? "Cargando..." : "Actualizar"}
         </button>
-      </div>
-
-      {/* ── Estado inicial: sin datos cargados ───────────────────────────── */}
-      {!state.loading && state.forecast === null && state.reorder.length === 0 && state.prices.length === 0 &&
-        !state.errors.forecast && !state.errors.reorder && !state.errors.prices && (
-        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
-          <RefreshCw className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-            Presiona <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">Actualizar</span> para cargar las predicciones
-          </p>
-        </div>
-      )}
+      </AdminModuleHeader>
 
       {/* ── Grid principal (2 columnas en desktop) ───────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -443,10 +448,10 @@ export default function ForecastingDashboard() {
               {/* Headline — ingresos proyectados */}
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+                  <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
                     {formatCurrency(state.forecast.weeklyAvg)}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
                     proyectados en los proximos 7 dias
                   </p>
                 </div>
@@ -472,7 +477,7 @@ export default function ForecastingDashboard() {
 
               {/* Mini-barras diarias */}
               <div>
-                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">
+                <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2">
                   Proyeccion dia a dia
                 </p>
                 <div className="flex items-end gap-1 h-20" role="img" aria-label="Grafico de barras proyeccion semanal">
@@ -481,7 +486,7 @@ export default function ForecastingDashboard() {
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         {/* Valor sobre la barra */}
-                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
+                        <span className="text-xs text-[var(--text-tertiary)] font-medium hidden sm:block">
                           {formatCurrency(d.rev).replace("S/ ", "")}
                         </span>
                         {/* Barra */}
@@ -492,7 +497,7 @@ export default function ForecastingDashboard() {
                           />
                         </div>
                         {/* Nombre del día */}
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-400">
                           {d.dia}
                         </span>
                       </div>
@@ -525,15 +530,15 @@ export default function ForecastingDashboard() {
                 return (
                   <li key={item.productId} className="flex items-center gap-3">
                     {/* Posición */}
-                    <span className="w-7 text-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0">
+                    <span className="w-7 text-center text-sm font-bold text-[var(--text-secondary)] dark:text-zinc-400 shrink-0">
                       {medal}
                     </span>
                     {/* Nombre + barra */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                         {item.productName}
                       </p>
-                      <div className="mt-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${Math.max(pct, 6)}%` }}
@@ -541,7 +546,7 @@ export default function ForecastingDashboard() {
                       </div>
                     </div>
                     {/* Demanda */}
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
+                    <span className="text-xs font-bold text-[var(--text-primary)] shrink-0">
                       {item.demandDuringLeadTime} u.
                     </span>
                   </li>
@@ -569,7 +574,7 @@ export default function ForecastingDashboard() {
                   disabled={autoReordering}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold",
-                    "bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600",
+                    "bg-[var(--text-primary)] hover:opacity-90 dark:bg-zinc-700 dark:hover:bg-zinc-600",
                     "text-white transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                     "min-h-[44px]", // touch target
@@ -603,12 +608,12 @@ export default function ForecastingDashboard() {
               <div className="overflow-x-auto -mx-1">
                 <table className="w-full min-w-[540px] text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800">
-                      <th className="text-left py-2 px-2 font-semibold text-slate-500 dark:text-slate-400">Producto</th>
-                      <th className="text-right py-2 px-2 font-semibold text-slate-500 dark:text-slate-400">Stock actual</th>
-                      <th className="text-right py-2 px-2 font-semibold text-slate-500 dark:text-slate-400">Demanda LT</th>
-                      <th className="text-right py-2 px-2 font-semibold text-slate-500 dark:text-slate-400">Pedir</th>
-                      <th className="text-right py-2 px-2 font-semibold text-slate-500 dark:text-slate-400">Total est.</th>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Producto</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Stock actual</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Demanda LT</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Pedir</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Total est.</th>
                       <th className="py-2 px-2"></th>
                     </tr>
                   </thead>
@@ -619,19 +624,19 @@ export default function ForecastingDashboard() {
                         <tr
                           key={item.productId}
                           className={cn(
-                            "border-b border-slate-50 dark:border-slate-800/50 transition-colors",
+                            "border-b border-[var(--rule-soft)]/60 transition-colors",
                             critico
                               ? "bg-[var(--data-error-50)]/60 dark:bg-red-950/20"
-                              : "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+                              : "hover:bg-[var(--surface-sunken)]/40",
                           )}
                         >
                           {/* Nombre + proveedor */}
                           <td className="py-2.5 px-2">
                             <div className="flex flex-col gap-0.5">
-                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
                                 {item.productName}
                               </span>
-                              <span className="text-xs text-slate-400 dark:text-slate-500">
+                              <span className="text-xs text-[var(--text-tertiary)]">
                                 {item.supplierName} · LT {item.leadTimeDays}d
                               </span>
                             </div>
@@ -643,14 +648,14 @@ export default function ForecastingDashboard() {
                               "font-bold",
                               critico
                                 ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-                                : "text-slate-700 dark:text-slate-300",
+                                : "text-[var(--text-primary)]",
                             )}>
                               {item.currentStock} {item.unit}
                             </span>
                           </td>
 
                           {/* Demanda durante lead time */}
-                          <td className="py-2.5 px-2 text-right font-medium text-slate-600 dark:text-slate-400">
+                          <td className="py-2.5 px-2 text-right font-medium text-[var(--text-secondary)]">
                             {item.demandDuringLeadTime} {item.unit}
                           </td>
 
@@ -662,7 +667,7 @@ export default function ForecastingDashboard() {
                           </td>
 
                           {/* Total estimado */}
-                          <td className="py-2.5 px-2 text-right font-semibold text-slate-700 dark:text-slate-300">
+                          <td className="py-2.5 px-2 text-right font-semibold text-[var(--text-primary)]">
                             {formatCurrency(item.estimatedTotal)}
                           </td>
 
@@ -760,21 +765,21 @@ function PanelCard({
   headerExtra,
 }: PanelCardProps) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 md:p-5 ">
+    <AdminCard padding="md">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-2">
-          <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">{icon}</span>
-          <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200">
+          <span className="text-primary">{icon}</span>
+          <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             {title}
-          </CardTitle>
+          </h3>
         </div>
         {headerExtra}
       </div>
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-10 gap-2 text-slate-400 dark:text-slate-600">
+        <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin" />
           <span className="text-xs">Calculando predicciones...</span>
         </div>
@@ -782,23 +787,23 @@ function PanelCard({
 
       {/* Error */}
       {!loading && error && (
-        <div className="flex items-start gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)]/50 p-3">
-          <AlertTriangle className="w-4 h-4 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 mt-0.5" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-start gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)]/40 p-3">
+          <AlertTriangle className="w-4 h-4 text-[var(--data-error)] shrink-0 mt-0.5" />
+          <p className="text-xs text-[var(--data-error)]">{error}</p>
         </div>
       )}
 
       {/* Empty */}
       {!loading && !error && isEmpty && (
         <div className="flex flex-col items-center justify-center py-8 gap-2">
-          <Package className="w-7 h-7 text-slate-300 dark:text-slate-700" />
-          <p className="text-xs text-slate-400 dark:text-slate-600 text-center">{emptyMsg}</p>
+          <Package className="w-7 h-7 text-[var(--text-tertiary)]/40" />
+          <p className="text-xs text-[var(--text-tertiary)] text-center">{emptyMsg}</p>
         </div>
       )}
 
       {/* Contenido */}
       {!loading && !error && !isEmpty && children}
-    </div>
+    </AdminCard>
   );
 }
 
@@ -820,7 +825,7 @@ function TrendBadge({ trend }: { trend: "SUBIENDO" | "ESTABLE" | "BAJANDO" }) {
     ESTABLE: {
       icon: <Minus className="w-3.5 h-3.5" />,
       label: "Estable",
-      cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+      cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
     },
   } as const;
 
@@ -847,13 +852,13 @@ function MetricChip({
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 text-center">
-      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
+    <div className="rounded-xl bg-[var(--surface-sunken)] p-2.5 text-center">
+      <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium mb-0.5">{label}</p>
       <p className={cn(
         "text-sm font-extrabold",
         danger
           ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-          : "text-slate-800 dark:text-slate-200",
+          : "text-[var(--text-primary)] dark:text-foreground",
       )}>
         {value}
       </p>
@@ -896,14 +901,14 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
       "rounded-xl border p-3.5 flex flex-col gap-3 transition-colors",
       isApplied
         ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]"
-        : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30",
+        : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40",
       s.reason === "fefo_urgent" && !isApplied
         ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50"
         : "",
     )}>
       {/* Nombre + badge de razón */}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
+        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-snug">
           {s.productName}
         </p>
         <span className={cn(
@@ -916,10 +921,10 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
 
       {/* Precios */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-slate-400 dark:text-slate-500 line-through">
+        <span className="text-sm text-[var(--text-tertiary)] line-through">
           {formatCurrency(s.currentPrice)}
         </span>
-        <span className="text-slate-400 dark:text-slate-600">→</span>
+        <span className="text-[var(--text-tertiary)]">→</span>
         <span className={cn(
           "text-base font-extrabold",
           esBaja
@@ -939,12 +944,12 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
       </div>
 
       {/* Detalle */}
-      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+      <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 leading-relaxed">
         {s.detail}
       </p>
 
       {/* Stock */}
-      <p className="text-xs text-slate-400 dark:text-slate-600">
+      <p className="text-xs text-[var(--text-tertiary)]">
         Stock actual: {s.currentStock} u.
       </p>
 

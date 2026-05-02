@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -481,34 +482,26 @@ export default function RecetasModule() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
-            <FlaskConical className="h-5 w-5" />
-          </div>
-          <div>
-            <PageTitle className="text-xl font-bold text-[var(--text-primary)]">
-              Recetas
-              {/* Mejora 20 (R3): Badge de estado */}
-              {!loading && recetas.length > 0 && (
-                <span className="ml-2 text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2 py-0.5 rounded-full align-middle">{recetas.filter(r => r.activa).length} recetas</span>
-              )}
-            </PageTitle>
-            <p className="text-sm text-[var(--text-secondary)]">Producción interna con control de costos</p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Producción · Costos"
+        title="Recetas"
+        description="Producción interna con control de costos e ingredientes."
+        icon={FlaskConical}
+      >
+        {!loading && recetas.length > 0 && (
+          <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2.5 py-1 rounded-full">{recetas.filter(r => r.activa).length} recetas</span>
+        )}
         {activeTab === "recetas" && (
           <button
             onClick={() => { setShowNew(true); addIngrediente(); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Nueva Receta
           </button>
         )}
-      </div>
+      </AdminModuleHeader>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">

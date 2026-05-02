@@ -9,6 +9,7 @@ import {
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
   LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -950,7 +951,14 @@ export default function FiadosModule() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Cobros · Crédito"
+        title="Fiados"
+        description="Gestiona los créditos a clientes, cobranza por ruta, riesgo de morosidad y proyección de cobros."
+        icon={HandCoins}
+      />
+
       {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row). */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px] max-w-sm">

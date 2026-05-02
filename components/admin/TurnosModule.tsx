@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -375,7 +376,14 @@ export default function TurnosModule() {
   const ultimoTurno = historial.find(t => t.cierreEfectivo != null) ?? null;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Operaciones · Caja"
+        title="Turnos"
+        description="Apertura y cierre de turnos, control de cajeros y arqueo de caja."
+        icon={Clock}
+      />
+
       {/* ── Fila única: Tabs Turnos/Cajeros + chip estado de turno ───────────── */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1 w-fit">

@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -848,28 +849,22 @@ export default function NotasCreditoModule() {
   // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* ── Header — ADR-074 Phase 3 ───────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Documentos / Ajustes</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <FileX className="h-5 w-5 currentColor" />
-            Notas de Cr{"\u00e9"}dito
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Centro de documentos {"\u2014"} anulaciones, devoluciones y ajustes</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => setShowShortcuts(s => !s)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hidden sm:block" title="Atajos de teclado">
-            <Keyboard className="h-4 w-4" />
-          </button>
-          <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
-            <Plus className="h-4 w-4" />
-            Nueva NC
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminModuleHeader
+        eyebrow="Documentos · Ajustes"
+        title="Notas de Crédito"
+        description="Centro de documentos — anulaciones, devoluciones y ajustes."
+        icon={FileX}
+      >
+        <button onClick={() => setShowShortcuts(s => !s)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hidden sm:block" title="Atajos de teclado">
+          <Keyboard className="h-4 w-4" />
+        </button>
+        <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]">
+          <Plus className="h-4 w-4" />
+          Nueva NC
+        </button>
+      </AdminModuleHeader>
 
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (
