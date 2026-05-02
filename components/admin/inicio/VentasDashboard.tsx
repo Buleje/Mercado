@@ -18,6 +18,7 @@ const VentasAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape",
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function VentasDashboard({ dateRange }: { dateRange: DateRange }) {
+export default function VentasDashboard({ dateRange, onChangeRange }: { dateRange: DateRange; onChangeRange?: (r: DateRange) => void }) {
   const { data: shared, loading, error, refresh } = useDashboardData();
   const refreshing = false;
 
@@ -261,6 +262,18 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
     </div>
   );
   if (!data) return null;
+
+  // Empty state: no hubo ventas en el rango seleccionado
+  if (data.ventasNetas === 0 && data.tickets === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="ventas"
+        onChangeRange={onChangeRange}
+        action={{ label: "Registrar venta manual", href: "/admin?tab=ventas-caja" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

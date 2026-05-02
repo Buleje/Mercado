@@ -18,6 +18,7 @@ const CajaAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,9 +70,10 @@ const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape",
 
 interface CajaDashboardProps {
   dateRange: DateRange;
+  onChangeRange?: (r: DateRange) => void;
 }
 
-export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
+export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboardProps) {
   const { data: shared, loading, error, refresh } = useDashboardData();
 
   const raw = shared
@@ -210,6 +212,17 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
     </div>
   );
   if (!data) return null;
+
+  if (data.ingresos === 0 && data.egresos === 0 && data.ticketsTotal === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="movimientos de caja"
+        onChangeRange={onChangeRange}
+        action={{ label: "Abrir caja", href: "/admin?tab=turnos" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

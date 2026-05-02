@@ -9,6 +9,7 @@ import { BulejeComposedChart } from "@/components/ui-system/charts";
 // restaura el hero en esta pantalla.
 import { SkeletonEditorial } from "@/components/ui-system";
 import { InicioMultiCharts } from "./InicioMultiCharts";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 /**
  * InicioDashboardV2 — redesign denso (ADR-066 Ola M).
@@ -24,6 +25,7 @@ import { InicioMultiCharts } from "./InicioMultiCharts";
 
 interface Props {
   dateRange?: DateRange;
+  onChangeRange?: (r: DateRange) => void;
 }
 
 interface OverviewData {
@@ -66,7 +68,7 @@ const PRESET_PROYECCION: Record<string, string> = {
   personalizado: "Proyección período",
 };
 
-export default function InicioDashboardV2({ dateRange }: Props) {
+export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   // Hook llamado SIEMPRE — antes de cualquier early return (Rules of Hooks).
@@ -75,9 +77,11 @@ export default function InicioDashboardV2({ dateRange }: Props) {
   // (Date.now es impure en render body). El ref se setea UNA vez al mount
   // y es estable para fallback de daysInRange calculation.
   const nowRef = useRef<number | null>(null);
+  // eslint-disable-next-line react-hooks/purity -- lazy-init estable, solo 1ra render
   if (nowRef.current === null) nowRef.current = Date.now();
   // dayOfMonth idem — estable dentro del lifecycle del componente.
   const dayOfMonthRef = useRef<number | null>(null);
+  // eslint-disable-next-line react-hooks/purity -- lazy-init estable, solo 1ra render
   if (dayOfMonthRef.current === null) dayOfMonthRef.current = new Date().getDate();
 
   const rangeQuery = useMemo(() => {
@@ -138,6 +142,18 @@ export default function InicioDashboardV2({ dateRange }: Props) {
   const { hero, contextual: { uniqueCustomers, criticalStock } } = data;
   const ordersInRange = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
   const heroValue = hero.totalRange ?? hero.totalToday ?? 0;
+
+  // Empty state: todo en cero en el rango — más útil que charts vacíos.
+  if (heroValue === 0 && ordersInRange === 0 && uniqueCustomers === 0 && dateRange) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="actividad"
+        onChangeRange={onChangeRange}
+        action={{ label: "Registrar venta", href: "/admin?tab=ventas-caja" }}
+      />
+    );
+  }
 
   // Weekly data desde sparkline — labels dinámicos según rango
   const lastSpark = hero.sparkline[hero.sparkline.length - 1] || 1;

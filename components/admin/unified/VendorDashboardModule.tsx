@@ -205,15 +205,15 @@ export default function VendorDashboardModule() {
             {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo */}
             <TodayHub dateRange={dateRange} />
             {/* Dashboard denso con compound charts + multi-signal KPIs scoped al rango */}
-            <InicioDashboardV2 dateRange={dateRange} />
+            <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
           </div>
         )}
-        {tab === "ventas" && <VentasDashboard dateRange={dateRange} />}
-        {tab === "caja" && <CajaDashboard dateRange={dateRange} />}
-        {tab === "inventario" && <InventarioDashboard dateRange={dateRange} />}
-        {tab === "compras" && <ComprasDashboard dateRange={dateRange} />}
-        {tab === "productos" && <ProductosDashboard dateRange={dateRange} />}
-        {tab === "clientes" && <ClientesDashboard dateRange={dateRange} />}
+        {tab === "ventas" && <VentasDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
+        {tab === "caja" && <CajaDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
+        {tab === "inventario" && <InventarioDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
+        {tab === "compras" && <ComprasDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
+        {tab === "productos" && <ProductosDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
+        {tab === "clientes" && <ClientesDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
 
         {tab === "marketplace" && (
           <div className="space-y-6">

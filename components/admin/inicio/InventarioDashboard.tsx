@@ -18,6 +18,7 @@ const InventarioAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,9 +65,10 @@ const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarr
 
 interface InventarioDashboardProps {
   dateRange: DateRange;
+  onChangeRange?: (r: DateRange) => void;
 }
 
-export default function InventarioDashboard({ dateRange }: InventarioDashboardProps) {
+export default function InventarioDashboard({ dateRange, onChangeRange }: InventarioDashboardProps) {
   const [now] = useState(() => Date.now());
   const { data: shared, loading, error, refresh } = useDashboardData();
 
@@ -226,6 +228,23 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
     </div>
   );
   if (!data) return null;
+
+  // Empty state: sin productos cargados — invariante del rango porque
+  // inventario es estado actual; pero si no hay ni productos ni movimientos
+  // mostramos onboarding inventario.
+  if (data.totalProductos === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="productos en inventario"
+        onChangeRange={onChangeRange}
+        icon={Package}
+        title="Tu inventario está vacío"
+        description="Agregá productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
+        action={{ label: "Agregar producto", href: "/admin?tab=productos" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

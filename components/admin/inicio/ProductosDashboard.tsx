@@ -18,6 +18,8 @@ const ProductosAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
+import { Tag } from "@buleje/design-system/icons";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,7 +70,7 @@ const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarr
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function ProductosDashboard({ dateRange }: { dateRange: DateRange }) {
+export default function ProductosDashboard({ dateRange, onChangeRange }: { dateRange: DateRange; onChangeRange?: (r: DateRange) => void }) {
   const { data: shared, loading, error, refresh } = useDashboardData();
   const refreshing = false;
 
@@ -231,6 +233,18 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
     </div>
   );
   if (!data) return null;
+
+  if (data.productosActivos === 0 && data.unidadesVendidas === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="productos vendidos"
+        onChangeRange={onChangeRange}
+        icon={Tag}
+        action={{ label: "Crear producto", href: "/admin?tab=productos" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

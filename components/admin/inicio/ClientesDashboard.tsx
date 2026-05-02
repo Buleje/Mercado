@@ -18,6 +18,7 @@ const ClientesAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,9 +71,10 @@ function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateSt
 
 interface ClientesDashboardProps {
   dateRange: DateRange;
+  onChangeRange?: (r: DateRange) => void;
 }
 
-export default function ClientesDashboard({ dateRange }: ClientesDashboardProps) {
+export default function ClientesDashboard({ dateRange, onChangeRange }: ClientesDashboardProps) {
   const { data: shared, loading, error, refresh } = useDashboardData();
 
   const customers = (shared?.customers ?? []) as Customer[];
@@ -277,6 +279,18 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
     </div>
   );
   if (!data) return null;
+
+  if (data.totalClientes === 0 && data.nuevos === 0 && data.recurrentes === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="clientes"
+        onChangeRange={onChangeRange}
+        icon={Users}
+        action={{ label: "Ver listado de clientes", href: "/admin?tab=clientes" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

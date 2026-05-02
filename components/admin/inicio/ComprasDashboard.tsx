@@ -18,6 +18,7 @@ const ComprasAdvancedCharts = dynamic(
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
+import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,9 +64,10 @@ const PROV_COLORS = ["#00B4A6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06
 
 interface ComprasDashboardProps {
   dateRange: DateRange;
+  onChangeRange?: (r: DateRange) => void;
 }
 
-export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
+export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDashboardProps) {
   const { data: shared, loading, error, refresh } = useDashboardData();
 
   const purchases = (shared?.purchases ?? []) as Purchase[];
@@ -182,6 +184,17 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
     </div>
   );
   if (!data) return null;
+
+  if (data.totalCompras === 0 && data.cantidadOrdenes === 0) {
+    return (
+      <EmptyDateRangeState
+        dateRange={dateRange}
+        metric="compras"
+        onChangeRange={onChangeRange}
+        action={{ label: "Registrar compra", href: "/admin?tab=compras" }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
