@@ -28,6 +28,8 @@ import {
   ImageIcon,
   Sparkles,
   Layers,
+  CreditCard,
+  Sliders,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -52,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
+  { label: "Pagos pendientes", icon: <CreditCard     className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
   { label: "Repartidores",    icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"    },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"     },
   { label: "Marca",           icon: <Sparkles        className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
@@ -61,7 +64,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
   { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
   { label: "Seguridad",       icon: <ShieldCheck     className="w-5 h-5 shrink-0" />, href: "/superadmin/security"        },
-  { label: "Config",          icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
+  { label: "Configuración",   icon: <Sliders         className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion"   },
+  { label: "Sistema",         icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -69,6 +73,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/control-center":  "Centro de Control",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",
+  "/superadmin/pagos-pendientes": "Pagos pendientes · Yape, Plin, transferencias",
   "/superadmin/repartidores":    "Repartidores · Aprobación y gestión",
   "/superadmin/marketplace":     "Marketplace",
   "/superadmin/marketplace/suppliers": "Marketplace · Proveedores",
@@ -80,7 +85,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
   "/superadmin/activity":        "Actividad",
-  "/superadmin/settings":        "Config",
+  "/superadmin/configuracion":   "Configuración · Yape, Plin, marca y contacto",
+  "/superadmin/settings":        "Config del sistema",
   "/superadmin":                 "Dashboard",
 };
 
