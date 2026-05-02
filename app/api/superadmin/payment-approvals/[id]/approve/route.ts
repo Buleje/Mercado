@@ -36,16 +36,16 @@ export async function POST(
   if (!approval) {
     return NextResponse.json({ error: "Aprobación no encontrada" }, { status: 404 });
   }
-  if (approval.status === "approved" || approval.status === "rejected") {
-    return NextResponse.json(
-      { error: `El pago ya está ${approval.status}` },
-      { status: 409 },
-    );
-  }
 
-  // ── 1. Mark approval as approved ────────────────────────────────────────
+  // ── 1. Mark approval as approved (atomic transition) ────────────────────
+  // PaymentApprovalDb.approve() runs an UPDATE … WHERE status IN
+  // ('pending','review_required'). It returns false when another reviewer
+  // (or a duplicate click) already finalized this row. In that case we
+  // STOP — no Order transitions, no customer notification — to avoid
+  // double side-effects.
+  let transitioned: boolean;
   try {
-    await PaymentApprovalDb.approve(id, auth.username);
+    transitioned = await PaymentApprovalDb.approve(id, auth.username);
   } catch (err) {
     logger.error("[payment-approvals/approve] failed", {
       error: String(err),
@@ -53,6 +53,15 @@ export async function POST(
       reviewer: auth.username,
     });
     return NextResponse.json({ error: "Error al aprobar el pago" }, { status: 500 });
+  }
+
+  if (!transitioned) {
+    // Refresh to learn the actual final status for the 409 message.
+    const fresh = await PaymentApprovalDb.getById(id);
+    return NextResponse.json(
+      { error: `El pago ya está ${fresh?.status ?? "finalizado"}` },
+      { status: 409 },
+    );
   }
 
   // ── 2. Transition each linked Order to "confirmado" ─────────────────────
@@ -96,6 +105,14 @@ export async function POST(
       orderIds: linked.map((o) => o.id),
       totalAmount: approval.expectedAmount,
       storeNames,
+    });
+  } else if (linked.length === 0) {
+    // BUG-2 fix (audit 2026-05-02): silent skip used to be invisible.
+    // Surface the case so we can investigate (race condition between
+    // checkout creating the Orders and the approval being finalized).
+    logger.warn("[payment-approvals/approve] no orders linked — customer NOT notified", {
+      approvalId: id,
+      customerPhone: approval.customerPhone.slice(-6),
     });
   }
 

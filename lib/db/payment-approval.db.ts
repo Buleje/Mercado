@@ -170,7 +170,8 @@ export const PaymentApprovalDb = {
     if (!row) throw new Error("PaymentApproval creado pero no recuperable");
     logger.info("[payment-approval] created", {
       id,
-      customerPhone: input.customerPhone,
+      // PII redaction (audit 2026-05-02 #14): only last 6 digits — Ley 29733 PE.
+      customerPhone: input.customerPhone.slice(-6),
       expectedAmount: input.expectedAmount,
     });
     return row;
@@ -289,46 +290,77 @@ export const PaymentApprovalDb = {
     });
   },
 
-  async approve(id: string, reviewerUsername: string): Promise<void> {
+  /**
+   * Atomic approve. Returns true when the row transitioned from
+   * pending/review_required to approved; false if another reviewer (or
+   * a duplicate click from the same reviewer) had already finalized it.
+   * Callers MUST check the boolean before transitioning Orders or
+   * notifying the customer to avoid double-side-effects.
+   */
+  async approve(id: string, reviewerUsername: string): Promise<boolean> {
     await bootstrap();
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
-    await prisma.$executeRawUnsafe(
+    const affected = await prisma.$executeRawUnsafe(
       `UPDATE "PaymentApproval"
         SET status      = 'approved',
             "reviewedBy" = $2,
             "reviewedAt" = NOW(),
             "updatedAt"  = NOW()
-        WHERE id = $1`,
+        WHERE id = $1
+          AND status IN ('pending', 'review_required')`,
       id,
       reviewerUsername,
     );
-    logger.info("[payment-approval] approved", { id, reviewer: reviewerUsername });
+    const transitioned = Number(affected) > 0;
+    if (transitioned) {
+      logger.info("[payment-approval] approved", { id, reviewer: reviewerUsername });
+    } else {
+      logger.warn("[payment-approval] approve no-op (already finalized)", {
+        id,
+        reviewer: reviewerUsername,
+      });
+    }
+    return transitioned;
   },
 
+  /**
+   * Atomic reject. Same contract as approve(): returns true on transition,
+   * false when the row was already finalized.
+   */
   async reject(
     id: string,
     reviewerUsername: string,
     reason: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     await bootstrap();
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
-    await prisma.$executeRawUnsafe(
+    const affected = await prisma.$executeRawUnsafe(
       `UPDATE "PaymentApproval"
         SET status            = 'rejected',
             "reviewedBy"      = $2,
             "rejectionReason" = $3,
             "reviewedAt"      = NOW(),
             "updatedAt"       = NOW()
-        WHERE id = $1`,
+        WHERE id = $1
+          AND status IN ('pending', 'review_required')`,
       id,
       reviewerUsername,
       reason,
     );
-    logger.info("[payment-approval] rejected", {
-      id,
-      reviewer: reviewerUsername,
-      reason,
-    });
+    const transitioned = Number(affected) > 0;
+    if (transitioned) {
+      logger.info("[payment-approval] rejected", {
+        id,
+        reviewer: reviewerUsername,
+        reason,
+      });
+    } else {
+      logger.warn("[payment-approval] reject no-op (already finalized)", {
+        id,
+        reviewer: reviewerUsername,
+      });
+    }
+    return transitioned;
   },
 
   /**

@@ -5,6 +5,8 @@ import { logger } from "@/lib/logger";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 
+export const dynamic = "force-dynamic";
+
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
 const MetaTextMessageSchema = z.object({
@@ -301,7 +303,8 @@ async function processPayload(rawBody: string): Promise<void> {
 
         logger.info("[whatsapp/concierge] processing message", {
           tenantId: effectiveTenantId,
-          phone,
+          // PII redaction (audit 2026-05-02 #11): only last 6 digits — Ley 29733 PE.
+          phone: phone.slice(-6),
           text: trimmed.slice(0, 80),
         });
 

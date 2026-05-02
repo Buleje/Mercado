@@ -137,7 +137,7 @@ describe("POST /api/superadmin/payment-approvals/[id]/approve", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePlatformAPI.mockResolvedValue(AUTH_OK);
-    mockApprove.mockResolvedValue(undefined);
+    mockApprove.mockResolvedValue(true); // boolean contract: transitioned
     mockOrdersUpdate.mockResolvedValue({ id: "order-001", status: "confirmado" });
     mockNotifyApproved.mockResolvedValue(true);
   });
@@ -219,8 +219,12 @@ describe("POST /api/superadmin/payment-approvals/[id]/approve", () => {
   // ── 409 ya procesado ─────────────────────────────────────────────────────────
 
   it("approval ya approved → 409 con mensaje de estado", async () => {
-    // Arrange
-    mockGetById.mockResolvedValue(makeApproval({ status: "approved" }));
+    // Arrange — atomic UPDATE returns false (already finalized);
+    // handler then re-reads to surface the actual final status.
+    mockApprove.mockResolvedValueOnce(false);
+    mockGetById
+      .mockResolvedValueOnce(makeApproval({ status: "review_required" })) // initial read
+      .mockResolvedValueOnce(makeApproval({ status: "approved" })); // re-read for 409 message
 
     // Act
     const res = await approveHandler(makeApproveRequest(), { params: PARAMS });
@@ -229,12 +233,16 @@ describe("POST /api/superadmin/payment-approvals/[id]/approve", () => {
     // Assert
     expect(res.status).toBe(409);
     expect(data.error).toContain("approved");
-    expect(mockApprove).not.toHaveBeenCalled();
+    expect(mockOrdersUpdate).not.toHaveBeenCalled();
+    expect(mockNotifyApproved).not.toHaveBeenCalled();
   });
 
   it("approval ya rejected → 409", async () => {
     // Arrange
-    mockGetById.mockResolvedValue(makeApproval({ status: "rejected" }));
+    mockApprove.mockResolvedValueOnce(false);
+    mockGetById
+      .mockResolvedValueOnce(makeApproval({ status: "review_required" }))
+      .mockResolvedValueOnce(makeApproval({ status: "rejected" }));
 
     // Act
     const res = await approveHandler(makeApproveRequest(), { params: PARAMS });
@@ -317,7 +325,7 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePlatformAPI.mockResolvedValue(AUTH_OK);
-    mockReject.mockResolvedValue(undefined);
+    mockReject.mockResolvedValue(true); // boolean contract: transitioned
     mockOrdersUpdate.mockResolvedValue({ id: "order-001", status: "cancelado" });
     mockNotifyRejected.mockResolvedValue(true);
   });
@@ -415,8 +423,11 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
   // ── 409 ya procesado ─────────────────────────────────────────────────────────
 
   it("approval ya rejected → 409", async () => {
-    // Arrange
-    mockGetById.mockResolvedValue(makeApproval({ status: "rejected" }));
+    // Arrange — atomic UPDATE returns false; handler re-reads to surface status.
+    mockReject.mockResolvedValueOnce(false);
+    mockGetById
+      .mockResolvedValueOnce(makeApproval({ status: "review_required" }))
+      .mockResolvedValueOnce(makeApproval({ status: "rejected" }));
 
     // Act
     const res = await rejectHandler(makeRejectRequest(), { params: PARAMS });
@@ -424,12 +435,15 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
 
     // Assert
     expect(res.status).toBe(409);
-    expect(mockReject).not.toHaveBeenCalled();
+    expect(mockOrdersUpdate).not.toHaveBeenCalled();
   });
 
   it("approval ya approved → 409", async () => {
     // Arrange
-    mockGetById.mockResolvedValue(makeApproval({ status: "approved" }));
+    mockReject.mockResolvedValueOnce(false);
+    mockGetById
+      .mockResolvedValueOnce(makeApproval({ status: "review_required" }))
+      .mockResolvedValueOnce(makeApproval({ status: "approved" }));
 
     // Act
     const res = await rejectHandler(makeRejectRequest(), { params: PARAMS });

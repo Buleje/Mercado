@@ -28,6 +28,8 @@ import { logger } from "@/lib/logger";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { extractYapePayment } from "@/lib/ai/yape-vision";
 
+export const dynamic = "force-dynamic";
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 interface ResolvedCapture {

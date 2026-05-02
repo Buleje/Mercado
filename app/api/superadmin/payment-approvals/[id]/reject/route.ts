@@ -54,16 +54,13 @@ export async function POST(
   if (!approval) {
     return NextResponse.json({ error: "Aprobación no encontrada" }, { status: 404 });
   }
-  if (approval.status === "approved" || approval.status === "rejected") {
-    return NextResponse.json(
-      { error: `El pago ya está ${approval.status}` },
-      { status: 409 },
-    );
-  }
 
-  // ── 1. Mark approval as rejected ────────────────────────────────────────
+  // ── 1. Mark approval as rejected (atomic transition) ────────────────────
+  // Same atomic guard as /approve — UPDATE … WHERE status IN (pending,
+  // review_required). Returns false when already finalized.
+  let transitioned: boolean;
   try {
-    await PaymentApprovalDb.reject(id, auth.username, parsed.data.reason);
+    transitioned = await PaymentApprovalDb.reject(id, auth.username, parsed.data.reason);
   } catch (err) {
     logger.error("[payment-approvals/reject] failed", {
       error: String(err),
@@ -71,6 +68,14 @@ export async function POST(
       reviewer: auth.username,
     });
     return NextResponse.json({ error: "Error al rechazar el pago" }, { status: 500 });
+  }
+
+  if (!transitioned) {
+    const fresh = await PaymentApprovalDb.getById(id);
+    return NextResponse.json(
+      { error: `El pago ya está ${fresh?.status ?? "finalizado"}` },
+      { status: 409 },
+    );
   }
 
   // ── 2. Cancel each linked Order ──────────────────────────────────────────
