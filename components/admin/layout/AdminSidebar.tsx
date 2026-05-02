@@ -147,23 +147,22 @@ export function AdminSidebar({
   alerts,
   hiddenTabs,
   sidebarSearch,
-  isEasyMode,
-  onToggleAdminMode,
+  isEasyMode: _isEasyMode,
+  onToggleAdminMode: _onToggleAdminMode,
   allTabs,
 }: AdminSidebarProps) {
   const { subTabs: _subTabs, activeSubTab: _activeSubTab } = useModuleTabs();
-  const [storeHref, setStoreHref] = React.useState("/marketplace");
 
-  React.useEffect(() => {
-    let active = true;
-
-    const href = activeTenantSlug ? `/t/${activeTenantSlug}/tienda` : "/marketplace";
-    if (active) setStoreHref(href);
-
-    return () => {
-      active = false;
-    };
-  }, [activeTenantSlug]);
+  /* "Ver mi tienda" debe apuntar a la tienda real del negocio.
+     Si el slug activo es uno de los demos del SaaS (main/previus/demo/preview),
+     no tiene sentido linkear ahí — lo redirige a /tiendas (lista) para que
+     el usuario elija su negocio real. */
+  const DEMO_TENANT_SLUGS = React.useMemo(
+    () => new Set(["main", "previus", "demo", "preview", "default"]),
+    [],
+  );
+  const isRealTenant = !!activeTenantSlug && !DEMO_TENANT_SLUGS.has(activeTenantSlug.toLowerCase());
+  const storeHref = isRealTenant ? `/t/${activeTenantSlug}/tienda` : "/tiendas";
 
   /* Tema del sidebar: 3 opciones persistidas en localStorage.
      - "cristal": paleta de marca Buleje (teal accent). Default moderno.
@@ -176,12 +175,12 @@ export function AdminSidebar({
   const { resolveLabel, isHiddenByTemplate } = useAdminTemplateOverlay();
 
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
-    if (typeof window === "undefined") return "cristal";
+    if (typeof window === "undefined") return "buleje";
     try {
       const stored = localStorage.getItem("admin-sidebar-theme");
-      if (stored === "light" || stored === "dark" || stored === "cristal" || stored === "shaded") return stored;
+      if (stored === "light" || stored === "dark" || stored === "cristal" || stored === "shaded" || stored === "buleje") return stored;
     } catch { /* ignore */ }
-    return "cristal";
+    return "buleje";
   });
 
   const updateTheme = React.useCallback((theme: SidebarTheme) => {
@@ -397,23 +396,25 @@ export function AdminSidebar({
      y highlights, NO un bloque de teal plano que se veia saturado. */
   const themeClasses = React.useMemo(() => {
     switch (sidebarTheme) {
-      case "shaded": // alias legacy → cristal
+      // Theme Buleje editorial v2 — gradient slate-deep + halo teal sutil al inicio.
+      // Active state premium: pill con gradient teal + texto blanco BRILLANTE +
+      // glow exterior + ring teal-bright + barra inset 4px. Reemplaza el active
+      // anterior que tenía bg teal/18 plano + texto teal-300 apagado.
+      case "buleje":
+      case "shaded": // alias legacy → buleje
       case "cristal":
         return {
-          /* Slate-900 con tinte teal sutil en el borde y header.
-             Fondo profundo que no compite con el contenido pero que
-             respira la identidad de marca via bordes y active state. */
-          bg: "bg-[#0b1f2b] dark:bg-[#050e15]",
-          /* AA compliant: 80% white on slate-900 = 10.7:1 contrast ratio. */
-          text: "text-white/80",
-          /* Hover con tinte teal + glow sutil — feedback más tangible. */
-          hover: "hover:bg-primary/10 hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(0,180,166,0.15)]",
-          /* Borde con tinte teal para evocar marca. */
-          border: "border-white/[0.08]",
-          /* Active: pill teal sólido + text-white + shadow sutil.
-             Antes era fondo débil — ahora se nota claramente el item activo. */
-          activeItem: "bg-primary/25 text-white font-semibold shadow-[inset_0_0_0_1px_rgba(0,180,166,0.3)]",
-          headerBorder: "border-white/[0.08]",
+          // Halo radial teal en el top + gradient slate-deep base.
+          bg: "bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,rgba(0,180,166,0.10)_0%,transparent_60%),linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] dark:bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,rgba(0,180,166,0.08)_0%,transparent_60%),linear-gradient(180deg,#050e15_0%,#040a10_50%,#03070d_100%)]",
+          // 70% white sobre slate-900 ≈ 9:1 AAA body.
+          text: "text-white/70",
+          // Hover gradient horizontal sutil — sensación de luz al pasar mouse.
+          hover: "hover:bg-linear-to-r hover:from-white/[0.06] hover:to-white/[0.02] hover:text-white",
+          // Borde teal hairline sutil — separa del shell sin pelearse.
+          border: "border-[rgba(0,180,166,0.15)]",
+          // Active premium: gradient pill + texto blanco + ring teal-bright + glow exterior + barra inset 4px.
+          activeItem: "bg-linear-to-r from-[rgba(52,212,190,0.28)] via-[rgba(0,180,166,0.18)] to-[rgba(0,180,166,0.06)] text-white font-semibold shadow-[inset_4px_0_0_#34d4be,0_2px_16px_-2px_rgba(52,212,190,0.4)] ring-1 ring-inset ring-[rgba(52,212,190,0.22)]",
+          headerBorder: "border-[rgba(0,180,166,0.2)]",
         };
       case "dark":
         return {
@@ -568,7 +569,7 @@ export function AdminSidebar({
 
   /* Colores por categoría — le dan personalidad al sidebar sin saturar.
      Si iconStyle = "monochrome" → todos grises. Si "colored" → por categoría. */
-  const isDarkTheme = sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded";
+  const isDarkTheme = sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded" || sidebarTheme === "buleje";
   const MONOCHROME_ICON_COLOR = isDarkTheme ? "text-white/60" : "text-[var(--text-tertiary)]";
   const ICON_COLORS_COLORED: Record<string, string> = isDarkTheme
     ? {
@@ -665,47 +666,58 @@ export function AdminSidebar({
           effectiveCompact ? "px-3 justify-center" : "px-4"
         )}>
           {activeTenantLogo ? (
-            <Image
-              src={activeTenantLogo}
-              alt={activeTenantName ?? "Logo"}
-              width={36}
-              height={36}
-              className={cn(
-                "h-9 w-9 rounded-xl object-cover shrink-0",
-                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
-                  ? "ring-2 ring-white/10"
-                  : "ring-2 ring-gray-100 dark:ring-card-border",
-              )}
-            />
+            <div className={cn(
+              "relative shrink-0",
+              isDarkTheme && "drop-shadow-[0_0_12px_rgba(52,212,190,0.25)]"
+            )}>
+              <Image
+                src={activeTenantLogo}
+                alt={activeTenantName ?? "Logo"}
+                width={40}
+                height={40}
+                className={cn(
+                  "h-10 w-10 rounded-xl object-cover",
+                  isDarkTheme
+                    ? "ring-1 ring-[rgba(52,212,190,0.3)]"
+                    : "ring-2 ring-gray-100 dark:ring-card-border",
+                )}
+              />
+            </div>
           ) : (
             <div className={cn(
-              "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
-              sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
-                ? "bg-white/10 text-white"
-                : "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
+              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+              isDarkTheme
+                ? "bg-linear-to-br from-[rgba(0,180,166,0.28)] to-[rgba(52,212,190,0.06)] ring-1 ring-[rgba(52,212,190,0.32)] text-[#5eead4] shadow-[0_0_16px_-2px_rgba(0,180,166,0.3)]"
+                : "bg-linear-to-br from-primary/15 to-primary/5 ring-1 ring-primary/20 text-primary",
             )}>
-              <BulejeMark size={20} strokeWidth={1.75} />
+              <BulejeMark size={22} strokeWidth={1.75} />
             </div>
           )}
           {!effectiveCompact && (
             <div className="flex-1 min-w-0">
               <p className={cn(
-                "font-bold text-sm leading-tight truncate",
-                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
+                "font-bold text-sm leading-tight tracking-tight truncate",
+                isDarkTheme
                   ? "text-white"
                   : "text-[var(--text-primary)] dark:text-foreground",
               )}>
                 {activeTenantName ?? "Buleje"}
               </p>
-              <p className={cn(
-                "text-[length:var(--ts-xs)] leading-tight mt-0.5",
-                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
-                  ? "text-white/60"
-                  : "text-[var(--text-tertiary)] dark:text-muted",
-              )}>
-                <span className="capitalize">{userName}</span>
-                {" · "}
-                <span className="uppercase text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)]">{userRole}</span>
+              <p className="flex items-center gap-1.5 mt-1 leading-none">
+                <span className={cn(
+                  "capitalize text-[length:var(--ts-2xs)] truncate",
+                  isDarkTheme ? "text-white/55" : "text-[var(--text-tertiary)] dark:text-muted"
+                )}>
+                  {userName}
+                </span>
+                <span className={cn(
+                  "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
+                  isDarkTheme
+                    ? "bg-[rgba(52,212,190,0.14)] text-[#5eead4] ring-1 ring-inset ring-[rgba(52,212,190,0.25)]"
+                    : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+                )}>
+                  {userRole}
+                </span>
               </p>
             </div>
           )}
@@ -756,15 +768,27 @@ export function AdminSidebar({
                     )}
                     <button
                       onClick={() => toggleSection(sectionLabel)}
-                      className="w-full flex items-center gap-1.5 px-3 mt-3 mb-1 group/section"
+                      className="w-full flex items-center gap-1.5 px-3 mt-4 mb-1.5 group/section"
                     >
                       <ChevronDown className={cn(
-                        "h-3 w-3 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] transition-transform duration-[var(--dur-base)]",
+                        "h-3 w-3 transition-transform duration-[var(--dur-base)]",
+                        isDarkTheme ? "text-[rgba(94,234,212,0.5)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",
                         isSectionCollapsed && "-rotate-90"
                       )} />
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover/section:text-[var(--text-tertiary)] dark:group-hover/section:text-[var(--text-secondary)] transition-colors">
+                      <span className={cn(
+                        "text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
+                        isDarkTheme
+                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[#5eead4]"
+                          : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
+                      )}>
                         {sectionLabel}
                       </span>
+                      <span className={cn(
+                        "flex-1 ml-2 h-px",
+                        isDarkTheme
+                          ? "bg-linear-to-r from-[rgba(52,212,190,0.18)] to-transparent"
+                          : "bg-linear-to-r from-[var(--rule-soft)] to-transparent"
+                      )} />
                     </button>
                   </>
                 )}
@@ -807,18 +831,23 @@ export function AdminSidebar({
                         densityPad,
                         densityGap,
                         isActive
-                          ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
-                          : cn(themeClasses.text, themeClasses.hover, sidebarTheme === "dark" ? "hover:text-white" : "hover:text-[var(--text-primary)] dark:hover:text-gray-200")
+                          ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
+                          : cn(themeClasses.text, themeClasses.hover, isDarkTheme ? "hover:text-white" : "hover:text-[var(--text-primary)] dark:hover:text-gray-200")
                       )}
                     >
-                      {/* Active indicator bar — 3px left bar with category color */}
+                      {/* Active indicator bar — gradient inset bar with accent glow */}
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={accentBarStyle} />
+                        <span
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+                          style={accentBarStyle}
+                        />
                       )}
 
                       <DisplayIcon className={cn(
                         "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
-                        isActive ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : iconColor
+                        isActive
+                          ? (isDarkTheme ? "text-[#5eead4] drop-shadow-[0_0_6px_rgba(52,212,190,0.5)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]")
+                          : iconColor
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
@@ -835,8 +864,10 @@ export function AdminSidebar({
                           transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                         >
                           <ChevronRight className={cn(
-                            "h-3.5 w-3.5 shrink-0",
-                            isActive ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]"
+                            "h-3.5 w-3.5 shrink-0 transition-colors",
+                            isActive
+                              ? (isDarkTheme ? "text-[#5eead4]" : "text-[var(--data-success)]")
+                              : (isDarkTheme ? "text-white/35 group-hover:text-white/60" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]")
                           )} />
                         </m.div>
                       )}
@@ -883,7 +914,7 @@ export function AdminSidebar({
                                   className={cn(
                                     "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] transition-all",
                                     isSubActive
-                                      ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
+                                      ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
                                       : cn(themeClasses.text, themeClasses.hover, "font-medium")
                                   )}
                                 >
@@ -892,7 +923,9 @@ export function AdminSidebar({
                                   )}
                                   <SubIcon className={cn(
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
-                                    isSubActive ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
+                                    isSubActive
+                                      ? (isDarkTheme ? "text-[#5eead4]" : "text-[var(--data-success)]")
+                                      : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
                                   {subAlertCount > 0 && (
@@ -982,67 +1015,35 @@ export function AdminSidebar({
           themeClasses.headerBorder,
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
-          {/* Easy / Advanced mode toggle */}
-          {!effectiveCompact && (
-            <button
-              onClick={onToggleAdminMode}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]/40 group"
-            >
-              <div className={cn(
-                "relative h-5 w-9 rounded-full transition-colors shrink-0",
-                isEasyMode ? "bg-primary" : "bg-[var(--accent-soft)]"
-              )}>
-                <div className={cn(
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white  transition-transform",
-                  isEasyMode ? "left-0.5" : "left-[18px]"
-                )} />
-              </div>
-              <span className="truncate">
-                {isEasyMode ? "Modo Fácil" : "Avanzado"}
-              </span>
-            </button>
-          )}
-          {effectiveCompact && (
-            <button
-              onClick={onToggleAdminMode}
-              title={isEasyMode ? "Modo Fácil — click para Avanzado" : "Modo Avanzado — click para Fácil"}
-              className="relative w-full flex items-center justify-center rounded-lg transition-all mb-0.5 px-0 py-2.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]/40 hover:text-[var(--text-secondary)]"
-            >
-              <div className={cn(
-                "h-5 w-9 rounded-full transition-colors",
-                isEasyMode ? "bg-primary" : "bg-[var(--accent-soft)]"
-              )}>
-                <div className={cn(
-                  "absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white  transition-transform",
-                  isEasyMode ? "left-[calc(50%-14px)]" : "left-[calc(50%+2px)]"
-                )} />
-              </div>
-            </button>
-          )}
+          {/* Quick links: Ver tiendas (lista) + Ver mi tienda (storefront real) */}
           <Link
-            href="/marketplace"
+            href="/tiendas"
             target="_blank"
             rel="noopener noreferrer"
-            title={effectiveCompact ? "Ver marketplace público (nueva pestaña)" : "Abre el marketplace público en una pestaña nueva"}
+            title={effectiveCompact ? "Ver tiendas (nueva pestaña)" : "Abre la lista de tiendas en una pestaña nueva"}
             className={cn(
-              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)]/50 dark:hover:bg-[var(--accent-muted)] transition-all",
+              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
+              themeClasses.text, themeClasses.hover,
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
-            <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver marketplace ↗"}
+            <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver tiendas ↗"}
           </Link>
-          <Link
-            href={storeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={effectiveCompact ? "Ver mi tienda (nueva pestaña)" : "Abre tu storefront público en una pestaña nueva"}
-            className={cn(
-              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)]/50 dark:hover:bg-[var(--accent-muted)] transition-all",
-              effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
-            )}
-          >
-            <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver mi tienda ↗"}
-          </Link>
+          {isRealTenant && (
+            <Link
+              href={storeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={effectiveCompact ? "Ver mi tienda (nueva pestaña)" : "Abre tu storefront público en una pestaña nueva"}
+              className={cn(
+                "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
+                themeClasses.text, themeClasses.hover,
+                effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
+              )}
+            >
+              <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver mi tienda ↗"}
+            </Link>
+          )}
 
           {/* ── Compact mode toggle (hidden when auto-collapsed on narrow screens) ── */}
           {!focusMode && !isNarrow && (

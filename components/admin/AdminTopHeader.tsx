@@ -29,19 +29,19 @@ import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
   applyToHeader: boolean;
-  theme: "light" | "dark" | "cristal" | "shaded";
+  theme: "light" | "dark" | "cristal" | "shaded" | "buleje";
   accent: "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
 };
 
 function readInitialHeaderTheming(): HeaderThemingEvent {
-  if (typeof window === "undefined") return { applyToHeader: false, theme: "light", accent: "teal" };
+  if (typeof window === "undefined") return { applyToHeader: false, theme: "buleje", accent: "teal" };
   try {
     const applyToHeader = localStorage.getItem("admin-sidebar-apply-to-header") === "true";
     const rawTheme = localStorage.getItem("admin-sidebar-theme");
     const theme: HeaderThemingEvent["theme"] =
-      rawTheme === "cristal" || rawTheme === "dark" || rawTheme === "light" || rawTheme === "shaded"
+      rawTheme === "cristal" || rawTheme === "dark" || rawTheme === "light" || rawTheme === "shaded" || rawTheme === "buleje"
         ? (rawTheme as HeaderThemingEvent["theme"])
-        : "light";
+        : "buleje";
     const rawAccent = localStorage.getItem("admin-sidebar-accent");
     const accent: HeaderThemingEvent["accent"] =
       rawAccent === "teal" || rawAccent === "emerald" || rawAccent === "sky" || rawAccent === "violet" || rawAccent === "amber" || rawAccent === "rose"
@@ -106,10 +106,14 @@ export function AdminTopHeader({
     return () => window.removeEventListener("admin-sidebar-theming-change", handler);
   }, []);
 
-  /* Clases del header según si aplica tema del sidebar o no. */
-  const headerThemeClasses = theming.applyToHeader
-    ? theming.theme === "cristal" || theming.theme === "shaded"
-      ? "bg-[#0b1f2b] border-white/[0.08] text-white/80"
+  /* Clases del header según si aplica tema del sidebar o no.
+     IMPORTANTE: cuando el tema es "buleje" (marca completa), aplica
+     automáticamente al header sin importar applyToHeader — es un tema
+     editorial integral que no tiene sentido fragmentado. */
+  const isBulejeTheme = theming.theme === "buleje" || theming.theme === "cristal" || theming.theme === "shaded";
+  const headerThemeClasses = (theming.applyToHeader || isBulejeTheme)
+    ? isBulejeTheme
+      ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[rgba(0,180,166,0.2)] text-white/80"
       : theming.theme === "dark"
         ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
         : "bg-white border-[var(--rule-base)] text-[var(--text-primary)]"
@@ -138,13 +142,29 @@ export function AdminTopHeader({
         <button
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
-          className="group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-sm"
+          className={cn(
+            "group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
+            isBulejeTheme
+              ? "bg-white/[0.04] border-[rgba(52,212,190,0.15)] hover:border-[rgba(52,212,190,0.4)] hover:bg-white/[0.07]"
+              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-sm"
+          )}
         >
-          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary transition-colors" strokeWidth={2} />
-          <span className="flex-1 text-left text-sm font-medium text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)] truncate transition-colors">
+          <Search className={cn(
+            "h-4 w-4 shrink-0 transition-colors",
+            isBulejeTheme ? "text-white/50 group-hover:text-[#5eead4]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
+          )} strokeWidth={2} />
+          <span className={cn(
+            "flex-1 text-left text-sm font-medium truncate transition-colors",
+            isBulejeTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
+          )}>
             Buscar módulos, productos, clientes...
           </span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono text-[var(--text-tertiary)] dark:text-muted bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1.5 py-0.5 rounded-md tabular-nums">
+          <kbd className={cn(
+            "hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border",
+            isBulejeTheme
+              ? "text-white/55 bg-white/[0.06] border-white/[0.1]"
+              : "text-[var(--text-tertiary)] dark:text-muted bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border"
+          )}>
             <span className="text-base leading-none">⌘</span>K
           </kbd>
         </button>
@@ -158,7 +178,12 @@ export function AdminTopHeader({
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir tienda en nueva pestaña"
-            className="hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
+            className={cn(
+              "hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
+              isBulejeTheme
+                ? "border-[rgba(52,212,190,0.3)] bg-[rgba(52,212,190,0.1)] text-[#5eead4] hover:bg-[rgba(52,212,190,0.18)]"
+                : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
+            )}
           >
             <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
             <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>

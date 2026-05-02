@@ -25,7 +25,7 @@ interface SidebarFlyoutProps {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function SidebarFlyout({
-  category,
+  category: _category,
   tabs,
   activeTab,
   onNavigate,
@@ -43,28 +43,25 @@ export function SidebarFlyout({
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  /* Paleta del flyout coherente con el sidebar cristal (slate profundo). */
+  /* Paleta del flyout coherente con el sidebar buleje (slate profundo + teal).
+     "cristal" ahora replica el lenguaje editorial buleje: bg slate-deep,
+     ring teal, active state con gradient pill + icono cyan glow. */
   const themeStyles = {
     cristal: {
-      /* Flyout blanco crisp que flota sobre el sidebar oscuro cristal. */
-      bg: "bg-white dark:bg-[#0f2532]",
-      arrow: "bg-white dark:bg-[#0f2532] border-[var(--rule-soft)] dark:border-white/10",
-      border: "border-[var(--rule-base)] dark:border-white/10 shadow-xl",
-      header: "bg-[var(--surface-sunken)] dark:bg-white/[0.03]",
-      divider: "border-[var(--rule-soft)] dark:border-white/[0.06]",
-      activeBg: "bg-primary/10 dark:bg-primary/20 text-primary font-semibold",
-      inactiveText: "text-[var(--text-secondary)] dark:text-white/70",
-      hoverBg: "hover:bg-[var(--surface-sunken)] dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] dark:hover:text-white",
-      indicator: "bg-primary",
-      activeIcon: "text-primary",
-      inactiveIcon: "text-[var(--text-tertiary)] dark:text-white/50",
+      bg: "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]",
+      arrow: "bg-[#0b1f2b] border-[rgba(0,180,166,0.2)]",
+      border: "border-[rgba(0,180,166,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(52,212,190,0.08)]",
+      activeBg: "bg-linear-to-r from-[rgba(52,212,190,0.22)] via-[rgba(0,180,166,0.14)] to-[rgba(0,180,166,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#34d4be]",
+      inactiveText: "text-white/70",
+      hoverBg: "hover:bg-white/[0.05] hover:text-white",
+      indicator: "bg-[#34d4be]",
+      activeIcon: "text-[#5eead4] drop-shadow-[0_0_4px_rgba(52,212,190,0.5)]",
+      inactiveIcon: "text-white/45",
     },
     dark: {
-      bg: "bg-zinc-900",
-      arrow: "bg-zinc-900 border-white/10",
-      border: "border-white/10",
-      header: "bg-white/[0.03]",
-      divider: "border-white/[0.06]",
+      bg: "bg-zinc-950",
+      arrow: "bg-zinc-950 border-white/10",
+      border: "border-white/10 shadow-xl",
       activeBg: "bg-white/[0.08] text-white",
       inactiveText: "text-zinc-300",
       hoverBg: "hover:bg-white/[0.04] hover:text-white",
@@ -75,10 +72,8 @@ export function SidebarFlyout({
     light: {
       bg: "bg-white dark:bg-card",
       arrow: "bg-white dark:bg-card border-[var(--rule-soft)]",
-      border: "border-[var(--rule-soft)]",
-      header: "bg-gray-50 dark:bg-zinc-800/50",
-      divider: "border-[var(--rule-soft)]",
-      activeBg: "bg-[var(--accent-soft)] text-primary",
+      border: "border-[var(--rule-soft)] shadow-lg",
+      activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
       inactiveText: "text-[var(--text-secondary)]",
       hoverBg: "hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
       indicator: "bg-primary",
@@ -91,12 +86,14 @@ export function SidebarFlyout({
     <div
       style={{
         position: "fixed",
-        top: position.top - 20,
-        left: 268, // sidebar width (260) + 8px gap
+        top: position.top - 8,
+        /* Pegado al sidebar (sin gap) — left: 260 = sidebar width exacto.
+           El borde izquierdo del flyout queda touching con el border del sidebar. */
+        left: 260,
         zIndex: 100,
       }}
       className={cn(
-        "rounded-xl border min-w-[220px] overflow-hidden shadow-lg",
+        "rounded-xl rounded-l-none border min-w-[220px] overflow-hidden py-1.5",
         themeStyles.bg,
         themeStyles.border,
         "transition-all duration-[var(--dur-fast)]",
@@ -107,56 +104,36 @@ export function SidebarFlyout({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* Arrow pointing left */}
-      <div
-        className={cn(
-          "absolute top-6 -left-[6px] w-3 h-3 border-l border-b rotate-45",
-          themeStyles.arrow,
-        )}
-      />
-
-      {/* Header */}
-      <div className={cn("px-4 py-2", themeStyles.header)}>
-        <span className={cn("text-sm font-semibold", themeStyles.inactiveText)}>
-          {category.label}
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div className={cn("border-t", themeStyles.divider)} />
-
-      {/* Tab options */}
-      <div className="py-1">
-        {tabs.map(({ id, label, icon: Icon }) => {
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              onClick={() => {
-                onNavigate(id);
-                onClose();
-              }}
+      {/* Tab options — sin header, solo enlaces */}
+      {tabs.map(({ id, label, icon: Icon }) => {
+        const isActive = activeTab === id;
+        return (
+          <button
+            key={id}
+            onClick={() => {
+              onNavigate(id);
+              onClose();
+            }}
+            className={cn(
+              "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium transition-all",
+              isActive
+                ? themeStyles.activeBg
+                : cn(themeStyles.inactiveText, themeStyles.hoverBg),
+            )}
+          >
+            {isActive && theme !== "cristal" && (
+              <span className={cn("absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full", themeStyles.indicator)} />
+            )}
+            <Icon
               className={cn(
-                "relative w-full flex items-center gap-2.5 px-4 py-2 text-[length:var(--ts-sm)] font-medium transition-colors",
-                isActive
-                  ? themeStyles.activeBg
-                  : cn(themeStyles.inactiveText, themeStyles.hoverBg),
+                "h-4 w-4 shrink-0 transition-transform",
+                isActive ? themeStyles.activeIcon : themeStyles.inactiveIcon,
               )}
-            >
-              {isActive && (
-                <span className={cn("absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full", themeStyles.indicator)} />
-              )}
-              <Icon
-                className={cn(
-                  "h-4 w-4 shrink-0",
-                  isActive ? themeStyles.activeIcon : themeStyles.inactiveIcon,
-                )}
-              />
-              <span className="truncate">{label}</span>
-            </button>
-          );
-        })}
-      </div>
+            />
+            <span className="truncate">{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
