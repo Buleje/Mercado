@@ -6,14 +6,14 @@ const BASE_URL = "https://www.buleje.pe";
 export const metadata: Metadata = {
   title: "Registra tu Tienda | Marketplace Buleje",
   description:
-    "Abre tu tienda en el marketplace de Buleje. Vende tus productos online a toda Pucallpa con delivery incluido.",
+    "Abrí tu tienda en Buleje. Vendé online en tu ciudad con delivery, Yape y panel completo. Primer mes sin cargo.",
   alternates: {
     canonical: `${BASE_URL}/marketplace/registrar`,
   },
   openGraph: {
     title: "Registra tu Tienda | Marketplace Buleje",
     description:
-      "Abre tu tienda en el marketplace de Buleje. Vende tus productos online a toda Pucallpa con delivery incluido.",
+      "Abrí tu tienda en Buleje. Vendé online en tu ciudad con delivery, Yape y panel completo. Primer mes sin cargo.",
     url: `${BASE_URL}/marketplace/registrar`,
     siteName: "Buleje",
     locale: "es_PE",

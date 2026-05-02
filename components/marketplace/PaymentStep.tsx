@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Loader2, CheckCircle, CreditCard, Smartphone, Upload, ArrowRight, Copy, Check } from "@buleje/design-system/icons";
+import { Loader2, CheckCircle, CreditCard, Smartphone, Upload, Copy, Check } from "@buleje/design-system/icons";
 import { PLANS, firstMonthPrice, type PlanTier } from "@/lib/billing/plan-tiers";
 
 export interface RegistrationPayload {
@@ -143,54 +143,16 @@ function TabBtn({
 // ─────────────────────────────────────────────────────────────────────
 
 function StripePane({
-  data,
   amount,
-  onSuccess: _onSuccess,
 }: {
   data: RegistrationPayload;
   amount: number;
   onSuccess: () => void;
 }) {
-  void _onSuccess;
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const start = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Brandon: el endpoint actual /api/billing/checkout requiere
-      // sesión admin. Como acá el cliente todavía NO tiene cuenta,
-      // usamos un endpoint de signup-checkout que no necesita auth
-      // (se crea on-the-fly en el webhook). Si todavía no existe,
-      // mostramos un mensaje para que el cliente pague vía Yape.
-      const res = await fetch("/api/billing/signup-checkout", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantSlug: data.tenantSlug,
-          planTier: data.planTier,
-          billingCycle: data.billingCycle,
-          ownerEmail: data.ownerEmail,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.url) {
-        setError(
-          json.error ??
-            "El pago con tarjeta aún no está habilitado para registro nuevo. Pagá vía Yape o Plin y aprobamos tu tienda en minutos.",
-        );
-        return;
-      }
-      window.location.href = json.url;
-    } catch {
-      setError("Error de red.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // El endpoint signup-checkout no existe todavía (Stripe checkout
+  // requiere admin session, y acá el cliente aún NO tiene tenant).
+  // En vez de simular un click que falla con 403, mostramos un
+  // mensaje claro y guiamos a Yape/Plin que sí está activo.
   return (
     <div className="rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6">
       <div className="flex items-start gap-3">
@@ -200,7 +162,7 @@ function StripePane({
         <div className="flex-1">
           <h3 className="text-base font-extrabold">Tarjeta de crédito o débito</h3>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Pago seguro vía Stripe. Soportamos Visa, Mastercard, Amex.
+            Pago seguro vía Stripe — próximamente disponible al registrarte.
           </p>
         </div>
         <span className="text-xl font-black tabular-nums text-[var(--text-primary)]">
@@ -208,26 +170,17 @@ function StripePane({
         </span>
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-xl border-2 border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5 text-xs font-semibold text-yellow-700 dark:text-yellow-300 leading-snug">
-          {error}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={start}
-        disabled={loading}
-        className="mt-5 w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:opacity-95 disabled:opacity-60 transition-all"
-      >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-        Pagar con tarjeta
-        <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-      </button>
-      <p className="mt-3 text-[11px] text-center text-[var(--text-tertiary)]">
-        Tu tarjeta queda guardada para los siguientes meses. Cancelás
-        cuando quieras desde el panel.
-      </p>
+      <div className="mt-5 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-3.5">
+        <p className="text-sm font-extrabold text-[var(--accent)] mb-1">
+          Por ahora pagá con Yape o Plin
+        </p>
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          Stripe lo activamos esta semana para signups nuevos. Mientras tanto,
+          pagá con Yape o Plin (arriba) — aprobamos tu tienda en menos de 1 hora
+          y desde ahí ya podés cargar tu tarjeta para los meses siguientes
+          desde el panel del negocio.
+        </p>
+      </div>
     </div>
   );
 }
@@ -371,10 +324,11 @@ function ManualPane({
 
       {/* Referencia opcional */}
       <div>
-        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
+        <label htmlFor="payment-reference" className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
           N° de operación (opcional)
         </label>
         <input
+          id="payment-reference"
           type="text"
           value={reference}
           onChange={(e) => setReference(e.target.value)}
@@ -385,7 +339,7 @@ function ManualPane({
 
       {/* Captura */}
       <div>
-        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
+        <label htmlFor="payment-proof-file" className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
           Captura del pago *
         </label>
         <label
