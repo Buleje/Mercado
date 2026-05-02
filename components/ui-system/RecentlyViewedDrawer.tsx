@@ -74,85 +74,101 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
       role="dialog"
       aria-modal="true"
       aria-labelledby="recently-viewed-title"
-      className="fixed inset-0 z-50 flex flex-col items-end justify-end sm:justify-center motion-safe:animate-[fadeIn_0.18s]"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center motion-safe:animate-[fadeIn_0.2s] p-0 sm:p-6"
     >
+      {/* Backdrop con blur fuerte */}
       <button
         type="button"
         aria-label="Cerrar"
         tabIndex={-1}
         onClick={onClose}
-        className="absolute inset-0 bg-[var(--text-primary)]/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-[var(--text-primary)]/55 backdrop-blur-md"
       />
 
+      {/* Modal centrado y pulido */}
       <div
         className={cn(
-          "relative w-full sm:max-w-md sm:m-4 bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col",
-          "max-h-[60vh] sm:max-h-[70vh]",
-          "motion-safe:animate-[slideUp_0.25s_cubic-bezier(0.32,0.72,0,1)]",
+          "relative w-full sm:max-w-lg flex flex-col",
+          "bg-[var(--surface-raised)] ring-1 ring-black/5",
+          "rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/20",
+          "max-h-[85vh] sm:max-h-[80vh]",
+          "motion-safe:animate-[slideUp_0.3s_cubic-bezier(0.32,0.72,0,1)] sm:motion-safe:animate-[fadeIn_0.2s]",
           className,
         )}
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {/* Drag handle (sólo mobile) */}
-        <div aria-hidden className="flex sm:hidden items-center justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-[var(--rule-base)]" />
+        <div aria-hidden className="flex sm:hidden items-center justify-center pt-3 pb-1.5">
+          <div className="w-12 h-1.5 rounded-full bg-[var(--rule-base)]" />
         </div>
 
-        {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b-2 border-[var(--rule-base)] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)]/10">
-              <Clock className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-            </div>
-            <div>
-              <h2
-                id="recently-viewed-title"
-                className="text-base font-black tracking-tight text-[var(--text-primary)]"
-              >
-                Viste recientemente
-              </h2>
-              {items.length > 0 && (
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  {items.length} {items.length === 1 ? "producto" : "productos"}
+        {/* Header — banner gradient con icono grande + título prominente */}
+        <div className="relative px-6 pt-6 pb-5 border-b border-[var(--rule-soft)] bg-gradient-to-br from-[var(--accent)]/8 via-[var(--accent-soft,rgba(0,180,166,0.08))] to-transparent rounded-t-3xl">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3.5">
+              <div className="relative shrink-0">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30">
+                  <Clock className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-[0.12em] text-[var(--accent)] mb-0.5">
+                  Tu historial
                 </p>
-              )}
+                <h2
+                  id="recently-viewed-title"
+                  className="text-[length:clamp(1.25rem,2.5vw,1.5rem)] font-black tracking-tight text-[var(--text-primary)] leading-tight"
+                >
+                  Viste recientemente
+                </h2>
+                {items.length > 0 && (
+                  <p className="mt-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)]">
+                    {items.length} {items.length === 1 ? "producto guardado" : "productos guardados"}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            {items.length > 0 && (
-              <button
-                type="button"
-                onClick={clear}
-                className="text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error,_#e11d48)] transition-colors px-2"
-              >
-                Limpiar
-              </button>
-            )}
             <button
               type="button"
               onClick={onClose}
               aria-label="Cerrar"
-              className="h-9 w-9 flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors active:scale-90"
             >
               <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           </div>
         </div>
 
+        {/* Action bar — Limpiar */}
+        {items.length > 0 && (
+          <div className="px-6 py-2.5 flex items-center justify-end border-b border-[var(--rule-soft)]">
+            <button
+              type="button"
+              onClick={clear}
+              className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--data-error,#e11d48)] transition-colors"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Limpiar historial
+            </button>
+          </div>
+        )}
+
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4">
           {items.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <div className="mx-auto h-14 w-14 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center mb-3">
-                <Clock className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+            <div className="text-center py-16 px-4">
+              <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--accent)]/5 flex items-center justify-center mb-5 ring-1 ring-[var(--accent)]/15">
+                <Clock className="h-10 w-10 text-[var(--accent)]" strokeWidth={1.5} aria-hidden />
               </div>
-              <p className="text-base font-bold text-[var(--text-primary)]">Sin historial aún</p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1.5 max-w-xs mx-auto">
-                Los productos que mires aparecerán acá por 7 días.
+              <p className="text-[length:var(--ts-lg)] font-black tracking-tight text-[var(--text-primary)]">
+                Sin historial aún
+              </p>
+              <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] mt-2 max-w-xs mx-auto leading-relaxed">
+                Los productos que mires aparecerán acá por 7 días para que los retomes fácil.
               </p>
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {items.map((item) => {
                 const itemKey = String(item.id);
                 const justAdded = addedIds.has(itemKey);
@@ -163,12 +179,12 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                 return (
                   <li
                     key={itemKey}
-                    className="group relative flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5 hover:border-[var(--accent)] transition-colors"
+                    className="group relative flex items-center gap-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)] hover:shadow-md transition-all"
                   >
                     <Link
                       href={item.url}
                       onClick={onClose}
-                      className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]"
+                      className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
                       aria-label={`Ver ${item.name}`}
                     >
                       {item.image ? (
@@ -176,12 +192,12 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                           src={item.image}
                           alt={item.name}
                           fill
-                          sizes="64px"
-                          className="object-cover"
+                          sizes="80px"
+                          className="object-cover transition-transform group-hover:scale-105"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
-                          <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+                          <Package className="h-7 w-7" strokeWidth={1.5} aria-hidden />
                         </div>
                       )}
                     </Link>
@@ -191,20 +207,20 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                       onClick={onClose}
                       className="flex-1 min-w-0 py-0.5"
                     >
-                      <p className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">
+                      <p className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] line-clamp-2 leading-snug">
                         {item.name}
                       </p>
-                      <p className="mt-1 text-base font-black text-[var(--text-primary)] tabular-nums">
+                      <p className="mt-1.5 text-[length:var(--ts-lg)] font-black text-[var(--brand-primary,#00B4A6)] tabular-nums leading-none">
                         S/{Number(item.price).toFixed(2)}
                         {item.unit && (
-                          <span className="ml-1 text-xs font-medium text-[var(--text-tertiary)]">
+                          <span className="ml-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
                             / {item.unit}
                           </span>
                         )}
                       </p>
                     </Link>
 
-                    <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
                       {canAdd && (
                         <button
                           type="button"
@@ -214,10 +230,10 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                           }}
                           aria-label={`Agregar ${item.name} al carrito`}
                           className={cn(
-                            "h-10 w-10 flex items-center justify-center rounded-xl transition-all active:scale-95",
+                            "h-11 w-11 flex items-center justify-center rounded-xl transition-all active:scale-90",
                             justAdded
-                              ? "bg-[var(--accent)] text-white"
-                              : "bg-[var(--accent)] text-white hover:opacity-90 shadow-md hover:shadow-lg",
+                              ? "bg-[var(--data-success,#10b981)] text-white shadow-md"
+                              : "bg-[var(--accent)] text-white hover:opacity-90 shadow-md shadow-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--accent)]/40",
                           )}
                         >
                           {justAdded ? (
@@ -234,9 +250,9 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                           remove(item.id);
                         }}
                         aria-label={`Quitar ${item.name} del historial`}
-                        className="h-7 w-7 flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--data-error,_#e11d48)] hover:bg-[var(--surface-sunken)] opacity-0 group-hover:opacity-100 transition-all"
+                        className="h-7 w-7 flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--data-error,#e11d48)] hover:bg-[var(--surface-sunken)] sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                       >
-                        <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                        <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                       </button>
                     </div>
                   </li>
