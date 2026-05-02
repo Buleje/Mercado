@@ -27,6 +27,7 @@ import {
 } from "@/components/marketplace/useMarketplaceGeo";
 import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
 import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby";
+import { useCustomer } from "@/contexts/customer-context";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
@@ -102,6 +103,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   const router = useRouter();
   const pathname = usePathname();
   const initialSyncDone = useRef(false);
+
+  // ── Auth gate — secciones personalizadas (mis pedidos, destacadas
+  // cerca tuyo, repetir último) sólo se muestran al cliente logueado.
+  // Sin login mostrábamos data del localStorage de sesiones previas, lo
+  // que confundía a usuarios deslogueados que veían "Mis pedidos" sin
+  // estar logueados (Brandon, mayo 2026).
+  const { customer } = useCustomer();
+  const isLoggedIn = customer != null && Boolean(customer.phone);
 
   const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
   const [loading, setLoading] = useState(initialStores.length === 0);
@@ -632,20 +641,28 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       {/* ── Tus tiendas frecuentes ──────────────────────────────────── */}
       <TusTiendasStrip />
 
-      {/* ── Hero "Repetir último pedido" — solo si hay historial ───────── */}
-      {search.trim().length === 0 && <RepetirUltimoPedido />}
+      {/* ── Secciones personalizadas — solo logueados ─────────────────
+          Si el cliente no inició sesión, no le mostramos su historial
+          ni recomendaciones por GPS — eso requiere identidad. */}
+      {isLoggedIn && (
+        <>
+          {/* Hero "Repetir último pedido" — solo si hay historial */}
+          {search.trim().length === 0 && <RepetirUltimoPedido />}
 
-      {/* ── Pedidos favoritos del cliente (localStorage) ──────────────── */}
-      <MisPedidosFavoritosStrip />
+          {/* Pedidos favoritos del cliente (localStorage) */}
+          <MisPedidosFavoritosStrip />
 
-      {/* ── Tiendas destacadas cerca de ti (personalizado por GPS) ────
-          Solo aparece si el cliente compartió su ubicación. Top 6
-          dentro del radio (default 50 km — radio actúa como filtro
-          automático multi-ciudad CC↔Pucallpa). Hover → drawer con
-          productos destacados + comprar rápido. */}
-      <div className="pt-12 sm:pt-16">
-        <FeaturedStoresNearby userCoords={userCoords} />
-      </div>
+          {/* Tiendas destacadas cerca de ti (personalizado por GPS).
+              Top 6 dentro del radio (default 50 km — radio actúa como
+              filtro automático multi-ciudad CC ↔ Pucallpa). Hover →
+              drawer lateral con productos destacados + comprar rápido.
+              Wrap con max-w-[1280px] para alinear con el resto de
+              secciones del directorio. */}
+          <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+            <FeaturedStoresNearby userCoords={userCoords} />
+          </section>
+        </>
+      )}
 
       {/* ── Recomendadas / destacadas (carrusel) ─────────────────────── */}
       {/* Fallback / discovery secundario: tiendas top-rated del
