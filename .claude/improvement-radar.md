@@ -122,13 +122,17 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - **Acción manual:** ver `/setup-autonomy` Bloque 3.
 - **Beneficio:** notificación push real al móvil cuando termina trabajo largo.
 
-### [pending] 2026-04-28 — Playwright deps (necesita 1 sudo)
-- **Acción manual:** ver `/setup-autonomy` Bloque 1.
-- **Beneficio:** tests E2E sin depender del Chrome de Windows.
+### [applied] 2026-05-03 — Playwright deps instaladas
+- libnss3 + libatk + libcups + libxkb + libgbm + resto del set chromium ya en sistema.
+- npx playwright --version → 1.58.2 funcional.
 
-### [pending] 2026-04-28 — Tesseract OCR (necesita 1 sudo)
-- **Acción manual:** ver `/setup-autonomy` Bloque 2.
-- **Beneficio:** extraer texto exacto de cualquier screenshot.
+### [applied] 2026-05-03 — Tesseract OCR instalado
+- tesseract-ocr 5.3.4 + tesseract-ocr-spa (español + inglés + osd).
+- Verificado: `tesseract --version` ok.
+
+### [applied] 2026-05-03 — GitHub CLI autenticado
+- `gh auth login` completado vía device code. Token con scopes: gist, read:org, repo, workflow.
+- Habilita PRs/issues automáticos desde Claude.
 
 ---
 
