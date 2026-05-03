@@ -117,41 +117,57 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 bg-zinc-950 text-white"
-      style={{
-        backgroundImage:
-          "radial-gradient(120% 80% at 0% 0%, rgba(139,92,246,0.18) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, rgba(139,92,246,0.10) 0%, transparent 55%)",
-      }}
-    >
-      <main className={cn("w-full max-w-[440px]", shaking && "animate-[shake_0.45s_ease-out]")}>
-        {/* Brand mark */}
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div
-            className="inline-flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg mb-5"
-            style={{
-              background: "linear-gradient(135deg, var(--brand-purple) 0%, #6d28d9 100%)",
-              boxShadow: "0 16px 32px -8px rgba(139,92,246,0.4)",
-            }}
-          >
-            <Crown className="h-7 w-7 text-white" strokeWidth={2.25} />
+    <div className="min-h-screen bg-zinc-950 text-white grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.2fr_1fr]">
+      {/* ─── HERO IZQUIERDO — violet glassmorphism ────────────────────── */}
+      <aside className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden">
+        {/* Glow */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(at 25% 0%, rgba(139,92,246,0.30) 0px, transparent 55%), radial-gradient(at 75% 100%, rgba(139,92,246,0.18) 0px, transparent 50%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-40 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, var(--brand-purple) 0%, transparent 70%)" }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* TOP — brand */}
+        <header className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, var(--brand-purple) 0%, #6d28d9 100%)",
+                boxShadow: "0 12px 32px -8px rgba(139,92,246,0.5)",
+              }}
+            >
+              <Crown className="h-6 w-6" strokeWidth={2.25} />
+            </div>
+            <div>
+              <p
+                className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]"
+                style={{ color: "rgb(196,181,253)" }}
+              >
+                Buleje · Plataforma
+              </p>
+              <p className="text-base font-extrabold leading-tight">Superadmin</p>
+            </div>
           </div>
-          <p
-            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
-            style={{ color: "rgb(196,181,253)" }}
-          >
-            {challengeId ? "Verificación 2 pasos" : "Plataforma · Superadmin"}
-          </p>
-          <SectionTitle className="text-3xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
-            {challengeId ? "Confirma tu identidad" : "Acceso a la plataforma"}
-          </SectionTitle>
-          <p className="text-sm text-white/60 mt-2 max-w-xs">
-            {challengeId
-              ? "Ingresa el código de 6 dígitos de tu app autenticadora."
-              : "Solo para dueños de Buleje. ¿Tienes una bodega? Abajo está tu panel."}
-          </p>
           <span
-            className="inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full border text-[length:var(--ts-2xs)] font-bold"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[length:var(--ts-2xs)] font-bold"
             style={{
               background: "rgba(139,92,246,0.12)",
               borderColor: "rgba(139,92,246,0.35)",
@@ -159,19 +175,87 @@ export default function SuperAdminLoginPage() {
             }}
           >
             <Lock className="h-3 w-3" strokeWidth={2.5} />
-            Acceso restringido · 2FA recomendado
+            Acceso restringido
           </span>
+        </header>
+
+        {/* MIDDLE */}
+        <div className="relative z-10 max-w-md">
+          <h1 className="text-4xl xl:text-5xl font-black tracking-[-0.03em] text-balance leading-[1.05]">
+            Plataforma Buleje.{" "}
+            <span className="italic font-serif" style={{ color: "rgb(196,181,253)" }}>
+              Solo para dueños.
+            </span>
+          </h1>
+          <p className="mt-5 text-[15px] text-white/70 leading-relaxed max-w-sm">
+            Operaciones de plataforma. Si tienes una bodega, este NO es tu
+            panel — usa el Panel del Negocio.
+          </p>
+
+          <ul className="mt-9 space-y-4">
+            {PLATFORM_FEATURES.map((f) => (
+              <li key={f.label} className="flex items-start gap-3.5">
+                <span
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border shrink-0"
+                  style={{
+                    background: "rgba(139,92,246,0.10)",
+                    borderColor: "rgba(139,92,246,0.25)",
+                  }}
+                >
+                  <f.icon className="h-4.5 w-4.5" strokeWidth={2} style={{ color: "var(--brand-purple)" }} />
+                </span>
+                <div>
+                  <p className="text-[15px] font-bold text-white">{f.label}</p>
+                  <p className="text-[13px] text-white/55 mt-0.5 leading-relaxed">{f.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div
-          className="rounded-3xl p-6 sm:p-8"
-          style={{
-            background: "rgba(24,24,27,0.6)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(24px)",
-            boxShadow: "0 24px 60px -12px rgba(0,0,0,0.5), 0 8px 16px -8px rgba(139,92,246,0.15)",
-          }}
-        >
+        {/* BOTTOM */}
+        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/45 max-w-sm">
+          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
+          <span className="leading-relaxed">
+            Cada acceso queda registrado en el audit log.
+            Ley 29733 PE · Sesión 12h · 2FA recomendado.
+          </span>
+        </footer>
+      </aside>
+
+      {/* ─── FORM DERECHO ────────────────────────────────────────────── */}
+      <main className="flex items-center justify-center px-6 py-8 sm:px-12 sm:py-12">
+        <div className={cn("w-full max-w-[420px]", shaking && "animate-[shake_0.45s_ease-out]")}>
+          {/* Logo mobile */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+            <div
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-md"
+              style={{
+                background: "linear-gradient(135deg, var(--brand-purple) 0%, #6d28d9 100%)",
+              }}
+            >
+              <Crown className="h-5 w-5 text-white" strokeWidth={2.25} />
+            </div>
+            <p className="font-extrabold text-white text-lg tracking-tight">Plataforma</p>
+          </div>
+
+          {/* Eyebrow + título */}
+          <p
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
+            style={{ color: "rgb(196,181,253)" }}
+          >
+            {challengeId ? "Verificación 2 pasos" : "Iniciar sesión"}
+          </p>
+          <SectionTitle className="text-3xl sm:text-[2.25rem] font-extrabold text-white leading-[1.1] tracking-tight">
+            {challengeId ? "Confirma tu identidad" : "Acceso plataforma"}
+          </SectionTitle>
+          <p className="text-sm text-white/60 mt-2.5 max-w-sm">
+            {challengeId
+              ? "Ingresa el código de 6 dígitos de tu app autenticadora."
+              : "Solo para dueños de Buleje. ¿Tienes una bodega? Usa el panel del negocio abajo."}
+          </p>
+
+          <div className="mt-8">
 
           {/* Aviso sesión expirada */}
           {sessionExpired && !challengeId && (
@@ -345,11 +429,10 @@ export default function SuperAdminLoginPage() {
               </button>
             </form>
           )}
+          </div>
 
-        </div>
-
-        {/* Switches a otros paneles — fuera del card */}
-        <div className="mt-6 space-y-2">
+        {/* Switches a otros paneles — dentro del wrapper max-w-420 */}
+        <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
           <p className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
             ¿Buscas otro panel?
           </p>
@@ -369,11 +452,12 @@ export default function SuperAdminLoginPage() {
           />
         </div>
 
-        {/* Trust footer */}
-        <p className="mt-6 flex items-start gap-2 text-xs text-white/40 justify-center text-center max-w-xs mx-auto leading-relaxed">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
-          <span>Cada acceso queda en el audit log · Ley 29733 PE · Sesión 12h.</span>
-        </p>
+          {/* Trust footer mobile (hero hidden) */}
+          <p className="lg:hidden mt-6 flex items-start gap-2 text-xs text-white/40 justify-center text-center max-w-xs mx-auto leading-relaxed">
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
+            <span>Audit log · Ley 29733 PE · Sesión 12h.</span>
+          </p>
+        </div>
       </main>
     </div>
   );

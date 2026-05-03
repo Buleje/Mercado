@@ -1,20 +1,28 @@
 "use client";
 
 /**
- * /admin/login — Login para dueños y staff de tienda.
+ * /admin/login — Login universal para dueños y staff de tienda.
  *
- * Identidad visual: "Para tu bodega · Buleje". Acento primary (teal del DS).
- * Hero lateral con bullets de beneficios operativos. Distinto del login de
- * superadmin (violeta/plataforma) y del de delivery (teal+orange/repartidor).
+ * Mayo 2026 (rediseño split-view): un único login que resuelve tenant
+ * automáticamente. El usuario puede:
+ *   - Tipear el slug de su tienda en el campo "Tu tienda" (ej: "mi-pollo")
+ *   - O dejar vacío si viene desde /t/{slug}/admin/login (URL setea cookie)
+ *   - O usar la última sesión recordada (localStorage)
+ *
+ * Layout: split-view 2 columnas en desktop (hero teal a la izquierda,
+ * form a la derecha). Mobile: stack single-column con form arriba.
+ *
+ * Identidad visual: paleta teal del DS. Diferenciado de superadmin
+ * (violeta) y delivery (orange).
  */
 
-import { PageTitle, SectionTitle } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
   Store, Zap, ArrowRight, ShoppingCart, Package, Wallet, ShieldCheck,
-  Bike, Crown,
+  Bike, Crown, Building2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +44,7 @@ export default function AdminLoginPage() {
   }, []);
   const adminPath = (path: string) => `${tenantPrefix}${path}`;
 
+  const [tenantSlug, setTenantSlug] = useState("");
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,16 +61,19 @@ export default function AdminLoginPage() {
 
     const tenantParam = params.get("tenant");
     const autoParam = params.get("auto");
-    const userParam = params.get("user");
 
     if (tenantParam) {
       localStorage.setItem("active-tenant-slug", tenantParam);
       sessionStorage.setItem("active-tenant-slug", tenantParam);
       setActiveTenant(tenantParam);
+      setTenantSlug(tenantParam);
       if (!fromRef.current) fromRef.current = `/t/${tenantParam}/admin`;
     } else {
       const slug = localStorage.getItem("active-tenant-slug");
-      if (slug && slug !== "main") setActiveTenant(slug);
+      if (slug && slug !== "main") {
+        setActiveTenant(slug);
+        setTenantSlug(slug);
+      }
     }
 
     const saved = localStorage.getItem("login-remember-username");
@@ -78,10 +90,8 @@ export default function AdminLoginPage() {
           const cred = JSON.parse(credJson) as { username: string; password: string };
           if (cred.username) setUsername(cred.username);
           if (cred.password) setPw(cred.password);
-          return;
         }
-      } catch { /* silent */ }
-      if (userParam) setUsername(userParam);
+      } catch { /* ignore */ }
     }
 
     usernameRef.current?.focus();
@@ -97,7 +107,7 @@ export default function AdminLoginPage() {
 
   const showError = (msg: string) => {
     setError(msg);
-    setTimeout(() => setError(null), 3000);
+    setTimeout(() => setError(null), 3500);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -105,14 +115,19 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const tenantSlug = typeof window !== "undefined"
+      // Resolución del tenant — orden de prioridad:
+      //   1. Campo "Tu tienda" tipeado por el usuario
+      //   2. Cookie active-tenant-slug (sesión previa o /t/{slug}/admin/login)
+      //   3. "main" (default plataforma)
+      const slugFromForm = tenantSlug.trim().toLowerCase();
+      const slugFromStorage = typeof window !== "undefined"
         ? localStorage.getItem("active-tenant-slug")
         : null;
+      const finalSlug = slugFromForm || slugFromStorage || "main";
+
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (tenantSlug) {
-        headers["x-tenant-id"] = tenantSlug;
-        document.cookie = `active-tenant=${tenantSlug}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
-      }
+      headers["x-tenant-id"] = finalSlug;
+      document.cookie = `active-tenant=${finalSlug}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -143,7 +158,7 @@ export default function AdminLoginPage() {
           router.push(fromRef.current ? decodeURIComponent(fromRef.current) : adminPath("/admin"));
         }
       } else {
-        showError("Credenciales incorrectas");
+        showError("Credenciales incorrectas — verifica tienda, usuario y contraseña");
       }
     } catch {
       showError("No se pudo iniciar sesión");
@@ -173,48 +188,168 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12"
-      style={{
-        background:
-          "radial-gradient(120% 80% at 0% 0%, var(--accent-soft) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, var(--accent-muted) 0%, transparent 55%), var(--surface-canvas)",
-      }}
-    >
-      <main className={cn("w-full max-w-[440px]", shaking && "animate-[shake_0.45s_ease-out]")}>
-        {/* Brand mark */}
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div
-            className="inline-flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg mb-5"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
-              boxShadow: "0 16px 32px -8px rgba(0,180,166,0.3)",
-            }}
-          >
-            <Store className="h-7 w-7 text-white" strokeWidth={2.25} />
+    <div className="min-h-screen bg-[var(--surface-canvas)] grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.2fr_1fr]">
+      {/* ─── HERO IZQUIERDO ───────────────────────────────────────────── */}
+      <aside
+        className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--text-primary) 0%, #0f1d24 50%, var(--text-primary) 100%)",
+        }}
+      >
+        {/* Mesh blobs */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(at 20% 0%, rgba(0,180,166,0.40) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(45,212,191,0.20) 0px, transparent 50%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
+        />
+        {/* Grid pattern */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* TOP — brand */}
+        <header className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
+                boxShadow: "0 12px 32px -8px rgba(0,180,166,0.5)",
+              }}
+            >
+              <Store className="h-6 w-6 text-white" strokeWidth={2.25} />
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                Buleje · Negocio
+              </p>
+              <p className="text-base font-extrabold leading-tight">Panel del dueño</p>
+            </div>
           </div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            Panel del negocio
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/8 border border-white/15 text-[length:var(--ts-2xs)] font-bold text-white/80 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+            En línea
+          </span>
+        </header>
+
+        {/* MIDDLE — copy + features */}
+        <div className="relative z-10 max-w-md">
+          <h1 className="text-4xl xl:text-5xl font-black tracking-[-0.03em] text-balance leading-[1.05]">
+            Tu bodega,{" "}
+            <span className="italic font-serif text-[var(--accent)]">
+              en un solo lugar.
+            </span>
+          </h1>
+          <p className="mt-5 text-[15px] text-white/70 leading-relaxed max-w-sm">
+            Inventario, ventas, fiados, delivery y reportes — todo lo que
+            necesitas para vender más sin perder el control.
           </p>
-          <SectionTitle className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">
-            Bienvenido
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-xs">
-            {activeTenant ? (
-              <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>.</>
-            ) : (
-              "Ingresa con las credenciales de tu tienda."
-            )}
-          </p>
+
+          <ul className="mt-9 space-y-4">
+            {FEATURES.map((f) => (
+              <li key={f.label} className="flex items-start gap-3.5">
+                <span
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border shrink-0"
+                  style={{
+                    background: "rgba(0,180,166,0.10)",
+                    borderColor: "rgba(0,180,166,0.25)",
+                  }}
+                >
+                  <f.icon className="h-4.5 w-4.5 text-[var(--accent)]" strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-[15px] font-bold text-white">{f.label}</p>
+                  <p className="text-[13px] text-white/55 mt-0.5 leading-relaxed">{f.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div
-          className="rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-6 sm:p-8"
-          style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.06)" }}
-        >
+        {/* BOTTOM — trust */}
+        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/45 max-w-sm">
+          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" strokeWidth={2} />
+          <span className="leading-relaxed">
+            Tus datos están aislados — solo tú accedes a tu tienda.
+            Cumplimiento Ley 29733 PE · Cookies HttpOnly · CSRF activo.
+          </span>
+        </footer>
+      </aside>
+
+      {/* ─── FORM DERECHO ────────────────────────────────────────────── */}
+      <main className="flex items-center justify-center px-6 py-8 sm:px-12 sm:py-12">
+        <div className={cn("w-full max-w-[420px]", shaking && "animate-[shake_0.45s_ease-out]")}>
+          {/* Logo mobile (hero hidden) */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+            <div
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-md"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
+              }}
+            >
+              <Store className="h-5 w-5 text-white" strokeWidth={2.25} />
+            </div>
+            <p className="font-extrabold text-[var(--text-primary)] text-lg tracking-tight">Buleje</p>
+          </div>
+
+          {/* Eyebrow + título */}
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            Iniciar sesión
+          </p>
+          <SectionTitle className="text-3xl sm:text-[2.25rem] font-extrabold text-[var(--text-primary)] leading-[1.1] tracking-tight">
+            Bienvenido de vuelta
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-2.5 max-w-sm">
+            {activeTenant ? (
+              <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>. <button type="button" onClick={() => { setActiveTenant(null); setTenantSlug(""); localStorage.removeItem("active-tenant-slug"); }} className="text-[var(--accent)] hover:underline font-semibold">cambiar</button></>
+            ) : (
+              "Ingresa tu tienda y credenciales — entras al panel directo."
+            )}
+          </p>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            {/* Tu tienda — opcional, autocomplete del slug */}
+            {!activeTenant && (
+              <div className="space-y-1.5">
+                <label htmlFor="tenant" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Tu tienda <span className="text-[var(--text-tertiary)] font-medium normal-case">(opcional)</span>
+                </label>
+                <div className="relative group">
+                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors" strokeWidth={2} />
+                  <input
+                    id="tenant"
+                    type="text"
+                    value={tenantSlug}
+                    onChange={(e) => setTenantSlug(e.target.value)}
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15 transition-all"
+                    placeholder="mi-pollo"
+                    autoComplete="organization"
+                  />
+                </div>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  Si dejas vacío, entras a la plataforma principal.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label htmlFor="username" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Usuario
@@ -262,12 +397,12 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm pt-1">
-              <label className="inline-flex items-center gap-2 cursor-pointer">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30"
+                  className="h-4 w-4 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 cursor-pointer"
                 />
                 <span className="text-[var(--text-secondary)] font-medium">Recordarme</span>
               </label>
@@ -282,7 +417,7 @@ export default function AdminLoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 {error}
               </div>
@@ -291,7 +426,12 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading || !pw}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-[var(--ls-wider)] hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent)]/20"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-white text-sm font-extrabold uppercase tracking-[var(--ls-wider)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
+                boxShadow: "0 12px 24px -8px rgba(0,180,166,0.4)",
+              }}
             >
               {loading ? (
                 <>
@@ -317,41 +457,34 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
+          {/* Switches a otros paneles */}
+          <div className="mt-8 pt-6 border-t border-[var(--rule-soft)] space-y-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+              ¿Buscas otro panel?
+            </p>
+            <SwitchChip
+              href="/superadmin/login"
+              icon={<Crown className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Plataforma"
+              title="Acceso Superadmin"
+              accent="violet"
+            />
+            <SwitchChip
+              href="/delivery-app/login"
+              icon={<Bike className="h-4 w-4" strokeWidth={2} />}
+              eyebrow="Repartidor"
+              title="Acceso Delivery"
+              accent="orange"
+            />
+          </div>
         </div>
-
-        {/* Switches a otros paneles — fuera del card, footer del wrapper */}
-        <div className="mt-6 space-y-2">
-          <p className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-            ¿Buscas otro panel?
-          </p>
-          <SwitchChip
-            href="/superadmin/login"
-            icon={<Crown className="h-4 w-4" strokeWidth={2} />}
-            eyebrow="Plataforma"
-            title="Acceso Superadmin"
-            accent="violet"
-          />
-          <SwitchChip
-            href="/delivery-app/login"
-            icon={<Bike className="h-4 w-4" strokeWidth={2} />}
-            eyebrow="Repartidor"
-            title="Acceso Delivery"
-            accent="orange"
-          />
-        </div>
-
-        {/* Trust footer */}
-        <p className="mt-6 flex items-start gap-2 text-xs text-[var(--text-tertiary)] justify-center text-center max-w-xs mx-auto leading-relaxed">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--accent)]" />
-          <span>Tus datos están aislados. Cumplimiento Ley 29733 PE.</span>
-        </p>
       </main>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SwitchChip — link a otro panel de auth con identidad visual diferenciada.
+// SwitchChip — link a otro panel con identidad visual diferenciada.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SwitchChip({
