@@ -72,7 +72,7 @@ export default function StoreHero({
   return (
     <section
       aria-labelledby="store-hero-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
+      className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
     >
       <div
         className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"

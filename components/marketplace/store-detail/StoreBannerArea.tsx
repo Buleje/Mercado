@@ -48,11 +48,14 @@ export default function StoreBannerArea({
       className="relative w-full overflow-hidden"
     >
       {/* ── Banner background ─────────────────────────────────────────────── */}
+      {/* Compact: era h-44/56/64 — estiraba muy alto en desktop. Ahora 32/36/40
+          (~37% mas chico) para que se vea proporcionado al banner real subido
+          desde admin/configuracion en vez de tipo poster gigante. */}
       <motion.div
         initial={{ opacity: 0, scale: 1.04 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative h-44 sm:h-56 lg:h-64 w-full"
+        className="relative h-32 sm:h-36 lg:h-40 w-full"
       >
         {hasBanner ? (
           <Image
@@ -78,7 +81,7 @@ export default function StoreBannerArea({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="-mt-14 sm:-mt-16 lg:-mt-20 relative z-10 flex items-end gap-4">
           {/* Avatar */}
@@ -171,7 +174,7 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
       />
 
       {/* Wordmark + tagline */}
-      <div className="relative z-10 h-full w-full px-6 sm:px-10 lg:px-14 flex flex-col justify-center max-w-7xl mx-auto">
+      <div className="relative z-10 h-full w-full px-6 sm:px-10 lg:px-14 flex flex-col justify-center max-w-screen-2xl mx-auto">
         <div className="flex items-center gap-2 mb-2">
           <span className="inline-flex items-center justify-center h-7 w-7 rounded-md bg-white/15 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
