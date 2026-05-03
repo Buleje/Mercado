@@ -64,6 +64,16 @@
           "id": "pol-moq631wddzx7",
           "name": "Salchipapa Montada",
           "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777836752163-Salchipapa_Elevado.webp"
+        },
+        {
+          "id": "pol-moqdyt9f4zxj",
+          "name": "Porcion Arroz Blanco",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777849962780-Porcion_Arroz_Blanco.webp"
+        },
+        {
+          "id": "pol-moqe4tssg2i4",
+          "name": "1/8 de Broster",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850244172-Broster_1_8.webp"
         }
       ]
     },
@@ -146,6 +156,46 @@
           "id": "beb-moqbo61sk3go",
           "name": "Jugo de Cocona",
           "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777846107356-Cocona_jugo.webp"
+        },
+        {
+          "id": "beb-moqdzlr63lvp",
+          "name": "Vaso de Cocona",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777849998563-Vaso_Cocona.webp"
+        },
+        {
+          "id": "beb-moqe039i3rqq",
+          "name": "Cerveza en Lata San Juan",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850022293-San_juan_cerveza.webp"
+        },
+        {
+          "id": "beb-moqe10u4l5ps",
+          "name": "Pepsi Black",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850066357-Pepsi_Black.webp"
+        },
+        {
+          "id": "beb-moqe1ztljddx",
+          "name": "Cerveza Heineken 310 ml",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850111637-heineken-original-bottle_310_ml.webp"
+        },
+        {
+          "id": "beb-moqe2n5s42um",
+          "name": "Cerveza Pilsen",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850141623-Cerveza_Pilsen.webp"
+        },
+        {
+          "id": "beb-moqe34zrgd67",
+          "name": "Cerveza Cusqueña 310 ml",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850157832-Cerveza_Cusque_a_310_ml.webp"
+        },
+        {
+          "id": "beb-moqe3jce2nny",
+          "name": "Cerveza Corona",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850181461-Cerveza_corona_330_ml.webp"
+        },
+        {
+          "id": "beb-moqe445r8mti",
+          "name": "Vaso Chicha Morada",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850210557-Baso_Chicha_Morada.webp"
         }
       ]
     },

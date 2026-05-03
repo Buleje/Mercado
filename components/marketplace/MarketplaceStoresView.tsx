@@ -311,19 +311,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         )}
         avatar={
           <div
-            className="h-10 w-10 rounded-xl overflow-hidden bg-[var(--surface-raised)] border-2 border-[var(--surface-canvas)] shadow-md flex items-center justify-center"
+            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-[3px] border-[var(--surface-canvas)] shadow-lg flex items-center justify-center"
             aria-label={ariaLabel}
           >
             {store.logo ? (
               <Image
                 src={store.logo}
                 alt=""
-                width={40}
-                height={40}
+                width={80}
+                height={80}
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-sm font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+              <span className="text-xl sm:text-2xl font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
                 {store.name.trim().charAt(0).toUpperCase()}
               </span>
             )}

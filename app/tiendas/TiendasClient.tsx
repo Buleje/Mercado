@@ -284,8 +284,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
   // Skip flag: en el primer mount, si ya tenemos initialStores del server,
   // NO disparamos fetch ni setLoading(true) porque la lista ya está
-  // materializada. Si el usuario filtra/busca, los siguientes runs sí fetchean.
-  const skipInitialFetchRef = useRef(initialStores.length > 0);
+  // materializada. PERO si la URL trae filtros activos (?q=, ?cat=, ?zona=),
+  // forzamos el fetch porque initialStores trae TODAS las tiendas sin filtrar.
+  const hasInitialFilters =
+    (searchParams.get("q")?.trim().length ?? 0) > 0 ||
+    (searchParams.get("cat") && searchParams.get("cat") !== "todos") ||
+    (searchParams.get("zona")?.trim().length ?? 0) > 0;
+  const skipInitialFetchRef = useRef(initialStores.length > 0 && !hasInitialFilters);
 
   // Fetch con AbortController — cancela request previa si el user sigue
   // tipeando/filtrando. Debounce 300ms unificado (no solo en search) para
@@ -527,6 +532,18 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   <SearchAutocomplete
                     onSearch={setSearch}
                     placeholder="¿Qué buscás hoy? Bodega, farmacia, restaurante…"
+                    onSelect={isTiendasOnly ? (item) => {
+                      // Modo tiendas-only: si el cliente selecciona una tienda,
+                      // navega al storefront. Cualquier otro tipo (producto,
+                      // categoria, query) filtra el listado en /tiendas sin
+                      // redireccionar — Brandon pidio que NO se vaya a otro
+                      // apartado del marketplace.
+                      if (item.type === "store" && item.href) {
+                        window.location.href = item.href;
+                        return;
+                      }
+                      setSearch(item.label);
+                    } : undefined}
                   />
                 </div>
               </div>

@@ -132,11 +132,19 @@ function useRotatingPlaceholder(active: boolean): string {
 interface Props {
   className?: string;
   placeholder?: string;
+  /**
+   * En modo "tiendas-only" (superadmin nav config), submit y selecciones
+   * de productos/categorias/queries redirigen a /tiendas?q= para FILTRAR
+   * tiendas en vez de abrir paginas cross-product. Solo selecciones de
+   * tipo store siguen al storefront del vendor.
+   */
+  storesOnly?: boolean;
 }
 
 export default function NavbarSearchAutocomplete({
   className,
   placeholder,
+  storesOnly = false,
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -240,11 +248,18 @@ export default function NavbarSearchAutocomplete({
           e.preventDefault();
           const it = flatItems[activeIdx];
           setOpen(false);
-          router.push(it.href);
+          // En storesOnly: solo type=store mantiene su href (storefront).
+          // Productos/categorias/queries redirigen a /tiendas?q=label para
+          // filtrar el listado de tiendas con ese termino.
+          if (storesOnly && it.type !== "store") {
+            router.push(`/tiendas?q=${encodeURIComponent(it.label)}`);
+          } else {
+            router.push(it.href);
+          }
         }
       }
     },
-    [activeIdx, flatItems, open, router],
+    [activeIdx, flatItems, open, router, storesOnly],
   );
 
   const onSubmit = useCallback(
@@ -253,9 +268,14 @@ export default function NavbarSearchAutocomplete({
       const q = query.trim();
       if (!q) return;
       setOpen(false);
-      router.push(`/marketplace/buscar?q=${encodeURIComponent(q)}`);
+      // En storesOnly el submit filtra tiendas en /tiendas, no abre la
+      // pagina cross-product de busqueda.
+      const target = storesOnly
+        ? `/tiendas?q=${encodeURIComponent(q)}`
+        : `/marketplace/buscar?q=${encodeURIComponent(q)}`;
+      router.push(target);
     },
-    [query, router],
+    [query, router, storesOnly],
   );
 
   return (
@@ -365,10 +385,13 @@ export default function NavbarSearchAutocomplete({
                             : s.type === "product"
                               ? Package
                               : Search;
+                      const targetHref = storesOnly && s.type !== "store"
+                        ? `/tiendas?q=${encodeURIComponent(s.label)}`
+                        : s.href;
                       return (
                         <li key={s.id}>
                           <Link
-                            href={s.href}
+                            href={targetHref}
                             role="option"
                             aria-selected={active}
                             onClick={() => setOpen(false)}

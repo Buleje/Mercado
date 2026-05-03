@@ -378,6 +378,7 @@ export default function MarketplaceNavbar() {
             <div data-tour="search" className="hidden md:block flex-1 max-w-[680px]">
               <NavbarSearchAutocomplete
                 className="block"
+                storesOnly={isTiendasOnly}
                 placeholder={
                   isTiendasOnly
                     ? "Buscar producto o tienda en Pucallpa..."
