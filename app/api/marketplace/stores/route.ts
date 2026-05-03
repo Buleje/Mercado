@@ -150,6 +150,7 @@ export async function GET(req: NextRequest) {
           slug:            true,
           name:            true,
           logo:            true,
+          banner:          true, // hero al entrar al storefront
           category:        true,
           zone:            true,
           rating:          true,
@@ -165,6 +166,24 @@ export async function GET(req: NextRequest) {
         },
         take: limit * 2,
       });
+
+      // Patch in `cover` por raw query — la columna existe en DB pero el
+      // schema.prisma no se regenera (zona peligrosa). Patrón expand seguro.
+      // Loop simple porque normalmente son <100 tiendas.
+      if (stores.length > 0) {
+        try {
+          const covers = await prisma.$queryRawUnsafe<Array<{ id: string; cover: string | null }>>(
+            `SELECT id, cover FROM "Store" WHERE id = ANY($1::text[])`,
+            stores.map((s) => s.id as string),
+          ).catch(() => [] as Array<{ id: string; cover: string | null }>);
+          const coverMap = new Map(covers.map((c) => [c.id, c.cover]));
+          for (const s of stores) {
+            (s as Record<string, unknown>).cover = coverMap.get(s.id as string) ?? null;
+          }
+        } catch {
+          // sin cover → marketplace sigue funcionando con logo de fallback
+        }
+      }
     } catch (dbErr) {
       // If Store table doesn't exist or DB connection fails, return empty list
       logger.warn("[marketplace/stores] DB query failed, returning empty list", { error: dbErr instanceof Error ? dbErr.message : String(dbErr) });
@@ -401,6 +420,8 @@ export async function GET(req: NextRequest) {
         slug: s.slug,
         name: s.name,
         logo: s.logo,
+        cover: (s as { cover?: string | null }).cover ?? null, // Portada — patched arriba via raw query
+        banner: (s as { banner?: string | null }).banner ?? null, // Hero del storefront
         category: s.category,
         zone: finalZone,
         rating: s.rating,

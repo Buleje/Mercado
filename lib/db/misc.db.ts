@@ -128,7 +128,9 @@ export type DbSettings = {
   businessLat?: number;
   businessLon?: number;
   logoUrl?: string;
-  /** Banner wide (1600×500) que se muestra arriba de la tienda en el marketplace. */
+  /** Portada — imagen principal (4:3) que se muestra en la card del listado /tiendas. */
+  coverUrl?: string;
+  /** Banner — hero wide (1600×500) que se muestra al entrar al storefront. */
   bannerUrl?: string;
   description?: string;
   hours?: string;

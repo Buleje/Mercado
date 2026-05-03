@@ -5,6 +5,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import {
   Store, Phone, MapPin, Clock, AlignLeft, Upload, Lock, X, Search,
@@ -271,7 +272,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const [businessPhone, setBusinessPhone] = useState("51916409675");
   const [businessAddress, setBusinessAddress] = useState("Pucallpa, Ucayali");
   const [logoUrl, setLogoUrl] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const coverImgRef = useRef<HTMLInputElement>(null);
   const bannerImgRef = useRef<HTMLInputElement>(null);
   const [description, setDescription] = useState("Productos frescos, precios justos y entrega directa a tu puerta.");
   const [hours, setHours] = useState("Lun - Sáb: 7am - 9pm");
@@ -443,6 +446,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         if (d.businessPhone) setBusinessPhone(d.businessPhone);
         if (d.businessAddress) setBusinessAddress(d.businessAddress);
         if (d.logoUrl) setLogoUrl(d.logoUrl);
+        if (d.coverUrl) setCoverUrl(d.coverUrl as string);
         if (d.bannerUrl) setBannerUrl(d.bannerUrl as string);
         if (d.description) setDescription(d.description);
         if (d.hours) setHours(d.hours);
@@ -540,15 +544,26 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   const patch = useCallback(async (data: SettingsData) => {
     setSaving(true);
+    const t = toast.loading("Guardando cambios…");
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(errBody.error ?? `HTTP ${res.status}`);
+      }
+      toast.success("Cambios guardados", { id: t, description: "La configuración se actualizó correctamente." });
       setSavedSection(activeSection);
       setTimeout(() => setSavedSection(null), 2000);
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error("No se pudo guardar", {
+        id: t,
+        description: err instanceof Error ? err.message : "Error desconocido. Probá de nuevo.",
+      });
+    }
     setSaving(false);
   }, [activeSection]);
 
@@ -577,12 +592,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       if (!file) return;
       e.target.value = ""; // reset para que volver a elegir el mismo archivo dispare onChange
       setUploadingField(fieldId);
+      const t = toast.loading(`Subiendo ${fieldId}…`);
       try {
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", folder);
         // CSRF: el endpoint valida double-submit cookie via header.
-        // Sin esto, devuelve 403 "CSRF token invalido o ausente".
         const res = await fetch("/api/upload", {
           method: "POST",
           headers: csrfHeaders(),
@@ -594,12 +609,15 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         }
         const data = await res.json() as { url: string };
         setter(data.url);
+        toast.success(`${fieldId.charAt(0).toUpperCase() + fieldId.slice(1)} subido`, {
+          id: t,
+          description: "Click \"Guardar cambios\" para confirmar.",
+        });
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("[settings] upload failed", err);
-        // Notificar al usuario sin alert nativo: simple alert por ahora,
-        // mejorable con toast del DS.
-        alert("Error al subir la imagen. Probá de nuevo.");
+        toast.error("No se pudo subir la imagen", {
+          id: t,
+          description: err instanceof Error ? err.message : "Probá con un archivo más chico o en otro formato.",
+        });
       } finally {
         setUploadingField(null);
       }
@@ -828,59 +846,49 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         </div>
       </SectionCard>
 
-      {/* Logo */}
-      <SectionCard title="Logo del negocio" desc="Aparece en el header de tu panel y en la card de tu tienda en el marketplace">
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            disabled={uploadingField === "logo"}
-            onClick={() => logoImgRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors disabled:opacity-60 disabled:cursor-wait"
-          >
-            {uploadingField === "logo" ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Subiendo…</>
-            ) : (
-              <><Upload className="h-4 w-4" /> Subir imagen</>
-            )}
-          </button>
-          <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl, "logo", "branding")} />
-          <TextInput value={logoUrl.startsWith("data:") ? "" : logoUrl} onChange={setLogoUrl} placeholder="https://… o /logo.png" />
+      {/* ─── Identidad visual: 3 imágenes (Logo + Portada + Banner) ─── */}
+      <SectionCard
+        title="Identidad visual"
+        desc="Subí 3 imágenes que definen cómo se ve tu negocio en el marketplace y en tu panel"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ImageDropCard
+            label="Logo"
+            hint="Cuadrado · 200×200"
+            whereVisible="Header del panel + ícono pequeño en la card"
+            value={logoUrl}
+            previewClass="aspect-square"
+            inputRef={logoImgRef}
+            onChange={setLogoUrl}
+            uploading={uploadingField === "logo"}
+            onUpload={handleFileUpload(setLogoUrl, "logo", "branding")}
+            mockup={<MockHeader logoUrl={logoUrl} />}
+          />
+          <ImageDropCard
+            label="Portada"
+            hint="Horizontal · 1200×900 (4:3)"
+            whereVisible="Foto principal de tu card en /tiendas"
+            value={coverUrl}
+            previewClass="aspect-[4/3]"
+            inputRef={coverImgRef}
+            onChange={setCoverUrl}
+            uploading={uploadingField === "portada"}
+            onUpload={handleFileUpload(setCoverUrl, "portada", "branding")}
+            mockup={<MockStoreCard coverUrl={coverUrl} logoUrl={logoUrl} businessName={businessName} />}
+          />
+          <ImageDropCard
+            label="Banner"
+            hint="Wide · 1600×500 (16:5)"
+            whereVisible="Hero gigante al entrar a tu tienda"
+            value={bannerUrl}
+            previewClass="aspect-[16/5]"
+            inputRef={bannerImgRef}
+            onChange={setBannerUrl}
+            uploading={uploadingField === "banner"}
+            onUpload={handleFileUpload(setBannerUrl, "banner", "branding")}
+            mockup={<MockStorefront bannerUrl={bannerUrl} logoUrl={logoUrl} businessName={businessName} />}
+          />
         </div>
-        {logoUrl && (
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
-            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-[var(--rule-soft)]" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            <span className="text-xs text-[var(--text-secondary)] flex-1">Vista previa</span>
-            <button onClick={() => setLogoUrl("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button>
-          </div>
-        )}
-      </SectionCard>
-
-      {/* Banner */}
-      <SectionCard title="Banner del negocio" desc="Imagen wide (1600×500 ideal) que se muestra arriba de tu tienda en el marketplace">
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            disabled={uploadingField === "banner"}
-            onClick={() => bannerImgRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors disabled:opacity-60 disabled:cursor-wait"
-          >
-            {uploadingField === "banner" ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Subiendo…</>
-            ) : (
-              <><Upload className="h-4 w-4" /> Subir banner</>
-            )}
-          </button>
-          <input ref={bannerImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setBannerUrl, "banner", "branding")} />
-          <TextInput value={bannerUrl.startsWith("data:") ? "" : bannerUrl} onChange={setBannerUrl} placeholder="https://… o /banner.jpg" />
-        </div>
-        {bannerUrl && (
-          <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
-            <Image src={bannerUrl} alt="Banner" fill className="object-cover" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            <button onClick={() => setBannerUrl("")} className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-black/60 text-white text-xs font-bold hover:bg-black/80">
-              Quitar
-            </button>
-          </div>
-        )}
       </SectionCard>
 
       {/* Social links */}
@@ -913,7 +921,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       <SaveButton saving={saving} saved={savedSection === "business"} onClick={() => patch({
         mode, businessName, businessPhone, businessAddress, businessLat, businessLon,
-        logoUrl, bannerUrl, description, hours, deliveryZone, razonSocial, ruc, businessEmail,
+        logoUrl, coverUrl, bannerUrl, description, hours, deliveryZone, razonSocial, ruc, businessEmail,
         currency, timezone, businessType, socialLinks,
       }).then(() => onModeChange(mode))} />
     </div>
@@ -1950,6 +1958,178 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           </m.div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Image Drop Card ─────────────────────────────────────────────────────────
+//
+// Card unificado para subir imágenes (Logo / Portada / Banner). Cada uno
+// muestra:
+//  - Label + hint del aspect ratio recomendado
+//  - Mini-mockup que ANTICIPA dónde va a aparecer la imagen
+//  - Dropzone con preview en el aspect-ratio real
+//  - Input URL alternativo
+//  - Botón "Quitar" sobre el preview
+
+interface ImageDropCardProps {
+  label: string;
+  hint: string;
+  whereVisible: string;
+  value: string;
+  previewClass: string;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onChange: (v: string) => void;
+  uploading: boolean;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  mockup: React.ReactNode;
+}
+
+function ImageDropCard({
+  label,
+  hint,
+  whereVisible,
+  value,
+  previewClass,
+  inputRef,
+  onChange,
+  uploading,
+  onUpload,
+  mockup,
+}: ImageDropCardProps) {
+  const safeUrl = value && !value.startsWith("data:") ? value : "";
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-raised)] dark:bg-surface p-4 flex flex-col gap-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="text-base font-extrabold text-[var(--text-primary)] truncate">{label}</h4>
+          <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>
+        </div>
+      </div>
+
+      {/* Donde aparece (mini-mockup) */}
+      <div className="rounded-xl bg-gray-50 dark:bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
+          Aparece en
+        </p>
+        <p className="text-xs text-[var(--text-secondary)] mb-2">{whereVisible}</p>
+        {mockup}
+      </div>
+
+      {/* Preview o dropzone */}
+      <div className="space-y-2">
+        {value ? (
+          <div className={`relative w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-gray-50 dark:bg-surface ${previewClass}`}>
+            <Image src={value} alt={label} fill className="object-contain" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <button
+              onClick={() => onChange("")}
+              className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/70 text-white text-xs font-bold hover:bg-black/90 transition-colors"
+            >
+              Quitar
+            </button>
+            <button
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/90 text-[var(--text-primary)] text-xs font-bold hover:bg-white transition-colors disabled:opacity-60"
+            >
+              <Upload className="h-3 w-3" />
+              Cambiar
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm font-bold">Subiendo…</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-6 w-6" />
+                <span className="text-sm font-bold">Subir imagen</span>
+                <span className="text-xs text-[var(--text-tertiary)]">JPG · PNG · WebP</span>
+              </>
+            )}
+          </button>
+        )}
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onUpload} />
+        <input
+          value={safeUrl}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="o pegá URL: https://…"
+          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-[var(--surface-canvas)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini-mockups ────────────────────────────────────────────────────────────
+// Visualizan dónde aparece cada imagen en su contexto real, en miniatura.
+
+function MockHeader({ logoUrl }: { logoUrl: string }) {
+  return (
+    <div className="rounded-md bg-[#0b1f2b] text-white/80 px-2 py-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)]">
+      <div className="w-1 h-3 bg-white/15 rounded-sm" />
+      <div className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[rgba(52,212,190,0.3)] bg-[rgba(52,212,190,0.1)] text-[#5eead4] font-bold">
+        {logoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={logoUrl} alt="" className="h-3 w-3 rounded object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        ) : (
+          <Store className="h-2.5 w-2.5" />
+        )}
+        <span className="truncate max-w-[40px]">Tienda</span>
+      </div>
+    </div>
+  );
+}
+
+function MockStoreCard({ coverUrl, logoUrl, businessName }: { coverUrl: string; logoUrl: string; businessName: string }) {
+  return (
+    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)]">
+      <div className="aspect-[4/3] bg-linear-to-br from-primary/10 to-primary/30 relative">
+        {coverUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={coverUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">Portada</div>
+        )}
+        {logoUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={logoUrl} alt="" className="absolute bottom-1 left-1 h-4 w-4 rounded-md ring-1 ring-white object-cover bg-white" />
+        )}
+      </div>
+      <div className="px-1.5 py-1">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] truncate">{businessName || "Tu tienda"}</p>
+      </div>
+    </div>
+  );
+}
+
+function MockStorefront({ bannerUrl, logoUrl, businessName }: { bannerUrl: string; logoUrl: string; businessName: string }) {
+  return (
+    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)]">
+      <div className="aspect-[16/5] bg-linear-to-r from-primary/15 via-primary/25 to-primary/10 relative">
+        {bannerUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={bannerUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">Banner gigante</div>
+        )}
+      </div>
+      <div className="px-1.5 py-1 flex items-center gap-1">
+        {logoUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={logoUrl} alt="" className="h-3 w-3 rounded-sm object-cover" />
+        )}
+        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] truncate">{businessName || "Tu tienda"}</p>
+      </div>
     </div>
   );
 }

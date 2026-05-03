@@ -70,6 +70,7 @@ export async function PUT(req: NextRequest) {
       ...(body.businessPhone !== undefined && { businessPhone: body.businessPhone }),
       ...(body.businessAddress !== undefined && { businessAddress: body.businessAddress }),
       ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+      ...(body.coverUrl !== undefined && { coverUrl: body.coverUrl }),
       ...(body.bannerUrl !== undefined && { bannerUrl: body.bannerUrl }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.hours !== undefined && { hours: body.hours }),
@@ -200,6 +201,7 @@ export async function PUT(req: NextRequest) {
 
     if (
       body.logoUrl !== undefined ||
+      body.coverUrl !== undefined ||
       body.bannerUrl !== undefined ||
       body.description !== undefined ||
       body.businessName !== undefined
@@ -214,6 +216,14 @@ export async function PUT(req: NextRequest) {
           ...(body.businessName !== undefined && body.businessName && { name: body.businessName }),
         },
       }).catch((err: unknown) => logger.warn("[settings] store sync skipped", { error: String(err) }));
+
+      // Store.cover via raw SQL — el campo existe en DB (ALTER TABLE) pero el
+      // schema.prisma no se regenera (zona peligrosa). Patrón expand seguro:
+      // columnas nullable nuevas no rompen clientes viejos.
+      if (body.coverUrl !== undefined) {
+        prisma.$executeRaw`UPDATE "Store" SET "cover" = ${body.coverUrl || null} WHERE "tenantId" = ${tenantId}`
+          .catch((err: unknown) => logger.warn("[settings] store cover sync skipped", { error: String(err) }));
+      }
     }
 
     return NextResponse.json(saved);
