@@ -53,8 +53,18 @@ export async function GET(req: NextRequest) {
   try {
     const tenantId = await resolveTenantIdForRoute(req);  // JWT > header
     const settings = await withDbRetry(() => SettingsDB.get(tenantId));
-    // ⚠️ SIEMPRE filtrar credentials antes de responder
-    const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings;
+    // ⚠️ SIEMPRE strippear credentials + secrets antes de responder.
+    // El cliente NO recibe los valores — debe re-tipear si quiere cambiarlos.
+    const {
+      adminPassword: _pw, adminBypassLogin: _bypass,
+      smtpPass: _smtp, whatsappApiToken: _wapp,
+      sunatApiKey: _sunat, transferAccountNum: _tan,
+      ...publicSettings
+    } = settings as DbSettings & {
+      adminPassword?: string; adminBypassLogin?: boolean;
+      smtpPass?: string; whatsappApiToken?: string;
+      sunatApiKey?: string; transferAccountNum?: string;
+    };
     return NextResponse.json(publicSettings, {
       headers: { "Cache-Control": "private, no-cache, max-age=0" },
     });
@@ -64,6 +74,10 @@ export async function GET(req: NextRequest) {
   }
 }
 ```
+
+> **Nota:** PUT debe ignorar valores `""` para estos secrets — sino el cliente
+> los borra al guardar (porque GET ya no los devuelve).
+> Patrón: `...(body.smtpPass !== undefined && body.smtpPass !== "" && { smtpPass: body.smtpPass })`
 
 ### PUT — patrón obligatorio (5 capas)
 
@@ -77,18 +91,25 @@ const headerTenantId = req.headers.get("x-tenant-id");
 const rawTenantId = (headerTenantId && headerTenantId !== "main") ? headerTenantId : auth.tenantId;
 ```
 
-#### Capa 2: Slug → CUID resolution (BUG HISTÓRICO ⚠️)
+#### Capa 2: Slug → CUID resolution (BUG HISTÓRICO ⚠️) + Validación
 
 ```ts
+const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
+
 let tenantId = rawTenantId;
 if (rawTenantId && !rawTenantId.startsWith("cm") && rawTenantId !== "main") {
+  // [SECURITY] Validar formato slug ANTES de findUnique (defensa en profundidad)
+  if (!TENANT_SLUG_RE.test(rawTenantId)) {
+    return NextResponse.json({ error: "Invalid tenant identifier" }, { status: 400 });
+  }
   const t = await prisma.tenant.findUnique({ where: { slug: rawTenantId }, select: { id: true } });
   if (t?.id) tenantId = t.id;
 }
 ```
 
-> **Sin esto:** UPSERT crea 2 filas (una con slug, otra con cuid). El dueño nunca ve sus uploads.
+> **Sin slug→cuid:** UPSERT crea 2 filas (una con slug, otra con cuid). El dueño nunca ve sus uploads.
 > Bug fixeado en commit `2fbd0cd5`. **No volver a romper.**
+> **Sin Zod:** un slug malformado podría triggerar errores Prisma inesperados.
 
 #### Capa 3: Spread condicional
 

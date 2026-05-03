@@ -8,6 +8,9 @@ import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 
+// [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
+const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
+
 export async function GET(req: NextRequest) {
   try {
     // [SEGURIDAD MULTI-TENANT] JWT > header (ver lib/resolve-tenant.ts).
@@ -15,9 +18,26 @@ export async function GET(req: NextRequest) {
     // con el de "main" si el header está stale.
     const tenantId = await resolveTenantIdForRoute(req);
     const settings = await withDbRetry(() => SettingsDB.get(tenantId));
-    // Never expose credentials or security toggles to public callers
-     
-    const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings as DbSettings & { adminPassword?: string; adminBypassLogin?: boolean };
+    // [SECURITY] Strip credentials + security toggles + secrets per-tenant.
+    // El cliente debe re-tipear si quiere cambiar smtpPass/whatsappApiToken/etc.
+    // El PUT ignora valores vacíos para estos campos (no sobreescribe).
+
+    const {
+      adminPassword: _pw,
+      adminBypassLogin: _bypass,
+      smtpPass: _smtp,
+      whatsappApiToken: _wapp,
+      sunatApiKey: _sunat,
+      transferAccountNum: _tan,
+      ...publicSettings
+    } = settings as DbSettings & {
+      adminPassword?: string;
+      adminBypassLogin?: boolean;
+      smtpPass?: string;
+      whatsappApiToken?: string;
+      sunatApiKey?: string;
+      transferAccountNum?: string;
+    };
     return NextResponse.json(publicSettings, {
       headers: {
         "Cache-Control": "private, no-cache, max-age=0",
@@ -46,6 +66,12 @@ export async function PUT(req: NextRequest) {
     // ve sus uploads porque GET lee de un row distinto.
     let tenantId = rawTenantId;
     if (rawTenantId && !rawTenantId.startsWith("cm") && rawTenantId !== "main") {
+      // [SECURITY] Validar formato slug antes de findUnique. Defensa en
+      // profundidad: el header ya viene canonicalizado por proxy, pero un
+      // refactor futuro podría romper la invariante.
+      if (!TENANT_SLUG_RE.test(rawTenantId)) {
+        return NextResponse.json({ error: "Invalid tenant identifier" }, { status: 400 });
+      }
       const t = await prisma.tenant
         .findUnique({ where: { slug: rawTenantId }, select: { id: true } })
         .catch((err) => {
@@ -153,9 +179,11 @@ export async function PUT(req: NextRequest) {
       ...(body.smtpHost !== undefined && { smtpHost: body.smtpHost }),
       ...(body.smtpPort !== undefined && { smtpPort: body.smtpPort }),
       ...(body.smtpUser !== undefined && { smtpUser: body.smtpUser }),
-      ...(body.smtpPass !== undefined && { smtpPass: body.smtpPass }),
+      // [SECURITY] Secrets: ignorar si vienen vacíos (el GET ya no los expone,
+      // así que el cliente envía "" si el admin no tipea nada — preserva valor existente).
+      ...(body.smtpPass !== undefined && body.smtpPass !== "" && { smtpPass: body.smtpPass }),
       ...(body.smtpFrom !== undefined && { smtpFrom: body.smtpFrom }),
-      ...(body.whatsappApiToken !== undefined && { whatsappApiToken: body.whatsappApiToken }),
+      ...(body.whatsappApiToken !== undefined && body.whatsappApiToken !== "" && { whatsappApiToken: body.whatsappApiToken }),
       ...(body.whatsappBusinessNum !== undefined && { whatsappBusinessNum: body.whatsappBusinessNum }),
       ...(body.whatsappWebhookUrl !== undefined && { whatsappWebhookUrl: body.whatsappWebhookUrl }),
       ...(body.notifChannels !== undefined && { notifChannels: body.notifChannels }),
@@ -165,7 +193,7 @@ export async function PUT(req: NextRequest) {
       ...(body.plinName !== undefined && { plinName: body.plinName }),
       ...(body.plinPhone !== undefined && { plinPhone: body.plinPhone }),
       ...(body.sunatProvider !== undefined && { sunatProvider: body.sunatProvider }),
-      ...(body.sunatApiKey !== undefined && { sunatApiKey: body.sunatApiKey }),
+      ...(body.sunatApiKey !== undefined && body.sunatApiKey !== "" && { sunatApiKey: body.sunatApiKey }),
       ...(body.googleAnalyticsId !== undefined && { googleAnalyticsId: body.googleAnalyticsId }),
       ...(body.googleTagManagerId !== undefined && { googleTagManagerId: body.googleTagManagerId }),
       ...(body.logRetentionDays !== undefined && { logRetentionDays: body.logRetentionDays }),
@@ -180,7 +208,7 @@ export async function PUT(req: NextRequest) {
       ...(body.enabledModules !== undefined && { enabledModules: body.enabledModules }),
       ...(body.transferEnabled !== undefined && { transferEnabled: body.transferEnabled }),
       ...(body.transferBankName !== undefined && { transferBankName: body.transferBankName }),
-      ...(body.transferAccountNum !== undefined && { transferAccountNum: body.transferAccountNum }),
+      ...(body.transferAccountNum !== undefined && body.transferAccountNum !== "" && { transferAccountNum: body.transferAccountNum }),
       ...(body.transferAccountHolder !== undefined && { transferAccountHolder: body.transferAccountHolder }),
 
       // ── StoreCustomizer ──

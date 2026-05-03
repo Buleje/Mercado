@@ -8,6 +8,12 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 const BUCKET = "media";
 const MAX_WIDTH = 1200;
+// [SECURITY] Allowlist contra path traversal — admin malicioso o XSS
+// no puede escribir cross-tenant con folder="../otro-tenant".
+const ALLOWED_FOLDERS = new Set([
+  "products", "logos", "brand", "general",
+  "image-bank", "media", "covers", "banners", "superadmin",
+]);
 
 export async function POST(req: NextRequest) {
   // Solo admins pueden subir imágenes
@@ -17,7 +23,12 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const folder = (formData.get("folder") as string) ?? "general";
+    // [SECURITY] Sanitizar folder + allowlist. Bloquea path traversal (../, ..\\)
+    // y cualquier char fuera de [a-zA-Z0-9_-]. Si el folder no está en la
+    // allowlist, fallback a "general" (no rechazo para no romper UX).
+    const rawFolder = (formData.get("folder") as string) ?? "general";
+    const sanitized = rawFolder.replace(/[^a-zA-Z0-9_-]/g, "");
+    const folder = ALLOWED_FOLDERS.has(sanitized) ? sanitized : "general";
 
     if (!file) {
       return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
