@@ -1,124 +1,86 @@
 "use client";
 
 /**
- * Buleje Logo — ilustrativo canonico (ADR-067 Ola final).
+ * Buleje Logo — único asset oficial.
  *
- * Estilo: Notion-minimalist line-art hand-drawn-feel.
- * Representa una bodega: fachada con techo de dos aguas + ventana + puerta.
- * El "wobble humano" aplica aqui tambien: lineas no perfectas, detalle carino.
+ * Mayo 2026: el SVG ilustrativo (bodega line-art) fue reemplazado por
+ * el logo de marca real (`/brand/buleje-logo.png`) — la "b" con swoosh
+ * teal + el wordmark "Buleje". Este es el único logo de la plataforma:
+ * navbar, footer, login, onboarding, share images, todo.
  *
- * Técnica:
- * - viewBox 48x48 (tamano logo optimo)
- * - stroke currentColor -> pinta teal cuando contexto es claro, white en dark
- * - strokeWidth 1.75 default (entre linea suave y logo visible)
- * - Variante "mark" = solo la ilustracion
- * - Variante "wordmark" = mark + texto "Buleje" a la derecha
- *
- * Reemplaza:
- * - Bloque "B" teal solido en Header/MarketplaceNavbar
- * - ShoppingBasket en AdminSidebar (tenant logo fallback)
- * - ShieldCheck "Platform" en SuperAdminShell
+ * API conservada para retrocompat con los callers existentes:
+ *  - BulejeMark / BulejeWordmark / BulejeLogo
+ *  - props: size, className, strokeWidth (ignored, preserved type compat),
+ *    textSize/showText (ignored — el PNG ya incluye el wordmark grabado).
  */
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-interface LogoProps extends React.SVGAttributes<SVGSVGElement> {
+const LOGO_SRC = "/brand/buleje-logo.png";
+
+interface LogoProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {
   size?: number;
+  /** @deprecated solo por compat — el PNG no usa stroke. */
   strokeWidth?: number;
   className?: string;
 }
 
-const baseProps = (size: number, strokeWidth: number) => ({
-  viewBox: "0 0 48 48",
-  width: size,
-  height: size,
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true as const,
-});
-
 /**
- * BulejeMark — icono cuadrado de la bodega ilustrada.
- *
- * Composicion:
- *  - Techo en dos aguas (trapecio con caida suave)
- *  - Cuerpo fachada con ventana + puerta
- *  - Toldo sutil que evoca la bodega de barrio
- *  - Linea base del piso con leve imperfeccion
+ * BulejeMark — logo cuadrado.
+ * Usar para iconos pequeños (navbar 36–48px) y app icons (192/512).
+ * El PNG ya incluye el wordmark "Buleje" grabado debajo de la marca.
  */
-export function BulejeMark({ size = 40, strokeWidth = 1.75, className, ...rest }: LogoProps) {
+export function BulejeMark({ size = 40, className, ...rest }: LogoProps) {
+  // strokeWidth se descarta — el PNG no es vector.
+  delete (rest as { strokeWidth?: number }).strokeWidth;
   return (
-    <svg {...baseProps(size, strokeWidth)} className={className} {...rest}>
-      {/* Fachada cuerpo — con leve inclinacion, no rectangulo perfecto */}
-      <path d="M9 22q15 -2 30 0v18q-15 1 -30 0z" />
-      {/* Techo dos aguas — vertice 24,10 */}
-      <path d="M7 22l17 -12l17 12" />
-      {/* Toldo sutil sobre fachada (mitad izquierda, detalle bodega) */}
-      <path d="M11 22q6 3 13 0" opacity="0.55" />
-      {/* Puerta — rectangulo con pomo */}
-      <path d="M20 40v-10q4 -1 8 0v10" />
-      <circle cx="25" cy="36" r="0.6" fill="currentColor" />
-      {/* Ventana izquierda — cuadrado dividido */}
-      <rect x="11.5" y="26" width="6" height="6" rx="0.5" />
-      <path d="M14.5 26v6M11.5 29h6" opacity="0.5" />
-      {/* Ventana derecha — cuadrado dividido */}
-      <rect x="30.5" y="26" width="6" height="6" rx="0.5" />
-      <path d="M33.5 26v6M30.5 29h6" opacity="0.5" />
-      {/* Suelo linea — con leve wobble */}
-      <path d="M6 42q18 -1 36 0" opacity="0.55" />
-      {/* Detalle chimenea derecha */}
-      <path d="M33 16v-4h3v2" opacity="0.7" />
-    </svg>
-  );
-}
-
-/**
- * BulejeWordmark — mark + texto "Buleje" a la derecha.
- * Uso: Header, MarketplaceNavbar, About hero.
- */
-interface WordmarkProps extends LogoProps {
-  /** Tamano del texto tipografico. Default 20 */
-  textSize?: number;
-  /** Si se muestra el texto o solo el mark (responsive). Default true */
-  showText?: boolean;
-}
-
-export function BulejeWordmark({
-  size = 36,
-  strokeWidth = 1.75,
-  textSize = 18,
-  showText = true,
-  className,
-  ...rest
-}: WordmarkProps) {
-  return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <BulejeMark size={size} strokeWidth={strokeWidth} {...rest} />
-      {showText && (
-        <span
-          className="font-bold tracking-tight leading-none"
-          style={{ fontSize: `${textSize}px` }}
-        >
-          Buleje
-        </span>
-      )}
+    <span
+      className={cn("inline-flex items-center justify-center shrink-0", className)}
+      style={{ width: size, height: size }}
+      {...rest}
+    >
+      <Image
+        src={LOGO_SRC}
+        alt="Buleje"
+        width={size}
+        height={size}
+        priority={size >= 48}
+        className="object-contain"
+        sizes={`${size}px`}
+      />
     </span>
   );
 }
 
+interface WordmarkProps extends LogoProps {
+  /** @deprecated el PNG ya tiene el texto integrado. */
+  textSize?: number;
+  /** @deprecated el PNG siempre muestra el wordmark. */
+  showText?: boolean;
+}
+
 /**
- * BulejeLogo — export flexible con variant prop.
- * Permite usar <BulejeLogo variant="mark" /> o <BulejeLogo variant="wordmark" />.
+ * BulejeWordmark — alias de BulejeMark.
+ * El PNG oficial ya integra el texto "Buleje" debajo de la marca, así
+ * que mark y wordmark son la misma imagen.
  */
+export function BulejeWordmark({
+  size = 36,
+  className,
+  ...rest
+}: WordmarkProps) {
+  delete (rest as { strokeWidth?: number }).strokeWidth;
+  delete (rest as { textSize?: number }).textSize;
+  delete (rest as { showText?: boolean }).showText;
+  return <BulejeMark size={size} className={className} {...rest} />;
+}
+
 interface BulejeLogoProps extends WordmarkProps {
   variant?: "mark" | "wordmark";
 }
 
-export function BulejeLogo({ variant = "mark", ...props }: BulejeLogoProps) {
-  if (variant === "wordmark") return <BulejeWordmark {...props} />;
+export function BulejeLogo({ variant: _variant = "mark", ...props }: BulejeLogoProps) {
   return <BulejeMark {...props} />;
 }
 

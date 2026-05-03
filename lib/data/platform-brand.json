@@ -8,11 +8,11 @@
     "country": "Perú"
   },
   "logos": {
-    "logoLight": null,
-    "logoDark": null,
-    "logoSquare": null,
-    "favicon": null,
-    "ogImage": null
+    "logoLight": "/brand/buleje-logo.png",
+    "logoDark": "/brand/buleje-logo.png",
+    "logoSquare": "/brand/buleje-logo.png",
+    "favicon": "/brand/buleje-logo.png",
+    "ogImage": "/brand/buleje-logo.png"
   },
   "colors": {
     "primary": "#00B4A6",

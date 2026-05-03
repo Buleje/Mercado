@@ -67,8 +67,8 @@ export const PLATFORM_CONFIG_DEFAULTS: PlatformConfig = {
   brand: {
     name: "Buleje",
     tagline: null,
-    logoUrl: null,
-    faviconUrl: null,
+    logoUrl: "/brand/buleje-logo.png",
+    faviconUrl: "/brand/buleje-logo.png",
     primaryColor: "#00B4A6",
     secondaryColor: "#f4a261",
   },

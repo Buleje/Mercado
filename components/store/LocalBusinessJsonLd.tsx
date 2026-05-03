@@ -12,7 +12,7 @@ export default async function LocalBusinessJsonLd() {
   let description = "Tienda online con delivery a domicilio.";
   let phone = "";
   let address = "";
-  let logo = "/logo.png";
+  let logo = "/brand/buleje-logo.png";
   let lat = -8.3791;
   let lon = -74.5539;
 
