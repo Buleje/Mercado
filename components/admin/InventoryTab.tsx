@@ -516,14 +516,41 @@ export default function InventoryTab() {
   const saveEdit = async () => {
     if (!editModalProduct) return;
     setSaving(true);
-    await fetch(`/api/products/${editModalProduct.id}`, {
-      method: "PUT",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(editForm),
-    });
-    setSaving(false);
-    closeEditModal();
-    load();
+    setImgError(null);
+    try {
+      // Limpiar el body — Zod del backend strippa unknown keys, pero los que
+      // el form maneja como string vacío para "sin valor" deben ir como null
+      // o undefined para que el schema los acepte.
+      const body: Record<string, unknown> = {};
+      const allowedKeys = [
+        "name", "category", "price", "costPrice", "image", "unit",
+        "badge", "barcode", "stock", "stockMin", "stockMax", "active",
+        "expiryDate", "description",
+      ] as const;
+      for (const k of allowedKeys) {
+        const v = (editForm as Record<string, unknown>)[k];
+        if (v !== undefined && v !== "") body[k] = v;
+      }
+
+      const res = await fetch(`/api/products/${editModalProduct.id}`, {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string; issues?: string[] };
+        const detail = (errBody.issues ?? []).join(", ");
+        setImgError(`No se guardó: ${errBody.error ?? "error " + res.status}${detail ? ` — ${detail}` : ""}`);
+        setSaving(false);
+        return; // mantener modal abierto para que el usuario vea el error
+      }
+      closeEditModal();
+      load();
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "Error de red al guardar");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (p: DbProduct) => {
