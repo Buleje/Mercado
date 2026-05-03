@@ -20,12 +20,13 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Search, X } from "@buleje/design-system/icons";
+import { ArrowLeft, Search, X, Menu } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 import StorePromoBannersStrip from "./StorePromoBannersStrip";
-import StoreCategories, { type StoreCategoryChip } from "./StoreCategories";
+import { type StoreCategoryChip } from "./StoreCategories";
+import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreCatalog from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
 import StorePoliciesBlock from "./StorePoliciesBlock";
@@ -63,6 +64,13 @@ export default function StoreDetailClient({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [mobileCatOpen, setMobileCatOpen] = useState(false);
+
+  // Cierra el drawer mobile cuando seleccionan una categoría
+  const handleCategorySelect = useCallback((cat: string | null) => {
+    setActiveCategory(cat);
+    setMobileCatOpen(false);
+  }, []);
 
   // Sugerencias rápidas: matchea nombre, categoría
   const suggestions = useMemo(() => {
@@ -144,12 +152,9 @@ export default function StoreDetailClient({
       {/* ── Sentinel para detectar sticky ─────────────────────────────────── */}
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
-      {/* ── Sticky bar — FULL VIEWPORT WIDTH (no max-w container) ─────────
-          FIX 2026-05: Antes el sticky vivía dentro de max-w-7xl mx-auto
-          y solo podía romper el padding con -mx-* — quedaba constreñido
-          al ancho del catálogo. Ahora vive FUERA del container, así
-          ocupa 100vw cuando hace sticky. El contenido interno se centra
-          con su propio max-w-7xl mx-auto. */}
+      {/* ── Search bar sticky FULL VIEWPORT WIDTH ─────────────────────────
+          La búsqueda es lo más prominente. Se mantiene visible al scrollear.
+          El sidebar de categorías va ABAJO de esto, no en el sticky. */}
       <div
         className={cn(
           "sticky top-0 z-30 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] transition-shadow duration-150",
@@ -157,101 +162,160 @@ export default function StoreDetailClient({
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          {/* Layout: chips + search en UNA SOLA FILA en sm+. En mobile
-              chips arriba (wrap si hace falta) + search debajo. */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {/* Chips ocupan el espacio disponible — flex-1 + flex-wrap interno */}
-          <div className="flex-1 min-w-0">
-            <StoreCategories
-              categories={categories}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-              images={categoryImages}
-              compact
-            />
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center gap-2">
+            {/* Mobile: botón Categorías → abre drawer */}
+            <button
+              type="button"
+              onClick={() => setMobileCatOpen(true)}
+              className="lg:hidden inline-flex items-center gap-1.5 px-3 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/50 transition-colors shrink-0"
+              aria-label="Abrir categorías"
+            >
+              <Menu className="h-4 w-4" strokeWidth={2.5} />
+              <span className="hidden sm:inline">Categorías</span>
+              {activeCategory && (
+                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black">
+                  1
+                </span>
+              )}
+            </button>
 
-          {/* Search compacto — w-56 sm, w-72 lg. NO ocupa todo el ancho. */}
-          <div className="relative w-full sm:w-56 lg:w-72 shrink-0">
-            <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder={`Buscar en ${store.name}…`}
-              className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
-              aria-label="Buscar productos"
-              autoComplete="off"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm("")}
-                aria-label="Limpiar búsqueda"
-                className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </button>
-            )}
+            {/* Search bar grande + prominente */}
+            <div className="relative flex-1">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]"
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                placeholder={`Buscar en ${store.name}…`}
+                className="w-full h-12 pl-12 pr-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
+                aria-label="Buscar productos"
+                autoComplete="off"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+              )}
 
-            {/* Sugerencias dropdown — solo cuando hay foco + matches */}
-            {searchFocused && suggestions.length > 0 && (
-              <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
-                {suggestions.map((s, idx) => (
-                  <button
-                    key={`${s.type}:${s.value}:${idx}`}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault() /* evita blur antes del click */}
-                    onClick={() => {
-                      if (s.type === "category") {
-                        setActiveCategory(s.value);
-                        setSearchTerm("");
-                      } else {
-                        setSearchTerm(s.value);
-                      }
-                      setSearchFocused(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
-                  >
-                    <span className={cn(
-                      "inline-flex items-center justify-center h-7 w-7 rounded-full shrink-0",
-                      s.type === "category" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                    )}>
-                      <Search className="h-3.5 w-3.5" />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{s.label}</p>
-                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                        {s.type === "category" ? "Filtrar por categoría" : "Producto"}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              {/* Sugerencias dropdown */}
+              {searchFocused && suggestions.length > 0 && (
+                <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
+                  {suggestions.map((s, idx) => (
+                    <button
+                      key={`${s.type}:${s.value}:${idx}`}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        if (s.type === "category") {
+                          setActiveCategory(s.value);
+                          setSearchTerm("");
+                        } else {
+                          setSearchTerm(s.value);
+                        }
+                        setSearchFocused(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
+                    >
+                      <span className={cn(
+                        "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
+                        s.type === "category" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                      )}>
+                        <Search className="h-4 w-4" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">{s.label}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                          {s.type === "category" ? "Filtrar por categoría" : "Producto"}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Catalog (constrained al max-w-7xl) ───────────────────────────── */}
+      {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
-        <StoreCatalog
-          storeSlug={store.slug}
-          storeName={store.name}
-          storeId={store.id}
-          products={products}
-          activeCategory={activeCategory}
-          externalSearch={searchTerm}
-          onExternalSearchChange={setSearchTerm}
-        />
+        <div className="flex gap-6 lg:gap-8">
+          {/* Sidebar desktop — sticky, vertical */}
+          <aside className="hidden lg:block w-60 shrink-0">
+            <div className="sticky top-[5.5rem]">
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
+                <StoreCategoriesSidebar
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onCategoryChange={handleCategorySelect}
+                  images={categoryImages}
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* Main: catálogo */}
+          <main className="flex-1 min-w-0">
+            <StoreCatalog
+              storeSlug={store.slug}
+              storeName={store.name}
+              storeId={store.id}
+              products={products}
+              activeCategory={activeCategory}
+              externalSearch={searchTerm}
+              onExternalSearchChange={setSearchTerm}
+            />
+          </main>
+        </div>
       </div>
+
+      {/* ── Drawer mobile — overlay con lista de categorías ────────────── */}
+      {mobileCatOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-50 flex"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Categorías"
+        >
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileCatOpen(false)}
+          />
+          <div className="relative ml-auto h-full w-[85vw] max-w-sm bg-[var(--surface-canvas)] shadow-2xl flex flex-col">
+            <div className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <p className="text-base font-black text-[var(--text-primary)]">Categorías</p>
+              <button
+                type="button"
+                onClick={() => setMobileCatOpen(false)}
+                aria-label="Cerrar categorías"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--surface-sunken)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              <StoreCategoriesSidebar
+                categories={categories}
+                activeCategory={activeCategory}
+                onCategoryChange={handleCategorySelect}
+                images={categoryImages}
+                hideHeader
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Divider ────────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
