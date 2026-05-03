@@ -3,17 +3,12 @@
 /**
  * /admin/login — Login universal para dueños y staff de tienda.
  *
- * Mayo 2026 (rediseño split-view): un único login que resuelve tenant
- * automáticamente. El usuario puede:
- *   - Tipear el slug de su tienda en el campo "Tu tienda" (ej: "mi-pollo")
- *   - O dejar vacío si viene desde /t/{slug}/admin/login (URL setea cookie)
- *   - O usar la última sesión recordada (localStorage)
+ * Mayo 2026: solo usuario + contraseña. El backend busca globalmente por
+ * username y resuelve el tenantId del AdminUser que matchee — el usuario
+ * NO necesita saber su slug.
  *
  * Layout: split-view 2 columnas en desktop (hero teal a la izquierda,
  * form a la derecha). Mobile: stack single-column con form arriba.
- *
- * Identidad visual: paleta teal del DS. Diferenciado de superadmin
- * (violeta) y delivery (orange).
  */
 
 import { SectionTitle } from "@buleje/design-system";
@@ -22,7 +17,7 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
   Store, Zap, ArrowRight, ShoppingCart, Package, Wallet, ShieldCheck,
-  Bike, Crown, Building2,
+  Bike, Crown,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +39,6 @@ export default function AdminLoginPage() {
   }, []);
   const adminPath = (path: string) => `${tenantPrefix}${path}`;
 
-  const [tenantSlug, setTenantSlug] = useState("");
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -66,14 +60,10 @@ export default function AdminLoginPage() {
       localStorage.setItem("active-tenant-slug", tenantParam);
       sessionStorage.setItem("active-tenant-slug", tenantParam);
       setActiveTenant(tenantParam);
-      setTenantSlug(tenantParam);
       if (!fromRef.current) fromRef.current = `/t/${tenantParam}/admin`;
     } else {
       const slug = localStorage.getItem("active-tenant-slug");
-      if (slug && slug !== "main") {
-        setActiveTenant(slug);
-        setTenantSlug(slug);
-      }
+      if (slug && slug !== "main") setActiveTenant(slug);
     }
 
     const saved = localStorage.getItem("login-remember-username");
@@ -115,19 +105,20 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
-      // Resolución del tenant — orden de prioridad:
-      //   1. Campo "Tu tienda" tipeado por el usuario
-      //   2. Cookie active-tenant-slug (sesión previa o /t/{slug}/admin/login)
-      //   3. "main" (default plataforma)
-      const slugFromForm = tenantSlug.trim().toLowerCase();
+      // El backend resuelve el tenant por username globalmente. Igual mandamos
+      // el slug de la URL/cookie como hint para el caso fallback Settings.
+      const slugFromUrl = typeof window !== "undefined"
+        ? window.location.pathname.match(/^\/t\/([^/]+)\/admin/)?.[1]
+        : null;
       const slugFromStorage = typeof window !== "undefined"
         ? localStorage.getItem("active-tenant-slug")
         : null;
-      const finalSlug = slugFromForm || slugFromStorage || "main";
+      const hintSlug = slugFromUrl || slugFromStorage || "main";
 
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      headers["x-tenant-id"] = finalSlug;
-      document.cookie = `active-tenant=${finalSlug}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "x-tenant-id": hintSlug,
+      };
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -158,7 +149,7 @@ export default function AdminLoginPage() {
           router.push(fromRef.current ? decodeURIComponent(fromRef.current) : adminPath("/admin"));
         }
       } else {
-        showError("Credenciales incorrectas — verifica tienda, usuario y contraseña");
+        showError("Usuario o contraseña incorrectos");
       }
     } catch {
       showError("No se pudo iniciar sesión");
@@ -318,38 +309,14 @@ export default function AdminLoginPage() {
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2.5 max-w-sm">
             {activeTenant ? (
-              <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>. <button type="button" onClick={() => { setActiveTenant(null); setTenantSlug(""); localStorage.removeItem("active-tenant-slug"); }} className="text-[var(--accent)] hover:underline font-semibold">cambiar</button></>
+              <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>. <button type="button" onClick={() => { setActiveTenant(null); localStorage.removeItem("active-tenant-slug"); }} className="text-[var(--accent)] hover:underline font-semibold">cambiar</button></>
             ) : (
-              "Ingresa tu tienda y credenciales — entras al panel directo."
+              "Ingresa tu usuario y contraseña — te llevamos directo a tu panel."
             )}
           </p>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            {/* Tu tienda — opcional, autocomplete del slug */}
-            {!activeTenant && (
-              <div className="space-y-1.5">
-                <label htmlFor="tenant" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Tu tienda <span className="text-[var(--text-tertiary)] font-medium normal-case">(opcional)</span>
-                </label>
-                <div className="relative group">
-                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors" strokeWidth={2} />
-                  <input
-                    id="tenant"
-                    type="text"
-                    value={tenantSlug}
-                    onChange={(e) => setTenantSlug(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15 transition-all"
-                    placeholder="mi-pollo"
-                    autoComplete="organization"
-                  />
-                </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  Si dejas vacío, entras a la plataforma principal.
-                </p>
-              </div>
-            )}
-
             <div className="space-y-1.5">
               <label htmlFor="username" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Usuario

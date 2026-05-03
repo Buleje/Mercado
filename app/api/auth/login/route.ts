@@ -75,52 +75,52 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  // Step 1: Resolve slug → tenant ID (CUID)
-  // Also build a list of possible IDs (CUID + slug) for data that may have inconsistent tenantIds
+  // Step 1: Resolve slug → tenant ID (CUID) — usado solo si el username no
+  // existe en NINGÚN tenant (fallback Settings.adminPassword).
   let tenantId = resolvedSlug;
-  let possibleTenantIds = [resolvedSlug];
   try {
     const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true, slug: true } });
-    if (tenant) {
-      tenantId = tenant.id;
-      possibleTenantIds = [...new Set([tenant.id, tenant.slug, resolvedSlug])];
-    }
+    if (tenant) tenantId = tenant.id;
   } catch { /* use slug as-is */ }
 
-  // Step 2: Find AdminUser for that tenant (search by all possible tenantId values)
+  // Step 2: Búsqueda GLOBAL por username (no por tenant). El usuario solo
+  // necesita ingresar usuario+contraseña — el tenantId se infiere del
+  // AdminUser que matchee. Si hay varios usuarios con el mismo nombre en
+  // tenants distintos, la primera contraseña que matchee gana. Esto es
+  // seguro porque bcrypt hace el match único por hash.
   type DbUser = { username: string; passwordHash: string; role: string; name: string; tenantId: string; onboardingCompletedAt: Date | null };
   let dbUsers: DbUser[] = [];
   try {
     dbUsers = await prisma.adminUser.findMany({
-      where: { active: true, tenantId: { in: possibleTenantIds }, ...(username ? { username } : {}) },
+      where: { active: true, ...(username ? { username } : {}) },
       select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
+      take: 50, // safety cap — bcrypt es ~100ms/comparación
     });
   } catch { /* DB unavailable */ }
 
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash, u.username)) {
-      // Always use the canonical Tenant ID (CUID) for the session
+      // Usar el tenantId del usuario que matcheó (no el resolved del header).
+      const matchedTenantId = u.tenantId;
       const [token, refreshToken] = await Promise.all([
-        createSessionToken(u.role as AdminRole, u.username, tenantId, u.name),
-        createRefreshToken(u.role as AdminRole, u.username, tenantId, u.name),
+        createSessionToken(u.role as AdminRole, u.username, matchedTenantId, u.name),
+        createRefreshToken(u.role as AdminRole, u.username, matchedTenantId, u.name),
       ]);
       const onboardingPending = !u.onboardingCompletedAt;
-      // Find the tenant slug for the active-tenant-slug cookie (used by admin UI)
+      // Buscar el slug del tenant matcheado (para active-tenant-slug cookie y redirect)
       let tenantSlug = resolvedSlug;
       try {
         const t = await prisma.tenant.findFirst({
-          where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+          where: { OR: [{ id: matchedTenantId }, { slug: matchedTenantId }] },
           select: { slug: true },
         });
         if (t) tenantSlug = t.slug;
       } catch { /* use resolvedSlug */ }
 
-      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId, tenantSlug });
+      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
       response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
-      // Set active-tenant cookie with the canonical Tenant ID for proxy.ts
-      response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
-      // Set active-tenant-slug cookie for the admin UI (readable by client JS)
+      response.cookies.set("active-tenant", matchedTenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       response.cookies.set("active-tenant-slug", tenantSlug, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       return response;
     }
