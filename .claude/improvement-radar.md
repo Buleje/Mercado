@@ -152,3 +152,29 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - **NO bloquea commits**: pre-commit usa `--max-warnings 150` solo en archivos staged.
 - Mayoría: reglas nuevas del React Compiler annotation mode + `ds-no-decorative-color-admin` (ADR-075) + `ds-no-direct-lucide-import`.
 - Esfuerzo estimado: 4-8h sprint dedicado. Probable estrategia: codemods + reglas selectivas.
+
+---
+
+## Skills sugeridos por compound-learning (auto, 2026-05-03)
+
+Detectados 114 patrones con ≥3 co-edits sin skill creado.
+Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
+
+### [pending] pat-coedit-1777240582428-zpqt
+- **Tipo:** `co_edit_cluster` (3 occurrences)
+- **Files:** `app/api/marketplace/subcategories/route.ts`, `app/tiendas/TiendasClient.tsx`
+- **Sugerencia:** Files [app/api/marketplace/subcategories/route.ts, app/tiendas/TiendasClient.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
+- **Last seen:** 2026-04-26T21:56:22.427Z
+
+### [pending] pat-coedit-1777253978825-5eer
+- **Tipo:** `co_edit_cluster` (3 occurrences)
+- **Files:** `components/marketplace/PromoBannerRenderer.tsx`, `lib/promo-banners.ts`
+- **Sugerencia:** Files [components/marketplace/PromoBannerRenderer.tsx, lib/promo-banners.ts] are always edited together. Consider creating a skill that pre-loads all 2 files.
+- **Last seen:** 2026-04-27T01:39:38.824Z
+
+### [pending] pat-coedit-1777254228120-pe6r
+- **Tipo:** `co_edit_cluster` (3 occurrences)
+- **Files:** `components/superadmin/banners/BannerImageAdjuster.tsx`, `components/superadmin/banners/BannerPreviewStudio.tsx`
+- **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
+- **Last seen:** 2026-04-27T01:43:48.118Z
+

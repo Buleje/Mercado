@@ -191,6 +191,12 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-checkpoint.mjs",
             "timeout": 5,
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-skill-suggester.mjs",
+            "timeout": 5,
+            "async": true
           }
         ]
       }
