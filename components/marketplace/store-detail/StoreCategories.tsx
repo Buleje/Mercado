@@ -57,7 +57,8 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
   };
 
   // ── Variant: COMPACT (sticky scrolling) ─────────────────────────────
-  // Rectangular bajo (h-10), horizontal, sin imagen grande aunque haya.
+  // ULTRA-compact para que entren todos en UNA SOLA FILA: padding apretado,
+  // imagen pequeña, count pegado, texto medio.
   if (compact) {
     return (
       <button
@@ -65,31 +66,30 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
         onClick={handleClick}
         aria-pressed={active}
         className={cn(
-          "snap-start shrink-0 inline-flex items-center gap-2 rounded-xl px-4 h-10 text-sm font-bold transition-all whitespace-nowrap border-2",
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-colors whitespace-nowrap border",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-          "hover:-translate-y-0.5 hover:shadow-md",
           active
-            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_2px_10px_rgba(0,180,166,0.30)]"
-            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]",
+            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"
+            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
         )}
       >
         {imageUrl && (
-          <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-md">
+          <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full">
             <Image
               src={imageUrl}
               alt=""
               fill
-              sizes="20px"
+              sizes="16px"
               className="object-cover"
               unoptimized
               priority
             />
           </span>
         )}
-        <span className="text-sm font-bold">{label}</span>
+        <span>{label}</span>
         <span
           className={cn(
-            "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-black tabular-nums",
+            "inline-flex items-center justify-center min-w-[1rem] h-4 px-1 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
             active
               ? "bg-white/25 text-white"
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",

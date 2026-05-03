@@ -157,19 +157,23 @@ export default function StoreDetailClient({
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-1.5">
-          {/* Chips de categorías */}
-          <StoreCategories
-            categories={categories}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            images={categoryImages}
-            compact
-          />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          {/* Layout: chips + search en UNA SOLA FILA en sm+. En mobile
+              chips arriba (wrap si hace falta) + search debajo. */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          {/* Chips ocupan el espacio disponible — flex-1 + flex-wrap interno */}
+          <div className="flex-1 min-w-0">
+            <StoreCategories
+              categories={categories}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+              images={categoryImages}
+              compact
+            />
+          </div>
 
-          {/* Search bar con sugerencias en dropdown — debajo de los chips.
-              Adaptado: full-width en mobile, max-w-2xl en desktop centrado. */}
-          <div className="relative max-w-2xl mx-auto">
+          {/* Search compacto — w-56 sm, w-72 lg. NO ocupa todo el ancho. */}
+          <div className="relative w-full sm:w-56 lg:w-72 shrink-0">
             <Search
               className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
               aria-hidden
@@ -231,6 +235,7 @@ export default function StoreDetailClient({
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>
