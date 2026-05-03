@@ -37,10 +37,24 @@ export async function PUT(req: NextRequest) {
     // Si el SuperAdmin impersona una tienda, el header x-tenant-id puede diferir
     // del tenantId del token. Damos prioridad al header explícito.
     const headerTenantId = req.headers.get("x-tenant-id");
-    const effectiveTenantId = (headerTenantId && headerTenantId !== "main")
+    const rawTenantId = (headerTenantId && headerTenantId !== "main")
       ? headerTenantId
       : auth.tenantId;
-    const tenantId = effectiveTenantId;
+
+    // Resolver slug → cuid si lo recibimos como slug. Sin esto, el upsert
+    // crea filas duplicadas (una con slug, otra con cuid) y el dueño nunca
+    // ve sus uploads porque GET lee de un row distinto.
+    let tenantId = rawTenantId;
+    if (rawTenantId && !rawTenantId.startsWith("cm") && rawTenantId !== "main") {
+      const t = await prisma.tenant
+        .findUnique({ where: { slug: rawTenantId }, select: { id: true } })
+        .catch((err) => {
+          logger.warn("[settings] tenant slug resolution failed", { slug: rawTenantId, error: String(err) });
+          return null;
+        });
+      if (t?.id) tenantId = t.id;
+    }
+
     const body = await req.json() as Partial<DbSettings>;
     if (body.mode && body.mode !== "whatsapp" && body.mode !== "checkout") {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });
@@ -174,7 +188,7 @@ export async function PUT(req: NextRequest) {
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
     // eslint-disable-next-line no-restricted-syntax -- activity log fire-and-forget; no debe bloquear la respuesta de Settings
-    enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId: effectiveTenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch((err) => logger.warn("[settings] activity enqueue failed", { error: String(err) }));
     const saved = await SettingsDB.set(updated, tenantId);
 
     // ── Sync de branding cross-modelo ─────────────────────────────────────────
