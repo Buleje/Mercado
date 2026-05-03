@@ -174,11 +174,17 @@ export default function TenantsPage() {
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
           </button>
-          {/* Ola 2: trigger neutro; confirm modal (NuclearResetModal) mantiene danger sólido */}
-          <button type="button" onClick={() => setNuclearResetOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-transparent text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-            title="Borrar todos los datos del sistema">
-            <Bomb className="w-4 h-4 text-[var(--text-secondary)]" /> Limpiar datos
+          {/* Acción destructiva: icon-only sutil (no click-bait). Hover revela peligro.
+              El NuclearResetModal exige tipear "BORRAR TODO" — doble barrera.
+              Antes: botón con texto "Limpiar datos" prominente arriba a la derecha. */}
+          <button
+            type="button"
+            onClick={() => setNuclearResetOpen(true)}
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--rule-base)] bg-transparent text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:border-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+            title="Mantenimiento del sistema · Reinicio total (acción destructiva — requiere confirmación tipeando BORRAR TODO)"
+            aria-label="Reinicio total del sistema (acción destructiva)"
+          >
+            <Bomb className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -304,6 +310,8 @@ export default function TenantsPage() {
         <NuclearResetModal loading={nuclearResetLoading}
           onConfirm={() => void handleNuclearReset()}
           onCancel={() => setNuclearResetOpen(false)}
+          tenantCount={tenants.length}
+          tenantNames={tenants.slice(0, 5).map((t) => t.name)}
         />
       )}
     </AdminTabShell>

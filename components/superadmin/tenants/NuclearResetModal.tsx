@@ -7,11 +7,13 @@ interface NuclearResetModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
+  tenantCount?: number;
+  tenantNames?: string[];
 }
 
 const CONFIRM_TEXT = "BORRAR TODO";
 
-export function NuclearResetModal({ onConfirm, onCancel, loading }: NuclearResetModalProps) {
+export function NuclearResetModal({ onConfirm, onCancel, loading, tenantCount, tenantNames }: NuclearResetModalProps) {
   const [typed, setTyped] = useState("");
   const confirmed = typed === CONFIRM_TEXT;
 
@@ -42,6 +44,19 @@ export function NuclearResetModal({ onConfirm, onCancel, loading }: NuclearReset
           <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-2 font-semibold">
             Las tiendas (tenants) se mantienen, pero sin ningún dato dentro.
           </p>
+          {typeof tenantCount === "number" && tenantCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-[var(--data-error)]/30 space-y-1">
+              <p className="text-xs text-[var(--data-error)] font-bold">
+                Afecta a {tenantCount} tienda{tenantCount === 1 ? "" : "s"} actualmente:
+              </p>
+              {tenantNames && tenantNames.length > 0 && (
+                <p className="text-xs text-[var(--data-error)] font-mono">
+                  {tenantNames.join(", ")}
+                  {tenantCount > tenantNames.length && ` + ${tenantCount - tenantNames.length} más`}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
