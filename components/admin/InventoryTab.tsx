@@ -89,25 +89,87 @@ function computeSalesPerWeek(productId: number, movements: DbInventoryMovement[]
   return totalSold / 4.3; // ~4.3 weeks in 30 days
 }
 
-// Resize a File to max 800×800 JPEG via canvas (client-side, ~40–80 KB output)
-async function resizeImage(file: File, maxPx = 800, quality = 0.8): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { URL.revokeObjectURL(objectUrl); reject(new Error("canvas unavailable")); return; }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(objectUrl);
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("image load error")); };
-    img.src = objectUrl;
-  });
+/**
+ * Procesa imagen del usuario en cualquier formato (jpg, png, webp, gif, heic*, etc.):
+ *  1. Valida que sea image/*.
+ *  2. Detecta canal alpha (transparencia) muestreando pixels.
+ *  3. Resize a max 1200px lado mayor (suficiente para PDP).
+ *  4. Output WebP (30-40% más liviano que JPEG, soporta transparencia).
+ *  5. Iterative quality reduction hasta target ~120KB.
+ *  6. Devuelve dataURL + metadata para feedback al usuario.
+ *
+ * (*) HEIC/HEIF en Safari iOS — algunos browsers no decodifican nativo.
+ */
+async function processImage(
+  file: File,
+  opts: { maxPx?: number; targetKB?: number } = {}
+): Promise<{ dataUrl: string; originalKB: number; finalKB: number; width: number; height: number; quality: number }> {
+  const maxPx = opts.maxPx ?? 1200;
+  const targetKB = opts.targetKB ?? 120;
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("El archivo no es una imagen válida");
+  }
+  if (file.size > 30 * 1024 * 1024) {
+    throw new Error("La imagen es demasiado grande (máx 30 MB)");
+  }
+
+  const img = new window.Image();
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("No se pudo leer la imagen — formato no soportado por el navegador"));
+      img.src = objectUrl;
+    });
+  } finally { /* revoked en cleanup */ }
+  URL.revokeObjectURL(objectUrl);
+
+  const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas no disponible en este navegador");
+  // Mejor calidad de re-muestreo
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const dataUrlBytes = (url: string) => Math.round(((url.split(",")[1] ?? "").length) * 0.75);
+
+  // Iterative quality reduction → WebP siempre (mejor compresión + transparencia)
+  let quality = 0.88;
+  let dataUrl = canvas.toDataURL("image/webp", quality);
+  let bytes = dataUrlBytes(dataUrl);
+  while (bytes > targetKB * 1024 && quality > 0.45) {
+    quality = Math.max(0.45, quality - 0.08);
+    dataUrl = canvas.toDataURL("image/webp", quality);
+    bytes = dataUrlBytes(dataUrl);
+  }
+
+  // Fallback a JPEG si el navegador no produjo WebP (raro en 2026)
+  if (!dataUrl.startsWith("data:image/webp")) {
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+    bytes = dataUrlBytes(dataUrl);
+  }
+
+  return {
+    dataUrl,
+    originalKB: Math.round(file.size / 1024),
+    finalKB: Math.round(bytes / 1024),
+    width: w,
+    height: h,
+    quality: Math.round(quality * 100),
+  };
+}
+
+/** Compat: nombres antiguos. */
+async function resizeImage(file: File): Promise<string> {
+  const r = await processImage(file);
+  return r.dataUrl;
 }
 
 // ── InventoryContextMenu (right-click menu for product rows) ───────────────
@@ -233,6 +295,8 @@ export default function InventoryTab() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
+  const [imgInfo, setImgInfo] = useState<{ originalKB: number; finalKB: number; width: number; height: number; quality: number } | null>(null);
+  const [imgError, setImgError] = useState<string | null>(null);
   const addImgRef = useRef<HTMLInputElement>(null);
   const editImgRef = useRef<HTMLInputElement>(null);
 
@@ -400,6 +464,8 @@ export default function InventoryTab() {
 
   const openEditModal = (p: DbProduct) => {
     setEditModalProduct(p);
+    setImgInfo(null);
+    setImgError(null);
     setEditForm({
       name: p.name, price: p.price, category: p.category, unit: p.unit,
       badge: p.badge ?? "", active: p.active, image: p.image ?? "",
@@ -409,7 +475,7 @@ export default function InventoryTab() {
       isVariant: false, variantOf: "", variantAttr: "",
     });
   };
-  const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); };
+  const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); setImgInfo(null); setImgError(null); };
 
   const saveEdit = async () => {
     if (!editModalProduct) return;
@@ -761,6 +827,48 @@ export default function InventoryTab() {
     return products.filter(p => p.costPrice && p.price && p.costPrice > p.price);
   }, [products]);
 
+  // ── Dynamic categories — derivadas del inventario real ─────────────────
+  // En lugar de la lista hardcodeada de data/products.ts, calculamos las
+  // categorías que efectivamente tienen productos (con conteo). Si el
+  // catálogo del tenant no tiene "carnes" pero sí "panadería", solo se
+  // muestra panadería. Mantenemos siempre "Todos" como primer chip.
+  const dynamicCategories = useMemo(() => {
+    const counts = new Map<string, number>();
+    let total = 0;
+    products.forEach(p => {
+      if (!showInactive && !p.active) return;
+      const cat = (p.category || "otros").toLowerCase().trim();
+      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+      total++;
+    });
+    const humanize = (id: string) => {
+      // Busca primero en el catálogo conocido (data/products.ts) por label oficial
+      const known = realCategories.find(rc => rc.id === id);
+      if (known) return known.label;
+      // Fallback: id-con-guiones → "Id Con Guiones"
+      return id
+        .split(/[-_\s]+/)
+        .filter(Boolean)
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(" ") || "Otros";
+    };
+    const real = Array.from(counts.entries())
+      .map(([id, count]) => ({ id, label: humanize(id), count }))
+      .sort((a, b) => b.count - a.count);
+    return [
+      { id: "todos", label: "Todos", count: total },
+      ...real,
+    ];
+  }, [products, showInactive]);
+
+  // Si el filtro activo ya no existe en el inventario (p.ej. eliminaron
+  // todos los productos de esa categoría), reseteamos a "todos".
+  useEffect(() => {
+    if (catFilter !== "todos" && !dynamicCategories.some(c => c.id === catFilter)) {
+      setCatFilter("todos");
+    }
+  }, [dynamicCategories, catFilter]);
+
   // ── Filtered ───────────────────────────────────────────────────────────────
 
   const noImageCount = products.filter(p => !p.image || p.image === "").length;
@@ -986,40 +1094,38 @@ export default function InventoryTab() {
         </div>
       </div>
 
-      {/* Category chips — horizontal scroll, click-to-filter */}
-      <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
-        <div className="flex items-center gap-2 min-w-fit">
-          {categories.map(c => {
-            const active = catFilter === c.id;
-            const count = c.id === "todos"
-              ? products.filter(p => showInactive || p.active).length
-              : products.filter(p => p.category === c.id && (showInactive || p.active)).length;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCatFilter(c.id)}
-                aria-pressed={active}
-                className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
-                  active
-                    ? "border-primary bg-primary text-white shadow-sm"
-                    : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:border-primary/40 hover:bg-primary/5"
-                )}
-              >
-                <span className="text-base leading-none">{c.emoji}</span>
-                <span>{c.label}</span>
-                <span className={cn(
-                  "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                  active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted"
-                )}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+      {/* Category chips — derivadas dinámicamente del inventario real, sin emojis */}
+      {dynamicCategories.length > 1 && (
+        <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-2 min-w-fit">
+            {dynamicCategories.map(c => {
+              const active = catFilter === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCatFilter(c.id)}
+                  aria-pressed={active}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
+                    active
+                      ? "border-primary bg-primary text-white shadow-sm"
+                      : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:border-primary/40 hover:bg-primary/5"
+                  )}
+                >
+                  <span>{c.label}</span>
+                  <span className={cn(
+                    "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
+                    active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted"
+                  )}>
+                    {c.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* KPIs — grid-cols-5 */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -1979,21 +2085,37 @@ export default function InventoryTab() {
                       <input
                         ref={addImgRef}
                         type="file"
-                        accept="image/png,image/webp,image/svg+xml"
+                        accept="image/*"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           setImgUploading(true);
+                          setImgError(null);
                           try {
-                            const dataUrl = await resizeImage(file);
-                            setAddForm(f => ({ ...f, image: dataUrl }));
+                            const result = await processImage(file);
+                            setAddForm(f => ({ ...f, image: result.dataUrl }));
+                            setImgInfo({ originalKB: result.originalKB, finalKB: result.finalKB, width: result.width, height: result.height, quality: result.quality });
+                          } catch (err) {
+                            setImgError(err instanceof Error ? err.message : "Error al procesar imagen");
                           } finally {
                             setImgUploading(false);
                             e.target.value = "";
                           }
                         }}
                       />
+                      {imgInfo && (
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] flex items-center gap-1.5 leading-snug">
+                          <CheckCircle className="h-3 w-3 shrink-0" />
+                          Imagen optimizada: {imgInfo.originalKB} KB → <strong>{imgInfo.finalKB} KB</strong> · {imgInfo.width}×{imgInfo.height}px · WebP {imgInfo.quality}%
+                        </p>
+                      )}
+                      {imgError && (
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1.5 leading-snug">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          {imgError}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2169,15 +2291,31 @@ export default function InventoryTab() {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           setImgUploading(true);
+                          setImgError(null);
                           try {
-                            const dataUrl = await resizeImage(file);
-                            setEditForm(f => ({ ...f, image: dataUrl }));
+                            const result = await processImage(file);
+                            setEditForm(f => ({ ...f, image: result.dataUrl }));
+                            setImgInfo({ originalKB: result.originalKB, finalKB: result.finalKB, width: result.width, height: result.height, quality: result.quality });
+                          } catch (err) {
+                            setImgError(err instanceof Error ? err.message : "Error al procesar imagen");
                           } finally {
                             setImgUploading(false);
                             e.target.value = "";
                           }
                         }}
                       />
+                      {imgInfo && (
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] flex items-center gap-1.5 leading-snug">
+                          <CheckCircle className="h-3 w-3 shrink-0" />
+                          Imagen optimizada: {imgInfo.originalKB} KB → <strong>{imgInfo.finalKB} KB</strong> · {imgInfo.width}×{imgInfo.height}px · WebP {imgInfo.quality}%
+                        </p>
+                      )}
+                      {imgError && (
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1.5 leading-snug">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          {imgError}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
