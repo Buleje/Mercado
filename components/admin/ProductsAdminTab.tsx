@@ -3,6 +3,7 @@
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { validateProductImage, type ImageValidationResult } from "@/lib/image-validator";
 import { ImageValidationPanel, ImageRequirementsGuide } from "@/components/admin/shared/ImageValidationPanel";
+import { installDragGuard, uninstallDragGuard, compressIfLarge } from "@/lib/image-upload-utils";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { detectCategoryFromName } from "@/lib/category-detector";
 import Image from "next/image";
@@ -144,6 +145,34 @@ function ProductFormModal({
   const [uploading, setUploading] = useState(false);
   const [imageValidation, setImageValidation] = useState<ImageValidationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Preview optimista: el usuario ve la imagen INMEDIATAMENTE al seleccionarla,
+  // sin esperar el round-trip completo del upload. Si falla, se revierte.
+  const [optimisticImage, setOptimisticImage] = useState<string | null>(null);
+  const optimisticImageRef = useRef<string | null>(null);
+  // Drag-over highlight para que el usuario vea claramente la zona de drop.
+  const [dragOver, setDragOver] = useState(false);
+
+  // Instalar global drag guard mientras este modal está montado: evita que
+  // soltar un archivo fuera del dropzone navegue a `file://...`.
+  useEffect(() => {
+    installDragGuard();
+    return () => {
+      uninstallDragGuard();
+      // Liberar objectURL pendiente — evita memory leaks acumulando MB en RAM.
+      if (optimisticImageRef.current) {
+        URL.revokeObjectURL(optimisticImageRef.current);
+        optimisticImageRef.current = null;
+      }
+    };
+  }, []);
+
+  const releaseOptimistic = useCallback(() => {
+    if (optimisticImageRef.current) {
+      URL.revokeObjectURL(optimisticImageRef.current);
+      optimisticImageRef.current = null;
+    }
+    setOptimisticImage(null);
+  }, []);
 
   const searchNational = useCallback((q: string) => {
     if (nationalDebounceRef.current) clearTimeout(nationalDebounceRef.current);
@@ -191,23 +220,46 @@ function ProductFormModal({
       const validation = await validateProductImage(file);
       setImageValidation(validation);
       if (!validation.ok) {
-        // Hay errores bloqueantes — aborta upload
         setUploading(false);
         return;
       }
 
+      // Preview optimista: el usuario ve su imagen al instante.
+      if (optimisticImageRef.current) URL.revokeObjectURL(optimisticImageRef.current);
+      const previewUrl = URL.createObjectURL(file);
+      optimisticImageRef.current = previewUrl;
+      setOptimisticImage(previewUrl);
+
+      // Comprimir client-side si > 1.5MB — recorta tiempo de upload 3-5×.
+      const finalFile = await compressIfLarge(file);
+
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", finalFile);
       fd.append("folder", "products");
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
         set("image", data.url);
+        releaseOptimistic();
+      } else {
+        // Si falla, revertir preview para no engañar al usuario.
+        releaseOptimistic();
       }
     } catch {
-      // silently fail
+      releaseOptimistic();
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Handler de drop (drag-drop sobre la zona de imagen).
+  const handleImageDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      void handleImageUpload(file);
     }
   };
 
@@ -493,28 +545,69 @@ function ProductFormModal({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
+              onChange={(e) => {
+                // Reset del value tras el handler — sin esto, seleccionar el
+                // mismo archivo dos veces seguidas no dispara onChange (el
+                // input considera que no hubo cambio).
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void handleImageUpload(f);
+              }}
             />
             <div
-              className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-[var(--rule-base)] dark:border-card-border cursor-pointer group"
+              data-dropzone="true"
+              className={cn(
+                "relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border-2 border-dashed cursor-pointer group transition-all",
+                dragOver
+                  ? "border-primary bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/30"
+                  : "border-[var(--rule-base)] dark:border-card-border",
+              )}
               onClick={() => !uploading && fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+              onDragLeave={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                setDragOver(false);
+              }}
+              onDrop={handleImageDrop}
             >
-              {form.image && !imgError ? (
+              {(optimisticImage || form.image) && !imgError ? (
                 <>
-                  <Image src={form.image} alt="Preview" fill className="object-cover" onError={() => setImgError(true)} unoptimized />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-[var(--text-primary)] text-sm font-semibold">
-                      <Camera className="h-4 w-4" />
-                      Cambiar imagen
+                  <Image
+                    src={optimisticImage ?? form.image ?? ""}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    onError={() => setImgError(true)}
+                    unoptimized
+                  />
+                  {/* Overlay de upload en progreso (sobre el preview optimista) */}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 text-[var(--text-primary)] text-xs font-semibold">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Subiendo…
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  {/* Hover overlay para "Cambiar imagen" — solo cuando no está subiendo */}
+                  {!uploading && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-[var(--text-primary)] text-sm font-semibold">
+                        <Camera className="h-4 w-4" />
+                        Cambiar imagen
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : uploading ? (
                 <LoadingState message="Subiendo imagen..." />
               ) : (
                 <div className="h-full flex flex-col items-center justify-center gap-2 text-[var(--text-tertiary)] group-hover:text-primary transition-colors">
                   <Camera className="h-10 w-10" />
-                  <span className="text-xs font-semibold text-[var(--text-tertiary)] group-hover:text-primary">Click para subir imagen</span>
+                  <span className="text-sm font-semibold text-[var(--text-tertiary)] group-hover:text-primary">
+                    {dragOver ? "Soltá aquí para subir" : "Click o arrastrá una imagen"}
+                  </span>
+                  <span className="text-xs text-muted">JPG · PNG · WebP — se optimiza automático</span>
                 </div>
               )}
             </div>
