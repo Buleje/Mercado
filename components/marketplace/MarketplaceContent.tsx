@@ -1,49 +1,101 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useSearchParams } from "next/navigation";
 import { Store, ArrowUpRight } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { m } from "framer-motion";
-import MarketplaceCatalogViewSection from "@/components/marketplace/MarketplaceCatalogViewSection";
 import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-// useCustomer y ReorderButton removidos (ronda A) — sin uso en catálogo puro
 import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
-// CategoriasQuickAccess movido a /explorar
-// LiveStats removido — ya no aparece en el home de bodegas
-import TiendasDestacadas from "@/components/marketplace/home/TiendasDestacadas";
-// BentoHero + WelcomeStrip movidos a /explorar
-// StickyPromoBar + LiveActivityStrip removidos del home de bodegas
-// BodegueroSpotlight, CategoriasShowcase, Testimonials — movidos a la landing `/`.
-// OfertasEditorial movido a /explorar
 import SectionDivider from "@/components/marketplace/home/SectionDivider";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
-import MarketplaceStories from "@/components/marketplace/MarketplaceStories";
-import MarketplaceTopToday from "@/components/marketplace/MarketplaceTopToday";
-import MarketplaceFreeShippingBar from "@/components/marketplace/MarketplaceFreeShippingBar";
-// MarketplaceMiniCart floating removido — CartBadge del navbar lo reemplaza
-import MarketplaceJungleProducts from "@/components/marketplace/MarketplaceJungleProducts";
-import MarketplaceRecipesWidget from "@/components/marketplace/MarketplaceRecipesWidget";
-import MarketplaceRecentViewed from "@/components/marketplace/MarketplaceRecentViewed";
-import SubscribeAndSaveSection from "@/components/marketplace/SubscribeAndSaveSection";
-import GiftCardsBanner from "@/components/marketplace/gift-cards/GiftCardsBanner";
-// LiveNowWidget removido (ronda A) — ver /marketplace/en-vivo
-// import { LiveNowWidget } from "@/components/marketplace/en-vivo/LiveNowWidget";
-import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
-// AddedToCartDrawerProvider vive en app/marketplace/layout.tsx (persistente).
-// Footer también vive en el layout — NO volver a incluirlo aquí.
-// ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
-import OfertasDelDiaHero from "@/components/marketplace/home/OfertasDelDiaHero";
-import OfertasFlashSection from "@/components/marketplace/home/OfertasFlashSection";
-import LiveActivityFeed from "@/components/marketplace/home/LiveActivityFeed";
-import AhorraMasMegaSection from "@/components/marketplace/home/AhorraMasMegaSection";
-import ComparedProductsSection from "@/components/marketplace/home/ComparedProductsSection";
-import AsistenteHomeBanner from "@/components/marketplace/home/AsistenteHomeBanner";
-import VenderMiniCTA from "@/components/marketplace/home/VenderMiniCTA";
-import LiveOrderCounter from "@/components/marketplace/LiveOrderCounter";
+
+// Audit P10 (sprint perf): below-fold sections diferidas para reducir
+// el initial bundle (138 → ~60 chunks meta). Cada `dynamic({ ssr: false })`
+// se descarga solo cuando React monta el componente — el usuario las ve
+// tras el hero, después del paint inicial.
+const MarketplaceCatalogViewSection = dynamic(
+  () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
+  { ssr: false },
+);
+const TiendasDestacadas = dynamic(
+  () => import("@/components/marketplace/home/TiendasDestacadas"),
+  { ssr: false },
+);
+const MarketplaceStories = dynamic(
+  () => import("@/components/marketplace/MarketplaceStories"),
+  { ssr: false },
+);
+const MarketplaceTopToday = dynamic(
+  () => import("@/components/marketplace/MarketplaceTopToday"),
+  { ssr: false },
+);
+const MarketplaceFreeShippingBar = dynamic(
+  () => import("@/components/marketplace/MarketplaceFreeShippingBar"),
+  { ssr: false },
+);
+const MarketplaceJungleProducts = dynamic(
+  () => import("@/components/marketplace/MarketplaceJungleProducts"),
+  { ssr: false },
+);
+const MarketplaceRecipesWidget = dynamic(
+  () => import("@/components/marketplace/MarketplaceRecipesWidget"),
+  { ssr: false },
+);
+const MarketplaceRecentViewed = dynamic(
+  () => import("@/components/marketplace/MarketplaceRecentViewed"),
+  { ssr: false },
+);
+const SubscribeAndSaveSection = dynamic(
+  () => import("@/components/marketplace/SubscribeAndSaveSection"),
+  { ssr: false },
+);
+const GiftCardsBanner = dynamic(
+  () => import("@/components/marketplace/gift-cards/GiftCardsBanner"),
+  { ssr: false },
+);
+const MarketplaceWelcomeCoupon = dynamic(
+  () => import("@/components/marketplace/MarketplaceWelcomeCoupon"),
+  { ssr: false },
+);
+
+// Home narrative modules — todos below-fold
+const OfertasDelDiaHero = dynamic(
+  () => import("@/components/marketplace/home/OfertasDelDiaHero"),
+  { ssr: false },
+);
+const OfertasFlashSection = dynamic(
+  () => import("@/components/marketplace/home/OfertasFlashSection"),
+  { ssr: false },
+);
+const LiveActivityFeed = dynamic(
+  () => import("@/components/marketplace/home/LiveActivityFeed"),
+  { ssr: false },
+);
+const AhorraMasMegaSection = dynamic(
+  () => import("@/components/marketplace/home/AhorraMasMegaSection"),
+  { ssr: false },
+);
+const ComparedProductsSection = dynamic(
+  () => import("@/components/marketplace/home/ComparedProductsSection"),
+  { ssr: false },
+);
+const AsistenteHomeBanner = dynamic(
+  () => import("@/components/marketplace/home/AsistenteHomeBanner"),
+  { ssr: false },
+);
+const VenderMiniCTA = dynamic(
+  () => import("@/components/marketplace/home/VenderMiniCTA"),
+  { ssr: false },
+);
+const LiveOrderCounter = dynamic(
+  () => import("@/components/marketplace/LiveOrderCounter"),
+  { ssr: false },
+);
 
 // Removidos (ronda A) — ahora en /tiendas o ronda B nav secundaria:
 // import MarketplaceFilters, { type MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";

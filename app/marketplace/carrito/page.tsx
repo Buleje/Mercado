@@ -33,6 +33,7 @@ import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useCustomer } from "@/contexts/customer-context";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
+import { useConfirm } from "@/components/ui-system/ConfirmModal";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -130,6 +131,7 @@ export default function CarritoPage() {
     useMarketplaceCart();
   const { customer: loggedCustomer } = useCustomer();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const storeIds = Object.keys(byStore);
   const isEmpty = storeIds.length === 0;
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -210,14 +212,20 @@ export default function CarritoPage() {
               )}
               heading="Mi carrito Buleje"
             />
-            {/* Designer audit P0: clearAll directo era destructivo. Ahora
-                pide confirmación con `confirm()` nativo. WCAG 3.3.4. */}
+            {/* Audit P10: confirm() nativo bloqueaba event loop y rompía
+                inmersión visual en iOS. Ahora ConfirmModal del DS (Radix
+                AlertDialog) — no bloquea, animación suave, look consistente. */}
             <button
               type="button"
-              onClick={() => {
-                if (confirm("¿Vaciar todo el carrito? Esta acción no se puede deshacer.")) {
-                  clearAll();
-                }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "¿Vaciar todo el carrito?",
+                  description: "Vas a perder todos los productos guardados. Esta acción no se puede deshacer.",
+                  intent: "danger",
+                  confirmLabel: "Sí, vaciar",
+                  cancelLabel: "Cancelar",
+                });
+                if (ok) clearAll();
               }}
               className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)]/70 hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
             >
@@ -349,6 +357,7 @@ export default function CarritoPage() {
         </div>
       )}
       <AuthModal open={authModalOpen} onClose={closeAuthModal} />
+      <ConfirmDialog />
     </div>
   );
 }

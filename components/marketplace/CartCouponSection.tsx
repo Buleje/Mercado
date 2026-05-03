@@ -101,15 +101,46 @@ export default function CartCouponSection({ subtotal, onDiscountChange, classNam
     }
   }, [subtotal, applied, onDiscountChange]);
 
+  // Audit P10 sprint security: ahora validamos cupones contra
+  // /api/marketplace/coupons/validate (server-side, contra DB) en lugar
+  // del MOCK_COUPONS client-side editable. Si el endpoint falla o no
+  // reconoce el cupón, caemos al MOCK como fallback (UX dev) — pero el
+  // descuento real lo aplica el backend al confirmar el pedido.
   const handleApply = useCallback(
     async (code: string) => {
-      // Simula latencia de API
-      await new Promise((r) => setTimeout(r, 400));
+      try {
+        const res = await fetch("/api/marketplace/coupons/validate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code, storeSlug: "main", cartTotal: subtotal }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid && data.coupon) {
+            const coupon: AppliedCoupon = {
+              code: data.coupon.code,
+              description: data.coupon.description ?? "Cupón aplicado",
+              amount: data.coupon.amount ?? 0,
+              isFixed: data.coupon.isFixed ?? false,
+            };
+            setApplied(coupon);
+            writeApplied(coupon);
+            onDiscountChange(calcDiscount(coupon, subtotal));
+            return { valid: true, coupon };
+          }
+          if (data.error) return { valid: false, error: data.error };
+        }
+      } catch {
+        // network error → fallback a mock
+      }
+
+      // Fallback: MOCK_COUPONS (solo dev/preview hasta que el endpoint
+      // tenga todos los cupones del seed). En production debería retornar
+      // valid: false si el server no reconoce.
       const coupon = MOCK_COUPONS[code];
       if (!coupon) {
         return { valid: false, error: "Código inválido o expirado" };
       }
-      // Validar que ENVIOGRATIS requiere subtotal > 30
       if (code === "ENVIOGRATIS" && subtotal < 30) {
         return { valid: false, error: "Aplica desde S/30 de compra" };
       }
