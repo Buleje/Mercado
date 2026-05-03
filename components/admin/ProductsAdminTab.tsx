@@ -1254,49 +1254,131 @@ export default function ProductsAdminTab() {
 
       {/* Grid view */}
       {viewMode === "grid" && filtered.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        // Grid generoso: menos columnas → cards más grandes → imagen más visible.
+        // Antes: 2/3/4/5 cols (cards de ~150px). Ahora: 1/2/3/4 cols (cards de
+        // 280-320px). La imagen pasa a ser el protagonista de la card.
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filtered.map((p) => {
             const cat = CATEGORY_OPTS.find((c) => c.id === p.category);
             const isOut = p.stock !== undefined && p.stock <= 0;
+            const stockLevel = p.stock === undefined
+              ? null
+              : isOut
+                ? "out"
+                : (p.stockMin !== undefined && p.stock <= p.stockMin) ? "low" : "ok";
             return (
               <div
                 key={p.id}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden group",
-                  p.active === false && "opacity-50"
+                  "group relative bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5",
+                  p.active === false && "opacity-60"
                 )}
               >
-                <div className="relative aspect-square bg-gray-50 dark:bg-surface">
+                {/* IMAGEN — protagonista. Aspect 4/5 (vertical) la hace más
+                    grande sin desfigurar fotos cuadradas. p-3 deja respirar la
+                    foto del fondo gris claro. */}
+                <div className="relative aspect-[4/5] bg-gray-50 dark:bg-surface overflow-hidden">
                   {p.image ? (
-                    <Image src={p.image} alt={p.name} fill className="object-cover" sizes="200px" unoptimized />
+                    <Image
+                      src={p.image}
+                      alt={p.name}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+                      unoptimized
+                    />
                   ) : (
-                    <div className="h-full flex items-center justify-center text-gray-200"><Package className="h-10 w-10" /></div>
+                    <div className="h-full flex flex-col items-center justify-center gap-2 text-[var(--text-tertiary)]">
+                      <Package className="h-12 w-12" strokeWidth={1.25} />
+                      <span className="text-xs font-bold uppercase tracking-wide">Sin foto</span>
+                    </div>
                   )}
-                  {/* Overlay actions — AV-17: botón Duplicar agregado */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center hover:scale-110 transition-transform" title="Editar">
+
+                  {/* Badges arriba izquierda (estado del producto) */}
+                  <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 items-start">
+                    {p.active === false && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-700/90 text-white backdrop-blur-sm">Oculto</span>
+                    )}
+                    {p.badge && p.active !== false && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary text-white shadow-sm">{p.badge}</span>
+                    )}
+                    {cat?.emoji && p.active !== false && !p.badge && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/90 dark:bg-card/90 text-[var(--text-secondary)] backdrop-blur-sm shadow-sm">
+                        {cat.emoji} {cat.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Stock badge arriba derecha — visible siempre, color por nivel */}
+                  {stockLevel && (
+                    <div className="absolute top-2.5 right-2.5">
+                      <span
+                        className={cn(
+                          "text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm backdrop-blur-sm",
+                          stockLevel === "out" && "bg-[var(--data-error)] text-white",
+                          stockLevel === "low" && "bg-[var(--data-warning)] text-white",
+                          stockLevel === "ok" && "bg-white/90 dark:bg-card/90 text-[var(--text-primary)]"
+                        )}
+                      >
+                        {stockLevel === "out" ? "Agotado" : `${p.stock} uds`}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Overlay actions — más grande, mejor visible. Solo en hover. */}
+                  <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent pt-12 pb-3 px-3 flex items-end justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setModal({ product: p })}
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white text-primary font-bold text-xs hover:bg-white/90 transition-colors shadow-md"
+                      title="Editar"
+                    >
                       <Pencil className="h-3.5 w-3.5" />
+                      Editar
                     </button>
-                    <button onClick={() => handleDuplicateProduct(p)} className="h-8 w-8 rounded-full bg-white text-[var(--text-secondary)] flex items-center justify-center hover:scale-110 transition-transform" title="Duplicar">
+                    <button
+                      onClick={() => handleDuplicateProduct(p)}
+                      className="h-9 w-9 rounded-lg bg-white text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      title="Duplicar"
+                    >
                       <Copy className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => handleToggleActive(p)} className="h-8 w-8 rounded-full bg-white text-[var(--text-secondary)] flex items-center justify-center hover:scale-110 transition-transform">
+                    <button
+                      onClick={() => handleToggleActive(p)}
+                      className="h-9 w-9 rounded-lg bg-white text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      title={p.active === false ? "Mostrar" : "Ocultar"}
+                    >
                       {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
-                    <button onClick={() => setDeleteTarget(p)} className="h-8 w-8 rounded-full bg-white text-[var(--data-error)] flex items-center justify-center hover:scale-110 transition-transform">
+                    <button
+                      onClick={() => setDeleteTarget(p)}
+                      className="h-9 w-9 rounded-lg bg-white text-[var(--data-error)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      title="Eliminar"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  {isOut && <span className="absolute top-1.5 right-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error)] text-white">Agotado</span>}
-                  {p.active === false && <span className="absolute top-1.5 left-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-gray-500 text-white">Oculto</span>}
-                  {p.badge && p.active !== false && <span className="absolute top-1.5 left-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary text-white">{p.badge}</span>}
                 </div>
-                <div className="p-2.5">
-                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs font-extrabold text-primary">S/{p.price.toFixed(2)}</span>
-                    <span className="text-[length:var(--ts-2xs)] text-muted">{cat?.emoji} {p.stock !== undefined ? `${p.stock} uds.` : ""}</span>
+
+                {/* INFO — jerarquía clara: nombre / precio / unidad+sku */}
+                <div className="p-4 space-y-2">
+                  <h3 className="text-base font-extrabold text-foreground line-clamp-2 leading-tight min-h-[2.5rem]" title={p.name}>
+                    {p.name}
+                  </h3>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-2xl font-black text-primary leading-none">
+                      S/<span className="text-2xl">{p.price.toFixed(2)}</span>
+                    </span>
+                    <span className="text-xs font-medium text-[var(--text-tertiary)]">
+                      {p.unit ?? "unidad"}
+                    </span>
                   </div>
+                  {(p.sku || p.barcode) && (
+                    <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+                      <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
+                        {p.sku ? `SKU: ${p.sku}` : `EAN: ${p.barcode}`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             );
