@@ -149,9 +149,11 @@ export default function StoreCatalog({
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(p);
     }
-    // Orden estable: por cantidad descendente (la categoría con más
-    // productos primero suele ser la "estrella" del catálogo).
-    return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
+    // Preservar insertion order del Map — los productos llegan pre-ordenados
+    // desde StoreDetailPage (app/marketplace/[slug]/page.tsx) aplicando
+    // category-order + product-order persistidos por el admin. Antes
+    // ordenabamos aqui por count desc lo que rompia la intencion del admin.
+    return Array.from(map.entries());
   }, [filtered, activeCategory, search]);
 
   const humanizeCategory = (id: string) =>

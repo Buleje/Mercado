@@ -166,13 +166,28 @@ export default async function StoreDetailPage({ params }: Props) {
     limit: 100,
   });
 
-  // 2b. Aplicar orden manual de productos por categoría (admin/marketplace/orden).
-  // Productos no listados quedan al final, preservando orden original.
+  // 2b. Aplicar orden manual de categorias y productos definido por el admin
+  // en /admin?tab=marketplace → Orden. Brandon espera que el catalogo del
+  // storefront se muestre en ese orden — primero la seccion de la categoria
+  // 1, luego la 2, etc. — y dentro de cada una en el orden de productos
+  // persistido. Productos/categorias sin orden caen al final preservando
+  // el orden original de la DB.
   const { getProductOrder, applyProductOrder } = await import("@/lib/store-product-order");
-  const productOrderMap = await getProductOrder(slug);
+  const { getCategoryOrder, getStoreCategoryImages } = await import("@/lib/store-category-order");
+  const { resolveCategoryImages } = await import("@/lib/superadmin-category-images");
+  const [productOrderMap, persistedOrder, ownImages] = await Promise.all([
+    getProductOrder(slug),
+    getCategoryOrder(slug),
+    getStoreCategoryImages(slug),
+  ]);
+
   const products = (() => {
-    if (Object.keys(productOrderMap).length === 0) return productsRaw;
-    // Agrupa por categoría, aplica orden persistido a cada grupo, vuelve a unir.
+    const hasProductOrder = Object.keys(productOrderMap).length > 0;
+    const hasCategoryOrder = persistedOrder.length > 0;
+    if (!hasProductOrder && !hasCategoryOrder) return productsRaw;
+
+    // Agrupa por categoria, aplica orden persistido a cada grupo,
+    // luego une los grupos en el orden definido por persistedOrder.
     const byCat = new Map<string, typeof productsRaw>();
     const noCat: typeof productsRaw = [];
     for (const p of productsRaw) {
@@ -181,8 +196,24 @@ export default async function StoreDetailPage({ params }: Props) {
       if (!byCat.has(cat)) byCat.set(cat, []);
       byCat.get(cat)!.push(p);
     }
+
+    // Lista de categorias en orden final: persistedOrder primero (intersectado
+    // con las categorias que realmente tienen productos), luego las restantes
+    // ordenadas por cantidad desc (default heuristico anterior).
+    const inPersisted = new Set(persistedOrder);
+    const presentCats = Array.from(byCat.keys());
+    const orderedCats: string[] = [];
+    for (const cat of persistedOrder) {
+      if (byCat.has(cat)) orderedCats.push(cat);
+    }
+    presentCats
+      .filter((c) => !inPersisted.has(c))
+      .sort((a, b) => (byCat.get(b)?.length ?? 0) - (byCat.get(a)?.length ?? 0))
+      .forEach((c) => orderedCats.push(c));
+
     const flat: typeof productsRaw = [];
-    for (const [cat, items] of byCat) {
+    for (const cat of orderedCats) {
+      const items = byCat.get(cat)!;
       const ordered = productOrderMap[cat]
         ? applyProductOrder(items, productOrderMap[cat])
         : items;
@@ -202,15 +233,6 @@ export default async function StoreDetailPage({ params }: Props) {
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => ({ name, count }));
 
-  // 3b. Aplicar orden manual configurado por el dueño (admin/marketplace/orden)
-  // o por superadmin (superadmin/stores → Orden). Si no hay orden persistido
-  // se conserva el orden por count desc.
-  const { getCategoryOrder, getStoreCategoryImages } = await import("@/lib/store-category-order");
-  const { resolveCategoryImages } = await import("@/lib/superadmin-category-images");
-  const [persistedOrder, ownImages] = await Promise.all([
-    getCategoryOrder(slug),
-    getStoreCategoryImages(slug),
-  ]);
   // Resuelve imágenes: per-store > global default > undefined (texto-only).
   const categoryImages = await resolveCategoryImages(ownImages);
   const categories: StoreCategoryChip[] = persistedOrder.length === 0
