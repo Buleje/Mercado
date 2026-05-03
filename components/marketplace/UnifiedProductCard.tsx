@@ -292,31 +292,19 @@ export default function UnifiedProductCard({
       {/* ── Zona imagen ──────────────────────────────────────────────────────── */}
       <div className="relative">
         <Link href={productHref} className="block">
-          <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800">
+          {/* Aspect 4/5 (más alto que ancho) en vez de square para dar más
+              superficie a la imagen del producto sin alargar mucho la card.
+              Imagen object-contain con padding mínimo, sin backdrop —
+              respeta los PNG transparentes que vienen ya optimizados. */}
+          <div className="relative aspect-[4/5] overflow-hidden bg-white dark:bg-gray-900">
             {product.image ? (
-              <>
-                {/* Backdrop desenfocado (misma imagen) — rellena el espacio
-                    con un blur que se ve intencional cuando la foto no es
-                    cuadrada. Patrón usado por Mercado Libre, Amazon,
-                    Instagram Shop. */}
-                <Image
-                  src={product.image}
-                  alt=""
-                  aria-hidden
-                  fill
-                  className="object-cover scale-110 blur-2xl opacity-50 dark:opacity-30 pointer-events-none"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                />
-                {/* Foreground — imagen completa, NO se recorta. p-2 para que
-                    no toque los bordes. */}
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03] z-[1]"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                />
-              </>
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
             ) : (
               <ProductImageFallback name={product.name} category={product.category} />
             )}

@@ -119,18 +119,32 @@ export default function StoreDetailClient({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-10">
         {/* Sentinel: detecta cuando el bar queda sticky arriba */}
         <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+        {/* FIX 2026-05: el sticky bar antes hacía:
+              - bg-[var(--surface-canvas)]/95 + backdrop-blur-md → blur en
+                cada frame de scroll = 60fps→25fps en mid-range.
+              - transition-[padding] + isStuck toggle → relayout cada vez
+                que cruzaba el sentinel = jitter visible.
+            Ahora: bg sólido + padding fijo + will-change/contain hints
+            para que el browser pinte solo este layer. Animación queda en
+            opacity de la sombra (GPU-accelerated). */}
         <div
           className={cn(
-            "sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-soft)] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-[padding] duration-200",
-            isStuck ? "py-1.5" : "py-2.5",
+            "sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6 py-2 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] transition-shadow duration-150",
+            isStuck ? "shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08)]" : "shadow-none",
           )}
+          style={{ contain: "layout paint", willChange: "transform" }}
         >
+          {/* FIX 2026-05: ANTES los chips morphaban entre "card vertical
+              110px" (top) y "rectangular h-10" (stuck) cada vez que cruzaba
+              el sentinel. Eso recalculaba el layout de TODOS los chips de
+              golpe = jitter visible al scrollear. AHORA siempre compact:
+              chips estables, sin morph, scroll fluido. */}
           <StoreCategories
             categories={categories}
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
             images={categoryImages}
-            compact={isStuck}
+            compact
           />
         </div>
         <StoreCatalog
