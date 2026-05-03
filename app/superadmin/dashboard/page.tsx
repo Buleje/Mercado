@@ -52,6 +52,7 @@ interface AnalyticsData {
     tenantGrowthPct: number;
     ordersThisMonth: number;
     orderGrowthPct: number;
+    mrrGrowthPct: number;
   };
   totals: {
     totalOrders: number;
@@ -228,7 +229,7 @@ export default function DashboardPage() {
             value={fmtSoles(data.overview.mrr)}
             icon={TrendingUp}
             tone="teal"
-            delta={data.growth.tenantGrowthPct}
+            delta={data.growth.mrrGrowthPct}
             deltaLabel="vs mes anterior"
             sparkline={sparks.mrr}
           />

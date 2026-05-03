@@ -120,6 +120,15 @@ async function getAnalyticsData() {
     monthlyRevenue.push({ month: label, revenue });
   }
 
+  // MRR growth: comparar el último mes vs el anterior usando monthlyRevenue.
+  // Antes el dashboard usaba tenantGrowthPct para el MRR — daba "-100%" cuando
+  // no había nuevos tenants ese mes, aunque MRR real existiera. Bug fix.
+  const currentMrr = monthlyRevenue[monthlyRevenue.length - 1]?.revenue ?? 0;
+  const prevMrr = monthlyRevenue[monthlyRevenue.length - 2]?.revenue ?? 0;
+  const mrrGrowthPct = prevMrr > 0
+    ? Math.round(((currentMrr - prevMrr) / prevMrr) * 100)
+    : currentMrr > 0 ? 100 : 0;
+
   // Churn rate: tenants que cancelaron (cancelAtPeriodEnd o inactive con plan free que antes pagaban)
   // Usamos como proxy: tenants cancelando + tenants inactivos / total tenants
   const cancelingTenants = allTenants.filter((t) => t.cancelAtPeriodEnd).length;
@@ -159,6 +168,7 @@ async function getAnalyticsData() {
       ordersThisMonth,
       ordersLastMonth,
       orderGrowthPct,
+      mrrGrowthPct,
     },
     totals: {
       totalOrders,
