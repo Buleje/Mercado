@@ -5,15 +5,22 @@
  *
  * Checklist visual del estado de cumplimiento. Render documental —
  * los controles reales viven en multi-tenant-guard, audit logs, etc.
+ *
+ * Acción de export Art. 18: Dialog que pide tenant slug + DNI y dispara
+ * POST /api/superadmin/compliance/data-export. El JSON se descarga como
+ * archivo. Cumplimiento real, no mock.
  */
 
 import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   ClipboardCheck,
   ShieldCheck,
   AlertTriangle,
   XCircle,
   FileDown,
+  X,
+  Loader2,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import {
@@ -179,16 +186,10 @@ export function ComplianceTab() {
   const [feedback, setFeedback] = useState<
     { title: string; description?: string } | null
   >(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
-  /**
-   * TODO: wire con skill gdpr-export — POST /api/compliance/export { dni }.
-   */
   const handleExportRequest = () => {
-    setFeedback({
-      title: "Flujo de exportación abierto (mock)",
-      description:
-        "Ingresá el DNI del cliente en la herramienta de exportación para generar el ZIP legal.",
-    });
+    setExportOpen(true);
   };
 
   const passCount = [...LEY_29733, ...OWASP_TOP_10].filter(
@@ -273,7 +274,137 @@ export function ComplianceTab() {
           </ul>
         </div>
       </AdminSection>
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        onSuccess={(msg) => setFeedback({ title: "Exportación generada", description: msg })}
+      />
     </div>
+  );
+}
+
+// ─── Export dialog (real) ────────────────────────────────────────────────────
+// Pide tenant slug + DNI, llama al endpoint y descarga el JSON como archivo.
+
+function ExportDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [tenantSlug, setTenantSlug] = useState("");
+  const [dni, setDni] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!tenantSlug.trim() || !dni.trim()) {
+      setError("Tenant y DNI son obligatorios");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/superadmin/compliance/data-export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tenantSlug: tenantSlug.trim(), dni: dni.trim() }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      // Descargar como archivo JSON.
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `export-${tenantSlug.trim()}-${dni.trim()}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      onSuccess(`Archivo descargado: ${a.download}. Acción registrada en el audit log.`);
+      onOpenChange(false);
+      setTenantSlug("");
+      setDni("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al generar export");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl">
+          <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
+            <Dialog.Title className="text-base font-extrabold text-[var(--text-primary)]">
+              Exportar datos del cliente (Art. 18)
+            </Dialog.Title>
+            <Dialog.Close className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]" aria-label="Cerrar">
+              <X className="h-4 w-4" />
+            </Dialog.Close>
+          </div>
+          <div className="p-5 space-y-3">
+            <Dialog.Description className="text-xs text-[var(--text-tertiary)]">
+              Genera un JSON con todos los datos personales del cliente. Acción auditada
+              bajo Ley 29733 Art. 18-20.
+            </Dialog.Description>
+            <label className="block">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                Tenant slug *
+              </span>
+              <input
+                ref={(el) => { if (el && open) el.focus(); }}
+                value={tenantSlug}
+                onChange={(e) => setTenantSlug(e.target.value)}
+                placeholder="ej: bodega-rosita"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                DNI / Documento del cliente *
+              </span>
+              <input
+                value={dni}
+                onChange={(e) => setDni(e.target.value)}
+                placeholder="ej: 12345678"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              />
+            </label>
+            {error && (
+              <p role="alert" className="text-xs text-[var(--data-error)] flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="px-5 py-4 border-t border-[var(--rule-soft)] flex justify-end gap-2">
+            <Dialog.Close asChild>
+              <button className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">
+                Cancelar
+              </button>
+            </Dialog.Close>
+            <button
+              onClick={submit}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--accent)] hover:brightness-110 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+              Generar export
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

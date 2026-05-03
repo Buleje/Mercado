@@ -15,7 +15,7 @@
  * Acciones concretas son stubs mock — ver cada tab.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import {
   LayoutDashboard,
@@ -57,9 +57,26 @@ const TABS: TabDef[] = [
   { key: "audit", label: "Audit log", icon: ScrollText },
 ];
 
+function fmtRelativeFromMs(ms: number): string {
+  const diffMin = Math.max(0, Math.round((Date.now() - ms) / 60_000));
+  if (diffMin < 1) return "hace instantes";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `hace ${diffH}h`;
+  return `hace ${Math.round(diffH / 24)}d`;
+}
+
 export default function SecurityCenterPage() {
   const [active, setActive] = useState<TabKey>("overview");
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshMs, setLastRefreshMs] = useState<number>(() => Date.now());
+  // Tick cada 30s para mantener el label "hace X min" fresco sin re-fetch.
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -67,6 +84,7 @@ export default function SecurityCenterPage() {
     // OverviewTab y AuthSessionsTab se re-cargan vía useEffect listener.
     window.dispatchEvent(new CustomEvent("security-overview-refresh"));
     window.dispatchEvent(new CustomEvent("security-sessions-refresh"));
+    setLastRefreshMs(Date.now());
     // Animación de spinning durante 600ms — los fetches reales son independientes.
     setTimeout(() => setRefreshing(false), 600);
   };
@@ -74,7 +92,7 @@ export default function SecurityCenterPage() {
   return (
     <AdminPage>
       <SecurityHero
-        lastScanLabel="hace 2h"
+        lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"
         onRefresh={handleRefresh}
         refreshing={refreshing}
