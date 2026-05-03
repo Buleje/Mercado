@@ -2,20 +2,42 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, Image as ImageIcon,
+  Plus, Trash2, Image as ImageIcon,
   Loader2, X, Upload, Check, AlertTriangle, Pencil, Camera,
+  ZoomIn, FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
 
+// ─── Safe URL guard ──────────────────────────────────────────────────────────
+//
+// Por qué: `imageUrl` viaja al cliente y se renderiza en <img src>. Si un usuario
+// (o un payload manipulado) inserta `javascript:alert(1)`, el navegador podría
+// ejecutarlo. Validamos: o es path relativo (/uploads/, /api/, /…) o protocolo
+// http/https. Cualquier otra cosa → cae al placeholder "Sin foto".
+function isSafeImageUrl(url: string | undefined | null): url is string {
+  if (!url || typeof url !== "string") return false;
+  if (url.startsWith("/")) return true;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default function ImageBankClient() {
   const [categories, setCategories] = useState<BankCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // openCatId = qué categoría tiene el modal abierto (solo una a la vez).
+  // Antes era un Set<string> con accordion expansivo — eso forzaba a la
+  // página a crecer hacia abajo y empujar el resto del contenido.
+  const [openCatId, setOpenCatId] = useState<string | null>(null);
   const [showNewCat, setShowNewCat] = useState(false);
 
   const reload = useCallback(async () => {
@@ -35,17 +57,15 @@ export default function ImageBankClient() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
   const totalItems = categories.reduce((s, c) => s + c.items.length, 0);
-  const itemsWithImage = categories.reduce((s, c) => s + c.items.filter((it) => it.imageUrl).length, 0);
+  const itemsWithImage = categories.reduce(
+    (s, c) => s + c.items.filter((it) => isSafeImageUrl(it.imageUrl)).length,
+    0,
+  );
+
+  // Mantengo referencia "viva" para que cuando reload() actualice la lista,
+  // el modal abierto refresque sus items sin cerrarse.
+  const openCategory = openCatId ? categories.find((c) => c.id === openCatId) ?? null : null;
 
   return (
     <div className="space-y-4">
@@ -69,21 +89,20 @@ export default function ImageBankClient() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+        <div role="alert" className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
           {error}
         </div>
       )}
 
       <NewCategoryModal open={showNewCat} onOpenChange={setShowNewCat} onSaved={() => { setShowNewCat(false); reload(); }} />
 
-      {/* Categorías */}
-      <div className="space-y-2">
+      {/* Categorías — grid de cards resumen, click abre modal */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {categories.map((cat) => (
-          <CategoryCard
+          <CategorySummaryCard
             key={cat.id}
             category={cat}
-            expanded={expanded.has(cat.id)}
-            onToggle={() => toggleExpand(cat.id)}
+            onOpen={() => setOpenCatId(cat.id)}
             onChanged={reload}
           />
         ))}
@@ -96,6 +115,16 @@ export default function ImageBankClient() {
             Aún no hay categorías. Creá la primera para empezar.
           </p>
         </div>
+      )}
+
+      {/* Modal de detalle — solo una categoría a la vez */}
+      {openCategory && (
+        <CategoryDetailModal
+          category={openCategory}
+          open={!!openCategory}
+          onOpenChange={(o) => { if (!o) setOpenCatId(null); }}
+          onChanged={reload}
+        />
       )}
     </div>
   );
@@ -179,75 +208,347 @@ function NewCategoryModal({ open, onOpenChange, onSaved }: { open: boolean; onOp
   );
 }
 
-// ─── Category card ───────────────────────────────────────────────────────────
+// ─── Category summary card (click → modal) ───────────────────────────────────
+//
+// Antes: accordion expansivo que empujaba la página hacia abajo.
+// Ahora: card compacta con preview de hasta 3 imágenes, contador y botón "Abrir"
+// que dispara CategoryDetailModal. Eliminar categoría usa ConfirmDialog
+// (no más confirm() nativo que no respeta dark mode ni a11y).
 
-function CategoryCard({ category, expanded, onToggle, onChanged }: { category: BankCategory; expanded: boolean; onToggle: () => void; onChanged: () => void }) {
-  const [showAdd, setShowAdd] = useState(false);
+function CategorySummaryCard({
+  category,
+  onOpen,
+  onChanged,
+}: {
+  category: BankCategory;
+  onOpen: () => void;
+  onChanged: () => void;
+}) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
-  const remove = async () => {
-    if (!confirm(`¿Eliminar la categoría "${category.name}" y sus ${category.items.length} items?`)) return;
-    const res = await fetch(`/api/superadmin/image-bank/${category.id}`, { method: "DELETE" });
-    if (res.ok) onChanged();
+  const itemsWithImage = category.items.filter((it) => isSafeImageUrl(it.imageUrl)).length;
+  // Preview: las primeras 3 imágenes válidas de la categoría como thumbnails.
+  const previewItems = category.items.filter((it) => isSafeImageUrl(it.imageUrl)).slice(0, 3);
+
+  const doRemove = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      const res = await fetch(`/api/superadmin/image-bank/${category.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      setConfirmRemove(false);
+      onChanged();
+    } catch (e) {
+      setRemoveError(e instanceof Error ? e.message : "Error al eliminar");
+    } finally {
+      setRemoving(false);
+    }
   };
 
-  const itemsWithImage = category.items.filter((it) => it.imageUrl).length;
-
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-      <div className="p-4 flex items-center gap-3">
-        <button onClick={onToggle} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+    <>
+      <div className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden hover:border-primary/40 hover:shadow-md transition-all">
+        {/* Preview strip */}
+        <button
+          onClick={onOpen}
+          className="w-full block text-left"
+          aria-label={`Abrir categoría ${category.name}`}
+        >
+          <div className="aspect-[3/1] bg-[var(--surface-sunken)] flex items-center justify-center gap-1 p-2 border-b border-[var(--rule-soft)]">
+            {previewItems.length === 0 ? (
+              <div className="flex flex-col items-center text-[var(--text-tertiary)]">
+                <Camera className="h-5 w-5 mb-0.5" />
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase">Sin fotos aún</span>
+              </div>
+            ) : (
+              previewItems.map((it) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  key={it.id}
+                  src={it.imageUrl}
+                  alt={it.name}
+                  className="h-full w-1/3 object-contain rounded"
+                />
+              ))
+            )}
+          </div>
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">{category.name}</h3>
-            <span className="text-xs text-[var(--text-tertiary)]">
+
+        <div className="p-3 flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{category.name}</h3>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
               {category.items.length} item{category.items.length === 1 ? "" : "s"}
               {" · "}
               <strong className="text-[var(--data-success)]">{itemsWithImage} con foto</strong>
-            </span>
+            </p>
+            {category.description && (
+              <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{category.description}</p>
+            )}
           </div>
-          {category.description && (
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{category.description}</p>
-          )}
+          <div className="flex flex-col gap-1 shrink-0">
+            <button
+              onClick={onOpen}
+              title="Abrir"
+              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+            >
+              <FolderOpen className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setConfirmRemove(true)}
+              title="Eliminar categoría"
+              className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/5 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={remove}
-          title="Eliminar categoría"
-          className="p-1.5 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/5"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </div>
 
-      {expanded && (
-        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/50 p-4 space-y-3">
-          {category.items.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {category.items.map((it) => (
-                <ItemCard key={it.id} categoryId={category.id} item={it} onChanged={onChanged} />
-              ))}
-            </div>
-          )}
+      <ConfirmDialog
+        open={confirmRemove}
+        onOpenChange={(o) => { if (!o) { setConfirmRemove(false); setRemoveError(null); } }}
+        title={`Eliminar "${category.name}"`}
+        description={
+          category.items.length > 0
+            ? `Esta acción borrará la categoría y sus ${category.items.length} item${category.items.length === 1 ? "" : "s"}. No se puede deshacer.`
+            : "Esta acción no se puede deshacer."
+        }
+        confirmLabel="Eliminar categoría"
+        variant="danger"
+        loading={removing}
+        error={removeError}
+        onConfirm={doRemove}
+      />
+    </>
+  );
+}
 
-          {showAdd ? (
-            <NewItemForm
-              categoryId={category.id}
-              onSaved={() => { setShowAdd(false); onChanged(); }}
-              onCancel={() => setShowAdd(false)}
-            />
-          ) : (
+// ─── Category detail modal ───────────────────────────────────────────────────
+//
+// Modal grande (max-w-5xl) con la grilla de items + zona "agregar item nuevo".
+// Reutiliza el mismo NewItemForm/ItemForm que ya existían — solo cambió el
+// envoltorio. El modal escucha cambios de la lista global vía props.
+
+function CategoryDetailModal({
+  category,
+  open,
+  onOpenChange,
+  onChanged,
+}: {
+  category: BankCategory;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onChanged: () => void;
+}) {
+  const [showAdd, setShowAdd] = useState(false);
+  const itemsWithImage = category.items.filter((it) => isSafeImageUrl(it.imageUrl)).length;
+
+  // Cuando cambia la categoría abierta, resetear el form de "nuevo item".
+  useEffect(() => { setShowAdd(false); }, [category.id]);
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content
+          className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl"
+          aria-describedby={undefined}
+        >
+          <div className="px-6 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 shrink-0">
+            <div className="min-w-0">
+              <Dialog.Title className="text-lg font-extrabold text-[var(--text-primary)] truncate">
+                {category.name}
+              </Dialog.Title>
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                {category.items.length} item{category.items.length === 1 ? "" : "s"}
+                {" · "}
+                <strong className="text-[var(--data-success)]">{itemsWithImage} con foto</strong>
+                {category.description ? ` · ${category.description}` : ""}
+              </p>
+            </div>
+            <Dialog.Close className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] shrink-0" aria-label="Cerrar">
+              <X className="h-4 w-4" />
+            </Dialog.Close>
+          </div>
+
+          <div className="flex-1 overflow-auto p-6 space-y-4">
+            {category.items.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {category.items.map((it) => (
+                  <ItemCard key={it.id} categoryId={category.id} item={it} onChanged={onChanged} />
+                ))}
+              </div>
+            ) : (
+              !showAdd && (
+                <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center">
+                  <Camera className="h-7 w-7 text-[var(--text-tertiary)] mx-auto mb-2" />
+                  <p className="text-sm text-[var(--text-secondary)] font-medium">
+                    Esta categoría aún no tiene items.
+                  </p>
+                </div>
+              )
+            )}
+
+            {showAdd && (
+              <NewItemForm
+                categoryId={category.id}
+                onSaved={() => { setShowAdd(false); onChanged(); }}
+                onCancel={() => setShowAdd(false)}
+              />
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t border-[var(--rule-soft)] flex justify-end gap-2 shrink-0">
+            {!showAdd && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4" />
+                Agregar item
+              </button>
+            )}
+            <Dialog.Close asChild>
+              <button className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">
+                Cerrar
+              </button>
+            </Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+// ─── Confirm dialog (replaces native confirm) ────────────────────────────────
+//
+// Razón: confirm() nativo (1) no respeta dark mode, (2) no es localizable bien,
+// (3) en algunas combinaciones de browser/OS bloquea el event loop. Radix
+// AlertDialog le da focus trap, ESC, click-outside, role=alertdialog y soporte
+// de loading state mientras la mutación viaja al server.
+
+function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
+  variant = "default",
+  loading,
+  error,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "default" | "danger";
+  loading?: boolean;
+  error?: string | null;
+  onConfirm: () => void;
+}) {
+  const confirmClass = variant === "danger"
+    ? "bg-[var(--data-error)] hover:brightness-110 text-white"
+    : "bg-primary hover:bg-primary/90 text-white";
+
+  return (
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" />
+        <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl p-5">
+          <div className="flex items-start gap-3">
+            {variant === "danger" && (
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-error)]/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <AlertDialog.Title className="text-base font-extrabold text-[var(--text-primary)]">{title}</AlertDialog.Title>
+              {description && (
+                <AlertDialog.Description className="text-sm text-[var(--text-secondary)] mt-1">
+                  {description}
+                </AlertDialog.Description>
+              )}
+              {error && (
+                <p role="alert" className="mt-2 text-xs text-[var(--data-error)] flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  {error}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-5">
+            <AlertDialog.Cancel asChild>
+              <button
+                disabled={loading}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              >
+                {cancelLabel}
+              </button>
+            </AlertDialog.Cancel>
             <button
-              onClick={() => setShowAdd(true)}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border-2 border-dashed border-primary/40 hover:bg-primary/5"
+              onClick={(e) => { e.preventDefault(); onConfirm(); }}
+              disabled={loading}
+              className={cn("inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50", confirmClass)}
             >
-              <Plus className="h-4 w-4" />
-              Agregar item nuevo
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {confirmLabel}
             </button>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  );
+}
+
+// ─── Image preview dialog (full size) ────────────────────────────────────────
+
+function ImagePreviewDialog({
+  src,
+  alt,
+  open,
+  onOpenChange,
+}: {
+  src: string;
+  alt: string;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  if (!isSafeImageUrl(src)) return null;
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm" />
+        <Dialog.Content
+          className="fixed left-1/2 top-1/2 z-[70] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[90vh] flex flex-col items-center"
+          aria-describedby={undefined}
+        >
+          <Dialog.Title className="sr-only">{alt}</Dialog.Title>
+          <Dialog.Close
+            className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+            aria-label="Cerrar preview"
+          >
+            <X className="h-5 w-5" />
+          </Dialog.Close>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+          />
+          <p className="mt-3 text-sm text-white/90 font-medium text-center px-4">{alt}</p>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -255,17 +556,34 @@ function CategoryCard({ category, expanded, onToggle, onChanged }: { category: B
 
 function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: BankItem; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const safeUrl = isSafeImageUrl(item.imageUrl) ? item.imageUrl : "";
 
-  const remove = async () => {
-    if (!confirm(`¿Eliminar "${item.name}"?`)) return;
-    const res = await fetch(`/api/superadmin/image-bank/${categoryId}/items/${item.id}`, { method: "DELETE" });
-    if (res.ok) onChanged();
+  const doRemove = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      const res = await fetch(`/api/superadmin/image-bank/${categoryId}/items/${item.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      setConfirmRemove(false);
+      onChanged();
+    } catch (e) {
+      setRemoveError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setRemoving(false);
+    }
   };
 
   if (editing) {
     return (
       <ItemForm
-        initial={{ name: item.name, imageUrl: item.imageUrl }}
+        initial={{ name: item.name, imageUrl: safeUrl }}
         categoryId={categoryId}
         itemId={item.id}
         onSaved={() => { setEditing(false); onChanged(); }}
@@ -276,10 +594,22 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
 
   return (
     <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-      <div className="aspect-square bg-[var(--surface-sunken)] relative">
-        {item.imageUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-contain p-2" />
+      <div className="aspect-square bg-[var(--surface-sunken)] relative group">
+        {safeUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={safeUrl} alt={item.name} className="w-full h-full object-contain p-2" />
+            <button
+              onClick={() => setPreviewOpen(true)}
+              className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all"
+              aria-label={`Ver "${item.name}" en grande`}
+            >
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/70 text-white text-xs font-bold">
+                <ZoomIn className="h-3.5 w-3.5" />
+                Ver grande
+              </span>
+            </button>
+          </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-tertiary)]">
             <Camera className="h-6 w-6 mb-1" />
@@ -291,13 +621,35 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
         <p className="text-xs font-bold text-[var(--text-primary)] truncate" title={item.name}>{item.name}</p>
         <div className="flex justify-between gap-1 mt-1.5">
           <button onClick={() => setEditing(true)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary border border-primary/30 hover:bg-primary/5">
-            <Pencil className="h-3 w-3" /> {item.imageUrl ? "Editar" : "Subir foto"}
+            <Pencil className="h-3 w-3" /> {safeUrl ? "Editar" : "Subir foto"}
           </button>
-          <button onClick={remove} className="inline-flex items-center justify-center px-2 py-1 rounded-lg text-[var(--data-error)] border border-[var(--rule-soft)] hover:bg-[var(--data-error)]/5">
+          <button
+            onClick={() => setConfirmRemove(true)}
+            aria-label={`Eliminar "${item.name}"`}
+            className="inline-flex items-center justify-center px-2 py-1 rounded-lg text-[var(--data-error)] border border-[var(--rule-soft)] hover:bg-[var(--data-error)]/5"
+          >
             <Trash2 className="h-3 w-3" />
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmRemove}
+        onOpenChange={(o) => { if (!o) { setConfirmRemove(false); setRemoveError(null); } }}
+        title={`Eliminar "${item.name}"`}
+        description="Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={removing}
+        error={removeError}
+        onConfirm={doRemove}
+      />
+      <ImagePreviewDialog
+        src={safeUrl}
+        alt={item.name}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   );
 }
