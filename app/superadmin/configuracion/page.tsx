@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import ConfiguracionClient from "./ConfiguracionClient";
 
 export const metadata: Metadata = {
-  title: "Configuración de plataforma — Buleje",
+  title: "Configuración de plataforma",
   robots: "noindex, nofollow",
 };
 

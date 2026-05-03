@@ -235,10 +235,10 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
             Para bodegueros
           </p>
           <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-            ¿Tienes una tienda?
+            ¿Tienes una tienda?{" "}
             <br />
             <span className="italic font-serif text-[var(--accent)]">
-              Sumate al marketplace.
+              Súmate al marketplace.
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">

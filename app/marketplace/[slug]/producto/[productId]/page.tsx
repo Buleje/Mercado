@@ -135,7 +135,7 @@ export async function generateMetadata({
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
 
   const product = await fetchProduct(productId);
-  if (!product) return { title: "Producto no encontrado — Buleje" };
+  if (!product) return { title: "Producto no encontrado" };
 
   const title =
     product.metaTitle ||

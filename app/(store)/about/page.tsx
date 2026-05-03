@@ -25,11 +25,11 @@ import LandingHeader from "@/components/landing/LandingHeader";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Acerca de Nosotros — Buleje | Hecho en Ciudad Constitución, Perú",
+  title: "Acerca de Nosotros — Hecho en Ciudad Constitución, Perú",
   description:
     "Buleje es la plataforma de bodegas y minimarkets del Perú. Hecho en Ciudad Constitución (Pasco) y, próximamente, en Pucallpa (Ucayali). ERP, marketplace, POS, delivery, fiado digital y facturación SUNAT.",
   openGraph: {
-    title: "Hecho en Ciudad Constitución — Buleje",
+    title: "Hecho en Ciudad Constitución",
     description:
       "Plataforma para bodegas del Perú creada en Ciudad Constitución, próximamente en Pucallpa. ERP + marketplace + POS + delivery.",
     type: "website",

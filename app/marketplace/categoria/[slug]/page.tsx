@@ -26,7 +26,7 @@ export async function generateMetadata({
 
   if (!def) {
     return {
-      title: "Categoria no encontrada — Buleje",
+      title: "Categoria no encontrada",
       description: "La categoria que buscas no existe.",
       robots: { index: false, follow: false },
     };

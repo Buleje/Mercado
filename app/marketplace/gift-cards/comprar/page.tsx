@@ -4,7 +4,7 @@ import ComprarClient from "@/components/marketplace/gift-cards/comprar/ComprarCl
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 
 export const metadata: Metadata = {
-  title: "Comprar Tarjeta de Regalo — Buleje",
+  title: "Comprar Tarjeta de Regalo",
   description:
     "Elegi monto, disenio y dedicatoria. Enviamos la tarjeta por WhatsApp o email al instante.",
   robots: { index: false, follow: true },

@@ -42,11 +42,25 @@ function readStoredLocale(): Locale {
   return "es";
 }
 
+// Map de Locale → BCP 47 lang code para document.documentElement.lang
+// (designer audit P0 a11y: el html lang debe actualizarse cuando el user
+// cambia de idioma — WCAG 3.1.1 nivel A).
+const LOCALE_TO_LANG: Record<string, string> = {
+  es: "es-PE",
+  en: "en",
+  shi: "shp", // Shipibo-Konibo ISO 639-3
+};
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("es");
 
   useEffect(() => {
-    setLocaleState(readStoredLocale());
+    const stored = readStoredLocale();
+    setLocaleState(stored);
+    // Sincronizar el lang del html en mount
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = LOCALE_TO_LANG[stored] ?? "es-PE";
+    }
   }, []);
 
   const setLocale = useCallback((l: Locale) => {
@@ -55,6 +69,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(STORAGE_KEY, l);
     } catch {
       /* ignore */
+    }
+    // Actualizar lang del html para screen readers / traductores automáticos
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = LOCALE_TO_LANG[l] ?? "es-PE";
     }
   }, []);
 

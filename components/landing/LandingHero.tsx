@@ -95,7 +95,7 @@ export default function LandingHero({
             </p>
 
             <h1 className="text-[clamp(2.5rem,6.5vw,4.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.95] text-balance">
-              {t("landing.hero.title1")} {t("landing.hero.title2")}
+              {t("landing.hero.title1")} {t("landing.hero.title2")}{" "}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
                 {t("landing.hero.titleAccent")}

@@ -5,7 +5,7 @@ import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import ConfirmacionClient from "@/components/marketplace/gift-cards/comprar/ConfirmacionClient";
 
 export const metadata: Metadata = {
-  title: "Tarjeta enviada — Buleje",
+  title: "Tarjeta enviada",
   description: "Tu tarjeta de regalo Buleje se envio correctamente.",
   robots: { index: false, follow: false },
 };

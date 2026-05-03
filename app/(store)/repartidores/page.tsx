@@ -7,14 +7,14 @@ import dynamic from "next/dynamic";
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export const metadata: Metadata = {
-  title: "Maneja tu propia ruta — Repartidores Buleje",
+  title: "Manejá tu propia ruta — Repartidores",
   description:
-    "Ganá hasta 25% más por entrega cumpliendo con bodegas de tu zona. Horarios flexibles, pagos diarios, app simple.",
+    "Cumplí con bodegas de tu zona. Horarios flexibles, pagos diarios, app simple.",
   alternates: {
     canonical: "https://www.buleje.pe/repartidores",
   },
   openGraph: {
-    title: "Repartidores Buleje — Manejá tu propia ruta",
+    title: "Repartidores — Manejá tu propia ruta",
     description: "Horarios flexibles, pagos diarios, ruta corta en tu zona.",
     url: "https://www.buleje.pe/repartidores",
     type: "website",
@@ -40,7 +40,7 @@ export default function RepartidoresPage() {
             </p>
 
             <h1 className="text-[clamp(2.5rem,6.5vw,4.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.95] text-balance">
-              Manejá tu propia ruta.
+              Manejá tu propia ruta.{" "}
               <br />
               <span className="text-[var(--accent)]">
                 Cobrá lo que te toca.

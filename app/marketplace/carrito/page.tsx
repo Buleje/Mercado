@@ -326,7 +326,7 @@ export default function CarritoPage() {
           </section>
 
           <CheckoutSummary
-            ctaLabel={loggedCustomer ? "Continuar" : "Iniciar sesión y continuar"}
+            ctaLabel={loggedCustomer ? "Continuar al checkout" : "Iniciar sesión y continuar"}
             ctaHref={continueHref}
             onCtaClick={loggedCustomer ? undefined : handleContinueWithoutAuth}
             showItems={false}

@@ -479,11 +479,12 @@ export default function StoreRegistrationForm() {
               {step === "info" && (
                 <div className="space-y-5">
                   <div>
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                    <label htmlFor="reg-owner-name" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <User className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu nombre completo <span className="text-[var(--data-error)]">*</span>
                     </label>
                     <input
+                      id="reg-owner-name"
                       type="text"
                       name="ownerName"
                       autoComplete="name"
@@ -496,11 +497,12 @@ export default function StoreRegistrationForm() {
                     />
                   </div>
                   <div>
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                    <label htmlFor="reg-owner-phone" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <Phone className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu WhatsApp <span className="text-[var(--data-error)]">*</span>
                     </label>
                     <input
+                      id="reg-owner-phone"
                       type="tel"
                       name="ownerPhone"
                       autoComplete="tel"
@@ -518,7 +520,7 @@ export default function StoreRegistrationForm() {
                     </p>
                   </div>
                   <div>
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                    <label htmlFor="reg-owner-email" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <Mail className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Email{" "}
                       <span className="text-xs font-semibold text-[var(--text-tertiary)]">
@@ -526,6 +528,7 @@ export default function StoreRegistrationForm() {
                       </span>
                     </label>
                     <input
+                      id="reg-owner-email"
                       type="email"
                       name="ownerEmail"
                       autoComplete="email"

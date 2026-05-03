@@ -299,7 +299,10 @@ export default function OfertasClient() {
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="marketplace_ofertas" />
-      <PromoBannerCarousel slot="ofertas" />
+      {/* Designer audit P0: el PromoBannerCarousel mostraba "Ofertas
+          relámpago — hasta -40%" aunque la página estuviera vacía. Ocultar
+          cuando no hay deals reales — no le mentimos al usuario. */}
+      {allDeals.length > 0 && <PromoBannerCarousel slot="ofertas" />}
 
       {error && (
         <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">

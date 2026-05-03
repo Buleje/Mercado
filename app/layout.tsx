@@ -113,7 +113,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Buleje — Bodegas del Perú en tu celular",
+    title: "Bodegas del Perú en tu celular",
     description:
       "Marketplace + ERP de bodegas peruanas. Delivery rápido o gestioná tu tienda. Yape, Plin, efectivo. Disponible en todo el Perú.",
     images: ["/api/og"],

@@ -46,17 +46,17 @@ const LocalStorageDoctor = dynamic(
 
 const FloatingDockController = dynamic(
   () => import("@/components/marketplace/FloatingDockController"),
-  {},
+  { ssr: false, loading: () => null },
 );
 
 const MarketplaceFirstVisitTour = dynamic(
   () => import("@/components/marketplace/MarketplaceFirstVisitTour"),
-  {},
+  { ssr: false, loading: () => null },
 );
 
 const DockFeatureSpotlight = dynamic(
   () => import("@/components/marketplace/DockFeatureSpotlight"),
-  {},
+  { ssr: false, loading: () => null },
 );
 
 export default function MarketplaceFloatingWidgets() {

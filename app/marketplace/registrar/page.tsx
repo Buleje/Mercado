@@ -4,14 +4,14 @@ import StoreRegistrationForm from "@/components/marketplace/StoreRegistrationFor
 const BASE_URL = "https://www.buleje.pe";
 
 export const metadata: Metadata = {
-  title: "Registra tu Tienda | Marketplace Buleje",
+  title: "Registra tu Tienda",
   description:
     "Abrí tu tienda en Buleje. Vendé online en tu ciudad con delivery, Yape y panel completo. Primer mes sin cargo.",
   alternates: {
     canonical: `${BASE_URL}/marketplace/registrar`,
   },
   openGraph: {
-    title: "Registra tu Tienda | Marketplace Buleje",
+    title: "Registra tu Tienda",
     description:
       "Abrí tu tienda en Buleje. Vendé online en tu ciudad con delivery, Yape y panel completo. Primer mes sin cargo.",
     url: `${BASE_URL}/marketplace/registrar`,

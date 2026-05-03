@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Cómo pagar tu pedido | Buleje",
+    title: "Cómo pagar tu pedido",
     description:
       "Yape, Plin, transferencia o efectivo al recibir. Pagá como te quede más cómodo.",
     url: `${BASE_URL}/marketplace/como-pagar`,

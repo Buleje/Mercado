@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!receta) {
     return {
-      title: "Receta no encontrada — Buleje",
+      title: "Receta no encontrada",
       description: "La receta que buscas no existe o fue removida del recetario.",
       robots: { index: false, follow: false },
     };

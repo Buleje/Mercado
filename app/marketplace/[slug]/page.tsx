@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!store) {
     return {
-      title: "Tienda | Marketplace Buleje",
+      title: "Tienda",
       description: "Descubre esta tienda en el Marketplace de Buleje.",
     };
   }
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   return {
-    title: `${store.name} — ${store.category} en ${zone} | Marketplace Buleje`,
+    title: `${store.name} — ${store.category} en ${zone} | Marketplace`,
     description: desc,
     alternates: { canonical: storeUrl },
     openGraph: {
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${store.name} | Marketplace Buleje`,
+      title: `${store.name} | Marketplace`,
       description: desc,
       ...(store.logo ? { images: [store.logo] } : {}),
     },

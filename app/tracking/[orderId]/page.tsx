@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import TrackingClient from "./TrackingClient";
 
 export const metadata: Metadata = {
-  title: "Seguimiento de pedido | Buleje",
+  title: "Seguimiento de pedido",
   description: "Rastrea en tiempo real la ubicacion de tu pedido. Delivery con seguimiento GPS.",
 };
 
