@@ -1,1 +1,148 @@
-{}
+{
+  "main": {
+    "Restaurante": [
+      "c7c61f0c5c97ff2f233167954"
+    ],
+    "Abarrotes": [
+      "cmnm6z3ch0003n8vzq7rqnjb5",
+      "cmnm6z3ch0001n8vztn094eob",
+      "cmnm6z3ch0005n8vz5v2qwr2u",
+      "cmnm6z3ch0002n8vz5xis8q3p",
+      "cmnm6z3ch0008n8vzs8s4l9l9",
+      "cmnm6z3ch0004n8vzihxftmwr",
+      "cmnm6z3ch0009n8vznpgkabt0",
+      "cmnm6z3ch0006n8vz57iuc344",
+      "cmnm6z3ch000cn8vzvxlwiopa",
+      "cmnm6z3ch0007n8vzs2xzz2c3",
+      "cmnm6z3ch000bn8vzch8fb2y5"
+    ],
+    "Bebidas": [
+      "cmnm6z3ch000fn8vzyndqx2h4",
+      "cmnm6z3ch000hn8vzxv5rn2xn",
+      "cmnm6z3ch000in8vz9n58l29r",
+      "cmnm6z3ch000gn8vz9sajth00",
+      "cmnm6z3ch000en8vzjqbvsr9f",
+      "cmnm6z3ch000kn8vz8rf8k54o",
+      "cmnm6z3ch000dn8vz94bwoy7z",
+      "cmnm6z3ch000ln8vzcyw90cim"
+    ],
+    "Frutas y Verduras": [
+      "cmnm6z3ch0013n8vzjty41amo",
+      "cmnm6z3ch000yn8vzb6t1xezz",
+      "cmnm6z3ch000zn8vzrvpc5g9z",
+      "cmnm6z3ch0011n8vz6cmo7m1m",
+      "cmnm6z3ch000xn8vzm1zdmrfi",
+      "cmnm6z3ch0012n8vziuzty5vi",
+      "cmnm6z3ch0010n8vzvo1kexpn"
+    ],
+    "Conservas": [
+      "cmnm6z3ch000an8vzmk3kwod4"
+    ],
+    "Ropa": [
+      "ca4e849e84f004f144e90238e"
+    ],
+    "Carnes": [
+      "cmnm6z3ch0015n8vzozytudhe",
+      "cmnm6z3ch0017n8vzvklyeweq",
+      "cmnm6z3ch0016n8vzargz4zdq",
+      "cmnm6z3ch0014n8vzzwvuruj1"
+    ],
+    "Snacks": [
+      "cmnm6z3ch001an8vz7fduyx4s",
+      "cmnm6z3ch0018n8vzabwvn5a1",
+      "cmnm6z3ch0019n8vzm91hh5h5",
+      "cmnm6z3ch001bn8vzouv30ub9"
+    ],
+    "Heladeria": [
+      "c0b63784427a615308c62e7fb"
+    ],
+    "Limpieza": [
+      "cmnm6z3ch000rn8vzosi71i5q",
+      "cmnm6z3ch000wn8vzdm6505yl",
+      "cmnm6z3ch000tn8vz3mjyrl0c",
+      "cmnm6z3ch000vn8vzbupgq6st",
+      "cmnm6z3ch000sn8vzkbf9l4rl",
+      "cmnm6z3ch000un8vzwo9izoim"
+    ],
+    "Cuidado Personal": [
+      "cmnm6z3ch001cn8vz66hru1r9",
+      "cmnm6z3ch001dn8vzikawoeze",
+      "cmnm6z3ch001en8vz20bp0jl8"
+    ],
+    "Lácteos": [
+      "cmnm6z3ch000nn8vzp44de82j",
+      "cmnm6z3ch000mn8vz8czgftmy",
+      "cmnm6z3ch000qn8vz56kvl82n",
+      "cmnm6z3ch000pn8vzmlh74bn1",
+      "cmnm6z3ch000on8vzh5kz5bdn",
+      "cmnm6z3ch000jn8vzetarqqhb"
+    ],
+    "Panadería": [
+      "cmnm6z3ch001fn8vz70ps8wj4",
+      "cmnm6z3ch001gn8vz77cf8205"
+    ],
+    "Farmacia": [
+      "c0622148acd886b5f39d6fb55"
+    ]
+  },
+  "mi-pollo": {
+    "pollo-brasa": [
+      "cmoewub0d00093wvz7udcny29",
+      "cmoewuamu00073wvzqqfwsbzq",
+      "cmoewuatn00083wvzl52buun3",
+      "cmoewub74000a3wvz2zbwsxdo"
+    ],
+    "guarniciones": [
+      "cmoewud2x000k3wvzqu7negtt",
+      "cmoewuby6000e3wvz4512cmn5",
+      "cmoewucpe000i3wvzhkjmgxlo",
+      "cmoewucbu000g3wvzgmift5yf",
+      "cmoewu9hw00013wvzdixrubu9",
+      "cmoewucw6000j3wvz82opon92",
+      "cmoewu9oy00023wvzxvmhw5nm",
+      "cmoewubrd000d3wvz1u2uzdcc",
+      "cmoewucim000h3wvzdenjq4mh",
+      "cmoewuc51000f3wvz7e4xv3hk"
+    ],
+    "broaster": [
+      "cmoewubkm000c3wvzzh8jieos",
+      "cmoewubdv000b3wvzkcdyv26i"
+    ],
+    "bebidas": [
+      "cmoewuh7p00163wvzzb6i1sz7",
+      "cmoewufiv000x3wvzldb6lk46",
+      "cmoewufpn000y3wvz7y90sm9o",
+      "cmoewufc4000w3wvzyjch16dh",
+      "cmoewuel1000s3wvzvhv6s9uh",
+      "cmoewuers000t3wvzczx95u5k",
+      "cmoewufwe000z3wvzoe1vhq0x",
+      "cmoewugne00133wvzm180ssx0",
+      "cmoewuh0y00153wvzo8933j6f",
+      "cmoewug9x00113wvzybxvcftr",
+      "cmoewuggo00123wvzbncb0hvr",
+      "cmoewugu600143wvzc24n2nd7",
+      "cmoewug3500103wvz0hvl5yn7",
+      "cmoewuhl900183wvzzv71bftd",
+      "cmoewuheh00173wvz01ert8c1",
+      "cmoewuf5d000v3wvzw3yr5n6n",
+      "cmoewueyl000u3wvz1101xk10"
+    ],
+    "postres": [
+      "cmoewudty000o3wvzz6tkbxjo",
+      "cmoewudn5000n3wvz0vap6hu3",
+      "cmoewue0p000p3wvzruu5goop",
+      "cmoewue7g000q3wvzh8n6vjb4",
+      "cmoewuee8000r3wvzlaputehz",
+      "cmoewudgf000m3wvzu7553q86",
+      "cmoewud9o000l3wvz3s3niztn"
+    ],
+    "promociones": [
+      "cmoewua2l00043wvz3eloqkpx",
+      "cmoewu9vq00033wvzixgwamkk"
+    ],
+    "salchipapa": [
+      "cmoewua9c00053wvzb8f62pae",
+      "cmoewuag300063wvznt5u6qtq"
+    ]
+  }
+}

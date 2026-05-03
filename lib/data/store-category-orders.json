@@ -1,1 +1,33 @@
-{}
+{
+  "main": {
+    "order": [
+      "Bebidas",
+      "Frutas y Verduras",
+      "Abarrotes",
+      "Limpieza",
+      "Lácteos",
+      "Carnes",
+      "Snacks",
+      "Cuidado Personal",
+      "Panadería",
+      "Restaurante",
+      "Conservas",
+      "Ropa",
+      "Heladeria",
+      "Farmacia"
+    ],
+    "images": {}
+  },
+  "mi-pollo": {
+    "order": [
+      "pollo-brasa",
+      "broaster",
+      "salchipapa",
+      "postres",
+      "guarniciones",
+      "bebidas",
+      "promociones"
+    ],
+    "images": {}
+  }
+}

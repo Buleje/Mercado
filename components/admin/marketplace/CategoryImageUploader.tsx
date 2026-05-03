@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface CategoryImageUploaderProps {
   /** Nombre de la categoría (key en el mapa). */
@@ -51,7 +52,7 @@ export default function CategoryImageUploader({
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
-      const res = await fetch(uploadEndpoint, { method: "POST", body: fd });
+      const res = await fetch(uploadEndpoint, { method: "POST", headers: csrfHeaders(), body: fd });
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? `HTTP ${res.status}`);
