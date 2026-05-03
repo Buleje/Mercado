@@ -245,7 +245,9 @@ function isStoreModePath(pathname: string): boolean {
 const storeModeLinks = [
   { href: "/marketplace/ofertas", label: "Ofertas" },
   { href: "/cuenta/pedidos", label: "Mis pedidos" },
-  { href: "/ayuda/como-pagar", label: "Cómo pagar" },
+  // Mayo 2026: ambos links apuntaban a /ayuda/como-pagar (404) y
+  // /marketplace/como-pagar (real). Unificado al canónico marketplace.
+  { href: "/marketplace/como-pagar", label: "Cómo pagar" },
   { href: "/ayuda#como-funciona", label: "Cómo funciona" },
   { href: "/marketplace/registrar", label: "Crear tienda" },
 ];

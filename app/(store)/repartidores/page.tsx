@@ -48,8 +48,8 @@ export default function RepartidoresPage() {
             </h1>
 
             <p className="mt-6 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
-              Bodegas de tu zona te asignan pedidos cortos. Vos elegís cuándo
-              salís, qué tan cerca trabajas y cómo cobrás. Sin patrón, sin
+              Bodegas de tu zona te asignan pedidos cortos. Tú eliges cuándo
+              sales, qué tan cerca trabajas y cómo cobras. Sin patrón, sin
               horario fijo.
             </p>
 
@@ -90,8 +90,8 @@ export default function RepartidoresPage() {
               },
               {
                 Icon: Clock,
-                title: "Horario que vos elegís",
-                desc: "Conectás cuando podés. Sin turnos obligatorios, sin penalizaciones.",
+                title: "Horario que tú eliges",
+                desc: "Conectás cuando puedes. Sin turnos obligatorios, sin penalizaciones.",
               },
             ].map(({ Icon, title, desc }, i) => (
               <div
@@ -124,10 +124,10 @@ export default function RepartidoresPage() {
             <Bike className="h-7 w-7" strokeWidth={2} />
           </span>
           <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[1.0]">
-            Empezá a repartir hoy.
+            Empieza a repartir hoy.
           </h2>
           <p className="mt-6 text-xl text-[var(--text-secondary)] max-w-xl mx-auto leading-[1.4]">
-            Te validamos en menos de 24 horas. Si vos cumplís con bodegas de
+            Te validamos en menos de 24 horas. Si tú cumplís con bodegas de
             tu zona, te asignamos pedidos esa misma semana.
           </p>
           <div className="mt-10">

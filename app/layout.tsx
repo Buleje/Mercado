@@ -32,6 +32,7 @@ import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ToastContainer";
+import NetworkErrorListener from "@/components/NetworkErrorListener";
 import { Toaster as SonnerToaster } from "sonner";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { LocaleProvider } from "@/contexts/locale-context";
@@ -135,8 +136,13 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "https://www.buleje.pe",
+    // Designer audit P1 SEO: declarar hreflang permite que Google indexe
+    // las versiones traducidas. Por ahora solo es-PE es la versión real;
+    // las otras se mantendrán como `?lang=` cuando se completen.
     languages: {
       "es-PE": "https://www.buleje.pe",
+      "es":    "https://www.buleje.pe",
+      "x-default": "https://www.buleje.pe",
     },
   },
 };
@@ -302,6 +308,7 @@ export default function RootLayout({
         <RootDeferredWidgets />
         {children}
         <ToastContainer position="bottom-right" />
+        <NetworkErrorListener />
         <SonnerToaster
           richColors
           closeButton

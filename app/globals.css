@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* ── Reduced motion escape hatch (designer audit P1 a11y) ─────────────
+   Disable global animations and transitions when the user has
+   `prefers-reduced-motion: reduce`. Esto cubre framer-motion (que
+   internamente usa transform + transition) y cualquier componente que
+   olvidó usar useReducedMotion(). No afecta a usuarios que NO lo activan. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Scope explícito: solo escanear código de la app.
    Tailwind v4 default escanea todo — esto lo restringe a los directorios
    reales de componentes/rutas/libs de UI y excluye docs/reports/scripts/tests

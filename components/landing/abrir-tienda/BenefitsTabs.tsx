@@ -70,11 +70,11 @@ const CATEGORIES: Category[] = [
     highlight: "los nuestros",
     features: [
       "Asignación automática de repartidores",
-      "Tracking en vivo para vos y tu cliente",
+      "Tracking en vivo para tú y tu cliente",
       "Zonas de delivery con tarifas dinámicas",
       "Cobertura cross-vendor compartida",
     ],
-    metric: { value: "GPS en vivo", label: "vos y el cliente lo ven en el mapa" },
+    metric: { value: "GPS en vivo", label: "tú y el cliente lo ven en el mapa" },
     bg: "from-[var(--accent)] via-cyan-700 to-slate-800",
   },
   {
@@ -108,7 +108,7 @@ export default function BenefitsTabs() {
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              Qué obtenés
+              Qué obtienes
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               Cuatro músculos

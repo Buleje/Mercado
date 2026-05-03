@@ -35,7 +35,7 @@ const COMPARISONS: Comparison[] = [
   {
     moment: "Cuando un vecino te escribe por WhatsApp",
     before: "Le copiás precios uno a uno, calculás a mano y le mandás cuenta de banco.",
-    after: "Te pasa un link, arma su pedido solo y vos sólo aceptás y despachás.",
+    after: "Te pasa un link, arma su pedido solo y tú sólo aceptás y despachás.",
   },
   {
     moment: "Al cierre del día",
@@ -121,7 +121,7 @@ export default function HowItChanges() {
             <ArrowUpRight className="hidden h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           </Link>
           <p className="mt-4 text-sm text-[var(--text-tertiary)] max-w-md mx-auto">
-            Lo verificás vos mismo en el primer mes — sin tarjeta, sin compromiso,
+            Lo verificás tú mismo en el primer mes — sin tarjeta, sin compromiso,
             y los datos siempre quedan tuyos.
           </p>
         </div>

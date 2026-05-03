@@ -28,12 +28,12 @@ const LiveSignupTicker = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Activá tu tienda online | Buleje — Plataforma todo-en-uno",
+  title: "Activa tu tienda online | Buleje — Plataforma todo-en-uno",
   description:
     "Más clientes, más pedidos, cero tecnología. Plan Estándar con primer mes gratis · Sin tarjeta · Sin contrato. Cancelás cuando quieras.",
   alternates: { canonical: "/abrir-tienda" },
   openGraph: {
-    title: "Activá tu tienda online | Buleje",
+    title: "Activa tu tienda online | Buleje",
     description:
       "Plataforma todo-en-uno para que tu negocio venda online en 5 minutos.",
     type: "website",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: "¿Cuánto tarda el setup?",
-    a: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si querés.",
+    a: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
   },
   {
     q: "¿Puedo cambiar de plan después?",
@@ -107,7 +107,7 @@ export default function AbrirTiendaPage() {
                 {/* H1 reducido: antes clamp(2.75,7.5vw,5.5rem) aplastaba la
                     jerarquía y dejaba el subtítulo sin aire. Bajo a 4rem max. */}
                 <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-                  Activá tu tienda
+                  Activa tu tienda
                   <br />
                   <span className="text-[var(--accent)]">
                     online en 5 minutos.
@@ -115,7 +115,7 @@ export default function AbrirTiendaPage() {
                 </h1>
                 <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.45] max-w-2xl">
                   Catálogo, pagos Yape, delivery y reportes — todo listo para
-                  que vendás hoy. Sin código, sin técnicos, sin contratos.
+                  que vendas hoy. Sin código, sin técnicos, sin contratos.
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -155,7 +155,7 @@ export default function AbrirTiendaPage() {
                       // Mayo 2026: "+42% ventas promedio" eliminado tras
                       // designer audit. No tenemos datos reales para sustentarlo;
                       // reemplazado por feature concreta y verificable.
-                      { value: "Yape · Plin", label: "Cobrás como ya cobrás" },
+                      { value: "Yape · Plin", label: "Cobrás como ya cobras" },
                       { value: "24/7", label: "Soporte humano por WhatsApp" },
                     ].map(({ value, label }, idx) => (
                       <div

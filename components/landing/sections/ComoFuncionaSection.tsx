@@ -141,7 +141,7 @@ export default function ComoFuncionaSection() {
               href="/abrir-tienda"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-8 py-4 text-base font-bold text-[var(--surface-canvas)] hover:opacity-90 transition-opacity"
             >
-              <T k="landing.how.cta" fallback="Probá el primer mes sin pagar" />
+              <T k="landing.how.cta" fallback="Prueba el primer mes sin pagar" />
               <span aria-hidden>→</span>
             </Link>
           </div>

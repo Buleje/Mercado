@@ -350,7 +350,7 @@ function AboutAndPricingSnapshot() {
               <T k="landing.plans.kicker" fallback="Planes" />
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              <T k="landing.plans.title" fallback="Probá un mes," />
+              <T k="landing.plans.title" fallback="Prueba un mes," />
               <br />
               <span className="italic font-serif text-[var(--accent)]">
                 <T k="landing.plans.titleAccent" fallback="pagá solo si te conviene." />
@@ -437,7 +437,7 @@ function PaymentMethods() {
           </span>
         </div>
         <p className="mt-6 text-center text-sm text-[var(--text-tertiary)]">
-          Sin comisiones para vos · Cobrás como ya cobrás
+          Sin comisiones para tú · Cobrás como ya cobras
         </p>
       </div>
     </section>
@@ -468,7 +468,7 @@ function FinalCTA() {
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          <T k="landing.finalCta.description" fallback="Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso." />
+          <T k="landing.finalCta.description" fallback="Activa tu tienda online en 5 minutos y empieza a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso." />
         </p>
         {/* CTA único — antes había 2 botones idénticos hacia /abrir-tienda. */}
         <div className="mt-12 flex justify-center">

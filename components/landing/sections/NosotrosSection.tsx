@@ -47,7 +47,7 @@ export default function NosotrosSection() {
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-3xl">
-            <T k="about.subheadline" fallback="Catálogo, pagos, delivery, repartidores y reportes — en una sola plataforma. Vos vendés, nosotros nos ocupamos de la tecnología." />
+            <T k="about.subheadline" fallback="Catálogo, pagos, delivery, repartidores y reportes — en una sola plataforma. Tú vendes, nosotros nos ocupamos de la tecnología." />
           </p>
         </div>
 
@@ -61,12 +61,12 @@ export default function NosotrosSection() {
               </span>{" "}
               <T k="about.noCode.middle" fallback="Te damos la plataforma lista para que" />{" "}
               <span className="text-[var(--accent)] font-semibold">
-                <T k="about.noCode.benefits" fallback="vendés más, gastás menos y atendés mejor" />
+                <T k="about.noCode.benefits" fallback="vendes más, gastas menos y atiendes mejor" />
               </span>
               .
             </p>
             <p className="mt-6 text-base text-[var(--text-tertiary)] leading-relaxed">
-              <T k="about.tools" fallback="Cada herramienta — catálogo, Yape, delivery, reportes, fiados — pensada para que tu negocio crezca sin contratar técnicos ni pagar mensualidad. Si querés probarla, son 5 minutos." />
+              <T k="about.tools" fallback="Cada herramienta — catálogo, Yape, delivery, reportes, fiados — pensada para que tu negocio crezca sin contratar técnicos ni pagar mensualidad. Si quieres probarla, son 5 minutos." />
             </p>
           </div>
 
@@ -97,7 +97,7 @@ export default function NosotrosSection() {
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
           >
-            <T k="landing.how.cta" fallback="Probá el primer mes sin pagar" />
+            <T k="landing.how.cta" fallback="Prueba el primer mes sin pagar" />
             <span aria-hidden>→</span>
           </Link>
         </div>

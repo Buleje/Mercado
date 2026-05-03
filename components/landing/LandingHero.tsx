@@ -7,7 +7,7 @@
  * El phone preview es ahora interactivo: toast en vivo, tracker animado,
  * contador de ventas, pulso de elementos clave.
  *
- * LEFT: kicker + título dramático + subhead + CTAs (Probá gratis / Ver demo).
+ * LEFT: kicker + título dramático + subhead + CTAs (Prueba gratis / Ver demo).
  * RIGHT: phone preview animado con dashboard del negocio.
  */
 
@@ -181,7 +181,7 @@ export default function LandingHero({
                 Yape, Plin y efectivo
               </p>
               <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Cobrás como ya cobrás
+                Cobrás como ya cobras
               </p>
             </div>
           </div>

@@ -43,8 +43,9 @@ export function SkipLink({
         "border border-[var(--rule-base)] shadow-md",
         // Oculto off-screen hasta focus; anima con transform.
         "-translate-y-20 transition-transform duration-200 ease-out",
-        // Al recibir foco por teclado, aparece.
-        "focus-visible:translate-y-0",
+        // Al recibir foco por teclado, aparece. focus + focus-visible
+        // (algunos browsers/embeds no disparan focus-visible reliably).
+        "focus:translate-y-0 focus-visible:translate-y-0",
         // Outline visible al focus (no depende de sombras).
         "focus-visible:outline-2 focus-visible:outline-offset-2",
         "focus-visible:outline-[var(--text-primary)]",

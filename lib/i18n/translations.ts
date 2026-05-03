@@ -167,11 +167,11 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.hero.title2": { es: "Más pedidos.", en: "More orders.", shi: "Más" },
   "landing.hero.titleAccent": { es: "Cero tecnología.", en: "Zero tech.", shi: "Cero" },
   "landing.hero.description": {
-    es: "Catálogo, pagos Yape, delivery y reportes — todo listo en 5 minutos. Vos te enfocás en vender.",
+    es: "Catálogo, pagos Yape, delivery y reportes — todo listo en 5 minutos. Tú te enfocás en vender.",
     en: "Catalog, Yape payments, delivery and reports — all ready in 5 minutes. You focus on selling.",
     shi: "Catalogo, pagos, delivery, todo listo.",
   },
-  "landing.hero.ctaPrimary": { es: "Probá el primer mes sin pagar", en: "Try the first month free", shi: "Probá" },
+  "landing.hero.ctaPrimary": { es: "Prueba el primer mes sin pagar", en: "Try the first month free", shi: "Prueba" },
   "landing.hero.ctaSecondary": { es: "Ver demo", en: "See demo", shi: "Ver demo" },
 
   // ── Landing — Stats Marquee ──────────────────────────────────────────
@@ -203,11 +203,11 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.finalCta.title1": { es: "Tu negocio merece", en: "Your business deserves", shi: "Tu negocio" },
   "landing.finalCta.titleAccent": { es: "algo más grande.", en: "something bigger.", shi: "algo más grande." },
   "landing.finalCta.description": {
-    es: "Activá tu tienda online en 5 minutos y empezá a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso.",
+    es: "Activa tu tienda online en 5 minutos y empieza a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso.",
     en: "Activate your online store in 5 minutes and start receiving orders today. No card, no commitment.",
-    shi: "Activá tu tienda.",
+    shi: "Activa tu tienda.",
   },
-  "landing.finalCta.tryFree": { es: "Probá gratis 90 días", en: "Try free for 90 days", shi: "Probá 90 días" },
+  "landing.finalCta.tryFree": { es: "Prueba gratis 90 días", en: "Try free for 90 days", shi: "Prueba 90 días" },
   "landing.finalCta.openStore": { es: "Abre tu tienda", en: "Open your store", shi: "Abre tu tienda" },
 
   // ── Landing — Métodos de pago ────────────────────────────────────────
@@ -256,7 +256,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.how.stat2.label": { es: "Comisión 90 días", en: "Fees 90 days", shi: "Mana pagana 90" },
   "landing.how.stat3.value": { es: "24/7", en: "24/7", shi: "24/7" },
   "landing.how.stat3.label": { es: "Soporte por WhatsApp", en: "WhatsApp support", shi: "Soporte" },
-  "landing.how.cta": { es: "Probá el primer mes sin pagar", en: "Try the first month free", shi: "Probá" },
+  "landing.how.cta": { es: "Prueba el primer mes sin pagar", en: "Try the first month free", shi: "Prueba" },
 
   // ── Promo Banners (Sumate a Buleje) ─────────────────────────────────
   "landing.promo.business.kicker": { es: "Para dueños", en: "For owners", shi: "Dueños" },
@@ -285,7 +285,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
 
   // ── Planes section ──────────────────────────────────────────────────
   "landing.plans.kicker": { es: "Planes", en: "Plans", shi: "Plankuna" },
-  "landing.plans.title": { es: "Probá un mes,", en: "Try one month,", shi: "Killata probay" },
+  "landing.plans.title": { es: "Prueba un mes,", en: "Try one month,", shi: "Killata probay" },
   "landing.plans.titleAccent": { es: "pagá solo si te conviene.", en: "pay only if it fits.", shi: "pagay" },
   "landing.plans.description": {
     es: "Cambiás de plan cuando quieras. Sin contratos, sin permanencia, sin sorpresas en la factura.",
@@ -318,7 +318,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "plans.firstMonthFree": { es: "1er mes gratis", en: "1st month free", shi: "1 killa mana paguy" },
   "plans.firstMonth": { es: "1er mes", en: "1st month", shi: "1 killa" },
   "plans.tagline.basico": {
-    es: "Empezá a vender online sin complicarte",
+    es: "Empieza a vender online sin complicarte",
     en: "Start selling online without hassle",
     shi: "Online rantichiy",
   },
@@ -352,7 +352,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
     en: "You save per year",
     shi: "Waqaychay",
   },
-  "plans.cta.basico": { es: "Probar gratis 1 mes", en: "Try free for 1 month", shi: "Probá 1 killa" },
+  "plans.cta.basico": { es: "Probar gratis 1 mes", en: "Try free for 1 month", shi: "Prueba 1 killa" },
   "plans.cta.pro": { es: "Empezar con Pro", en: "Start with Pro", shi: "Pro qallariy" },
   "plans.cta.enterprise": { es: "Contactar a ventas", en: "Contact sales", shi: "Ventas" },
   "plans.cta.max": { es: "Hablar con un experto", en: "Talk to an expert", shi: "Expertowan rimay" },
@@ -362,7 +362,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "about.headline1": { es: "El sistema que pone", en: "The system that gets", shi: "Sistema" },
   "about.headlineAccent": { es: "a vender tu negocio.", en: "your business selling.", shi: "rantichiy negocioyki." },
   "about.subheadline": {
-    es: "Catálogo, pagos, delivery, repartidores y reportes — en una sola plataforma. Vos vendés, nosotros nos ocupamos de la tecnología.",
+    es: "Catálogo, pagos, delivery, repartidores y reportes — en una sola plataforma. Tú vendes, nosotros nos ocupamos de la tecnología.",
     en: "Catalog, payments, delivery, couriers and reports — all on one platform. You sell, we handle the tech.",
     shi: "Catalogu, pago, delivery, willaykuna — huk plataformapi.",
   },
@@ -377,24 +377,24 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
     shi: "Plataforma listo qosayki",
   },
   "about.noCode.benefits": {
-    es: "vendés más, gastás menos y atendés mejor",
+    es: "vendes más, gastas menos y atiendes mejor",
     en: "sell more, spend less and serve better",
     shi: "astawan rantichiy, pisi gastay, allin atender",
   },
   "about.tools": {
-    es: "Cada herramienta — catálogo, Yape, delivery, reportes, fiados — pensada para que tu negocio crezca sin contratar técnicos ni pagar mensualidad. Si querés probarla, son 5 minutos.",
+    es: "Cada herramienta — catálogo, Yape, delivery, reportes, fiados — pensada para que tu negocio crezca sin contratar técnicos ni pagar mensualidad. Si quieres probarla, son 5 minutos.",
     en: "Every tool — catalog, Yape, delivery, reports, store credit — designed so your business grows without hiring techs or paying monthly fees. Try it: 5 minutes.",
     shi: "Sapa herramienta. 5 minutos.",
   },
   "about.value1.title": { es: "Tus clientes, tus reglas", en: "Your customers, your rules", shi: "Rantiqniyki, kamachiyniyki" },
   "about.value1.desc": {
-    es: "Vendés directo, sin intermediarios. Nosotros ponemos la tecnología; vos decidís precios, promociones y delivery.",
+    es: "Vendés directo, sin intermediarios. Nosotros ponemos la tecnología; tú decidís precios, promociones y delivery.",
     en: "Sell direct, no middlemen. We provide the tech; you decide prices, promos and delivery.",
     shi: "Mana intermediario.",
   },
   "about.value2.title": { es: "Llegás a más vecinos", en: "Reach more neighbors", shi: "Astawan vecinokuna" },
   "about.value2.desc": {
-    es: "Tu negocio aparece en el mapa, en buscadores y en el celular de quien necesita lo que vendés.",
+    es: "Tu negocio aparece en el mapa, en buscadores y en el celular de quien necesita lo que vendes.",
     en: "Your business shows up on the map, in searches and on the phone of who needs what you sell.",
     shi: "Mapapi, buscador-pipas.",
   },
@@ -482,13 +482,13 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "faq.cat3.label": { es: "Setup y soporte", en: "Setup and support", shi: "Setup, yanapay" },
   "faq.cat3.q1": { es: "¿Cuánto demora el setup?", en: "How long does setup take?", shi: "Hayk'a setup?" },
   "faq.cat3.a1": {
-    es: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si querés.",
+    es: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
     en: "5 minutes. Upload logo, catalog and hours. We help via WhatsApp if you want.",
     shi: "5 minutos.",
   },
   "faq.cat3.q2": { es: "¿Necesito saber de tecnología?", en: "Do I need tech knowledge?", shi: "Tecnología yachayta?" },
   "faq.cat3.a2": {
-    es: "Cero. La app está hecha para que la maneje cualquier persona. Si ya usás WhatsApp, podés usar Buleje.",
+    es: "Cero. La app está hecha para que la maneje cualquier persona. Si ya usas WhatsApp, puedes usar Buleje.",
     en: "Zero. The app is made for anyone. If you already use WhatsApp, you can use Buleje.",
     shi: "Mana. WhatsApp yachayniyki.",
   },
