@@ -175,9 +175,11 @@ export default function TenantLifecycleKanban() {
     } else if (action === "email" && tenant.ownerEmail) {
       window.open(`mailto:${tenant.ownerEmail}`, "_blank");
     } else if (action === "impersonate") {
-      // Setear cookies admin del tenant target ANTES de abrir /admin.
-      // Sin este POST, /admin usaría la cookie admin previa → siempre el
-      // mismo tenant. Y la URL `/${slug}/admin` no existía como ruta.
+      // POST setea cookies de sesión admin para el tenant target.
+      // FIX 2026-05: abrimos /t/{slug}/admin (no /admin directo) para que
+      // el proxy slug-routing fuerce x-tenant-id correcto. Antes /admin
+      // podía caer en "main" si las cookies sameSite=strict no llegaban
+      // a la nueva pestaña.
       try {
         const res = await fetch("/api/superadmin/impersonate", {
           method: "POST",
@@ -193,7 +195,7 @@ export default function TenantLifecycleKanban() {
           const { clearAllTenantCache } = await import("@/lib/tenant-cache");
           clearAllTenantCache();
         } catch { /* fallback gestionado por assertTenantOwnership */ }
-        window.open("/admin", "_blank");
+        window.open(`/t/${encodeURIComponent(tenant.slug)}/admin`, "_blank");
       } catch {
         setError("Error de red al impersonar.");
       }
