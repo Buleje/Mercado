@@ -12,7 +12,10 @@ const ProductUpdateSchema = z.object({
   category: z.string().min(1).max(100).optional(),
   price: z.number().positive().optional(),
   costPrice: z.number().min(0).optional().nullable(),
-  image: z.string().max(500).optional(),
+  // FIX 2026-05: bumped 500 → 500_000 para soportar dataURL WebP comprimida.
+  // El processImage() del cliente garantiza ≤120KB (~160_000 chars base64).
+  // 500K da margen para imágenes grandes pegadas como URL externa también.
+  image: z.string().max(500_000).optional(),
   unit: z.string().max(20).optional(),
   badge: z.string().max(50).optional().nullable(),
   barcode: z.string().max(100).optional().nullable(),
@@ -21,6 +24,10 @@ const ProductUpdateSchema = z.object({
   stockMax: z.number().min(0).optional().nullable(),
   active: z.boolean().optional(),
   expiryDate: z.string().optional().nullable(),
+  // FIX 2026-05: faltaba el campo description aunque la UI lo expone y la
+  // generación AI lo llena. Sin esto los cambios al description se perdían
+  // silenciosamente al guardar.
+  description: z.string().max(2000).optional().nullable(),
 });
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -68,6 +75,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       stock: body.stock ?? existing.stock,
       stockMin: body.stockMin ?? existing.stockMin,
       stockMax: body.stockMax ?? existing.stockMax,
+      description: body.description ?? existing.description,
     });
 
     // Record price history when price actually changed

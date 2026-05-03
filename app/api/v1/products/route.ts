@@ -29,14 +29,17 @@ function toPublicProduct(p: Awaited<ReturnType<typeof ProductsDB.getAll>>[number
 }
 
 const ProductPostSchema = z.object({
-  name:     z.string().min(1).max(150),
-  category: z.string().min(1).max(100),
-  price:    z.number().positive(),
-  image:    z.string().max(500).optional(),
-  unit:     z.string().max(20).optional(),
-  badge:    z.string().max(50).optional(),
-  stock:    z.number().min(0).optional(),
-  stockMin: z.number().min(0).optional(),
+  name:        z.string().min(1).max(150),
+  category:    z.string().min(1).max(100),
+  price:       z.number().positive(),
+  // FIX 2026-05: bumped 500 → 500_000 para dataURL WebP. processImage()
+  // garantiza ≤120KB (~160K chars).
+  image:       z.string().max(500_000).optional(),
+  unit:        z.string().max(20).optional(),
+  badge:       z.string().max(50).optional(),
+  description: z.string().max(2000).optional(),
+  stock:       z.number().min(0).optional(),
+  stockMin:    z.number().min(0).optional(),
 });
 
 export async function GET(req: NextRequest) {

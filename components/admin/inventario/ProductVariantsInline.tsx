@@ -390,6 +390,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
               onSave={() => handleSaveRow(r, false)}
               onDelete={() => r.id && handleDelete(r.id)}
               onUploadImage={() => { setPendingImageFor(r.id ?? null); fileInputRef.current?.click(); }}
+              onDropImage={(file) => r.id && handleFileSelected(file, r.id)}
             />
           ))}
         </div>
@@ -411,6 +412,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
             onSave={() => handleSaveRow(draftRow, true)}
             onDelete={() => setDraftRow(null)}
             onUploadImage={() => { setPendingImageFor("draft"); fileInputRef.current?.click(); }}
+            onDropImage={(file) => handleFileSelected(file, "draft")}
             isDraft
           />
         </div>
@@ -496,9 +498,10 @@ interface CardProps {
   onSave: () => void;
   onDelete: () => void;
   onUploadImage: () => void;
+  onDropImage?: (file: File) => void;
 }
 
-function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, onSave, onDelete, onUploadImage }: CardProps) {
+function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, onSave, onDelete, onUploadImage, onDropImage }: CardProps) {
   const finalPrice = basePrice + (row.priceModifier ?? 0);
   const previewImg = row.image || parentImage || "";
 
@@ -513,12 +516,20 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
         </div>
       )}
 
-      {/* Imagen */}
+      {/* Imagen — click para subir o arrastrar al cuadro */}
       <button
         type="button"
         onClick={onUploadImage}
-        className="relative h-16 w-16 rounded-lg overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-card-border hover:border-primary shrink-0 bg-[var(--surface-sunken)] dark:bg-surface group"
-        title="Subir imagen de la variante"
+        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-primary"); }}
+        onDragLeave={(e) => { e.currentTarget.classList.remove("ring-2", "ring-primary"); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove("ring-2", "ring-primary");
+          const file = e.dataTransfer.files?.[0];
+          if (file && onDropImage) onDropImage(file);
+        }}
+        className="relative h-16 w-16 rounded-lg overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-card-border hover:border-primary shrink-0 bg-[var(--surface-sunken)] dark:bg-surface group transition-all"
+        title="Click para elegir o arrastrá una imagen aquí"
       >
         {previewImg ? (
           <Image
@@ -537,6 +548,12 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[length:var(--ts-2xs)] py-0.5 text-center font-bold">
             heredada
           </span>
+        )}
+        {!row.image && !parentImage && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-tertiary)]">
+            <Camera className="h-4 w-4" />
+            <span className="text-[length:var(--ts-2xs)] font-bold mt-0.5">+ foto</span>
+          </div>
         )}
       </button>
 
