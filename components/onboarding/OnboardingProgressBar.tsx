@@ -1,50 +1,62 @@
 'use client';
 
+/**
+ * OnboardingProgressBar — barra de progreso compacta con labels.
+ *
+ * Audit P14: el diseño anterior (5 dots numerados sin labels) era
+ * confuso. Ahora muestra el step actual con su label + un track delgado
+ * con dots discretos.
+ */
+
 interface Props {
   currentStep: number;
   totalSteps?: number;
 }
 
+const STEP_LABELS = ["Marca", "Producto", "Cliente", "POS demo", "Listo"];
+
 export default function OnboardingProgressBar({ currentStep, totalSteps = 5 }: Props) {
   const percentage = (currentStep / totalSteps) * 100;
+  const currentLabel = STEP_LABELS[currentStep - 1] ?? "";
 
   return (
-    <div className="w-full mb-8">
-      {/* Progress bar */}
-      <div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-4">
+    <div className="w-full">
+      {/* Step counter + label */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Paso {currentStep} de {totalSteps}
+        </span>
+        <span className="text-sm font-semibold text-[var(--accent)]">
+          {currentLabel}
+        </span>
+      </div>
+
+      {/* Track con gradient progress */}
+      <div className="relative h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
         <div
-          className="absolute inset-y-0 left-0 bg-[#00B4A6] rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${percentage}%` }}
+          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out"
+          style={{
+            width: `${percentage}%`,
+            background: "linear-gradient(90deg, var(--accent) 0%, var(--data-success-600) 100%)",
+          }}
         />
       </div>
 
-      {/* Step dots */}
-      <div className="flex justify-between">
+      {/* Dots checkpoint sutiles */}
+      <div className="flex items-center justify-between mt-2 px-0.5">
         {Array.from({ length: totalSteps }, (_, i) => {
           const step = i + 1;
-          const isCompleted = step < currentStep;
-          const isCurrent = step === currentStep;
-
+          const reached = step <= currentStep;
           return (
-            <div key={step} className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                  isCompleted
-                    ? 'bg-[#00B4A6] text-white'
-                    : isCurrent
-                    ? 'bg-[#00B4A6] text-white ring-4 ring-[#00B4A6]/20'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-                }`}
-              >
-                {isCompleted ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  step
-                )}
-              </div>
-            </div>
+            <span
+              key={step}
+              className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                reached
+                  ? "bg-[var(--accent)] scale-110"
+                  : "bg-[var(--rule-base)]"
+              }`}
+              aria-hidden
+            />
           );
         })}
       </div>

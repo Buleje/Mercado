@@ -87,89 +87,105 @@ export default function OnboardingWizard() {
   }, [complete]);
 
   return (
-    <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      style={{
+        background:
+          "radial-gradient(120% 80% at 0% 0%, var(--accent-soft) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, var(--accent-muted) 0%, transparent 55%), var(--surface-canvas)",
+      }}
+    >
       {showConfetti && <ConfettiEffect />}
 
-      <div className="w-full max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 relative">
-        {/* Back button */}
-        {currentStep > 1 && (
-          <button
-            onClick={goPrev}
-            className="absolute top-4 left-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex items-center gap-1 text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Atrás
-          </button>
-        )}
-
-        {/* Progress bar */}
-        <div className="mt-6">
+      {/* Card compacto: 480px hardcoded para escapar del override de
+          --container-lg (1200px) que tiene este proyecto en Tailwind v4.
+          Animación de entrada suave (sin opacity stuck). */}
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[480px] mx-auto bg-[var(--surface-raised)] rounded-3xl border border-[var(--rule-base)] overflow-hidden"
+        style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.08)" }}
+      >
+        {/* Header con progress + back button */}
+        <div className="px-6 pt-6 pb-5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40">
+          {currentStep > 1 && (
+            <button
+              onClick={goPrev}
+              aria-label="Volver al paso anterior"
+              className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1 -ml-1"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Atrás
+            </button>
+          )}
           <OnboardingProgressBar currentStep={currentStep} />
         </div>
 
-        {/* Steps with animation */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            {currentStep === 1 && (
-              <OnboardingStep1Brand
-                data={stepData.brand}
-                onChange={data => updateStep('brand', data)}
-                onNext={goNext}
-              />
-            )}
+        {/* Body con steps */}
+        <div className="px-6 py-7 sm:px-8 sm:py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              {currentStep === 1 && (
+                <OnboardingStep1Brand
+                  data={stepData.brand}
+                  onChange={data => updateStep('brand', data)}
+                  onNext={goNext}
+                />
+              )}
 
-            {currentStep === 2 && (
-              <OnboardingStep2Product
-                data={stepData.product}
-                onChange={data => updateStep('product', data)}
-                onNext={goNext}
-              />
-            )}
+              {currentStep === 2 && (
+                <OnboardingStep2Product
+                  data={stepData.product}
+                  onChange={data => updateStep('product', data)}
+                  onNext={goNext}
+                />
+              )}
 
-            {currentStep === 3 && (
-              <OnboardingStep3Client
-                data={stepData.client}
-                onChange={data => updateStep('client', data)}
-                onNext={goNext}
-              />
-            )}
+              {currentStep === 3 && (
+                <OnboardingStep3Client
+                  data={stepData.client}
+                  onChange={data => updateStep('client', data)}
+                  onNext={goNext}
+                />
+              )}
 
-            {currentStep === 4 && (
-              <OnboardingStep4POSDemo onNext={goNext} />
-            )}
+              {currentStep === 4 && (
+                <OnboardingStep4POSDemo onNext={goNext} />
+              )}
 
-            {currentStep === 5 && (
-              <OnboardingStep5Finish
-                data={stepData.preferences}
-                defaultPhone={stepData.brand.telefono}
-                onChange={data => updateStep('preferences', data)}
-                onComplete={handleComplete}
-                isCompleting={isCompleting}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+              {currentStep === 5 && (
+                <OnboardingStep5Finish
+                  data={stepData.preferences}
+                  defaultPhone={stepData.brand.telefono}
+                  onChange={data => updateStep('preferences', data)}
+                  onComplete={handleComplete}
+                  isCompleting={isCompleting}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-        {/* Skip link */}
-        <div className="mt-6 text-center">
+        {/* Footer skip */}
+        <div className="px-6 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 text-center">
           <button
             onClick={handleSkipAll}
             disabled={isCompleting}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
+            className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-2 py-1"
           >
-            Saltar configuración &rarr;
+            Saltar configuración →
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
