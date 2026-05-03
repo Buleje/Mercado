@@ -37,6 +37,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
 
   const [productSearch, setProductSearch] = useState("");
+  const [activeProductCat, setActiveProductCat] = useState<string | null>(null);
   const [savingProductIds, setSavingProductIds] = useState<Set<number>>(new Set());
   const [recentlyAssigned, setRecentlyAssigned] = useState<Map<number, string>>(new Map());
   const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
@@ -64,13 +65,38 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
       setBankSearch("");
       setProductSearch("");
       setActiveCatId(null);
+      setActiveProductCat(null);
     }
   }, [open, reloadBank]);
 
+  // Pool base — productos sin imagen (incluye los recien asignados para
+  // que sigan visibles con badge verde mientras el modal esta abierto).
+  const baseWithoutImage = useMemo(
+    () => products.filter((p) => !p.image || p.image.trim() === "" || recentlyAssigned.has(p.id)),
+    [products, recentlyAssigned],
+  );
+
+  // Categorias del pool — solo las que tienen al menos 1 producto sin imagen.
+  // Cada chip muestra cuantos quedan pendientes (sin contar los ya asignados
+  // en esta sesion) para que Brandon vea el progreso.
+  const productCategories = useMemo(() => {
+    const map = new Map<string, { total: number; pending: number }>();
+    for (const p of baseWithoutImage) {
+      const cat = p.category || "Sin categoria";
+      const cur = map.get(cat) ?? { total: 0, pending: 0 };
+      cur.total += 1;
+      if (!recentlyAssigned.has(p.id)) cur.pending += 1;
+      map.set(cat, cur);
+    }
+    return Array.from(map.entries())
+      .map(([name, counts]) => ({ name, ...counts }))
+      .sort((a, b) => b.pending - a.pending || a.name.localeCompare(b.name));
+  }, [baseWithoutImage, recentlyAssigned]);
+
   const productsWithoutImage = useMemo(() => {
     const q = productSearch.trim().toLowerCase();
-    return products
-      .filter((p) => !p.image || p.image.trim() === "" || recentlyAssigned.has(p.id))
+    return baseWithoutImage
+      .filter((p) => !activeProductCat || p.category === activeProductCat)
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.barcode ?? "").includes(q))
       .sort((a, b) => {
         // Recién asignados primero (feedback visual de progreso)
@@ -79,7 +105,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
         if (aR !== bR) return aR ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
-  }, [products, productSearch, recentlyAssigned]);
+  }, [baseWithoutImage, productSearch, activeProductCat, recentlyAssigned]);
 
   const visibleCats = useMemo(() => {
     return categories
@@ -356,16 +382,50 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
+              {productCategories.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setActiveProductCat(null)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
+                      !activeProductCat
+                        ? "border-primary bg-primary text-white"
+                        : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                    )}
+                  >
+                    Todas <span className="ml-1 opacity-80">· {baseWithoutImage.length}</span>
+                  </button>
+                  {productCategories.map((c) => (
+                    <button
+                      key={c.name}
+                      onClick={() => setActiveProductCat(c.name)}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors flex items-center gap-1",
+                        activeProductCat === c.name
+                          ? "border-primary bg-primary text-white"
+                          : c.pending === 0
+                          ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/10 text-[var(--data-success)]"
+                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                      )}
+                      title={`${c.name}: ${c.pending} pendientes / ${c.total} totales`}
+                    >
+                      {c.name}
+                      <span className="opacity-80">· {c.pending}</span>
+                      {c.pending === 0 && c.total > 0 && <Check className="h-3 w-3" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </header>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {productsWithoutImage.length === 0 && (
                 <div className="text-center py-10">
                   <Check className="h-12 w-12 text-[var(--data-success)] mx-auto mb-3" />
                   <p className="text-base font-extrabold text-[var(--text-primary)]">
-                    {productSearch ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
+                    {productSearch || activeProductCat ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
                   </p>
                   <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                    {productSearch ? "Probá otra búsqueda." : "Buen trabajo."}
+                    {productSearch ? "Probá otra búsqueda." : activeProductCat ? "Probá quitar el filtro de categoría." : "Buen trabajo."}
                   </p>
                 </div>
               )}
