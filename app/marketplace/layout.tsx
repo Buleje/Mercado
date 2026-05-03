@@ -18,13 +18,17 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
 import NavModeToast from "@/components/marketplace/NavModeToast";
 import MainWithBackKey from "@/components/marketplace/MainWithBackKey";
 
+// Designer audit P0: el template anterior "%s | Marketplace · Buleje"
+// generaba duplicaciones tipo "Marketplace — Bodegas... | Marketplace · Buleje"
+// y triple "Tienda | Marketplace Buleje | Marketplace · Buleje". Removido —
+// se hereda el template root "%s | Buleje" para todas las rutas marketplace.
 export const metadata: Metadata = {
   title: {
-    default: "Marketplace Buleje — Bodegas y Tiendas de Todo el Perú",
-    template: "%s | Marketplace · Buleje",
+    default: "Marketplace — Bodegas y Tiendas del Perú",
+    template: "%s | Buleje",
   },
   description:
-    "Encuentra bodegas, minimarkets y tiendas de todo el Perú en un solo lugar. Compra con delivery rápido. Yape y efectivo.",
+    "Encuentra bodegas, minimarkets y tiendas del Perú en un solo lugar. Delivery rápido, pago con Yape o efectivo.",
 };
 
 /**

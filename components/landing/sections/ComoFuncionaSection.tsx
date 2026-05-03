@@ -52,7 +52,7 @@ export default function ComoFuncionaSection() {
               <T k="landing.how.kicker" fallback="Cómo funciona" />
             </p>
             <h2 className="text-[clamp(2.5rem,6.5vw,4.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              <T k="landing.how.title" fallback="Cuatro pasos." />
+              <T k="landing.how.title" fallback="Cuatro pasos." />{" "}
               <br />
               <span className="text-[var(--accent)]">
                 <T k="landing.how.titleAccent" fallback="Cero fricción." />

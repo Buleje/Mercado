@@ -41,14 +41,17 @@ const HomePlansToggle = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Más",
+  // Designer audit P0: el template root "%s | Buleje" duplicaba la marca.
+  // Removido "Buleje — " del prefijo y "| Bodegas..." del suffix; el template
+  // añade "| Buleje" al final, dando: "Pide lo que quieras... | Buleje".
+  title: "Pide lo que quieras, te lo llevamos",
   description:
     "Compra en bodegas, minimarkets y tiendas de tu zona con delivery rápido. Paga con Yape o efectivo. Miles de productos al alcance de tu mano en Buleje.",
   alternates: {
     canonical: "https://www.buleje.pe",
   },
   openGraph: {
-    title: "Buleje — Pide lo que quieras, te lo llevamos",
+    title: "Pide lo que quieras, te lo llevamos | Buleje",
     description:
       "Compra en bodegas y tiendas de tu zona con delivery rápido. Yape y efectivo.",
     url: "https://www.buleje.pe",
@@ -350,7 +353,7 @@ function AboutAndPricingSnapshot() {
               <T k="landing.plans.kicker" fallback="Planes" />
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              <T k="landing.plans.title" fallback="Prueba un mes," />
+              <T k="landing.plans.title" fallback="Prueba un mes," />{" "}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
                 <T k="landing.plans.titleAccent" fallback="pagá solo si te conviene." />
@@ -461,7 +464,7 @@ function FinalCTA() {
           <T k="landing.finalCta.kicker" fallback="Empieza hoy" />
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          <T k="landing.finalCta.title1" fallback="Tu negocio merece" />
+          <T k="landing.finalCta.title1" fallback="Tu negocio merece" />{" "}
           <br />
           <span className="italic font-serif text-[var(--accent)]">
             <T k="landing.finalCta.titleAccent" fallback="algo más grande." />

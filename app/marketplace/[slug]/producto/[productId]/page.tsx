@@ -137,9 +137,12 @@ export async function generateMetadata({
   const product = await fetchProduct(productId);
   if (!product) return { title: "Producto no encontrado" };
 
+  // Designer audit P0: antes terminaba en "en Buleje" y el template root
+  // añadía otro "| Buleje" → "Pepsi Black — Mi Pollo en Buleje | Marketplace · Buleje".
+  // Ahora solo "Producto — Tienda" y el template lo cierra con "| Buleje".
   const title =
     product.metaTitle ||
-    `${product.name} — ${product.store.name} en Buleje`;
+    `${product.name} — ${product.store.name}`;
   const description =
     product.metaDescription ||
     product.description ||
