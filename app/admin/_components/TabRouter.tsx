@@ -1,7 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "@buleje/design-system/icons";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
@@ -230,81 +229,62 @@ export function TabRouter({
   // (Declaración Inventario movido dentro del módulo Inventario — tab "Declaración")
 
   // ── 8. Configuración ──
-  // Este tab agrupa varios sub-paneles: Settings, Equipo, Navegación, Reordenar sidebar y Tutorial.
+  // Cada sub-panel (Settings, Equipo, Navegación, Reordenar sidebar, Tutorial)
+  // vive en su propio "cuadrito" homogéneo (rounded-2xl + borde + bg surface)
+  // para que el config se sienta como una grilla coherente, sin huecos visuales.
   if (tab === "config") {
     return (
-      <div className="space-y-8">
+      <div className="space-y-5">
         <SettingsTab storeMode={storeMode} onModeChange={onModeChange} />
 
-        {/* ── Gestión de Equipo ── */}
-        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </div>
-            <div>
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Gestión de Equipo</CardTitle>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Gestiona tu equipo y control de acceso por rol</p>
-            </div>
-          </div>
+        <ConfigCard
+          icon={Users}
+          title="Gestión de Equipo"
+          desc="Gestiona tu equipo y control de acceso por rol"
+        >
           <TeamTab />
-        </div>
+        </ConfigCard>
 
-        {/* ── Navegación por defecto ── */}
-        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
-              <SlidersHorizontal className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </div>
-            <div>
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Navegación</CardTitle>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Configura que tab se abre por defecto en cada seccion</p>
-            </div>
-          </div>
+        <ConfigCard
+          icon={SlidersHorizontal}
+          title="Navegación"
+          desc="Configura qué tab se abre por defecto en cada sección"
+        >
           <NavDefaultTabsConfig />
-        </div>
+        </ConfigCard>
 
-        {/* ── Reordenar barra lateral ── */}
-        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
-              <ArrowUpDown className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </div>
-            <div>
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Reordenar barra lateral</CardTitle>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Cambia el orden de las secciones en tu menú lateral</p>
-            </div>
-          </div>
+        <ConfigCard
+          icon={ArrowUpDown}
+          title="Reordenar barra lateral"
+          desc="Cambia el orden de las secciones en tu menú lateral"
+        >
           <SidebarReorderPanel
             categories={visibleCategories}
             onSave={onSaveCategoryOrder}
           />
-        </div>
+        </ConfigCard>
 
-        {/* ── Repetir tutorial ── */}
-        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
-                <GraduationCap className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Tutorial de bienvenida</p>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Repasa cómo funciona cada sección del panel</p>
-              </div>
-            </div>
+        <ConfigCard
+          icon={GraduationCap}
+          title="Tutorial de bienvenida"
+          desc="Repasa cómo funciona cada sección del panel"
+        >
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-[var(--text-secondary)] dark:text-muted flex-1 min-w-0">
+              Volvé a ver el recorrido guiado del panel cuando quieras.
+            </p>
             <button
               onClick={() => {
                 onboarding.resetTour();
                 onNavigateTab("asistente-ia");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100  transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
-              Repetir tutorial de bienvenida
+              Repetir tutorial
             </button>
           </div>
-        </div>
+        </ConfigCard>
       </div>
     );
   }
@@ -345,4 +325,42 @@ export function TabRouter({
   if (tab === "pagina-inicio") return <StorePageAdminPage />;
 
   return null;
+}
+
+// ─── ConfigCard ──────────────────────────────────────────────────────────────
+//
+// Wrapper homogéneo para sub-paneles del tab "config". Antes cada sección
+// usaba <div className="pt-8 border-t..."> (un divisor lineal sin caja),
+// lo que dejaba huecos visuales entre paneles. Ahora cada uno vive en su
+// propio "cuadrito" igual al SectionCard del SettingsModule:
+//   - Borde rounded-2xl + bg surface
+//   - Header con icon + título + descripción
+//   - Padding 5
+//   - Sin border-t separator (la propia card es el separator visual)
+
+function ConfigCard({
+  icon: Icon,
+  title,
+  desc,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  desc: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 sm:p-6 shadow-sm">
+      <header className="flex items-center gap-3 mb-5 pb-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
+          <Icon className="h-5 w-5 text-[var(--text-tertiary)]" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground truncate">{title}</h3>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{desc}</p>
+        </div>
+      </header>
+      <div>{children}</div>
+    </section>
+  );
 }

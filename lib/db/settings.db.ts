@@ -34,6 +34,11 @@ function mapSettings(s: PSettings): DbSettings {
     ...(s.businessLat != null && { businessLat: s.businessLat }),
     ...(s.businessLon != null && { businessLon: s.businessLon }),
     ...(s.logoUrl != null && { logoUrl: s.logoUrl }),
+    // coverUrl + bannerUrl viven en columnas TEXT agregadas via ALTER TABLE
+    // (no están en schema.prisma — ver patrón expand seguro). Se leen via
+    // raw access al record para evitar mismatch del Prisma Client.
+    ...(r.coverUrl != null && { coverUrl: r.coverUrl as string }),
+    ...(r.bannerUrl != null && { bannerUrl: r.bannerUrl as string }),
     ...(s.description != null && { description: s.description }),
     ...(s.hours != null && { hours: s.hours }),
     ...(s.deliveryZone != null && { deliveryZone: s.deliveryZone }),
@@ -178,6 +183,24 @@ export const SettingsDB = {
           }
         }
         if (!row) return { mode: "whatsapp", adminBypassLogin: false };
+
+        // Prisma `findUnique` ignora columnas que no están en schema.prisma.
+        // coverUrl + bannerUrl se agregaron via ALTER TABLE pero el schema no
+        // se regeneró (zona peligrosa). Leemos esos 2 campos via raw query.
+        try {
+          const extras = await prisma.$queryRawUnsafe<Array<{ coverUrl: string | null; bannerUrl: string | null }>>(
+            `SELECT "coverUrl", "bannerUrl" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
+            (row as { tenantId?: string }).tenantId ?? tid,
+          );
+          const e = extras[0];
+          if (e) {
+            (row as Record<string, unknown>).coverUrl = e.coverUrl;
+            (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
+          }
+        } catch (err) {
+          logger.warn("[settings.db] cover/banner raw read skipped", { error: String(err) });
+        }
+
         return mapSettings(row);
       } catch (error) {
         logger.warn("[settings] falling back to defaults", { error: error instanceof Error ? error.message : String(error) });
@@ -193,6 +216,9 @@ export const SettingsDB = {
       hours: s.hours, deliveryZone: s.deliveryZone, yapeEnabled: s.yapeEnabled ?? false,
       yapeImage: s.yapeImage, yapeName: s.yapeName, yapePhone: s.yapePhone,
       cashEnabled: s.cashEnabled ?? true,
+      // coverUrl + bannerUrl: columnas TEXT agregadas via ALTER TABLE pero
+      // NO en schema.prisma (zona peligrosa). Se persisten DESPUÉS del upsert
+      // con $executeRawUnsafe — ver más abajo.
       ...(s.navLinks !== undefined && { navLinksJson: JSON.stringify(s.navLinks) }),
       ...(s.businessLat !== undefined && { businessLat: s.businessLat }),
       ...(s.businessLon !== undefined && { businessLon: s.businessLon }),
@@ -310,7 +336,25 @@ export const SettingsDB = {
       create: { tenantId: tid, ...d },
       update: d,
     });
+
+    // coverUrl + bannerUrl viven en columnas TEXT que NO están en schema.prisma
+    // (patrón expand seguro, agregadas via ALTER TABLE IF NOT EXISTS).
+    // Persistir via raw SQL — pasamos `null` cuando vienen como string vacío
+    // para que el "Quitar" del UI también funcione.
+    if (s.coverUrl !== undefined) {
+      await prisma
+        .$executeRawUnsafe(`UPDATE "Settings" SET "coverUrl" = $1 WHERE "tenantId" = $2`, s.coverUrl || null, tid)
+        .catch((err) => logger.warn("[settings.db] coverUrl raw write failed", { error: String(err) }));
+    }
+    if (s.bannerUrl !== undefined) {
+      await prisma
+        .$executeRawUnsafe(`UPDATE "Settings" SET "bannerUrl" = $1 WHERE "tenantId" = $2`, s.bannerUrl || null, tid)
+        .catch((err) => logger.warn("[settings.db] bannerUrl raw write failed", { error: String(err) }));
+    }
+
     invalidateByPrefix(`settings:${tid}`);
-    return mapSettings(row);
+    // Re-fetch fresh row para que mapSettings vea los campos cover/banner persistidos.
+    const fresh = await prisma.settings.findUnique({ where: { tenantId: tid } });
+    return mapSettings(fresh ?? row);
   },
 };
