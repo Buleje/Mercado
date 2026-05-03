@@ -5,8 +5,14 @@ import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
 
 // Whitelist de protocolos para imageUrl — bloquea SSRF (file://, internal IPs).
-// Aceptamos solo HTTPS público (CDN del marketplace, Supabase Storage, etc.).
+// Aceptamos:
+//  - HTTPS público (CDN del marketplace, Supabase Storage, etc.)
+//  - Paths relativos same-origin (/uploads/..., /brand/...) que vienen del
+//    endpoint /api/superadmin/upload con fallback FS local en dev.
 const isSafeImageUrl = (s: string): boolean => {
+  if (s.startsWith("/uploads/") || s.startsWith("/brand/") || s.startsWith("/images/")) {
+    return true;
+  }
   try {
     const u = new URL(s);
     return u.protocol === "https:";
@@ -19,8 +25,8 @@ const OptionSchema = z.object({
   name: z.string().min(1).max(120),
   imageUrl: z
     .string()
-    .url()
-    .refine(isSafeImageUrl, { message: "imageUrl debe ser HTTPS público" })
+    .refine((s) => s.startsWith("/") || /^https?:\/\//.test(s), { message: "URL inválida" })
+    .refine(isSafeImageUrl, { message: "imageUrl debe ser HTTPS público o un path /uploads/" })
     .nullable()
     .optional(),
   priceDelta: z.number().min(-10000).max(10000).optional(),

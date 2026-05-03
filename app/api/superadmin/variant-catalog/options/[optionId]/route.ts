@@ -4,8 +4,11 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
 
-// SSRF guard: solo HTTPS público (no file://, http internal, etc.)
+// SSRF guard: HTTPS público, o paths relativos same-origin (/uploads/, /brand/).
 const isSafeImageUrl = (s: string): boolean => {
+  if (s.startsWith("/uploads/") || s.startsWith("/brand/") || s.startsWith("/images/")) {
+    return true;
+  }
   try {
     const u = new URL(s);
     return u.protocol === "https:";
@@ -18,8 +21,8 @@ const PatchSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   imageUrl: z
     .string()
-    .url()
-    .refine(isSafeImageUrl, { message: "imageUrl debe ser HTTPS público" })
+    .refine((s) => s.startsWith("/") || /^https?:\/\//.test(s), { message: "URL inválida" })
+    .refine(isSafeImageUrl, { message: "imageUrl debe ser HTTPS público o un path /uploads/" })
     .nullable()
     .optional(),
   priceDelta: z.number().min(-10000).max(10000).optional(),
