@@ -36,6 +36,7 @@ import { usePagination, Paginator } from "@/hooks/use-pagination";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
+const BulkImageAssignModal = dynamic(() => import("@/components/admin/inventario/BulkImageAssignModal"), { ssr: false });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -303,6 +304,7 @@ export default function InventoryTab() {
   const [aiDescGenerating, setAiDescGenerating] = useState(false);
   const [aiDescError, setAiDescError] = useState<string | null>(null);
   const [showImageBank, setShowImageBank] = useState(false);
+  const [showBulkImageAssign, setShowBulkImageAssign] = useState(false);
 
   const generateDescriptionAI = useCallback(async (form: typeof editForm, setter: typeof setEditForm) => {
     const name = form.name?.trim();
@@ -565,15 +567,10 @@ export default function InventoryTab() {
     load();
   };
 
-  /**
-   * Auto-save SOLO del campo `image` cuando el usuario lo cambia en modo edit.
-   * Razon: Brandon reporta que al agregar imagen del banco o subir local,
-   * "no se añade y demora" — porque el usuario espera que aplique de inmediato
-   * pero el flujo previo requeria click "Guardar" del modal. Ahora persiste
-   * apenas cambia la imagen, sin esperar.
-   *
-   * Fire-and-forget: NO bloquea el UI. Si falla, muestra toast pero no rompe.
-   */
+  // Auto-save del campo `image` cuando el usuario lo cambia en modo edit.
+  // Optimistic update local — NO refetch (load() global resetea el scrollTop
+  // del div overflow-y-auto del modal, dejando el preview fuera de viewport
+  // ~900ms después del pick, que el usuario percibe como "no se aplicó").
   const autoSaveImage = useCallback(async (productId: number, imageUrl: string) => {
     try {
       const res = await fetch(`/api/products/${productId}`, {
@@ -586,12 +583,11 @@ export default function InventoryTab() {
         return;
       }
       toast.success("Imagen guardada", { duration: 1800 });
-      // Refresh background — no bloquear UX
-      load();
+      setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, image: imageUrl } : p)));
     } catch {
       toast.error("Error de red al guardar imagen. Verifica conexion.", { duration: 4000 });
     }
-  }, [load]);
+  }, []);
 
   /**
    * Subir archivo de imagen al endpoint /api/upload (Supabase Storage + Sharp).
@@ -1438,6 +1434,24 @@ export default function InventoryTab() {
                   <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
                 </button>
               )}
+              <button
+                onClick={() => setShowBulkImageAssign(true)}
+                title="Asigna imágenes del banco a varios productos a la vez con drag & drop"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all",
+                  noImageCount > 0
+                    ? "border-primary bg-linear-to-r from-primary to-[var(--data-success)] text-white hover:opacity-90 shadow-sm"
+                    : "border-primary/30 text-primary hover:bg-primary/5",
+                )}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Añadir IMG Amplio
+                {noImageCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-white/25 text-[length:var(--ts-2xs)] font-extrabold">
+                    {noImageCount} sin foto
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -2806,6 +2820,19 @@ export default function InventoryTab() {
           productId={modifiersProduct.id}
           productName={modifiersProduct.name}
           onClose={() => setModifiersProduct(null)}
+        />
+      )}
+
+      {/* Bulk image assign — drag&drop banco → productos sin imagen */}
+      {showBulkImageAssign && (
+        <BulkImageAssignModal
+          open={showBulkImageAssign}
+          onOpenChange={setShowBulkImageAssign}
+          products={products}
+          onAssigned={(productId, imageUrl) => {
+            // Optimistic update local — evita refetch que rompe scroll del modal
+            setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, image: imageUrl } : p)));
+          }}
         />
       )}
 

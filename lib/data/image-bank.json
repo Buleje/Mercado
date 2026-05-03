@@ -44,6 +44,26 @@
           "id": "pol-9",
           "name": "Ensalada Mixta",
           "imageUrl": "/uploads/image-bank/image-bank_1777815744252-ensalalda.webp"
+        },
+        {
+          "id": "pol-moq5vsaqshzn",
+          "name": "Patacones",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777836385958-patacones.webp"
+        },
+        {
+          "id": "pol-moq5yic9oysi",
+          "name": "Platano Frito",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777836510885-platano_frito.webp"
+        },
+        {
+          "id": "pol-moq61enlhyje",
+          "name": "Porcion Arroz Chaufa",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777836682748-arroz_chaufa.webp"
+        },
+        {
+          "id": "pol-moq631wddzx7",
+          "name": "Salchipapa Montada",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777836752163-Salchipapa_Elevado.webp"
         }
       ]
     },
@@ -85,37 +105,47 @@
         {
           "id": "beb-7",
           "name": "Sprite 500ml",
-          "imageUrl": ""
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777846085452-Sprite_500ml.webp"
         },
         {
           "id": "beb-8",
           "name": "Fanta 500ml",
-          "imageUrl": ""
-        },
-        {
-          "id": "beb-9",
-          "name": "Agua San Luis 625ml",
-          "imageUrl": ""
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777845964102-Fanta_500_ml.webp"
         },
         {
           "id": "beb-10",
           "name": "Agua Cielo 625ml",
-          "imageUrl": ""
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777845590428-Agua_San_Luis.webp"
         },
         {
           "id": "beb-11",
           "name": "Agua San Luis 2.5L",
-          "imageUrl": ""
-        },
-        {
-          "id": "beb-12",
-          "name": "Chicha Morada 1L",
-          "imageUrl": ""
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777845990975-San_luis_2_5.webp"
         },
         {
           "id": "beb-13",
           "name": "Maracuyá 1L",
           "imageUrl": ""
+        },
+        {
+          "id": "beb-moqbdiwg8umx",
+          "name": "Chicha Morada",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777845610843-chicha.webp"
+        },
+        {
+          "id": "beb-moqbmqgns7mj",
+          "name": "Inka Kola 3 Litros",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777846037255-Inka_3_lt.webp"
+        },
+        {
+          "id": "beb-moqbndg72y4l",
+          "name": "Coca Cola 3 Litros",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777846069828-Cocaa_3_lt.webp"
+        },
+        {
+          "id": "beb-moqbo61sk3go",
+          "name": "Jugo de Cocona",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777846107356-Cocona_jugo.webp"
         }
       ]
     },
@@ -502,6 +532,27 @@
           "id": "min-8",
           "name": "Detergente Ariel 1kg",
           "imageUrl": ""
+        }
+      ]
+    },
+    {
+      "id": "comida-rapido-otros",
+      "name": "Comida  Rapido - Otros",
+      "items": [
+        {
+          "id": "com-moq56eujicy1",
+          "name": "Alitas a la BBQ",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777835200052-alitas_a_la_bbq-removebg-preview.webp"
+        },
+        {
+          "id": "com-moq584osj5eh",
+          "name": "Alitas Acebicahdas",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777835282786-acevichdas.webp"
+        },
+        {
+          "id": "com-moq5alc2h0sq",
+          "name": "Alitas Cryspi",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777835397151-Cryspie.webp"
         }
       ]
     }
