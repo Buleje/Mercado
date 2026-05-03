@@ -20,6 +20,7 @@ import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ExcelProductImporter from "./ExcelProductImporter";
 import BulkImportModal from "./BulkImportModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -214,6 +215,7 @@ function ProductFormModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return;
     setUploading(true);
+    const t = toast.loading("Subiendo imagen del producto…");
     try {
       // Validar contra el estándar de imágenes de producto del marketplace.
       // Los errores bloquean; warnings se muestran pero permiten subir.
@@ -221,6 +223,10 @@ function ProductFormModal({
       setImageValidation(validation);
       if (!validation.ok) {
         setUploading(false);
+        toast.error("La imagen no cumple el estándar", {
+          id: t,
+          description: validation.errors?.[0]?.message ?? "Revisá las indicaciones de abajo.",
+        });
         return;
       }
 
@@ -236,17 +242,35 @@ function ProductFormModal({
       const fd = new FormData();
       fd.append("file", finalFile);
       fd.append("folder", "products");
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      // CSRF: el endpoint valida double-submit cookie via header. Sin esto
+      // devuelve 403 silencioso y el preview se revertía sin avisar.
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+      });
       if (res.ok) {
         const data = await res.json();
         set("image", data.url);
         releaseOptimistic();
+        toast.success("Imagen agregada", {
+          id: t,
+          description: "Click \"Guardar\" para confirmar el producto.",
+        });
       } else {
-        // Si falla, revertir preview para no engañar al usuario.
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
         releaseOptimistic();
+        toast.error("No se pudo subir la imagen", {
+          id: t,
+          description: errBody.error ?? `HTTP ${res.status}. Probá de nuevo o usá una imagen más chica.`,
+        });
       }
-    } catch {
+    } catch (err) {
       releaseOptimistic();
+      toast.error("Error de conexión al subir", {
+        id: t,
+        description: err instanceof Error ? err.message : "Revisá tu internet y reintentá.",
+      });
     } finally {
       setUploading(false);
     }

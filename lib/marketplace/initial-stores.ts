@@ -13,6 +13,10 @@ export interface InitialStore {
   slug: string;
   name: string;
   logo: string | null;
+  /** Portada — imagen principal de la card en /tiendas (4:3). */
+  cover?: string | null;
+  /** Banner — hero gigante al entrar al storefront (16:5). */
+  banner?: string | null;
   category: string;
   zone: string | null;
   rating: number;
@@ -53,6 +57,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         slug: true,
         name: true,
         logo: true,
+        banner: true,
         category: true,
         zone: true,
         rating: true,
@@ -61,11 +66,30 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
       },
     });
 
+    // Patch cover via raw SQL — la columna existe en DB pero schema.prisma
+    // no se actualiza (zona peligrosa). Sin esto, la portada nunca llega
+    // al SSR de /tiendas y la card del marketplace usa solo el logo.
+    const ids = rows.map((r) => r.id);
+    let coverMap = new Map<string, string | null>();
+    if (ids.length > 0) {
+      try {
+        const covers = await prisma.$queryRawUnsafe<Array<{ id: string; cover: string | null }>>(
+          `SELECT id, cover FROM "Store" WHERE id = ANY($1::text[])`,
+          ids,
+        );
+        coverMap = new Map(covers.map((c) => [c.id, c.cover]));
+      } catch {
+        // sin cover → fallback a logo en el render
+      }
+    }
+
     return rows.map((s) => ({
       id: s.id,
       slug: s.slug,
       name: s.name,
       logo: s.logo,
+      cover: coverMap.get(s.id) ?? null,
+      banner: s.banner,
       category: s.category,
       zone: s.zone,
       rating: s.rating,
