@@ -19,6 +19,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
   Clock,
   Gauge,
@@ -31,6 +32,9 @@ import {
   CreditCard,
   Sliders,
   BookOpen,
+  Palette,
+  Wallet,
+  Server,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -42,35 +46,117 @@ interface NavItem {
   href: string;
 }
 
+type NavGroupId = "plataforma" | "negocios" | "catalogo" | "pagos" | "sistema";
+
+interface NavGroupDef {
+  id: NavGroupId;
+  label: string;
+  icon: React.ReactNode;
+  items: NavItem[];
+}
+
 interface SuperAdminShellProps {
   children: React.ReactNode;
   username: string;
   freshToken?: string | null;
 }
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
+// ─── Nav groups (5 categorías colapsables) ────────────────────────────────────
+//
+// Por qué agrupado: con 19 enlaces planos el ojo barre toda la lista cada vez.
+// Las categorías reflejan el "modo mental" del superadmin:
+//  • Plataforma — métricas globales (¿cómo está todo?)
+//  • Negocios — gestión de tenants (¿quiénes están?)
+//  • Catálogo & Marca — assets visuales que se publican (¿cómo se ven?)
+//  • Pagos & Riesgo — flujos de dinero y seguridad (¿qué hay que aprobar?)
+//  • Sistema — meta-config (¿cómo lo administro?)
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
-  { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
-  { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
-  { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
-  { label: "Pagos pendientes", icon: <CreditCard     className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
-  { label: "Repartidores",    icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"    },
-  { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"     },
-  { label: "Pagos Yape",           icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"      },
-  { label: "Catálogo variaciones", icon: <BookOpen   className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
-  { label: "Banco de imágenes",    icon: <ImageIcon   className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
-  { label: "Marca",           icon: <Sparkles        className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
-  { label: "Plantilla panel", icon: <Layers          className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
-  { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
-  { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
-  { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
-  { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
-  { label: "Seguridad",       icon: <ShieldCheck     className="w-5 h-5 shrink-0" />, href: "/superadmin/security"        },
-  { label: "Configuración",   icon: <Sliders         className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion"   },
-  { label: "Sistema",         icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
+const NAV_GROUPS: NavGroupDef[] = [
+  {
+    id: "plataforma",
+    label: "Plataforma",
+    icon: <Gauge className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Dashboard",      icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
+      { label: "Centro Control", icon: <Gauge          className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+      { label: "Analytics",      icon: <BarChart3      className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"      },
+      { label: "Salud",          icon: <HeartPulse     className="w-5 h-5 shrink-0" />, href: "/superadmin/health"         },
+      { label: "Actividad",      icon: <Activity       className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
+    ],
+  },
+  {
+    id: "negocios",
+    label: "Negocios",
+    icon: <Building2 className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Tiendas",       icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"             },
+      { label: "Aplicaciones",  icon: <FileCheck   className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
+      { label: "Marketplace",   icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"         },
+      { label: "Repartidores",  icon: <Wrench      className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"        },
+    ],
+  },
+  {
+    id: "catalogo",
+    label: "Catálogo & Marca",
+    icon: <Palette className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Banco de imágenes",    icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
+      { label: "Catálogo variaciones", icon: <BookOpen  className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
+      { label: "Marca",                icon: <Sparkles  className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
+      { label: "Plantilla panel",      icon: <Layers    className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
+      { label: "Banners",              icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
+    ],
+  },
+  {
+    id: "pagos",
+    label: "Pagos & Riesgo",
+    icon: <Wallet className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Pagos pendientes", icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
+      { label: "Pagos Yape",       icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"       },
+      { label: "Seguridad",        icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security"         },
+    ],
+  },
+  {
+    id: "sistema",
+    label: "Sistema",
+    icon: <Server className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Configuración", icon: <Sliders  className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion" },
+      { label: "Sistema",       icon: <Settings className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"      },
+    ],
+  },
 ];
+
+// Lista plana derivada — preserva compatibilidad con loadNavConfig (hidden/order
+// se aplican dentro de cada grupo, no se rompen las prefs de Brandon).
+const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+
+// Por defecto solo "Plataforma" abierto — los otros grupos se expanden con click.
+// Persiste en localStorage para que recargar mantenga la elección del usuario.
+const DEFAULT_COLLAPSED_GROUPS: NavGroupId[] = ["negocios", "catalogo", "pagos", "sistema"];
+const STORAGE_KEY_GROUPS_COLLAPSED = "superadmin-nav-groups-collapsed";
+
+function loadCollapsedGroups(): Set<NavGroupId> {
+  if (typeof window === "undefined") return new Set(DEFAULT_COLLAPSED_GROUPS);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_GROUPS_COLLAPSED);
+    if (!raw) return new Set(DEFAULT_COLLAPSED_GROUPS);
+    const parsed = JSON.parse(raw) as NavGroupId[];
+    return new Set(parsed);
+  } catch {
+    return new Set(DEFAULT_COLLAPSED_GROUPS);
+  }
+}
+
+function saveCollapsedGroups(set: Set<NavGroupId>) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_GROUPS_COLLAPSED, JSON.stringify([...set]));
+  } catch {
+    // localStorage lleno o privado — silencio, no bloquear UI
+  }
+}
 
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
@@ -228,6 +314,39 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const [sessionExpired, setSessionExpired] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS);
   const [visual, setVisual] = useState<SidebarVisualPrefs>(DEFAULT_VISUAL);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<NavGroupId>>(() => new Set(DEFAULT_COLLAPSED_GROUPS));
+
+  // Hidratar desde localStorage tras el mount (evita mismatch SSR/CSR).
+  useEffect(() => {
+    setCollapsedGroups(loadCollapsedGroups());
+  }, []);
+
+  const toggleGroup = (id: NavGroupId) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      saveCollapsedGroups(next);
+      return next;
+    });
+  };
+
+  // Auto-expand el grupo que contiene la ruta activa (UX: si entrás a /superadmin/health
+  // por URL directa, abrir "Plataforma" para que veas dónde estás parado).
+  useEffect(() => {
+    const activeGroup = NAV_GROUPS.find((g) =>
+      g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
+    );
+    if (activeGroup && collapsedGroups.has(activeGroup.id)) {
+      setCollapsedGroups((prev) => {
+        const next = new Set(prev);
+        next.delete(activeGroup.id);
+        saveCollapsedGroups(next);
+        return next;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   // Sincroniza nav items + visual prefs con la config guardada. Reacciona
   // a "storage" (otra pestaña) y a custom event "superadmin-nav-config-changed"
@@ -425,30 +544,47 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           )}
         </div>
 
-        {/* Nav items */}
+        {/* Nav items — agrupados en categorías colapsables (cuando expandido)
+            o lista plana de iconos (cuando colapsado a w-16). */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-          {navItems.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={[
-                  "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
-                  navItemPadding,
-                  collapsed ? "justify-center" : "",
-                  active ? navItemActiveClass : navItemIdleClass,
-                ].join(" ")}
-                title={collapsed ? item.label : undefined}
-              >
-                <span className={iconClassName}>{item.icon}</span>
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
+          {collapsed ? (
+            // Sidebar colapsado a w-16 — sin headers de grupo, solo iconos.
+            navItems.map((item) => {
+              const active =
+                pathname === item.href ||
+                (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={[
+                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors justify-center",
+                    navItemPadding,
+                    active ? navItemActiveClass : navItemIdleClass,
+                  ].join(" ")}
+                  title={item.label}
+                >
+                  <span className={iconClassName}>{item.icon}</span>
+                </Link>
+              );
+            })
+          ) : (
+            // Sidebar expandido — render por grupos.
+            <NavGroupsList
+              groups={NAV_GROUPS}
+              visibleHrefs={new Set(navItems.map((it) => it.href))}
+              pathname={pathname}
+              collapsedGroups={collapsedGroups}
+              onToggleGroup={toggleGroup}
+              onItemClick={() => setMobileOpen(false)}
+              navItemPadding={navItemPadding}
+              navItemActiveClass={navItemActiveClass}
+              navItemIdleClass={navItemIdleClass}
+              iconClassName={iconClassName}
+              isBuleje={isBuleje}
+            />
+          )}
         </nav>
 
         {/* Collapse toggle (desktop) */}
@@ -507,27 +643,21 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             </button>
           </div>
 
-          {/* Nav items */}
+          {/* Nav items — mismos grupos colapsables que desktop. */}
           <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={[
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active ? navItemActiveClass : navItemIdleClass,
-                  ].join(" ")}
-                >
-                  {item.icon}
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
+            <NavGroupsList
+              groups={NAV_GROUPS}
+              visibleHrefs={new Set(navItems.map((it) => it.href))}
+              pathname={pathname}
+              collapsedGroups={collapsedGroups}
+              onToggleGroup={toggleGroup}
+              onItemClick={() => setMobileOpen(false)}
+              navItemPadding="px-3 py-2"
+              navItemActiveClass={navItemActiveClass}
+              navItemIdleClass={navItemIdleClass}
+              iconClassName=""
+              isBuleje={isBuleje}
+            />
           </nav>
         </aside>
       )}
@@ -615,6 +745,118 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Nav grouped list (colapsable) ────────────────────────────────────────────
+//
+// Cada grupo es un <button> con header + chevron, y los items hijos solo
+// renderizan cuando el grupo NO está colapsado. El estado vive en el padre
+// y se persiste en localStorage vía toggleGroup.
+//
+// Nota a11y: el botón usa aria-expanded y aria-controls para que screen readers
+// anuncien el estado de colapso, y los items hijos van en un contenedor con id.
+
+interface NavGroupsListProps {
+  groups: NavGroupDef[];
+  visibleHrefs: Set<string>;
+  pathname: string;
+  collapsedGroups: Set<NavGroupId>;
+  onToggleGroup: (id: NavGroupId) => void;
+  onItemClick: () => void;
+  navItemPadding: string;
+  navItemActiveClass: string;
+  navItemIdleClass: string;
+  iconClassName: string;
+  isBuleje: boolean;
+}
+
+function NavGroupsList({
+  groups,
+  visibleHrefs,
+  pathname,
+  collapsedGroups,
+  onToggleGroup,
+  onItemClick,
+  navItemPadding,
+  navItemActiveClass,
+  navItemIdleClass,
+  iconClassName,
+  isBuleje,
+}: NavGroupsListProps) {
+  const groupHeaderClass = isBuleje
+    ? "text-white/55 hover:bg-white/[0.04] hover:text-white/90"
+    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)]";
+  const groupActiveDotClass = isBuleje ? "bg-[#34d4be]" : "bg-[var(--accent)]";
+
+  return (
+    <div className="space-y-2">
+      {groups.map((group) => {
+        const groupItems = group.items.filter((it) => visibleHrefs.has(it.href));
+        if (groupItems.length === 0) return null;
+
+        const isCollapsed = collapsedGroups.has(group.id);
+        const hasActive = groupItems.some(
+          (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
+        );
+        const panelId = `nav-group-${group.id}`;
+
+        return (
+          <div key={group.id} className="space-y-0.5">
+            <button
+              type="button"
+              onClick={() => onToggleGroup(group.id)}
+              aria-expanded={!isCollapsed}
+              aria-controls={panelId}
+              className={[
+                "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] transition-colors",
+                groupHeaderClass,
+              ].join(" ")}
+            >
+              <span className="opacity-60">{group.icon}</span>
+              <span className="flex-1 text-left">{group.label}</span>
+              {hasActive && isCollapsed && (
+                <span
+                  className={["w-1.5 h-1.5 rounded-full", groupActiveDotClass].join(" ")}
+                  aria-hidden
+                  title="Hay un tab activo en este grupo"
+                />
+              )}
+              <ChevronDown
+                className={[
+                  "w-3.5 h-3.5 transition-transform duration-200 shrink-0",
+                  isCollapsed ? "-rotate-90" : "rotate-0",
+                ].join(" ")}
+              />
+            </button>
+            {!isCollapsed && (
+              <div id={panelId} className="space-y-0.5">
+                {groupItems.map((item) => {
+                  const active =
+                    pathname === item.href ||
+                    (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onItemClick}
+                      className={[
+                        "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+                        navItemPadding,
+                        active ? navItemActiveClass : navItemIdleClass,
+                      ].join(" ")}
+                    >
+                      <span className={iconClassName}>{item.icon}</span>
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
