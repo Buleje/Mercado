@@ -77,31 +77,20 @@ function calcDiscount(coupon: AppliedCoupon | null, subtotal: number): number {
 export default function CartCouponSection({ subtotal, onDiscountChange, className }: Props) {
   const [applied, setApplied] = useState<AppliedCoupon | null>(null);
 
-  // Hidratar — incluye auto-apply BIENVENIDO10 para clientes nuevos.
-  // Designer audit P1: el cupón está visible en /tiendas pero no se
-  // aplicaba automáticamente, generando disconnect entre la promo
-  // mostrada y el campo de input. Ahora si no hay cupón aplicado y
-  // el flag "buleje-first-purchase-v1" no existe (= cliente nuevo),
-  // pre-aplicamos BIENVENIDO10 silenciosamente.
+  // Hidratar cupón ya aplicado.
+  // SECURITY (audit P9): el auto-apply de BIENVENIDO10 fue REMOVIDO.
+  // El flag client-side `buleje-first-purchase-v1` era explotable —
+  // cualquier user borraba `buleje-applied-coupon-v1` y reaplicaba 10%
+  // perpetuo. La validación de "primera compra" debe vivir server-side
+  // (customer.firstPurchaseUsedAt) en /api/checkout/apply-coupon antes
+  // de habilitar auto-apply de nuevo. MOCK_COUPONS sigue siendo solo
+  // para input manual (preview); el descuento real se valida en backend.
   useEffect(() => {
     const c = readApplied();
     if (c) {
       setApplied(c);
       onDiscountChange(calcDiscount(c, subtotal));
-      return;
     }
-    // Auto-apply BIENVENIDO10 si es primera compra
-    try {
-      const usedFirstPurchase = localStorage.getItem("buleje-first-purchase-v1");
-      if (!usedFirstPurchase && subtotal > 0) {
-        const welcome = MOCK_COUPONS.BIENVENIDO10;
-        if (welcome) {
-          writeApplied(welcome);
-          setApplied(welcome);
-          onDiscountChange(calcDiscount(welcome, subtotal));
-        }
-      }
-    } catch { /* localStorage bloqueado */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

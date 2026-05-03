@@ -35,17 +35,11 @@ import {
 } from "@buleje/design-system/icons";
 import { useLocale } from "@/contexts/locale-context";
 
-interface Props {
-  storeCount: number;
-  productCount: number;
-  avgRating: number;
-}
-
-export default function LandingHero({
-  storeCount,
-  productCount,
-  avgRating,
-}: Props) {
+// Props eliminados (audit P9): antes recibíamos storeCount/productCount/avgRating
+// del server pero los reemplazamos por diferenciadores cualitativos. La query
+// de DB seguía corriendo cada 5min en cache pero el resultado se descartaba.
+// Ahora el componente no recibe nada — el caller también dejó de hacer la query.
+export default function LandingHero() {
   const { t } = useLocale();
   const ref = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
@@ -60,10 +54,6 @@ export default function LandingHero({
     ["0%", reducedMotion ? "0%" : "18%"]
   );
   const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0.4]);
-
-  // heroStats array eliminado: las métricas falsas (storeCount || 240) eran
-  // engañosas mientras crecemos. Reemplazadas abajo por diferenciadores cualitativos.
-  void storeCount; void productCount; void avgRating;
 
   return (
     <section

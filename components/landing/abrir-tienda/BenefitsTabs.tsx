@@ -70,11 +70,11 @@ const CATEGORIES: Category[] = [
     highlight: "los nuestros",
     features: [
       "Asignación automática de repartidores",
-      "Tracking en vivo para tú y tu cliente",
+      "Tracking en vivo para ti y tu cliente",
       "Zonas de delivery con tarifas dinámicas",
       "Cobertura cross-vendor compartida",
     ],
-    metric: { value: "GPS en vivo", label: "tú y el cliente lo ven en el mapa" },
+    metric: { value: "GPS en vivo", label: "tú y tu cliente lo ven en el mapa" },
     bg: "from-[var(--accent)] via-cyan-700 to-slate-800",
   },
   {

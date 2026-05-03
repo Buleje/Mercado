@@ -546,15 +546,25 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <a
-              href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Buleje, necesito ayuda")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
-            >
-              <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              WhatsApp
-            </a>
+            {/* Audit P9: antes concatenaba `${whatsapp}?text=...` sin
+                normalizar — si `storeTheme.whatsapp` ya era un wa.me URL
+                completo con ?text=, se generaba ?text=...?text=... mal. */}
+            {(() => {
+              const rawPhone = (storeTheme?.whatsapp || hp.footerWhatsApp || "").replace(/\D/g, "");
+              if (!rawPhone) return null;
+              const text = encodeURIComponent("Hola Buleje, necesito ayuda");
+              return (
+                <a
+                  href={`https://wa.me/${rawPhone}?text=${text}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                >
+                  <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                  WhatsApp
+                </a>
+              );
+            })()}
           </nav>
 
           {/* ── Columna 5: Identidad ── */}
@@ -581,16 +591,23 @@ export default function Footer() {
               <span className="text-white/55 text-[length:var(--ts-2xs)] ml-1.5 tabular-nums">{hp.footerRating}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <a
-                href={`${storeTheme?.whatsapp || platformWa || hp.footerWhatsApp}${(storeTheme?.whatsapp || platformWa || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                WhatsApp
-              </a>
+              {(() => {
+                const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                if (!rawPhone) return null;
+                const text = encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`);
+                return (
+                  <a
+                    href={`https://wa.me/${rawPhone}?text=${text}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    aria-label="WhatsApp"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                    WhatsApp
+                  </a>
+                );
+              })()}
               <a
                 href={fbUrl || hp.footerFacebook}
                 target="_blank"

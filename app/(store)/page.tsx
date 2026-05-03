@@ -167,15 +167,12 @@ async function BulejeJsonLd() {
   );
 }
 
-// ── Hero — 2-column layout con ilustraciones locales + stats trust strip ──
-async function HeroSection() {
-  const stats = await getMarketplaceStats();
+// ── Hero — 2-column layout con ilustraciones locales + diferenciador
+// cualitativo. Audit P9: removida la query de stats que era descartada
+// dentro del componente (LandingHero ya no usa numbers desde mayo).
+function HeroSection() {
   return (
-    <LandingHero
-      storeCount={stats.storeCount}
-      productCount={stats.productCount}
-      avgRating={stats.avgRating}
-    />
+    <LandingHero />
   );
 }
 
@@ -440,7 +437,7 @@ function PaymentMethods() {
           </span>
         </div>
         <p className="mt-6 text-center text-sm text-[var(--text-tertiary)]">
-          Sin comisiones para tú · Cobrás como ya cobras
+          Sin comisiones para ti · Cobras como ya cobras
         </p>
       </div>
     </section>

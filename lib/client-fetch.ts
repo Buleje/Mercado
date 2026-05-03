@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * client-fetch.ts — wrapper liviano de fetch para client components.
  *
@@ -5,12 +7,21 @@
  *   1. 503 sin handling visible al usuario → retry con backoff exponencial
  *   2. Requests duplicados (e.g. /api/auth/customer/me llamado 9 veces) → dedup
  *      por URL+method en una ventana de 2s
- *   3. Sin error feedback → emite custom event "buleje:network-error" que
- *      cualquier toast layer puede escuchar
+ *   3. Sin error feedback → canal interno (no window.dispatchEvent) que toasts
+ *      pueden escuchar — evita que terceros disparen mensajes phishing.
  *
  * Sin dependencias nuevas (no SWR, no React Query). Pensado para client
  * components que solo necesitan GET con cache de corta vida. Para mutaciones
  * o flujos complejos usar fetch nativo.
+ *
+ * SECURITY (audit P9):
+ *   - "use client" — el cache es per-tab, no compartido entre usuarios SSR
+ *   - URLs validadas same-origin: solo paths que empiezan con "/" se aceptan,
+ *     evita SSRF latente si un caller pasa user input.
+ *   - emitError limpia la URL a path-only antes de emitir (no leakea query
+ *     params con tokens).
+ *   - NetworkErrorBus es un EventTarget privado, no window — terceros no
+ *     pueden disparar toasts maliciosos.
  */
 
 const inflight = new Map<string, Promise<Response>>();
@@ -32,15 +43,45 @@ interface FetchOpts {
 const DEFAULTS = { cacheTTL: 0, retries: 2, backoffMs: 400, silent: false } as const;
 
 /**
- * Custom event despachado en errores no-recuperables.
- * Suscribir desde un toast provider:
- *   window.addEventListener("buleje:network-error", (e) => toast.error(e.detail.message));
+ * Bus privado de eventos de red. Exportado para que NetworkErrorListener
+ * lo suscriba directo. Antes usábamos window.dispatchEvent(CustomEvent) lo
+ * cual permitía que terceros (analytics, tag manager, XSS) dispararan
+ * toasts con mensajes phishing.
  */
-function emitError(detail: { url: string; status?: number; message: string }) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("buleje:network-error", { detail }),
+export const NetworkErrorBus = typeof window !== "undefined" ? new EventTarget() : null;
+
+interface NetworkErrorDetail {
+  url: string;
+  status?: number;
+  message: string;
+}
+
+function emitError(detail: NetworkErrorDetail) {
+  if (!NetworkErrorBus) return;
+  // Strip query params — no leakear tokens / IDs sensibles
+  let safeUrl = detail.url;
+  try {
+    const u = new URL(detail.url, "http://localhost");
+    safeUrl = u.pathname;
+  } catch { /* malformed url, leave as-is */ }
+  NetworkErrorBus.dispatchEvent(
+    new CustomEvent("network-error", {
+      detail: { ...detail, url: safeUrl },
+    }),
   );
+}
+
+/** Validación same-origin: solo aceptamos paths internos. */
+function assertSameOrigin(url: string): void {
+  if (url.startsWith("/")) return;
+  // Permitir URLs absolutas a la misma origin
+  if (typeof window !== "undefined") {
+    try {
+      const u = new URL(url);
+      if (u.origin === window.location.origin) return;
+    } catch { /* malformed */ }
+  }
+  throw new Error(`clientFetch: URL no permitida (solo same-origin): ${url}`);
 }
 
 function buildKey(url: string, init?: RequestInit): string {
@@ -57,6 +98,9 @@ export async function clientFetch<T = unknown>(
   url: string,
   opts: FetchOpts = {},
 ): Promise<T> {
+  // SECURITY: bloquear URLs externas (SSRF / data exfiltration)
+  assertSameOrigin(url);
+
   const { cacheTTL, retries, backoffMs, silent, init } = { ...DEFAULTS, ...opts };
   const key = buildKey(url, init);
 
@@ -68,10 +112,15 @@ export async function clientFetch<T = unknown>(
     }
   }
 
-  // Dedup: si ya hay una promesa en vuelo para esta misma key, devolverla
+  // Dedup: si ya hay una promesa en vuelo para esta misma key, devolverla.
+  // Importante: propagar errores también — antes el caller secundario quedaba
+  // colgado si el request original rechazaba (no se ejecutaba .then).
   const existing = inflight.get(key);
   if (existing) {
-    return existing.then((r) => r.clone().json() as Promise<T>);
+    return existing.then(
+      (r) => r.clone().json() as Promise<T>,
+      (err) => Promise.reject(err),
+    );
   }
 
   const exec = async (attempt: number): Promise<Response> => {
