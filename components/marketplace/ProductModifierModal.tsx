@@ -180,75 +180,187 @@ export default function ProductModifierModal({
             onClick={onClose}
           />
 
-          {/* Sheet */}
+          {/* Sheet — vertical en mobile, split 2-col en lg+ */}
           <motion.div
             initial={{ y: 100, opacity: 0, scale: 0.96 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="relative z-10 w-full sm:max-w-lg max-h-[94vh] flex flex-col bg-[var(--surface-canvas)] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[var(--rule-soft)]"
+            className={cn(
+              "relative z-10 w-full bg-[var(--surface-canvas)] rounded-t-3xl shadow-2xl overflow-hidden border border-[var(--rule-soft)]",
+              "sm:max-w-lg sm:rounded-3xl max-h-[94vh] flex flex-col",
+              // Desktop: split-view 2-col, modal más ancho.
+              "lg:max-w-5xl lg:max-h-[88vh] lg:flex-row lg:items-stretch",
+            )}
           >
-            {/* ── Hero compacto con imagen + título ─────────────────────── */}
-            <div className="relative shrink-0">
-              {product.image ? (
-                <div className="relative h-32 sm:h-36 w-full overflow-hidden">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 512px"
-                    className="object-cover"
-                    priority
-                  />
-                  {/* Gradient WCAG AA: 0/85 abajo → transparent arriba para garantizar
-                      contraste sobre fotos de comida (el texto blanco sobre arroz
-                      claro se perdía con el gradiente anterior). */}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/15" />
-                  {/* Mesh teal sutil — textura sin sobrecargar */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none"
-                    style={{
-                      background: "radial-gradient(at 20% 0%, rgba(0,180,166,0.5) 0px, transparent 55%)",
-                    }}
-                  />
+            {/* ═══ COLUMNA IZQUIERDA — hero + meta + qty + CTA ═══════════════
+                Mobile: hero compacto con título overlay (forma actual).
+                Desktop: hero más alto + bloque meta debajo + spacer + qty/CTA
+                anclado al fondo. Sticky por flex-col interno. */}
+            <div className="shrink-0 lg:flex lg:flex-col lg:w-[420px] lg:border-r lg:border-[var(--rule-soft)] lg:overflow-y-auto">
+              {/* Hero image */}
+              <div className="relative shrink-0">
+                {product.image ? (
+                  <div className="relative h-32 sm:h-36 lg:h-auto lg:aspect-[4/3] w-full overflow-hidden">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 512px, 420px"
+                      className="object-cover"
+                      priority
+                    />
+                    {/* Gradient — solo en mobile/tablet (overlay del título). En lg
+                        el título está ABAJO de la imagen, no encima → sin gradient. */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/15 lg:hidden" />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none lg:opacity-15"
+                      style={{
+                        background: "radial-gradient(at 20% 0%, rgba(0,180,166,0.5) 0px, transparent 55%)",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success)] flex items-center justify-center">
+                    <Sparkles className="h-8 lg:h-12 w-8 lg:w-12 text-white/90" aria-hidden />
+                  </div>
+                )}
+
+                {/* Drag handle solo mobile */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/50 sm:hidden" aria-hidden />
+
+                {/* Close button — siempre visible */}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Cerrar"
+                  className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/65 hover:bg-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-10"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                </button>
+
+                {/* Title overlay — SOLO mobile/tablet (desktop usa meta block separado) */}
+                <div className="absolute bottom-3 left-4 right-16 lg:hidden">
+                  <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/90 mb-0.5">
+                    Armá tu pedido
+                  </p>
+                  <h2 className="font-display text-xl sm:text-[22px] font-black tracking-tight text-white drop-shadow-lg leading-tight line-clamp-2">
+                    {product.name}
+                  </h2>
+                  <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-white/85">
+                    Desde {fmt(product.price)}
+                    {product.unit && <span className="font-medium text-white/70"> · {product.unit}</span>}
+                  </p>
                 </div>
-              ) : (
-                <div className="h-24 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success)] flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-white/90" aria-hidden />
-                </div>
-              )}
+              </div>
 
-              {/* Drag handle visual (mobile bottom sheet feel) */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/50 sm:hidden" aria-hidden />
-
-              {/* Close — sólido para tener contraste garantizado sobre cualquier foto */}
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Cerrar"
-                className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/65 hover:bg-black text-white shadow-lg transition-all hover:scale-105 active:scale-95"
-              >
-                <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-              </button>
-
-              {/* Title overlay con descripción + precio base */}
-              <div className="absolute bottom-3 left-4 right-16">
-                <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/90 mb-0.5">
+              {/* Desktop meta block — bloque de info debajo de la imagen */}
+              <div className="hidden lg:block px-5 pt-5 pb-3 border-b border-[var(--rule-soft)]">
+                <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Armá tu pedido
                 </p>
-                <h2 className="font-display text-xl sm:text-[22px] font-black tracking-tight text-white drop-shadow-lg leading-tight line-clamp-2">
+                <h2 className="mt-1 font-display text-[26px] font-black tracking-tight text-[var(--text-primary)] leading-[1.1]">
                   {product.name}
                 </h2>
-                <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-white/85">
-                  Desde {fmt(product.price)}
-                  {product.unit && <span className="font-medium text-white/70"> · {product.unit}</span>}
+                {product.description && (
+                  <p className="mt-2 text-sm text-[var(--text-secondary)] leading-snug line-clamp-3">
+                    {product.description}
+                  </p>
+                )}
+                <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">
+                  Desde <span className="text-[var(--text-primary)] font-black tabular-nums">{fmt(product.price)}</span>
+                  {product.unit && <span className="font-medium text-[var(--text-tertiary)]"> · {product.unit}</span>}
                 </p>
+              </div>
+
+              {/* Spacer desktop — empuja el resumen al fondo */}
+              <div className="hidden lg:block lg:flex-1" />
+
+              {/* Quantity + breakdown + CTA — DESKTOP solamente (mobile lo ve abajo) */}
+              <div className="hidden lg:block border-t border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-3">
+                {/* Cantidad */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[length:var(--ts-xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Cantidad
+                  </span>
+                  <div className="flex items-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      aria-label="Disminuir cantidad"
+                      disabled={quantity <= 1}
+                      className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Minus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                    </button>
+                    <span className="min-w-[2.75rem] text-center text-lg font-black tabular-nums text-[var(--text-primary)]">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                      aria-label="Aumentar cantidad"
+                      className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all"
+                    >
+                      <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Breakdown vertical */}
+                <div className="space-y-1 pt-2 border-t border-[var(--rule-soft)]">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[var(--text-tertiary)] font-medium">Base</span>
+                    <span className="tabular-nums font-bold text-[var(--text-secondary)]">{fmt(product.price)}</span>
+                  </div>
+                  {priceDeltaTotal > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--text-tertiary)] font-medium">Adicionales</span>
+                      <span className="tabular-nums font-bold text-[var(--accent)]">+{fmt(priceDeltaTotal)}</span>
+                    </div>
+                  )}
+                  {quantity > 1 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--text-tertiary)] font-medium">Cantidad</span>
+                      <span className="tabular-nums font-bold text-[var(--text-secondary)]">× {quantity}</span>
+                    </div>
+                  )}
+                  <div className="flex items-baseline justify-between pt-1.5 border-t border-[var(--rule-soft)]">
+                    <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Total
+                    </span>
+                    <span className="font-display text-2xl font-black tabular-nums text-[var(--text-primary)]">
+                      {fmt(totalPrice)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <motion.button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={!isValid}
+                  whileTap={isValid ? { scale: 0.98 } : {}}
+                  className={cn(
+                    "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-14 px-4 text-base font-black transition-all",
+                    isValid
+                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
+                  )}
+                >
+                  <ShoppingCart className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden />
+                  {isValid ? (
+                    <span>Agregar al carrito</span>
+                  ) : (
+                    <span className="truncate">{validation[0]?.message ?? "Elegí las opciones"}</span>
+                  )}
+                </motion.button>
               </div>
             </div>
 
-            {/* ── Body — grupos ─────────────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-6">
+            {/* ═══ COLUMNA DERECHA — grupos + notas (scroll interno desktop) ═══ */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-5 lg:px-6 py-5 lg:py-6 space-y-6 lg:max-h-[88vh]">
               {/* Indicador de progreso */}
               {groups.length > 0 && (
                 <div className="flex items-center gap-2 text-[length:var(--ts-xs)]">
@@ -408,8 +520,10 @@ export default function ProductModifierModal({
               )}
             </div>
 
-            {/* ── Footer sticky con price breakdown ──────────────────────── */}
-            <div className="shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            {/* ── Footer mobile/tablet — sticky con price breakdown ──────
+                En desktop (lg+) este footer se oculta porque qty + breakdown +
+                CTA ya están dentro de la columna izquierda anclados al fondo. */}
+            <div className="lg:hidden shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">
               {/* Price breakdown vivo cuando hay adicionales */}
               {priceDeltaTotal > 0 && (
                 <div className="px-4 sm:px-5 pt-3 pb-1 flex items-center justify-between text-[length:var(--ts-xs)]">
