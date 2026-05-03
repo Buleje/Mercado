@@ -157,7 +157,7 @@ export default function StoreDetailClient({
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 space-y-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-1.5">
           {/* Chips de categorías */}
           <StoreCategories
             categories={categories}
@@ -171,7 +171,7 @@ export default function StoreDetailClient({
               Adaptado: full-width en mobile, max-w-2xl en desktop centrado. */}
           <div className="relative max-w-2xl mx-auto">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
               aria-hidden
             />
             <input
@@ -181,7 +181,7 @@ export default function StoreDetailClient({
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
               placeholder={`Buscar en ${store.name}…`}
-              className="w-full h-11 pl-11 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
+              className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
               aria-label="Buscar productos"
               autoComplete="off"
             />

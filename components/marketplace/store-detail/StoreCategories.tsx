@@ -188,7 +188,7 @@ export default function StoreCategories({
   return (
     <nav
       aria-label="Categorías del catálogo"
-      className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory"
+      className="flex flex-wrap gap-1.5 sm:gap-2"
     >
       <ChipButton
         active={activeCategory === null}
