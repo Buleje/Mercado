@@ -2,7 +2,8 @@
 
 import { useEffect, useCallback, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { toPng } from "html-to-image";
+// html-to-image (~35KB gz) lazy-loaded — solo se descarga cuando el usuario
+// hace click en "Exportar PNG". AICommandCenter ya usa el mismo patron.
 import { toast } from "sonner";
 import {
   X,
@@ -153,6 +154,8 @@ export function ChartPresentationModal({
     if (!el || !activeItem) return;
     setIsExporting(true);
     try {
+      // Lazy import: solo se descarga cuando el usuario realmente exporta.
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(el, {
         backgroundColor: "#ffffff",
         cacheBust: true,

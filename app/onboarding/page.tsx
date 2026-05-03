@@ -1,9 +1,16 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+
+// Lazy: OnboardingWizard arrastra framer-motion (~80KB gz) al bundle
+// inicial de /onboarding. Como es ruta exclusiva del wizard, splittear
+// no afecta UX (loading.tsx cubre el momento) y libera el bundle base.
+const OnboardingWizard = dynamic(
+  () => import("@/components/onboarding/OnboardingWizard"),
+);
 
 // Next 16 cacheComponents: la lógica async (cookies + prisma + redirect) debe
 // estar bajo un Suspense boundary para permitir partial prerendering del shell.
@@ -25,6 +32,7 @@ async function OnboardingGate() {
 
   // 2. Check if onboarding already completed
   try {
+    // eslint-disable-next-line no-restricted-properties -- onboarding gate read-only, refactor a lib/db/admin-users.db.ts pendiente
     const user = await prisma.adminUser.findFirst({
       where: {
         username: session.username,

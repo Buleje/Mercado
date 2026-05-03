@@ -52,23 +52,6 @@ interface ContractVersion {
   savedAt: string;
 }
 
-interface _Contract {
-  id: string;
-  templateId: string;
-  número: string;
-  tipo: ContratoTipo;
-  estado: ContratoEstado;
-  parties: { emisor: string; contraparte: string };
-  data: Record<string, string>;
-  content: string;
-  summary: string;
-  montoTotal: number;
-  createdAt: string;
-  expiresAt?: string;
-  versions: ContractVersion[];
-}
-
-// Re-export old API-compatible type
 type ContratoAPI = {
   id: string;
   número: string;
@@ -83,6 +66,8 @@ type ContratoAPI = {
   clausulas: string[];
   createdAt: string;
   updatedAt: string;
+  /** Estado explicito desde el API (ANULADO/BORRADOR overridean date-based logic). */
+  estado?: ContratoEstado;
 };
 
 type TabId = "dashboard" | "plantillas" | "contratos" | "crear" | "editor";
@@ -594,14 +579,6 @@ function formatDatePeru(iso: string) {
   } catch { return iso; }
 }
 
-function _formatDateLong(iso: string) {
-  if (!iso) return "---";
-  try {
-    const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
-    return d.toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
-  } catch { return iso; }
-}
-
 function getDiasVencimiento(fecha?: string): number | null {
   if (!fecha) return null;
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -610,6 +587,8 @@ function getDiasVencimiento(fecha?: string): number | null {
 }
 
 function getEstado(c: ContratoAPI): ContratoEstado {
+  // Respect explicit states (ANULADO, BORRADOR) from the API before date-based logic
+  if (c.estado === "ANULADO" || c.estado === "BORRADOR") return c.estado;
   if (!c.fechaVencimiento) return "VIGENTE";
   const dias = getDiasVencimiento(c.fechaVencimiento);
   if (dias === null) return "VIGENTE";
@@ -627,7 +606,7 @@ const ESTADO_STYLES: Record<ContratoEstado, string> = {
   POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
   VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
   ANULADO: "bg-gray-200 dark:bg-gray-800 text-[var(--text-tertiary)]",
-  BORRADOR: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+  BORRADOR: "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]",
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -645,7 +624,13 @@ const TIPO_LABELS: Record<string, string> = {
   LOCACION: "Locacion Serv.",
 };
 
-const PIE_COLORS = ["#00B4A6", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#606c38", "#bc6c25", "#023047", "#219ebc", "#8338ec", "#ff006e"];
+// Using CSS variables via getComputedStyle to honor DS tokens at runtime
+const PIE_COLORS = [
+  "var(--brand-ink)", "var(--secondary)", "var(--data-warning)", "var(--data-error)",
+  "var(--accent)", "var(--brand-ink-light, #2a9d8f)", "var(--data-success)",
+  "var(--text-secondary)", "var(--rule-base)", "var(--data-warning-100)",
+  "var(--surface-sunken)", "var(--data-error-100)",
+];
 
 const PER_PAGE = 12;
 
@@ -653,11 +638,28 @@ const PER_PAGE = 12;
 
 function LegalTooltip({ term, explanation, example }: { term: string; explanation: string; example: string }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
   return (
-    <span className="relative inline-flex items-center">
-      <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors" title="¿Qué significa esto?">?</button>
+    <span ref={ref} className="relative inline-flex items-center">
+      <button
+        onClick={() => setOpen(!open)}
+        className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors"
+        title="¿Qué significa esto?"
+        aria-expanded={open}
+        aria-haspopup="true"
+      >?</button>
       {open && (
-        <div className="absolute bottom-7 left-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs">
+        <div className="absolute bottom-7 left-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs shadow-lg">
           <p className="font-bold text-[var(--text-primary)] mb-1">{term}</p>
           <p className="text-[var(--text-secondary)] mb-2">{explanation}</p>
           <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 rounded-lg p-2">
@@ -844,7 +846,6 @@ const LUGAR_ENTREGA_OPTIONS = [
   "Puerto de Pucallpa", "Terminal terrestre de Pucallpa", "Otro (escribir)",
 ];
 
-const _MONEDA_OPTIONS = ["Soles (S/)", "Dolares (US$)"];
 
 // ── Main Component ──────────────────────────────────────────────────────
 
@@ -1109,10 +1110,22 @@ export default function ContratosModule() {
 
       const clausulasArr = content.split("\n\n").filter(c => c.trim());
 
-      // Determine the closest matching API type
-      const apiTipo = (["VENTA", "SERVICIO", "TRABAJO", "PROVEEDOR", "DISTRIBUCION", "ALQUILER"] as const).includes(selectedTemplate.tipo as never)
-        ? selectedTemplate.tipo as "VENTA" | "SERVICIO" | "TRABAJO" | "PROVEEDOR" | "DISTRIBUCION" | "ALQUILER"
-        : "VENTA";
+      // Map plantilla tipo → tipos aceptados por el API (schema de la ruta)
+      const API_TIPO_MAP: Record<ContratoTipo, "VENTA" | "SERVICIO" | "TRABAJO" | "PROVEEDOR" | "DISTRIBUCION" | "ALQUILER" | "COMPRAVENTA" | "SUMINISTRO"> = {
+        VENTA: "COMPRAVENTA",
+        SERVICIO: "SERVICIO",
+        TRABAJO: "TRABAJO",
+        PROVEEDOR: "PROVEEDOR",
+        DISTRIBUCION: "DISTRIBUCION",
+        ALQUILER: "ALQUILER",
+        CONSIGNACION: "PROVEEDOR",
+        MUTUO: "SERVICIO",
+        TRANSPORTE: "SERVICIO",
+        NDA: "SERVICIO",
+        FORESTAL: "COMPRAVENTA",
+        LOCACION: "SERVICIO",
+      };
+      const apiTipo = API_TIPO_MAP[selectedTemplate.tipo];
 
       const res = await fetch("/api/contratos", {
         method: "POST",
@@ -1391,7 +1404,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <XAxis dataKey="name" fontSize={11} />
                           <YAxis fontSize={11} allowDecimals={false} />
                           <Tooltip />
-                          <Bar dataKey="contratos" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="contratos" fill="var(--brand-ink)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     ) : <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin datos</p>}
