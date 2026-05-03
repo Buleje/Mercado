@@ -17,10 +17,10 @@
  * StoreCategories → StoreCatalog sin setState en useEffect.
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "@buleje/design-system/icons";
+import { ArrowLeft, Search, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
@@ -61,6 +61,32 @@ export default function StoreDetailClient({
   categoryImages,
 }: StoreDetailClientProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Sugerencias rápidas: matchea nombre, categoría
+  const suggestions = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const seen = new Set<string>();
+    const results: { type: "product" | "category"; label: string; value: string }[] = [];
+    // Categorías que matcheen
+    for (const c of categories) {
+      if (c.name.toLowerCase().includes(q) && !seen.has(`cat:${c.name}`)) {
+        results.push({ type: "category", label: c.name, value: c.name });
+        seen.add(`cat:${c.name}`);
+      }
+    }
+    // Productos que matcheen
+    for (const p of products) {
+      if (p.productName.toLowerCase().includes(q) && !seen.has(`prod:${p.productName}`)) {
+        results.push({ type: "product", label: p.productName, value: p.productName });
+        seen.add(`prod:${p.productName}`);
+        if (results.length >= 8) break;
+      }
+    }
+    return results.slice(0, 8);
+  }, [searchTerm, categories, products]);
 
   // Detección de sticky scroll: cuando el sentinel sale del viewport,
   // el bar de categorías está pegado al top y rendea en modo `compact`.
@@ -115,30 +141,24 @@ export default function StoreDetailClient({
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
 
-      {/* ── Categories sticky + Catalog ───────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-10">
-        {/* Sentinel: detecta cuando el bar queda sticky arriba */}
-        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
-        {/* FIX 2026-05: el sticky bar antes hacía:
-              - bg-[var(--surface-canvas)]/95 + backdrop-blur-md → blur en
-                cada frame de scroll = 60fps→25fps en mid-range.
-              - transition-[padding] + isStuck toggle → relayout cada vez
-                que cruzaba el sentinel = jitter visible.
-            Ahora: bg sólido + padding fijo + will-change/contain hints
-            para que el browser pinte solo este layer. Animación queda en
-            opacity de la sombra (GPU-accelerated). */}
-        <div
-          className={cn(
-            "sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6 py-2 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] transition-shadow duration-150",
-            isStuck ? "shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08)]" : "shadow-none",
-          )}
-          style={{ contain: "layout paint", willChange: "transform" }}
-        >
-          {/* FIX 2026-05: ANTES los chips morphaban entre "card vertical
-              110px" (top) y "rectangular h-10" (stuck) cada vez que cruzaba
-              el sentinel. Eso recalculaba el layout de TODOS los chips de
-              golpe = jitter visible al scrollear. AHORA siempre compact:
-              chips estables, sin morph, scroll fluido. */}
+      {/* ── Sentinel para detectar sticky ─────────────────────────────────── */}
+      <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+
+      {/* ── Sticky bar — FULL VIEWPORT WIDTH (no max-w container) ─────────
+          FIX 2026-05: Antes el sticky vivía dentro de max-w-7xl mx-auto
+          y solo podía romper el padding con -mx-* — quedaba constreñido
+          al ancho del catálogo. Ahora vive FUERA del container, así
+          ocupa 100vw cuando hace sticky. El contenido interno se centra
+          con su propio max-w-7xl mx-auto. */}
+      <div
+        className={cn(
+          "sticky top-0 z-30 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] transition-shadow duration-150",
+          isStuck ? "shadow-[0_2px_12px_-4px_rgba(0,0,0,0.10)]" : "shadow-none",
+        )}
+        style={{ contain: "layout paint" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 space-y-2.5">
+          {/* Chips de categorías */}
           <StoreCategories
             categories={categories}
             activeCategory={activeCategory}
@@ -146,13 +166,85 @@ export default function StoreDetailClient({
             images={categoryImages}
             compact
           />
+
+          {/* Search bar con sugerencias en dropdown — debajo de los chips.
+              Adaptado: full-width en mobile, max-w-2xl en desktop centrado. */}
+          <div className="relative max-w-2xl mx-auto">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+              placeholder={`Buscar en ${store.name}…`}
+              className="w-full h-11 pl-11 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
+              aria-label="Buscar productos"
+              autoComplete="off"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </button>
+            )}
+
+            {/* Sugerencias dropdown — solo cuando hay foco + matches */}
+            {searchFocused && suggestions.length > 0 && (
+              <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={`${s.type}:${s.value}:${idx}`}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault() /* evita blur antes del click */}
+                    onClick={() => {
+                      if (s.type === "category") {
+                        setActiveCategory(s.value);
+                        setSearchTerm("");
+                      } else {
+                        setSearchTerm(s.value);
+                      }
+                      setSearchFocused(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
+                  >
+                    <span className={cn(
+                      "inline-flex items-center justify-center h-7 w-7 rounded-full shrink-0",
+                      s.type === "category" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                    )}>
+                      <Search className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{s.label}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        {s.type === "category" ? "Filtrar por categoría" : "Producto"}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* ── Catalog (constrained al max-w-7xl) ───────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         <StoreCatalog
           storeSlug={store.slug}
           storeName={store.name}
           storeId={store.id}
           products={products}
           activeCategory={activeCategory}
+          externalSearch={searchTerm}
+          onExternalSearchChange={setSearchTerm}
         />
       </div>
 

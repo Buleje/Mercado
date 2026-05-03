@@ -28,6 +28,10 @@ interface StoreCatalogProps {
   products: DbStoreProduct[];
   /** Categoría activa desde StoreCategories (prop-driven, no local state) */
   activeCategory: string | null;
+  /** Búsqueda controlada desde el sticky bar del padre. Si no se pasa,
+      el catalog mantiene su input interno como fallback. */
+  externalSearch?: string;
+  onExternalSearchChange?: (value: string) => void;
 }
 
 type SortKey = "default" | "price_asc" | "price_desc" | "name_az";
@@ -95,8 +99,14 @@ export default function StoreCatalog({
   storeId,
   products,
   activeCategory,
+  externalSearch,
+  onExternalSearchChange,
 }: StoreCatalogProps) {
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
+  // Si el padre controla la búsqueda (desde el sticky bar), usar esa.
+  // Si no, fallback al estado interno (input local del toolbar).
+  const search = externalSearch !== undefined ? externalSearch : internalSearch;
+  const setSearch = onExternalSearchChange ?? setInternalSearch;
   const [sort, setSort] = useState<SortKey>("default");
   const [view, setView] = useState<"grid" | "list">("grid");
 
@@ -168,20 +178,23 @@ export default function StoreCatalog({
 
       {/* Toolbar — filtros grandes, cuadrados, visibles */}
       <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
-        {/* Search — input grande, padding generoso, icono más grande */}
-        <div className="relative flex-1 lg:max-w-md">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-secondary)]"
-            aria-hidden
-          />
-          <input
-            type="search"
-            placeholder="Buscar producto..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
-          />
-        </div>
+        {/* Search local — solo se muestra si NO hay search externo del sticky
+            bar (el padre la controla). Evita tener dos inputs duplicados. */}
+        {externalSearch === undefined && (
+          <div className="relative flex-1 lg:max-w-md">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-secondary)]"
+              aria-hidden
+            />
+            <input
+              type="search"
+              placeholder="Buscar producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
+            />
+          </div>
+        )}
 
         {/* Sort — select grande con label visible */}
         <label className="relative inline-flex flex-col gap-1">
