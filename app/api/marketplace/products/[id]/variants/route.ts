@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductVariantsDB } from "@/lib/db/product-variants.db";
-import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { invalidateByPrefix } from "@/lib/cache";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
@@ -38,13 +38,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
-    const cacheKey = `marketplace:product:${productId}:variants`;
-
-    const variants = await getOrSet(cacheKey, 300, () =>
-      ProductVariantsDB.list(tenantId, productId)
-    );
-
+    // FIX 2026-05: ProductVariantsDB.list ahora resuelve OR(slug, CUID)
+    // internamente, así que filas legacy guardadas con slug aparecen junto
+    // con las nuevas guardadas con CUID. Eliminé el cache compartido
+    // entre tenants — el lookup por DB es suficientemente rápido.
+    const headerTenant = req.headers.get("x-tenant-id") ?? "main";
+    const variants = await ProductVariantsDB.list(headerTenant, productId);
     return NextResponse.json({ data: variants });
   } catch (err) {
     logger.error("marketplace/products/variants GET: error", { traceId, err });
@@ -113,6 +112,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
     }
 
+    // FIX 2026-05: ProductVariantsDB.update resuelve OR(slug, CUID).
     const updated = await ProductVariantsDB.update(auth.tenantId, variantId, parsed.data);
     if (!updated) {
       return NextResponse.json({ error: "Variante no encontrada" }, { status: 404 });
@@ -147,6 +147,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "variantId requerido" }, { status: 400 });
     }
 
+    // FIX 2026-05: ProductVariantsDB.delete resuelve OR(slug, CUID).
     await ProductVariantsDB.delete(auth.tenantId, variantId);
     invalidateByPrefix(`marketplace:product:${productId}`);
 

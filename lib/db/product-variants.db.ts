@@ -68,10 +68,32 @@ function mapVariant(r: PProductVariant): DbProductVariant {
 
 // ── DB Class ──────────────────────────────────────────────────────────────────
 
+/**
+ * Resuelve un tenantId crudo (slug o CUID) a la lista canónica de
+ * identificadores con que las filas pueden estar guardadas. Histórica-
+ * mente algunas filas se persistieron con slug y otras con CUID según
+ * la ruta de creación. Devolver ambos permite que el WHERE matchee
+ * independiente de cuál se haya usado al INSERT.
+ */
+async function resolveTenantAliases(tenantIdOrSlug: string): Promise<string[]> {
+  const ids = new Set<string>([tenantIdOrSlug]);
+  try {
+    const t = await prisma.tenant.findFirst({
+      where: { OR: [{ id: tenantIdOrSlug }, { slug: tenantIdOrSlug }] },
+      select: { id: true, slug: true },
+    });
+    if (t) { ids.add(t.id); ids.add(t.slug); }
+  } catch { /* tenant lookup falló — usamos solo el input */ }
+  return Array.from(ids);
+}
+
 export const ProductVariantsDB = {
   async list(tenantId: string, productId: number): Promise<DbProductVariant[]> {
+    // FIX 2026-05: queryamos por OR(slug, CUID) para tolerar filas legacy
+    // que se persistieron con slug en vez del CUID canónico.
+    const tenantIds = await resolveTenantAliases(tenantId);
     const rows = await prisma.productVariant.findMany({
-      where: { tenantId, productId, isActive: true },
+      where: { tenantId: { in: tenantIds }, productId, isActive: true },
       orderBy: { position: "asc" },
     });
     return rows.map(mapVariant);
@@ -95,8 +117,9 @@ export const ProductVariantsDB = {
   },
 
   async update(tenantId: string, id: string, params: DbProductVariantUpdateInput): Promise<DbProductVariant | null> {
+    const tenantIds = await resolveTenantAliases(tenantId);
     const result = await prisma.productVariant.updateMany({
-      where: { id, tenantId },
+      where: { id, tenantId: { in: tenantIds } },
       data: params,
     });
     if (result.count === 0) return null;
@@ -106,8 +129,9 @@ export const ProductVariantsDB = {
 
   /** Soft delete: marca isActive=false en vez de borrar la fila. */
   async delete(tenantId: string, id: string): Promise<void> {
+    const tenantIds = await resolveTenantAliases(tenantId);
     await prisma.productVariant.updateMany({
-      where: { id, tenantId },
+      where: { id, tenantId: { in: tenantIds } },
       data: { isActive: false },
     });
   },
