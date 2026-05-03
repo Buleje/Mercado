@@ -117,52 +117,41 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 grid lg:grid-cols-[1.05fr_1fr]">
-      {/* ─── Hero — paleta violeta del proyecto ─────────────────────────── */}
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-zinc-900 text-white">
-        {/* Glow violeta */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(at 25% 0%, rgba(139,92,246,0.30) 0px, transparent 55%), radial-gradient(at 75% 100%, rgba(139,92,246,0.18) 0px, transparent 50%)",
-          }}
-        />
-        {/* Mesh blob */}
-        <div
-          aria-hidden
-          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-40 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, var(--brand-purple) 0%, transparent 70%)" }}
-        />
-        {/* Pattern */}
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-
-        {/* Top */}
-        <header className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg"
-              style={{ background: "var(--brand-purple)", boxShadow: "0 12px 32px -8px rgba(139,92,246,0.5)" }}
-            >
-              <Crown className="h-6 w-6" strokeWidth={2.25} />
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]" style={{ color: "var(--brand-purple)" }}>
-                Buleje · Plataforma
-              </p>
-              <p className="text-base font-extrabold leading-tight">Superadmin</p>
-            </div>
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 bg-zinc-950 text-white"
+      style={{
+        backgroundImage:
+          "radial-gradient(120% 80% at 0% 0%, rgba(139,92,246,0.18) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, rgba(139,92,246,0.10) 0%, transparent 55%)",
+      }}
+    >
+      <main className={cn("w-full max-w-[440px]", shaking && "animate-[shake_0.45s_ease-out]")}>
+        {/* Brand mark */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div
+            className="inline-flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg mb-5"
+            style={{
+              background: "linear-gradient(135deg, var(--brand-purple) 0%, #6d28d9 100%)",
+              boxShadow: "0 16px 32px -8px rgba(139,92,246,0.4)",
+            }}
+          >
+            <Crown className="h-7 w-7 text-white" strokeWidth={2.25} />
           </div>
+          <p
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
+            style={{ color: "rgb(196,181,253)" }}
+          >
+            {challengeId ? "Verificación 2 pasos" : "Plataforma · Superadmin"}
+          </p>
+          <SectionTitle className="text-3xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
+            {challengeId ? "Confirma tu identidad" : "Acceso a la plataforma"}
+          </SectionTitle>
+          <p className="text-sm text-white/60 mt-2 max-w-xs">
+            {challengeId
+              ? "Ingresa el código de 6 dígitos de tu app autenticadora."
+              : "Solo para dueños de Buleje. ¿Tienes una bodega? Abajo está tu panel."}
+          </p>
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[length:var(--ts-2xs)] font-bold"
+            className="inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full border text-[length:var(--ts-2xs)] font-bold"
             style={{
               background: "rgba(139,92,246,0.12)",
               borderColor: "rgba(139,92,246,0.35)",
@@ -170,77 +159,19 @@ export default function SuperAdminLoginPage() {
             }}
           >
             <Lock className="h-3 w-3" strokeWidth={2.5} />
-            Acceso restringido
+            Acceso restringido · 2FA recomendado
           </span>
-        </header>
-
-        {/* Middle */}
-        <div className="relative z-10 max-w-md">
-          <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05] text-white">
-            Plataforma Buleje. Sólo para dueños.
-          </PageTitle>
-          <p className="mt-4 text-sm text-white/70 leading-relaxed">
-            Acceso a operaciones de plataforma. Si tenés una bodega, este NO es
-            tu panel — usá el Panel del Negocio.
-          </p>
-
-          <ul className="mt-8 space-y-4">
-            {PLATFORM_FEATURES.map((f) => (
-              <li key={f.label} className="flex items-start gap-3">
-                <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border shrink-0"
-                  style={{ background: "rgba(139,92,246,0.10)", borderColor: "rgba(139,92,246,0.25)" }}
-                >
-                  <f.icon className="h-4 w-4" strokeWidth={2} style={{ color: "var(--brand-purple)" }} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold">{f.label}</p>
-                  <p className="text-xs text-white/60 mt-0.5 leading-relaxed">{f.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
         </div>
 
-        {/* Bottom */}
-        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/55 max-w-sm">
-          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
-          <span className="leading-relaxed">
-            Cada acceso queda registrado en el audit log. Ley 29733 PE ·
-            Sesión 12h · 2FA recomendado.
-          </span>
-        </footer>
-      </aside>
-
-      {/* ─── Form — fondo zinc-950 ──────────────────────────────────────── */}
-      <main className="flex items-center justify-center p-6 sm:p-12">
-        <div className={cn("w-full max-w-sm text-white", shaking && "animate-[shake_0.45s_ease-out]")}>
-          {/* Logo mobile */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-8">
-            <div
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ background: "var(--brand-purple)" }}
-            >
-              <Crown className="h-5 w-5" strokeWidth={2.25} />
-            </div>
-            <p className="font-extrabold text-white text-lg tracking-tight">Plataforma Buleje</p>
-          </div>
-
-          {/* Eyebrow + título */}
-          <p
-            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
-            style={{ color: "var(--brand-purple)" }}
-          >
-            {challengeId ? "Verificación 2 pasos" : "Plataforma · Superadmin"}
-          </p>
-          <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold text-white leading-tight">
-            {challengeId ? "Confirmá tu identidad" : "Acceso a la plataforma"}
-          </SectionTitle>
-          <p className="text-sm text-white/60 mt-2">
-            {challengeId
-              ? "Ingresá el código de 6 dígitos de tu app autenticadora."
-              : "Sólo dueños de Buleje. ¿Tenés una bodega? Usá el Panel del Negocio abajo."}
-          </p>
+        <div
+          className="rounded-3xl p-6 sm:p-8"
+          style={{
+            background: "rgba(24,24,27,0.6)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(24px)",
+            boxShadow: "0 24px 60px -12px rgba(0,0,0,0.5), 0 8px 16px -8px rgba(139,92,246,0.15)",
+          }}
+        >
 
           {/* Aviso sesión expirada */}
           {sessionExpired && !challengeId && (
@@ -415,27 +346,34 @@ export default function SuperAdminLoginPage() {
             </form>
           )}
 
-          {/* Switches a otros paneles */}
-          <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
-              ¿Buscás otro panel?
-            </p>
-            <SwitchChipDark
-              href="/admin/login"
-              icon={<Store className="h-4 w-4" strokeWidth={2} />}
-              eyebrow="Negocio"
-              title="Panel de tu bodega"
-              accent="teal"
-            />
-            <SwitchChipDark
-              href="/delivery-app/login"
-              icon={<Bike className="h-4 w-4" strokeWidth={2} />}
-              eyebrow="Repartidor"
-              title="Acceso Delivery"
-              accent="orange"
-            />
-          </div>
         </div>
+
+        {/* Switches a otros paneles — fuera del card */}
+        <div className="mt-6 space-y-2">
+          <p className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
+            ¿Buscas otro panel?
+          </p>
+          <SwitchChipDark
+            href="/admin/login"
+            icon={<Store className="h-4 w-4" strokeWidth={2} />}
+            eyebrow="Negocio"
+            title="Panel de tu bodega"
+            accent="teal"
+          />
+          <SwitchChipDark
+            href="/delivery-app/login"
+            icon={<Bike className="h-4 w-4" strokeWidth={2} />}
+            eyebrow="Repartidor"
+            title="Acceso Delivery"
+            accent="orange"
+          />
+        </div>
+
+        {/* Trust footer */}
+        <p className="mt-6 flex items-start gap-2 text-xs text-white/40 justify-center text-center max-w-xs mx-auto leading-relaxed">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "var(--brand-purple)" }} />
+          <span>Cada acceso queda en el audit log · Ley 29733 PE · Sesión 12h.</span>
+        </p>
       </main>
     </div>
   );

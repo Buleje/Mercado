@@ -173,111 +173,45 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)] grid lg:grid-cols-[1.05fr_1fr]">
-      {/* ─── Hero — desktop. Gradient teal + pattern + features ────────── */}
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-[var(--text-primary)] text-white">
-        {/* Gradient overlay */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(at 25% 0%, rgba(0,180,166,0.45) 0px, transparent 55%), radial-gradient(at 80% 100%, rgba(51,196,184,0.25) 0px, transparent 50%)",
-          }}
-        />
-        {/* Mesh gradient blob */}
-        <div
-          aria-hidden
-          className="absolute -top-32 -right-32 h-96 w-96 rounded-full opacity-40 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
-        />
-        {/* Pattern */}
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-
-        {/* Top: brand */}
-        <header className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] shadow-lg shadow-[var(--accent)]/30">
-              <Store className="h-6 w-6" strokeWidth={2.25} />
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                Buleje · Negocio
-              </p>
-              <p className="text-base font-extrabold leading-tight">Panel del dueño</p>
-            </div>
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12"
+      style={{
+        background:
+          "radial-gradient(120% 80% at 0% 0%, var(--accent-soft) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, var(--accent-muted) 0%, transparent 55%), var(--surface-canvas)",
+      }}
+    >
+      <main className={cn("w-full max-w-[440px]", shaking && "animate-[shake_0.45s_ease-out]")}>
+        {/* Brand mark */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div
+            className="inline-flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg mb-5"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
+              boxShadow: "0 16px 32px -8px rgba(0,180,166,0.3)",
+            }}
+          >
+            <Store className="h-7 w-7 text-white" strokeWidth={2.25} />
           </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[length:var(--ts-2xs)] font-bold text-white/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
-            En línea
-          </span>
-        </header>
-
-        {/* Middle: hero copy + features */}
-        <div className="relative z-10 max-w-md">
-          <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05] text-white">
-            Tu bodega, organizada en un solo lugar.
-          </PageTitle>
-          <p className="mt-4 text-sm text-white/70 leading-relaxed">
-            Inventario, ventas, fiados, delivery y reportes — todo lo que necesitás
-            para vender más sin perder el control.
-          </p>
-
-          <ul className="mt-8 space-y-4">
-            {FEATURES.map((f) => (
-              <li key={f.label} className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/10 shrink-0">
-                  <f.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold">{f.label}</p>
-                  <p className="text-xs text-white/60 mt-0.5 leading-relaxed">{f.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Bottom: trust */}
-        <footer className="relative z-10 flex items-start gap-3 text-xs text-white/55">
-          <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" />
-          <span className="leading-relaxed">
-            Tus datos están aislados. Solo vos accedés a tu tienda. Cumplimiento
-            Ley 29733 PE.
-          </span>
-        </footer>
-      </aside>
-
-      {/* ─── Form ──────────────────────────────────────────────────────── */}
-      <main className="flex items-center justify-center p-6 sm:p-12">
-        <div className={cn("w-full max-w-sm", shaking && "animate-[shake_0.45s_ease-out]")}>
-          {/* Logo mobile */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-8">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--text-primary)]">
-              <Store className="h-5 w-5 text-white" strokeWidth={2.25} />
-            </div>
-            <p className="font-extrabold text-[var(--text-primary)] text-lg tracking-tight">Buleje</p>
-          </div>
-
-          {/* Eyebrow + título */}
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Panel del negocio
           </p>
-          <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold text-[var(--text-primary)] leading-tight">
+          <SectionTitle className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">
             Bienvenido
           </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-2">
-            {activeTenant
-              ? <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>.</>
-              : "Ingresá con las credenciales de tu tienda."}
+          <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-xs">
+            {activeTenant ? (
+              <>Estás entrando a <strong className="text-[var(--text-primary)]">{activeTenant}</strong>.</>
+            ) : (
+              "Ingresa con las credenciales de tu tienda."
+            )}
           </p>
+        </div>
+
+        <div
+          className="rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-6 sm:p-8"
+          style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.06)" }}
+        >
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-7 space-y-4">
@@ -383,27 +317,34 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Switches a otros paneles */}
-          <div className="mt-8 pt-6 border-t border-[var(--rule-soft)] space-y-2">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-              ¿Buscás otro panel?
-            </p>
-            <SwitchChip
-              href="/superadmin/login"
-              icon={<Crown className="h-4 w-4" strokeWidth={2} />}
-              eyebrow="Plataforma"
-              title="Acceso Superadmin"
-              accent="violet"
-            />
-            <SwitchChip
-              href="/delivery-app/login"
-              icon={<Bike className="h-4 w-4" strokeWidth={2} />}
-              eyebrow="Repartidor"
-              title="Acceso Delivery"
-              accent="orange"
-            />
-          </div>
         </div>
+
+        {/* Switches a otros paneles — fuera del card, footer del wrapper */}
+        <div className="mt-6 space-y-2">
+          <p className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+            ¿Buscas otro panel?
+          </p>
+          <SwitchChip
+            href="/superadmin/login"
+            icon={<Crown className="h-4 w-4" strokeWidth={2} />}
+            eyebrow="Plataforma"
+            title="Acceso Superadmin"
+            accent="violet"
+          />
+          <SwitchChip
+            href="/delivery-app/login"
+            icon={<Bike className="h-4 w-4" strokeWidth={2} />}
+            eyebrow="Repartidor"
+            title="Acceso Delivery"
+            accent="orange"
+          />
+        </div>
+
+        {/* Trust footer */}
+        <p className="mt-6 flex items-start gap-2 text-xs text-[var(--text-tertiary)] justify-center text-center max-w-xs mx-auto leading-relaxed">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--accent)]" />
+          <span>Tus datos están aislados. Cumplimiento Ley 29733 PE.</span>
+        </p>
       </main>
     </div>
   );
