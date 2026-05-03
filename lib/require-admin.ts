@@ -65,7 +65,11 @@ export async function requireAdmin(
     // - Referer slug "demo" doesn't match JWT CUID "cmnl82b..." (same tenant, different format)
     // - Multi-tab: shared cookie has a different tenant than the URL
     // In ALL cases, the JWT's tenantId is the canonical CUID and the safest for DB queries.
-    if (payload.role === "admin") {
+    //
+    // Permitimos a TODO management tier (admin/owner/manager/superadmin) seguir
+    // operando bajo su tenantId real del JWT. Antes solo "admin" estricto pasaba,
+    // y eso causaba 403 falsos para owner/manager.
+    if (isManagementTier) {
       logger.info("[AUTH] Tenant context — using JWT CUID over header", {
         username: payload.username,
         role: payload.role,

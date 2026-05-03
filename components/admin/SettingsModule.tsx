@@ -4,6 +4,7 @@ import Image from "next/image";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
+import { csrfHeaders } from "@/lib/csrf-client";
 import dynamic from "next/dynamic";
 import {
   Store, Phone, MapPin, Clock, AlignLeft, Upload, Lock, X, Search,
@@ -542,7 +543,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
     try {
       await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
       setSavedSection(activeSection);
@@ -554,7 +555,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const patchFlags = useCallback(async (flags: Record<string, boolean>) => {
     await fetch("/api/settings/feature-flags", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(flags),
     });
   }, []);
@@ -580,8 +581,17 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", folder);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // CSRF: el endpoint valida double-submit cookie via header.
+        // Sin esto, devuelve 403 "CSRF token invalido o ausente".
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: csrfHeaders(),
+          body: fd,
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(errBody.error ?? `HTTP ${res.status}`);
+        }
         const data = await res.json() as { url: string };
         setter(data.url);
       } catch (err) {
