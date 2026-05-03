@@ -1,0 +1,165 @@
+{
+  "categories": [
+    {
+      "id": "polleria",
+      "name": "Pollería",
+      "description": "Pollo a la brasa, broaster y guarniciones",
+      "items": [
+        { "id": "pol-1", "name": "1/8 de Pollo a la Brasa", "imageUrl": "" },
+        { "id": "pol-2", "name": "1/4 de Pollo a la Brasa", "imageUrl": "" },
+        { "id": "pol-3", "name": "1/2 Pollo a la Brasa", "imageUrl": "" },
+        { "id": "pol-4", "name": "Pollo Entero a la Brasa", "imageUrl": "" },
+        { "id": "pol-5", "name": "Pollo Broaster (3 pzs)", "imageUrl": "" },
+        { "id": "pol-6", "name": "Mostrito (1/4 + papas + ensalada)", "imageUrl": "" },
+        { "id": "pol-7", "name": "Salchipapa Familiar", "imageUrl": "" },
+        { "id": "pol-8", "name": "Papas Fritas", "imageUrl": "" },
+        { "id": "pol-9", "name": "Ensalada Mixta", "imageUrl": "" },
+        { "id": "pol-10", "name": "Crema de Ají Amarillo", "imageUrl": "" },
+        { "id": "pol-11", "name": "Mayonesa de la Casa", "imageUrl": "" },
+        { "id": "pol-12", "name": "Crema de Huancaína", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "bebidas",
+      "name": "Bebidas",
+      "description": "Gaseosas, aguas, jugos",
+      "items": [
+        { "id": "beb-1", "name": "Inca Kola 500ml", "imageUrl": "" },
+        { "id": "beb-2", "name": "Inca Kola 1.5L", "imageUrl": "" },
+        { "id": "beb-3", "name": "Coca Cola 500ml", "imageUrl": "" },
+        { "id": "beb-4", "name": "Coca Cola 1.5L", "imageUrl": "" },
+        { "id": "beb-5", "name": "Pepsi 500ml", "imageUrl": "" },
+        { "id": "beb-6", "name": "Pepsi 1.5L", "imageUrl": "" },
+        { "id": "beb-7", "name": "Sprite 500ml", "imageUrl": "" },
+        { "id": "beb-8", "name": "Fanta 500ml", "imageUrl": "" },
+        { "id": "beb-9", "name": "Agua San Luis 625ml", "imageUrl": "" },
+        { "id": "beb-10", "name": "Agua Cielo 625ml", "imageUrl": "" },
+        { "id": "beb-11", "name": "Agua San Luis 2.5L", "imageUrl": "" },
+        { "id": "beb-12", "name": "Chicha Morada 1L", "imageUrl": "" },
+        { "id": "beb-13", "name": "Maracuyá 1L", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "pizzeria",
+      "name": "Pizzería",
+      "description": "Pizzas, lasagnas y entradas italianas",
+      "items": [
+        { "id": "piz-1", "name": "Pizza Margherita Familiar", "imageUrl": "" },
+        { "id": "piz-2", "name": "Pizza Hawaiana Familiar", "imageUrl": "" },
+        { "id": "piz-3", "name": "Pizza Pepperoni Familiar", "imageUrl": "" },
+        { "id": "piz-4", "name": "Pizza Cuatro Quesos Familiar", "imageUrl": "" },
+        { "id": "piz-5", "name": "Pizza Americana Familiar", "imageUrl": "" },
+        { "id": "piz-6", "name": "Pizza Vegetariana Familiar", "imageUrl": "" },
+        { "id": "piz-7", "name": "Pizza Personal Margherita", "imageUrl": "" },
+        { "id": "piz-8", "name": "Lasagna a la Boloñesa", "imageUrl": "" },
+        { "id": "piz-9", "name": "Pan al Ajo", "imageUrl": "" },
+        { "id": "piz-10", "name": "Bastones de Mozzarella", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "jugueria",
+      "name": "Juguería",
+      "description": "Jugos naturales, batidos y desayunos",
+      "items": [
+        { "id": "jug-1", "name": "Jugo de Naranja", "imageUrl": "" },
+        { "id": "jug-2", "name": "Jugo Especial de la Casa", "imageUrl": "" },
+        { "id": "jug-3", "name": "Jugo de Papaya con Leche", "imageUrl": "" },
+        { "id": "jug-4", "name": "Jugo de Plátano con Leche", "imageUrl": "" },
+        { "id": "jug-5", "name": "Jugo de Surtido", "imageUrl": "" },
+        { "id": "jug-6", "name": "Maracuyá Natural", "imageUrl": "" },
+        { "id": "jug-7", "name": "Sandwich Mixto", "imageUrl": "" },
+        { "id": "jug-8", "name": "Sandwich de Pollo", "imageUrl": "" },
+        { "id": "jug-9", "name": "Sandwich Triple", "imageUrl": "" },
+        { "id": "jug-10", "name": "Tostadas con Palta", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "chifa",
+      "name": "Chifa",
+      "description": "Comida china peruana",
+      "items": [
+        { "id": "chi-1", "name": "Arroz Chaufa de Pollo", "imageUrl": "" },
+        { "id": "chi-2", "name": "Arroz Chaufa Especial", "imageUrl": "" },
+        { "id": "chi-3", "name": "Tallarín Saltado de Pollo", "imageUrl": "" },
+        { "id": "chi-4", "name": "Tallarín Saltado de Carne", "imageUrl": "" },
+        { "id": "chi-5", "name": "Sopa Wantán", "imageUrl": "" },
+        { "id": "chi-6", "name": "Aeropuerto", "imageUrl": "" },
+        { "id": "chi-7", "name": "Pollo Chi Jau Kay", "imageUrl": "" },
+        { "id": "chi-8", "name": "Wantán Frito", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "comida-criolla",
+      "name": "Comida Criolla",
+      "description": "Platos peruanos tradicionales",
+      "items": [
+        { "id": "cri-1", "name": "Lomo Saltado", "imageUrl": "" },
+        { "id": "cri-2", "name": "Ají de Gallina", "imageUrl": "" },
+        { "id": "cri-3", "name": "Arroz con Pollo", "imageUrl": "" },
+        { "id": "cri-4", "name": "Tallarín Verde con Bistec", "imageUrl": "" },
+        { "id": "cri-5", "name": "Cau Cau", "imageUrl": "" },
+        { "id": "cri-6", "name": "Seco de Res", "imageUrl": "" },
+        { "id": "cri-7", "name": "Causa Limeña", "imageUrl": "" },
+        { "id": "cri-8", "name": "Papa a la Huancaína", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "ceviche-pescado",
+      "name": "Ceviche y Pescado",
+      "description": "Cevichería y mariscos",
+      "items": [
+        { "id": "cev-1", "name": "Ceviche Mixto", "imageUrl": "" },
+        { "id": "cev-2", "name": "Ceviche de Pescado", "imageUrl": "" },
+        { "id": "cev-3", "name": "Leche de Tigre", "imageUrl": "" },
+        { "id": "cev-4", "name": "Arroz con Mariscos", "imageUrl": "" },
+        { "id": "cev-5", "name": "Jalea de Pescado", "imageUrl": "" },
+        { "id": "cev-6", "name": "Chicharrón de Pescado", "imageUrl": "" },
+        { "id": "cev-7", "name": "Sudado de Pescado", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "heladeria",
+      "name": "Heladería",
+      "description": "Helados, postres y bebidas frías",
+      "items": [
+        { "id": "hel-1", "name": "Cono de Vainilla", "imageUrl": "" },
+        { "id": "hel-2", "name": "Cono de Chocolate", "imageUrl": "" },
+        { "id": "hel-3", "name": "Cono de Fresa", "imageUrl": "" },
+        { "id": "hel-4", "name": "Cono de Lúcuma", "imageUrl": "" },
+        { "id": "hel-5", "name": "Banana Split", "imageUrl": "" },
+        { "id": "hel-6", "name": "Sundae de Chocolate", "imageUrl": "" },
+        { "id": "hel-7", "name": "Milkshake de Vainilla", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "panaderia",
+      "name": "Panadería",
+      "description": "Panes, dulces y desayunos",
+      "items": [
+        { "id": "pan-1", "name": "Pan Francés (5 unidades)", "imageUrl": "" },
+        { "id": "pan-2", "name": "Pan Integral", "imageUrl": "" },
+        { "id": "pan-3", "name": "Pan de Yema", "imageUrl": "" },
+        { "id": "pan-4", "name": "Empanada de Pollo", "imageUrl": "" },
+        { "id": "pan-5", "name": "Empanada de Carne", "imageUrl": "" },
+        { "id": "pan-6", "name": "Cachito de Manjar", "imageUrl": "" },
+        { "id": "pan-7", "name": "Torta de Chocolate", "imageUrl": "" },
+        { "id": "pan-8", "name": "Pie de Manzana", "imageUrl": "" }
+      ]
+    },
+    {
+      "id": "minimarket",
+      "name": "Minimarket / Bodega",
+      "description": "Abarrotes y productos de primera necesidad",
+      "items": [
+        { "id": "min-1", "name": "Arroz Costeño 5kg", "imageUrl": "" },
+        { "id": "min-2", "name": "Aceite Primor 1L", "imageUrl": "" },
+        { "id": "min-3", "name": "Azúcar Blanca 1kg", "imageUrl": "" },
+        { "id": "min-4", "name": "Leche Gloria Tarro", "imageUrl": "" },
+        { "id": "min-5", "name": "Atún Florida Lata", "imageUrl": "" },
+        { "id": "min-6", "name": "Fideos Don Vittorio", "imageUrl": "" },
+        { "id": "min-7", "name": "Papel Higiénico 4 rollos", "imageUrl": "" },
+        { "id": "min-8", "name": "Detergente Ariel 1kg", "imageUrl": "" }
+      ]
+    }
+  ]
+}

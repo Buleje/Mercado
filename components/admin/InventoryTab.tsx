@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
+import ImageBankPicker from "@/components/admin/inventario/ImageBankPicker";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -300,6 +301,7 @@ export default function InventoryTab() {
   const [imgError, setImgError] = useState<string | null>(null);
   const [aiDescGenerating, setAiDescGenerating] = useState(false);
   const [aiDescError, setAiDescError] = useState<string | null>(null);
+  const [showImageBank, setShowImageBank] = useState(false);
 
   const generateDescriptionAI = useCallback(async (form: typeof editForm, setter: typeof setEditForm) => {
     const name = form.name?.trim();
@@ -2384,15 +2386,26 @@ export default function InventoryTab() {
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5 min-w-[180px]">
-                      <button
-                        type="button"
-                        onClick={() => editImgRef.current?.click()}
-                        disabled={imgUploading}
-                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
-                      >
-                        <Camera className="h-4 w-4" />
-                        {imgUploading ? "Procesando…" : "Subir foto"}
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editImgRef.current?.click()}
+                          disabled={imgUploading}
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
+                        >
+                          <Camera className="h-4 w-4" />
+                          {imgUploading ? "Procesando…" : "Subir foto"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowImageBank(true)}
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-linear-to-r from-primary to-[var(--data-success)] text-white hover:opacity-90 transition-all text-sm font-bold"
+                          title="Elegir una imagen del banco global mantenido por el superadmin"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          Banco de imágenes
+                        </button>
+                      </div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center">
                         o arrastrá una imagen aquí — cualquier formato (JPG, PNG, WebP, AVIF…)
                       </p>
@@ -2711,6 +2724,26 @@ export default function InventoryTab() {
           onClose={() => setModifiersProduct(null)}
         />
       )}
+
+      {/* Image Bank picker — comparte el state showImageBank entre add+edit modal */}
+      <ImageBankPicker
+        open={showImageBank}
+        onOpenChange={setShowImageBank}
+        onPick={(picked) => {
+          // Si el modal edit está abierto, fill ahí. Sino, en el add form.
+          if (editModalProduct) {
+            setEditForm(f => ({ ...f, image: picked.imageUrl }));
+            // Si el nombre del producto en el form está vacío, sugerir el del banco.
+            if (!editForm.name?.trim()) {
+              setEditForm(f => ({ ...f, name: picked.name }));
+            }
+          } else if (showAdd) {
+            setAddForm(f => ({ ...f, image: picked.imageUrl, name: f.name || picked.name }));
+          }
+          setImgInfo(null);
+          setImgError(null);
+        }}
+      />
 
       {/* Mejora 6 nueva: QR Modal */}
       {showQRProduct && (
