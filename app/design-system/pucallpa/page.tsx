@@ -71,7 +71,7 @@ export default function PucallpaDemoPage() {
           </p>
           <h2 className="text-fs-h2 mb-3">Números con historia — no fríos</h2>
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-2xl">
-            Cada KPI genera narrativa contextual: causa probable + next action. Reemplaza "S/4,520 ↑12%" por "Tu mejor martes del año".
+            Cada KPI genera narrativa contextual: causa probable + next action. Reemplaza &quot;S/4,520 ↑12%&quot; por &quot;Tu mejor martes del año&quot;.
           </p>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -219,15 +219,15 @@ export default function PucallpaDemoPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Mañana 5-11h</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Bebiendo mate<br/>"Buenos días"</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Bebiendo mate<br/>&quot;Buenos días&quot;</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Tarde 12-18h</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Con cuaderno<br/>"Trabajando"</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Con cuaderno<br/>&quot;Trabajando&quot;</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Noche 19-4h</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Durmiendo<br/>"Zzz"</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Durmiendo<br/>&quot;Zzz&quot;</p>
                 </div>
               </div>
             </div>
