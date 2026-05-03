@@ -47,7 +47,7 @@ function sortProducts(
   sort: SortKey,
   onlyInStock: boolean
 ): WishlistProduct[] {
-  let filtered = onlyInStock ? products.filter((p) => p.inStock) : products;
+  const filtered = onlyInStock ? products.filter((p) => p.inStock) : products;
   return [...filtered].sort((a, b) => {
     if (sort === "reciente") return b.addedAt - a.addedAt;
     if (sort === "antiguo") return a.addedAt - b.addedAt;
