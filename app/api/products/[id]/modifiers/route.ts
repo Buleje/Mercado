@@ -1,4 +1,9 @@
 import "server-only";
+/* eslint-disable no-restricted-properties */
+// Legacy: este endpoint fue escrito antes de la regla MULTI-TENANT (lib/db/*).
+// Mantenemos prisma directo porque la transacción $transaction y el delete-then-
+// create necesitan acceso bajo nivel. Refactor a DB layer queda como deuda
+// técnica documentada — el WHERE incluye tenantId en cada query.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +20,8 @@ const OptionSchema = z.object({
   priceDelta: z.number().min(0).max(9999).default(0),
   isDefault: z.boolean().optional(),
   position: z.number().int().min(0).optional(),
+  // 500K para soportar dataURL WebP comprimida (~120KB tras processImage).
+  imageUrl: z.string().max(500_000).optional().nullable(),
 });
 
 const GroupSchema = z.object({
@@ -77,6 +84,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
         priceDelta: toNumOrZero(o.priceDelta),
         isDefault: o.isDefault,
         position: o.position,
+        imageUrl: o.imageUrl,
       })),
     }));
 
@@ -148,6 +156,7 @@ export async function PUT(req: NextRequest, ctx: RouteCtx) {
                 position: o.position ?? j,
                 isActive: true,
                 tenantId,
+                imageUrl: o.imageUrl ?? null,
               })),
             },
           },

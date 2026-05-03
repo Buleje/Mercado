@@ -2,15 +2,21 @@
 
 /**
  * VariantCatalogPicker — modal que muestra plantillas del catálogo global
- * (mantenido por el superadmin) y permite al admin del tenant importar una
- * a su producto. Al importar, se clona el template + options al
- * ProductModifierGroup + ProductModifierOption del tenant.
+ * (mantenido por el superadmin) y permite al admin del tenant:
+ *   1. Importar TODA una plantilla con sus opciones (botón principal)
+ *   2. Importar OPCIONES INDIVIDUALES (modo selectivo con checkboxes)
+ *
+ * Ambos modos copian a ProductModifierGroup + ProductModifierOption del tenant.
  */
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import * as Dialog from "@radix-ui/react-dialog";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { X, BookOpen, Loader2, Check, Image as ImageIcon } from "@buleje/design-system/icons";
+import {
+  X, BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
+  CheckSquare, Square, Plus,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const OptionSchema = z.object({
@@ -38,6 +44,7 @@ const ResponseSchema = z.object({
 });
 
 type Template = z.infer<typeof TemplateSchema>;
+type CatOption = z.infer<typeof OptionSchema>;
 
 interface Props {
   productId: number;
@@ -49,10 +56,14 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
   const [templates, setTemplates] = useState<Template[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
-  const [imported, setImported] = useState<Set<string>>(new Set());
+  const [importedFull, setImportedFull] = useState<Set<string>>(new Set());
+  const [expandedTpl, setExpandedTpl] = useState<string | null>(null);
+  // Map<templateId, Set<optionId>> — opciones tildadas por plantilla
+  const [selected, setSelected] = useState<Map<string, Set<string>>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +82,46 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
     return () => { cancelled = true; };
   }, []);
 
-  const filtered = activeCategory ? templates.filter((t) => t.category === activeCategory) : templates;
+  const filtered = templates.filter((t) => {
+    if (activeCategory && t.category !== activeCategory) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!t.name.toLowerCase().includes(q)
+        && !t.category.toLowerCase().includes(q)
+        && !t.options.some((o) => o.name.toLowerCase().includes(q))) return false;
+    }
+    return true;
+  });
 
-  const importTemplate = async (template: Template) => {
+  const toggleOption = (templateId: string, optionId: string) => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      const set = new Set(next.get(templateId) ?? []);
+      if (set.has(optionId)) set.delete(optionId);
+      else set.add(optionId);
+      if (set.size === 0) next.delete(templateId);
+      else next.set(templateId, set);
+      return next;
+    });
+  };
+
+  const toggleAllOptions = (template: Template) => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      const current = next.get(template.id);
+      const allSelected = current && current.size === template.options.length;
+      if (allSelected) {
+        next.delete(template.id);
+      } else {
+        next.set(template.id, new Set(template.options.map((o) => o.id)));
+      }
+      return next;
+    });
+  };
+
+  const importFull = async (template: Template) => {
     setImporting(template.id);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/products/${productId}/import-from-catalog`, {
         method: "POST",
@@ -85,9 +132,8 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `HTTP ${res.status}`);
       }
-      setImported((prev) => new Set([...prev, template.id]));
-      // Pequeño delay para mostrar el "importado" antes de cerrar
-      setTimeout(() => onImported(), 500);
+      setImportedFull((prev) => new Set([...prev, template.id]));
+      // Permite seguir importando sin cerrar — al final el usuario hace click en "Listo".
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo importar");
     } finally {
@@ -95,175 +141,337 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
     }
   };
 
+  const importSelected = async (template: Template) => {
+    const optionIds = Array.from(selected.get(template.id) ?? []);
+    if (optionIds.length === 0) return;
+    setImporting(template.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/import-from-catalog`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        body: JSON.stringify({ templateId: template.id, optionIds }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      // Marca como importadas y limpia las selecciones
+      setImportedFull((prev) => new Set([...prev, template.id]));
+      setSelected((prev) => {
+        const next = new Map(prev);
+        next.delete(template.id);
+        return next;
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo importar");
+    } finally {
+      setImporting(null);
+    }
+  };
+
+  const totalSelected = Array.from(selected.values()).reduce((sum, s) => sum + s.size, 0);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div
-        className="bg-[var(--surface-canvas)] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <BookOpen className="h-5 w-5" />
+    <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[8500] bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3 bg-white dark:bg-card">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <Dialog.Title className="text-base font-extrabold text-[var(--text-primary)]">Catálogo de adicionales</Dialog.Title>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Importá plantillas completas o seleccioná opciones específicas (con sus imágenes).
+              </p>
+            </div>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
+              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </button>
           </div>
+
+          {/* Filtros */}
+          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar plantilla, categoría o opción…"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            {categories.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setActiveCategory(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
+                    !activeCategory
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                  )}
+                >
+                  Todas ({templates.length})
+                </button>
+                {categories.map((c) => {
+                  const count = templates.filter((t) => t.category === c).length;
+                  const active = activeCategory === c;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setActiveCategory(c)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
+                        active
+                          ? "border-primary bg-primary text-white"
+                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                      )}
+                    >
+                      {c} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            {loading && (
+              <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Cargando catálogo…</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+                {error}
+              </div>
+            )}
+
+            {!loading && filtered.length === 0 && (
+              <div className="text-center py-10">
+                <ImageIcon className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-3" />
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {search ? `Sin resultados para "${search}"` : `Sin plantillas ${activeCategory ? `en "${activeCategory}"` : ""}`}
+                </p>
+              </div>
+            )}
+
+            {filtered.map((t) => (
+              <TemplateRow
+                key={t.id}
+                template={t}
+                expanded={expandedTpl === t.id}
+                onToggleExpand={() => setExpandedTpl(expandedTpl === t.id ? null : t.id)}
+                isImporting={importing === t.id}
+                isImported={importedFull.has(t.id)}
+                selectedIds={selected.get(t.id) ?? new Set()}
+                onToggleOption={(optionId) => toggleOption(t.id, optionId)}
+                onToggleAll={() => toggleAllOptions(t)}
+                onImportFull={() => importFull(t)}
+                onImportSelected={() => importSelected(t)}
+              />
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-white dark:bg-card">
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {totalSelected > 0
+                ? `${totalSelected} opción${totalSelected === 1 ? "" : "es"} seleccionada${totalSelected === 1 ? "" : "s"}`
+                : "Las plantillas son globales — al importar se copian a tu producto."}
+            </span>
+            <button
+              onClick={() => { onImported(); }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+            >
+              <Check className="h-4 w-4" />
+              Listo
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+// ─── Template row (collapsed/expanded) ───────────────────────────────────────
+
+function TemplateRow({
+  template, expanded, onToggleExpand, isImporting, isImported,
+  selectedIds, onToggleOption, onToggleAll, onImportFull, onImportSelected,
+}: {
+  template: Template;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  isImporting: boolean;
+  isImported: boolean;
+  selectedIds: Set<string>;
+  onToggleOption: (optionId: string) => void;
+  onToggleAll: () => void;
+  onImportFull: () => void;
+  onImportSelected: () => void;
+}) {
+  const allSelected = selectedIds.size === template.options.length && template.options.length > 0;
+
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <button onClick={onToggleExpand} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors mt-1">
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-[var(--text-primary)]">Catálogo de variaciones</h2>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Importa una plantilla con sus opciones e imágenes a tu producto.
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                {template.category}
+              </span>
+              {template.required && (
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  Obligatorio
+                </span>
+              )}
+            </div>
+            {template.description && (
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{template.description}</p>
+            )}
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              {template.options.length} {template.options.length === 1 ? "opción" : "opciones"}
+              {" · "}
+              {template.minSelect === template.maxSelect ? `exactamente ${template.maxSelect}` : `${template.minSelect}–${template.maxSelect}`} selecciones
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+          <button
+            onClick={onImportFull}
+            disabled={isImporting}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors",
+              isImported
+                ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
+                : "bg-primary text-white hover:bg-primary/90",
+              "disabled:opacity-50"
+            )}
+          >
+            {isImported ? <><Check className="h-3.5 w-3.5" /> Importado</> :
+             isImporting ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Importando…</> :
+             <><Plus className="h-3.5 w-3.5" /> Importar todo</>}
           </button>
         </div>
 
-        {/* Categorías */}
-        {categories.length > 0 && (
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] flex flex-wrap gap-1.5">
+        {/* Preview thumbnails (collapsed) */}
+        {!expanded && template.options.length > 0 && (
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
+            {template.options.slice(0, 6).map((opt) => (
+              <OptionPreview key={opt.id} option={opt} compact />
+            ))}
+            {template.options.length > 6 && (
+              <button
+                onClick={onToggleExpand}
+                className="rounded-lg border border-dashed border-[var(--rule-soft)] p-2 flex items-center justify-center text-xs font-bold text-[var(--text-tertiary)] hover:border-primary hover:text-primary transition-colors min-h-[44px]"
+              >
+                +{template.options.length - 6} más
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Expanded — selectivo con checkboxes */}
+      {expanded && (
+        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/50 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <button
-              onClick={() => setActiveCategory(null)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-                !activeCategory
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
-              )}
+              onClick={onToggleAll}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
             >
-              Todas ({templates.length})
+              {allSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+              {allSelected ? "Deseleccionar todas" : "Seleccionar todas"}
             </button>
-            {categories.map((c) => {
-              const count = templates.filter((t) => t.category === c).length;
-              const active = activeCategory === c;
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {selectedIds.size > 0 ? `${selectedIds.size} de ${template.options.length} elegidas` : "Tocá las que querés importar"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {template.options.map((opt) => {
+              const isChecked = selectedIds.has(opt.id);
               return (
                 <button
-                  key={c}
-                  onClick={() => setActiveCategory(c)}
+                  key={opt.id}
+                  onClick={() => onToggleOption(opt.id)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-                    active
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
+                    "text-left rounded-xl border-2 p-2.5 transition-all relative",
+                    isChecked
+                      ? "border-primary bg-primary/5"
+                      : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary/40"
                   )}
                 >
-                  {c} ({count})
+                  <div className="flex items-center gap-2.5">
+                    <span className={cn(
+                      "flex h-5 w-5 items-center justify-center rounded border-2 shrink-0",
+                      isChecked ? "border-primary bg-primary text-white" : "border-[var(--rule-base)]"
+                    )}>
+                      {isChecked && <Check className="h-3 w-3" />}
+                    </span>
+                    <OptionPreview option={opt} />
+                  </div>
                 </button>
               );
             })}
           </div>
-        )}
 
-        {/* Contenido */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
-          {loading && (
-            <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Cargando catálogo...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
-              {error}
-            </div>
-          )}
-
-          {!loading && filtered.length === 0 && (
-            <div className="text-center py-10">
-              <ImageIcon className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-3" />
-              <p className="text-sm text-[var(--text-secondary)]">
-                Aún no hay plantillas {activeCategory ? `en "${activeCategory}"` : "publicadas"}.
+          {selectedIds.size > 0 && !isImported && (
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--rule-soft)]">
+              <p className="text-xs text-[var(--text-secondary)]">
+                Se copiarán <strong>{selectedIds.size}</strong> opción{selectedIds.size === 1 ? "" : "es"} con sus imágenes al producto.
               </p>
+              <button
+                onClick={onImportSelected}
+                disabled={isImporting}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                Importar selección
+              </button>
             </div>
           )}
-
-          {filtered.map((t) => {
-            const isImporting = importing === t.id;
-            const isDone = imported.has(t.id);
-            return (
-              <div key={t.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-bold text-[var(--text-primary)]">{t.name}</h3>
-                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-                        {t.category}
-                      </span>
-                      {t.required && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                          Obligatorio
-                        </span>
-                      )}
-                    </div>
-                    {t.description && (
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t.description}</p>
-                    )}
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      {t.options.length} {t.options.length === 1 ? "opción" : "opciones"}
-                      {" · "}
-                      Selección: {t.minSelect === t.maxSelect ? `exactamente ${t.maxSelect}` : `${t.minSelect}–${t.maxSelect}`}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => importTemplate(t)}
-                    disabled={isImporting || isDone}
-                    className={cn(
-                      "shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors min-h-[44px]",
-                      isDone
-                        ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
-                        : "bg-primary text-white hover:bg-primary/90",
-                      "disabled:opacity-50"
-                    )}
-                  >
-                    {isDone ? <><Check className="h-4 w-4" /> Importado</> :
-                     isImporting ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</> :
-                     "Importar"}
-                  </button>
-                </div>
-
-                {/* Preview de options con imágenes */}
-                {t.options.length > 0 && (
-                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {t.options.slice(0, 8).map((opt) => (
-                      <div key={opt.id} className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2 flex items-center gap-2">
-                        <div className={cn(
-                          "h-10 w-10 rounded shrink-0 overflow-hidden border border-[var(--rule-soft)]",
-                          opt.imageUrl ? "" : "bg-[var(--surface-sunken)] flex items-center justify-center"
-                        )}>
-                          {opt.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={opt.imageUrl} alt={opt.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{opt.name}</p>
-                          {opt.priceDelta !== 0 && (
-                            <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-secondary)]">
-                              {opt.priceDelta > 0 ? "+" : ""}S/ {opt.priceDelta.toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {t.options.length > 8 && (
-                      <div className="rounded-lg border border-dashed border-[var(--rule-soft)] p-2 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-                        +{t.options.length - 8} más
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
         </div>
+      )}
+    </div>
+  );
+}
 
-        <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between text-xs text-[var(--text-tertiary)] bg-[var(--surface-canvas)]">
-          <span>Las plantillas son globales del SaaS — al importar se copia a tu producto y puedes editar luego.</span>
-          <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--surface-sunken)]">
-            Cerrar
-          </button>
-        </div>
+// ─── Option preview (con imagen) ─────────────────────────────────────────────
+
+function OptionPreview({ option, compact }: { option: CatOption; compact?: boolean }) {
+  return (
+    <div className={cn("flex items-center gap-2 min-w-0", compact && "flex-col gap-1")}>
+      <div className={cn(
+        "rounded-lg shrink-0 overflow-hidden border border-[var(--rule-soft)]",
+        compact ? "h-10 w-10" : "h-9 w-9",
+        option.imageUrl ? "" : "bg-[var(--surface-sunken)] flex items-center justify-center"
+      )}>
+        {option.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={option.imageUrl} alt={option.name} className="w-full h-full object-cover" />
+        ) : (
+          <ImageIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+        )}
+      </div>
+      <div className={cn("min-w-0", compact && "text-center w-full")}>
+        <p className={cn("text-xs font-semibold text-[var(--text-primary)] truncate", compact && "text-[length:var(--ts-2xs)]")}>{option.name}</p>
+        {option.priceDelta !== 0 && (
+          <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-secondary)]">
+            {option.priceDelta > 0 ? "+" : ""}S/ {Number(option.priceDelta).toFixed(2)}
+          </p>
+        )}
       </div>
     </div>
   );

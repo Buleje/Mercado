@@ -221,13 +221,22 @@ export class VariantCatalogDb {
     tenantId: string,
     productId: number,
     templateId: string,
-  ): Promise<{ groupId: string; optionsCount: number; alreadyExists?: boolean }> {
+    optionIds?: string[],
+  ): Promise<{ groupId: string; optionsCount: number; alreadyExists?: boolean; addedOptions?: number }> {
     return prisma.$transaction(async (tx) => {
       const template = await tx.variantCatalogTemplate.findUnique({
         where: { id: templateId },
         include: { options: { orderBy: { position: "asc" } } },
       });
       if (!template) throw new Error("Template no encontrado");
+
+      // Filtra options si se pasaron optionIds (modo selectivo)
+      const filteredOptions = optionIds && optionIds.length > 0
+        ? template.options.filter((o) => optionIds.includes(o.id))
+        : template.options;
+      if (filteredOptions.length === 0 && optionIds && optionIds.length > 0) {
+        throw new Error("Las opciones seleccionadas no existen en este template");
+      }
 
       // Verifica que el producto pertenece al tenant (multi-tenant guard)
       const product = await tx.product.findFirst({
@@ -236,7 +245,9 @@ export class VariantCatalogDb {
       });
       if (!product) throw new Error("Producto no pertenece al tenant");
 
-      // Idempotency: rechaza duplicados con mismo nombre activo en el producto
+      // Idempotency: si existe grupo con mismo nombre, MERGE en vez de duplicar.
+      // En modo selectivo (optionIds) agregamos solo las opciones nuevas que
+      // no estén ya por nombre en el grupo existente.
       const existing = await tx.productModifierGroup.findFirst({
         where: {
           tenantId,
@@ -244,18 +255,45 @@ export class VariantCatalogDb {
           name: template.name,
           isActive: true,
         },
-        select: { id: true, _count: { select: { options: true } } },
+        include: { options: { where: { isActive: true } } },
       });
+
       if (existing) {
+        if (optionIds && optionIds.length > 0) {
+          // Selectivo: agregamos solo las opciones que no existan ya
+          const existingNames = new Set(existing.options.map((o) => o.name.toLowerCase()));
+          const newOptions = filteredOptions.filter((o) => !existingNames.has(o.name.toLowerCase()));
+          if (newOptions.length > 0) {
+            await tx.productModifierOption.createMany({
+              data: newOptions.map((opt, idx) => ({
+                groupId: existing.id,
+                tenantId,
+                name: opt.name,
+                imageUrl: opt.imageUrl,
+                priceDelta: opt.priceDelta,
+                position: existing.options.length + idx,
+                isDefault: opt.isDefault,
+                isActive: true,
+              })),
+            });
+          }
+          logger.info("variant-catalog.import.merged", {
+            tenantId, productId, templateId, groupId: existing.id, added: newOptions.length,
+          });
+          return {
+            groupId: existing.id,
+            optionsCount: existing.options.length + newOptions.length,
+            alreadyExists: true,
+            addedOptions: newOptions.length,
+          };
+        }
+        // Modo todo-el-template y ya existe → idempotente, no duplica
         logger.info("variant-catalog.import.duplicate", {
-          tenantId,
-          productId,
-          templateId,
-          existingGroupId: existing.id,
+          tenantId, productId, templateId, existingGroupId: existing.id,
         });
         return {
           groupId: existing.id,
-          optionsCount: existing._count.options,
+          optionsCount: existing.options.length,
           alreadyExists: true,
         };
       }
@@ -272,7 +310,7 @@ export class VariantCatalogDb {
           position: template.position,
           isActive: true,
           options: {
-            create: template.options.map((opt, idx) => ({
+            create: filteredOptions.map((opt, idx) => ({
               tenantId,
               name: opt.name,
               imageUrl: opt.imageUrl,

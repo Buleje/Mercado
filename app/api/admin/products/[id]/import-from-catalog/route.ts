@@ -6,6 +6,9 @@ import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
   templateId: z.string().min(1),
+  // Si se pasa optionIds, solo se importan esas opciones (modo selectivo).
+  // Si está vacío/ausente, se importan todas las opciones del template.
+  optionIds: z.array(z.string()).optional(),
 });
 
 /**
@@ -37,7 +40,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   try {
-    const result = await VariantCatalogDb.importToProduct(auth.tenantId, productId, parsed.data.templateId);
+    const result = await VariantCatalogDb.importToProduct(
+      auth.tenantId,
+      productId,
+      parsed.data.templateId,
+      parsed.data.optionIds && parsed.data.optionIds.length > 0 ? parsed.data.optionIds : undefined,
+    );
     // 200 si ya existía (idempotente — admin spamea botón sin duplicar),
     // 201 si recién creado.
     return NextResponse.json(
