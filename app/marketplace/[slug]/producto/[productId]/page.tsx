@@ -46,6 +46,8 @@ interface ApiProduct {
     logo: string | null;
     description: string | null;
     zone: string | null;
+    rating?: number | null;
+    reviewCount?: number | null;
   };
 }
 
@@ -160,38 +162,98 @@ export async function generateMetadata({
       description,
       url: pageUrl,
       type: "website",
-      ...(ogImage ? { images: [{ url: ogImage, alt: product.name }] } : {}),
+      siteName: "Buleje",
+      locale: "es_PE",
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630, alt: product.name }] } : {}),
+    },
+    // Audit P11: Twitter Card explícito por ruta — antes solo el root
+    // layout lo definía y child pages lo heredaban con summary genérico.
+    // summary_large_image da preview rica con foto del producto.
+    twitter: {
+      card: "summary_large_image",
+      title: product.metaTitle || product.name,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }
 
 // ── JSON-LD ────────────────────────────────────────────────────────────────────
 
-function ProductJsonLd({ product, slug, productId }: {
+// Helper puro: priceValidUntil 30 días forward formateado YYYY-MM-DD.
+// Externalizado para no romper react-hooks/purity en el componente.
+function pricingValidUntil(now: number): string {
+  const d = new Date(now + 30 * 24 * 60 * 60 * 1000);
+  const isoString = d.toISOString();
+  const datePart = isoString.split("T")[0];
+  return datePart ?? isoString;
+}
+
+function ProductJsonLd({ product, slug, productId, now }: {
   product: ApiProduct;
   slug: string;
   productId: string;
+  now: number;
 }) {
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   const inStock = product.stock === null || product.stock > 0;
+  const productUrl = `${base}/marketplace/${slug}/producto/${productId}`;
+  const priceNum = typeof product.price === "number" ? product.price : Number(product.price);
+  const priceFormatted = Number.isFinite(priceNum) ? priceNum.toFixed(2) : "0.00";
 
-  const jsonLd = {
+  // Audit P11 top-tier: schema enriquecido para Google Shopping rich results.
+  const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": productUrl,
     name: product.name,
     description: product.description || undefined,
-    image: product.image || undefined,
+    image: product.image ? [product.image] : undefined,
+    sku: String(product.id),
+    category: product.category || undefined,
+    brand: {
+      "@type": "Brand",
+      name: product.store.name,
+    },
     offers: {
       "@type": "Offer",
-      price: product.price.toFixed(2),
+      price: priceFormatted,
       priceCurrency: "PEN",
+      priceValidUntil: pricingValidUntil(now),
       availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
-      url: `${base}/marketplace/${slug}/producto/${productId}`,
-      seller: { "@type": "Organization", name: product.store.name },
+      itemCondition: "https://schema.org/NewCondition",
+      url: productUrl,
+      seller: {
+        "@type": "Organization",
+        name: product.store.name,
+        url: `${base}/marketplace/${slug}`,
+      },
+      areaServed: {
+        "@type": "City",
+        name: "Pucallpa",
+      },
     },
   };
+
+  // AggregateRating: solo si store tiene reviewCount > 0
+  const rating = product.store.rating;
+  const reviewCount = product.store.reviewCount;
+  if (
+    typeof rating === "number" &&
+    rating > 0 &&
+    typeof reviewCount === "number" &&
+    reviewCount > 0
+  ) {
+    jsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: rating.toFixed(1),
+      reviewCount: reviewCount,
+      bestRating: "5",
+      worstRating: "1",
+    };
+  }
 
   return (
     <script
@@ -232,7 +294,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <ProductJsonLd product={product} slug={slug} productId={productId} />
+      {/* eslint-disable-next-line react-hooks/purity -- Server Component:
+          Date.now() en RSC es seguro (no está en client render path). */}
+      <ProductJsonLd product={product} slug={slug} productId={productId} now={Date.now()} />
 
       {/* Botón Volver — más limpio que breadcrumbs, vuelve a la tienda. */}
       <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">

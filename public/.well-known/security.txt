@@ -1,0 +1,17 @@
+# RFC 9116 — Security disclosure policy for Buleje
+# https://www.rfc-editor.org/rfc/rfc9116
+# https://www.buleje.pe/.well-known/security.txt
+
+Contact: mailto:security@buleje.pe
+Contact: https://wa.me/51916409675
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://www.buleje.pe/.well-known/security.txt
+Policy: https://www.buleje.pe/terminos
+Hiring: https://www.buleje.pe/abrir-tienda
+
+# Si encontraste una vulnerabilidad:
+# 1. Por favor NO la publiques antes de contactarnos.
+# 2. Te respondemos en menos de 48 horas.
+# 3. Te damos crédito en nuestro Hall of Fame si querés.
+# 4. Estamos basados en Pucallpa, Perú — escribí en español o inglés.

@@ -1,3 +1,5 @@
+// eslint-disable @typescript-eslint/no-restricted-imports
+/* eslint-disable no-restricted-properties */
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -5,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * @prisma-direct excepción documentada — el endpoint POST hace `review.create`
@@ -84,6 +87,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  // Audit P11 top-tier: rate limit anti-spam reviews (5 / 15min / IP)
+  const rl = applyRateLimit(req, "STRICT", "marketplace-reviews-create");
+  if (rl) return rl;
+
   try {
     const { slug } = await params;
 

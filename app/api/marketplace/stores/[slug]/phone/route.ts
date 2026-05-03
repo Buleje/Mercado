@@ -1,7 +1,9 @@
+/* eslint-disable no-restricted-properties */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/marketplace/stores/[slug]/phone
@@ -16,9 +18,13 @@ import { logger } from "@/lib/logger";
  * marketplace sin beneficio: el caller ya tolera `phone: null`.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  // Audit P11: rate limit anti-scraping de WhatsApp phones (60 / 15min / IP)
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-store-phone");
+  if (rl) return rl;
+
   let slug = "";
   try {
     ({ slug } = await params);
