@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import CommandPalette from "./CommandPalette";
@@ -131,32 +131,6 @@ const NAV_GROUPS: NavGroupDef[] = [
 // Lista plana derivada — preserva compatibilidad con loadNavConfig (hidden/order
 // se aplican dentro de cada grupo, no se rompen las prefs de Brandon).
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
-
-// Por defecto solo "Plataforma" abierto — los otros grupos se expanden con click.
-// Persiste en localStorage para que recargar mantenga la elección del usuario.
-const DEFAULT_COLLAPSED_GROUPS: NavGroupId[] = ["negocios", "catalogo", "pagos", "sistema"];
-const STORAGE_KEY_GROUPS_COLLAPSED = "superadmin-nav-groups-collapsed";
-
-function loadCollapsedGroups(): Set<NavGroupId> {
-  if (typeof window === "undefined") return new Set(DEFAULT_COLLAPSED_GROUPS);
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_GROUPS_COLLAPSED);
-    if (!raw) return new Set(DEFAULT_COLLAPSED_GROUPS);
-    const parsed = JSON.parse(raw) as NavGroupId[];
-    return new Set(parsed);
-  } catch {
-    return new Set(DEFAULT_COLLAPSED_GROUPS);
-  }
-}
-
-function saveCollapsedGroups(set: Set<NavGroupId>) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY_GROUPS_COLLAPSED, JSON.stringify([...set]));
-  } catch {
-    // localStorage lleno o privado — silencio, no bloquear UI
-  }
-}
 
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
@@ -314,39 +288,6 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const [sessionExpired, setSessionExpired] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS);
   const [visual, setVisual] = useState<SidebarVisualPrefs>(DEFAULT_VISUAL);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<NavGroupId>>(() => new Set(DEFAULT_COLLAPSED_GROUPS));
-
-  // Hidratar desde localStorage tras el mount (evita mismatch SSR/CSR).
-  useEffect(() => {
-    setCollapsedGroups(loadCollapsedGroups());
-  }, []);
-
-  const toggleGroup = (id: NavGroupId) => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      saveCollapsedGroups(next);
-      return next;
-    });
-  };
-
-  // Auto-expand el grupo que contiene la ruta activa (UX: si entrás a /superadmin/health
-  // por URL directa, abrir "Plataforma" para que veas dónde estás parado).
-  useEffect(() => {
-    const activeGroup = NAV_GROUPS.find((g) =>
-      g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
-    );
-    if (activeGroup && collapsedGroups.has(activeGroup.id)) {
-      setCollapsedGroups((prev) => {
-        const next = new Set(prev);
-        next.delete(activeGroup.id);
-        saveCollapsedGroups(next);
-        return next;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
 
   // Sincroniza nav items + visual prefs con la config guardada. Reacciona
   // a "storage" (otra pestaña) y a custom event "superadmin-nav-config-changed"
@@ -544,47 +485,20 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           )}
         </div>
 
-        {/* Nav items — agrupados en categorías colapsables (cuando expandido)
-            o lista plana de iconos (cuando colapsado a w-16). */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-          {collapsed ? (
-            // Sidebar colapsado a w-16 — sin headers de grupo, solo iconos.
-            navItems.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={[
-                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors justify-center",
-                    navItemPadding,
-                    active ? navItemActiveClass : navItemIdleClass,
-                  ].join(" ")}
-                  title={item.label}
-                >
-                  <span className={iconClassName}>{item.icon}</span>
-                </Link>
-              );
-            })
-          ) : (
-            // Sidebar expandido — render por grupos.
-            <NavGroupsList
-              groups={NAV_GROUPS}
-              visibleHrefs={new Set(navItems.map((it) => it.href))}
-              pathname={pathname}
-              collapsedGroups={collapsedGroups}
-              onToggleGroup={toggleGroup}
-              onItemClick={() => setMobileOpen(false)}
-              navItemPadding={navItemPadding}
-              navItemActiveClass={navItemActiveClass}
-              navItemIdleClass={navItemIdleClass}
-              iconClassName={iconClassName}
-              isBuleje={isBuleje}
-            />
-          )}
+        {/* Nav — botones de grupo. Hover abre flyout lateral con los items
+            del grupo (mismo patrón que admin de negocios). Tipografía sm/base
+            para mejorar lectura (antes era 2xs/sm = muy chico). */}
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1.5">
+          <NavGroupsFlyout
+            groups={NAV_GROUPS}
+            visibleHrefs={new Set(navItems.map((it) => it.href))}
+            pathname={pathname}
+            sidebarCollapsed={collapsed}
+            onItemClick={() => setMobileOpen(false)}
+            isBuleje={isBuleje}
+            density={visual.density}
+            iconClassName={iconClassName}
+          />
         </nav>
 
         {/* Collapse toggle (desktop) */}
@@ -643,19 +557,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             </button>
           </div>
 
-          {/* Nav items — mismos grupos colapsables que desktop. */}
-          <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-            <NavGroupsList
+          {/* Nav mobile — sin flyout (no hay hover en touch).
+              Acordeón vertical clásico: tap en grupo expande sus items. */}
+          <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-2">
+            <NavGroupsAccordion
               groups={NAV_GROUPS}
               visibleHrefs={new Set(navItems.map((it) => it.href))}
               pathname={pathname}
-              collapsedGroups={collapsedGroups}
-              onToggleGroup={toggleGroup}
               onItemClick={() => setMobileOpen(false)}
-              navItemPadding="px-3 py-2"
-              navItemActiveClass={navItemActiveClass}
-              navItemIdleClass={navItemIdleClass}
-              iconClassName=""
               isBuleje={isBuleje}
             />
           </nav>
@@ -749,90 +658,358 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   );
 }
 
-// ─── Nav grouped list (colapsable) ────────────────────────────────────────────
+// ─── Desktop: flyout lateral on hover ─────────────────────────────────────────
 //
-// Cada grupo es un <button> con header + chevron, y los items hijos solo
-// renderizan cuando el grupo NO está colapsado. El estado vive en el padre
-// y se persiste en localStorage vía toggleGroup.
+// Patrón replicado del admin de negocio (components/admin/shared/SidebarFlyout.tsx).
+// Los grupos NO se expanden verticalmente; al hacer hover sobre el botón del
+// grupo aparece un panel lateral pegado al borde derecho del sidebar con los
+// items del grupo. Click en el ítem navega y cierra el flyout.
 //
-// Nota a11y: el botón usa aria-expanded y aria-controls para que screen readers
-// anuncien el estado de colapso, y los items hijos van en un contenedor con id.
+// Delays: open 80ms (casi instantáneo), close 120ms (permite cruzar entre el
+// botón y el flyout sin parpadeo). Cuando el cursor cae sobre el flyout el
+// timer de cierre se cancela.
+//
+// Tipografía: header del grupo usa text-sm (14px) en lugar de text-2xs (10px) —
+// "más grande y coherente". Items del flyout usan text-base (16px) — peso de
+// menú principal, fácil de leer. Cumple bsm-typography-rules.
 
-interface NavGroupsListProps {
+interface NavGroupsFlyoutProps {
   groups: NavGroupDef[];
   visibleHrefs: Set<string>;
   pathname: string;
-  collapsedGroups: Set<NavGroupId>;
-  onToggleGroup: (id: NavGroupId) => void;
+  sidebarCollapsed: boolean;
   onItemClick: () => void;
-  navItemPadding: string;
-  navItemActiveClass: string;
-  navItemIdleClass: string;
-  iconClassName: string;
   isBuleje: boolean;
+  density: SidebarVisualPrefs["density"];
+  iconClassName: string;
 }
 
-function NavGroupsList({
+function NavGroupsFlyout({
   groups,
   visibleHrefs,
   pathname,
-  collapsedGroups,
-  onToggleGroup,
+  sidebarCollapsed,
   onItemClick,
-  navItemPadding,
-  navItemActiveClass,
-  navItemIdleClass,
-  iconClassName,
   isBuleje,
-}: NavGroupsListProps) {
-  const groupHeaderClass = isBuleje
-    ? "text-white/55 hover:bg-white/[0.04] hover:text-white/90"
-    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)]";
-  const groupActiveDotClass = isBuleje ? "bg-[#34d4be]" : "bg-[var(--accent)]";
+  density,
+  iconClassName,
+}: NavGroupsFlyoutProps) {
+  const [hoveredId, setHoveredId] = useState<NavGroupId | null>(null);
+  const [position, setPosition] = useState<{ top: number } | null>(null);
+  const refs = useRef<Partial<Record<NavGroupId, HTMLButtonElement | null>>>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const open = (id: NavGroupId) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setHoveredId(id), 80);
+  };
+  const close = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setHoveredId(null), 120);
+  };
+  const cancelClose = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  // Reposicionar el flyout a la altura del header del grupo hovered.
+  useEffect(() => {
+    if (!hoveredId) { setPosition(null); return; }
+    const el = refs.current[hoveredId];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPosition({ top: rect.top });
+  }, [hoveredId]);
+
+  // Cerrar el flyout al cambiar de ruta (después de que el usuario navega).
+  useEffect(() => { setHoveredId(null); }, [pathname]);
+
+  // Densidad afecta padding vertical del header (compact / normal / spacious).
+  const headerPad =
+    density === "compact" ? "px-3 py-2" : density === "spacious" ? "px-3 py-3.5" : "px-3 py-2.5";
+
+  // Estilos coherentes con el theme buleje (slate + teal).
+  const headerActiveClass = isBuleje
+    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#34d4be]"
+    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
+  const headerIdleClass = isBuleje
+    ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
+    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  const dotClass = isBuleje ? "bg-[#34d4be]" : "bg-[var(--accent)]";
+
+  const sidebarWidth = sidebarCollapsed ? 64 : 240;
+  const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
+  const hoveredVisibleItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {groups.map((group) => {
         const groupItems = group.items.filter((it) => visibleHrefs.has(it.href));
         if (groupItems.length === 0) return null;
 
-        const isCollapsed = collapsedGroups.has(group.id);
         const hasActive = groupItems.some(
           (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
         );
-        const panelId = `nav-group-${group.id}`;
+        const isHovered = hoveredId === group.id;
 
         return (
-          <div key={group.id} className="space-y-0.5">
-            <button
-              type="button"
-              onClick={() => onToggleGroup(group.id)}
-              aria-expanded={!isCollapsed}
-              aria-controls={panelId}
+          <button
+            key={group.id}
+            ref={(el) => { refs.current[group.id] = el; }}
+            type="button"
+            onMouseEnter={() => open(group.id)}
+            onMouseLeave={close}
+            onFocus={() => open(group.id)}
+            onBlur={close}
+            onClick={() => {
+              // El header del grupo es solo trigger del flyout. La navegación
+              // ocurre dentro del flyout (clicks en los items). Esto evita
+              // un full-reload con window.location.href y mantiene la SPA.
+              setHoveredId((prev) => (prev === group.id ? null : group.id));
+            }}
+            aria-haspopup="menu"
+            aria-expanded={isHovered}
+            aria-label={`Grupo ${group.label}`}
+            className={[
+              "w-full flex items-center gap-3 rounded-lg transition-colors",
+              headerPad,
+              sidebarCollapsed ? "justify-center" : "",
+              "text-sm font-bold",
+              hasActive ? headerActiveClass : (isHovered ? headerActiveClass : headerIdleClass),
+            ].join(" ")}
+            title={sidebarCollapsed ? group.label : undefined}
+          >
+            <span className={[iconClassName, "shrink-0"].join(" ")}>{group.icon}</span>
+            {!sidebarCollapsed && (
+              <>
+                <span className="flex-1 text-left truncate">{group.label}</span>
+                {hasActive && (
+                  <span
+                    className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")}
+                    aria-hidden
+                  />
+                )}
+                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+              </>
+            )}
+          </button>
+        );
+      })}
+
+      {/* Flyout lateral — pegado al borde derecho del sidebar, alineado con el
+          botón del grupo donde está parado el cursor. */}
+      {hoveredGroup && position && hoveredVisibleItems.length > 0 && (
+        <SuperAdminFlyout
+          group={hoveredGroup}
+          items={hoveredVisibleItems}
+          position={position}
+          left={sidebarWidth}
+          pathname={pathname}
+          isBuleje={isBuleje}
+          onItemClick={() => {
+            cancelClose();
+            setHoveredId(null);
+            onItemClick();
+          }}
+          onMouseEnter={cancelClose}
+          onMouseLeave={close}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Flyout component ─────────────────────────────────────────────────────────
+//
+// Panel pegado al lado derecho del sidebar. Render via position:fixed para
+// escapar del overflow del nav. Tipografía text-base (16px) en items para
+// lectura cómoda.
+
+interface SuperAdminFlyoutProps {
+  group: NavGroupDef;
+  items: NavItem[];
+  position: { top: number };
+  left: number;
+  pathname: string;
+  isBuleje: boolean;
+  onItemClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
+function SuperAdminFlyout({
+  group,
+  items,
+  position,
+  left,
+  pathname,
+  isBuleje,
+  onItemClick,
+  onMouseEnter,
+  onMouseLeave,
+}: SuperAdminFlyoutProps) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Mismo lenguaje editorial buleje del flyout admin.
+  const bg = isBuleje
+    ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]"
+    : "bg-[var(--surface-raised)]";
+  const border = isBuleje
+    ? "border-[rgba(0,180,166,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(52,212,190,0.08)]"
+    : "border-[var(--rule-base)] shadow-lg";
+  const headerLabelClass = isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]";
+  const itemActive = isBuleje
+    ? "bg-linear-to-r from-[rgba(52,212,190,0.22)] via-[rgba(0,180,166,0.14)] to-[rgba(0,180,166,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#34d4be]"
+    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
+  const itemIdle = isBuleje
+    ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
+    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+
+  return (
+    <div
+      role="menu"
+      aria-label={group.label}
+      style={{ position: "fixed", top: position.top - 4, left, zIndex: 100 }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={[
+        "rounded-xl rounded-l-none border min-w-[240px] overflow-hidden py-2",
+        bg,
+        border,
+        "transition-all duration-200",
+        visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-1",
+      ].join(" ")}
+    >
+      {/* Header del flyout — etiqueta del grupo. text-xs uppercase es OK aquí
+          porque solo es un label informativo; el peso visual está en los items. */}
+      <div className={["px-4 pt-1.5 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]", headerLabelClass].join(" ")}>
+        {group.label}
+      </div>
+      <div className="space-y-0.5 px-1.5">
+        {items.map((item) => {
+          const active =
+            pathname === item.href ||
+            (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onItemClick}
+              role="menuitem"
               className={[
-                "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] transition-colors",
-                groupHeaderClass,
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors",
+                active ? itemActive : itemIdle,
               ].join(" ")}
             >
-              <span className="opacity-60">{group.icon}</span>
+              <span className="shrink-0">{item.icon}</span>
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile: accordion vertical ───────────────────────────────────────────────
+//
+// En mobile no hay hover. Tap en el header del grupo expande/colapsa los items.
+// Auto-expande el grupo que contiene la ruta activa.
+
+interface NavGroupsAccordionProps {
+  groups: NavGroupDef[];
+  visibleHrefs: Set<string>;
+  pathname: string;
+  onItemClick: () => void;
+  isBuleje: boolean;
+}
+
+function NavGroupsAccordion({
+  groups,
+  visibleHrefs,
+  pathname,
+  onItemClick,
+  isBuleje,
+}: NavGroupsAccordionProps) {
+  const activeGroupId = groups.find((g) =>
+    g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
+  )?.id ?? "plataforma";
+  const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
+
+  // Cuando cambia la ruta, asegurarse que el grupo de la ruta está expandido.
+  useEffect(() => {
+    if (activeGroupId) {
+      setExpanded((prev) => {
+        if (prev.has(activeGroupId)) return prev;
+        const next = new Set(prev);
+        next.add(activeGroupId);
+        return next;
+      });
+    }
+  }, [activeGroupId]);
+
+  const toggle = (id: NavGroupId) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const headerActive = isBuleje
+    ? "bg-[rgba(0,180,166,0.12)] text-white"
+    : "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
+  const headerIdle = isBuleje
+    ? "text-white/75 hover:bg-white/[0.04] hover:text-white"
+    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  const itemActive = isBuleje
+    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold"
+    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
+  const itemIdle = isBuleje
+    ? "text-white/70 hover:bg-white/[0.04] hover:text-white"
+    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+
+  return (
+    <div className="space-y-2">
+      {groups.map((group) => {
+        const items = group.items.filter((it) => visibleHrefs.has(it.href));
+        if (items.length === 0) return null;
+        const isOpen = expanded.has(group.id);
+        const panelId = `m-nav-group-${group.id}`;
+
+        return (
+          <div key={group.id}>
+            <button
+              type="button"
+              onClick={() => toggle(group.id)}
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              className={[
+                "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base font-bold transition-colors",
+                isOpen ? headerActive : headerIdle,
+              ].join(" ")}
+            >
+              <span className="shrink-0">{group.icon}</span>
               <span className="flex-1 text-left">{group.label}</span>
-              {hasActive && isCollapsed && (
-                <span
-                  className={["w-1.5 h-1.5 rounded-full", groupActiveDotClass].join(" ")}
-                  aria-hidden
-                  title="Hay un tab activo en este grupo"
-                />
-              )}
               <ChevronDown
                 className={[
-                  "w-3.5 h-3.5 transition-transform duration-200 shrink-0",
-                  isCollapsed ? "-rotate-90" : "rotate-0",
+                  "w-4 h-4 transition-transform duration-200 shrink-0",
+                  isOpen ? "rotate-0" : "-rotate-90",
                 ].join(" ")}
               />
             </button>
-            {!isCollapsed && (
-              <div id={panelId} className="space-y-0.5">
-                {groupItems.map((item) => {
+            {isOpen && (
+              <div id={panelId} className="mt-1 ml-2 pl-3 border-l border-white/10 dark:border-white/10 space-y-0.5">
+                {items.map((item) => {
                   const active =
                     pathname === item.href ||
                     (item.href !== "/superadmin/dashboard" && pathname.startsWith(item.href));
@@ -842,12 +1019,11 @@ function NavGroupsList({
                       href={item.href}
                       onClick={onItemClick}
                       className={[
-                        "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
-                        navItemPadding,
-                        active ? navItemActiveClass : navItemIdleClass,
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        active ? itemActive : itemIdle,
                       ].join(" ")}
                     >
-                      <span className={iconClassName}>{item.icon}</span>
+                      <span className="shrink-0">{item.icon}</span>
                       <span className="truncate">{item.label}</span>
                     </Link>
                   );
