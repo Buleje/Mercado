@@ -1729,6 +1729,10 @@ export default function InventoryTab() {
                             <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                               <Trash2 className="h-4 w-4" />
                             </button>
+                            {/* Adicionales / modificadores (cremas, sabores, extras) */}
+                            <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors" title="Adicionales y modificadores (cremas, salsas, extras)">
+                              <Sliders className="h-4 w-4" />
+                            </button>
                             {/* Mejora 6 nueva: QR */}
                             <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors" title="QR">
                               <ScanBarcode className="h-4 w-4" />
@@ -2281,6 +2285,32 @@ export default function InventoryTab() {
                   basePrice={Number(editForm.price) || editModalProduct.price}
                   parentImage={editForm.image ?? null}
                 />
+              </div>
+
+              {/* Adicionales / Modificadores — extras que el cliente elige al ordenar */}
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex items-center gap-2">
+                      <Sliders className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Adicionales / extras</p>
+                    </div>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-1 leading-snug">
+                      Cosas que el cliente elige <strong>encima</strong> del producto base — cremas, salsas, presa, sabores, toppings, palta extra. <strong>No afecta el stock</strong> del producto principal.
+                    </p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5">
+                      Ejemplos: <em>Pollo a la brasa</em> con grupo &quot;Cremas&quot; (mayonesa +0, ají +0.5, mostaza +0) o <em>Hamburguesa</em> con &quot;Extras&quot; (queso +2, tocino +3, palta +2).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => editModalProduct && setModifiersProduct({ id: editModalProduct.id, name: editModalProduct.name })}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+                  >
+                    <Sliders className="h-4 w-4" />
+                    Configurar adicionales
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
