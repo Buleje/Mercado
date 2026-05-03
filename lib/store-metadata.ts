@@ -67,9 +67,21 @@ export async function buildTenantTitle(
   robots?: Metadata["robots"],
 ): Promise<Metadata> {
   const { name, isTenant } = await readStoreName();
+  // Designer audit P1: cuando no es tenant (= plataforma global), antes
+  // generaba "Prefix — Buleje" y el template root añadía otro "| Buleje"
+  // dando "Prefix — Buleje | Buleje". Ahora si name === "Buleje" (sin
+  // tenant) devolvemos solo el prefix y dejamos que el template haga
+  // su trabajo.
+  if (!isTenant) {
+    return {
+      title: prefix,
+      ...(description ? { description } : {}),
+      ...(robots !== undefined ? { robots } : {}),
+    };
+  }
   const title = `${prefix} — ${name}`;
   return {
-    title: isTenant ? { absolute: title } : title,
+    title: { absolute: title },
     ...(description ? { description } : {}),
     ...(robots !== undefined ? { robots } : {}),
   };

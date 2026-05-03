@@ -67,7 +67,7 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
 
       <p className="mt-3 max-w-md text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
         No encontramos productos que coincidan. Prueba con otra palabra,
-        revisa la ortografia o explora las categorias de abajo.
+        revisa la ortografía o explora las categorías de abajo.
       </p>
 
       {/* Sugerencias de texto */}
@@ -77,7 +77,7 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
             className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
-          Prueba con una palabra mas corta: &ldquo;arroz&rdquo; en lugar de
+          Prueba con una palabra más corta: &ldquo;arroz&rdquo; en lugar de
           &ldquo;arroz extra largo grano fino&rdquo;
         </li>
         <li className="flex items-center gap-2 justify-center">
@@ -85,14 +85,14 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
             className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
-          Revisa que no haya errores de ortografia
+          Revisa que no haya errores de ortografía
         </li>
         <li className="flex items-center gap-2 justify-center">
           <span
             className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
-          Busca el nombre generico del producto
+          Busca el nombre genérico del producto
         </li>
       </ul>
 

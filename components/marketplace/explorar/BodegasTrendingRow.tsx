@@ -89,12 +89,20 @@ function StoreCard({ store }: { store: StoreItem }) {
             className="h-4 w-4 text-[var(--accent)] fill-[var(--accent)]"
             aria-hidden
           />
-          <span className="text-base font-black tabular-nums text-[var(--text-primary)] leading-none">
-            {rating.toFixed(1)}
-          </span>
-          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-            Rating
-          </span>
+          {rating > 0 ? (
+            <>
+              <span className="text-base font-black tabular-nums text-[var(--text-primary)] leading-none">
+                {rating.toFixed(1)}
+              </span>
+              <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                Rating
+              </span>
+            </>
+          ) : (
+            <span className="text-sm font-semibold text-[var(--text-secondary)] leading-none">
+              Tienda nueva
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1 py-1 border-x border-[var(--rule-soft)]">
@@ -180,7 +188,7 @@ export default function BodegasTrendingRow() {
       <ExplorarSectionHeader
         kicker="Bodegas activas"
         title="Tendencia esta semana"
-        subtitle="Las tiendas con mas ventas en Pucallpa"
+        subtitle="Las tiendas con más ventas en Pucallpa"
         ctaLabel="Ver todas las bodegas"
         ctaHref="/tiendas"
       />

@@ -210,10 +210,16 @@ export default function CarritoPage() {
               )}
               heading="Mi carrito Buleje"
             />
+            {/* Designer audit P0: clearAll directo era destructivo. Ahora
+                pide confirmación con `confirm()` nativo. WCAG 3.3.4. */}
             <button
               type="button"
-              onClick={clearAll}
-              className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
+              onClick={() => {
+                if (confirm("¿Vaciar todo el carrito? Esta acción no se puede deshacer.")) {
+                  clearAll();
+                }
+              }}
+              className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)]/70 hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
             >
               Vaciar carrito
             </button>

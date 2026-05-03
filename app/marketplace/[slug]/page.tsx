@@ -13,6 +13,23 @@ import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/market
 // deduplicate within a single render because it is keyed by string and
 // fetched concurrently. React.cache solves the per-request dedupe problem.
 const getStoreBySlug = cache((slug: string) => MarketplaceStoresDB.getBySlug(slug));
+
+// Designer audit: el title antes mostraba la categoría raw "polleria" sin
+// tilde. Map mínimo a labels visibles correctos en español.
+const CATEGORY_LABELS: Record<string, string> = {
+  polleria: "Pollería",
+  carniceria: "Carnicería",
+  panaderia: "Panadería",
+  licoreria: "Licorería",
+  farmacia: "Farmacia",
+  bodega: "Bodega",
+  restaurante: "Restaurante",
+  ferreteria: "Ferretería",
+};
+function formatCategoryLabel(raw: string): string {
+  return CATEGORY_LABELS[raw] ?? (raw.charAt(0).toUpperCase() + raw.slice(1));
+}
+
 import { getStoreTagline } from "@/lib/store-tagline";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import type { StoreCategoryChip } from "@/components/marketplace/store-detail/StoreCategories";
@@ -48,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   return {
-    title: `${store.name} — ${store.category} en ${zone} | Marketplace`,
+    title: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
     description: desc,
     alternates: { canonical: storeUrl },
     openGraph: {

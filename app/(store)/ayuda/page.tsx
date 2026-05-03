@@ -265,7 +265,7 @@ export default function AyudaPage() {
           { name: "Ayuda", url: "https://www.buleje.pe/ayuda" },
         ]}
       />
-      <LandingHeader />
+      <LandingHeader minimal />
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
 
       <main id="main-content" className="bg-[var(--surface-canvas)]">

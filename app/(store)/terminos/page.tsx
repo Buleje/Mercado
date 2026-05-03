@@ -5,23 +5,25 @@ import dynamic from "next/dynamic";
 const Footer = dynamic(() => import("@/components/Footer"));
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones | Buleje",
+  title: "Términos y Condiciones",
   description: "Términos y condiciones de uso del servicio de delivery de Buleje.",
 };
 
 export default function TerminosPage() {
   return (
     <>
-    <LandingHeader />
-    <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
-      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-foreground mb-8">
+    <LandingHeader minimal />
+    {/* Designer audit P0: H1 antes era text-gray-900 hardcoded → invisible
+        en dark mode (contraste 1.2:1). Ahora token DS que se adapta. */}
+    <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16 text-[var(--text-primary)]">
+      <h1 className="text-3xl font-extrabold text-[var(--text-primary)] mb-8">
         Términos y Condiciones
       </h1>
-      <p className="text-sm text-gray-500 dark:text-muted mb-8">
+      <p className="text-sm text-[var(--text-tertiary)] mb-8">
         Última actualización: 12 de abril de 2026
       </p>
 
-      <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
+      <div className="prose prose-sm dark:prose-invert max-w-none space-y-6 text-[var(--text-secondary)]">
         <section>
           <h2 className="text-xl font-bold">1. Aceptación de los términos</h2>
           <p>

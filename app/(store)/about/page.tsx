@@ -102,7 +102,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <LandingHeader />
+      <LandingHeader minimal />
       <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-gray-950" id="main-content">
 
         {/* ── HERO ─ editorial dark ─ */}

@@ -493,14 +493,14 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                   ? "Verificación"
                   : initialName
                     ? `¡Hola, ${initialName.split(" ")[0]}!`
-                    : "Crea tu cuenta"}
+                    : "Bienvenido a Buleje"}
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {step === "otp"
                   ? "Ingresa el código que te enviamos"
                   : initialName
                     ? "Casi listo — solo falta tu celular para terminar"
-                    : "Regístrate y empieza a comprar en tu barrio"}
+                    : "Inicia sesión o crea tu cuenta para comprar en tu barrio"}
               </p>
             </div>
           </div>

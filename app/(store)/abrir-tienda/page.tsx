@@ -28,12 +28,12 @@ const LiveSignupTicker = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Activa tu tienda online | Buleje — Plataforma todo-en-uno",
+  title: "Activa tu tienda online — Plataforma todo-en-uno",
   description:
     "Más clientes, más pedidos, cero tecnología. Plan Estándar con primer mes gratis · Sin tarjeta · Sin contrato. Cancelás cuando quieras.",
   alternates: { canonical: "/abrir-tienda" },
   openGraph: {
-    title: "Activa tu tienda online | Buleje",
+    title: "Activa tu tienda online",
     description:
       "Plataforma todo-en-uno para que tu negocio venda online en 5 minutos.",
     type: "website",

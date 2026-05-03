@@ -44,7 +44,7 @@ function StarRating({ rating }: { rating: number }) {
         />
       ))}
       <span className="text-xs font-bold text-[var(--text-primary)] ml-1 tabular-nums">
-        {rating.toFixed(1)}
+        {rating > 0 ? rating.toFixed(1) : "Nueva"}
       </span>
     </div>
   );
