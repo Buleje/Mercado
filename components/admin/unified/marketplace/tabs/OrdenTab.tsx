@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import CategoryImageUploader from "@/components/admin/marketplace/CategoryImageUploader";
 import { TableSkeleton, type MarketplaceProduct } from "../types";
 
@@ -275,18 +276,18 @@ export default function OrdenTab() {
       const [catRes, prodRes, imgRes] = await Promise.all([
         fetch("/api/admin/marketplace/category-order", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ order: rows.map((r) => r.name) }),
         }),
         fetch("/api/admin/marketplace/product-order", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ byCategory }),
         }),
         Object.keys(imagesDiff).length > 0
           ? fetch("/api/admin/marketplace/category-images", {
               method: "PUT",
-              headers: { "Content-Type": "application/json" },
+              headers: csrfHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({ images: imagesDiff }),
             })
           : Promise.resolve(new Response(JSON.stringify({ ok: true }))),

@@ -49,6 +49,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ImageUpload from "@/components/admin/ImageUpload";
 import CategoryImageUploader from "@/components/admin/marketplace/CategoryImageUploader";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
@@ -4959,18 +4960,18 @@ function OrdenTab() {
       const [catRes, prodRes, imgRes] = await Promise.all([
         fetch("/api/admin/marketplace/category-order", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ order: rows.map((r) => r.name) }),
         }),
         fetch("/api/admin/marketplace/product-order", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ byCategory }),
         }),
         Object.keys(imagesDiff).length > 0
           ? fetch("/api/admin/marketplace/category-images", {
               method: "PUT",
-              headers: { "Content-Type": "application/json" },
+              headers: csrfHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({ images: imagesDiff }),
             })
           : Promise.resolve(new Response(JSON.stringify({ ok: true }))),
