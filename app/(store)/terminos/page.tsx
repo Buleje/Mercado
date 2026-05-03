@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import LandingHeader from "@/components/landing/LandingHeader";
+import dynamic from "next/dynamic";
+
+const Footer = dynamic(() => import("@/components/Footer"));
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones | Buleje",
@@ -7,6 +11,8 @@ export const metadata: Metadata = {
 
 export default function TerminosPage() {
   return (
+    <>
+    <LandingHeader />
     <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
       <h1 className="text-3xl font-extrabold text-gray-900 dark:text-foreground mb-8">
         Términos y Condiciones
@@ -107,5 +113,7 @@ export default function TerminosPage() {
         </section>
       </div>
     </main>
+    <Footer />
+    </>
   );
 }

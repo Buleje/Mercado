@@ -32,6 +32,7 @@ import CompartirListaWhatsApp from "@/components/marketplace/CompartirListaWhats
 import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useCustomer } from "@/contexts/customer-context";
+import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -132,17 +133,27 @@ export default function CarritoPage() {
   const storeIds = Object.keys(byStore);
   const isEmpty = storeIds.length === 0;
   const [couponDiscount, setCouponDiscount] = useState(0);
-  // Si no hay sesión, mandamos al gate auth que fuerza el modal con fondo vacío
-  const continueHref = loggedCustomer ? "/checkout/datos" : "/checkout/auth";
+  // Mayo 2026 (designer audit P0): si no hay sesión, abrimos el AuthModal
+  // in-place en vez de navegar a /checkout/auth — el botón antes mostraba
+  // "Te pedimos iniciar sesión" pero no abría nada.
+  const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
+  const continueHref = loggedCustomer ? "/checkout/datos" : undefined;
+  const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
 
   // Prefetch del próximo paso para que la transición sea instantánea
   useEffect(() => {
-    if (!isEmpty) {
-      router.prefetch(continueHref);
-      // Si va a auth, también precachear datos para el siguiente click
-      if (!loggedCustomer) router.prefetch("/checkout/datos");
+    if (!isEmpty && loggedCustomer) {
+      router.prefetch("/checkout/datos");
     }
-  }, [isEmpty, continueHref, loggedCustomer, router]);
+  }, [isEmpty, loggedCustomer, router]);
+
+  // Si el usuario se loggea con el modal abierto, redirigir automáticamente
+  useEffect(() => {
+    if (loggedCustomer && authModalOpen) {
+      closeAuthModal();
+      router.push("/checkout/datos");
+    }
+  }, [loggedCustomer, authModalOpen, closeAuthModal, router]);
 
   const handleQty = useCallback(
     (item: CartItem, qty: number) =>
@@ -315,8 +326,9 @@ export default function CarritoPage() {
           </section>
 
           <CheckoutSummary
-            ctaLabel="Continuar"
+            ctaLabel={loggedCustomer ? "Continuar" : "Iniciar sesión y continuar"}
             ctaHref={continueHref}
+            onCtaClick={loggedCustomer ? undefined : handleContinueWithoutAuth}
             showItems={false}
             couponDiscount={couponDiscount}
             helperText={
@@ -330,6 +342,7 @@ export default function CarritoPage() {
           />
         </div>
       )}
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
     </div>
   );
 }

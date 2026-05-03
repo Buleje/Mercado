@@ -84,7 +84,19 @@ function writeStorage(state: CartState) {
 // ---------- hook ----------
 
 export function useMarketplaceCart() {
-  const [items, setItems] = useState<CartItem[]>(() => readStorage().items);
+  // Mayo 2026 (designer audit P0 — cart no persiste entre rutas):
+  // arrancamos SIEMPRE vacío para evitar hydration mismatch (en SSR
+  // readStorage() retorna []), pero el effect de abajo hidrata desde
+  // localStorage en mount y un guard `hydrated` evita pisar storage
+  // con [] antes de leer el valor real.
+  const [items, setItems] = useState<CartItem[]>(EMPTY_STATE.items);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hidratar desde localStorage en mount (solo cliente)
+  useEffect(() => {
+    setItems(readStorage().items);
+    setHydrated(true);
+  }, []);
 
   // On mount: validate cart items still exist — remove stale/deleted products.
   //
@@ -136,10 +148,13 @@ export function useMarketplaceCart() {
     };
   }, []);
 
-  // Persistir cuando cambian los items
+  // Persistir cuando cambian los items — pero NO antes de hidratar
+  // (si no, el primer mount con items=[] pisaría el localStorage y
+  // borraría el carrito de otras instancias del hook).
   useEffect(() => {
+    if (!hydrated) return;
     writeStorage({ items });
-  }, [items]);
+  }, [items, hydrated]);
 
   // ---------- acciones ----------
 

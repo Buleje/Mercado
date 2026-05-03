@@ -17,7 +17,11 @@ import {
   ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
-import Header from "@/components/Header";
+// Mayo 2026 (designer audit): /about usaba Header (navbar de tienda
+// white-label con Inicio/Tienda/Tiendas/Ofertas/Cómo pagar) que rompía
+// el contexto corporativo. Ahora LandingHeader como el resto de pages
+// corporativas.
+import LandingHeader from "@/components/landing/LandingHeader";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -98,7 +102,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <Header />
+      <LandingHeader />
       <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-gray-950" id="main-content">
 
         {/* ── HERO ─ editorial dark ─ */}

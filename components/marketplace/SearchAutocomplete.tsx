@@ -58,7 +58,7 @@ export default function SearchAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLFormElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listId = useId();
 
@@ -258,8 +258,16 @@ export default function SearchAutocomplete({
 
   const showDropdown = open && (loading || items.length > 0 || value.trim().length > 0);
 
+  // Mayo 2026 (designer audit P0): wrap raíz en <form> para que la tecla
+  // Enter dispare submit nativo. Antes era <div> y Enter solo funcionaba
+  // por handleKeyDown, que tenía branches que no siempre disparaban.
   return (
-    <div ref={containerRef} className={cn("relative w-full", className)}>
+    <form
+      ref={containerRef}
+      onSubmit={(e) => { e.preventDefault(); handleSubmitRaw(); }}
+      role="search"
+      className={cn("relative w-full", className)}
+    >
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" aria-hidden="true" />
         <input
@@ -428,6 +436,6 @@ export default function SearchAutocomplete({
           </m.div>
         )}
       </AnimatePresence>
-    </div>
+    </form>
   );
 }
