@@ -31,8 +31,18 @@ import {
   RBAC_ROLES,
   RBAC_MATRIX,
   type RbacAccess,
-} from "@/lib/mocks/cve-list.mock";
-import { fmtRelative } from "@/lib/mocks/security-events.mock";
+} from "@/lib/rbac-matrix-data";
+
+// fmtRelative inline (antes venía del mock).
+function fmtRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  const diffMin = Math.max(0, Math.round((Date.now() - then) / 60_000));
+  if (diffMin < 1) return "hace instantes";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `hace ${diffH}h`;
+  return `hace ${Math.round(diffH / 24)}d`;
+}
 
 function AccessCell({ access }: { access: RbacAccess }) {
   if (access === "full") {

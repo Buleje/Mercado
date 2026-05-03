@@ -22,6 +22,9 @@ export interface PlatformSession {
   lastSeen: number;
   /** SHA-256 hash (base64url, 16 chars) del User-Agent al iniciar sesión */
   uaHash: string;
+  /** issued at (ms epoch). Permite "force logout global" rechazando tokens
+   *  emitidos antes de un timestamp dado (ver lib/superadmin-revocation). */
+  iat?: number;
 }
 
 function getSecret(): string {
@@ -81,6 +84,10 @@ export async function hashUA(ua: string | null | undefined): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(buf))).slice(0, 16);
 }
 
+// Lazy import — superadmin-revocation es Node only (in-memory). Edge OK,
+// la función getMinIssuedAt() retorna un número simple sin side-effects.
+import { getMinIssuedAt } from "@/lib/superadmin-revocation";
+
 export async function createPlatformToken(
   username: string,
   ua: string | null | undefined,
@@ -91,6 +98,7 @@ export async function createPlatformToken(
     exp: now + DURATION_MS,
     lastSeen: now,
     uaHash: await hashUA(ua),
+    iat: now,
   };
   const payload = b64e(JSON.stringify(session));
   const sig = await sign(getSecret(), payload);
@@ -124,6 +132,16 @@ export async function getPlatformSession(
     // tokens emitidos antes del binding; esos caducan en 8 h por exp).
     if (typeof data.lastSeen === "number") {
       if (Date.now() - data.lastSeen > IDLE_TIMEOUT_MS) return null;
+    }
+
+    // 2.5. Force-logout global. Si un superadmin disparó "Revocar todas las
+    // sesiones", `getMinIssuedAt()` devuelve el ms epoch del corte. Tokens
+    // emitidos antes de ese instante quedan inválidos. Tokens viejos sin
+    // `iat` también caen (defensivo: si no podemos saber cuándo fue emitido,
+    // asumimos que es anterior al corte).
+    const minIat = getMinIssuedAt();
+    if (minIat > 0) {
+      if (typeof data.iat !== "number" || data.iat < minIat) return null;
     }
 
     // 3. UA binding (sólo si el campo existe en el token y nos pasaron
@@ -160,12 +178,15 @@ export async function maybeRotateToken(
   const needsRotation = remaining < DURATION_MS / 2 || idle > 5 * 60 * 1000;
   if (!needsRotation) return null;
 
-  // Nueva sesión: refresca lastSeen y exp; mantiene uaHash original.
+  // Nueva sesión: refresca lastSeen y exp; mantiene uaHash y iat original
+  // (no rotamos iat al refrescar — si rotara, "force logout" no afectaría
+  // sesiones que se acaban de auto-renovar).
   const refreshed: PlatformSession = {
     username: session.username,
     exp: now + DURATION_MS,
     lastSeen: now,
     uaHash: session.uaHash,
+    iat: session.iat ?? now,
   };
   const payload = b64e(JSON.stringify(refreshed));
   const sig = await sign(getSecret(), payload);

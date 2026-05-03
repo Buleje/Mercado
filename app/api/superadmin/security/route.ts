@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     // Recent events (max 200)
     prisma.activityLog.findMany({
       where: {
-        tenantId: "superadmin",
+        entity: "superadmin",
         action: { in: securityActions },
         createdAt: { gte: since },
       },
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     prisma.activityLog.groupBy({
       by: ["action"],
       where: {
-        tenantId: "superadmin",
+        entity: "superadmin",
         action: { in: securityActions },
         createdAt: { gte: since },
       },

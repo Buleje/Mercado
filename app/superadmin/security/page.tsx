@@ -63,8 +63,12 @@ export default function SecurityCenterPage() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    // Stub — ver TODO en OverviewTab.
-    setTimeout(() => setRefreshing(false), 800);
+    // Dispara re-fetch en cualquier tab que escuche este evento.
+    // OverviewTab y AuthSessionsTab se re-cargan vía useEffect listener.
+    window.dispatchEvent(new CustomEvent("security-overview-refresh"));
+    window.dispatchEvent(new CustomEvent("security-sessions-refresh"));
+    // Animación de spinning durante 600ms — los fetches reales son independientes.
+    setTimeout(() => setRefreshing(false), 600);
   };
 
   return (
