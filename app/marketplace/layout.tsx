@@ -66,18 +66,30 @@ export default function MarketplaceLayout({
                 a /marketplace o /tiendas (detecta el back-nav vía sessionStorage
                 marker + usePathname). Reemplaza al BackNavRefresh global que
                 hacía window.location.reload() poco confiable.
+
+                Audit P13 (Next 16): cada child que accede uncached data
+                (cookies/headers/connection) debe estar en su propio Suspense
+                boundary para que el streaming no bloquee el resto del layout.
               */}
-              <MainWithBackKey>{children}</MainWithBackKey>
+              <Suspense fallback={null}>
+                <MainWithBackKey>{children}</MainWithBackKey>
+              </Suspense>
               {/* Footer persistente — evita flash / remount al navegar. */}
-              <Footer />
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
               {/* Widgets de compra — ocultos en rutas de inscripción/onboarding. */}
-              <ConditionalShoppingChrome>
-                <MarketplaceFloatingWidgets />
-                <StickyCartBar />
-                <BottomNav />
-              </ConditionalShoppingChrome>
+              <Suspense fallback={null}>
+                <ConditionalShoppingChrome>
+                  <MarketplaceFloatingWidgets />
+                  <StickyCartBar />
+                  <BottomNav />
+                </ConditionalShoppingChrome>
+              </Suspense>
               {/* Toast de cambio de modo nav — solo aparece al detectar cambio */}
-              <NavModeToast />
+              <Suspense fallback={null}>
+                <NavModeToast />
+              </Suspense>
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>
