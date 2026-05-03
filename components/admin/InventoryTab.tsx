@@ -12,6 +12,7 @@ import {
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
 import ImageBankPicker from "@/components/admin/inventario/ImageBankPicker";
+import { toast } from "sonner";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -563,6 +564,72 @@ export default function InventoryTab() {
     });
     load();
   };
+
+  /**
+   * Auto-save SOLO del campo `image` cuando el usuario lo cambia en modo edit.
+   * Razon: Brandon reporta que al agregar imagen del banco o subir local,
+   * "no se añade y demora" — porque el usuario espera que aplique de inmediato
+   * pero el flujo previo requeria click "Guardar" del modal. Ahora persiste
+   * apenas cambia la imagen, sin esperar.
+   *
+   * Fire-and-forget: NO bloquea el UI. Si falla, muestra toast pero no rompe.
+   */
+  const autoSaveImage = useCallback(async (productId: number, imageUrl: string) => {
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ image: imageUrl }),
+      });
+      if (!res.ok) {
+        toast.error("La imagen se ve aqui pero no persistio. Reintenta o usa Guardar.", { duration: 4000 });
+        return;
+      }
+      toast.success("Imagen guardada", { duration: 1800 });
+      // Refresh background — no bloquear UX
+      load();
+    } catch {
+      toast.error("Error de red al guardar imagen. Verifica conexion.", { duration: 4000 });
+    }
+  }, [load]);
+
+  /**
+   * Subir archivo de imagen al endpoint /api/upload (Supabase Storage + Sharp).
+   * Reemplaza el flujo viejo `processImage` que devolvia dataUrl base64 inline
+   * (~1-5MB en string que iba al JSON del PUT — lento y a veces fallaba).
+   *
+   * Retorna URL publica de la imagen subida o null si fallo.
+   */
+  const uploadImageFile = useCallback(async (file: File): Promise<string | null> => {
+    const t = toast.loading("Subiendo imagen...");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "products");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error("No se pudo subir la imagen", {
+          id: t,
+          description: err.error ?? `HTTP ${res.status}. Intenta con una imagen mas chica.`,
+        });
+        return null;
+      }
+      const data = await res.json() as { url: string };
+      toast.success("Imagen subida", { id: t, duration: 1500 });
+      return data.url;
+    } catch (e) {
+      toast.error("Error de red al subir imagen", {
+        id: t,
+        description: e instanceof Error ? e.message : "Verifica conexion.",
+      });
+      return null;
+    }
+  }, []);
 
   const deleteProduct = async (id: number) => {
     const product = products.find((p) => p.id === id);
@@ -2162,9 +2229,15 @@ export default function InventoryTab() {
                           setImgUploading(true);
                           setImgError(null);
                           try {
-                            const result = await processImage(file);
-                            setAddForm(f => ({ ...f, image: result.dataUrl }));
-                            setImgInfo({ originalKB: result.originalKB, finalKB: result.finalKB, width: result.width, height: result.height, quality: result.quality });
+                            // Subir a /api/upload (Supabase Storage + Sharp).
+                            // Antes guardaba dataUrl base64 inline — bug de lentitud.
+                            const url = await uploadImageFile(file);
+                            if (url) {
+                              setAddForm(f => ({ ...f, image: url }));
+                              setImgInfo({ originalKB: Math.round(file.size / 1024), finalKB: Math.round(file.size / 1024), width: 0, height: 0, quality: 82 });
+                            } else {
+                              setImgError("No se pudo subir la imagen. Reintenta.");
+                            }
                           } catch (err) {
                             setImgError(err instanceof Error ? err.message : "Error al procesar imagen");
                           } finally {
@@ -2426,9 +2499,20 @@ export default function InventoryTab() {
                           setImgUploading(true);
                           setImgError(null);
                           try {
-                            const result = await processImage(file);
-                            setEditForm(f => ({ ...f, image: result.dataUrl }));
-                            setImgInfo({ originalKB: result.originalKB, finalKB: result.finalKB, width: result.width, height: result.height, quality: result.quality });
+                            // Subir a /api/upload (Supabase Storage + Sharp) y auto-save.
+                            // Antes guardaba dataUrl base64 inline — el JSON del PUT
+                            // pesaba 1-5MB y a veces fallaba silencioso.
+                            const url = await uploadImageFile(file);
+                            if (url) {
+                              setEditForm(f => ({ ...f, image: url }));
+                              setImgInfo({ originalKB: Math.round(file.size / 1024), finalKB: Math.round(file.size / 1024), width: 0, height: 0, quality: 82 });
+                              // AUTO-SAVE: el usuario ya no espera al click "Guardar".
+                              if (editModalProduct) {
+                                void autoSaveImage(editModalProduct.id, url);
+                              }
+                            } else {
+                              setImgError("No se pudo subir la imagen. Reintenta.");
+                            }
                           } catch (err) {
                             setImgError(err instanceof Error ? err.message : "Error al procesar imagen");
                           } finally {
@@ -2730,15 +2814,21 @@ export default function InventoryTab() {
         open={showImageBank}
         onOpenChange={setShowImageBank}
         onPick={(picked) => {
-          // Si el modal edit está abierto, fill ahí. Sino, en el add form.
+          // Si el modal edit está abierto, fill ahí Y auto-save la imagen.
           if (editModalProduct) {
             setEditForm(f => ({ ...f, image: picked.imageUrl }));
             // Si el nombre del producto en el form está vacío, sugerir el del banco.
             if (!editForm.name?.trim()) {
               setEditForm(f => ({ ...f, name: picked.name }));
             }
+            // AUTO-SAVE inmediato del campo image — Brandon esperaba que se
+            // aplicara de inmediato sin necesidad de click "Guardar" extra.
+            void autoSaveImage(editModalProduct.id, picked.imageUrl);
           } else if (showAdd) {
+            // En el add form (producto nuevo) no hay productId aun, persiste
+            // al click "Crear producto". Solo actualiza preview.
             setAddForm(f => ({ ...f, image: picked.imageUrl, name: f.name || picked.name }));
+            toast.success("Imagen seleccionada. Click Crear para guardar el producto.", { duration: 2500 });
           }
           setImgInfo(null);
           setImgError(null);
