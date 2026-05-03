@@ -294,13 +294,29 @@ export default function UnifiedProductCard({
         <Link href={productHref} className="block">
           <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800">
             {product.image ? (
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-              />
+              <>
+                {/* Backdrop desenfocado (misma imagen) — rellena el espacio
+                    con un blur que se ve intencional cuando la foto no es
+                    cuadrada. Patrón usado por Mercado Libre, Amazon,
+                    Instagram Shop. */}
+                <Image
+                  src={product.image}
+                  alt=""
+                  aria-hidden
+                  fill
+                  className="object-cover scale-110 blur-2xl opacity-50 dark:opacity-30 pointer-events-none"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                />
+                {/* Foreground — imagen completa, NO se recorta. p-2 para que
+                    no toque los bordes. */}
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03] z-[1]"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                />
+              </>
             ) : (
               <ProductImageFallback name={product.name} category={product.category} />
             )}
