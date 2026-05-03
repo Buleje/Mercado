@@ -10,6 +10,7 @@ import {
   Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
+import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -2211,71 +2212,76 @@ export default function InventoryTab() {
                 </div>
               </div>
 
-              {/* IMPROVEMENT 3: Variant Management in Edit */}
+              {/* Variantes — editor inline real (CRUD vía /api/.../variants) */}
               <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
-                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setEditForm(f => ({ ...f, isVariant: !f.isVariant }))}
-                    className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      editForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
-                    )}
-                  >
-                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", editForm.isVariant ? "translate-x-4" : "translate-x-0")} />
-                  </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Variantes / presentaciones</p>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">— Tamaños, colores, sabores. Cada uno con su foto y stock.</span>
                 </div>
-                {editForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
-                      <select
-                        value={editForm.variantOf ?? ""}
-                        onChange={(e) => setEditForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
-                      >
-                        <option value="">Ninguno (es producto padre)</option>
-                        {products.filter(p => p.active && p.id !== editModalProduct?.id).map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
-                      <input
-                        value={editForm.variantAttr ?? ""}
-                        onChange={(e) => setEditForm(f => ({ ...f, variantAttr: e.target.value }))}
-                        placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
+                <ProductVariantsInline
+                  productId={editModalProduct.id}
+                  basePrice={Number(editForm.price) || editModalProduct.price}
+                  parentImage={editForm.image ?? null}
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Imagen del producto</label>
-                  <div className="flex flex-wrap gap-3 items-start">
-                    {editForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
-                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
+                  {/* Drag-and-drop zone — arrastrá o click para subir */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-primary", "bg-primary/5"); }}
+                    onDragLeave={(e) => { e.currentTarget.classList.remove("ring-2", "ring-primary", "bg-primary/5"); }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("ring-2", "ring-primary", "bg-primary/5");
+                      const file = e.dataTransfer.files?.[0];
+                      if (!file) return;
+                      setImgUploading(true);
+                      setImgError(null);
+                      try {
+                        const result = await processImage(file);
+                        setEditForm(f => ({ ...f, image: result.dataUrl }));
+                        setImgInfo({ originalKB: result.originalKB, finalKB: result.finalKB, width: result.width, height: result.height, quality: result.quality });
+                      } catch (err) {
+                        setImgError(err instanceof Error ? err.message : "Error al procesar imagen");
+                      } finally {
+                        setImgUploading(false);
+                      }
+                    }}
+                    className="flex flex-wrap gap-3 items-start p-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 transition-all"
+                  >
+                    {editForm.image ? (
+                      <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface group">
+                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="80px" />
+                        <button
+                          type="button"
+                          onClick={() => { setEditForm(f => ({ ...f, image: "" })); setImgInfo(null); }}
+                          title="Quitar imagen"
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-[var(--data-error)] transition-all"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="h-20 w-20 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center shrink-0">
+                        <Camera className="h-6 w-6 text-[var(--text-tertiary)] dark:text-muted" />
                       </div>
                     )}
-                    <div className="flex-1 space-y-1.5">
+                    <div className="flex-1 space-y-1.5 min-w-[180px]">
                       <button
                         type="button"
                         onClick={() => editImgRef.current?.click()}
                         disabled={imgUploading}
-                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
                       >
                         <Camera className="h-4 w-4" />
                         {imgUploading ? "Procesando…" : "Subir foto"}
                       </button>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center">
+                        o arrastrá una imagen aquí — cualquier formato (JPG, PNG, WebP, AVIF…)
+                      </p>
                       <input
                         value={editForm.image ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, image: e.target.value }))}

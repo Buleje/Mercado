@@ -12,7 +12,8 @@ const PostSchema = z.object({
   sku: z.string().max(50).optional(),
   priceModifier: z.number(),
   stock: z.int().min(0).optional(),
-  attributesJson: z.string().max(500).optional(),
+  // 50KB para permitir imageData WebP comprimida embebida ({"image":"data:..."}).
+  attributesJson: z.string().max(50000).optional(),
 });
 
 const PutSchema = z.object({
@@ -20,7 +21,8 @@ const PutSchema = z.object({
   sku: z.string().max(50).optional(),
   priceModifier: z.number().optional(),
   stock: z.int().min(0).optional(),
-  attributesJson: z.string().max(500).optional(),
+  // 50KB para permitir imageData WebP comprimida embebida ({"image":"data:..."}).
+  attributesJson: z.string().max(50000).optional(),
   isActive: z.boolean().optional(),
   position: z.int().min(0).optional(),
 });

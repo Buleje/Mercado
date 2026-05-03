@@ -3,7 +3,7 @@
  *
  * GET: no requiere auth, usa x-tenant-id header
  * POST/PUT/DELETE: requireAdmin con ["admin", "almacenero"]
- * attributesJson max 500 chars (no 2000)
+ * attributesJson max 50000 chars (permite imageData WebP comprimida embebida)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -170,8 +170,8 @@ describe("POST /api/marketplace/products/[id]/variants", () => {
     expect(res.status).toBe(201);
   });
 
-  it("retorna 400 si attributesJson supera 500 chars", async () => {
-    const largeAttrs = "x".repeat(501);
+  it("retorna 400 si attributesJson supera 50000 chars", async () => {
+    const largeAttrs = "x".repeat(50001);
     const res = await POST(makePostReq({ name: "Variante", priceModifier: 0, attributesJson: largeAttrs }), makeParams());
     expect(res.status).toBe(400);
   });
