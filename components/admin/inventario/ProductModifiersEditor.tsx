@@ -21,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import VariantCatalogPicker from "./VariantCatalogPicker";
+import CatalogOptionPicker from "./CatalogOptionPicker";
 
 type Option = {
   id?: string;
@@ -211,6 +212,11 @@ export default function ProductModifiersEditor({ productId, productName, onClose
                 onUpdateOption={(oIdx, patch) => updateOption(gIdx, oIdx, patch)}
                 onRemoveOption={(oIdx) => removeOption(gIdx, oIdx)}
                 onAddOption={() => addOption(gIdx)}
+                onAddFromCatalog={(opt) => {
+                  setGroups((g2) => g2.map((it, i) =>
+                    i === gIdx ? { ...it, options: [...it.options, opt] } : it,
+                  ));
+                }}
               />
             ))}
 
@@ -270,7 +276,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
 // ─── Group card ───────────────────────────────────────────────────────────────
 
 function GroupCard({
-  group, onUpdate, onRemove, onUpdateOption, onRemoveOption, onAddOption,
+  group, onUpdate, onRemove, onUpdateOption, onRemoveOption, onAddOption, onAddFromCatalog,
 }: {
   group: Group;
   onUpdate: (patch: Partial<Group>) => void;
@@ -278,7 +284,10 @@ function GroupCard({
   onUpdateOption: (oIdx: number, patch: Partial<Option>) => void;
   onRemoveOption: (oIdx: number) => void;
   onAddOption: () => void;
+  onAddFromCatalog: (opt: Option) => void;
 }) {
+  const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+  const existingNames = new Set(group.options.map((o) => o.name.toLowerCase()));
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden shadow-sm">
       {/* Group header */}
@@ -355,11 +364,30 @@ function GroupCard({
             ))}
           </div>
         )}
-        <button onClick={onAddOption}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
-          <Plus className="h-3.5 w-3.5" /> Agregar opción
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button onClick={onAddOption}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
+            <Plus className="h-3.5 w-3.5" /> Agregar opción
+          </button>
+          <button onClick={() => setShowCatalogPicker(true)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-primary to-[var(--data-success)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
+            <BookOpen className="h-3.5 w-3.5" /> Añadir del catálogo
+          </button>
+        </div>
       </div>
+
+      {showCatalogPicker && (
+        <CatalogOptionPicker
+          onClose={() => setShowCatalogPicker(false)}
+          onPick={(picked) => onAddFromCatalog({
+            name: picked.name,
+            priceDelta: picked.priceDelta,
+            isDefault: picked.isDefault,
+            imageUrl: picked.imageUrl,
+          })}
+          existingNames={existingNames}
+        />
+      )}
     </div>
   );
 }
