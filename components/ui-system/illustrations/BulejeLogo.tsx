@@ -21,6 +21,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const MARK_SRC = "/brand/buleje-logo-mark.png";
+const MARK_DARK_SRC = "/brand/buleje-logo-mark-dark.png";
 
 interface LogoProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {
   size?: number;
@@ -37,17 +38,29 @@ export function BulejeMark({ size = 40, className, ...rest }: LogoProps) {
   delete (rest as { strokeWidth?: number }).strokeWidth;
   return (
     <span
-      className={cn("inline-flex items-center justify-center shrink-0", className)}
+      className={cn("inline-flex items-center justify-center shrink-0 relative", className)}
       style={{ width: size, height: size }}
       {...rest}
     >
+      {/* Light mode: b oscura + swoosh teal */}
       <Image
         src={MARK_SRC}
         alt="Buleje"
         width={size}
         height={size}
         priority={size >= 48}
-        className="object-contain"
+        className="object-contain block dark:hidden"
+        sizes={`${size}px`}
+      />
+      {/* Dark mode: b blanca + swoosh teal */}
+      <Image
+        src={MARK_DARK_SRC}
+        alt=""
+        aria-hidden
+        width={size}
+        height={size}
+        priority={size >= 48}
+        className="object-contain hidden dark:block"
         sizes={`${size}px`}
       />
     </span>

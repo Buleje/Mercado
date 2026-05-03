@@ -111,6 +111,54 @@ async function main() {
     .webp({ quality: 92, alphaQuality: 100 })
     .toFile(path.join(OUT, "buleje-logo-mark.webp"));
 
+  // --- Variant 4: dark mode (b en blanco, swoosh teal preservado) ---
+  // Estrategia: para cada pixel no-transparente, si es "oscuro/neutro"
+  // (R≈G≈B y oscuros) → invertir a blanco. Si es teal-ish (G dominante)
+  // → preservar. Esto blanquea la "b" + texto y deja el swoosh intacto.
+  console.log("[5/5] Writing buleje-logo-mark-dark.png (white-b para dark mode)...");
+  const darkRaw = await sharp(SRC)
+    .extract({ left: 0, top: 0, width: sw, height: cropHeight })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const dd = darkRaw.data;
+  for (let i = 0; i < dd.length; i += 4) {
+    const r = dd[i], g = dd[i + 1], b = dd[i + 2];
+    if (r >= WHITE_THRESHOLD && g >= WHITE_THRESHOLD && b >= WHITE_THRESHOLD) {
+      dd[i + 3] = 0; continue;
+    }
+    if (r >= 200 && g >= 200 && b >= 200) {
+      const avg = (r + g + b) / 3;
+      dd[i + 3] = Math.min(dd[i + 3], Math.round(255 * (1 - (avg - 200) / 55)));
+      continue;
+    }
+    // Detección teal: G es el canal dominante y B no es muy bajo
+    const isTeal = g > r + 20 && g > 100 && b > 80;
+    if (!isTeal) {
+      // Pixel "oscuro/neutro" (la "b" o el texto) → invertir a blanco
+      dd[i] = 255; dd[i + 1] = 255; dd[i + 2] = 255;
+    }
+  }
+
+  const darkBase = sharp(dd, {
+    raw: { width: darkRaw.info.width, height: darkRaw.info.height, channels: darkRaw.info.channels },
+  });
+
+  await darkBase
+    .clone()
+    .trim()
+    .resize(256, 256, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9 })
+    .toFile(path.join(OUT, "buleje-logo-mark-dark.png"));
+
+  await darkBase
+    .clone()
+    .trim()
+    .resize(256, 256, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .webp({ quality: 92, alphaQuality: 100 })
+    .toFile(path.join(OUT, "buleje-logo-mark-dark.webp"));
+
   console.log("\n✅ Logos generados:");
   console.log("   /brand/buleje-logo.png       (full, 512x512, transparent)");
   console.log("   /brand/buleje-logo.webp      (full, 512x512, transparent, smaller)");
