@@ -201,8 +201,9 @@ function MethodCard({ method }: { method: Method }) {
 export default function ComoPagarClient() {
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* Hero */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-8 sm:pb-12">
+      {/* Hero — pt reducido (audit P1): antes pt-10/pt-16 dejaba al usuario
+          frente al banner cuando hacía click "Cómo pagar" del nav. */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-6 sm:pb-8">
         <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Pagás como prefieras
@@ -226,8 +227,8 @@ export default function ComoPagarClient() {
         </div>
       </section>
 
-      {/* Métodos */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      {/* Métodos — id "metodos" para deep-link desde el nav */}
+      <section id="metodos" className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-16 scroll-mt-24">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {METHODS.map((m) => (
             <MethodCard key={m.id} method={m} />

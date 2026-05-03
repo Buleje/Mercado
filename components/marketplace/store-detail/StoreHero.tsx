@@ -133,7 +133,8 @@ export default function StoreHero({
 
         {/* ── Stats strip — 4 KPIs con dividers ─────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 border-t-2 border-[var(--rule-base)]">
-          {/* Rating */}
+          {/* Rating — sin reseñas muestra empty state explícito en lugar
+              de un guión "—" críptico (designer audit). */}
           <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Star
@@ -142,14 +143,18 @@ export default function StoreHero({
               />
               Rating
             </span>
-            <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
-              {ratingLabel ?? "—"}
-              {ratingLabel && (
+            {ratingLabel ? (
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+                {ratingLabel}
                 <span className="ml-1 text-sm font-bold text-[var(--text-tertiary)]">
                   ({reviewCount})
                 </span>
-              )}
-            </p>
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">
+                Sin reseñas aún
+              </p>
+            )}
           </div>
 
           {/* Delivery */}

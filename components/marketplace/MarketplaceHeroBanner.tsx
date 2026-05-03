@@ -102,11 +102,13 @@ const STATIC_SLIDES: Slide[] = [
   },
 ];
 
-/** Stats persistentes mostrados debajo del CTA — psicologia: trust + scale. */
+/** Trust strip — antes mostraba "120+ tiendas activas" hardcoded mientras
+ * /tiendas reflejaba 6 reales (designer audit P0 inconsistencia de datos).
+ * Ahora claims cualitativos verificables. */
 const HERO_STATS = [
-  { Icon: Store, value: "120+", label: "tiendas activas" },
-  { Icon: Truck, value: "25 min", label: "entrega promedio" },
-  { Icon: ShoppingBag, value: "8.000+", label: "productos" },
+  { Icon: Store, value: "Pucallpa", label: "+ Ciudad Constitución" },
+  { Icon: Truck, value: "Yape · Plin", label: "o efectivo al recibir" },
+  { Icon: ShoppingBag, value: "WhatsApp", label: "soporte en tu zona" },
 ];
 
 const INTERVAL = 7000;

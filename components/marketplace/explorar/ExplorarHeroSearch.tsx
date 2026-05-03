@@ -29,10 +29,13 @@ const POPULAR_CHIPS: Array<{ label: string; q: string }> = [
   { label: "Cerveza", q: "cerveza" },
 ];
 
+// Mayo 2026: claims cuantitativos falsos ("120+ Bodegas verificadas",
+// "25 min entrega promedio", "4.8/5 calificación") reemplazados por
+// proof points cualitativos honestos mientras crecemos.
 const TRUST_STATS: Array<{ Icon: typeof Truck; value: string; label: string }> = [
-  { Icon: Truck, value: "25 min", label: "Entrega promedio" },
-  { Icon: Store, value: "120+", label: "Bodegas verificadas" },
-  { Icon: Star, value: "4.8/5", label: "Calificacion clientes" },
+  { Icon: Truck, value: "Yape · Plin", label: "o efectivo al recibir" },
+  { Icon: Store, value: "Pucallpa", label: "Bodegas de tu zona" },
+  { Icon: Star, value: "Soporte 1-a-1", label: "Por WhatsApp" },
 ];
 
 export default function ExplorarHeroSearch() {
