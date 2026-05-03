@@ -7,7 +7,7 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse, Maximize2, Copy, Sliders,
+  Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -208,6 +208,15 @@ export default function InventoryTab() {
   // Mejora 8R2: Filtro sin imagen
   const [noImageOnly, setNoImageOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  // View mode toggle (table vs cards) — persistido en localStorage
+  const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
+    if (typeof window === "undefined") return "table";
+    const saved = window.localStorage.getItem("inv-view-mode");
+    return saved === "cards" ? "cards" : "table";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("inv-view-mode", viewMode);
+  }, [viewMode]);
   const [expandedOC, setExpandedOC] = useState(false);
   const [generatingOC, setGeneratingOC] = useState(false);
 
@@ -893,16 +902,6 @@ export default function InventoryTab() {
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-colors"
           />
         </div>
-        {/* Category filter */}
-        <select
-          value={catFilter}
-          onChange={e => setCatFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
-        >
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.label}</option>
-          ))}
-        </select>
         {/* Filter chips inline */}
         <button
           onClick={() => setLowOnly(!lowOnly)}
@@ -952,6 +951,74 @@ export default function InventoryTab() {
           Mas
           <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
         </button>
+        {/* View mode toggle: tabla / cards (solo desktop) */}
+        <div className="hidden sm:inline-flex items-center rounded-lg border border-[var(--rule-base)] dark:border-card-border overflow-hidden ml-auto">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            aria-pressed={viewMode === "table"}
+            title="Vista tabla"
+            className={cn(
+              "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors",
+              viewMode === "table"
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            )}
+          >
+            <LayoutList className="h-3.5 w-3.5" />
+            Tabla
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("cards")}
+            aria-pressed={viewMode === "cards"}
+            title="Vista cards"
+            className={cn(
+              "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors border-l border-[var(--rule-base)] dark:border-card-border",
+              viewMode === "cards"
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Cards
+          </button>
+        </div>
+      </div>
+
+      {/* Category chips — horizontal scroll, click-to-filter */}
+      <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-2 min-w-fit">
+          {categories.map(c => {
+            const active = catFilter === c.id;
+            const count = c.id === "todos"
+              ? products.filter(p => showInactive || p.active).length
+              : products.filter(p => p.category === c.id && (showInactive || p.active)).length;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCatFilter(c.id)}
+                aria-pressed={active}
+                className={cn(
+                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
+                  active
+                    ? "border-primary bg-primary text-white shadow-sm"
+                    : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:border-primary/40 hover:bg-primary/5"
+                )}
+              >
+                <span className="text-base leading-none">{c.emoji}</span>
+                <span>{c.label}</span>
+                <span className={cn(
+                  "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
+                  active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted"
+                )}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* KPIs — grid-cols-5 */}
@@ -1232,8 +1299,13 @@ export default function InventoryTab() {
       ) : view === "productos" ? (
         /* ── Products View ──────────────────────────────────────── */
         <>
-          {/* Mobile cards */}
-          <div className="grid grid-cols-1 gap-3 sm:hidden">
+          {/* Cards view — siempre en mobile, opcional en desktop via viewMode */}
+          <div className={cn(
+            "grid grid-cols-1 gap-3",
+            viewMode === "cards"
+              ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "sm:hidden"
+          )}>
             {pgProducts.items.map(p => {
               const lowStock = isLowStock(p);
               const cat = categories.find(c => c.id === p.category);
@@ -1329,8 +1401,11 @@ export default function InventoryTab() {
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
 
-          {/* Desktop table — UX Mejora 18: Sticky header */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hidden sm:block">
+          {/* Desktop table — UX Mejora 18: Sticky header. Oculta cuando viewMode==="cards". */}
+          <div className={cn(
+            "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden",
+            viewMode === "cards" ? "hidden" : "hidden sm:block"
+          )}>
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[var(--shadow-sm)]">
