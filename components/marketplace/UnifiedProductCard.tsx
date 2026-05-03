@@ -12,7 +12,58 @@ import {
   Heart,
   Timer,
 } from "@buleje/design-system/icons";
-import { MarketplaceItemPlaceholder } from "@buleje/design-system";
+// MarketplaceItemPlaceholder reemplazado por ProductImageFallback (audit P12).
+
+// Audit P12: fallback amable para productos sin foto. Antes mostraba un
+// placeholder vectorial gris genérico que parecía bug; ahora muestra emoji
+// grande de la categoría + nombre del producto sobre fondo de marca + CTA
+// honesto "Sin foto · Avisanos para subirla". Convierte un negativo en
+// invitación al bodeguero a colaborar con la curaduría visual.
+const CATEGORY_EMOJI: Record<string, string> = {
+  abarrotes: "🥫",
+  bebidas: "🥤",
+  carnes: "🥩",
+  lacteos: "🥛",
+  frutas: "🍎",
+  verduras: "🥬",
+  panaderia: "🥖",
+  panadería: "🥖",
+  golosinas: "🍬",
+  limpieza: "🧴",
+  hogar: "🏠",
+  mascotas: "🐶",
+  bebes: "👶",
+  bebés: "👶",
+  farmacia: "💊",
+  ferreteria: "🔧",
+  ferretería: "🔧",
+  pollo: "🍗",
+  polleria: "🍗",
+  pollería: "🍗",
+  pescados: "🐟",
+  congelados: "🧊",
+  default: "🛒",
+};
+function ProductImageFallback({ name, category }: { name?: string | null; category?: string | null }) {
+  const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const emoji = CATEGORY_EMOJI[key] ?? CATEGORY_EMOJI.default;
+  return (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-sunken)]"
+      aria-label="Producto sin foto"
+    >
+      <span className="text-5xl mb-2" aria-hidden>{emoji}</span>
+      {name && (
+        <p className="text-xs font-bold text-[var(--text-primary)] leading-tight line-clamp-2">
+          {name}
+        </p>
+      )}
+      <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        Sin foto
+      </p>
+    </div>
+  );
+}
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
@@ -251,7 +302,7 @@ export default function UnifiedProductCard({
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
               />
             ) : (
-              <MarketplaceItemPlaceholder />
+              <ProductImageFallback name={product.name} category={product.category} />
             )}
           </div>
         </Link>

@@ -221,7 +221,7 @@ function EarlyAdopterPlaceholder() {
           </Link>
         </div>
         <p className="mt-6 text-sm text-[var(--text-tertiary)]">
-          Acompañamiento 1-a-1 los primeros 90 días · Sin tarjeta · Sin permanencia
+          Acompañamiento 1-a-1 los primeros 90 días · Sin permanencia · Cancelas cuando quieras
         </p>
       </div>
     </section>
@@ -468,7 +468,7 @@ function FinalCTA() {
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          <T k="landing.finalCta.description" fallback="Activa tu tienda online en 5 minutos y empieza a recibir pedidos hoy mismo. Sin tarjeta, sin compromiso." />
+          <T k="landing.finalCta.description" fallback="Activa tu tienda online en 5 minutos y empieza a recibir pedidos hoy mismo. Sin compromiso, cancelas cuando quieras." />
         </p>
         {/* CTA único — antes había 2 botones idénticos hacia /abrir-tienda. */}
         <div className="mt-12 flex justify-center">

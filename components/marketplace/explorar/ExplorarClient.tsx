@@ -28,21 +28,31 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { ArrowUpRight, Store } from "@buleje/design-system/icons";
+
+// Above-fold (estáticos): hero search, tracker, error boundary, reveal wrapper.
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
-import WelcomeStrip from "@/components/marketplace/home/WelcomeStrip";
-import ExplorarTileGrid from "./ExplorarTileGrid";
 import ExplorarHeroSearch from "./ExplorarHeroSearch";
 import ExplorarErrorBoundary from "./ExplorarErrorBoundary";
-import ExplorarBackToTop from "./ExplorarBackToTop";
 import ExplorarTracker from "./ExplorarTracker";
-import ExplorarAmazonBoxes from "./ExplorarAmazonBoxes";
-import ExplorarCategoriasGrid from "./ExplorarCategoriasGrid";
-import RecentlyViewedStrip, { RecentlyViewedSectionBox } from "./RecentlyViewedStrip";
-import BuyAgainStrip from "./BuyAgainStrip";
-import DealsOfTheDayStrip from "./DealsOfTheDayStrip";
-import TopRatedBento from "./TopRatedBento";
-import BodegasTrendingRow from "./BodegasTrendingRow";
+
+// Audit P12 sprint perf: 12 secciones below-fold a dynamic({ ssr: false }).
+// Reduce el initial chunk de /marketplace/explorar de ~152 a ~80 estimado.
+const WelcomeStrip = dynamic(() => import("@/components/marketplace/home/WelcomeStrip"), { ssr: false });
+const ExplorarTileGrid = dynamic(() => import("./ExplorarTileGrid"), { ssr: false });
+const ExplorarBackToTop = dynamic(() => import("./ExplorarBackToTop"), { ssr: false });
+const ExplorarAmazonBoxes = dynamic(() => import("./ExplorarAmazonBoxes"), { ssr: false });
+const ExplorarCategoriasGrid = dynamic(() => import("./ExplorarCategoriasGrid"), { ssr: false });
+const RecentlyViewedStrip = dynamic(() => import("./RecentlyViewedStrip"), { ssr: false });
+const RecentlyViewedSectionBox = dynamic(
+  () => import("./RecentlyViewedStrip").then((m) => ({ default: m.RecentlyViewedSectionBox })),
+  { ssr: false },
+);
+const BuyAgainStrip = dynamic(() => import("./BuyAgainStrip"), { ssr: false });
+const DealsOfTheDayStrip = dynamic(() => import("./DealsOfTheDayStrip"), { ssr: false });
+const TopRatedBento = dynamic(() => import("./TopRatedBento"), { ssr: false });
+const BodegasTrendingRow = dynamic(() => import("./BodegasTrendingRow"), { ssr: false });
 // Consolidacion 2026-04-23: removidos EditorialFeature, NeighborsBoughtStrip,
 // ExplorarRelacionados (2 carruseles), NewArrivalsRow, FillBanner extra.
 // Pasamos de 15 a 9 secciones (-40% altura, menos decision paralysis).

@@ -163,7 +163,7 @@ export default function LandingHero() {
                 Setup en 5 minutos
               </p>
               <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Sin tarjeta, sin permanencia
+                Cancelas cuando quieras
               </p>
             </div>
             <div className="md:border-l md:border-[var(--rule-soft)] md:pl-6">
