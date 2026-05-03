@@ -17,8 +17,107 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { Plus, Trash2, Camera, Check, X, Loader2, AlertTriangle, GripVertical } from "@buleje/design-system/icons";
+import { Plus, Trash2, Camera, Check, X, Loader2, AlertTriangle, GripVertical, Sparkles, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+
+// ── Plantillas — sets pre-armados de variantes comunes ──────────────────────
+// Formato: { name } se usa como label; { attr } se guarda en attributesJson.
+// El priceModifier arranca en 0 para todas — el usuario lo ajusta luego.
+
+interface TemplateItem { name: string; attr: string }
+
+const VARIANT_TEMPLATES: { id: string; label: string; description: string; items: TemplateItem[] }[] = [
+  {
+    id: "tallas",
+    label: "Tallas",
+    description: "S, M, L, XL — ropa, calzado",
+    items: [
+      { name: "Talla S", attr: "S" },
+      { name: "Talla M", attr: "M" },
+      { name: "Talla L", attr: "L" },
+      { name: "Talla XL", attr: "XL" },
+    ],
+  },
+  {
+    id: "tallas-completas",
+    label: "Tallas completas",
+    description: "XS hasta XXL",
+    items: [
+      { name: "Talla XS", attr: "XS" },
+      { name: "Talla S", attr: "S" },
+      { name: "Talla M", attr: "M" },
+      { name: "Talla L", attr: "L" },
+      { name: "Talla XL", attr: "XL" },
+      { name: "Talla XXL", attr: "XXL" },
+    ],
+  },
+  {
+    id: "tamanos-liquido",
+    label: "Tamaños — líquido",
+    description: "200ml, 500ml, 1L, 2L",
+    items: [
+      { name: "200 ml", attr: "200ml" },
+      { name: "500 ml", attr: "500ml" },
+      { name: "1 litro", attr: "1L" },
+      { name: "2 litros", attr: "2L" },
+    ],
+  },
+  {
+    id: "tamanos-peso",
+    label: "Tamaños — peso",
+    description: "100g, 250g, 500g, 1kg",
+    items: [
+      { name: "100 g", attr: "100g" },
+      { name: "250 g", attr: "250g" },
+      { name: "500 g", attr: "500g" },
+      { name: "1 kg", attr: "1kg" },
+    ],
+  },
+  {
+    id: "sabores-basicos",
+    label: "Sabores básicos",
+    description: "Chocolate, vainilla, fresa",
+    items: [
+      { name: "Chocolate", attr: "chocolate" },
+      { name: "Vainilla", attr: "vainilla" },
+      { name: "Fresa", attr: "fresa" },
+    ],
+  },
+  {
+    id: "sabores-extendidos",
+    label: "Sabores extendidos",
+    description: "Chocolate, vainilla, fresa, mango, lúcuma",
+    items: [
+      { name: "Chocolate", attr: "chocolate" },
+      { name: "Vainilla", attr: "vainilla" },
+      { name: "Fresa", attr: "fresa" },
+      { name: "Mango", attr: "mango" },
+      { name: "Lúcuma", attr: "lucuma" },
+    ],
+  },
+  {
+    id: "colores-basicos",
+    label: "Colores básicos",
+    description: "Rojo, azul, negro, blanco",
+    items: [
+      { name: "Rojo", attr: "rojo" },
+      { name: "Azul", attr: "azul" },
+      { name: "Negro", attr: "negro" },
+      { name: "Blanco", attr: "blanco" },
+    ],
+  },
+  {
+    id: "packs",
+    label: "Packs / cantidades",
+    description: "Unidad, pack x6, pack x12, pack x24",
+    items: [
+      { name: "Unidad", attr: "x1" },
+      { name: "Pack x6", attr: "x6" },
+      { name: "Pack x12", attr: "x12" },
+      { name: "Pack x24", attr: "x24" },
+    ],
+  },
+];
 
 interface VariantRow {
   id?: string;
@@ -104,6 +203,8 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
   const [draftRow, setDraftRow] = useState<VariantRow | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImageFor, setPendingImageFor] = useState<"draft" | string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [generatingFromTemplate, setGeneratingFromTemplate] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -168,6 +269,52 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
       setError(e instanceof Error ? e.message : "Error al guardar");
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleGenerateFromTemplate = async (templateId: string) => {
+    const tpl = VARIANT_TEMPLATES.find(t => t.id === templateId);
+    if (!tpl) return;
+    setShowTemplates(false);
+    setGeneratingFromTemplate(true);
+    setError(null);
+    let createdCount = 0;
+    let failCount = 0;
+    try {
+      // Filtrar items que ya existen (mismo attr) para no duplicar
+      const existingAttrs = new Set(rows.map(r => r.attr.toLowerCase()));
+      const itemsToCreate = tpl.items.filter(it => !existingAttrs.has(it.attr.toLowerCase()));
+      if (itemsToCreate.length === 0) {
+        setError(`Ya tenés todas las variantes de "${tpl.label}"`);
+        return;
+      }
+      // POST en serie (no paralelo) para preservar position y evitar rate limits
+      for (let i = 0; i < itemsToCreate.length; i++) {
+        const it = itemsToCreate[i];
+        const body = {
+          name: it.name,
+          priceModifier: 0,
+          attributesJson: JSON.stringify({ attr: it.attr }),
+        };
+        const res = await fetch(`/api/marketplace/products/${productId}/variants`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", ...csrfHeaders() },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) createdCount++;
+        else failCount++;
+      }
+      await load();
+      if (failCount > 0 && createdCount === 0) {
+        setError(`No se pudieron crear las variantes`);
+      } else if (failCount > 0) {
+        setError(`Se crearon ${createdCount} de ${itemsToCreate.length} (${failCount} fallaron)`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error generando variantes");
+    } finally {
+      setGeneratingFromTemplate(false);
     }
   };
 
@@ -269,16 +416,54 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
         </div>
       )}
 
-      {/* Botón agregar variante */}
+      {/* Acciones — agregar + plantillas */}
       {!draftRow && (
-        <button
-          type="button"
-          onClick={() => setDraftRow({ name: "", attr: "", priceModifier: 0, stock: null, image: null, sku: null })}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-bold"
-        >
-          <Plus className="h-4 w-4" />
-          Agregar variante
-        </button>
+        <div className="flex flex-wrap items-stretch gap-2">
+          <button
+            type="button"
+            onClick={() => setDraftRow({ name: "", attr: "", priceModifier: 0, stock: null, image: null, sku: null })}
+            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-bold"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar variante
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowTemplates(s => !s)}
+              disabled={generatingFromTemplate}
+              className="h-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success)] text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              title="Crear varias variantes desde una plantilla pre-armada"
+            >
+              {generatingFromTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {generatingFromTemplate ? "Creando…" : "Desde plantilla"}
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showTemplates && "rotate-180")} />
+            </button>
+            {showTemplates && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowTemplates(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 w-72 max-h-80 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card shadow-xl">
+                  <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Elegí una plantilla</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Crea todas las variantes en un click. Después podés editarlas o agregar más.</p>
+                  </div>
+                  {VARIANT_TEMPLATES.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => handleGenerateFromTemplate(tpl.id)}
+                      className="w-full text-left px-3 py-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors border-b border-[var(--rule-soft)] dark:border-card-border last:border-b-0"
+                    >
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{tpl.label}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{tpl.description}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-primary font-semibold mt-0.5">{tpl.items.length} variantes</p>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {/* File input compartido para todas las variantes */}

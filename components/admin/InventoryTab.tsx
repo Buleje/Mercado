@@ -7,7 +7,7 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList,
+  Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList, Sparkles,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
@@ -298,6 +298,41 @@ export default function InventoryTab() {
   const [imgUploading, setImgUploading] = useState(false);
   const [imgInfo, setImgInfo] = useState<{ originalKB: number; finalKB: number; width: number; height: number; quality: number } | null>(null);
   const [imgError, setImgError] = useState<string | null>(null);
+  const [aiDescGenerating, setAiDescGenerating] = useState(false);
+  const [aiDescError, setAiDescError] = useState<string | null>(null);
+
+  const generateDescriptionAI = useCallback(async (form: typeof editForm, setter: typeof setEditForm) => {
+    const name = form.name?.trim();
+    if (!name || name.length < 2) {
+      setAiDescError("Ponele un nombre al producto antes de generar");
+      return;
+    }
+    setAiDescGenerating(true);
+    setAiDescError(null);
+    try {
+      const res = await fetch("/api/products/generate-description", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        body: JSON.stringify({
+          name,
+          category: form.category ?? null,
+          attributes: [form.unit, form.badge].filter(Boolean).join(", ") || null,
+          tone: "friendly",
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Error al generar");
+      }
+      const data = await res.json() as { description: string };
+      setter(f => ({ ...f, description: data.description }));
+    } catch (e) {
+      setAiDescError(e instanceof Error ? e.message : "Error al generar");
+    } finally {
+      setAiDescGenerating(false);
+    }
+  }, []);
   const addImgRef = useRef<HTMLInputElement>(null);
   const editImgRef = useRef<HTMLInputElement>(null);
 
@@ -2201,7 +2236,23 @@ export default function InventoryTab() {
                   <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descripción del producto</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Descripción del producto</label>
+                    <button
+                      type="button"
+                      onClick={() => generateDescriptionAI(editForm, setEditForm)}
+                      disabled={aiDescGenerating || !editForm.name}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-linear-to-r from-primary to-[var(--data-success)] text-white text-[length:var(--ts-2xs)] font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={!editForm.name ? "Primero ingresa el nombre del producto" : "Generar descripción con IA"}
+                    >
+                      {aiDescGenerating ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      {aiDescGenerating ? "Generando…" : "Generar con IA"}
+                    </button>
+                  </div>
                   <textarea
                     rows={3}
                     value={editForm.description ?? ""}
@@ -2209,6 +2260,12 @@ export default function InventoryTab() {
                     placeholder="Ej: Aceite de girasol puro, ideal para frituras ligeras. Botella de 1 litro."
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm resize-none"
                   />
+                  {aiDescError && (
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] mt-1 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {aiDescError}
+                    </p>
+                  )}
                 </div>
               </div>
 
