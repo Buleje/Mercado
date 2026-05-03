@@ -34,14 +34,33 @@ const PLAN_LABEL: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
+/**
+ * Tenants administrativos / demo del owner.
+ * No generan alerta "1 PROBLEMA" aunque estén vacíos.
+ * Para agregar uno: meter el slug acá. Para hacerlo flag en DB en el futuro,
+ * usar migration expand-only `isAdminTenant Boolean @default(false)`.
+ */
+const ADMIN_TENANT_SLUGS = new Set<string>(["buleje", "main"]);
+
+function isAdminTenant(t: TenantRow): boolean {
+  return ADMIN_TENANT_SLUGS.has(t.slug);
+}
+
 /** Computes a health score for the tenant. */
-function computeHealth(t: TenantRow): { ok: boolean; issues: string[] } {
+function computeHealth(t: TenantRow): { ok: boolean; issues: string[]; isAdmin: boolean } {
+  const isAdmin = isAdminTenant(t);
+  // Admin tenants: skip alertas de "vacío" pero mantener señal si está inactivo.
+  if (isAdmin) {
+    const adminIssues: string[] = [];
+    if (!t.active) adminIssues.push("Tienda inactiva");
+    return { ok: adminIssues.length === 0, issues: adminIssues, isAdmin: true };
+  }
   const issues: string[] = [];
   if ((t.usage?.products ?? 0) === 0) issues.push("Sin productos");
   if ((t._count.AdminUser ?? 0) === 0) issues.push("Sin usuarios admin");
   if (!t.active) issues.push("Tienda inactiva");
   if ((t.stores?.length ?? 0) === 0) issues.push("Sin tienda en marketplace");
-  return { ok: issues.length === 0, issues };
+  return { ok: issues.length === 0, issues, isAdmin: false };
 }
 
 export function TenantCard({
@@ -208,6 +227,9 @@ export function TenantCard({
                 <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />Marketplace
               </ProductBadge>
             )}
+            {health.isAdmin && (
+              <ProductBadge intent="premium">Admin</ProductBadge>
+            )}
             {!health.ok && (
               <ProductBadge intent="offer">
                 {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
@@ -297,11 +319,16 @@ export function TenantCard({
           })}
         </div>
 
-        {/* Panel data status — DS Alert */}
+        {/* Panel data status — DS Alert. Admin tenants: mensaje neutral, no warning. */}
         {hasVisibleAdminData ? (
           <SuccessAlert
             title="Panel con información"
             description="Esta tienda ya muestra datos en su admin del negocio."
+          />
+        ) : health.isAdmin ? (
+          <SuccessAlert
+            title="Tenant administrativo"
+            description="Cuenta interna del owner. No requiere productos ni movimientos."
           />
         ) : (
           <WarningAlert
