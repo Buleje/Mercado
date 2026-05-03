@@ -323,6 +323,7 @@ function AdminPage() {
           userRole={userRole}
           tenantSlug={activeTenantSlug}
           tenantName={activeTenantName}
+          tenantLogoUrl={activeTenantLogo}
           onOpenMobileNav={() => setMobileNavOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenCierreDiario={() => setShowCierreDiario(true)}

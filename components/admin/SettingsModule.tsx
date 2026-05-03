@@ -270,6 +270,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const [businessPhone, setBusinessPhone] = useState("51916409675");
   const [businessAddress, setBusinessAddress] = useState("Pucallpa, Ucayali");
   const [logoUrl, setLogoUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
+  const bannerImgRef = useRef<HTMLInputElement>(null);
   const [description, setDescription] = useState("Productos frescos, precios justos y entrega directa a tu puerta.");
   const [hours, setHours] = useState("Lun - Sáb: 7am - 9pm");
   const [deliveryZone, setDeliveryZone] = useState("Pucallpa");
@@ -440,6 +442,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         if (d.businessPhone) setBusinessPhone(d.businessPhone);
         if (d.businessAddress) setBusinessAddress(d.businessAddress);
         if (d.logoUrl) setLogoUrl(d.logoUrl);
+        if (d.bannerUrl) setBannerUrl(d.bannerUrl as string);
         if (d.description) setDescription(d.description);
         if (d.hours) setHours(d.hours);
         if (d.deliveryZone) setDeliveryZone(d.deliveryZone);
@@ -556,13 +559,41 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
     });
   }, []);
 
-  const handleFileUpload = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setter(reader.result as string);
-    reader.readAsDataURL(file);
-  };
+  // Estados de upload por campo (logo, banner, yape, plin) — para mostrar
+  // spinner mientras la imagen se sube a Supabase Storage.
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  /**
+   * Sube el archivo a /api/upload (Supabase Storage), recibe la URL pública,
+   * y la asigna al campo correspondiente. Antes esto usaba FileReader y
+   * guardaba la imagen como base64 dentro del JSON de settings — eso hacía
+   * que el guardado fallara silenciosamente con archivos > 1MB y nunca
+   * mostraba la imagen real al resto del sistema.
+   */
+  const handleFileUpload = (setter: (v: string) => void, fieldId: string, folder = "settings") =>
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = ""; // reset para que volver a elegir el mismo archivo dispare onChange
+      setUploadingField(fieldId);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", folder);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json() as { url: string };
+        setter(data.url);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[settings] upload failed", err);
+        // Notificar al usuario sin alert nativo: simple alert por ahora,
+        // mejorable con toast del DS.
+        alert("Error al subir la imagen. Probá de nuevo.");
+      } finally {
+        setUploadingField(null);
+      }
+    };
 
   // ── Search & Overview ──────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
@@ -788,12 +819,21 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       </SectionCard>
 
       {/* Logo */}
-      <SectionCard title="Logo del negocio">
+      <SectionCard title="Logo del negocio" desc="Aparece en el header de tu panel y en la card de tu tienda en el marketplace">
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
-            <Upload className="h-4 w-4" /> Subir imagen
+          <button
+            type="button"
+            disabled={uploadingField === "logo"}
+            onClick={() => logoImgRef.current?.click()}
+            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors disabled:opacity-60 disabled:cursor-wait"
+          >
+            {uploadingField === "logo" ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Subiendo…</>
+            ) : (
+              <><Upload className="h-4 w-4" /> Subir imagen</>
+            )}
           </button>
-          <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl)} />
+          <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl, "logo", "branding")} />
           <TextInput value={logoUrl.startsWith("data:") ? "" : logoUrl} onChange={setLogoUrl} placeholder="https://… o /logo.png" />
         </div>
         {logoUrl && (
@@ -801,6 +841,34 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-[var(--rule-soft)]" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <span className="text-xs text-[var(--text-secondary)] flex-1">Vista previa</span>
             <button onClick={() => setLogoUrl("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button>
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Banner */}
+      <SectionCard title="Banner del negocio" desc="Imagen wide (1600×500 ideal) que se muestra arriba de tu tienda en el marketplace">
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={uploadingField === "banner"}
+            onClick={() => bannerImgRef.current?.click()}
+            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors disabled:opacity-60 disabled:cursor-wait"
+          >
+            {uploadingField === "banner" ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Subiendo…</>
+            ) : (
+              <><Upload className="h-4 w-4" /> Subir banner</>
+            )}
+          </button>
+          <input ref={bannerImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setBannerUrl, "banner", "branding")} />
+          <TextInput value={bannerUrl.startsWith("data:") ? "" : bannerUrl} onChange={setBannerUrl} placeholder="https://… o /banner.jpg" />
+        </div>
+        {bannerUrl && (
+          <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+            <Image src={bannerUrl} alt="Banner" fill className="object-cover" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <button onClick={() => setBannerUrl("")} className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-black/60 text-white text-xs font-bold hover:bg-black/80">
+              Quitar
+            </button>
           </div>
         )}
       </SectionCard>
@@ -835,7 +903,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       <SaveButton saving={saving} saved={savedSection === "business"} onClick={() => patch({
         mode, businessName, businessPhone, businessAddress, businessLat, businessLon,
-        logoUrl, description, hours, deliveryZone, razonSocial, ruc, businessEmail,
+        logoUrl, bannerUrl, description, hours, deliveryZone, razonSocial, ruc, businessEmail,
         currency, timezone, businessType, socialLinks,
       }).then(() => onModeChange(mode))} />
     </div>
@@ -1191,7 +1259,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
                 <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
-                <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
+                <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage, "yape", "payments")} />
                 {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button></div>}
               </div>
             </div>
@@ -1205,7 +1273,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               </div>
               <div>
                 <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success)]/30 hover:border-[var(--data-success)]/30 text-sm font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
-                <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
+                <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage, "plin", "payments")} />
                 {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--accent-soft)] rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error)]">Quitar</button></div>}
               </div>
             </div>

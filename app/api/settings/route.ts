@@ -70,6 +70,7 @@ export async function PUT(req: NextRequest) {
       ...(body.businessPhone !== undefined && { businessPhone: body.businessPhone }),
       ...(body.businessAddress !== undefined && { businessAddress: body.businessAddress }),
       ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+      ...(body.bannerUrl !== undefined && { bannerUrl: body.bannerUrl }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.hours !== undefined && { hours: body.hours }),
       ...(body.deliveryZone !== undefined && { deliveryZone: body.deliveryZone }),
@@ -173,7 +174,49 @@ export async function PUT(req: NextRequest) {
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
     // eslint-disable-next-line no-restricted-syntax -- activity log fire-and-forget; no debe bloquear la respuesta de Settings
     enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId: effectiveTenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch(() => {});
-    return NextResponse.json(await SettingsDB.set(updated, tenantId));
+    const saved = await SettingsDB.set(updated, tenantId);
+
+    // ── Sync de branding cross-modelo ─────────────────────────────────────────
+    // El logo/banner/businessName/colors viven en 3 lugares por razones
+    // históricas: Settings (panel admin), Tenant (header/branding global) y
+    // Store (marketplace card). Para que el cambio se vea EN TODOS LADOS
+    // sin que el dueño se entere de la duplicación, propagamos en background.
+    if (
+      body.logoUrl !== undefined ||
+      body.businessName !== undefined ||
+      body.primaryColor !== undefined ||
+      body.secondaryColor !== undefined
+    ) {
+      prisma.tenant.update({
+        where: { id: tenantId },
+        data: {
+          ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl || null }),
+          ...(body.businessName !== undefined && body.businessName && { name: body.businessName }),
+          ...(body.primaryColor !== undefined && body.primaryColor && { primaryColor: body.primaryColor }),
+          ...(body.secondaryColor !== undefined && body.secondaryColor && { secondaryColor: body.secondaryColor }),
+        },
+      }).catch((err: unknown) => logger.warn("[settings] tenant sync skipped", { error: String(err) }));
+    }
+
+    if (
+      body.logoUrl !== undefined ||
+      body.bannerUrl !== undefined ||
+      body.description !== undefined ||
+      body.businessName !== undefined
+    ) {
+      // Update Store row (si existe) — el marketplace lee de aquí.
+      prisma.store.updateMany({
+        where: { tenantId },
+        data: {
+          ...(body.logoUrl !== undefined && { logo: body.logoUrl || null }),
+          ...(body.bannerUrl !== undefined && { banner: body.bannerUrl || null }),
+          ...(body.description !== undefined && { description: body.description || null }),
+          ...(body.businessName !== undefined && body.businessName && { name: body.businessName }),
+        },
+      }).catch((err: unknown) => logger.warn("[settings] store sync skipped", { error: String(err) }));
+    }
+
+    return NextResponse.json(saved);
   } catch (e) {
     logger.error("[settings] PUT error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 500 });

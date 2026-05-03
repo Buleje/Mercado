@@ -128,6 +128,8 @@ export type DbSettings = {
   businessLat?: number;
   businessLon?: number;
   logoUrl?: string;
+  /** Banner wide (1600×500) que se muestra arriba de la tienda en el marketplace. */
+  bannerUrl?: string;
   description?: string;
   hours?: string;
   deliveryZone?: string;

@@ -63,6 +63,7 @@ export interface AdminTopHeaderProps {
   userRole: string;
   tenantSlug?: string | null;
   tenantName?: string | null;
+  tenantLogoUrl?: string | null;
   onOpenMobileNav: () => void;
   onOpenSearch: () => void;
   onOpenCierreDiario: () => void;
@@ -84,6 +85,7 @@ export function AdminTopHeader({
   userRole,
   tenantSlug,
   tenantName,
+  tenantLogoUrl,
   onOpenMobileNav,
   onOpenSearch,
   onOpenCierreDiario,
@@ -185,7 +187,17 @@ export function AdminTopHeader({
                 : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
             )}
           >
-            <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            {tenantLogoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={tenantLogoUrl}
+                alt=""
+                className="h-5 w-5 rounded-md object-cover bg-white/30 shrink-0"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            )}
             <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>
             <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
           </Link>
