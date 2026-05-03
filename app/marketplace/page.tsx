@@ -26,14 +26,16 @@ export async function generateMetadata(props: {
     ? `${BASE_URL}/marketplace?zona=${encodeURIComponent(zona)}`
     : `${BASE_URL}/marketplace`;
 
-  // Adapt title and description based on zona
+  // Adapt title and description based on zona.
+  // Designer audit P0 SEO: layout root tiene `template: "%s | Buleje"` —
+  // NO duplicar "Buleje" en titles de child pages, y "Perú" con tilde.
   const zonaDisplay = zona ? ` — ${zona.charAt(0).toUpperCase() + zona.slice(1)}` : "";
   const title = zona
-    ? `Marketplace Buleje en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
-    : "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru";
+    ? `Marketplace en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
+    : "Marketplace — Bodegas y Tiendas del Perú";
   const description = zona
-    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Compra online con delivery rápido. Paga con Yape o efectivo.`
-    : "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra online con delivery rápido. Paga con Yape o efectivo.";
+    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Delivery rápido, pago con Yape o efectivo.`
+    : "Bodegas y minimarkets del Perú en un solo lugar. Delivery rápido, pago con Yape o efectivo.";
 
   return {
     title,
@@ -96,7 +98,7 @@ const collectionSchema = {
   "@type": "CollectionPage",
   "name": "Marketplace Buleje",
   "description":
-    "Catalogo de bodegas, minimarkets y tiendas del Peru con delivery y pago online via Yape, tarjeta o efectivo.",
+    "Catálogo de bodegas, minimarkets y tiendas del Perú con delivery y pago online vía Yape, tarjeta o efectivo.",
   "url": `${BASE_URL}/marketplace`,
   "inLanguage": "es-PE",
   "isPartOf": {

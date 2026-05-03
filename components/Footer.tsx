@@ -87,13 +87,23 @@ function WhatsAppIcon({ className }: { className?: string }) {
 const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
 
 function getPageContextMessage(pathname: string): string {
+  // Marketplace y rutas corporativas — antes el fallback decía
+  // "consulta sobre la bodega" lo cual era incorrecto en /terminos,
+  // /about, /ayuda, /marketplace, etc. (designer audit P1).
   if (pathname.startsWith("/tienda/producto/")) return "Hola, quiero consultar sobre un producto que vi en la tienda.";
   if (pathname.startsWith("/tienda/categoria/")) return "Hola, estoy viendo una categoría y tengo una consulta.";
   if (pathname.startsWith("/tienda")) return "Hola, estoy viendo la tienda y necesito ayuda.";
   if (pathname.startsWith("/recetas")) return "Hola, vi una receta y quiero consultar sobre los ingredientes.";
   if (pathname.startsWith("/cuenta") || pathname.startsWith("/mis-pedidos")) return "Hola, tengo una consulta sobre mi cuenta o pedidos.";
   if (pathname.startsWith("/puntos")) return "Hola, quiero saber más sobre mis puntos de fidelidad.";
-  return "Hola, quiero hacer una consulta sobre la bodega.";
+  if (pathname.startsWith("/marketplace/carrito") || pathname.startsWith("/checkout")) return "Hola, tengo una consulta sobre mi pedido en el marketplace.";
+  if (pathname.startsWith("/marketplace")) return "Hola, tengo una consulta sobre el marketplace de Buleje.";
+  if (pathname.startsWith("/abrir-tienda") || pathname.startsWith("/vender")) return "Hola, quiero saber más sobre cómo abrir mi tienda en Buleje.";
+  if (pathname.startsWith("/repartidores")) return "Hola, quiero saber cómo repartir con Buleje.";
+  if (pathname.startsWith("/terminos") || pathname.startsWith("/privacidad")) return "Hola, tengo una consulta sobre los términos del servicio.";
+  if (pathname.startsWith("/ayuda")) return "Hola, necesito ayuda con Buleje.";
+  if (pathname.startsWith("/about") || pathname === "/") return "Hola, quiero saber más sobre Buleje.";
+  return "Hola, quiero hacer una consulta sobre Buleje.";
 }
 
 function WhatsAppContactSection({

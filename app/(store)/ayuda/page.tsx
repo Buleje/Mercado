@@ -25,7 +25,9 @@ import {
   Shield,
   Info,
 } from "@buleje/design-system/icons";
-import Header from "@/components/Header";
+// Designer audit: /ayuda usaba Header (navbar de tienda white-label)
+// que rompía el contexto corporativo. Ahora LandingHeader como /about.
+import LandingHeader from "@/components/landing/LandingHeader";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
@@ -263,7 +265,7 @@ export default function AyudaPage() {
           { name: "Ayuda", url: "https://www.buleje.pe/ayuda" },
         ]}
       />
-      <Header />
+      <LandingHeader />
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
 
       <main id="main-content" className="bg-[var(--surface-canvas)]">

@@ -485,6 +485,10 @@ export default function StoreRegistrationForm() {
                     </label>
                     <input
                       type="text"
+                      name="ownerName"
+                      autoComplete="name"
+                      required
+                      minLength={2}
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       placeholder="Ej: María García"
@@ -498,6 +502,11 @@ export default function StoreRegistrationForm() {
                     </label>
                     <input
                       type="tel"
+                      name="ownerPhone"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      required
+                      pattern="[0-9 ()+-]{6,}"
                       value={ownerPhone}
                       onChange={(e) => setOwnerPhone(e.target.value)}
                       placeholder="Ej: 961 234 567"
@@ -518,6 +527,9 @@ export default function StoreRegistrationForm() {
                     </label>
                     <input
                       type="email"
+                      name="ownerEmail"
+                      autoComplete="email"
+                      inputMode="email"
                       value={ownerEmail}
                       onChange={(e) => setOwnerEmail(e.target.value)}
                       placeholder="maria@ejemplo.com"
