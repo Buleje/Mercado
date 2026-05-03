@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import {
   Store, Phone, MapPin, Clock, AlignLeft, Upload, Lock, X, Search,
   ShoppingCart, MessageCircle, Check,
-  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, AlertTriangle, Download,
+  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, Download,
   CheckCircle, Palette, User, Truck, Settings, Bell, Package,
   DollarSign, FileText, Zap, Landmark, Globe, Hash, Percent,
   Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
@@ -23,6 +23,13 @@ import { CardTitle, IconBadge } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
+// Componentes que antes vivían sueltos en TabRouter — ahora forman parte
+// de la grilla de secciones del SettingsModule (selección + detalle).
+const TeamTab = dynamic(() => import("@/components/admin/TeamTab"));
+const NavDefaultTabsConfig = dynamic(
+  () => import("@/components/admin/NavDefaultTabsConfig").then((m) => ({ default: m.NavDefaultTabsConfig })),
+);
+const SidebarReorderPanel = dynamic(() => import("@/components/admin/SidebarReorderPanel"));
 const PlanTierSelector = dynamic(
   () => import("@/components/admin/PlanTierSelector"),
   { ssr: false },
@@ -38,7 +45,12 @@ type SettingsData = Record<string, unknown>;
 
 type SectionId = "business" | "security" | "system" | "sales" | "inventory"
   | "cash" | "delivery" | "notifications" | "integrations" | "appearance"
-  | "audit" | "backup" | "modules" | "shortcuts" | "subscription" | "storefront";
+  | "audit" | "backup" | "modules" | "shortcuts" | "subscription" | "storefront"
+  | "team" | "nav-defaults" | "sidebar-order" | "tutorial";
+
+// Categoría visible para el panel "Reordenar barra lateral".
+// Compat con CategoryItem de components/admin/SidebarReorderPanel.tsx.
+type ReorderCategory = { id: string; label: string };
 
 const NAV_LABEL: Record<string, string> = {
   inicio: "Inicio", productos: "Productos", beneficios: "Beneficios", contacto: "Contacto",
@@ -76,6 +88,11 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
   { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
   { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
+  // ── Equipo y navegación (antes sueltos en TabRouter) ──
+  { id: "team", icon: <User className="h-5 w-5" />, title: "Gestión de Equipo", desc: "Tu equipo y control de acceso por rol", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-blue-950/30" },
+  { id: "nav-defaults", icon: <SlidersHorizontal className="h-5 w-5" />, title: "Navegación", desc: "Qué tab se abre por defecto en cada sección", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
+  { id: "sidebar-order", icon: <ArrowUpDown className="h-5 w-5" />, title: "Reordenar barra lateral", desc: "Cambia el orden de las secciones en tu menú", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
+  { id: "tutorial", icon: <ClipboardList className="h-5 w-5" />, title: "Tutorial de bienvenida", desc: "Repasa cómo funciona cada sección del panel", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
 ];
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
@@ -255,7 +272,27 @@ function OverviewCard({ section, completionPct, onClick }: {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function SettingsModule({ storeMode, onModeChange }: { storeMode: StoreMode; onModeChange: (m: StoreMode) => void }) {
+interface SettingsModuleProps {
+  storeMode: StoreMode;
+  onModeChange: (m: StoreMode) => void;
+  /** Categorías visibles para el panel "Reordenar barra lateral" (opcional). */
+  reorderCategories?: ReorderCategory[];
+  /** Callback al guardar el nuevo orden del sidebar. */
+  onSaveSidebarOrder?: (categoryIds: string[]) => void;
+  /** Callback al click "Repetir tutorial" — reset del onboarding tour. */
+  onResetTutorial?: () => void;
+  /** Callback para navegar a otro tab (ej. al iniciar tutorial). */
+  onNavigateTab?: (tab: string) => void;
+}
+
+export default function SettingsModule({
+  storeMode,
+  onModeChange,
+  reorderCategories,
+  onSaveSidebarOrder,
+  onResetTutorial,
+  onNavigateTab,
+}: SettingsModuleProps) {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>("business");
   const [saving, setSaving] = useState(false);
@@ -1713,6 +1750,54 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   // ── Section renderer map ────────────────────────────────────────────────────
 
+  // ── Renders para las 4 secciones absorbidas desde TabRouter ──────────────
+  const renderTeam = () => (
+    <div className="space-y-6">
+      <TeamTab />
+    </div>
+  );
+
+  const renderNavDefaults = () => (
+    <div className="space-y-6">
+      <NavDefaultTabsConfig />
+    </div>
+  );
+
+  const renderSidebarOrder = () => {
+    if (!reorderCategories || !onSaveSidebarOrder) {
+      return (
+        <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center">
+          <p className="text-sm text-[var(--text-secondary)]">El reorden de la barra lateral no está disponible en este contexto.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-6">
+        <SidebarReorderPanel categories={reorderCategories} onSave={onSaveSidebarOrder} />
+      </div>
+    );
+  };
+
+  const renderTutorial = () => (
+    <div className="space-y-4">
+      <SectionCard
+        title="Tutorial de bienvenida"
+        desc="Volvé a ver el recorrido guiado del panel cuando quieras."
+      >
+        <button
+          onClick={() => {
+            onResetTutorial?.();
+            onNavigateTab?.("asistente-ia");
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+        >
+          <Activity className="h-4 w-4" />
+          Repetir tutorial de bienvenida
+        </button>
+      </SectionCard>
+    </div>
+  );
+
   const renderSection = () => {
     switch (activeSection) {
       case "business": return renderBusiness();
@@ -1731,6 +1816,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       case "modules": return renderModules();
       case "shortcuts": return renderShortcuts();
       case "storefront": return <StorefrontEditor />;
+      case "team": return renderTeam();
+      case "nav-defaults": return renderNavDefaults();
+      case "sidebar-order": return renderSidebarOrder();
+      case "tutorial": return renderTutorial();
     }
   };
 

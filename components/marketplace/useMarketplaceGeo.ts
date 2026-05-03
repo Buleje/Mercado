@@ -35,6 +35,10 @@ export interface MarketplaceStore {
   slug: string;
   name: string;
   logo: string | null;
+  /** Portada — imagen principal de la card (4:3). Si null, usar logo como fallback. */
+  cover?: string | null;
+  /** Banner — hero gigante al entrar al storefront (16:5). */
+  banner?: string | null;
   category: string;
   zone: string | null;
   rating: number;
