@@ -251,10 +251,10 @@ export default function StoreDetailClient({
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         <div className="flex gap-6 lg:gap-8">
-          {/* Sidebar desktop — sticky, vertical */}
-          <aside className="hidden lg:block w-60 shrink-0">
+          {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
+          <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-[5.5rem]">
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 shadow-sm max-h-[calc(100vh-7rem)] overflow-y-auto">
                 <StoreCategoriesSidebar
                   categories={categories}
                   activeCategory={activeCategory}

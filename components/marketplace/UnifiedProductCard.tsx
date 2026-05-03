@@ -49,16 +49,16 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
   const emoji = CATEGORY_EMOJI[key] ?? CATEGORY_EMOJI.default;
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-sunken)]"
+      className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]"
       aria-label="Producto sin foto"
     >
-      <span className="text-5xl mb-2" aria-hidden>{emoji}</span>
+      <span className="text-4xl mb-1.5 opacity-80" aria-hidden>{emoji}</span>
       {name && (
-        <p className="text-xs font-bold text-[var(--text-primary)] leading-tight line-clamp-2">
+        <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[90%]">
           {name}
         </p>
       )}
-      <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <p className="mt-1 text-[10px] font-medium text-[var(--text-tertiary)]">
         Sin foto
       </p>
     </div>
@@ -278,12 +278,12 @@ export default function UnifiedProductCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -6 }}
       className={cn(
         "group relative flex w-full flex-col overflow-hidden rounded-xl",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
         "transition-[border-color,box-shadow,transform] duration-200",
-        "hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_rgba(0,180,166,0.18)]",
+        "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_rgba(0,180,166,0.28)]",
         isOutOfStock && "opacity-70",
       )}
       onMouseEnter={onMouseEnter}
