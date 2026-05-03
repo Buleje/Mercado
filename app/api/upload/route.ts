@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import sharp from "sharp";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
@@ -66,8 +66,9 @@ export async function POST(req: NextRequest) {
     const tenantId = auth.tenantId ?? "main";
     const path = `${tenantId}/${folder}/${timestamp}-${safeName}.${ext}`;
 
-    // Subir a Supabase Storage
-    const supabase = getSupabase();
+    // Subir a Supabase Storage con service_role (bypasea RLS — la auth
+    // ya la validó requireAdmin más arriba).
+    const supabase = getSupabaseAdmin();
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, optimized, {

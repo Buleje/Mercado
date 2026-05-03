@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -93,7 +93,7 @@ export async function POST(
 
   let publicUrl: string;
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, optimized, {

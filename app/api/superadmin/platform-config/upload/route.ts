@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { z } from "zod";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 
 /**
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   const path = `platform/${kind}-${ts}-${rand}.${extension}`;
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { error: upErr } = await supabase.storage
       .from(BUCKET)
       .upload(path, bytes, { contentType, upsert: false });

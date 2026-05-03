@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import sharp from "sharp";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     // ── Intento 1: Supabase Storage (producción) ────────────────────
     try {
-      const supabase = getSupabase();
+      const supabase = getSupabaseAdmin();
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(
         path,
         optimized,

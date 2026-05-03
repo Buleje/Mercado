@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { z } from "zod";
 import { PaymentProofsDB, type PaymentMethod, type BillingCycle } from "@/lib/db/payment-proofs.db";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
   let publicUrl: string;
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { error: upErr } = await supabase.storage
       .from(BUCKET)
       .upload(path, optimized, { contentType: "image/webp", upsert: false });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import sharp from "sharp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const randomSuffix = Math.random().toString(36).slice(2, 8);
     const path = `reviews/${timestamp}-${randomSuffix}.webp`;
 
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, optimized, {
