@@ -200,13 +200,16 @@ export default function ProductModifierModal({
                     className="object-cover"
                     priority
                   />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/30 to-transparent" />
-                  {/* Mesh decorativo para textura */}
+                  {/* Gradient WCAG AA: 0/85 abajo → transparent arriba para garantizar
+                      contraste sobre fotos de comida (el texto blanco sobre arroz
+                      claro se perdía con el gradiente anterior). */}
+                  <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/15" />
+                  {/* Mesh teal sutil — textura sin sobrecargar */}
                   <div
                     aria-hidden
-                    className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
+                    className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none"
                     style={{
-                      background: "radial-gradient(at 20% 0%, rgba(0,180,166,0.4) 0px, transparent 50%)",
+                      background: "radial-gradient(at 20% 0%, rgba(0,180,166,0.5) 0px, transparent 55%)",
                     }}
                   />
                 </div>
@@ -217,26 +220,30 @@ export default function ProductModifierModal({
               )}
 
               {/* Drag handle visual (mobile bottom sheet feel) */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/40 sm:hidden" aria-hidden />
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/50 sm:hidden" aria-hidden />
 
-              {/* Close */}
+              {/* Close — sólido para tener contraste garantizado sobre cualquier foto */}
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/50 hover:bg-black/75 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/65 hover:bg-black text-white shadow-lg transition-all hover:scale-105 active:scale-95"
               >
-                <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
               </button>
 
-              {/* Title overlay */}
+              {/* Title overlay con descripción + precio base */}
               <div className="absolute bottom-3 left-4 right-16">
-                <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/85 mb-0.5">
-                  Personalizar
+                <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/90 mb-0.5">
+                  Armá tu pedido
                 </p>
-                <h2 className="text-xl sm:text-[22px] font-black tracking-tight text-white drop-shadow-lg leading-tight line-clamp-2">
+                <h2 className="font-display text-xl sm:text-[22px] font-black tracking-tight text-white drop-shadow-lg leading-tight line-clamp-2">
                   {product.name}
                 </h2>
+                <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-white/85">
+                  Desde {fmt(product.price)}
+                  {product.unit && <span className="font-medium text-white/70"> · {product.unit}</span>}
+                </p>
               </div>
             </div>
 
@@ -247,8 +254,8 @@ export default function ProductModifierModal({
                 <div className="flex items-center gap-2 text-[length:var(--ts-xs)]">
                   <span className="font-bold text-[var(--text-tertiary)]">
                     {totalSelectedCount > 0
-                      ? `${totalSelectedCount} adicional${totalSelectedCount === 1 ? "" : "es"} elegido${totalSelectedCount === 1 ? "" : "s"}`
-                      : "Personalizá tu pedido"}
+                      ? `${totalSelectedCount} agregado${totalSelectedCount === 1 ? "" : "s"} a tu pedido`
+                      : "Armá tu pedido a tu gusto"}
                   </span>
                   <span className="flex-1 h-px bg-[var(--rule-soft)]" />
                   {priceDeltaTotal > 0 && (
@@ -276,19 +283,24 @@ export default function ProductModifierModal({
                   const isMulti = g.maxSelect > 1;
                   const isFull = isMulti && count >= g.maxSelect;
                   const groupErr = validation.find((v) => v.groupId === g.id);
-                  // Decide si renderear como GRID (cuando >=2 opciones tienen imagen) o LIST
-                  const optionsWithImage = g.options.filter((o) => o.imageUrl).length;
-                  const renderAsGrid = optionsWithImage >= 2;
+                  // Counter conversacional: "Hasta 4 — elegiste 0" en vez de "0/4"
+                  const counterLabel = isMulti
+                    ? count === 0
+                      ? `Hasta ${g.maxSelect}`
+                      : isFull
+                        ? "Listo, llegaste al máximo"
+                        : `Elegiste ${count} de ${g.maxSelect}`
+                    : count > 0 ? "Listo" : "";
 
                   return (
                     <section key={g.id} aria-labelledby={`group-${g.id}`}>
                       {/* Group header */}
                       <header className="mb-3">
-                        <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
                             <h3
                               id={`group-${g.id}`}
-                              className="text-[length:var(--ts-base)] font-black text-[var(--text-primary)] tracking-tight"
+                              className="font-display text-[length:var(--ts-lg)] font-black text-[var(--text-primary)] tracking-tight"
                             >
                               {g.name}
                             </h3>
@@ -299,63 +311,41 @@ export default function ProductModifierModal({
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            {isMulti && (
-                              <span className={cn(
-                                "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black tabular-nums transition-colors",
-                                isFull
-                                  ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
-                                  : count > 0
-                                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-                              )}>
-                                {count}/{g.maxSelect}
-                              </span>
-                            )}
-                            {!isMulti && count > 0 && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">
-                                <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                                Elegido
-                              </span>
-                            )}
-                          </div>
+                          {counterLabel && (
+                            <span className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black transition-colors whitespace-nowrap",
+                              isFull
+                                ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
+                                : count > 0
+                                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                            )}>
+                              {count > 0 && !isFull && <Check className="h-2.5 w-2.5" strokeWidth={3.5} />}
+                              {counterLabel}
+                            </span>
+                          )}
                         </div>
                         {g.description && (
-                          <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
+                          <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
                             {g.description}
                           </p>
                         )}
                       </header>
 
-                      {/* Options */}
-                      {renderAsGrid ? (
-                        <div className="grid grid-cols-2 gap-2.5" role="listbox" aria-multiselectable={isMulti}>
-                          {g.options.map((opt) => (
-                            <OptionCardGrid
-                              key={opt.id}
+                      {/* Options — UN SOLO PATRÓN unificado */}
+                      <ul className="space-y-1.5" role="listbox" aria-multiselectable={isMulti}>
+                        {g.options.map((opt) => (
+                          <li key={opt.id}>
+                            <OptionRow
                               option={opt}
                               isSelected={selected.includes(opt.id)}
                               isDisabled={!selected.includes(opt.id) && isFull}
                               isMulti={isMulti}
                               onClick={() => toggle(g, opt.id)}
                             />
-                          ))}
-                        </div>
-                      ) : (
-                        <ul className="space-y-1.5" role="listbox" aria-multiselectable={isMulti}>
-                          {g.options.map((opt) => (
-                            <li key={opt.id}>
-                              <OptionRow
-                                option={opt}
-                                isSelected={selected.includes(opt.id)}
-                                isDisabled={!selected.includes(opt.id) && isFull}
-                                isMulti={isMulti}
-                                onClick={() => toggle(g, opt.id)}
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                          </li>
+                        ))}
+                      </ul>
 
                       {groupErr && (
                         <p
@@ -381,7 +371,7 @@ export default function ProductModifierModal({
                           htmlFor="modifier-note"
                           className="text-[length:var(--ts-sm)] font-black text-[var(--text-primary)]"
                         >
-                          Notas para el cocinero
+                          Mensaje al cocinero
                         </label>
                         <button
                           type="button"
@@ -395,7 +385,7 @@ export default function ProductModifierModal({
                         id="modifier-note"
                         value={note}
                         onChange={(e) => setNote(e.target.value.slice(0, 100))}
-                        placeholder="Ej: sin cebolla, bien tostado, en porciones…"
+                        placeholder="Ej: bien doradito, sin cebolla, papas extra crocantes…"
                         rows={2}
                         autoFocus
                         className="block w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
@@ -411,7 +401,7 @@ export default function ProductModifierModal({
                       className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Añadir nota especial
+                      Dejale un mensaje al cocinero
                     </button>
                   )}
                 </div>
@@ -491,7 +481,10 @@ export default function ProductModifierModal({
   );
 }
 
-// ─── OptionCardGrid — para grupos con imágenes (>=2) ────────────────────────
+// ─── OptionRow — patrón ÚNICO horizontal para todas las opciones ────────────
+// Diseño: card 72px alto. Thumb 56x56 a la izq (placeholder elegante si no hay
+// imagen), nombre + badge "recomendado" en el medio, precio + selector a la
+// derecha. Selected state: border 2px accent + ring ext + tint accent-soft.
 
 interface OptionLike {
   id: string;
@@ -500,106 +493,6 @@ interface OptionLike {
   priceDelta: number;
   isDefault: boolean;
 }
-
-function OptionCardGrid({
-  option, isSelected, isDisabled, isMulti, onClick,
-}: {
-  option: OptionLike;
-  isSelected: boolean;
-  isDisabled: boolean;
-  isMulti: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      disabled={isDisabled}
-      whileTap={!isDisabled ? { scale: 0.97 } : {}}
-      role="option"
-      aria-selected={isSelected}
-      className={cn(
-        "relative rounded-2xl border-2 overflow-hidden text-left transition-all group",
-        isSelected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-lg shadow-[var(--accent)]/15"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:shadow-md",
-        isDisabled && "opacity-40 cursor-not-allowed",
-      )}
-    >
-      {/* Image + selector overlay */}
-      <div className="relative aspect-square w-full overflow-hidden bg-[var(--surface-sunken)]">
-        {option.imageUrl ? (
-          <Image
-            src={option.imageUrl}
-            alt={option.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 200px"
-            className={cn(
-              "object-cover transition-transform duration-300",
-              !isDisabled && "group-hover:scale-105"
-            )}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles className="h-7 w-7 text-[var(--text-tertiary)]" />
-          </div>
-        )}
-
-        {/* Selector indicator (top-right) */}
-        <span
-          aria-hidden
-          className={cn(
-            "absolute top-2 right-2 inline-flex h-7 w-7 items-center justify-center transition-all",
-            isMulti ? "rounded-lg" : "rounded-full",
-            isSelected
-              ? "bg-[var(--accent)] text-white shadow-lg ring-2 ring-white"
-              : "bg-white/90 backdrop-blur-sm border-2 border-white shadow-sm",
-          )}
-        >
-          {isSelected && <Check className="h-4 w-4" strokeWidth={3.5} />}
-        </span>
-
-        {/* Default star */}
-        {option.isDefault && !isSelected && (
-          <span
-            aria-hidden
-            className="absolute top-2 left-2 inline-flex h-6 items-center gap-0.5 px-1.5 rounded-full bg-[var(--data-warning)] text-white text-[length:var(--ts-2xs)] font-black uppercase tracking-wider"
-          >
-            <Star className="h-2.5 w-2.5 fill-current" />
-            Recomendado
-          </span>
-        )}
-
-        {/* Price delta badge (bottom-left) */}
-        {option.priceDelta !== 0 && (
-          <span
-            aria-hidden
-            className={cn(
-              "absolute bottom-2 left-2 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums backdrop-blur-md",
-              option.priceDelta > 0
-                ? "bg-black/65 text-white"
-                : "bg-[var(--data-success)]/85 text-white",
-            )}
-          >
-            {option.priceDelta > 0 ? "+" : ""}{fmt(option.priceDelta)}
-          </span>
-        )}
-      </div>
-
-      {/* Name */}
-      <div className="px-2.5 py-2">
-        <p className={cn(
-          "text-[length:var(--ts-sm)] font-black leading-tight line-clamp-2",
-          isSelected ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
-        )}>
-          {option.name}
-        </p>
-      </div>
-    </motion.button>
-  );
-}
-
-// ─── OptionRow — para grupos sin imagen o con 0-1 imágenes ──────────────────
 
 function OptionRow({
   option, isSelected, isDisabled, isMulti, onClick,
@@ -615,63 +508,53 @@ function OptionRow({
       type="button"
       onClick={onClick}
       disabled={isDisabled}
-      whileTap={!isDisabled ? { scale: 0.99 } : {}}
+      whileTap={!isDisabled ? { scale: 0.985 } : {}}
       role="option"
       aria-selected={isSelected}
       className={cn(
-        "w-full flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
+        "w-full flex items-center gap-3 rounded-2xl border-2 p-2.5 text-left transition-all",
         isSelected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md shadow-[var(--accent)]/10"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--surface-sunken)]",
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-4 ring-[var(--accent)]/15 shadow-md"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
         isDisabled && "opacity-40 cursor-not-allowed",
       )}
     >
-      {/* Selector */}
-      <span
-        aria-hidden
-        className={cn(
-          "shrink-0 inline-flex h-6 w-6 items-center justify-center transition-all",
-          isMulti ? "rounded-md" : "rounded-full",
-          isSelected
-            ? "bg-[var(--accent)] text-white shadow-sm"
-            : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]",
-        )}
-      >
-        {isSelected && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
-      </span>
-
-      {/* Optional image */}
-      {option.imageUrl && (
-        <span className="shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
+      {/* Thumbnail — siempre presente para uniformidad */}
+      <span className={cn(
+        "shrink-0 h-14 w-14 rounded-xl overflow-hidden border transition-colors",
+        isSelected ? "border-[var(--accent)]/30" : "border-[var(--rule-soft)]",
+        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-[var(--accent-soft)]/40 flex items-center justify-center"
+      )}>
+        {option.imageUrl ? (
           <Image
             src={option.imageUrl}
             alt={option.name}
-            width={44}
-            height={44}
+            width={56}
+            height={56}
             className="object-cover w-full h-full"
           />
-        </span>
-      )}
+        ) : (
+          <Sparkles className="h-5 w-5 text-[var(--accent)]/60" aria-hidden />
+        )}
+      </span>
 
-      {/* Name + price */}
-      <span className="flex-1 min-w-0 flex items-center justify-between gap-2">
-        <span className="flex-1 min-w-0">
-          <span className={cn(
-            "block text-[length:var(--ts-sm)] font-bold leading-tight truncate",
-            isSelected ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
-          )}>
-            {option.name}
-          </span>
-          {option.isDefault && !isSelected && (
-            <span className="inline-flex items-center gap-0.5 mt-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
-              <Star className="h-2.5 w-2.5 fill-current" /> Recomendado
-            </span>
-          )}
+      {/* Name + meta */}
+      <span className="flex-1 min-w-0">
+        <span className={cn(
+          "block text-[length:var(--ts-sm)] font-extrabold leading-tight",
+          isSelected ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
+        )}>
+          {option.name}
         </span>
+        {option.isDefault && (
+          <span className="inline-flex items-center gap-0.5 mt-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--data-warning)]">
+            <Star className="h-2.5 w-2.5 fill-current" /> Recomendado
+          </span>
+        )}
         {option.priceDelta !== 0 && (
           <span
             className={cn(
-              "shrink-0 text-[length:var(--ts-sm)] font-black tabular-nums",
+              "block mt-0.5 text-[length:var(--ts-xs)] font-black tabular-nums",
               option.priceDelta > 0
                 ? "text-[var(--accent)]"
                 : "text-[var(--data-success)]",
@@ -681,6 +564,22 @@ function OptionRow({
           </span>
         )}
       </span>
+
+      {/* Selector — siempre visible, anima al cambiar estado */}
+      <motion.span
+        aria-hidden
+        animate={{ scale: isSelected ? 1 : 0.92 }}
+        transition={{ type: "spring", stiffness: 600, damping: 20 }}
+        className={cn(
+          "shrink-0 inline-flex h-7 w-7 items-center justify-center transition-colors",
+          isMulti ? "rounded-lg" : "rounded-full",
+          isSelected
+            ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/40"
+            : "border-2 border-[var(--rule-strong)] bg-[var(--surface-canvas)]",
+        )}
+      >
+        {isSelected && <Check className="h-4 w-4" strokeWidth={3.5} />}
+      </motion.span>
     </motion.button>
   );
 }
