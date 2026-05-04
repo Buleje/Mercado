@@ -1,0 +1,11 @@
+{
+  "main": {
+    "enabled": true,
+    "message": "¡Pronto abrimos! Estamos preparando todo.",
+    "updatedAt": "2026-05-03T23:48:45.496Z"
+  },
+  "mi-pollo": {
+    "enabled": false,
+    "updatedAt": "2026-05-03T23:52:18.763Z"
+  }
+}

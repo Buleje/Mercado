@@ -26,6 +26,9 @@ export interface InitialStore {
   lng?: number | null;
   vacationMode?: boolean;
   vacationMessage?: string | null;
+  /** "Tienda en construccion" — overlay sobre la portada en /tiendas. */
+  underConstruction?: boolean;
+  underConstructionMessage?: string | null;
 }
 
 /**
@@ -83,19 +86,31 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
       }
     }
 
-    return rows.map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      name: s.name,
-      logo: s.logo,
-      cover: coverMap.get(s.id) ?? null,
-      banner: s.banner,
-      category: s.category,
-      zone: s.zone,
-      rating: s.rating,
-      reviewCount: s.reviewCount,
-      description: s.description,
-    }));
+    // Bulk lookup del flag "Tienda en construccion" — JSON file storage,
+    // mismo patron que store-category-orders (sin migracion). Cada card
+    // muestra overlay si su slug tiene enabled=true.
+    const { listConstructionMode } = await import("@/lib/store-construction-mode");
+    const constructionMap: Record<string, { enabled: boolean; message?: string; updatedAt: string }> =
+      await listConstructionMode().catch(() => ({}));
+
+    return rows.map((s) => {
+      const construction = constructionMap[s.slug];
+      return {
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        logo: s.logo,
+        cover: coverMap.get(s.id) ?? null,
+        banner: s.banner,
+        category: s.category,
+        zone: s.zone,
+        rating: s.rating,
+        reviewCount: s.reviewCount,
+        description: s.description,
+        underConstruction: Boolean(construction?.enabled),
+        underConstructionMessage: construction?.message ?? null,
+      };
+    });
   } catch {
     // Graceful degrade: devuelve [] y el cliente hace fetch en useEffect.
     return [];

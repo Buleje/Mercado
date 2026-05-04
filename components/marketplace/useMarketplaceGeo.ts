@@ -48,6 +48,9 @@ export interface MarketplaceStore {
   lng?: number | null;
   vacationMode?: boolean;
   vacationMessage?: string | null;
+  /** Flag "Tienda en construccion" — pinta overlay sobre la portada en /tiendas. */
+  underConstruction?: boolean;
+  underConstructionMessage?: string | null;
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;

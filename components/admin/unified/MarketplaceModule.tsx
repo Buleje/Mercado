@@ -1004,6 +1004,12 @@ function TiendaTab() {
   const [error, setError]       = useState<string | null>(null);
   const [saved, setSaved]       = useState(false);
   const [copied, setCopied]     = useState(false);
+  // Tienda en construccion — flag separado del schema, persiste en
+  // lib/data/store-construction.json. Toggle dispara PUT inmediato sin
+  // esperar al "Guardar cambios" general.
+  const [underConstruction, setUnderConstruction] = useState(false);
+  const [underConstructionMsg, setUnderConstructionMsg] = useState("");
+  const [savingConstruction, setSavingConstruction] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -1014,7 +1020,33 @@ function TiendaTab() {
       })
       .catch(() => setError("Error al cargar datos de la tienda."))
       .finally(() => setLoading(false));
+    // Carga el flag de construccion en paralelo
+    fetch("/api/admin/marketplace/store-construction")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.enabled === "boolean") {
+          setUnderConstruction(d.enabled);
+          setUnderConstructionMsg(typeof d.message === "string" ? d.message : "");
+        }
+      })
+      .catch(() => { /* fallback silent: false */ });
   }, []);
+
+  const persistConstruction = useCallback(
+    async (enabled: boolean, message: string) => {
+      setSavingConstruction(true);
+      try {
+        await fetch("/api/admin/marketplace/store-construction", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ enabled, message: message.trim() || undefined }),
+        });
+      } catch { /* silent — el toggle ya esta en UI; siguiente save lo persiste */ } finally {
+        setSavingConstruction(false);
+      }
+    },
+    [],
+  );
 
   const handleSave = async () => {
     if (!store.name?.trim()) {
@@ -1026,7 +1058,7 @@ function TiendaTab() {
     try {
       const res = await fetch("/api/marketplace/stores", {
         method: store.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(store),
       });
       if (!res.ok) {
@@ -1357,6 +1389,18 @@ function TiendaTab() {
                 desc="Pausa pedidos sin despublicar."
                 tone="warning"
               />
+              <div className="border-t border-[var(--rule-base)] mx-2" />
+              <ToggleRow
+                active={underConstruction}
+                onToggle={() => {
+                  const next = !underConstruction;
+                  setUnderConstruction(next);
+                  void persistConstruction(next, underConstructionMsg);
+                }}
+                title="Tienda en construcción"
+                desc="Muestra un overlay 'En construcción' sobre la portada en /tiendas."
+                tone="warning"
+              />
             </div>
 
             {store.vacationMode && (
@@ -1375,6 +1419,30 @@ function TiendaTab() {
                     "focus:ring-2 focus:ring-[var(--data-warning)]/30",
                   )}
                 />
+              </div>
+            )}
+
+            {underConstruction && (
+              <div className="mt-3 space-y-1.5 px-2">
+                <label className="text-xs font-bold text-[var(--text-secondary)]">
+                  Mensaje sobre la portada (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={underConstructionMsg}
+                  onChange={(e) => setUnderConstructionMsg(e.target.value)}
+                  onBlur={() => void persistConstruction(underConstruction, underConstructionMsg)}
+                  placeholder="Ej: Catálogo en construcción — abrimos pronto"
+                  maxLength={120}
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all",
+                    "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
+                    "focus:ring-2 focus:ring-[var(--data-warning)]/30",
+                  )}
+                />
+                {savingConstruction && (
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Guardando…</p>
+                )}
               </div>
             )}
           </SectionCard>

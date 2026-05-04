@@ -22,7 +22,7 @@ import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
-import { Plane } from "lucide-react";
+import { Plane, HardHat } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
@@ -90,6 +90,38 @@ interface ProductPreview {
  * No reemplaza la logica de negocio de hover-preview: esa logica vive aqui
  * porque es especifica de esta vista y el DS canonical no la incluye.
  */
+/**
+ * UnderConstructionOverlay — diagonal banner sobre la portada de la card
+ * cuando el dueno habilita el flag "Tienda en construccion" en el admin
+ * (/admin?tab=marketplace → Mi Tienda Personal). Cubre la imagen con tinte
+ * + cinta amarilla con el mensaje custom o "Tienda en construccion" default.
+ */
+function UnderConstructionOverlay({ message }: { message?: string | null }) {
+  return (
+    <>
+      {/* Tinte semi-translucido + iconos centro */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-10 bg-linear-to-br from-amber-900/45 via-amber-700/40 to-amber-600/35 flex flex-col items-center justify-center text-center pointer-events-none"
+      >
+        <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-[var(--data-warning)] text-white shadow-lg">
+          <HardHat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+        </div>
+        <p className="mt-2 px-3 text-[length:var(--ts-xs)] sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-md">
+          {message?.trim() ? message : "Tienda en construcción"}
+        </p>
+      </div>
+      {/* Cinta diagonal amarillo/negro */}
+      <div
+        aria-hidden
+        className="absolute -left-8 top-3 z-20 rotate-[-25deg] bg-[var(--data-warning)] text-black px-10 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-widest shadow-md pointer-events-none"
+      >
+        En construcción
+      </div>
+    </>
+  );
+}
+
 const StoreCardWrapper = memo(function StoreCardWrapper({
   store,
   index,
@@ -298,32 +330,38 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         badges={badges}
         footer={footer}
         renderImage={({ src, alt, className }) => (
-          <Image
-            src={src}
-            alt={alt}
-            fill
-            className={className}
-            sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
-          />
+          <>
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              className={className}
+              sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+            />
+            {store.underConstruction && <UnderConstructionOverlay message={store.underConstructionMessage} />}
+          </>
         )}
         renderImageFallback={() => (
-          <MiniBulejeBanner storeName={store.name} category={store.category} />
+          <>
+            <MiniBulejeBanner storeName={store.name} category={store.category} />
+            {store.underConstruction && <UnderConstructionOverlay message={store.underConstructionMessage} />}
+          </>
         )}
         avatar={
           <div
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-[3px] border-[var(--surface-canvas)] shadow-lg flex items-center justify-center"
+            className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-[3px] border-[var(--surface-canvas)] shadow-md flex items-center justify-center"
             aria-label={ariaLabel}
           >
             {store.logo ? (
               <Image
                 src={store.logo}
                 alt=""
-                width={80}
-                height={80}
+                width={56}
+                height={56}
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-xl sm:text-2xl font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+              <span className="text-base sm:text-lg font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
                 {store.name.trim().charAt(0).toUpperCase()}
               </span>
             )}

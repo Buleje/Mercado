@@ -395,6 +395,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Bulk lookup del flag "Tienda en construccion" por slug — stored en
+    // lib/data/store-construction.json (sin migracion). Cada card lo lee
+    // y muestra overlay sobre la portada en /tiendas si esta habilitado.
+    const { listConstructionMode } = await import("@/lib/store-construction-mode");
+    const constructionMap: Record<string, { enabled: boolean; message?: string; updatedAt: string }> =
+      await listConstructionMode().catch((err) => {
+        logger.warn("[marketplace/stores] construction mode lookup failed", { error: String(err) });
+        return {};
+      });
+
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
@@ -415,6 +425,7 @@ export async function GET(req: NextRequest) {
       const slug = (s as { slug?: string }).slug ?? "";
       const ownZone = ((s.zone as string | null | undefined) ?? "").trim();
       const finalZone = ownZone !== "" ? ownZone : (manualStoreZones[slug] ?? "");
+      const construction = constructionMap[slug];
       return {
         id: s.id,
         slug: s.slug,
@@ -429,6 +440,8 @@ export async function GET(req: NextRequest) {
         description: s.description,
         vacationMode: s.vacationMode,
         vacationMessage: s.vacationMessage,
+        underConstruction: Boolean(construction?.enabled),
+        underConstructionMessage: construction?.message ?? null,
         lat: s.lat,
         lng: s.lng,
         productCount: trust.productCount,
