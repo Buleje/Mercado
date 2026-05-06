@@ -2,28 +2,33 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
   Save, Loader2, Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
-  Paintbrush, FileText } from "@buleje/design-system/icons";
+  Paintbrush, FileText, Sparkles, Square, LayoutGrid, WandSparkles, RefreshCw,
+  Smartphone, Monitor, Zap, Truck, Star, Heart, Clock, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
 import dynamic from "next/dynamic";
 import StorefrontEditor from "./StorefrontEditor";
 
 const StoreCreativeMode = dynamic(() => import("./StoreCreativeMode"), { ssr: false });
 const CatalogoTiendaTab = dynamic(() => import("./store-page/CatalogoTiendaTab"), { ssr: false });
+const BrandConceptTab = dynamic(() => import("./BrandConceptTab"), { ssr: false });
+const CategoryBannersTab = dynamic(() => import("./CategoryBannersTab"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type Tab = "identidad" | "colores" | "secciones" | "hero" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
+type Tab = "identidad" | "marca" | "colores" | "secciones" | "hero" | "promos" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
 
 export interface StoreTheme {
   logo: string;
@@ -68,6 +73,18 @@ export interface StoreTheme {
   welcomePopupMessage: string;
   welcomePopupCoupon: string;
   customCSS: string;
+  // Banners promocionales por categoría — controla "Oferta de Temporada".
+  // El admin sube una imagen + textos; al click va a la categoría o producto vinculado.
+  categoryBanners?: Record<string, {
+    image?: string;
+    title?: string;
+    subtitle?: string;
+    ctaText?: string;
+    /** Si se setea, el CTA navega al producto en vez de filtrar la categoría. */
+    productSlug?: string;
+    /** Toggle para desactivar este banner sin perder los datos. */
+    enabled?: boolean;
+  }>;
 }
 
 const DEFAULT_THEME: StoreTheme = {
@@ -135,16 +152,39 @@ const COLOR_PRESETS = [
 ];
 
 const FONT_OPTIONS = [
-  { value: "sistema", label: "Sistema (por defecto)" },
-  { value: "geist",   label: "Geist" },
-  { value: "inter",   label: "Inter" },
-  { value: "poppins", label: "Poppins" },
-  { value: "montserrat", label: "Montserrat" },
-  { value: "raleway", label: "Raleway" },
-  { value: "nunito",  label: "Nunito" },
-  { value: "lato",    label: "Lato" },
-  { value: "roboto",  label: "Roboto" },
-  { value: "opensans", label: "Open Sans" },
+  { value: "sistema",    label: "Sistema",      stack: "system-ui, -apple-system, sans-serif", vibe: "Neutra del SO" },
+  { value: "geist",      label: "Geist",        stack: "'Geist', sans-serif",       vibe: "Moderna y técnica" },
+  { value: "inter",      label: "Inter",        stack: "'Inter', sans-serif",       vibe: "Limpia y versátil" },
+  { value: "poppins",    label: "Poppins",      stack: "'Poppins', sans-serif",     vibe: "Friendly y redonda" },
+  { value: "montserrat", label: "Montserrat",   stack: "'Montserrat', sans-serif",  vibe: "Elegante geométrica" },
+  { value: "raleway",    label: "Raleway",      stack: "'Raleway', sans-serif",     vibe: "Sofisticada delgada" },
+  { value: "nunito",     label: "Nunito",       stack: "'Nunito', sans-serif",      vibe: "Calidez redondeada" },
+  { value: "lato",       label: "Lato",         stack: "'Lato', sans-serif",        vibe: "Profesional cálida" },
+  { value: "roboto",     label: "Roboto",       stack: "'Roboto', sans-serif",      vibe: "Estándar Android" },
+  { value: "opensans",   label: "Open Sans",    stack: "'Open Sans', sans-serif",   vibe: "Legible universal" },
+];
+
+const CSS_SNIPPETS: { label: string; description: string; css: string }[] = [
+  {
+    label: "Borde dorado en cards",
+    description: "Resalta cada producto con borde dorado",
+    css: ".product-card { border: 2px solid gold; }",
+  },
+  {
+    label: "Header con blur fuerte",
+    description: "Efecto cristal esmerilado en el navbar",
+    css: ".store-header { backdrop-filter: blur(24px) saturate(1.6); }",
+  },
+  {
+    label: "Sombra azul al hover",
+    description: "Las cards levantan con tinte azul al pasar el mouse",
+    css: ".product-card:hover { box-shadow: 0 12px 32px rgba(37,99,235,0.25); transform: translateY(-2px); }",
+  },
+  {
+    label: "Animación pulse en CTAs",
+    description: "Los botones llaman la atención con latido suave",
+    css: "button[type=submit] { animation: pulse 2s infinite; }\n@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }",
+  },
 ];
 
 // ── Plantillas de tienda ────────────────────────────────────────────────────
@@ -237,9 +277,9 @@ function ColorPicker({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <label className="text-xs font-semibold text-muted">{label}</label>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-3">
+      <label className="text-sm font-semibold text-foreground">{label}</label>
+      <div className="flex flex-wrap gap-2.5 items-center">
         {COLOR_PRESETS.map((c) => (
           <button
             key={c.value}
@@ -247,10 +287,10 @@ function ColorPicker({
             onClick={() => onChange(c.value)}
             title={c.label}
             className={cn(
-              "h-8 w-8 rounded-full border-2 transition-all shrink-0",
+              "h-11 w-11 rounded-2xl border-2 transition-all shrink-0 shadow-sm",
               value === c.value
-                ? "border-foreground scale-110"
-                : "border-transparent hover:scale-105"
+                ? "border-foreground scale-110 ring-2 ring-primary/30"
+                : "border-white dark:border-card hover:scale-105 hover:border-foreground/40"
             )}
             style={{ backgroundColor: c.value }}
             aria-label={c.label}
@@ -261,27 +301,592 @@ function ColorPicker({
             type="color"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-8 rounded-full cursor-pointer border-2 border-[var(--rule-base)] overflow-hidden p-0"
+            className="h-11 w-11 rounded-2xl cursor-pointer border-2 border-[var(--rule-base)] overflow-hidden p-0"
             title="Color personalizado"
           />
         </div>
       </div>
-      <p className="text-xs text-muted font-mono">{value}</p>
+      <p className="text-xs text-muted font-mono tracking-wide">{value}</p>
     </div>
   );
 }
 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted">{label}</label>
+    <div className="space-y-2">
+      <label className="text-sm font-semibold text-foreground">{label}</label>
       {children}
     </div>
   );
 }
 
+function StyleSection({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4">
+      <header className="flex items-start gap-3">
+        <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-bold text-foreground leading-tight">{title}</h3>
+          <p className="text-sm text-muted leading-snug mt-0.5">{description}</p>
+        </div>
+      </header>
+      <div>{children}</div>
+    </section>
+  );
+}
+
 const inputCls =
-  "w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all min-h-[44px]";
+  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
+
+// ── Sugerencias rápidas para Hero (chips para auto-completar) ───────────────
+
+const TITLE_SUGGESTIONS = [
+  "Todo lo que necesitas, en 25 minutos",
+  "Tu bodega de confianza, ahora online",
+  "Frescos a tu puerta — Pucallpa",
+  "La despensa completa en 1 click",
+  "Pedí lo que falta, llega rapidito",
+];
+
+const SUBTITLE_SUGGESTIONS = [
+  "Delivery rápido en Pucallpa. Yape, Plin o efectivo.",
+  "Productos frescos, calidad de barrio y atención personal.",
+  "Más de 500 productos con entrega el mismo día.",
+  "Lo que tu vecino te lleva, pero con un click.",
+  "Pagás cuando llega. Confiable, rápido, cercano.",
+];
+
+const BADGE_SUGGESTIONS = [
+  "Delivery gratis +S/50",
+  "Entrega en 25 min",
+  "Yape · Plin · Efectivo",
+  "Pucallpa al instante",
+  "Atención 7am–10pm",
+];
+
+const CTA_SUGGESTIONS = [
+  { text: "Ver productos", icon: ShoppingBag },
+  { text: "Pedir ahora", icon: Zap },
+  { text: "Hablar por WhatsApp", icon: MessageSquare },
+  { text: "Explorar catálogo", icon: Grid3x3 },
+];
+
+// ── Hero Tab ────────────────────────────────────────────────────────────────
+
+function HeroTab({
+  theme,
+  update,
+  inputCls: inputClassName,
+}: {
+  theme: StoreTheme;
+  update: <K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => void;
+  inputCls: string;
+}) {
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+
+  const storefrontUrl = (() => {
+    if (typeof window === "undefined") return "/tienda";
+    const path = window.location.pathname;
+    const match = path.match(/^\/t\/([^/]+)\//);
+    return match ? `/t/${match[1]}/tienda` : "/tienda";
+  })();
+
+  const heroBg = theme.heroImage?.trim();
+  const accent = theme.accentColor || theme.primaryColor;
+
+  return (
+    <div className="space-y-8">
+      {/* Banner explicativo */}
+      <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+        <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <ImageIcon className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-base font-bold text-foreground">El primer mensaje que ve tu cliente</p>
+          <p className="text-sm text-muted mt-0.5">
+            El hero es el banner grande arriba de tu tienda. Vendé el por qué — qué problema resolves,
+            en cuánto tiempo, con qué garantía. Cambiá los textos abajo y mirá el preview en vivo.
+          </p>
+        </div>
+      </div>
+
+      {/* ── LIVE PREVIEW (fiel al hero real) ────────────────── */}
+      <StyleSection
+        icon={<Eye className="h-5 w-5 text-primary" />}
+        title="Vista previa en vivo"
+        description="Idéntico al hero real de tu tienda. Cambiá entre desktop y mobile para ver ambos."
+      >
+        <div className="space-y-3">
+          {/* Device toggle + abrir tienda */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-card-border">
+              {[
+                { value: "desktop" as const, label: "Desktop", icon: Monitor },
+                { value: "mobile" as const, label: "Mobile", icon: Smartphone },
+              ].map((d) => {
+                const Icon = d.icon;
+                const active = previewDevice === d.value;
+                return (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => setPreviewDevice(d.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold transition-all",
+                      active
+                        ? "bg-white dark:bg-card text-primary shadow"
+                        : "text-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+            <a
+              href={storefrontUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-foreground hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ver en tienda
+            </a>
+          </div>
+
+          {/* Preview frame — replicating the actual TiendaHero dark editorial */}
+          <div className="flex justify-center">
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border transition-all",
+                previewDevice === "desktop" ? "w-full" : "w-[390px] max-w-full"
+              )}
+              style={
+                heroBg
+                  ? {
+                      backgroundImage: `linear-gradient(to bottom, rgba(6,10,13,0.78), rgba(6,10,13,0.92)), url(${heroBg})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : { background: "#060a0d" }
+              }
+            >
+              {/* Ambient glows when no background image */}
+              {!heroBg && (
+                <div className="pointer-events-none absolute inset-0">
+                  <div
+                    className="absolute -top-24 -right-24 h-72 w-72 rounded-full blur-[80px]"
+                    style={{ backgroundColor: `${accent}30` }}
+                  />
+                  <div className="absolute -bottom-24 -left-24 h-60 w-60 rounded-full bg-white/5 blur-[80px]" />
+                </div>
+              )}
+
+              <div
+                className={cn(
+                  "relative z-10",
+                  previewDevice === "desktop"
+                    ? "px-8 sm:px-12 py-10 sm:py-14 grid grid-cols-1 md:grid-cols-5 gap-8 items-center"
+                    : "px-5 py-8 text-center"
+                )}
+              >
+                {/* Copy column */}
+                <div className={cn(previewDevice === "desktop" ? "md:col-span-3 text-left" : "")}>
+                  {theme.heroBadge && (
+                    <span
+                      className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-4"
+                      style={{ color: accent }}
+                    >
+                      {theme.heroBadge}
+                    </span>
+                  )}
+                  <h1
+                    className={cn(
+                      "font-extrabold text-white leading-[1.08] tracking-tight",
+                      previewDevice === "desktop" ? "text-3xl sm:text-4xl" : "text-2xl"
+                    )}
+                  >
+                    {theme.heroTitle || "Todo lo que necesitas, en tu puerta"}
+                  </h1>
+                  <p
+                    className={cn(
+                      "text-white/70 leading-relaxed",
+                      previewDevice === "desktop" ? "mt-4 text-base max-w-xl" : "mt-3 text-sm"
+                    )}
+                  >
+                    {theme.heroSubtitle || "Delivery rápido en Pucallpa. Paga con Yape o efectivo."}
+                  </p>
+                  <div
+                    className={cn(
+                      "flex gap-2.5 mt-6",
+                      previewDevice === "desktop" ? "flex-row" : "flex-col"
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white shadow-lg pointer-events-none"
+                      style={{ backgroundColor: accent, boxShadow: `0 10px 25px ${accent}40` }}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      {theme.heroCTA || "Ver productos"}
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-white/20 bg-white/5 text-white font-semibold text-sm pointer-events-none"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      Mi carrito
+                    </button>
+                  </div>
+
+                  {/* Stats line */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-6 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> 25 min
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-white/25" />
+                    <span className="inline-flex items-center gap-1">
+                      <Truck className="h-3 w-3" /> Delivery
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-white/25" />
+                    <span>Yape · Plin · Efectivo</span>
+                  </div>
+                </div>
+
+                {/* Illustration column (desktop only, no bg image) */}
+                {previewDevice === "desktop" && !heroBg && (
+                  <div className="md:col-span-2 flex justify-end">
+                    <div className="relative">
+                      <div
+                        className="absolute inset-0 rounded-full blur-[40px] scale-90"
+                        style={{ backgroundColor: `${accent}25` }}
+                      />
+                      <div className="relative rounded-3xl bg-white/[0.04] border border-white/10 p-6 backdrop-blur-sm w-44 h-44 flex items-center justify-center">
+                        <div
+                          className="h-24 w-24 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, ${theme.primaryColor}, ${accent})`,
+                          }}
+                        />
+                      </div>
+                      <div
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider text-white shadow-lg whitespace-nowrap"
+                        style={{
+                          backgroundColor: accent,
+                          boxShadow: `0 10px 25px ${accent}50`,
+                        }}
+                      >
+                        Hecho en Pucallpa
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 1. TÍTULO PRINCIPAL ─────────────────────────────── */}
+      <StyleSection
+        icon={<Type className="h-5 w-5 text-primary" />}
+        title="Título principal"
+        description="El gancho — la primera frase que va a leer un cliente nuevo. Corto, directo, máximo 8 palabras."
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={theme.heroTitle}
+            onChange={(e) => update("heroTitle", e.target.value)}
+            placeholder="Todo lo que necesitas, en tu puerta"
+            className={inputClassName}
+            maxLength={80}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">Tip: incluí el resultado o el tiempo. Ej: &ldquo;en 25 min&rdquo;, &ldquo;a tu puerta&rdquo;.</p>
+            <span className={cn(
+              "text-xs font-mono shrink-0",
+              (theme.heroTitle || "").length > 70 ? "text-amber-600 dark:text-amber-400" : "text-muted"
+            )}>
+              {(theme.heroTitle || "").length}/80
+            </span>
+          </div>
+
+          {/* Sugerencias chips */}
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted">Sugerencias rápidas</p>
+            <div className="flex flex-wrap gap-2">
+              {TITLE_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => update("heroTitle", s)}
+                  className={cn(
+                    "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
+                    theme.heroTitle === s
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 2. SUBTÍTULO ────────────────────────────────────── */}
+      <StyleSection
+        icon={<FileText className="h-5 w-5 text-primary" />}
+        title="Subtítulo"
+        description="Refuerza el título — el por qué deberían comprarte a vos. Máximo 2 líneas."
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={theme.heroSubtitle}
+            onChange={(e) => update("heroSubtitle", e.target.value)}
+            placeholder="Delivery rápido en Pucallpa. Paga con Yape o efectivo."
+            className={inputClassName}
+            maxLength={140}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">Mencioná tus 2 ventajas concretas: pagos, garantías, atención.</p>
+            <span className={cn(
+              "text-xs font-mono shrink-0",
+              (theme.heroSubtitle || "").length > 120 ? "text-amber-600 dark:text-amber-400" : "text-muted"
+            )}>
+              {(theme.heroSubtitle || "").length}/140
+            </span>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted">Sugerencias rápidas</p>
+            <div className="flex flex-wrap gap-2">
+              {SUBTITLE_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => update("heroSubtitle", s)}
+                  className={cn(
+                    "px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
+                    theme.heroSubtitle === s
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 3. BADGE SUPERIOR ───────────────────────────────── */}
+      <StyleSection
+        icon={<Sparkles className="h-5 w-5 text-primary" />}
+        title="Badge superior"
+        description="Etiqueta destacada arriba del título — promociones, garantías o urgencia. Opcional pero potente."
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={theme.heroBadge}
+            onChange={(e) => update("heroBadge", e.target.value)}
+            placeholder="Delivery gratis +S/50"
+            className={inputClassName}
+            maxLength={40}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">Aparece en el color de acento — destaca sobre el resto.</p>
+            <span className="text-xs font-mono text-muted shrink-0">{(theme.heroBadge || "").length}/40</span>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted">Sugerencias rápidas</p>
+            <div className="flex flex-wrap gap-2">
+              {BADGE_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => update("heroBadge", s)}
+                  className={cn(
+                    "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
+                    theme.heroBadge === s
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => update("heroBadge", "")}
+                className="px-3 h-9 rounded-xl text-sm font-semibold border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-muted hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
+              >
+                Sin badge
+              </button>
+            </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 4. BOTÓN DE ACCIÓN (CTA) ────────────────────────── */}
+      <StyleSection
+        icon={<MessageSquare className="h-5 w-5 text-primary" />}
+        title="Botón de acción (CTA)"
+        description="El click más importante de toda la tienda. Texto + destino al que lleva."
+      >
+        <div className="space-y-5">
+          {/* Texto del CTA */}
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-foreground">Texto del botón</label>
+            <input
+              type="text"
+              value={theme.heroCTA}
+              onChange={(e) => update("heroCTA", e.target.value)}
+              placeholder="Ver productos"
+              className={inputClassName}
+              maxLength={30}
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted">Verbo en infinitivo — qué hace el cliente cuando hace click.</p>
+              <span className="text-xs font-mono text-muted shrink-0">{(theme.heroCTA || "").length}/30</span>
+            </div>
+
+            {/* Sugerencias CTA con icono */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {CTA_SUGGESTIONS.map((s) => {
+                const Icon = s.icon;
+                const active = theme.heroCTA === s.text;
+                return (
+                  <button
+                    key={s.text}
+                    type="button"
+                    onClick={() => update("heroCTA", s.text)}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {s.text}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Destino del botón */}
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-foreground">Destino del botón</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {([
+                { value: "tienda",     label: "Tienda",     desc: "Lleva al catálogo de productos",  icon: <ShoppingBag className="h-5 w-5" /> },
+                { value: "whatsapp",   label: "WhatsApp",   desc: "Abre el chat con tu número",       icon: <MessageSquare className="h-5 w-5" /> },
+                { value: "categorias", label: "Categorías", desc: "Sección de categorías",            icon: <Grid3x3 className="h-5 w-5" /> },
+                { value: "custom",     label: "URL custom", desc: "Otro link específico",             icon: <Map className="h-5 w-5" /> },
+              ] as const).map((s) => {
+                const active = theme.heroLink === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => update("heroLink", s.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3",
+                      active
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                        : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                    )}
+                  >
+                    <div className={cn(
+                      "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+                      active ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-foreground"
+                    )}>
+                      {s.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-foreground leading-tight">{s.label}</p>
+                      <p className="text-xs text-muted leading-snug mt-0.5">{s.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 5. IMAGEN DE FONDO ──────────────────────────────── */}
+      <StyleSection
+        icon={<ImageIcon className="h-5 w-5 text-primary" />}
+        title="Imagen de fondo"
+        description="Opcional. Si dejás vacío, se usa el fondo oscuro editorial con tu color de acento."
+      >
+        <ImageUpload
+          value={theme.heroImage}
+          onChange={(url) => update("heroImage", url)}
+          onClear={() => update("heroImage", "")}
+          folder="hero"
+          label=""
+          aspectRatio="banner"
+          hint="Recomendado 1200×400 px. La imagen se oscurece automáticamente para que el texto blanco se lea."
+        />
+      </StyleSection>
+
+      {/* Tips finales */}
+      <div className="rounded-2xl border-2 border-[var(--data-success-500)]/20 bg-[var(--data-success-500)]/5 p-5">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--data-success-500)]/15 flex items-center justify-center">
+            <Star className="h-5 w-5 text-[var(--data-success-500)]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">Checklist del hero perfecto</p>
+            <ul className="text-xs text-muted mt-2 space-y-1.5">
+              <li className="flex items-start gap-1.5">
+                <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
+                Título corto que dice <span className="font-bold">qué resolves</span> y <span className="font-bold">en cuánto tiempo</span>.
+              </li>
+              <li className="flex items-start gap-1.5">
+                <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
+                Subtítulo que menciona <span className="font-bold">2 ventajas concretas</span> (precio, pago, atención).
+              </li>
+              <li className="flex items-start gap-1.5">
+                <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
+                Badge con <span className="font-bold">ofertas o urgencia</span> que llame la atención.
+              </li>
+              <li className="flex items-start gap-1.5">
+                <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
+                CTA con <span className="font-bold">verbo de acción claro</span> y destino lógico.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Tabs del panel — formato AdminTabBar (horizontal, draggable como otros módulos) ──
 
@@ -289,9 +894,11 @@ const MODULE_ID = "store-customizer";
 
 const TABS = [
   { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
+  { id: "marca" as Tab, label: "Marca", shortLabel: "Marca", icon: WandSparkles },
   { id: "colores" as Tab, label: "Colores", icon: Palette },
   { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
   { id: "hero" as Tab, label: "Hero", icon: ImageIcon },
+  { id: "promos" as Tab, label: "Promos por categoría", shortLabel: "Promos", icon: Tag },
   { id: "secciones" as Tab, label: "Secciones", shortLabel: "Sec.", icon: Layout },
   { id: "catalogo" as Tab, label: "Catálogo", shortLabel: "Cat.", icon: Package },
   { id: "contenido" as Tab, label: "Textos y popup", shortLabel: "Textos", icon: FileText },
@@ -474,7 +1081,13 @@ export default function StoreCustomizer() {
   const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [activeTenantSlug, setActiveTenantSlug] = useState("main");
+  // Inicializamos con el slug de la URL (si está) para evitar el flash de "/t/main"
+  // que aparece antes de que useEffect cargue el slug real desde resolveActiveTenantSlug.
+  const [activeTenantSlug, setActiveTenantSlug] = useState(() => {
+    if (typeof window === "undefined") return "main";
+    const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+    return m ? m[1] : "main";
+  });
 
   // Detecta si hay cambios pendientes comparando con la última versión guardada
   const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
@@ -558,7 +1171,7 @@ export default function StoreCustomizer() {
       const tenantSlug = activeTenantSlug || await resolveActiveTenantSlug();
       const res = await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
+        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
         body: JSON.stringify({ storeTheme: themeToSave }),
       });
       if (!res.ok) throw new Error("Error al guardar");
@@ -646,7 +1259,7 @@ export default function StoreCustomizer() {
       {/* Toast de éxito — patrón estándar admin (mismo estilo que plantilla/notificaciones) */}
       {toastMsg && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold shadow-[var(--shadow-xl)] animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
-          <Check className="h-4 w-4 shrink-0 text-[var(--data-success)]" />
+          <Check className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" />
           {toastMsg}
         </div>
       )}
@@ -654,12 +1267,24 @@ export default function StoreCustomizer() {
       {/* ── Header editorial estandarizado ─────────────────────────── */}
       <AdminModuleHeader
         icon={Palette}
-        eyebrow="Mi tienda · Personalización visual"
-        title="Mi tienda personal"
+        eyebrow="Mi tienda · Identidad y tema"
+        title="Cómo se ve tu tienda"
         description={
-          hasUnsavedChanges
-            ? "Tienes cambios sin guardar. Cambia el aspecto, colores y contenido de tu tienda online."
-            : "Cambia el aspecto, colores y contenido de tu tienda online. Lo que ve el cliente cuando entra."
+          hasUnsavedChanges ? (
+            <>
+              <strong>Tienes cambios sin guardar.</strong> Logo, colores, tipografía y CSS de tu tienda — la <strong>piel</strong>.
+            </>
+          ) : (
+            <>
+              Logo, colores, tipografía y CSS de tu tienda. Define la <strong>piel</strong> — no qué productos mostrar. Para eso, andá a{" "}
+              <Link
+                href="?tab=pagina-inicio"
+                className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+              >
+                Página de inicio →
+              </Link>
+            </>
+          )
         }
       >
         <div className="flex items-center gap-2">
@@ -708,27 +1333,32 @@ export default function StoreCustomizer() {
       <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border overflow-hidden">
 
         {/* Tab header with active tab info — usa SectionTitle del DS */}
-        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
-          {activeTabMeta && <activeTabMeta.icon className="h-4 w-4 text-primary" />}
-          <SectionTitle className="text-sm">{activeTabMeta?.label}</SectionTitle>
+        <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
+          {activeTabMeta && <activeTabMeta.icon className="h-5 w-5 text-primary" />}
+          <SectionTitle className="text-base">{activeTabMeta?.label}</SectionTitle>
         </div>
 
         {/* Contenido del tab activo */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
             {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
             {activeTab === "identidad" && (
-              <div className="space-y-6">
-                {/* Logo + Nombre en fila */}
-                <div className="flex items-start gap-4">
-                  <div className="shrink-0 w-20">
-                    <p className="text-xs font-semibold text-muted mb-1.5">Logo</p>
-                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
+              <div className="space-y-7">
+                {/* Logo card — área generosa con hover state propio */}
+                <div className="space-y-3">
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-sm font-semibold text-foreground">Logo de tu tienda</label>
+                    <span className="text-xs text-muted">PNG/JPG/WebP · máx 5 MB · cuadrado idealmente</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start gap-5 p-5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface">
+                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-md transition-all relative group">
                       {theme.logo ? (
                         <>
-                          <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="80px" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button type="button" onClick={() => update("logo", "")} className="text-xs font-bold text-white bg-[var(--data-error)]/80 px-2 py-0.5 rounded">Quitar</button>
+                          <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="128px" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button type="button" onClick={() => update("logo", "")} className="text-sm font-bold text-white bg-[var(--data-error-500)] px-3 py-1.5 rounded-lg hover:opacity-90">
+                              Quitar
+                            </button>
                           </div>
                         </>
                       ) : (
@@ -742,607 +1372,1487 @@ export default function StoreCustomizer() {
                         />
                       )}
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <FieldRow label="Nombre de la tienda">
-                      <input type="text" value={theme.storeName} onChange={(e) => update("storeName", e.target.value)}
-                        placeholder="Mi Bodega" className={inputCls} maxLength={60} />
-                    </FieldRow>
-                    <FieldRow label={`Eslogan (${theme.slogan.length}/100)`}>
-                      <input type="text" value={theme.slogan} onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
-                        placeholder="Tu bodega de confianza..." className={inputCls} maxLength={100} />
-                    </FieldRow>
+                    <div className="flex-1 space-y-2">
+                      <p className="text-base font-bold text-foreground">
+                        {theme.logo ? "Logo cargado" : "Sube tu logo"}
+                      </p>
+                      <p className="text-sm text-muted leading-relaxed">
+                        {theme.logo
+                          ? "Pasa el cursor sobre el logo para reemplazarlo o quitarlo."
+                          : "Aparece en la cabecera de tu tienda y en el navegador. Si no subes uno, usamos el logo del proyecto."}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Nombre */}
+                <FieldRow label="Nombre de la tienda">
+                  <input
+                    type="text"
+                    value={theme.storeName}
+                    onChange={(e) => update("storeName", e.target.value)}
+                    placeholder="Mi Bodega"
+                    className={inputCls}
+                    maxLength={60}
+                  />
+                  <p className="text-sm text-muted mt-1.5">Aparece en el header, footer y pestaña del navegador. Máximo 60 caracteres.</p>
+                </FieldRow>
+
+                {/* Eslogan */}
+                <FieldRow label="Eslogan">
+                  <input
+                    type="text"
+                    value={theme.slogan}
+                    onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
+                    placeholder="Tu bodega de confianza..."
+                    className={inputCls}
+                    maxLength={100}
+                  />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-sm text-muted">Una frase corta debajo del nombre de la tienda.</p>
+                    <span className={cn(
+                      "text-xs font-mono tabular-nums",
+                      theme.slogan.length > 90 ? "text-[var(--data-warning-500)]" : "text-muted",
+                    )}>
+                      {theme.slogan.length}/100
+                    </span>
+                  </div>
+                </FieldRow>
+
                 {/* Descripción */}
-                <FieldRow label={`Descripción (${theme.description.length}/200)`}>
+                <FieldRow label="Descripción">
                   <textarea
                     value={theme.description}
                     onChange={(e) => update("description", e.target.value.slice(0, 200))}
-                    placeholder="Describe tu tienda en pocas palabras..."
-                    className={cn(inputCls, "resize-none min-h-[80px]")}
+                    placeholder="Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio..."
+                    className={cn(inputCls, "resize-none min-h-[100px] py-3 leading-relaxed")}
                     maxLength={200}
                   />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-sm text-muted">Texto SEO para Google y redes sociales (Open Graph).</p>
+                    <span className={cn(
+                      "text-xs font-mono tabular-nums",
+                      theme.description.length > 180 ? "text-[var(--data-warning-500)]" : "text-muted",
+                    )}>
+                      {theme.description.length}/200
+                    </span>
+                  </div>
                 </FieldRow>
               </div>
             )}
 
+            {/* ── TAB: MARCA — análisis de logo + conceptos ─────────── */}
+            {activeTab === "marca" && (
+              <BrandConceptTab
+                theme={theme}
+                onApplyConcept={(patches) => {
+                  // Aplicar todos los patches en cascada usando el helper update
+                  Object.entries(patches).forEach(([key, value]) => {
+                    if (value !== undefined) {
+                      update(key as keyof StoreTheme, value as never);
+                    }
+                  });
+                }}
+              />
+            )}
+
+            {/* ── TAB: PROMOS POR CATEGORÍA ─────────────────────────── */}
+            {activeTab === "promos" && (
+              <CategoryBannersTab theme={theme} update={update} inputCls={inputCls} />
+            )}
+
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
-              <div className="space-y-6">
-                {/* Plantillas rápidas */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Plantillas</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {THEME_TEMPLATES.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          update("primaryColor", t.colors.primaryColor);
-                          update("secondaryColor", t.colors.secondaryColor);
-                          update("accentColor", t.colors.accentColor);
-                          update("fontFamily", t.fontFamily);
-                          update("darkModeDefault", t.darkModeDefault);
-                        }}
-                        className={cn(
-                          "flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
-                          theme.primaryColor === t.colors.primaryColor &&
-                          theme.secondaryColor === t.colors.secondaryColor
-                            ? "border-primary bg-primary/5 dark:bg-primary/10"
-                            : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
-                        )}
-                      >
-                        {/* Color dots */}
-                        <div className="flex -space-x-1 shrink-0">
-                          <div className="w-5 h-5 rounded-full border-2 border-white dark:border-card shadow" style={{ backgroundColor: t.colors.primaryColor }} />
-                          <div className="w-5 h-5 rounded-full border-2 border-white dark:border-card shadow" style={{ backgroundColor: t.colors.secondaryColor }} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">{t.name}</p>
-                          <p className="text-xs text-muted truncate">{t.description}</p>
-                        </div>
-                      </button>
-                    ))}
+              <div className="space-y-8">
+                {/* Banner explicativo */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Palette className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">La paleta de tu marca</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Empezá con una plantilla ya curada o ajustá cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda.
+                    </p>
                   </div>
                 </div>
 
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border" />
-
-                <ColorPicker
-                  label="Color primario"
-                  value={theme.primaryColor}
-                  onChange={(v) => update("primaryColor", v)}
-                />
-                <ColorPicker
-                  label="Color secundario"
-                  value={theme.secondaryColor}
-                  onChange={(v) => update("secondaryColor", v)}
-                />
-                <ColorPicker
-                  label="Color de acento"
-                  value={theme.accentColor}
-                  onChange={(v) => update("accentColor", v)}
-                />
-
-                {/* Preview de botón CTA */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Preview botón CTA</p>
-                  <div className="flex gap-3 items-center flex-wrap">
-                    <button
-                      type="button"
-                      className="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow transition-all hover:opacity-90"
-                      style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
-                    >
-                      {theme.heroCTA || "Ver productos"}
-                    </button>
-                    <button
-                      type="button"
-                      className="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow transition-all hover:opacity-90"
-                      style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
-                    >
-                      Secundario
-                    </button>
+                {/* ── 1. PLANTILLAS LISTAS ──────────────────────────── */}
+                <StyleSection
+                  icon={<Sparkles className="h-5 w-5 text-primary" />}
+                  title="Plantillas listas"
+                  description="Sets curados de colores + tipografía + modo. Click para aplicar todo en bloque."
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {THEME_TEMPLATES.map((t) => {
+                      const active = theme.primaryColor === t.colors.primaryColor &&
+                                     theme.secondaryColor === t.colors.secondaryColor;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            update("primaryColor", t.colors.primaryColor);
+                            update("secondaryColor", t.colors.secondaryColor);
+                            update("accentColor", t.colors.accentColor);
+                            update("fontFamily", t.fontFamily);
+                            update("darkModeDefault", t.darkModeDefault);
+                          }}
+                          aria-pressed={active}
+                          className={cn(
+                            "rounded-2xl border-2 text-left transition-all overflow-hidden hover:shadow-md",
+                            active
+                              ? "border-primary ring-2 ring-primary/20"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                          )}
+                        >
+                          {/* Mini-mockup banner — gradient con los 3 colores reales */}
+                          <div
+                            className="h-16 w-full relative overflow-hidden"
+                            style={{
+                              background: `linear-gradient(135deg, ${t.colors.primaryColor}, ${t.colors.accentColor || t.colors.primaryColor})`,
+                            }}
+                          >
+                            <div className="absolute inset-x-3 bottom-2 flex items-center gap-2">
+                              <div className="h-1.5 w-12 rounded-full bg-white/40" />
+                              <div className="h-3 w-10 rounded-md ml-auto" style={{ backgroundColor: t.colors.secondaryColor }} />
+                            </div>
+                            {active && (
+                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-white flex items-center justify-center shadow">
+                                <Check className="h-3 w-3 text-primary" />
+                              </div>
+                            )}
+                            {t.darkModeDefault && (
+                              <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[9px] font-bold">
+                                <Moon className="h-2.5 w-2.5" />
+                                Dark
+                              </span>
+                            )}
+                          </div>
+                          {/* Body con color dots + título + descripción */}
+                          <div className="p-3.5 flex items-start gap-3">
+                            <div className="flex -space-x-1.5 shrink-0 mt-0.5">
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.primaryColor }} />
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.secondaryColor }} />
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.accentColor || t.colors.primaryColor }} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-base font-bold text-foreground leading-tight">{t.name}</p>
+                              <p className="text-sm text-muted line-clamp-2 mt-0.5">{t.description}</p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                </StyleSection>
 
-                {/* Modo oscuro por defecto */}
-                <div className="flex items-center justify-between p-3.5 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface">
-                  <div className="flex items-center gap-2.5">
-                    {theme.darkModeDefault ? (
-                      <Moon className="h-4 w-4 text-[var(--data-success)]" />
-                    ) : (
-                      <Sun className="h-4 w-4 text-[var(--data-warning)]" />
-                    )}
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Modo oscuro por defecto</p>
-                      <p className="text-xs text-muted">La tienda abre en modo {theme.darkModeDefault ? "oscuro" : "claro"}</p>
+                {/* ── 2. COLORES PERSONALIZADOS — grid 3-col en xl ────── */}
+                <StyleSection
+                  icon={<Paintbrush className="h-5 w-5 text-primary" />}
+                  title="Colores personalizados"
+                  description="Ajustá cada color por separado. Tip: el primario manda en CTAs y links, el secundario en badges de oferta."
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.primaryColor }} />
+                          <p className="text-sm font-bold text-foreground">Primario</p>
+                        </div>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          style={{ backgroundColor: theme.primaryColor }}
+                        >
+                          CTA
+                        </span>
+                      </div>
+                      <ColorPicker
+                        label=""
+                        value={theme.primaryColor}
+                        onChange={(v) => update("primaryColor", v)}
+                      />
+                      <p className="text-xs text-muted leading-snug">Botones de compra, links, badges activos y acentos del header.</p>
+                    </div>
+
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.secondaryColor }} />
+                          <p className="text-sm font-bold text-foreground">Secundario</p>
+                        </div>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          style={{ backgroundColor: theme.secondaryColor }}
+                        >
+                          Oferta
+                        </span>
+                      </div>
+                      <ColorPicker
+                        label=""
+                        value={theme.secondaryColor}
+                        onChange={(v) => update("secondaryColor", v)}
+                      />
+                      <p className="text-xs text-muted leading-snug">CTAs alternos, badges de descuento, ofertas y temporada.</p>
+                    </div>
+
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.accentColor }} />
+                          <p className="text-sm font-bold text-foreground">Acento</p>
+                        </div>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          style={{ backgroundColor: theme.accentColor }}
+                        >
+                          Hover
+                        </span>
+                      </div>
+                      <ColorPicker
+                        label=""
+                        value={theme.accentColor}
+                        onChange={(v) => update("accentColor", v)}
+                      />
+                      <p className="text-xs text-muted leading-snug">Hover states, fondos suaves y resaltados sutiles.</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => update("darkModeDefault", !theme.darkModeDefault)}
-                    className="shrink-0 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label="Toggle modo oscuro"
-                  >
-                    {theme.darkModeDefault ? (
-                      <ToggleRight className="h-7 w-7 text-[var(--data-success)]" />
-                    ) : (
-                      <ToggleLeft className="h-7 w-7 text-[var(--text-tertiary)]" />
-                    )}
-                  </button>
-                </div>
+
+                  {/* Pista de contraste WCAG */}
+                  <div className="mt-4 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border p-3 flex items-start gap-2.5">
+                    <div className="shrink-0 mt-0.5">
+                      <Sliders className="h-4 w-4 text-muted" />
+                    </div>
+                    <div className="text-xs text-muted leading-snug">
+                      <span className="font-bold text-foreground">Contraste:</span> los colores primario y secundario se usan con texto blanco en botones — asegurate de que sean lo suficientemente oscuros para que el texto se lea bien (target hex con luminosidad &lt; 60%).
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 3. VISTA PREVIA EN VIVO ─────────────────────── */}
+                <StyleSection
+                  icon={<Eye className="h-5 w-5 text-primary" />}
+                  title="Vista previa en vivo"
+                  description="Cómo se aplican tus colores a un componente real de tu tienda."
+                >
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+                    {/* Mini header con primary */}
+                    <div
+                      className="px-5 py-3 flex items-center justify-between"
+                      style={{ backgroundColor: theme.primaryColor, borderRadius: 0 }}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-xs">
+                          {(theme.storeName || "B").slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="text-white font-bold text-sm truncate">{theme.storeName || "Tu tienda"}</span>
+                      </div>
+                      <span className="text-xs text-white/80 font-medium">Header</span>
+                    </div>
+
+                    {/* Body con cards y CTAs */}
+                    <div className="p-5 bg-white dark:bg-card space-y-4">
+                      {/* Hero stripe con gradient */}
+                      <div
+                        className="rounded-xl p-4 relative overflow-hidden"
+                        style={{
+                          background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                          borderRadius: `${theme.borderRadius}px`,
+                        }}
+                      >
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: theme.secondaryColor }}
+                        >
+                          {theme.heroBadge || "Oferta"}
+                        </span>
+                        <h4 className="text-white text-lg font-extrabold mt-2 leading-tight">{theme.heroTitle || "Todo lo que necesitas"}</h4>
+                        <p className="text-white/80 text-xs mt-1 line-clamp-1">{theme.heroSubtitle || "Tu tienda online lista en minutos"}</p>
+                      </div>
+
+                      {/* Buttons row */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className="px-5 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-90 transition-all pointer-events-none"
+                          style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
+                        >
+                          {theme.heroCTA || "Comprar ahora"}
+                        </button>
+                        <button
+                          type="button"
+                          className="px-5 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-90 transition-all pointer-events-none"
+                          style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
+                        >
+                          Ver oferta
+                        </button>
+                        <button
+                          type="button"
+                          className="px-5 py-2.5 text-sm font-bold border-2 hover:opacity-90 transition-all pointer-events-none"
+                          style={{
+                            borderColor: theme.primaryColor,
+                            color: theme.primaryColor,
+                            borderRadius: `${theme.borderRadius}px`,
+                          }}
+                        >
+                          Outline
+                        </button>
+                      </div>
+
+                      {/* Link + badge inline */}
+                      <div className="flex items-center gap-3 text-xs">
+                        <a
+                          href="#"
+                          onClick={(e) => e.preventDefault()}
+                          className="font-bold underline-offset-2 hover:underline"
+                          style={{ color: theme.primaryColor }}
+                        >
+                          Link primary
+                        </a>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: theme.secondaryColor }}
+                        >
+                          -25% OFF
+                        </span>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                          style={{ backgroundColor: `${theme.accentColor}25`, color: theme.accentColor }}
+                        >
+                          Hover state
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 4. MODO OSCURO ─────────────────────────────────── */}
+                <StyleSection
+                  icon={<Moon className="h-5 w-5 text-primary" />}
+                  title="Modo oscuro por defecto"
+                  description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Light mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", false)}
+                      aria-pressed={!theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        !theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
+                          <div className="h-1 rounded-full bg-gray-200 w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
+                        <p className="text-sm font-bold text-foreground">Modo claro</p>
+                      </div>
+                    </button>
+
+                    {/* Dark mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", true)}
+                      aria-pressed={theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-gray-700 w-3/4" />
+                          <div className="h-1 rounded-full bg-gray-800 w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
+                        <p className="text-sm font-bold text-foreground">Modo oscuro</p>
+                      </div>
+                    </button>
+                  </div>
+                </StyleSection>
               </div>
             )}
 
             {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
             {activeTab === "secciones" && (
-              <div className="space-y-6">
-                <div className="bg-primary/5 dark:bg-primary/10 border border-primary/15 rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-semibold text-foreground">
-                    Editor de secciones
-                  </p>
-                  <p className="text-xs text-muted">
-                    Las secciones de la tienda se gestionan desde el editor dedicado con drag &amp; drop.
-                    Puedes reordenar, activar y desactivar secciones desde ahí.
-                  </p>
-                  <StorefrontEditor />
+              <div className="space-y-8">
+                {/* Banner explicativo coherente con Estilos / Hero */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Layout className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Las secciones que ve tu cliente</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Activá, desactivá y reordená los bloques de tu tienda con drag &amp; drop.
+                      Las secciones desactivadas no se renderizan — la página se compacta automáticamente.
+                    </p>
+                  </div>
                 </div>
+                <StorefrontEditor />
               </div>
             )}
 
             {/* ── TAB: HERO ──────────────────────────────────────────── */}
             {activeTab === "hero" && (
-              <div className="space-y-5">
-                <FieldRow label="Título principal">
-                  <input
-                    type="text"
-                    value={theme.heroTitle}
-                    onChange={(e) => update("heroTitle", e.target.value)}
-                    placeholder="Todo lo que necesitas, en tu puerta"
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Subtítulo">
-                  <input
-                    type="text"
-                    value={theme.heroSubtitle}
-                    onChange={(e) => update("heroSubtitle", e.target.value)}
-                    placeholder="Delivery rápido en Pucallpa..."
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Texto del botón CTA">
-                  <input
-                    type="text"
-                    value={theme.heroCTA}
-                    onChange={(e) => update("heroCTA", e.target.value)}
-                    placeholder="Ver productos"
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Enlace del botón">
-                  <select
-                    value={theme.heroLink}
-                    onChange={(e) => update("heroLink", e.target.value)}
-                    className={inputCls}
-                  >
-                    <option value="tienda">Tienda (catálogo de productos)</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="categorias">Categorías</option>
-                    <option value="custom">URL personalizada</option>
-                  </select>
-                </FieldRow>
-
-                {/* Imagen de fondo */}
-                <FieldRow label="Imagen de fondo del hero">
-                  <ImageUpload
-                    value={theme.heroImage}
-                    onChange={(url) => update("heroImage", url)}
-                    onClear={() => update("heroImage", "")}
-                    folder="hero"
-                    label=""
-                    aspectRatio="banner"
-                    hint="Imagen de fondo del banner principal. Se recomienda 1200x400px."
-                  />
-                </FieldRow>
-              </div>
+              <HeroTab
+                theme={theme}
+                update={update}
+                inputCls={inputCls}
+              />
             )}
 
             {/* ── TAB: CONTACTO ──────────────────────────────────────── */}
             {activeTab === "contacto" && (
-              <div className="space-y-5">
-                <FieldRow label="WhatsApp">
-                  <input
-                    type="tel"
-                    value={theme.whatsapp}
-                    onChange={(e) => update("whatsapp", e.target.value)}
-                    placeholder="+51 900 000 000"
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Email">
-                  <input
-                    type="email"
-                    value={theme.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="contacto@tibodega.pe"
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Teléfono">
-                  <input
-                    type="tel"
-                    value={theme.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    placeholder="+51 061 000 000"
-                    className={inputCls}
-                  />
-                </FieldRow>
-                <FieldRow label="Dirección">
-                  <textarea
-                    value={theme.address}
-                    onChange={(e) => update("address", e.target.value)}
-                    placeholder="Jr. Ucayali 123, Pucallpa, Perú"
-                    className={cn(inputCls, "resize-none min-h-[72px]")}
-                  />
-                </FieldRow>
+              <div className="space-y-8">
+                {/* Banner explicativo */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Phone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Cómo te puede contactar el cliente</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Aparecen en el footer, mapa, sección de contacto y JSON-LD para Google. WhatsApp es el canal #1 — asegurate de que esté activo.
+                    </p>
+                  </div>
+                </div>
 
-                {/* Horarios */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Horarios de atención</p>
-                  <div className="space-y-2">
-                    {DAYS.map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-muted w-8 shrink-0">{label}</span>
+                {/* ── 1. CANALES DE CONTACTO ──────────────────────── */}
+                <StyleSection
+                  icon={<MessageSquare className="h-5 w-5 text-primary" />}
+                  title="Canales de contacto"
+                  description="Los datos por los que el cliente te encuentra y escribe."
+                >
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-[var(--data-success-500)]" />
+                        WhatsApp
+                        <span className="text-xs font-normal text-muted ml-1">recomendado</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={theme.whatsapp}
+                        onChange={(e) => update("whatsapp", e.target.value)}
+                        placeholder="+51 900 000 000"
+                        className={inputCls}
+                      />
+                      <p className="text-xs text-muted">Con código de país. Aparece en el footer y como botón flotante.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">Email</label>
                         <input
-                          type="time"
-                          value={theme.schedules[key]?.open ?? "07:00"}
-                          onChange={(e) =>
-                            update("schedules", {
-                              ...theme.schedules,
-                              [key]: { ...theme.schedules[key], open: e.target.value },
-                            })
-                          }
-                          className="flex-1 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 min-h-[44px]"
+                          type="email"
+                          value={theme.email}
+                          onChange={(e) => update("email", e.target.value)}
+                          placeholder="contacto@tibodega.pe"
+                          className={inputCls}
                         />
-                        <span className="text-xs text-muted">a</span>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">Teléfono fijo</label>
                         <input
-                          type="time"
-                          value={theme.schedules[key]?.close ?? "22:00"}
-                          onChange={(e) =>
-                            update("schedules", {
-                              ...theme.schedules,
-                              [key]: { ...theme.schedules[key], close: e.target.value },
-                            })
-                          }
-                          className="flex-1 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 min-h-[44px]"
+                          type="tel"
+                          value={theme.phone}
+                          onChange={(e) => update("phone", e.target.value)}
+                          placeholder="+51 061 000 000"
+                          className={inputCls}
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Map className="h-4 w-4 text-primary" />
+                        Dirección física
+                      </label>
+                      <textarea
+                        value={theme.address}
+                        onChange={(e) => update("address", e.target.value)}
+                        placeholder="Jr. Ucayali 123, Pucallpa, Perú"
+                        className={cn(inputCls, "resize-none min-h-[72px] py-3")}
+                        maxLength={200}
+                      />
+                      <p className="text-xs text-muted">Si tenés local físico — se muestra en el mapa de delivery y JSON-LD para Google Maps.</p>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 2. HORARIOS DE ATENCIÓN ──────────────────────── */}
+                <StyleSection
+                  icon={<Sliders className="h-5 w-5 text-primary" />}
+                  title="Horarios de atención"
+                  description="Aparecen en el footer y validan si tu tienda está 'Abierta' o 'Cerrada' al cliente."
+                >
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
+                    {DAYS.map(({ key, label }, idx) => (
+                      <div
+                        key={key}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3",
+                          idx > 0 && "border-t border-[var(--rule-soft)] dark:border-card-border"
+                        )}
+                      >
+                        <span className="text-sm font-bold text-foreground w-20 shrink-0">{label}</span>
+                        <div className="flex-1 grid grid-cols-2 gap-2 items-center">
+                          <input
+                            type="time"
+                            value={theme.schedules[key]?.open ?? "07:00"}
+                            onChange={(e) =>
+                              update("schedules", {
+                                ...theme.schedules,
+                                [key]: { ...theme.schedules[key], open: e.target.value },
+                              })
+                            }
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            aria-label={`Apertura ${label}`}
+                          />
+                          <input
+                            type="time"
+                            value={theme.schedules[key]?.close ?? "22:00"}
+                            onChange={(e) =>
+                              update("schedules", {
+                                ...theme.schedules,
+                                [key]: { ...theme.schedules[key], close: e.target.value },
+                              })
+                            }
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            aria-label={`Cierre ${label}`}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                  <p className="text-xs text-muted mt-2.5 px-1">
+                    Tip: si abrís y cerrás a la misma hora, ese día queda como cerrado en el storefront.
+                  </p>
+                </StyleSection>
               </div>
             )}
 
             {/* ── TAB: ESTILOS ───────────────────────────────────────── */}
             {activeTab === "estilos" && (
-              <div className="space-y-5">
-                {/* Estilo de cards */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Estilo de productos</p>
-                  <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-8">
+                {/* Banner explicativo */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Cómo se ven los elementos</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Cada opción muestra una vista previa real. Tus cambios se aplican al guardar y se ven inmediatamente en tu tienda online.
+                    </p>
+                  </div>
+                </div>
+
+                {/* ── 1. CARDS DE PRODUCTOS ─────────────────────────── */}
+                <StyleSection
+                  icon={<Package className="h-5 w-5 text-primary" />}
+                  title="Cards de productos"
+                  description="Cómo se ven las cards en /tienda y resultados de búsqueda."
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {([
-                      { value: "minimal", label: "Minimal", desc: "Sin bordes ni sombra" },
-                      { value: "shadow", label: "Con sombra", desc: "Sombra suave elegante" },
-                      { value: "border", label: "Con borde", desc: "Borde de color" },
-                      { value: "glass", label: "Glassmorphism", desc: "Efecto cristal blur" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("cardStyle", s.value)}
-                        className={cn("p-3 rounded-xl border text-left transition-all", theme.cardStyle === s.value ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40")}>
-                        <p className="text-xs font-bold text-foreground">{s.label}</p>
-                        <p className="text-xs text-muted">{s.desc}</p>
-                      </button>
-                    ))}
+                      { value: "minimal", label: "Minimal", desc: "Plano, sin bordes" },
+                      { value: "shadow",  label: "Con sombra", desc: "Sombra suave" },
+                      { value: "border",  label: "Con borde", desc: "Borde de color" },
+                      { value: "glass",   label: "Glassmorphism", desc: "Cristal con blur" },
+                    ] as const).map((s) => {
+                      const active = theme.cardStyle === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => update("cardStyle", s.value)}
+                          aria-pressed={active}
+                          className={cn(
+                            "group p-3 rounded-2xl border-2 text-left transition-all",
+                            active
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                          )}
+                        >
+                          {/* Mini-card preview */}
+                          <div className={cn(
+                            "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-white dark:bg-surface relative",
+                            s.value === "minimal" && "border-0",
+                            s.value === "shadow"  && "shadow-md",
+                            s.value === "border"  && "border-2",
+                            s.value === "glass"   && "backdrop-blur-md bg-white/60 dark:bg-surface/60 border border-white/40 dark:border-card-border"
+                          )}
+                          style={s.value === "border" ? { borderColor: theme.primaryColor } : undefined}>
+                            {/* Imagen placeholder */}
+                            <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                              <ShoppingBag className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                            </div>
+                            {/* Texto + precio */}
+                            <div className="px-2 py-1.5 space-y-0.5">
+                              <div className="h-1.5 w-3/4 rounded-full bg-gray-300 dark:bg-gray-600" />
+                              <div className="h-2 w-1/3 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
+                            </div>
+                          </div>
+                          <p className="text-sm font-bold text-foreground leading-tight">{s.label}</p>
+                          <p className="text-xs text-muted leading-tight mt-0.5">{s.desc}</p>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                </StyleSection>
 
-                {/* Estilo de botones */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Estilo de botones</p>
-                  <div className="flex gap-2">
-                    {([{ value: "rounded", label: "Redondeado" }, { value: "square", label: "Cuadrado" }, { value: "pill", label: "Pill" }] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("buttonStyle", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
+                {/* ── 2. BOTONES ────────────────────────────────────── */}
+                <StyleSection
+                  icon={<Square className="h-5 w-5 text-primary" />}
+                  title="Botones primarios"
+                  description="Forma de los botones de acción (Comprar, Agregar al carrito)."
+                >
+                  <div className="grid grid-cols-3 gap-3">
+                    {([
+                      { value: "rounded", label: "Redondeado", radius: "rounded-xl" },
+                      { value: "square",  label: "Cuadrado",   radius: "rounded-md" },
+                      { value: "pill",    label: "Pill",       radius: "rounded-full" },
+                    ] as const).map((s) => {
+                      const active = theme.buttonStyle === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => update("buttonStyle", s.value)}
+                          aria-pressed={active}
+                          className={cn(
+                            "p-4 rounded-2xl border-2 transition-all",
+                            active
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                          )}
+                        >
+                          {/* Preview real del botón */}
+                          <div
+                            className={cn(
+                              "w-full h-10 mb-3 flex items-center justify-center text-sm font-bold text-white shadow-sm",
+                              s.radius
+                            )}
+                            style={{ backgroundColor: theme.primaryColor }}
+                          >
+                            Comprar
+                          </div>
+                          <p className="text-sm font-bold text-foreground text-center">{s.label}</p>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                </StyleSection>
 
-                {/* Estilo de navbar */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Estilo del navbar</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([{ value: "solid", label: "Sólido" }, { value: "transparent", label: "Transparente" }, { value: "blur", label: "Con blur" }, { value: "minimal", label: "Minimalista" }] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
-                        className={cn("py-2 rounded-lg text-xs font-bold border transition-all", theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
+                {/* ── 3. NAVBAR ─────────────────────────────────────── */}
+                <StyleSection
+                  icon={<LayoutGrid className="h-5 w-5 text-primary" />}
+                  title="Barra superior (navbar)"
+                  description="Cabecera fija con el logo, búsqueda y carrito."
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { value: "solid",       label: "Sólido",      desc: "Fondo color completo" },
+                      { value: "transparent", label: "Transparente",desc: "Sin fondo, solo borde" },
+                      { value: "blur",        label: "Con blur",    desc: "Cristal esmerilado" },
+                      { value: "minimal",     label: "Minimalista", desc: "Linea fina inferior" },
+                    ] as const).map((s) => {
+                      const active = theme.navbarStyle === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => update("navbarStyle", s.value)}
+                          aria-pressed={active}
+                          className={cn(
+                            "p-3 rounded-2xl border-2 text-left transition-all",
+                            active
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                          )}
+                        >
+                          {/* Mini-mockup del navbar */}
+                          <div className="relative h-16 mb-3 rounded-xl overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                            <div
+                              className={cn(
+                                "absolute top-0 inset-x-0 h-7 flex items-center px-2 gap-1.5",
+                                s.value === "solid"       && "shadow-sm",
+                                s.value === "transparent" && "border-b border-gray-300 dark:border-gray-700",
+                                s.value === "blur"        && "backdrop-blur-md border-b border-white/30",
+                                s.value === "minimal"     && "border-b-2"
+                              )}
+                              style={
+                                s.value === "solid" ? { backgroundColor: theme.primaryColor } :
+                                s.value === "blur"  ? { backgroundColor: `${theme.primaryColor}cc` } :
+                                s.value === "minimal" ? { borderBottomColor: theme.primaryColor, backgroundColor: "transparent" } :
+                                { backgroundColor: "transparent" }
+                              }
+                            >
+                              <div className={cn(
+                                "h-2 w-6 rounded-full",
+                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : ""
+                              )}
+                              style={s.value === "transparent" || s.value === "minimal" ? { backgroundColor: theme.primaryColor } : undefined} />
+                              <div className="flex-1 h-2 rounded-full bg-white/30 dark:bg-white/10" />
+                              <div className={cn(
+                                "h-2 w-2 rounded-full",
+                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : "bg-gray-400"
+                              )} />
+                            </div>
+                            {/* Body placeholder */}
+                            <div className="absolute inset-x-2 bottom-2 space-y-1">
+                              <div className="h-1.5 w-1/2 rounded-full bg-gray-300 dark:bg-gray-700" />
+                              <div className="h-1.5 w-3/4 rounded-full bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                          </div>
+                          <p className="text-sm font-bold text-foreground">{s.label}</p>
+                          <p className="text-xs text-muted">{s.desc}</p>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                </StyleSection>
 
-                {/* Sombras */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Sombras</p>
-                  <div className="flex gap-2">
-                    {([{ value: "none", label: "Sin sombra" }, { value: "soft", label: "Suave" }, { value: "deep", label: "Profunda" }] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("shadowLevel", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* ── 4. DETALLES (sombras + animaciones + fondo) ───── */}
+                <StyleSection
+                  icon={<Sliders className="h-5 w-5 text-primary" />}
+                  title="Detalles de estilo"
+                  description="Sombras, movimiento y patrón decorativo del fondo."
+                >
+                  <div className="space-y-6">
+                    {/* Sombras con preview de cajas */}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground mb-3">Intensidad de sombras</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {([
+                          { value: "none", label: "Sin sombra", cls: "" },
+                          { value: "soft", label: "Suave",      cls: "shadow-md" },
+                          { value: "deep", label: "Profunda",   cls: "shadow-2xl" },
+                        ] as const).map((s) => {
+                          const active = theme.shadowLevel === s.value;
+                          return (
+                            <button
+                              key={s.value}
+                              type="button"
+                              onClick={() => update("shadowLevel", s.value)}
+                              aria-pressed={active}
+                              className={cn(
+                                "p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-2.5",
+                                active
+                                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                              )}
+                            >
+                              <div className={cn("w-10 h-10 rounded-xl bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border", s.cls)} />
+                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* Animaciones */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Animaciones</p>
-                  <div className="flex gap-2">
-                    {([{ value: "none", label: "Ninguna" }, { value: "subtle", label: "Suaves" }, { value: "dynamic", label: "Dinámicas" }] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("animations", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.animations === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    {/* Animaciones */}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground mb-3">Animaciones de la interfaz</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {([
+                          { value: "none",    label: "Ninguna",   desc: "Estática" },
+                          { value: "subtle",  label: "Suaves",    desc: "Recomendado" },
+                          { value: "dynamic", label: "Dinámicas", desc: "Llaman la atención" },
+                        ] as const).map((s) => {
+                          const active = theme.animations === s.value;
+                          return (
+                            <button
+                              key={s.value}
+                              type="button"
+                              onClick={() => update("animations", s.value)}
+                              aria-pressed={active}
+                              className={cn(
+                                "p-3 rounded-2xl border-2 transition-all text-center",
+                                active
+                                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                              )}
+                            >
+                              <Sparkles
+                                className={cn(
+                                  "h-6 w-6 mx-auto mb-1.5 transition-transform",
+                                  s.value === "none"    && "text-gray-400",
+                                  s.value === "subtle"  && "text-primary",
+                                  s.value === "dynamic" && "text-primary animate-pulse"
+                                )}
+                              />
+                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                              <p className="text-xs text-muted mt-0.5">{s.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* Fondo */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Fondo de la tienda</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([{ value: "none", label: "Liso" }, { value: "dots", label: "Puntos" }, { value: "waves", label: "Ondas" }, { value: "gradient", label: "Gradiente" }] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("backgroundPattern", s.value)}
-                        className={cn("py-2 rounded-lg text-xs font-bold border transition-all", theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
+                    {/* Fondo con preview de patrón */}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground mb-3">Patrón de fondo</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {([
+                          { value: "none",     label: "Liso" },
+                          { value: "dots",     label: "Puntos" },
+                          { value: "waves",    label: "Ondas" },
+                          { value: "gradient", label: "Gradiente" },
+                        ] as const).map((s) => {
+                          const active = theme.backgroundPattern === s.value;
+                          return (
+                            <button
+                              key={s.value}
+                              type="button"
+                              onClick={() => update("backgroundPattern", s.value)}
+                              aria-pressed={active}
+                              className={cn(
+                                "p-3 rounded-2xl border-2 transition-all",
+                                active
+                                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "aspect-[5/3] rounded-xl mb-2 overflow-hidden",
+                                  s.value === "none" && "bg-gray-50 dark:bg-surface",
+                                )}
+                                style={
+                                  s.value === "dots"
+                                    ? { backgroundImage: `radial-gradient(${theme.primaryColor}33 1px, transparent 1px)`, backgroundSize: "10px 10px", backgroundColor: "var(--surface-canvas, #fff)" }
+                                    : s.value === "waves"
+                                    ? { backgroundImage: `linear-gradient(45deg, ${theme.primaryColor}11 25%, transparent 25%), linear-gradient(-45deg, ${theme.primaryColor}11 25%, transparent 25%)`, backgroundSize: "12px 12px" }
+                                    : s.value === "gradient"
+                                    ? { background: `linear-gradient(135deg, ${theme.primaryColor}22, ${theme.secondaryColor}22)` }
+                                    : undefined
+                                }
+                              />
+                              <p className="text-sm font-bold text-foreground text-center">{s.label}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </StyleSection>
               </div>
             )}
 
             {/* ── TAB: CONTENIDO ────────────────────────────────────── */}
             {activeTab === "contenido" && (
-              <div className="space-y-5">
-                {/* Mensaje WhatsApp */}
-                <FieldRow label="Mensaje de WhatsApp">
-                  <input type="text" value={theme.whatsappMessage} onChange={(e) => update("whatsappMessage", e.target.value)}
-                    placeholder="Hola! Quiero hacer un pedido" className={inputCls} maxLength={200} />
-                  <p className="text-xs text-muted mt-1">Texto predeterminado cuando el cliente toca WhatsApp</p>
-                </FieldRow>
-
-                {/* Hero badge */}
-                <FieldRow label="Badge del Hero">
-                  <input type="text" value={theme.heroBadge} onChange={(e) => update("heroBadge", e.target.value)}
-                    placeholder="Delivery gratis +S/50" className={inputCls} maxLength={50} />
-                </FieldRow>
-
-                {/* Footer text */}
-                <FieldRow label="Texto del footer">
-                  <textarea value={theme.footerText} onChange={(e) => update("footerText", e.target.value)}
-                    placeholder="Tu bodega de confianza desde 2020..." className={cn(inputCls, "resize-none min-h-[72px]")} maxLength={300} />
-                </FieldRow>
-
-                {/* Popup de bienvenida */}
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-soft)] dark:border-card-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-foreground">Popup de bienvenida</p>
-                      <p className="text-xs text-muted">Se muestra una vez al visitante nuevo</p>
-                    </div>
-                    <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
-                      className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
-                      {theme.welcomePopupEnabled ? <ToggleRight className="h-6 w-6 text-[var(--data-success)]" /> : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
-                    </button>
+              <div className="space-y-8">
+                {/* Banner explicativo */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
-                  {theme.welcomePopupEnabled && (
-                    <div className="space-y-2">
-                      <input type="text" value={theme.welcomePopupTitle} onChange={(e) => update("welcomePopupTitle", e.target.value)} placeholder="Bienvenido!" className={inputCls} />
-                      <input type="text" value={theme.welcomePopupMessage} onChange={(e) => update("welcomePopupMessage", e.target.value)} placeholder="Usa este cupon en tu primera compra" className={inputCls} />
-                      <input type="text" value={theme.welcomePopupCoupon} onChange={(e) => update("welcomePopupCoupon", e.target.value)} placeholder="BIENVENIDO10" className={cn(inputCls, "font-mono uppercase")} />
-                    </div>
-                  )}
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Textos y mensajes de tu tienda</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Configurá los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón.
+                    </p>
+                  </div>
                 </div>
 
-                {/* QR de la tienda */}
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-soft)] dark:border-card-border">
-                  <p className="text-xs font-bold text-foreground">QR de tu tienda</p>
-                  <p className="text-xs text-muted">Codigo QR para pegar en tu local fisico. Los clientes escanean y entran a tu tienda.</p>
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white p-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border">
-                      {/* QR usando API publica */}
+                {/* ── 1. MENSAJES AUTOMÁTICOS ──────────────────────── */}
+                <StyleSection
+                  icon={<MessageSquare className="h-5 w-5 text-primary" />}
+                  title="Mensajes automáticos"
+                  description="Textos que el cliente ve sin que vos los escribas en cada interacción."
+                >
+                  <div className="space-y-5">
+                    {/* WhatsApp */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Saludo de WhatsApp</label>
+                      <input
+                        type="text"
+                        value={theme.whatsappMessage}
+                        onChange={(e) => update("whatsappMessage", e.target.value)}
+                        placeholder="Hola! Quiero hacer un pedido"
+                        className={inputCls}
+                        maxLength={200}
+                      />
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted">Pre-llena el chat cuando el cliente toca el botón de WhatsApp.</p>
+                        <span className="text-xs font-mono text-muted shrink-0">{(theme.whatsappMessage || "").length}/200</span>
+                      </div>
+                    </div>
+
+                    {/* Footer text */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Texto del footer</label>
+                      <textarea
+                        value={theme.footerText}
+                        onChange={(e) => update("footerText", e.target.value)}
+                        placeholder="Tu bodega de confianza desde 2020..."
+                        className={cn(inputCls, "resize-none min-h-[88px] py-3")}
+                        maxLength={300}
+                      />
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted">Aparece al pie de cada página. Buen lugar para tu historia, valores o años de servicio.</p>
+                        <span className="text-xs font-mono text-muted shrink-0">{(theme.footerText || "").length}/300</span>
+                      </div>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 2. POPUP DE BIENVENIDA ───────────────────────── */}
+                <StyleSection
+                  icon={<Sparkles className="h-5 w-5 text-primary" />}
+                  title="Popup de bienvenida"
+                  description="Aparece una sola vez al visitante nuevo con un cupón de descuento. Aumenta conversión en primeras compras."
+                >
+                  <div className={cn(
+                    "rounded-2xl border-2 p-5 transition-colors",
+                    theme.welcomePopupEnabled
+                      ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
+                      : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border"
+                  )}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-bold text-foreground">
+                          {theme.welcomePopupEnabled ? "Popup activo" : "Popup desactivado"}
+                        </p>
+                        <p className="text-sm text-muted mt-0.5">
+                          {theme.welcomePopupEnabled
+                            ? "Se muestra al visitante nuevo (una sola vez)"
+                            : "Activalo para incentivar la primera compra"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
+                        className={cn(
+                          "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
+                          theme.welcomePopupEnabled
+                            ? "bg-primary border-primary"
+                            : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                        )}
+                        aria-label="Toggle popup"
+                        aria-pressed={theme.welcomePopupEnabled}
+                      >
+                        <span className={cn(
+                          "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                          theme.welcomePopupEnabled ? "translate-x-6" : "translate-x-1"
+                        )} />
+                      </button>
+                    </div>
+                    {theme.welcomePopupEnabled && (
+                      <div className="space-y-3 mt-5 pt-5 border-t-2 border-primary/20">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Título</label>
+                          <input
+                            type="text"
+                            value={theme.welcomePopupTitle}
+                            onChange={(e) => update("welcomePopupTitle", e.target.value)}
+                            placeholder="Bienvenido!"
+                            className={inputCls}
+                            maxLength={50}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mensaje</label>
+                          <input
+                            type="text"
+                            value={theme.welcomePopupMessage}
+                            onChange={(e) => update("welcomePopupMessage", e.target.value)}
+                            placeholder="Usa este cupón en tu primera compra"
+                            className={inputCls}
+                            maxLength={120}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código del cupón</label>
+                          <input
+                            type="text"
+                            value={theme.welcomePopupCoupon}
+                            onChange={(e) => update("welcomePopupCoupon", e.target.value)}
+                            placeholder="BIENVENIDO10"
+                            className={cn(inputCls, "font-mono uppercase tracking-wider")}
+                            maxLength={20}
+                          />
+                          <p className="text-xs text-muted">Asegurate de que este código exista en la sección de cupones.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </StyleSection>
+
+                {/* ── 3. QR DE LA TIENDA ───────────────────────────── */}
+                <StyleSection
+                  icon={<Grid3x3 className="h-5 w-5 text-primary" />}
+                  title="QR de tu tienda"
+                  description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
+                >
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
+                    <div className="bg-white p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border shrink-0">
                       <Image
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
-                        width={112}
-                        height={112}
+                        width={160}
+                        height={160}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex-1 flex flex-col justify-center gap-3 text-center sm:text-left">
+                      <div>
+                        <p className="text-base font-bold text-foreground">Tu QR ya está listo</p>
+                        <p className="text-sm text-muted mt-0.5">
+                          Apunta a <span className="font-mono text-foreground">/t/{activeTenantSlug}</span>
+                        </p>
+                      </div>
                       <a
-                        href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "")}`}
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=512x512&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-[length:var(--ts-xs)] font-bold hover:opacity-90"
+                        className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 shadow-md self-center sm:self-start"
                       >
-                        Descargar QR grande
+                        Descargar QR (512px)
                       </a>
-                      <p className="text-xs text-muted">Imprimelo y pegalo en tu puerta o mostrador</p>
                     </div>
                   </div>
-                </div>
-
-                {/* CSS personalizado */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-foreground">CSS personalizado</p>
-                  <p className="text-xs text-muted">CSS inyectado directamente en tu tienda. Para usuarios avanzados.</p>
-                  <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
-                    placeholder=".product-card { border: 2px solid gold; }" rows={4}
-                    className={cn(inputCls, "font-mono text-[length:var(--ts-xs)] resize-y min-h-[80px]")} />
-                </div>
+                </StyleSection>
               </div>
             )}
 
             {/* ── TAB: CATÁLOGO (visibilidad de productos) ─────────── */}
             {activeTab === "catalogo" && (
-              <CatalogoTiendaTab />
+              <div className="space-y-8">
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Qué productos ve el cliente</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Activá o pausá productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario.
+                    </p>
+                  </div>
+                </div>
+                <CatalogoTiendaTab />
+              </div>
             )}
 
             {/* ── TAB: AVANZADO ──────────────────────────────────────── */}
             {activeTab === "avanzado" && (
-              <div className="space-y-6">
-                {/* Tipografía */}
-                <FieldRow label="Tipografía">
-                  <div className="relative">
-                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
-                    <select
-                      value={theme.fontFamily}
-                      onChange={(e) => update("fontFamily", e.target.value)}
-                      className={cn(inputCls, "pl-9")}
-                    >
-                      {FONT_OPTIONS.map((f) => (
-                        <option key={f.value} value={f.value}>{f.label}</option>
-                      ))}
-                    </select>
+              <div className="space-y-8">
+                {/* Banner explicativo */}
+                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
+                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Settings2 className="h-5 w-5 text-primary" />
                   </div>
-                </FieldRow>
-
-                {/* Bordes redondeados */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-muted">Bordes redondeados</p>
-                    <span className="text-xs font-bold text-foreground">{theme.borderRadius}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={24}
-                    value={theme.borderRadius}
-                    onChange={(e) => update("borderRadius", Number(e.target.value))}
-                    className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-muted">
-                    <span>Cuadrado</span>
-                    <span>Muy redondo</span>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-foreground">Configuración fina y SEO</p>
+                    <p className="text-sm text-muted mt-0.5">
+                      Tipografía con preview real, densidad, favicon, tracking con validación, CSS custom con snippets y vista previa de cómo aparece tu tienda en Google.
+                    </p>
                   </div>
                 </div>
 
-                {/* Espaciado */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted">Espaciado</p>
-                  <div className="flex gap-2">
-                    {(["compact", "normal", "spacious"] as const).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => update("spacing", s)}
-                        className={cn(
-                          "flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
-                          theme.spacing === s
-                            ? "bg-[var(--accent-soft)] text-white border-[var(--data-success)]/30"
-                            : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-[var(--data-success)]/30 hover:text-foreground"
+                {/* ── 1. TIPOGRAFÍA — visual font picker ─────────────── */}
+                <StyleSection
+                  icon={<Type className="h-5 w-5 text-primary" />}
+                  title="Tipografía"
+                  description="Elegí la fuente que más matchea con tu marca. La preview muestra cómo se verá realmente en tu tienda."
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {FONT_OPTIONS.map((f) => {
+                      const active = theme.fontFamily === f.value;
+                      return (
+                        <button
+                          key={f.value}
+                          type="button"
+                          onClick={() => update("fontFamily", f.value)}
+                          aria-pressed={active}
+                          className={cn(
+                            "p-3 rounded-2xl border-2 text-center transition-all",
+                            active
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                          )}
+                        >
+                          <div
+                            className="h-12 mb-2 rounded-xl bg-gray-50 dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-foreground"
+                            style={{ fontFamily: f.stack }}
+                          >
+                            Aa
+                          </div>
+                          <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: f.stack }}>
+                            {f.label}
+                          </p>
+                          <p className="text-[11px] text-muted leading-snug mt-0.5">{f.vibe}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </StyleSection>
+
+                {/* ── 2. BORDES Y DENSIDAD ─────────────────────────── */}
+                <StyleSection
+                  icon={<Sliders className="h-5 w-5 text-primary" />}
+                  title="Bordes y densidad"
+                  description="Cuánto se redondean tus cards y botones, y cuánto aire respira la página."
+                >
+                  <div className="space-y-6">
+                    {/* Border radius slider */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-foreground">Bordes redondeados</label>
+                        <span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums">{theme.borderRadius}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={24}
+                        value={theme.borderRadius}
+                        onChange={(e) => update("borderRadius", Number(e.target.value))}
+                        className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
+                      />
+                      {/* Preview multi-elemento: input, badge, card, botón */}
+                      <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-card-border">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div
+                            className="h-10 w-32 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border flex items-center px-3 text-xs text-muted transition-all"
+                            style={{ borderRadius: `${theme.borderRadius}px` }}
+                          >
+                            Input
+                          </div>
+                          <span
+                            className="px-2.5 py-1 text-xs font-bold text-white transition-all"
+                            style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
+                          >
+                            BADGE
+                          </span>
+                          <div
+                            className="h-12 w-20 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border shadow-sm transition-all"
+                            style={{ borderRadius: `${theme.borderRadius}px` }}
+                          />
+                          <button
+                            type="button"
+                            className="h-10 px-5 text-sm font-bold text-white shadow-md transition-all pointer-events-none"
+                            style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
+                          >
+                            Comprar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Espaciado — cards con mockup más rico */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-foreground">Densidad de espaciado</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {([
+                          { value: "compact",  label: "Compacto",  desc: "Más en menos espacio", pad: "py-1.5", gap: "gap-1" },
+                          { value: "normal",   label: "Normal",    desc: "Balance recomendado",  pad: "py-3",   gap: "gap-1.5" },
+                          { value: "spacious", label: "Espacioso", desc: "Aire y respiración",    pad: "py-5",   gap: "gap-2.5" },
+                        ] as const).map((s) => {
+                          const active = theme.spacing === s.value;
+                          return (
+                            <button
+                              key={s.value}
+                              type="button"
+                              onClick={() => update("spacing", s.value)}
+                              aria-pressed={active}
+                              className={cn(
+                                "p-3 rounded-2xl border-2 transition-all text-center",
+                                active
+                                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                              )}
+                            >
+                              <div className={cn("rounded-xl bg-gray-50 dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
+                                <div className="h-1.5 rounded-full bg-primary/30 w-1/2 mx-auto" />
+                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-3/4" />
+                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-2/3" />
+                                <div className="h-2 rounded-md mt-1 mx-auto w-12" style={{ backgroundColor: theme.primaryColor }} />
+                              </div>
+                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                              <p className="text-xs text-muted mt-0.5">{s.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 3. FAVICON con preview de pestaña ──────────────── */}
+                <StyleSection
+                  icon={<ImageIcon className="h-5 w-5 text-primary" />}
+                  title="Favicon"
+                  description="El ícono que aparece en la pestaña del navegador y al guardar como marcador."
+                >
+                  <div className="space-y-4">
+                    {/* Browser tab preview */}
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
+                      <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-card-border">
+                        <div className="inline-flex items-center gap-2 max-w-[260px] bg-white dark:bg-card rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-card-border px-3 py-2">
+                          {theme.favicon ? (
+                            <Image src={theme.favicon} alt="favicon" width={16} height={16} className="h-4 w-4 rounded shrink-0 object-cover" />
+                          ) : theme.logo ? (
+                            <Image src={theme.logo} alt="logo fallback" width={16} height={16} className="h-4 w-4 rounded shrink-0 object-cover" />
+                          ) : (
+                            <div className="h-4 w-4 rounded shrink-0 bg-primary" />
+                          )}
+                          <span className="text-xs text-foreground truncate">{theme.storeName || "Tu tienda"}</span>
+                        </div>
+                      </div>
+                      <div className="rounded-b-xl bg-gray-100 dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-card-border">
+                        <span className="text-xs font-mono text-muted">localhost:3000/t/{activeTenantSlug}</span>
+                      </div>
+                    </div>
+                    {/* Dropzone compacto + hint en columna derecha */}
+                    <div className="flex flex-col sm:flex-row items-start gap-4">
+                      <div className="w-full sm:w-40 shrink-0">
+                        <ImageUpload
+                          value={theme.favicon}
+                          onChange={(url) => update("favicon", url)}
+                          onClear={() => update("favicon", "")}
+                          folder="branding"
+                          label=""
+                          aspectRatio="square"
+                          hint=""
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2 pt-1">
+                        <p className="text-sm font-semibold text-foreground">Subí tu favicon</p>
+                        <ul className="text-xs text-muted space-y-1 list-disc pl-4">
+                          <li>Formato cuadrado — 32×32, 180×180 o 512×512 px</li>
+                          <li>JPG, PNG, WebP o SVG (recomendado)</li>
+                          <li>Si lo dejás vacío, se usa el logo de tu tienda</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── 4. SEO PREVIEW (Google) ────────────────────────── */}
+                <StyleSection
+                  icon={<Eye className="h-5 w-5 text-primary" />}
+                  title="Cómo aparece en Google"
+                  description="Vista previa del resultado en buscador. Se calcula desde el Nombre, Descripción y URL de tu tienda."
+                >
+                  <div className="rounded-2xl bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border p-5 space-y-1.5">
+                    <p className="text-xs text-muted truncate">
+                      {typeof window !== "undefined" ? window.location.origin : "tu-dominio.com"}
+                      <span className="mx-1">›</span>t<span className="mx-1">›</span>{activeTenantSlug}
+                    </p>
+                    <p className="text-xl font-medium leading-snug" style={{ color: "#1a0dab" }}>
+                      {theme.storeName || "Tu tienda"}
+                      {theme.slogan && <span className="text-foreground"> — {theme.slogan}</span>}
+                    </p>
+                    <p className="text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">
+                      {theme.description || "Configurá tu descripción en la pestaña Identidad para que Google sepa de qué trata tu tienda."}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted mt-2">
+                    Tip: una buena descripción menciona tu zona, qué vendés y diferencial (ej: &ldquo;Bodega en Pucallpa con delivery en 25 min, pago Yape&rdquo;).
+                  </p>
+                </StyleSection>
+
+                {/* ── 5. TRACKING Y ANALÍTICA con badges de estado ──── */}
+                <StyleSection
+                  icon={<Sliders className="h-5 w-5 text-primary" />}
+                  title="Tracking y analítica"
+                  description="Pegá tus IDs para medir tráfico y conversiones. Se inyectan en todas las páginas del storefront."
+                >
+                  <div className="space-y-5">
+                    {/* Google Analytics */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-semibold text-foreground">Google Analytics (GA4)</label>
+                        {theme.analyticsId?.trim().startsWith("G-") ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                            <Check className="h-3 w-3" /> Configurado
+                          </span>
+                        ) : theme.analyticsId?.trim() ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                            ⚠ Formato inválido
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-muted">Sin configurar</span>
                         )}
-                      >
-                        {s === "compact" ? "Compacto" : s === "normal" ? "Normal" : "Espacioso"}
-                      </button>
-                    ))}
+                      </div>
+                      <input
+                        type="text"
+                        value={theme.analyticsId}
+                        onChange={(e) => update("analyticsId", e.target.value)}
+                        placeholder="G-XXXXXXXXXX"
+                        className={cn(inputCls, "font-mono")}
+                      />
+                      <p className="text-xs text-muted">
+                        Empieza con <span className="font-mono">G-</span>. Lo obtenés en{" "}
+                        <a href="https://analytics.google.com/analytics/web/#/p/admin/streams" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          Google Analytics → Admin → Data Streams ↗
+                        </a>
+                      </p>
+                    </div>
+
+                    {/* Meta Pixel */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-semibold text-foreground">Meta Pixel (Facebook / Instagram)</label>
+                        {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                            <Check className="h-3 w-3" /> Configurado
+                          </span>
+                        ) : theme.pixelId?.trim() ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                            ⚠ Formato inválido
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-muted">Sin configurar</span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={theme.pixelId}
+                        onChange={(e) => update("pixelId", e.target.value)}
+                        placeholder="1234567890123456"
+                        className={cn(inputCls, "font-mono")}
+                      />
+                      <p className="text-xs text-muted">
+                        14-17 dígitos. Lo encontrás en{" "}
+                        <a href="https://business.facebook.com/events_manager2/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          Facebook Events Manager ↗
+                        </a>
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </StyleSection>
 
-                {/* Favicon */}
-                <FieldRow label="Favicon">
-                  <ImageUpload
-                    value={theme.favicon}
-                    onChange={(url) => update("favicon", url)}
-                    onClear={() => update("favicon", "")}
-                    folder="branding"
-                    label=""
-                    aspectRatio="square"
-                    hint="Icono de la pestana del navegador. Se recomienda 32x32px o 180x180px."
-                  />
-                </FieldRow>
+                {/* ── 6. CSS PERSONALIZADO con snippets ──────────────── */}
+                <StyleSection
+                  icon={<Paintbrush className="h-5 w-5 text-primary" />}
+                  title="CSS personalizado"
+                  description="Reglas CSS inyectadas en tu storefront. Solo si sabés CSS — un error puede romper tu tienda."
+                >
+                  <div className="space-y-4">
+                    {/* Snippets clickables */}
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Snippets para empezar</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {CSS_SNIPPETS.map((s) => (
+                          <button
+                            key={s.label}
+                            type="button"
+                            onClick={() => update("customCSS", ((theme.customCSS || "").trimEnd() + "\n\n" + s.css).trimStart())}
+                            className="text-left p-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-primary/5 transition-all"
+                          >
+                            <p className="text-sm font-bold text-foreground">{s.label}</p>
+                            <p className="text-xs text-muted leading-snug mt-0.5">{s.description}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                {/* Reset a valores por defecto */}
-                <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+                    {/* Editor */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-semibold text-foreground">Editor CSS</label>
+                        <span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span>
+                      </div>
+                      <textarea
+                        value={theme.customCSS}
+                        onChange={(e) => update("customCSS", e.target.value)}
+                        placeholder=".product-card { border: 2px solid gold; }
+.store-header { backdrop-filter: blur(20px); }"
+                        rows={8}
+                        spellCheck={false}
+                        className={cn(inputCls, "font-mono text-sm resize-y min-h-[180px] py-3")}
+                      />
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-xs text-muted">
+                          Selectores útiles:
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.product-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-header</span>
+                        </p>
+                        {theme.customCSS && (
+                          <button
+                            type="button"
+                            onClick={() => update("customCSS", "")}
+                            className="text-xs font-semibold text-[var(--data-error-500)] hover:underline"
+                          >
+                            Limpiar editor
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </StyleSection>
+
+                {/* ── ZONA DE PELIGRO ─────────────────────────────── */}
+                <div className="rounded-2xl border-2 border-dashed border-[var(--data-error-500)]/40 bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/5 p-5 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--data-error-500)]/10 flex items-center justify-center">
+                      <Settings2 className="h-5 w-5 text-[var(--data-error-500)]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-base font-bold text-foreground">Zona de peligro</p>
+                      <p className="text-sm text-muted mt-0.5">Restaurar borra todos los cambios no guardados de esta sesión y vuelve al theme inicial.</p>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)]/50 text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors min-h-[44px]"
+                    className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-[var(--data-error-500)] text-base font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
                   >
                     Restaurar valores por defecto
                   </button>
-                  <p className="text-xs text-muted text-center mt-1.5">Esta acción borra los cambios no guardados</p>
-                </div>
-
-                {/* Tracking */}
-                <div className="space-y-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
-                  <p className="text-xs font-semibold text-muted flex items-center gap-1.5">
-                    <Sliders className="h-3.5 w-3.5" />
-                    Seguimiento y analítica
-                  </p>
-                  <FieldRow label="Google Analytics ID (G-XXXXXXXX)">
-                    <input
-                      type="text"
-                      value={theme.analyticsId}
-                      onChange={(e) => update("analyticsId", e.target.value)}
-                      placeholder="G-XXXXXXXXXX"
-                      className={inputCls}
-                    />
-                  </FieldRow>
-                  <FieldRow label="Facebook Pixel ID">
-                    <input
-                      type="text"
-                      value={theme.pixelId}
-                      onChange={(e) => update("pixelId", e.target.value)}
-                      placeholder="1234567890"
-                      className={inputCls}
-                    />
-                  </FieldRow>
                 </div>
               </div>
             )}
           </div>
 
           {/* Botón guardar — fijo abajo del panel */}
-          <div className="shrink-0 px-5 py-3 border-t border-[var(--rule-soft)] dark:border-card-border space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 px-6 py-4 border-t-2 border-[var(--rule-base)] dark:border-card-border space-y-2 bg-white dark:bg-card">
             {error && (
-              <p className="text-xs text-[var(--data-error)] font-semibold text-center">{error}</p>
+              <p className="text-sm text-[var(--data-error-500)] font-semibold text-center">{error}</p>
             )}
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
               className={cn(
-                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] relative",
+                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-bold transition-all relative shadow-md",
                 saved
-                  ? "bg-[var(--accent-soft)] text-white"
-                  : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white hover:shadow-lg active:scale-[0.98]",
+                  ? "bg-[var(--data-success-500)] text-white"
+                  : "bg-primary hover:bg-primary-dark text-white hover:shadow-lg active:scale-[0.98]",
                 saving && "opacity-60 cursor-not-allowed"
               )}
             >
               {saving ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</>
+                <><Loader2 className="h-5 w-5 animate-spin" /> Guardando...</>
               ) : saved ? (
-                <><Check className="h-4 w-4" /> Cambios guardados</>
+                <><Check className="h-5 w-5" /> Cambios guardados</>
               ) : (
-                <><Save className="h-4 w-4" /> Guardar cambios</>
+                <><Save className="h-5 w-5" /> Guardar cambios</>
               )}
               {hasUnsavedChanges && !saving && !saved && (
-                <span className="absolute -top-1.5 -right-1.5 h-5 px-1.5 rounded-full bg-[var(--data-warning)] text-xs font-bold text-[var(--text-primary)] flex items-center">
+                <span className="absolute -top-2 -right-2 h-6 px-2 rounded-full bg-[var(--data-warning-500)] text-xs font-bold text-[var(--text-primary)] flex items-center shadow">
                   Sin guardar
                 </span>
               )}
@@ -1373,7 +2883,7 @@ export default function StoreCustomizer() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-[var(--data-success)] font-semibold hover:text-[var(--data-success)]">
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-[var(--data-success-500)] font-semibold hover:text-[var(--data-success-500)]">
                 Recargar
               </button>
               <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-tertiary)] hover:text-white">

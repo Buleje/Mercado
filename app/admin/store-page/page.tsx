@@ -103,9 +103,20 @@ export default function StorePageAdminPage() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <AdminModuleHeader
-        eyebrow="Mi tienda · Personalización"
-        title="Mi página de inicio"
-        description="Personaliza la página pública de tu tienda: apariencia, productos destacados, promociones y métricas. Solo afecta a tu página, nunca al marketplace general."
+        eyebrow="Mi tienda · Contenido público"
+        title="Qué muestra tu página de inicio"
+        description={
+          <>
+            Hero, productos destacados, ofertas y secciones de tu home pública. Define el{" "}
+            <strong>contenido</strong> — no los colores ni el logo. Para eso, andá a{" "}
+            <Link
+              href="?tab=store-customizer"
+              className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+            >
+              Identidad y tema →
+            </Link>
+          </>
+        }
         icon={Globe}
       >
         <Link

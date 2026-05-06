@@ -86,8 +86,8 @@ export const ALL_TABS = [
   { id: "delivery-live" as Tab,       label: "Delivery en Vivo",    icon: Activity },
   { id: "marketplace-chat" as Tab,    label: "Chat Clientes",       icon: MessageCircle },
   // — MI TIENDA —
-  { id: "store-customizer" as Tab,    label: "Mi Tienda",           icon: Palette },
-  { id: "pagina-inicio" as Tab,       label: "Página de Inicio",    icon: Globe },
+  { id: "store-customizer" as Tab,    label: "Identidad y tema",    icon: Palette },
+  { id: "pagina-inicio" as Tab,       label: "Página de inicio",    icon: Globe },
   // — SISTEMA —
   { id: "rendimiento" as Tab,         label: "Rendimiento",         icon: Gauge },
   { id: "auditoria" as Tab,           label: "Auditoría",           icon: Shield },

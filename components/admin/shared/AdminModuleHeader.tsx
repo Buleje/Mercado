@@ -42,8 +42,8 @@ interface AdminModuleHeaderProps {
   eyebrow?: string;
   /** Título principal — se renderiza con font-display italic. */
   title: string;
-  /** Descripción breve (1-2 líneas, lenguaje simple). */
-  description?: string;
+  /** Descripción breve (1-2 líneas, lenguaje simple). Acepta JSX para deep-links inline. */
+  description?: React.ReactNode;
   /** Icono decorativo opcional. */
   icon?: LucideIcon;
   /** @deprecated — ignored, kept for backward compat */
