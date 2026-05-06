@@ -329,6 +329,15 @@ export const POST = withApiHandler("orders-create", async (req) => {
     }
     for (const i of body.items) {
       if (!serverPriceMap.has(i.id)) {
+        // Estructurado para diagnóstico de invalid_product cross-tenant
+        // y data-drift entre catálogo público y validación de checkout.
+        logger.warn("[orders] invalid_product reject", {
+          rejectedId: i.id,
+          rawTenantId,
+          resolvedTenantId: tenantId,
+          requestedIds: productIds,
+          foundIds: Array.from(serverPriceMap.keys()),
+        });
         return NextResponse.json(
           { error: "invalid_product", productId: i.id },
           { status: 400 },
@@ -722,7 +731,9 @@ export const POST = withApiHandler("orders-create", async (req) => {
           logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId, productId: item.id, orderId: saved.id });
           import("@sentry/nextjs")
             .then((Sentry) => Sentry.captureException(err, { extra: { orderId: saved.id, productId: item.id, tenantId, type: "order-fefo-loss" } }))
-            .catch(() => {});
+            .catch((sentryErr) => {
+              logger.warn("[orders] sentry capture also failed", { error: String(sentryErr) });
+            });
         });
       }
     }
@@ -919,5 +930,39 @@ export const POST = withApiHandler("orders-create", async (req) => {
       })();
     }
 
-    return NextResponse.json(saved, { status: 201 });
+    // ── Auto-firmar customer-session ──────────────────────────────────────
+    // UX 2026-05-06: tras un checkout exitoso con phone válido, firmamos la
+    // cookie de sesión del cliente. Sin esto, /api/customers/[phone]/orders
+    // devolvía [] y la página /mis-pedidos mostraba "Haz tu primer pedido"
+    // aunque el cliente acababa de hacer uno. La cookie habilita el historial
+    // sin requerir un login adicional. El phone ya viene del input del propio
+    // cliente, así que no abrimos nuevo vector de auth — solo evitamos pedirle
+    // credenciales repetidas para sus propios datos.
+    const response = NextResponse.json(saved, { status: 201 });
+    const customerPhoneForSession = saved.customer?.phone;
+    if (customerPhoneForSession) {
+      try {
+        const { createCustomerToken, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+        const token = await createCustomerToken({
+          customerId: customerPhoneForSession,
+          email: `${customerPhoneForSession}@phone.local`,
+          name: body.customer.name,
+          tenantId,
+          provider: "checkout",
+        });
+        response.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: CUSTOMER_SESSION.MAX_AGE,
+          path: "/",
+        });
+      } catch (err) {
+        logger.warn("[orders] customer-session sign failed", {
+          error: err instanceof Error ? err.message : String(err),
+          orderId: saved.id,
+        });
+      }
+    }
+    return response;
 });
