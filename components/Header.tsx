@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
   Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass, Wallet,
+  Bell, AlertCircle, CheckCheck, ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -402,15 +403,31 @@ export default function Header() {
     };
   }, []);
 
-  // Fetch loyalty data when customer phone is available
+  // Fetch loyalty data when customer phone is available.
+  // Pre-check session — sin auth no llamamos endpoints protegidos para evitar
+  // que el 401 aparezca en consola del browser.
   useEffect(() => {
     if (!customer?.phone) { startTransition(() => setLoyalty(null)); return; }
     const phone = customer.phone.replace(/\D/g, "").slice(-9);
     if (phone.length < 6) return;
-    fetch(`/api/loyalty/${phone}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) startTransition(() => setLoyalty(data)); })
-      .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      try {
+        const auth = await fetch("/api/auth/customer/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (cancelled || !auth.ok) return;
+        const authData = await auth.json();
+        if (!authData?.authenticated) return;
+        const r = await fetch(`/api/loyalty/${phone}`, { credentials: "include" });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (cancelled || !data) return;
+        startTransition(() => setLoyalty(data));
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
   }, [customer?.phone]);
 
   // Search autocomplete — fuzzy with Levenshtein typo tolerance (debounced)
@@ -679,21 +696,24 @@ export default function Header() {
           </Link>
         );
       case "ofertas":
-        // Captura price-sensitive shoppers — link directo al hub de ofertas.
+        // Hub de ofertas cross-store del marketplace — fuera de la tienda individual.
+        if (isTenantStore) return null;
         return (
           <Link key="ofertas" href="/marketplace/ofertas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("ofertas") && activeNavCls)}>
             <Tag className="h-4 w-4" strokeWidth={1.75} /> Ofertas
           </Link>
         );
       case "como-pagar":
+        // Página informativa cross-store — la tienda individual ya tiene su footer con métodos.
+        if (isTenantStore) return null;
         return (
           <Link key="como-pagar" href="/marketplace/como-pagar" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
             <Wallet className="h-4 w-4" strokeWidth={1.75} /> Cómo pagar
           </Link>
         );
       case "tiendas":
-        // Directorio multi-tienda — disponible también dentro del storefront
-        // de un tenant individual (link absoluto a /tiendas).
+        // Directorio multi-tienda — fuera de la tienda individual (es un entorno autónomo del dueño).
+        if (isTenantStore) return null;
         return (
           <Link key="tiendas" href="/tiendas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tiendas") && activeNavCls)}>
             <Store className="h-4 w-4" strokeWidth={1.75} /> Tiendas
@@ -727,11 +747,9 @@ export default function Header() {
           </Link>
         );
       case "historial":
-        return (
-          <Link key="historial" href={tenantPath("/cuenta/historial")} className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("historial") && activeNavCls)}>
-            <History className="h-4 w-4" strokeWidth={1.75} /> Historial
-          </Link>
-        );
+        // Historial nav link removido — el cliente accede al historial via
+        // "Mi panel" → "Pedidos" en el menú de usuario para reducir clutter.
+        return null;
       default:
         return null;
     }
@@ -824,18 +842,21 @@ export default function Header() {
           </Link>
         );
       case "ofertas":
+        if (isTenantStore) return null;
         return (
           <Link key="ofertas" href="/marketplace/ofertas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
             <Tag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Ofertas
           </Link>
         );
       case "como-pagar":
+        if (isTenantStore) return null;
         return (
           <Link key="como-pagar" href="/marketplace/como-pagar" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
             <Wallet className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Cómo pagar
           </Link>
         );
       case "tiendas":
+        if (isTenantStore) return null;
         return (
           <Link key="tiendas" href="/tiendas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
             <Store className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Tiendas
@@ -878,7 +899,7 @@ export default function Header() {
   return (
     <header
       className={cn(
-        "fixed left-0 right-0 z-50 animate-[fadeDown_0.6s_ease-out]",
+        "store-header fixed left-0 right-0 z-50",
         announcementVisible ? "top-11" : "top-0",
         scrolled
           ? "bg-white/97 backdrop-blur-md shadow-lg dark:bg-card/97"
@@ -1002,11 +1023,11 @@ export default function Header() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
                               {(item.stock ?? 0) > 0 ? (
-                                <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400")}>
+                                <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400")}>
                                   {(item.stock ?? 0) <= 5 ? `¡Solo ${item.stock}!` : "Disponible"}
                                 </span>
                               ) : (
-                                <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Agotado</span>
+                                <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400">Agotado</span>
                               )}
                             </div>
                           </div>
@@ -1100,7 +1121,7 @@ export default function Header() {
               className={cn(
                 "relative flex items-center justify-center rounded-full transition-all shrink-0",
                 hasActiveOrder
-                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shadow-lg shadow-amber-400/30 hover:bg-amber-200"
+                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-lg shadow-amber-400/30 hover:bg-amber-200"
                   : scrolled
                     ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
                     : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"
@@ -1110,7 +1131,7 @@ export default function Header() {
               {hasActiveOrder && (
                 <>
                   <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
-                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500">
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]">
                     {orderStatusChanged && <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />}
                   </span>
                 </>
@@ -1142,12 +1163,29 @@ export default function Header() {
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-card rounded-xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
                   <div className="py-1.5">
-                    <button
-                      onClick={() => { openAccountModal(); setUserMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                    <a
+                      href={tenantPath("/mi-panel")}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
                     >
                       <User className="h-4 w-4" />
-                      <span>Mi cuenta</span>
+                      <span className="flex-1">Mi panel</span>
+                      <span
+                        className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        }}
+                      >
+                        Tienda
+                      </span>
+                    </a>
+                    <button
+                      onClick={() => { openAccountModal(); setUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>Editar mis datos</span>
                     </button>
                     <a
                       href={tenantPath("/mis-pedidos")}
@@ -1157,24 +1195,19 @@ export default function Header() {
                       <ClipboardList className="h-4 w-4" />
                       <span>Mis pedidos</span>
                     </a>
-                    <button
-                      onClick={() => { setUserMenuOpen(false); window.location.href = "/cuenta"; }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
-                    >
-                      <History className="h-4 w-4" />
-                      <span>Historial de datos</span>
-                    </button>
-                    {loyalty && customer && (
+                    {customer && (
                       <a
                         href={tenantPath("/puntos")}
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
                       >
-                        <Trophy className="h-4 w-4 text-amber-500" />
+                        <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                         <span className="flex-1">Mis puntos</span>
-                        <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                          {loyalty.loyaltyPoints ?? 0}
-                        </span>
+                        {loyalty && (
+                          <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full tabular-nums">
+                            {loyalty.loyaltyPoints ?? 0}
+                          </span>
+                        )}
                       </a>
                     )}
                     <button
@@ -1182,39 +1215,31 @@ export default function Header() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left",
                         hasActiveOrder
-                          ? "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+                          ? "bg-amber-50 dark:bg-amber-900/10 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
                           : "text-muted hover:bg-primary/5 hover:text-primary"
                       )}
                     >
                       <div className="relative">
                         <PackageCheck className="h-4 w-4" />
                         {hasActiveOrder && (
-                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--data-warning-500)] animate-ping" />
                         )}
                       </div>
                       <span className="flex-1">Estado de mi pedido</span>
                       {hasActiveOrder && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)] animate-pulse" />
                       )}
                     </button>
                     {customer && (
                       <>
                         <div className="mx-3 my-1 border-t border-gray-100 dark:border-card-border" />
-                        <a
-                          href="/admin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted hover:bg-primary/5 hover:text-primary transition-colors"
-                        >
-                          <Settings className="h-4 w-4" />
-                          <span>Panel administrador</span>
-                        </a>
                         <button
                           onClick={() => {
                             clear();
                             setUserMenuOpen(false);
                             window.location.reload();
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--data-error-500)] hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-left"
                         >
                           <X className="h-4 w-4" />
                           <span>Cerrar sesión</span>
@@ -1246,73 +1271,254 @@ export default function Header() {
               <Search className="h-4.5 w-4.5" />
             </button>
 
-            {/* Notification bell — customer inbox */}
+            {/* Notification bell + dropdown — wrapped en div relative para
+                que el dropdown ancle al bell, no al header completo (era el bug
+                de "el menú aparece en otro lugar"). */}
             {customer?.phone && (
-              <button
-                onClick={() => setNotifOpen((p) => !p)}
-                className={cn(
-                  "relative flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
-                  scrolled
-                    ? "text-foreground hover:bg-muted"
-                    : "text-white/70 hover:text-white hover:bg-white/15"
-                )}
-                aria-label={`Notificaciones${_unreadCount > 0 ? ` (${_unreadCount} sin leer)` : ""}`}
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {_unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[length:var(--ts-2xs)] font-bold text-white">
-                    {_unreadCount > 9 ? "9+" : _unreadCount}
-                  </span>
-                )}
-              </button>
-            )}
-
-            {/* Notification dropdown */}
-            {notifOpen && customer?.phone && (
-              <div
-                ref={notifRef}
-                className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl z-50"
-              >
-                <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Notificaciones</h3>
-                  {_unreadCount > 0 && (
-                    <button
-                      onClick={async () => {
-                        await fetch("/api/customer-notifications", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ phone: customer.phone, markAllRead: true }),
-                        }).catch(() => {});
-                        setUnreadCount(0);
-                        setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
-                      }}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                    >
-                      Marcar todas leidas
-                    </button>
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen((p) => !p)}
+                  className={cn(
+                    "relative flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
+                    scrolled
+                      ? "text-foreground hover:bg-muted"
+                      : "text-white/70 hover:text-white hover:bg-white/15"
                   )}
-                </div>
-                {_notifs.length === 0 ? (
-                  <p className="p-6 text-center text-sm text-slate-400">Sin notificaciones</p>
-                ) : (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {_notifs.slice(0, 10).map((n) => (
+                  aria-label={`Notificaciones${_unreadCount > 0 ? ` (${_unreadCount} sin leer)` : ""}`}
+                >
+                  <Bell className="h-5 w-5" strokeWidth={2.25} />
+                  {_unreadCount > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-extrabold text-white shadow-md"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--data-error-500) 0%, var(--data-error-600) 100%)",
+                      }}
+                    >
+                      {_unreadCount > 9 ? "9+" : _unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification dropdown — premium redesign 2026-05-06 */}
+                {notifOpen && (
+                  <div
+                    ref={notifRef}
+                    className="absolute right-0 top-full mt-3 w-[24rem] max-w-[calc(100vw-2rem)] rounded-3xl overflow-hidden shadow-2xl z-50 animate-[fadeUp_0.18s_ease-out]"
+                    style={{
+                      background: "var(--color-card)",
+                      border:
+                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, var(--color-card-border))",
+                    }}
+                    role="dialog"
+                    aria-label="Notificaciones"
+                  >
+                    {/* Header gradient */}
+                    <div
+                      className="relative px-5 py-4 overflow-hidden"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      }}
+                    >
                       <div
-                        key={n.id}
-                        className={cn(
-                          "px-3 py-2.5 text-sm",
-                          !n.read && "bg-emerald-50/50 dark:bg-emerald-900/10"
+                        className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none"
+                        style={{ background: "rgba(255,255,255,0.12)" }}
+                      />
+                      <div className="relative flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <Bell className="h-5 w-5 text-white" strokeWidth={2.25} />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-extrabold text-white leading-tight">
+                              Notificaciones
+                            </h3>
+                            <p className="text-xs text-white/85 font-bold">
+                              {_unreadCount > 0
+                                ? `${_unreadCount} sin leer`
+                                : "Estás al día"}
+                            </p>
+                          </div>
+                        </div>
+                        {_unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await fetch("/api/customer-notifications", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ phone: customer.phone, markAllRead: true }),
+                              }).catch((err) => {
+                                // Fire-and-forget — UI ya se actualizó optimista
+                                if (typeof console !== "undefined") {
+                                  // eslint-disable-next-line no-console
+                                  console.warn("[notif] markAllRead failed", String(err));
+                                }
+                              });
+                              setUnreadCount(0);
+                              setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+                            }}
+                            className="inline-flex items-center gap-1 text-xs font-extrabold text-white px-3 py-2 rounded-xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors"
+                            aria-label="Marcar todas como leídas"
+                          >
+                            <CheckCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
+                            Todas
+                          </button>
                         )}
-                      >
-                        <p className="font-medium text-slate-700 dark:text-slate-200 text-xs">{n.title}</p>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 line-clamp-2">{n.body}</p>
-                        <p className="text-slate-400 text-[length:var(--ts-2xs)] mt-1">
-                          {new Date(n.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+
+                    {/* Lista */}
+                    {_notifs.length === 0 ? (
+                      <div className="px-6 py-10 text-center">
+                        <div
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                          style={{
+                            background:
+                              "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                          }}
+                        >
+                          <Sparkles className="h-8 w-8 text-primary/60" strokeWidth={1.75} />
+                        </div>
+                        <p className="text-base font-extrabold text-foreground">
+                          Sin notificaciones
+                        </p>
+                        <p className="text-xs text-muted mt-1">
+                          Cuando tengas avisos aparecerán acá
                         </p>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="max-h-80 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+                        <ul className="p-2 space-y-1">
+                          {_notifs.slice(0, 10).map((n) => {
+                            const isUnread = !n.read;
+                            // Color por tipo (mismo mapeo que la página /cuenta/notificaciones)
+                            const typeColor =
+                              n.type === "pedido"
+                                ? "var(--accent)"
+                                : n.type === "oferta"
+                                  ? "var(--data-warning-500)"
+                                  : n.type === "tienda"
+                                    ? "var(--text-secondary)"
+                                    : "var(--color-primary, #00B4A6)";
+                            const TypeIcon =
+                              n.type === "pedido"
+                                ? Package
+                                : n.type === "oferta"
+                                  ? Tag
+                                  : n.type === "tienda"
+                                    ? Store
+                                    : AlertCircle;
+                            const inner = (
+                              <div
+                                className={cn(
+                                  "flex items-start gap-3 p-3 rounded-2xl transition-all",
+                                  isUnread
+                                    ? "hover:-translate-y-0.5"
+                                    : "hover:bg-gray-50 dark:hover:bg-surface",
+                                )}
+                                style={
+                                  isUnread
+                                    ? {
+                                        background: `color-mix(in oklch, ${typeColor} 6%, transparent)`,
+                                        border: `1px solid color-mix(in oklch, ${typeColor} 22%, transparent)`,
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <div
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative"
+                                  style={{
+                                    background: `color-mix(in oklch, ${typeColor} 14%, transparent)`,
+                                  }}
+                                >
+                                  <TypeIcon
+                                    className="h-5 w-5"
+                                    style={{ color: typeColor }}
+                                    strokeWidth={2.25}
+                                  />
+                                  {isUnread && (
+                                    <span
+                                      className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 animate-pulse"
+                                      style={{
+                                        background: typeColor,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        ["--tw-ring-color" as any]: "var(--color-card)",
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className={cn(
+                                      "text-sm leading-tight truncate",
+                                      isUnread
+                                        ? "font-extrabold text-foreground"
+                                        : "font-bold text-foreground",
+                                    )}
+                                  >
+                                    {n.title}
+                                  </p>
+                                  <p className="text-xs text-muted mt-0.5 line-clamp-2 leading-relaxed">
+                                    {n.body}
+                                  </p>
+                                  <p className="text-xs text-muted mt-1 tabular-nums opacity-70">
+                                    {new Date(n.createdAt).toLocaleDateString("es-PE", {
+                                      day: "numeric",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                            return (
+                              <li key={n.id}>
+                                {n.link ? (
+                                  <Link
+                                    href={n.link}
+                                    onClick={() => setNotifOpen(false)}
+                                    className="block"
+                                  >
+                                    {inner}
+                                  </Link>
+                                ) : (
+                                  inner
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Footer CTA */}
+                    <div
+                      className="px-3 py-3 border-t"
+                      style={{
+                        borderColor: "var(--color-card-border)",
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, transparent)",
+                      }}
+                    >
+                      <Link
+                        href="/cuenta/notificaciones"
+                        onClick={() => setNotifOpen(false)}
+                        className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-extrabold transition-all hover:-translate-y-0.5"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          color: "white",
+                          boxShadow:
+                            "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        }}
+                      >
+                        Ver todas
+                        <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1339,7 +1545,7 @@ export default function Header() {
                   key={count}
                   aria-live="polite"
                   aria-atomic="true"
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[length:var(--ts-2xs)] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--data-error-500)] text-[length:var(--ts-2xs)] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
                   style={{ minWidth: count > 9 ? "1.5rem" : undefined }}
                 >
                   {count > 99 ? "99+" : count}
@@ -1355,7 +1561,7 @@ export default function Header() {
                 "lg:hidden relative flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
                 scrolled
                   ? hasActiveOrder
-                    ? "text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                    ? "text-[var(--data-warning-600)] hover:bg-amber-50 dark:hover:bg-amber-900/20"
                     : "text-foreground hover:bg-primary/10 hover:text-primary"
                   : hasActiveOrder
                     ? "text-amber-300 hover:bg-white/15"
@@ -1366,7 +1572,7 @@ export default function Header() {
             >
               <PackageCheck className="h-5 w-5" />
               {hasActiveOrder && (
-                <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500">
+                <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]">
                   {orderStatusChanged && (
                     <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />
                   )}
@@ -1388,8 +1594,8 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Category quick-strip — visible on all pages */}
-        <div className="relative z-[1] px-3 pb-3 pt-1 lg:border-t lg:border-white/10 lg:px-4">
+        {/* Category quick-strip — solo mobile/tablet (en desktop hay sidebar lateral en /tienda) */}
+        <div className="relative z-[1] px-3 pb-3 pt-1 lg:hidden">
           <button
             type="button"
             onClick={() => scrollCategoryStrip("left")}
@@ -1515,13 +1721,13 @@ export default function Header() {
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors",
                     hasActiveOrder
-                      ? "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100"
+                      ? "bg-amber-50 dark:bg-amber-900/10 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-amber-100"
                       : "bg-primary/5 text-primary hover:bg-primary/10"
                   )}
                 >
                   <PackageCheck className="h-5 w-5 shrink-0" />
                   <span className="flex-1 text-left">Estado de mi pedido</span>
-                  {hasActiveOrder && <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />}
+                  {hasActiveOrder && <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)] animate-pulse" />}
                 </button>
                 <button
                   onClick={() => { openCustomerModal("profile"); setMobileOpen(false); }}
@@ -1547,7 +1753,7 @@ export default function Header() {
                     className={cn(
                       "relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors overflow-hidden",
                       loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante"
-                        ? "bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100"
+                        ? "bg-amber-50 dark:bg-amber-900/15 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-amber-100"
                         : loyalty.loyaltyTier === "plata"
                           ? "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                           : "bg-secondary/10 text-secondary hover:bg-secondary/20"
@@ -1570,7 +1776,7 @@ export default function Header() {
                       setMobileOpen(false);
                       window.location.reload();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 font-medium hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--data-error-500)] font-medium hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                   >
                     <X className="h-5 w-5" />
                     <span>Cerrar sesión</span>
@@ -1608,7 +1814,7 @@ export default function Header() {
                   className={cn(
                     "p-2 rounded-lg transition-colors",
                     listening
-                      ? "bg-red-100 dark:bg-red-900/30 text-red-500 animate-pulse"
+                      ? "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-500)] animate-pulse"
                       : "hover:bg-gray-100 dark:hover:bg-surface text-muted"
                   )}
                   aria-label="Búsqueda o pedido por voz"

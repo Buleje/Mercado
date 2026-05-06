@@ -1389,7 +1389,7 @@ export default function MisPedidosPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end gap-4 flex-wrap">
             <Link
-              href="/cuenta"
+              href="/mi-panel"
               className="h-12 w-12 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
               aria-label="Volver a mi cuenta"
             >
@@ -1700,7 +1700,7 @@ export default function MisPedidosPage() {
                         Hacer otro pedido
                       </Link>
                       <Link
-                        href="/cuenta"
+                        href="/mi-panel"
                         className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-foreground text-sm font-extrabold border-2 transition-colors hover:bg-gray-50 dark:hover:bg-surface"
                         style={{
                           background: "var(--color-card)",
