@@ -49,6 +49,7 @@ export default function CheckoutModal() {
     clear,
     close: closeCart,
     markOrderPending,
+    removeItem,
   } = useCart();
   const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
   const {
@@ -118,7 +119,7 @@ export default function CheckoutModal() {
     promo,
     discount,
     dispatch,
-    cartActions: { clear, closeCart, markOrderPending },
+    cartActions: { clear, closeCart, markOrderPending, removeItem },
     customerActions: { register, openOrderStatusModal },
     closeCheckout,
   });
@@ -196,6 +197,12 @@ export default function CheckoutModal() {
             phoneNotFound={phoneSearch.notFound}
             onPhoneSearch={handlers.handlePhoneSearchSubmit}
             onSkipAccount={handlers.handleSkipAccount}
+            onGoogleSignIn={() => {
+              // Redirige al OAuth flow del tenant. El backend resuelve `x-tenant-id`
+              // desde middleware → la cuenta se crea/asocia al tenant actual.
+              const here = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+              window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+            }}
           />
         )}
 

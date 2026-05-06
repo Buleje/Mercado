@@ -26,7 +26,21 @@ export function useLoyalty(dispatch: CheckoutDispatch) {
       const clean = phone.replace(/\D/g, "").slice(-9);
       if (clean.length < 6) return;
       try {
-        const res = await fetch(`/api/loyalty/${encodeURIComponent(clean)}`);
+        // Pre-check sesión activa: el endpoint /api/loyalty/[phone] requiere
+        // customer-session firmada. Sin esto, el browser loguea un 401 en
+        // cada init de checkout cuando hay phone en localStorage pero la
+        // cookie expiró. Lealtad es opcional → no debe ensuciar consola.
+        const auth = await fetch("/api/auth/customer/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!auth.ok) return;
+        const authData = await auth.json();
+        if (!authData?.authenticated) return;
+
+        const res = await fetch(`/api/loyalty/${encodeURIComponent(clean)}`, {
+          credentials: "include",
+        });
         if (!res.ok) return;
         const data = (await res.json()) as {
           loyaltyPoints?: number;

@@ -12,16 +12,26 @@ export default function UserAccountModal() {
     if (!accountModalOpen || !customer?.phone) { setLoyalty(null); return; }
     const phone = customer.phone.replace(/\D/g, "").slice(-9);
     if (phone.length < 6) return;
-    fetch(`/api/loyalty/${phone}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setLoyalty(data); })
-      .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      try {
+        const auth = await fetch("/api/auth/customer/me", { credentials: "include", cache: "no-store" });
+        if (cancelled || !auth.ok) return;
+        const authData = await auth.json();
+        if (!authData?.authenticated) return;
+        const r = await fetch(`/api/loyalty/${phone}`, { credentials: "include" });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!cancelled && data) setLoyalty(data);
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
   }, [accountModalOpen, customer?.phone]);
 
   if (!accountModalOpen) return null;
 
   const tierColors: Record<string, string> = {
-    Bronce: "text-amber-700 bg-amber-50 border-amber-200",
+    Bronce: "text-[var(--data-warning-700)] bg-amber-50 border-amber-200",
     Plata: "text-gray-600 bg-gray-50 border-gray-200",
     Oro: "text-yellow-700 bg-yellow-50 border-yellow-200",
     Platino: "text-[var(--accent)] bg-purple-50 border-purple-200",
@@ -82,10 +92,10 @@ export default function UserAccountModal() {
               {loyalty && (
                 <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-card-border">
                   <div className="flex items-center gap-3">
-                    <Star className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <Star className="h-5 w-5 text-[var(--data-warning-500)] mt-0.5" />
                     <div>
                       <p className="text-xs text-muted">Puntos acumulados</p>
-                      <p className="text-sm font-bold text-amber-600">{loyalty.loyaltyPoints} pts</p>
+                      <p className="text-sm font-bold text-[var(--data-warning-600)]">{loyalty.loyaltyPoints} pts</p>
                     </div>
                   </div>
                   {loyalty.loyaltyTier && (
@@ -131,7 +141,7 @@ export default function UserAccountModal() {
           {customer && (
             <button
               onClick={() => { clear(); closeAccountModal(); }}
-              className="w-full py-2.5 rounded-xl border-2 border-red-200 text-red-500 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
+              className="w-full py-2.5 rounded-xl border-2 border-red-200 text-[var(--data-error-500)] font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
             >
               <LogOut className="h-4 w-4" />
               Cerrar sesión

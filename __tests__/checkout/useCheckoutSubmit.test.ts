@@ -60,6 +60,7 @@ function setup(overrides: Partial<CheckoutState> = {}, finalTotal = 7) {
     clear: vi.fn(),
     closeCart: vi.fn(),
     markOrderPending: vi.fn(),
+    removeItem: vi.fn(),
   };
   const customerActions = {
     register: vi.fn(),
@@ -267,6 +268,7 @@ describe("useCheckoutSubmit", () => {
       clear: vi.fn(),
       closeCart: vi.fn(),
       markOrderPending: vi.fn(),
+      removeItem: vi.fn(),
     };
     const customerActions = {
       register: vi.fn(),

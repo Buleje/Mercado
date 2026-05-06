@@ -41,6 +41,7 @@ type Args = {
     clear: () => void;
     closeCart: () => void;
     markOrderPending: () => void;
+    removeItem: (id: number) => void;
   };
   customerActions: {
     register: (data: Customer) => void;
@@ -190,10 +191,19 @@ export function useCheckoutSubmit({
           }
 
           // ADR-096: backend reporta invalid_product cuando el cart trae items
-          // de otra tienda (cross-tenant fantasma). Mensaje claro al usuario.
+          // de otra tienda (cross-tenant fantasma). Auto-purgamos el item
+          // específico (productId viene en el errBody) para que el siguiente
+          // intento de checkout sea exitoso sin que el usuario tenga que
+          // vaciar todo el carrito manualmente.
           if (errBody?.error === "invalid_product") {
-            friendlyError =
-              "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y volvé a agregar lo que necesites.";
+            if (typeof errBody.productId === "number") {
+              cartActions.removeItem(errBody.productId);
+              friendlyError =
+                "Quitamos un producto que no está disponible en esta tienda. Revisá tu carrito y volvé a intentar.";
+            } else {
+              friendlyError =
+                "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y volvé a agregar lo que necesites.";
+            }
           } else if (errBody?.error === "tenant mismatch") {
             friendlyError =
               "Esta acción cruzó tiendas. Recarga la página e intenta de nuevo.";

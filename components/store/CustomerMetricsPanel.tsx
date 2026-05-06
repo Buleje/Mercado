@@ -42,7 +42,7 @@ type MetricsData = {
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  bronce:   { label: "Bronce",   color: "text-amber-700 dark:text-amber-300",   bg: "bg-amber-50 dark:bg-amber-900/20",   border: "border-amber-200 dark:border-amber-700" },
+  bronce:   { label: "Bronce",   color: "text-[var(--data-warning-700)] dark:text-amber-300",   bg: "bg-amber-50 dark:bg-amber-900/20",   border: "border-amber-200 dark:border-[var(--data-warning-700)]" },
   plata:    { label: "Plata",    color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",         border: "border-[var(--rule-base)] dark:border-gray-600" },
   oro:      { label: "Oro",      color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-50 dark:bg-yellow-900/20",  border: "border-yellow-200 dark:border-yellow-700" },
   diamante: { label: "Diamante", color: "text-sky-700 dark:text-sky-300",       bg: "bg-sky-50 dark:bg-sky-900/20",        border: "border-sky-200 dark:border-sky-700" },
@@ -136,7 +136,7 @@ function FavoritesList({ products }: { products: FavoriteProduct[] }) {
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{p.count} veces · {fmt(p.totalSpent)}</p>
             </div>
             <div className="shrink-0">
-              <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-full px-2 py-0.5">
                 <Star className="h-2.5 w-2.5" />
                 x{p.count}
               </span>
@@ -160,7 +160,7 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
       description: "Realizaste tu primer pedido",
       earned: orderCount >= 1,
       icon: Zap,
-      color: "bg-emerald-500",
+      color: "bg-[var(--data-success-500)]",
     },
     {
       id: "cliente_frecuente",
@@ -168,7 +168,7 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
       description: "10 o mas pedidos completados",
       earned: orderCount >= 10,
       icon: Trophy,
-      color: "bg-amber-500",
+      color: "bg-[var(--data-warning-500)]",
     },
     {
       id: "compra_grande",
@@ -176,7 +176,7 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
       description: "Un pedido mayor a S/ 100",
       earned: totalSpent > 0,  // API retorna si tuvo pedido > 100
       icon: ShoppingBag,
-      color: "bg-emerald-500",
+      color: "bg-[var(--data-success-500)]",
     },
     {
       id: "ahorro_cupones",
@@ -235,10 +235,25 @@ export default function CustomerMetricsPanel({ phone }: { phone: string }) {
 
     (async () => {
       try {
+        // Pre-check sesión activa: evita 401 ruidoso si la cookie expiró.
+        // Si no hay sesión, los endpoints públicos del cliente devolverán
+        // 401 — corto temprano sin ensuciar la consola.
+        const auth = await fetch("/api/auth/customer/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (cancelled) return;
+        const authData = auth.ok ? await auth.json() : null;
+        if (!authData?.authenticated) {
+          setLoading(false);
+          setError("Sesión expirada");
+          return;
+        }
+
         // Construye metricas a partir de los endpoints públicos del cliente
         const [ordersRes, loyaltyRes] = await Promise.all([
-          fetch(`/api/customers/${encodeURIComponent(phone)}/orders`),
-          fetch(`/api/loyalty/${encodeURIComponent(phone)}`),
+          fetch(`/api/customers/${encodeURIComponent(phone)}/orders`, { credentials: "include" }),
+          fetch(`/api/loyalty/${encodeURIComponent(phone)}`, { credentials: "include" }),
         ]);
 
         if (!ordersRes.ok) throw new Error("Sin datos");

@@ -157,7 +157,7 @@ function TeaserCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-[#00B4A6]/30 bg-[var(--surface-sunken)]",
+        "relative overflow-hidden rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface-sunken)]",
         "p-5",
         className,
       )}
@@ -167,7 +167,7 @@ function TeaserCard({ className }: { className?: string }) {
       {/* Decoración de fondo */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#00B4A6]/10 blur-2xl"
+        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[var(--accent)]/10 blur-2xl"
       />
       <div
         aria-hidden="true"
@@ -184,11 +184,11 @@ function TeaserCard({ className }: { className?: string }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--text-tertiary)] ring-2 ring-background">
               <Award className="h-4 w-4 text-[var(--surface-canvas)]" aria-hidden="true" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00B4A6] ring-2 ring-background">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] ring-2 ring-background">
               <Crown className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-[#00B4A6]">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
             Programa de puntos
           </span>
         </div>
@@ -214,14 +214,14 @@ function TeaserCard({ className }: { className?: string }) {
               key={text}
               className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
             >
-              <Icon className="h-3 w-3 text-[#00B4A6]" aria-hidden="true" />
+              <Icon className="h-3 w-3 text-[var(--accent)]" aria-hidden="true" />
               {text}
             </span>
           ))}
         </div>
 
         {/* CTA sutil */}
-        <div className="flex items-center gap-1.5 text-xs text-[#00B4A6] font-medium">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--accent)] font-medium">
           <Lock className="h-3 w-3" aria-hidden="true" />
           <span>Inicia sesion para ver tus puntos</span>
         </div>
@@ -340,42 +340,49 @@ export function LoyaltyWidget({
 
     let cancelled = false;
 
-    fetch(`/api/loyalty/${encodeURIComponent(customerPhone)}`)
-      .then((res) => {
+    (async () => {
+      try {
+        // Pre-check sesión activa: evita 401 ruidoso en consola cuando hay
+        // un customer en localStorage pero la cookie ya expiró.
+        const auth = await fetch("/api/auth/customer/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (cancelled || !auth.ok) {
+          if (!cancelled) { setFetchFailed(true); setLoading(false); }
+          return;
+        }
+        const authData = await auth.json();
+        if (!authData?.authenticated) {
+          if (!cancelled) { setFetchFailed(true); setLoading(false); }
+          return;
+        }
+
+        const res = await fetch(`/api/loyalty/${encodeURIComponent(customerPhone)}`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{
+        const json = (await res.json()) as {
           points: number;
           tier?: Tier;
           loyaltyTier?: string;
           loyaltyPoints?: number;
           transactions?: LoyaltyTransaction[];
-        }>;
-      })
-      .then((json) => {
+        };
         if (cancelled) return;
-        // La API puede devolver datos en distintos shapes; normalizamos aquí
         const points = json.points ?? json.loyaltyPoints ?? 0;
         const rawTier = (json.tier ?? json.loyaltyTier ?? "bronce")
           .toString()
           .toLowerCase();
         const tier: Tier =
-          rawTier === "oro"
-            ? "oro"
-            : rawTier === "plata"
-              ? "plata"
-              : "bronce";
-        setData({
-          points,
-          tier,
-          transactions: json.transactions ?? [],
-        });
-      })
-      .catch(() => {
+          rawTier === "oro" ? "oro" : rawTier === "plata" ? "plata" : "bronce";
+        setData({ points, tier, transactions: json.transactions ?? [] });
+      } catch {
         if (!cancelled) setFetchFailed(true);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -469,7 +476,7 @@ export function LoyaltyWidget({
             ) : (
               <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <ArrowUp
-                  className="h-3 w-3 text-[#00B4A6]"
+                  className="h-3 w-3 text-[var(--accent)]"
                   aria-hidden="true"
                 />
                 <span>
@@ -562,7 +569,7 @@ export function LoyaltyWidget({
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
                           isEarn
-                            ? "bg-[#00B4A6]/15 text-[#00B4A6]"
+                            ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                             : "bg-[#f4a261]/15 text-[#f4a261]",
                         )}
                         aria-hidden="true"
@@ -581,7 +588,7 @@ export function LoyaltyWidget({
                       className={cn(
                         "shrink-0 text-xs font-bold tabular-nums",
                         isEarn
-                          ? "text-[#00B4A6]"
+                          ? "text-[var(--accent)]"
                           : "text-[#f4a261]",
                       )}
                       aria-label={`${isEarn ? "Ganaste" : "Canjeaste"} ${Math.abs(tx.amount)} puntos`}
