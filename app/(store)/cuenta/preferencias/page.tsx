@@ -4,8 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  ArrowLeft, Bell, Mail, Moon, Globe, Shield, Trash2,
-  ChevronRight, Smartphone,
+  ArrowLeft,
+  Bell,
+  Mail,
+  Moon,
+  Sun,
+  Globe,
+  Shield,
+  Trash2,
+  ChevronRight,
+  Smartphone,
+  Settings,
+  Palette,
+  Lock,
+  CheckCheck,
+  AlertTriangle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -15,152 +28,342 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
-// ── Toggle row ─────────────────────────────────────────────────────
+// ── Toggle moderno ─────────────────────────────────────────────────
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      type="button"
+      onClick={() => !disabled && onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
+        disabled && "opacity-50 cursor-not-allowed",
+      )}
+      style={{
+        background: checked
+          ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+          : "var(--color-card-border)",
+      }}
+    >
+      <span
+        className={cn(
+          "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform",
+          checked ? "translate-x-5" : "translate-x-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
+// ── ToggleRow ──────────────────────────────────────────────────────
+
 function ToggleRow({
   label,
   sublabel,
   checked,
   onChange,
   Icon,
+  iconColor,
 }: {
   label: string;
   sublabel?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-  Icon?: React.ComponentType<{ className?: string }>;
+  Icon: typeof Bell;
+  iconColor?: string;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-card-border last:border-0">
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        {Icon && (
-          <Icon className="h-4 w-4 text-muted shrink-0" />
-        )}
-        <div className="min-w-0">
-          <p className="text-sm text-foreground">{label}</p>
+    <div
+      className="flex items-center justify-between py-3 border-b last:border-0"
+      style={{ borderColor: "var(--color-card-border)" }}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{
+            background: `color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 12%, transparent)`,
+          }}
+        >
+          <Icon
+            className="h-5 w-5"
+            style={{ color: iconColor ?? "var(--color-primary, #00B4A6)" }}
+            strokeWidth={2.25}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-foreground">{label}</p>
           {sublabel && (
-            <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{sublabel}</p>
+            <p className="text-xs text-muted mt-0.5">{sublabel}</p>
           )}
         </div>
       </div>
-      <button
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
-          checked ? "bg-primary" : "bg-gray-200 dark:bg-surface"
-        )}
-      >
-        <span
-          className={cn(
-            "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform",
-            checked ? "translate-x-4.5" : "translate-x-0.5"
-          )}
-        />
-      </button>
+      <ToggleSwitch checked={checked} onChange={onChange} label={label} />
     </div>
   );
 }
 
-// ── Select row ─────────────────────────────────────────────────────
-function SelectRow<T extends string>({
+// ── Select Pills ──────────────────────────────────────────────────
+
+function SelectPills<T extends string>({
   label,
+  sublabel,
   value,
   options,
   onChange,
   Icon,
 }: {
   label: string;
+  sublabel?: string;
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; Icon?: typeof Bell }[];
   onChange: (v: T) => void;
-  Icon?: React.ComponentType<{ className?: string }>;
+  Icon: typeof Bell;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-card-border last:border-0">
-      <div className="flex items-center gap-2.5">
-        {Icon && <Icon className="h-4 w-4 text-muted shrink-0" />}
-        <span className="text-sm text-foreground">{label}</span>
+    <div
+      className="py-4 border-b last:border-0"
+      style={{ borderColor: "var(--color-card-border)" }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{
+            background:
+              "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+          }}
+        >
+          <Icon
+            className="h-5 w-5 text-primary"
+            strokeWidth={2.25}
+          />
+        </div>
+        <div>
+          <p className="text-sm font-extrabold text-foreground">{label}</p>
+          {sublabel && <p className="text-xs text-muted">{sublabel}</p>}
+        </div>
       </div>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="text-xs font-semibold text-muted bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((opt) => {
+          const active = value === opt.value;
+          const OptIcon = opt.Icon;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              className={cn(
+                "flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-sm font-bold transition-all",
+                !active &&
+                  "text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface",
+              )}
+              style={
+                active
+                  ? {
+                      background:
+                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      color: "white",
+                      boxShadow:
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                    }
+                  : {
+                      background: "var(--color-card)",
+                      border: "2px solid var(--color-card-border)",
+                    }
+              }
+            >
+              {OptIcon && (
+                <OptIcon className="h-5 w-5" strokeWidth={2.25} />
+              )}
+              <span className="text-sm font-extrabold">{opt.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-// ── Link row ───────────────────────────────────────────────────────
+// ── Link Row ──────────────────────────────────────────────────────
+
 function LinkRow({
   label,
   sublabel,
   href,
   Icon,
   danger,
+  onClick,
 }: {
   label: string;
   sublabel?: string;
   href?: string;
-  Icon?: React.ComponentType<{ className?: string }>;
+  Icon: typeof Bell;
   danger?: boolean;
+  onClick?: () => void;
 }) {
   const inner = (
-    <div className="flex items-center gap-2.5 py-3 border-b border-gray-50 dark:border-card-border last:border-0 group cursor-pointer">
+    <div
+      className={cn(
+        "flex items-center gap-3 py-4 border-b last:border-0 group transition-colors",
+        href || onClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-surface" : "",
+      )}
+      style={{
+        borderColor: "var(--color-card-border)",
+      }}
+    >
       <div
-        className={cn(
-          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-          danger ? "bg-red-50 dark:bg-red-900/20" : "bg-gray-50 dark:bg-surface"
-        )}
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background: danger
+            ? "color-mix(in oklch, var(--data-error-500) 12%, transparent)"
+            : "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+        }}
       >
-        {Icon && (
-          <Icon
-            className={cn(
-              "h-4 w-4",
-              danger ? "text-red-500" : "text-muted"
-            )}
-          />
-        )}
+        <Icon
+          className="h-5 w-5"
+          style={{
+            color: danger
+              ? "var(--data-error-500)"
+              : "var(--color-primary, #00B4A6)",
+          }}
+          strokeWidth={2.25}
+        />
       </div>
       <div className="flex-1 min-w-0">
         <p
           className={cn(
-            "text-sm",
-            danger ? "text-red-600 dark:text-red-400 font-semibold" : "text-foreground"
+            "text-sm font-extrabold",
+            danger ? "text-[var(--data-error-600)] dark:text-red-400" : "text-foreground",
           )}
         >
           {label}
         </p>
         {sublabel && (
-          <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{sublabel}</p>
+          <p className="text-xs text-muted mt-0.5">{sublabel}</p>
         )}
       </div>
       <ChevronRight
         className={cn(
           "h-4 w-4 shrink-0 transition-colors",
           danger
-            ? "text-red-300"
-            : "text-gray-300 group-hover:text-gray-400"
+            ? "text-[var(--data-error-500)]/40"
+            : "text-muted group-hover:text-foreground",
         )}
+        strokeWidth={2.5}
       />
     </div>
   );
 
-  if (href) {
-    return <Link href={href}>{inner}</Link>;
+  if (href) return <Link href={href}>{inner}</Link>;
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="w-full text-left">
+        {inner}
+      </button>
+    );
   }
   return <div>{inner}</div>;
 }
 
+// ── Section Card ─────────────────────────────────────────────────
+
+function SectionCard({
+  id,
+  title,
+  description,
+  Icon,
+  iconColor,
+  danger,
+  children,
+}: {
+  id?: string;
+  title: string;
+  description?: string;
+  Icon: typeof Bell;
+  iconColor?: string;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className="rounded-3xl overflow-hidden"
+      style={{
+        background: "var(--color-card)",
+        border: danger
+          ? "1px solid color-mix(in oklch, var(--data-error-500) 25%, transparent)"
+          : "1px solid var(--color-card-border)",
+      }}
+    >
+      <div
+        className="px-6 py-5 border-b"
+        style={{
+          borderColor: danger
+            ? "color-mix(in oklch, var(--data-error-500) 18%, transparent)"
+            : "var(--color-card-border)",
+          background: danger
+            ? "linear-gradient(135deg, color-mix(in oklch, var(--data-error-500) 8%, var(--color-card)) 0%, var(--color-card) 100%)"
+            : `linear-gradient(135deg, color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 12%, var(--color-card)) 0%, var(--color-card) 100%)`,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+            style={{
+              background: danger
+                ? "linear-gradient(135deg, var(--data-error-500) 0%, var(--data-error-600) 100%)"
+                : `linear-gradient(135deg, ${iconColor ?? "var(--color-primary, #00B4A6)"} 0%, var(--color-primary-dark, #009690) 100%)`,
+              boxShadow: danger
+                ? "0 4px 10px -2px color-mix(in oklch, var(--data-error-500) 35%, transparent)"
+                : `0 4px 10px -2px color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 35%, transparent)`,
+            }}
+          >
+            <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2
+              className="text-lg font-extrabold leading-tight"
+              style={{
+                color: danger ? "var(--data-error-600)" : "var(--text-primary)",
+              }}
+            >
+              {title}
+            </h2>
+            {description && (
+              <p className="text-sm text-muted mt-0.5">{description}</p>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="px-6 py-2">{children}</div>
+    </section>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────
+
 type ThemeOption = "system" | "light" | "dark";
 type LangOption = "es" | "en";
+
+const SECTIONS = [
+  { key: "notif", label: "Notificaciones", Icon: Bell, anchor: "#notif" },
+  { key: "apariencia", label: "Apariencia", Icon: Palette, anchor: "#apariencia" },
+  { key: "privacidad", label: "Privacidad", Icon: Lock, anchor: "#privacidad" },
+] as const;
 
 export default function PreferenciasPage() {
   const [notifWhatsApp, setNotifWhatsApp] = useState(true);
@@ -169,166 +372,372 @@ export default function PreferenciasPage() {
   const [notifPedidos, setNotifPedidos] = useState(true);
   const [theme, setTheme] = useState<ThemeOption>("system");
   const [lang, setLang] = useState<LangOption>("es");
+  const [saved, setSaved] = useState(false);
+
+  const activeChannelsCount =
+    Number(notifWhatsApp) + Number(notifEmail);
+  const activeNotifsCount =
+    Number(notifPedidos) + Number(notifPromos);
+
+  function handleSave() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div
+      className="min-h-screen dark:bg-background"
+      style={{
+        background:
+          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+      }}
+    >
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
           { name: "Mi cuenta", url: "https://www.buleje.pe/cuenta" },
-          { name: "Preferencias", url: "https://www.buleje.pe/cuenta/preferencias" },
+          {
+            name: "Preferencias",
+            url: "https://www.buleje.pe/cuenta/preferencias",
+          },
         ]}
       />
       <AnnouncementBar />
       <Header />
 
-      {/* Hero */}
+      {/* ── Hero compacto ─────────────────────────────────────── */}
       <div
-        className="pt-32 sm:pt-36 pb-8 border-b border-gray-200 dark:border-gray-800"
-        style={{ background: "#060a0d" }}
+        className="relative overflow-hidden pt-28 sm:pt-32 pb-8"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+        }}
       >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <nav
-            aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-5"
-          >
-            <Link href="/" className="hover:text-white/60 transition-colors">
-              Inicio
-            </Link>
-            <span>/</span>
-            <Link href="/cuenta" className="hover:text-white/60 transition-colors">
-              Mi cuenta
-            </Link>
-            <span>/</span>
-            <span className="text-white/55">Preferencias</span>
-          </nav>
+        <div
+          className="absolute -top-20 -right-20 h-80 w-80 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.06)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-24 -left-12 h-56 w-56 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.04)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none opacity-15"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+          aria-hidden="true"
+        />
 
-          <div className="flex items-center gap-3">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end gap-4 flex-wrap">
             <Link
               href="/cuenta"
-              className="p-2 -ml-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-              aria-label="Volver"
+              className="h-12 w-12 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
+              aria-label="Volver a mi cuenta"
             >
-              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
             </Link>
-            <div>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40">
-                TU CUENTA
+            <div className="flex-1 min-w-0">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-white/85 mb-1">
+                <Settings className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Tu cuenta
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
                 Preferencias
               </h1>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl backdrop-blur-sm"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                }}
+              >
+                <Bell className="h-4 w-4 text-white" strokeWidth={2.5} />
+                <div>
+                  <p className="text-base font-extrabold text-white tabular-nums leading-none">
+                    {activeChannelsCount}/2
+                  </p>
+                  <p className="text-xs text-white/75 font-bold">Canales</p>
+                </div>
+              </div>
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl backdrop-blur-sm"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                }}
+              >
+                <Palette className="h-4 w-4 text-white" strokeWidth={2.5} />
+                <div>
+                  <p className="text-base font-extrabold text-white capitalize leading-none">
+                    {theme === "system"
+                      ? "Auto"
+                      : theme === "light"
+                        ? "Claro"
+                        : "Oscuro"}
+                  </p>
+                  <p className="text-xs text-white/75 font-bold">Tema</p>
+                </div>
+              </div>
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl backdrop-blur-sm"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                }}
+              >
+                <Globe className="h-4 w-4 text-white" strokeWidth={2.5} />
+                <div>
+                  <p className="text-base font-extrabold text-white leading-none">
+                    {lang === "es" ? "ES" : "EN"}
+                  </p>
+                  <p className="text-xs text-white/75 font-bold">Idioma</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4 pb-28">
+      {/* ── Main content ──────────────────────────────────────── */}
+      <main
+        id="main-content"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 pb-28"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          {/* ─── SIDEBAR ─────────────────────────────────── */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+            {/* Navegador rápido */}
+            <div
+              className="rounded-2xl p-2"
+              style={{
+                background: "var(--color-card)",
+                border: "1px solid var(--color-card-border)",
+              }}
+            >
+              <p className="text-xs font-bold uppercase tracking-wider text-muted px-3 pt-2 pb-3 flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5" strokeWidth={2.25} />
+                Secciones
+              </p>
+              <div className="flex flex-col gap-1">
+                {SECTIONS.map(({ key, label, Icon, anchor }) => (
+                  <a
+                    key={key}
+                    href={anchor}
+                    className="flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" strokeWidth={2.25} />
+                      {label}
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 opacity-50"
+                      strokeWidth={2.5}
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
 
-        {/* Seccion: Notificaciones */}
-        <section aria-labelledby="notif-heading">
-          <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-              NOTIFICACIONES
-            </span>
-          </div>
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-4">
-            <ToggleRow
-              label="WhatsApp"
-              sublabel="Actualizaciones de pedido por WhatsApp"
-              checked={notifWhatsApp}
-              onChange={setNotifWhatsApp}
-              Icon={Smartphone}
-            />
-            <ToggleRow
-              label="Correo electrónico"
-              sublabel="Resumen semanal y comprobantes"
-              checked={notifEmail}
-              onChange={setNotifEmail}
-              Icon={Mail}
-            />
-            <ToggleRow
-              label="Pedidos y delivery"
-              sublabel="Estado de tus pedidos en tiempo real"
-              checked={notifPedidos}
-              onChange={setNotifPedidos}
+            {/* Resumen actual */}
+            <div
+              className="rounded-2xl p-4 relative overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
+                border:
+                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 28%, transparent)",
+              }}
+            >
+              <div
+                className="absolute -top-6 -right-6 w-20 h-20 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                }}
+              />
+              <div className="relative">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
+                  Resumen
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center justify-between">
+                    <span className="text-muted">Canales activos</span>
+                    <span className="font-extrabold text-foreground tabular-nums">
+                      {activeChannelsCount}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="text-muted">Tipos activados</span>
+                    <span className="font-extrabold text-foreground tabular-nums">
+                      {activeNotifsCount}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="text-muted">Modo</span>
+                    <span className="font-extrabold text-foreground capitalize">
+                      {theme === "system" ? "Auto" : theme}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* CTA Save */}
+            <button
+              type="button"
+              onClick={handleSave}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl text-sm font-extrabold transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+              style={{
+                background: saved
+                  ? "linear-gradient(135deg, var(--data-success-500) 0%, var(--accent-dark) 100%)"
+                  : "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                color: "white",
+                boxShadow: saved
+                  ? "0 6px 14px -4px color-mix(in oklch, var(--data-success-500) 40%, transparent)"
+                  : "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+              }}
+            >
+              {saved ? (
+                <>
+                  <CheckCheck className="h-4 w-4" strokeWidth={2.5} />
+                  Guardado
+                </>
+              ) : (
+                "Guardar preferencias"
+              )}
+            </button>
+          </aside>
+
+          {/* ─── MAIN ─────────────────────────────────────── */}
+          <div className="space-y-6 min-w-0">
+            {/* Notificaciones */}
+            <SectionCard
+              id="notif"
+              title="Notificaciones"
+              description="Cómo querés que te avisemos"
               Icon={Bell}
-            />
-            <ToggleRow
-              label="Promociones y ofertas"
-              sublabel="Cupones, descuentos y novedades"
-              checked={notifPromos}
-              onChange={setNotifPromos}
-              Icon={Bell}
-            />
-          </div>
-        </section>
+            >
+              <ToggleRow
+                label="WhatsApp"
+                sublabel="Actualizaciones de pedido al celular"
+                checked={notifWhatsApp}
+                onChange={setNotifWhatsApp}
+                Icon={Smartphone}
+              />
+              <ToggleRow
+                label="Correo electrónico"
+                sublabel="Resumen semanal y comprobantes"
+                checked={notifEmail}
+                onChange={setNotifEmail}
+                Icon={Mail}
+              />
+              <ToggleRow
+                label="Pedidos y delivery"
+                sublabel="Estado de tus pedidos en tiempo real"
+                checked={notifPedidos}
+                onChange={setNotifPedidos}
+                Icon={Bell}
+                iconColor="var(--data-success-500)"
+              />
+              <ToggleRow
+                label="Promociones y ofertas"
+                sublabel="Cupones, descuentos y novedades"
+                checked={notifPromos}
+                onChange={setNotifPromos}
+                Icon={Bell}
+                iconColor="var(--data-warning-500)"
+              />
+            </SectionCard>
 
-        {/* Seccion: Apariencia */}
-        <section aria-labelledby="appearance-heading">
-          <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-              APARIENCIA
-            </span>
-          </div>
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-4">
-            <SelectRow
-              label="Modo de pantalla"
-              value={theme}
-              onChange={setTheme}
-              Icon={Moon}
-              options={[
-                { value: "system", label: "Sistema" },
-                { value: "light", label: "Claro" },
-                { value: "dark", label: "Oscuro" },
-              ]}
-            />
-            <SelectRow
-              label="Idioma"
-              value={lang}
-              onChange={setLang}
-              Icon={Globe}
-              options={[
-                { value: "es", label: "Espanol" },
-                { value: "en", label: "English" },
-              ]}
-            />
-          </div>
-        </section>
+            {/* Apariencia */}
+            <SectionCard
+              id="apariencia"
+              title="Apariencia"
+              description="Tema visual e idioma"
+              Icon={Palette}
+            >
+              <SelectPills<ThemeOption>
+                label="Modo de pantalla"
+                sublabel="Elegí cómo se ve la app"
+                value={theme}
+                onChange={setTheme}
+                Icon={Moon}
+                options={[
+                  { value: "system", label: "Auto", Icon: Settings },
+                  { value: "light", label: "Claro", Icon: Sun },
+                  { value: "dark", label: "Oscuro", Icon: Moon },
+                ]}
+              />
+              <SelectPills<LangOption>
+                label="Idioma"
+                sublabel="Idioma de la aplicación"
+                value={lang}
+                onChange={setLang}
+                Icon={Globe}
+                options={[
+                  { value: "es", label: "Español" },
+                  { value: "en", label: "English" },
+                ]}
+              />
+            </SectionCard>
 
-        {/* Seccion: Privacidad */}
-        <section aria-labelledby="privacy-heading">
-          <div className="mb-2 px-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-              PRIVACIDAD
-            </span>
-          </div>
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-4">
-            <LinkRow
-              label="Politica de privacidad"
-              sublabel="Como usamos tus datos"
-              href="/privacidad"
+            {/* Privacidad */}
+            <SectionCard
+              id="privacidad"
+              title="Privacidad y datos"
+              description="Acceso, términos y control de cuenta"
               Icon={Shield}
-            />
-            <LinkRow
-              label="Terminos de servicio"
-              sublabel="Condiciones de uso de Buleje"
-              href="/terminos"
-              Icon={Shield}
-            />
-            <LinkRow
-              label="Eliminar mi cuenta"
-              sublabel="Esta accion no se puede deshacer"
-              Icon={Trash2}
+            >
+              <LinkRow
+                label="Política de privacidad"
+                sublabel="Cómo usamos y protegemos tus datos"
+                href="/privacidad"
+                Icon={Shield}
+              />
+              <LinkRow
+                label="Términos de servicio"
+                sublabel="Condiciones de uso de Buleje"
+                href="/terminos"
+                Icon={Lock}
+              />
+            </SectionCard>
+
+            {/* Danger zone */}
+            <SectionCard
+              title="Zona de peligro"
+              description="Acciones que no se pueden deshacer"
+              Icon={AlertTriangle}
               danger
-            />
-          </div>
-        </section>
+            >
+              <LinkRow
+                label="Eliminar mi cuenta"
+                sublabel="Tus datos serán borrados permanentemente"
+                Icon={Trash2}
+                danger
+              />
+            </SectionCard>
 
-        {/* Guardar CTA */}
-        <button className="w-full py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20">
-          Guardar preferencias
-        </button>
+            {/* Volver */}
+            <div>
+              <Link
+                href="/cuenta"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+                Volver a mi cuenta
+              </Link>
+            </div>
+          </div>
+        </div>
       </main>
 
       <CartSidebar />

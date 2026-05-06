@@ -1387,21 +1387,6 @@ export default function MisPedidosPage() {
         />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav
-            aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-xs text-white/70 mb-5 font-bold"
-          >
-            <Link href="/" className="hover:text-white transition-colors">
-              Inicio
-            </Link>
-            <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
-            <Link href="/cuenta" className="hover:text-white transition-colors">
-              Mi panel
-            </Link>
-            <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
-            <span className="text-white">Mis pedidos</span>
-          </nav>
-
           <div className="flex items-end gap-4 flex-wrap">
             <Link
               href="/cuenta"
