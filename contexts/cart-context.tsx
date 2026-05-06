@@ -69,7 +69,16 @@ function sk(slug: string, key: string): string {
   return slug ? `buleje-${slug}-${key}` : `buleje-${key}`;
 }
 
-export type CartItem = Product & { quantity: number; note?: string };
+export type CartItem = Product & {
+  quantity: number;
+  note?: string;
+  /**
+   * Slug del tenant donde se añadió el item al cart. Permite descartar
+   * items "fantasma" cuando el usuario navega entre storefronts. Items
+   * legacy (sin slug) se asumen del tenant actual. Ver ADR-096.
+   */
+  storeSlug?: string;
+};
 
 type CartState = {
   items: CartItem[];
@@ -206,6 +215,15 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const slugRef = useRef(tenantSlug);
   const channelRef = useRef<BroadcastChannel | null>(null);
 
+  // Latest state via ref — necesario para que callbacks asíncronos (validación
+  // de productos, fetch sync) lean el state ACTUAL en vez del que tenían en
+  // closure cuando se dispararon. Antes: addItem mientras la validación estaba
+  // in-flight → el .then(HYDRATE) clobbeaba el item recién agregado (parpadeo).
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   // Mantener slugRef sincronizado en un effect (no se puede mutar refs en render — react-hooks/refs)
   useEffect(() => {
     slugRef.current = tenantSlug;
@@ -222,7 +240,17 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
 
     try {
       const saved = localStorage.getItem(sk(s, "cart"));
-      const items = saved ? JSON.parse(saved) : [];
+      const rawItems = saved ? JSON.parse(saved) : [];
+      // ADR-096: descartar items con storeSlug distinto al tenant actual.
+      // Items legacy (sin storeSlug) se preservan — pertenecen al tenant
+      // actual por convención. Determinístico, no requiere fetch.
+      const items = Array.isArray(rawItems)
+        ? rawItems.filter((i: CartItem) => !i.storeSlug || i.storeSlug === s)
+        : [];
+      if (items.length !== (rawItems?.length ?? 0)) {
+        // Persistir el cart limpio para que la próxima hidratación sea consistente.
+        localStorage.setItem(sk(s, "cart"), JSON.stringify(items));
+      }
       if (Array.isArray(items) && items.length > 0) {
         dispatch({ type: "HYDRATE", payload: items });
 
@@ -237,20 +265,30 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         // Guard: si por alguna razón la respuesta no es confiable (empty, error),
         // NUNCA borrar el carrito entero. Ver
         // .github/instructions/state-management.instructions.md.
+        const originalIds = new Set<number>(items.map((i: CartItem) => i.id));
         const idsQuery = items.map((i: CartItem) => i.id).join(",");
         fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
           .then((data: { existingIds?: number[]; missingIds?: number[] } | null) => {
             if (!data || !Array.isArray(data.existingIds)) return;
             const existing = new Set<number>(data.existingIds);
-            const validItems = items.filter((item: CartItem) => existing.has(item.id));
 
             // Guard: preservar carrito si TODOS "desaparecerían" (señal dudosa).
-            if (validItems.length === 0 && items.length > 0) return;
+            const validOriginals = items.filter((item: CartItem) => existing.has(item.id));
+            if (validOriginals.length === 0 && items.length > 0) return;
 
-            if (validItems.length !== items.length) {
-              dispatch({ type: "HYDRATE", payload: validItems });
-              localStorage.setItem(sk(s, "cart"), JSON.stringify(validItems));
+            // BUGFIX 2026-05-05: leer state ACTUAL via ref. Si el usuario agregó
+            // items mientras el fetch estaba in-flight, NO los borramos.
+            // Solo filtramos los ORIGINALES que ahora son inválidos; items
+            // nuevos (no estaban en originalIds) se preservan tal cual.
+            const current = stateRef.current.items;
+            const merged = current.filter(
+              (item) => !originalIds.has(item.id) || existing.has(item.id),
+            );
+
+            if (merged.length !== current.length) {
+              dispatch({ type: "HYDRATE", payload: merged });
+              localStorage.setItem(sk(s, "cart"), JSON.stringify(merged));
             }
           })
           .catch(() => { /* silently ignore — cart stays as-is or fetch aborted */ });
@@ -437,10 +475,23 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const total = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
   const addItem = useCallback((p: Product) => {
-    dispatch({ type: "ADD_ITEM", payload: p });
+    // ADR-096: tag con slug actual para descartar después si el usuario
+    // navega a otro storefront. El reducer hace `{ ...payload, quantity: 1 }`
+    // por lo que `storeSlug` se persiste tal cual en el item.
+    dispatch({ type: "ADD_ITEM", payload: { ...p, storeSlug: slugRef.current } as Product });
     playPopSound();
   }, []);
-  const addMultiple = useCallback((items: { product: Product; quantity: number }[]) => dispatch({ type: "ADD_MULTIPLE", payload: items }), []);
+  const addMultiple = useCallback(
+    (items: { product: Product; quantity: number }[]) =>
+      dispatch({
+        type: "ADD_MULTIPLE",
+        payload: items.map((i) => ({
+          product: { ...i.product, storeSlug: slugRef.current } as Product,
+          quantity: i.quantity,
+        })),
+      }),
+    [],
+  );
   const removeItem = useCallback((id: number) => dispatch({ type: "REMOVE_ITEM", payload: id }), []);
   const updateQty = useCallback(
     (id: number, qty: number) => dispatch({ type: "UPDATE_QTY", payload: { id, qty } }),

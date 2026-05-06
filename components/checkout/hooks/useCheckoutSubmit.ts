@@ -176,9 +176,11 @@ export function useCheckoutSubmit({
           closeCheckout();
         }, SUCCESS_DELAY_MS);
       } else {
+        let friendlyError = "No se pudo procesar tu pedido. Por favor intenta de nuevo.";
         try {
           const errBody = (await res!.json()) as {
             error?: string;
+            productId?: number;
             issues?: { path: (string | number)[]; message: string }[];
           };
           if (errBody?.issues?.length) {
@@ -186,15 +188,22 @@ export function useCheckoutSubmit({
           } else {
             console.error("[orders] Error response:", errBody);
           }
+
+          // ADR-096: backend reporta invalid_product cuando el cart trae items
+          // de otra tienda (cross-tenant fantasma). Mensaje claro al usuario.
+          if (errBody?.error === "invalid_product") {
+            friendlyError =
+              "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y volvé a agregar lo que necesites.";
+          } else if (errBody?.error === "tenant mismatch") {
+            friendlyError =
+              "Esta acción cruzó tiendas. Recarga la página e intenta de nuevo.";
+          }
         } catch {
           /* response wasn't JSON */
         }
         dispatch({
           type: "SET_UI",
-          patch: {
-            submitError:
-              "No se pudo procesar tu pedido. Por favor intenta de nuevo.",
-          },
+          patch: { submitError: friendlyError },
         });
       }
     } catch {

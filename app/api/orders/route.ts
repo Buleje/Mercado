@@ -203,6 +203,34 @@ export const POST = withApiHandler("orders-create", async (req) => {
   const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
   const tenantId = await resolveTenantSlugToId(slugOrId);
 
+  // SECURITY 2026-05-06 (audit pagos M010): si hay sesión admin con intent
+  // explícito de admin (header `x-admin-action: create-order`), validar que
+  // el tenant del JWT coincida con el del header — bloquea impersonation.
+  //
+  // Caso público (sin x-admin-action): permitido aunque haya cookie admin
+  // de otro tenant. Un admin navegando un storefront ajeno como cliente
+  // regular debe poder comprar — el pedido se crea con el tenantId del
+  // header (storefront), items/prices se validan contra esa DB, y el pago
+  // y comisión van al tenant correcto. La cookie admin se ignora.
+  try {
+    const { tryAdmin } = await import("@/lib/require-admin");
+    const adminSession = await tryAdmin(req);
+    if (adminSession && adminSession.tenantId !== tenantId) {
+      const isAdminAction = req.headers.get("x-admin-action") === "create-order";
+      if (isAdminAction) {
+        logger.warn("[orders] admin tenant mismatch — rechazo (admin action)", {
+          jwt: adminSession.tenantId,
+          header: tenantId,
+        });
+        return NextResponse.json({ error: "tenant mismatch" }, { status: 403 });
+      }
+      logger.info("[orders] admin cross-tenant — tratado como checkout público", {
+        adminTenant: adminSession.tenantId,
+        storefrontTenant: tenantId,
+      });
+    }
+  } catch { /* no admin session */ }
+
   // ── Trial expiry guard (ADR-084) ────────────────────────────────────────────
   // Tienda con trial vencido sin plan pagado → no se aceptan pedidos.
   // Defense-in-depth: el storefront ya redirige a "tienda no disponible",
@@ -418,9 +446,12 @@ export const POST = withApiHandler("orders-create", async (req) => {
           const balance = coupon.balance ?? coupon.discountValue;
           serverCouponDiscount = Math.min(balance, itemsTotal);
         } else {
+          // SECURITY 2026-05-06 (audit promotions #1): cap del 100% para
+          // descuentos percent. Antes admin con `discountValue=200` lograba
+          // descuento >100% del pedido.
           serverCouponDiscount =
             coupon.discountType === "percent"
-              ? Math.round((itemsTotal * coupon.discountValue) / 100 * 100) / 100
+              ? Math.round((itemsTotal * Math.min(coupon.discountValue, 100)) / 100 * 100) / 100
               : Math.min(coupon.discountValue, itemsTotal);
         }
         verifiedCouponCode = coupon.code;
@@ -454,9 +485,20 @@ export const POST = withApiHandler("orders-create", async (req) => {
     let isFirstPurchase = true;
 
     if (customerPhone) {
+      // SECURITY 2026-05-06 (audit pagos M004): normalizar phone antes del
+      // count. Antes el atacante cambiaba el formato (51999..., 999...,
+      // 999-888-...) para activar siempre `isFirstPurchase=true` y obtener
+      // descuento de primer compra repetidamente.
+      const normalized = customerPhone.replace(/\D/g, "");
       customerTotalPurchases = await prismaForTenant(tenantId).order.count({
-        where: { tenantId, customerPhone },
+        where: { tenantId, customerPhone: normalized },
       }).catch(() => 0);
+      // Fallback: también contar por phone tal-cual por si hay legacy data.
+      if (customerTotalPurchases === 0 && normalized !== customerPhone) {
+        customerTotalPurchases = await prismaForTenant(tenantId).order.count({
+          where: { tenantId, customerPhone },
+        }).catch(() => 0);
+      }
       isFirstPurchase = customerTotalPurchases === 0;
     }
 
@@ -671,9 +713,17 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
     // ── FEFO batch decrement (separate from Product.stock — deducts from
     //    earliest-expiring Batch rows). Fire-and-forget per CLAUDE.md #7.
+    // OBSERVABILITY 2026-05-06 (audit stock #2): si el FEFO falla, reportar
+    // a Sentry para reconciliación manual. Antes los fallos quedaban solo
+    // en logger y se perdían silenciosamente (kardex desync con Product.stock).
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch((err) => logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId }));
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch((err) => {
+          logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId, productId: item.id, orderId: saved.id });
+          import("@sentry/nextjs")
+            .then((Sentry) => Sentry.captureException(err, { extra: { orderId: saved.id, productId: item.id, tenantId, type: "order-fefo-loss" } }))
+            .catch(() => {});
+        });
       }
     }
     // Fire-and-forget email notification (never blocks the response)
@@ -745,13 +795,36 @@ export const POST = withApiHandler("orders-create", async (req) => {
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
 
-    // Notify connected admin clients in real-time (fire-and-forget)
-    emitAdminSSE("new_order", {
+    // SECURITY 2026-05-06 (audit notifs #1): SSE tenant-scoped. Antes el
+    // fan-out global hacía que admins de otros tenants vieran este evento.
+    emitAdminSSE(tenantId, "new_order", {
       id: saved.id,
       customer: saved.customer.name,
       total: saved.total,
       paymentMethod: saved.paymentMethod,
     });
+
+    // ── Delivery offer cascade — notifica al motorizado más cercano ──────
+    // Bug 2026-05-05: el flow de tienda individual (source=direct) no
+    // disparaba la oferta de delivery. Solo marketplace lo hacía. Ahora
+    // ambos canales notifican al partner cercano via offer-cascade.
+    void (async () => {
+      try {
+        const { triggerDeliveryOfferOnOrder } = await import(
+          "@/lib/delivery/trigger-offer-on-order"
+        );
+        await triggerDeliveryOfferOnOrder({
+          orderId: saved.id,
+          tenantId,
+          customerLocation: saved.customer.location ?? null,
+        });
+      } catch (err) {
+        logger.error("[orders] trigger delivery offer failed", {
+          error: String(err),
+          tenantId,
+        });
+      }
+    })();
 
     // ── Notify store OWNER/VENDOR via WhatsApp + Push (fire-and-forget) ────
     (async () => {
