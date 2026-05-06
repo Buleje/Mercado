@@ -184,10 +184,14 @@ export function useCheckoutSubmit({
             productId?: number;
             issues?: { path: (string | number)[]; message: string }[];
           };
+          // JSON.stringify para evitar el lazy-render de Chrome DevTools que
+          // muestra {} cuando el objeto fue mutado/descartado entre el log y la
+          // inspección. Incluimos status para diagnóstico futuro.
+          const ctx = `status=${res!.status}`;
           if (errBody?.issues?.length) {
-            console.error("[orders] Validation issues:", errBody.issues);
+            console.error("[orders] Validation issues:", JSON.stringify(errBody.issues), ctx);
           } else {
-            console.error("[orders] Error response:", errBody);
+            console.error("[orders] Error response:", JSON.stringify(errBody), ctx);
           }
 
           // ADR-096: backend reporta invalid_product cuando el cart trae items
