@@ -76,7 +76,7 @@ const nextConfig: NextConfig = {
     // eliminating /_next/image 404s caused by dev server not being able to reach external hosts
     unoptimized: process.env.NODE_ENV === "development",
     formats: ["image/avif", "image/webp"],
-    qualities: [70, 75],
+    qualities: [70, 75, 92],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "http", hostname: "images.unsplash.com" },
@@ -222,6 +222,26 @@ const nextConfig: NextConfig = {
           ...(isProd ? [{
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
+          }] : []),
+          // SECURITY 2026-05-06 (audit storefront H06): CSP fallback como
+          // defense-in-depth si el proxy.ts no setea CSP per-route. Antes el
+          // único CSP estaba en proxy y rutas storefront públicas (`/t/[slug]`,
+          // `/marketplace/**`) podrían quedar sin protección si el middleware
+          // matcheo cambiaba. La CSP definitiva sigue siendo per-route.
+          ...(isProd ? [{
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel-insights.com https://*.vercel-scripts.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://*.vercel-insights.com https://*.posthog.com",
+              "frame-ancestors 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
+            ].join("; "),
           }] : []),
         ],
       },
