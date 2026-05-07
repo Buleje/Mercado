@@ -43,7 +43,10 @@ import {
   ArrowUp,
   ArrowDown,
   RotateCcw,
-  ArrowUpDown } from "@buleje/design-system/icons";
+  ArrowUpDown,
+  Truck,
+  Receipt,
+  PackageCheck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -55,9 +58,6 @@ import { csrfHeaders } from "@/lib/csrf-client";
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
 // Dynamic import del dashboard del marketplace (charts unificados)
 const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
-// Hero del flujo de venta — aparece arriba del Resumen para reforzar
-// que la venta solo se concreta al entregar.
-const SalesFlowHero = lazy(() => import("@/components/admin/marketplace/SalesFlowHero"));
 
 // ── Spinner compacto ──
 const Spinner = () => (
@@ -705,6 +705,13 @@ interface QuickActionsState {
   productsWithStock: number;
   reviewsTotal: number;
   reviewsReplied: number;
+  /** Pipeline de pedidos — cuenta por estado del flujo de venta */
+  flowPendiente: number;
+  flowConfirmado: number;
+  flowEnCamino: number;
+  flowEntregadoHoy: number;
+  flowRevenueHoy: number;
+  flowRevenuePipeline: number;
 }
 
 function HealthGauge({ score }: { score: number }) {
@@ -806,6 +813,12 @@ function MarketplaceQuickActions({
     productsWithStock: 0,
     reviewsTotal: 0,
     reviewsReplied: 0,
+    flowPendiente: 0,
+    flowConfirmado: 0,
+    flowEnCamino: 0,
+    flowEntregadoHoy: 0,
+    flowRevenueHoy: 0,
+    flowRevenuePipeline: 0,
   });
 
   useEffect(() => {
@@ -834,6 +847,24 @@ function MarketplaceQuickActions({
       const pendingOrders = orders.filter((o: { status: string }) =>
         o.status === "pendiente" || o.status === "confirmado",
       ).length;
+
+      // Pipeline de venta — la venta solo se concreta al ENTREGAR.
+      // Pendiente/Confirmado/EnCamino son ingresos potenciales.
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      let flowPendiente = 0, flowConfirmado = 0, flowEnCamino = 0;
+      let flowEntregadoHoy = 0, flowRevenueHoy = 0, flowRevenuePipeline = 0;
+      for (const o of orders as Array<{ status: string; total?: number; createdAt: string }>) {
+        const total = Number(o.total ?? 0);
+        if (o.status === "pendiente") { flowPendiente++; flowRevenuePipeline += total; }
+        else if (o.status === "confirmado") { flowConfirmado++; flowRevenuePipeline += total; }
+        else if (o.status === "en_camino") { flowEnCamino++; flowRevenuePipeline += total; }
+        else if (o.status === "entregado") {
+          if (new Date(o.createdAt) >= startOfDay) {
+            flowEntregadoHoy++;
+            flowRevenueHoy += total;
+          }
+        }
+      }
 
       const productsTotal = products.length;
       const productsWithImage = products.filter((p: { image: string | null }) => !!p.image).length;
@@ -876,6 +907,12 @@ function MarketplaceQuickActions({
         productsWithStock,
         reviewsTotal,
         reviewsReplied,
+        flowPendiente,
+        flowConfirmado,
+        flowEnCamino,
+        flowEntregadoHoy,
+        flowRevenueHoy,
+        flowRevenuePipeline,
       });
     })().catch(() => {
       if (!cancel) setState((s) => ({ ...s, loading: false }));
@@ -1009,8 +1046,89 @@ function MarketplaceQuickActions({
   const pctStock = state.productsTotal > 0 ? Math.round((state.productsWithStock / state.productsTotal) * 100) : 0;
   const pctRev   = state.reviewsTotal > 0 ? Math.round((state.reviewsReplied / state.reviewsTotal) * 100) : 0;
 
+  // Pipeline de venta — fila minimalista alineada con el resto de cards
+  // del admin (bg surface-raised + border rule-base, sin gradients).
+  const pipelineSteps = [
+    { key: "pendiente",  label: "Pendiente",  count: state.flowPendiente,    Icon: Clock,       fg: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-500)]/10" },
+    { key: "confirmado", label: "Preparando", count: state.flowConfirmado,   Icon: CheckCircle, fg: "text-[var(--accent)]",            bg: "bg-[var(--accent-soft)]" },
+    { key: "en_camino",  label: "En camino",  count: state.flowEnCamino,     Icon: Truck,       fg: "text-primary",                    bg: "bg-primary/10" },
+    { key: "entregado",  label: "Entregado",  count: state.flowEntregadoHoy, Icon: PackageCheck, fg: "text-[var(--text-primary)]",     bg: "bg-[var(--surface-sunken)]", emphasis: true },
+  ] as const;
+  const fmtSoles = (n: number) => `S/ ${n.toFixed(2)}`;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+    <div className="space-y-4 mb-5">
+      {/* ── Pipeline del flujo de venta ───────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Receipt className="h-4 w-4" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-sm leading-tight">
+                Pipeline de venta
+              </CardTitle>
+              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
+                Solo entregado cuenta como venta concretada
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-semibold tabular-nums">
+            <span className="text-[var(--text-tertiary)]">
+              Pipeline: <span className="text-[var(--text-primary)] font-bold">{state.loading ? "—" : fmtSoles(state.flowRevenuePipeline)}</span>
+            </span>
+            <span className="text-[var(--text-tertiary)]">
+              Hoy: <span className="text-[var(--text-primary)] font-bold">{state.loading ? "—" : fmtSoles(state.flowRevenueHoy)}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => onNavigate("ordenes")}
+              className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
+            >
+              Ver pedidos
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {pipelineSteps.map((step, i) => {
+            const Icon = step.Icon;
+            const isLast = i === pipelineSteps.length - 1;
+            return (
+              <button
+                key={step.key}
+                type="button"
+                onClick={() => onNavigate("ordenes")}
+                className={cn(
+                  "relative text-left rounded-xl p-3 transition-colors flex items-center gap-3",
+                  isLast
+                    ? "bg-[var(--surface-sunken)] border border-[var(--rule-base)] hover:bg-[var(--surface-base)]"
+                    : "border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+                )}
+              >
+                <div className={cn("inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0", step.bg)}>
+                  <Icon className={cn("h-4 w-4", step.fg)} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    {step.label}
+                  </p>
+                  <p className={cn("text-base font-extrabold tabular-nums leading-tight mt-0.5", step.fg)}>
+                    {state.loading ? "—" : step.count}
+                  </p>
+                </div>
+                {isLast && !state.loading && step.count === 0 && (
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-semibold">hoy</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* ── Salud de la tienda ──────────────────────────────────────── */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between gap-2 mb-4">
@@ -1149,6 +1267,7 @@ function MarketplaceQuickActions({
           </ul>
         )}
       </div>
+    </div>
     </div>
   );
 }
@@ -4792,9 +4911,6 @@ export default function MarketplaceModule() {
       >
         {tab === "resumen"     && (
           <>
-            <Suspense fallback={<div className="h-72 rounded-3xl bg-[var(--surface-sunken)] animate-pulse mb-5" />}>
-              <SalesFlowHero onNavigate={(id) => setTab(id)} />
-            </Suspense>
             <MarketplaceQuickActions onNavigate={(id) => setTab(id)} />
             <Suspense fallback={<Spinner />}>
               <MarketplaceDashboardTab kpis={kpis} loading={kpisLoading} />
