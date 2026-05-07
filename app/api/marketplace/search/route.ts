@@ -168,6 +168,11 @@ export async function GET(req: NextRequest) {
           : {}),
         store: {
           isPublished: true,
+          // SECURITY 2026-05-07 (audit M5): filtrar tenants activos.
+          // Antes la búsqueda exponía productos de tenants suspendidos.
+          tenant: {
+            active: true,
+          },
           ...(zone && { zone }),
         },
         product: {

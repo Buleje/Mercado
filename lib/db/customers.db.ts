@@ -153,11 +153,16 @@ export const CustomersDB = {
 
     return { customers: items.map(mapCustomer), nextCursor, total };
   },
-  async getByPhone(phone: string, tenantId?: string): Promise<DbCustomer | null> {
+  async getByPhone(phone: string, tenantId: string): Promise<DbCustomer | null> {
+    // SECURITY 2026-05-07 (audit MT1): tenantId REQUERIDO. Antes era opcional —
+    // caller que omitía resolvía customer cross-tenant porque Customer.phone
+    // tiene unique global. Phone se reusa entre tenants = fuga.
+    if (!tenantId) throw new Error("CustomersDB.getByPhone: tenantId requerido");
     const normalized = normalizePhone(phone);
-    const row = tenantId
-      ? await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, include: { locations: true } })
-      : await prisma.customer.findUnique({ where: { phone: normalized }, include: { locations: true } });
+    const row = await prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      include: { locations: true },
+    });
     return row ? mapCustomer(row) : null;
   },
   /** Find the first customer with a given email within a tenant. */
@@ -208,7 +213,7 @@ export const CustomersDB = {
     // y luego ambas hacer increment → exceder creditLimit (fraude).
     const normalized = normalizePhone(phone);
     if (delta > 0) {
-      // eslint-disable-next-line no-restricted-properties -- guard atómico de credit limit
+      // guard atómico de credit limit (audit DB #5).
       const result = await prisma.$executeRawUnsafe(
         `UPDATE "Customer"
             SET "creditBalance" = "creditBalance" + $1

@@ -53,7 +53,7 @@ export async function GET(
     return NextResponse.json({ error: "Teléfono inválido" }, { status: 400 });
   }
   try {
-    const customer = await CustomersDB.getByPhone(auth.tenantId, normalized);
+    const customer = await CustomersDB.getByPhone(normalized, auth.tenantId);
     if (!customer) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
@@ -64,7 +64,6 @@ export async function GET(
       where: { customerPhone: normalized, tenantId: auth.tenantId },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
-      // eslint-disable-next-line no-restricted-syntax
     }).catch((err) => { logger.error("[customers GET] lastOrder lookup failed", { error: String(err), phone: normalized }); return null; });
     if (lastOrder) {
       const daysSince = Math.floor((Date.now() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24));

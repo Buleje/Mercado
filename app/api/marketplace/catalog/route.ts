@@ -130,6 +130,11 @@ export async function GET(req: NextRequest) {
       store: {
         isPublished: true,
         vacationMode: { not: true },
+        // SECURITY 2026-05-07 (audit M5): filtrar tenants activos con plan vigente.
+        // Antes tenants suspendidos seguían apareciendo en el marketplace público.
+        tenant: {
+          active: true,
+        },
         ...(zone && { zone }),
         // F4: filtrar por slug de tienda cuando se provee
         ...(storeSlug && { slug: storeSlug }),

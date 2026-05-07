@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   let customer: { phone: string; name: string } | null = null;
 
   try {
-    const existing = await CustomersDB.getByPhone(phone);
+    const existing = await CustomersDB.getByPhone(phone, PLATFORM_TENANT_ID);
     isNew = !existing;
 
     const displayName = name?.trim() || existing?.name || `Cliente ${phone.slice(-4)}`;
