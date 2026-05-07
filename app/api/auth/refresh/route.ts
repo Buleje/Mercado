@@ -9,6 +9,7 @@ import {
 } from "@/lib/session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { cacheStore } from "@/lib/cache";
 
 /**
  * POST /api/auth/refresh
@@ -37,6 +38,27 @@ export async function POST(req: NextRequest) {
     res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
     res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
     return res;
+  }
+
+  // SECURITY 2026-05-06 (pentest H007): jti blacklist contra replay.
+  // Si el jti ya fue consumido (tras una rotación previa), rechazar.
+  // Refresh tokens viejos sin jti (pre-fix) se aceptan una vez para back-compat.
+  if (payload.jti) {
+    const blacklistKey = `refresh-jti:consumed:${payload.jti}`;
+    const consumed = cacheStore.get<boolean>(blacklistKey);
+    if (consumed) {
+      logger.warn("[auth/refresh] jti replay attempt", {
+        username: payload.username,
+        jti: payload.jti,
+      });
+      const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
+      res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      return res;
+    }
+    // Marcar como consumido por TTL = remaining lifetime del refresh actual
+    // (7 días max — Redis lo ignora cuando expire).
+    cacheStore.set(blacklistKey, true, 7 * 24 * 60 * 60);
   }
 
   // Issue new token pair (rotation — old refresh is now replaced)

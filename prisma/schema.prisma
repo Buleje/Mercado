@@ -1173,6 +1173,9 @@ model AdminUser {
   // ── 2FA TOTP (ADR-043) ──────────────────────────────────────
   totpSecret    String? // Base32-encoded TOTP secret (RFC 6238). NULL = sin 2FA configurado
   totpEnabledAt DateTime? // Timestamp de activación. NULL = TOTP no activo aún
+  // SECURITY 2026-05-06 (pentest H002): replay protection. Persistir el último
+  // step TOTP usado por user para rechazar reuse del mismo código (60s window).
+  totpLastUsedStep Int? // Último step (Date.now()/30000) consumido en verify
 
   turnos Turno[]
 

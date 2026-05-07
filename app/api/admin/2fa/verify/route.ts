@@ -18,6 +18,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { verifyTotpCode } from "@/lib/auth/totp";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 
 const verifySchema = z.object({
   code: z
@@ -27,6 +29,7 @@ const verifySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-2fa-verify"); if (_rl) return _rl;
   // 1. Auth
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -99,7 +102,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5. Verificar el código TOTP con ventana ±1 step
+  // 5. Verificar el código TOTP con ventana ±1 step + replay protection
+  // SECURITY 2026-05-06 (pentest H002): rechazar reuse del mismo step que se
+  // verificó previamente (incluso dentro de su ventana de 60s).
+  const currentStep = Math.floor(Date.now() / 30_000);
+  const totpRow = await AdminTotpDB.getByUsername(auth.tenantId, auth.username);
+  const lastUsed = totpRow?.totpLastUsedStep;
   const isValid = verifyTotpCode(adminUser.totpSecret, parsed.data.code);
   if (!isValid) {
     return NextResponse.json(
@@ -107,8 +115,20 @@ export async function POST(req: NextRequest) {
       { status: 422 },
     );
   }
+  // Si el step actual o un step adyacente (±1) ya fue consumido → replay attempt.
+  if (lastUsed != null && Math.abs(currentStep - lastUsed) <= 1) {
+    logger.warn("[2fa/verify] TOTP replay attempt detectado", {
+      username: auth.username,
+      currentStep,
+      lastUsed,
+    });
+    return NextResponse.json(
+      { error: "Código ya consumido — esperá el siguiente (refresh tu app)" },
+      { status: 422 },
+    );
+  }
 
-  // 6. Activar 2FA marcando totpEnabledAt
+  // 6. Activar 2FA + persistir step consumido (replay protection)
   try {
     await prisma.adminUser.update({
       where: {
@@ -121,6 +141,7 @@ export async function POST(req: NextRequest) {
         totpEnabledAt: new Date(),
       },
     });
+    await AdminTotpDB.setLastUsedStep(auth.tenantId, auth.username, currentStep);
   } catch (err) {
     logger.error("[2fa/verify] Error al activar 2FA", { error: String((err as Error).message) });
     return NextResponse.json(

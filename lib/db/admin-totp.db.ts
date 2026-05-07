@@ -22,6 +22,7 @@ export interface AdminTotpRow {
   username: string;
   totpSecret: string | null;
   totpEnabledAt: Date | null;
+  totpLastUsedStep: number | null;
 }
 
 export interface SuperadminTotpRow {
@@ -43,7 +44,7 @@ export const AdminTotpDB = {
     username: string,
   ): Promise<AdminTotpRow | null> {
     const rows = await prisma.$queryRawUnsafe<AdminTotpRow[]>(
-      `SELECT id, username, "totpSecret", "totpEnabledAt"
+      `SELECT id, username, "totpSecret", "totpEnabledAt", "totpLastUsedStep"
        FROM "AdminUser"
        WHERE "tenantId" = $1
          AND username = $2
@@ -86,6 +87,26 @@ export const AdminTotpDB = {
          AND username = $2`,
       tenantId,
       username,
+    );
+  },
+
+  /**
+   * SECURITY 2026-05-06 (pentest H002): persistir el último step TOTP usado
+   * para rechazar replay del mismo código en su ventana de 60s.
+   */
+  async setLastUsedStep(
+    tenantId: string,
+    username: string,
+    step: number,
+  ): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "AdminUser"
+       SET "totpLastUsedStep" = $3, "updatedAt" = NOW()
+       WHERE "tenantId" = $1
+         AND username = $2`,
+      tenantId,
+      username,
+      step,
     );
   },
 } as const;

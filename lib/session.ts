@@ -84,6 +84,7 @@ export interface SessionPayload {
   username: string;
   tenantId: string;
   name?: string;
+  jti?: string;
 }
 
 export async function createSessionToken(
@@ -117,12 +118,16 @@ export async function createRefreshToken(
   tenantId = "main",
   name = ""
 ): Promise<string> {
+  // SECURITY 2026-05-06 (pentest H007): jti único por refresh token para
+  // permitir blacklist en Redis (consumed-once semantics).
+  const jti = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const payload = JSON.stringify({
     role,
     username,
     tenantId,
     name,
     type: "refresh",
+    jti,
     exp: Date.now() + REFRESH_DURATION_MS,
   });
   const encoded = b64Encode(payload);
@@ -149,6 +154,7 @@ export async function getRefreshPayload(token: string): Promise<SessionPayload |
       tenantId?: string;
       name?: string;
       type?: string;
+      jti?: string;
     };
     // MUST be a refresh token — reject access tokens used here
     if (payload.type !== "refresh") return null;
@@ -157,6 +163,7 @@ export async function getRefreshPayload(token: string): Promise<SessionPayload |
     return {
       role: payload.role,
       username: payload.username,
+      jti: payload.jti,
       tenantId: payload.tenantId ?? "main",
       name: payload.name,
     };

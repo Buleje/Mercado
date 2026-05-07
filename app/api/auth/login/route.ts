@@ -83,18 +83,22 @@ export async function POST(req: Request) {
     if (tenant) tenantId = tenant.id;
   } catch { /* use slug as-is */ }
 
-  // Step 2: Búsqueda GLOBAL por username (no por tenant). El usuario solo
-  // necesita ingresar usuario+contraseña — el tenantId se infiere del
-  // AdminUser que matchee. Si hay varios usuarios con el mismo nombre en
-  // tenants distintos, la primera contraseña que matchee gana. Esto es
-  // seguro porque bcrypt hace el match único por hash.
+  // SECURITY 2026-05-06 (pentest H005): scope tenant siempre que sea posible.
+  // Si tenemos tenantId resuelto del header/slug, BUSCAR SOLO en ese tenant.
+  // Antes: findMany global → primer match ganaba aunque viniera de otro
+  // tenant (race entre N hashes que matcheaban con la misma contraseña).
   type DbUser = { username: string; passwordHash: string; role: string; name: string; tenantId: string; onboardingCompletedAt: Date | null };
   let dbUsers: DbUser[] = [];
+  const tenantResolved = tenantId !== resolvedSlug; // CUID vs slug literal
   try {
     dbUsers = await prisma.adminUser.findMany({
-      where: { active: true, ...(username ? { username } : {}) },
+      where: {
+        active: true,
+        ...(username ? { username } : {}),
+        ...(tenantResolved ? { tenantId } : {}),
+      },
       select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
-      take: 50, // safety cap — bcrypt es ~100ms/comparación
+      take: tenantResolved ? 5 : 50, // si scopeado, basta poco; sin scope, cap genérico
     });
   } catch { /* DB unavailable */ }
 

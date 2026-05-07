@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Verificar token (ventana ±1 step = ±30s de tolerancia de reloj)
+    const currentStep = Math.floor(Date.now() / 30_000);
     const valid = verifyTotpCode(row.totpSecret, parsed.data.token);
 
     if (!valid) {
@@ -87,11 +88,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_token" }, { status: 400 });
     }
 
-    // 6. Activar 2FA si aún no estaba activo
+    // SECURITY 2026-05-06 (pentest H002): replay protection. Rechazar si el
+    // step actual o adyacente ya fue consumido (mismo código replay-eado en
+    // su ventana de 60s).
+    if (row.totpLastUsedStep != null && Math.abs(currentStep - row.totpLastUsedStep) <= 1) {
+      logger.warn("[totp/verify] TOTP replay attempt", {
+        username: auth.username,
+        currentStep,
+        lastUsed: row.totpLastUsedStep,
+      });
+      return NextResponse.json({ error: "code_already_used" }, { status: 400 });
+    }
+
+    // 6. Activar 2FA si aún no estaba activo + persistir step consumido
     const wasAlreadyActive = row.totpEnabledAt !== null;
     if (!wasAlreadyActive) {
       await AdminTotpDB.activate(auth.tenantId, auth.username);
     }
+    await AdminTotpDB.setLastUsedStep(auth.tenantId, auth.username, currentStep);
 
     logger.info("[totp/verify] Token válido", {
       username: auth.username,
