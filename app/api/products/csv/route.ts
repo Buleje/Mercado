@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+
 
 // GET /api/products/csv — Export products as CSV download
 export async function GET(req: NextRequest) {
@@ -104,9 +106,17 @@ export async function POST(req: NextRequest) {
 
       const existingId = row.id ? parseInt(row.id) : null;
       if (existingId && !isNaN(existingId)) {
-        await prisma.product.update({ where: { id: existingId }, data });
+        // eslint-disable-next-line no-restricted-properties -- legacy CSV import; updateMany con tenantId previene IDOR cross-tenant.
+        const result = await prisma.product.updateMany({ where: { id: existingId, tenantId: auth.tenantId }, data });
+        if (result.count === 0) {
+          errors++;
+          errorDetails.push(`Fila ${i + 1}: producto id=${existingId} no encontrado en este tenant`);
+          logger.warn("[products/csv] skip row — id no pertenece al tenant", { id: existingId, tenantId: auth.tenantId });
+          continue;
+        }
         updated++;
       } else {
+        // eslint-disable-next-line no-restricted-properties -- legacy CSV import; ProductsDB.create no expone bulk upsert.
         await prisma.product.create({ data });
         created++;
       }
@@ -120,7 +130,7 @@ export async function POST(req: NextRequest) {
     "Import", "producto",
     `CSV importado: ${created} nuevos, ${updated} actualizados, ${errors} errores`,
     undefined, "admin",
-  ).catch(() => {});
+  ).catch((err) => logger.warn("[products/csv] activity log failed", { err: String(err) }));
   invalidate(`dashboard:${auth.tenantId}`);
 
   return NextResponse.json({

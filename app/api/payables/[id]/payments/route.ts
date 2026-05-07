@@ -1,46 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+
+const AddPaymentSchema = z.object({
+  amount: z.number().positive(),
+  method: z.string().min(1),
+  notes: z.string().max(500).optional(),
+});
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const { searchParams } = new URL(req.url);
-    const supplierId = searchParams.get("supplierId");
-    if (supplierId) return NextResponse.json(await PayablesDB.getBySupplierId(auth.tenantId, supplierId));
-    return NextResponse.json(await PayablesDB.getAll(auth.tenantId));
+    const payable = await PayablesDB.getById(auth.tenantId, id);
+    if (!payable) {
+      return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
+    }
+    return NextResponse.json(payable.payments);
   } catch (e) {
-    logger.error("[payables/payments] GET error", { err: e instanceof Error ? e.message : String(e) });
+    logger.error("[payables/id/payments] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
 
-export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "payables-X-payments"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin"]);
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const _rl = await applyRateLimit(req, "MODERATE", "payables-X-payments");
+  if (_rl) return _rl;
+
+  const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  if (!body.supplierId || !body.amount) {
-    return NextResponse.json({ error: "supplierId and amount required" }, { status: 400 });
+  const { id } = await params;
+  try {
+    const raw = await req.json();
+    const parsed = AddPaymentSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+    const { amount, method, notes } = parsed.data;
+
+    // Verify payable belongs to tenant before adding payment
+    const existing = await PayablesDB.getById(auth.tenantId, id);
+    if (!existing) {
+      return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
+    }
+
+    const paymentId = `pmnt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const updated = await PayablesDB.addPayment(auth.tenantId, id, {
+      id: paymentId,
+      amount,
+      method: method as import("@/lib/db/misc.db").PaymentMethod,
+      date: new Date().toISOString(),
+      ...(notes && { reference: notes }),
+    });
+
+    if (!updated) {
+      return NextResponse.json({ error: "No se pudo registrar el pago" }, { status: 500 });
+    }
+    return NextResponse.json(updated, { status: 201 });
+  } catch (e) {
+    logger.error("[payables/id/payments] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-  const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const payable = await PayablesDB.add(auth.tenantId, {
-    id,
-    supplierId: body.supplierId,
-    supplierName: body.supplierName || "",
-    purchaseOrderId: body.purchaseOrderId || undefined,
-    description: body.description || "",
-    amount: Number(body.amount),
-    paidAmount: 0,
-    status: "pendiente",
-    dueDate: body.dueDate || new Date().toISOString(),
-    payments: [],
-    createdAt: new Date().toISOString(),
-  });
-  return NextResponse.json(payable, { status: 201 });
 }

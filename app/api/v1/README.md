@@ -35,8 +35,7 @@ Checklist para migrar un endpoint `/api/foo/route.ts` → `/api/v1/foo/route.ts`
 2. [ ] En `app/api/foo/route.ts`, reemplazar el handler por un re-export del `/v1/`:
    ```ts
    export { GET, POST } from "@/app/api/v1/foo/route";
-   export const dynamic = "force-dynamic";
-   ```
+      ```
 3. [ ] Agregar header `Deprecation: true` y `Link: </api/v1/foo>; rel="successor-version"` al response de la versión legacy.
 4. [ ] Actualizar OpenAPI spec con ambas rutas (legacy marcada `deprecated: true`).
 5. [ ] Actualizar `lib/tenant-fetch.ts` para que llamadas internas usen `/api/v1/...`.

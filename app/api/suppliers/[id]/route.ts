@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+
 const SupplierPatchSchema = z.object({
   // Existing fields
   name: z.string().min(1).max(200).optional(),
@@ -47,9 +48,9 @@ export async function GET(
     if (!supplier) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-    // Get full record with new fields from prisma
-    // eslint-disable-next-line no-restricted-properties -- supplier lookup tenant-scoped por auth.tenantId guard arriba.
-    const full = await prisma.supplier.findUnique({ where: { id } });
+    // Get full record with new fields from prisma — findFirst con tenantId para evitar IDOR cross-tenant.
+    // eslint-disable-next-line no-restricted-properties -- legacy: SuppliersDB no expone campos extendidos; findFirst con tenantId+id garantiza aislamiento.
+    const full = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json({ ...supplier, ...full });
   } catch (e) {
     logger.error("[suppliers/id] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -104,8 +105,13 @@ export async function PATCH(
       return NextResponse.json({ ok: true });
     }
 
-    // eslint-disable-next-line no-restricted-properties -- supplier update tenant-scoped por auth.tenantId guard arriba.
-    const updated = await prisma.supplier.update({ where: { id }, data });
+    // eslint-disable-next-line no-restricted-properties -- legacy: updateMany con tenantId+id previene IDOR cross-tenant.
+    const result = await prisma.supplier.updateMany({ where: { id, tenantId: auth.tenantId }, data });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    }
+    // eslint-disable-next-line no-restricted-properties -- legacy: re-fetch tras update para devolver registro actualizado.
+    const updated = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[suppliers/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });

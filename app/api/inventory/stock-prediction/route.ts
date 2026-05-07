@@ -1,22 +1,30 @@
-/* eslint-disable no-restricted-properties -- public predictivo. NOTA: ESTE endpoint actualmente NO scopea por tenantId — TODO migrar a lib/db con guard tenant. */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+// eslint-disable-next-line no-restricted-properties -- legacy: ProductsDB no expone campo unit ni inventoryMovement bulk; migrar a DB class en sprint posterior.
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 
-export async function GET() {
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Get all active products with stock
+    // Scoped to tenant — prevents cross-tenant stock leak
     const products = await prisma.product.findMany({
-      where: { active: true },
+      where: { active: true, tenantId: auth.tenantId },
       select: { id: true, name: true, category: true, stock: true, unit: true },
     });
 
-    // Get sale movements from the last 30 days
+    // Scoped movements to tenant products
+    const productIds = products.map((p) => p.id);
     const movements = await prisma.inventoryMovement.findMany({
       where: {
+        tenantId: auth.tenantId,
+        productId: { in: productIds },
         type: { in: ["venta", "venta_online"] },
         createdAt: { gte: thirtyDaysAgo },
       },
@@ -47,9 +55,7 @@ export async function GET() {
           daysRemaining,
         };
       })
-      // Only include products that have sales data OR low stock
       .filter((p) => p.avgDailySales > 0)
-      // Sort by days remaining ascending (most urgent first)
       .sort((a, b) => {
         if (a.daysRemaining === null) return 1;
         if (b.daysRemaining === null) return -1;

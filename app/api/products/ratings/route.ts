@@ -1,16 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ReviewsDB } from "@/lib/jsondb";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { tryAdmin } from "@/lib/require-admin";
+import { getTenantIdFromRequest } from "@/lib/tenant";
+
 
 /**
  * GET /api/products/ratings
- * Public endpoint — returns aggregated ratings per product.
+ * Semi-public endpoint — returns aggregated ratings per product.
+ * tenantId resolved from: 1) JWT (admin session), 2) x-tenant-id header (middleware from subdomain).
  * Response: { [productId: number]: { rating: number, reviewCount: number } }
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const tenantId = "main";
+    // Prefer JWT tenant (admin session) — fallback to subdomain header set by middleware
+    const session = await tryAdmin(req);
+    const tenantId = session?.tenantId ?? getTenantIdFromRequest(req);
 
     const ratings = await getOrSet(
       `product-ratings:${tenantId}`,

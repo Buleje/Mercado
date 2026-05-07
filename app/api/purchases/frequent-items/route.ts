@@ -1,15 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+// eslint-disable-next-line no-restricted-properties -- legacy: PurchaseItemsDB no expone groupBy; migrar a DB class en sprint posterior.
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
-export async function GET() {
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
+
   try {
-    // Get purchase items from last 90 days
+    // Get purchase items from last 90 days scoped to tenant — prevents cross-tenant cost leak
     const since = new Date();
     since.setDate(since.getDate() - 90);
 
     const items = await prisma.purchaseItem.groupBy({
       by: ["productId", "name"],
-      where: { purchaseOrder: { createdAt: { gte: since } } },
+      where: {
+        purchaseOrder: {
+          tenantId: auth.tenantId,
+          createdAt: { gte: since },
+        },
+      },
       _count: { productId: true },
       _avg: { quantity: true, unitCost: true },
       orderBy: { _count: { productId: "desc" } },
@@ -25,7 +37,8 @@ export async function GET() {
     }));
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    logger.error("[purchases/frequent-items] error", { err: err instanceof Error ? err.message : String(err) });
     // Fallback: return empty if query fails or model doesn't exist yet
     return NextResponse.json([]);
   }
