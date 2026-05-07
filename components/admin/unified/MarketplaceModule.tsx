@@ -55,6 +55,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
 // Dynamic import del dashboard del marketplace (charts unificados)
 const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
+// Hero del flujo de venta — aparece arriba del Resumen para reforzar
+// que la venta solo se concreta al entregar.
+const SalesFlowHero = lazy(() => import("@/components/admin/marketplace/SalesFlowHero"));
 
 // ── Spinner compacto ──
 const Spinner = () => (
@@ -145,17 +148,17 @@ interface CommissionSummary {
 
 // ── Status badge helpers ──
 const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
   en_camino:   { label: "En camino",  className: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  entregado:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+  entregado:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 
 const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]",         icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle },
+  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",     icon: Clock },
+  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",         icon: CheckCircle },
+  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: CheckCircle },
 };
 
 const MODULE_ID = "marketplace";
@@ -184,6 +187,13 @@ const CATEGORIAS = [
 // adicional que históricamente apareció en este selector pero no estaba en el
 // catálogo, para no romper datos existentes (Coronel Portillo, Ica Yanayacu).
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+// TiendaTab fue extraído del inline (~810 LOC) al archivo dedicado.
+import TiendaTab from "./marketplace/tabs/TiendaTab";
+// Real OrdenesTab importado desde /tabs (no usar el shadow interno).
+// El shadow en este archivo (function OrdenesTab) quedó desplazado por
+// `function OrdenesTabShadow_DEPRECATED` para no romper compilación, pero
+// NO se renderiza — el render usa `OrdenesTabReal`.
+import OrdenesTabReal from "./marketplace/tabs/OrdenesTab";
 
 const ZONAS: string[] = (() => {
   const fromCatalog = MARKETPLACE_ZONES.map((z) => z.label);
@@ -240,10 +250,10 @@ export function AdminMarketplaceOverview() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
-          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-[var(--data-success)]" },
+          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-[var(--data-success-500)]" },
           { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-[var(--text-secondary)]" },
-          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning)]" },
-          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]" },
+          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning-500)]" },
+          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 ">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
@@ -270,7 +280,7 @@ export function AdminMarketplaceOverview() {
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{s.orders} pedido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(s.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success-500)] shrink-0">{fmtS(s.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -346,7 +356,7 @@ void DashboardTab;
     try {
       const res = await fetch(`/api/marketplace/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "confirmado" }),
       });
       if (res.ok && data) {
@@ -383,9 +393,9 @@ void DashboardTab;
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
-          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success)]" },
+          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success-500)]" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
-          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning)]" },
+          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
@@ -408,7 +418,7 @@ void DashboardTab;
               <p className="text-xs text-[var(--text-secondary)]">Hoy (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-[var(--data-success)]">{data.allChannels.today.orders}</p>
+              <p className="text-lg font-extrabold text-[var(--data-success-500)]">{data.allChannels.today.orders}</p>
               <p className="text-xs text-[var(--text-secondary)]">Pedidos hoy (total)</p>
             </div>
             <div>
@@ -416,7 +426,7 @@ void DashboardTab;
               <p className="text-xs text-[var(--text-secondary)]">Este mes (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-[var(--data-warning)]">{data.allChannels.month.orders}</p>
+              <p className="text-lg font-extrabold text-[var(--data-warning-500)]">{data.allChannels.month.orders}</p>
               <p className="text-xs text-[var(--text-secondary)]">Pedidos mes (total)</p>
             </div>
           </div>
@@ -428,13 +438,13 @@ void DashboardTab;
       {(data.products.lowStock > 0 || data.pendingReviews > 0) && (
         <div className="flex flex-wrap gap-2">
           {data.products.lowStock > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] text-xs font-semibold">
               <AlertCircle className="h-3.5 w-3.5" />
               {data.products.lowStock} producto(s) con stock bajo
             </div>
           )}
           {data.pendingReviews > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña(s) por moderar
             </div>
@@ -461,13 +471,13 @@ void DashboardTab;
             className={cn(
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               (data.pendingOrders ?? 0) > 0
-                ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] hover:bg-[var(--data-warning-100)]"
+                ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] hover:bg-[var(--data-warning-100)]"
                 : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
               "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-              (data.pendingOrders ?? 0) > 0 ? "bg-[var(--data-warning)] text-[var(--data-warning)]" : "bg-gray-200 text-[var(--text-secondary)]"
+              (data.pendingOrders ?? 0) > 0 ? "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "bg-gray-200 text-[var(--text-secondary)]"
             )}>
               <ShoppingCart className="h-5 w-5" />
             </div>
@@ -495,13 +505,13 @@ void DashboardTab;
             className={cn(
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               data.products.lowStock > 0
-                ? "border-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)]"
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)]"
                 : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
               "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-              data.products.lowStock > 0 ? "bg-[var(--data-error)] text-[var(--data-error)]" : "bg-gray-200 text-[var(--text-secondary)]"
+              data.products.lowStock > 0 ? "bg-[var(--data-error-500)] text-[var(--data-error-500)]" : "bg-gray-200 text-[var(--text-secondary)]"
             )}>
               <Package className="h-5 w-5" />
             </div>
@@ -595,7 +605,7 @@ void DashboardTab;
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{p.qty} vendido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(p.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success-500)] shrink-0">{fmtS(p.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -653,7 +663,7 @@ void DashboardTab;
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total productos</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
-          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
+          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
             {data.products.lowStock}
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Stock bajo</p>
@@ -663,815 +673,6 @@ void DashboardTab;
   );
 }
 
-// ─────────────────────────────────────────────
-// Sub-tab: Mi Tienda Personal
-// ─────────────────────────────────────────────
-
-// Pequeñas piezas reutilizables solo dentro de TiendaTab.
-function SectionCard({
-  icon: Icon,
-  title,
-  hint,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-      <header className="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-[var(--rule-base)]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-primary shrink-0">
-          <Icon className="h-4.5 w-4.5" />
-        </span>
-        <div className="min-w-0">
-          <CardTitle className="text-sm">{title}</CardTitle>
-          {hint && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{hint}</p>}
-        </div>
-      </header>
-      <div className="p-5">{children}</div>
-    </section>
-  );
-}
-
-function ToggleRow({
-  active,
-  onToggle,
-  title,
-  desc,
-  tone = "primary",
-}: {
-  active: boolean;
-  onToggle: () => void;
-  title: string;
-  desc: string;
-  tone?: "primary" | "warning";
-}) {
-  const onColor = tone === "warning" ? "bg-[var(--data-warning)]" : "bg-primary";
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="w-full flex items-center justify-between gap-4 text-left rounded-xl px-4 py-3 hover:bg-[var(--surface-sunken)] transition-colors"
-    >
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{desc}</p>
-      </div>
-      <span
-        className={cn(
-          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0",
-          active ? onColor : "bg-gray-300",
-        )}
-        aria-pressed={active}
-      >
-        <span
-          className={cn(
-            "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-            active ? "translate-x-6" : "translate-x-1",
-          )}
-        />
-      </span>
-    </button>
-  );
-}
-
-function StatusPill({
-  isActive,
-  vacationMode,
-}: { isActive: boolean; vacationMode?: boolean }) {
-  if (vacationMode) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-semibold">
-        <Pause className="h-3.5 w-3.5" />
-        En vacaciones
-      </span>
-    );
-  }
-  if (isActive) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-semibold">
-        <CheckCircle className="h-3.5 w-3.5" />
-        Publicada
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-semibold">
-      <EyeOff className="h-3.5 w-3.5" />
-      Borrador
-    </span>
-  );
-}
-
-// Vista previa: cómo se ve la tarjeta en el listado público del marketplace.
-function StorePreviewCard({ store }: { store: StoreData }) {
-  const initial = (store.name || "T").trim().charAt(0).toUpperCase();
-  return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-white overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-24 bg-linear-to-br from-[var(--accent-soft)] via-white to-[var(--surface-sunken)] relative">
-        {store.zone && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
-            <MapPin className="h-3 w-3" /> {store.zone}
-          </span>
-        )}
-      </div>
-      <div className="px-4 pb-4 -mt-8">
-        <div className="h-16 w-16 rounded-2xl border-4 border-white bg-white shadow-md overflow-hidden flex items-center justify-center">
-          {store.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={store.logoUrl}
-              alt={store.name}
-              className="h-full w-full object-cover"
-              onError={(e) => ((e.currentTarget.style.display = "none"))}
-            />
-          ) : (
-            <span className="text-2xl font-bold text-primary">{initial}</span>
-          )}
-        </div>
-        <h4 className="mt-2 text-base font-bold text-[var(--text-primary)] truncate">
-          {store.name || "Tu tienda"}
-        </h4>
-        <p className="text-xs text-[var(--text-secondary)] line-clamp-2 min-h-[2.4em]">
-          {store.description || "Agrega una descripción atractiva para que los clientes te conozcan."}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {store.category && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)]">
-              <Tag className="h-3 w-3" /> {store.category}
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)]">
-            <Percent className="h-3 w-3" /> {store.commissionRate}% comisión
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Helpers Mi Tienda — slug live + horarios ───────────────────────────────
-
-const DAY_LABELS: Array<{ key: DayKey; label: string }> = [
-  { key: "mon", label: "Lun" },
-  { key: "tue", label: "Mar" },
-  { key: "wed", label: "Mié" },
-  { key: "thu", label: "Jue" },
-  { key: "fri", label: "Vie" },
-  { key: "sat", label: "Sáb" },
-  { key: "sun", label: "Dom" },
-];
-
-const DEFAULT_HOURS: Record<DayKey, StoreHours> = {
-  mon: { open: "08:00", close: "20:00", closed: false },
-  tue: { open: "08:00", close: "20:00", closed: false },
-  wed: { open: "08:00", close: "20:00", closed: false },
-  thu: { open: "08:00", close: "20:00", closed: false },
-  fri: { open: "08:00", close: "20:00", closed: false },
-  sat: { open: "08:00", close: "20:00", closed: false },
-  sun: { open: "09:00", close: "14:00", closed: true },
-};
-
-const JS_DAY_TO_KEY: DayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-
-function isOpenNow(hours?: Record<DayKey, StoreHours>): boolean {
-  if (!hours) return false;
-  const now = new Date();
-  const todayKey = JS_DAY_TO_KEY[now.getDay()];
-  const day = hours[todayKey];
-  if (!day || day.closed) return false;
-  const cur = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = day.open.split(":").map((n) => parseInt(n, 10));
-  const [ch, cm] = day.close.split(":").map((n) => parseInt(n, 10));
-  if ([oh, om, ch, cm].some((n) => Number.isNaN(n))) return false;
-  return cur >= oh * 60 + om && cur <= ch * 60 + cm;
-}
-
-type SlugCheckState =
-  | { state: "idle" }
-  | { state: "checking" }
-  | { state: "valid"; isOwn: boolean }
-  | { state: "invalid"; message: string }
-  | { state: "taken"; suggestions: string[] };
-
-function SlugLiveStatus({ slug, onPick }: { slug: string; onPick: (s: string) => void }) {
-  const [check, setCheck] = useState<SlugCheckState>({ state: "idle" });
-
-  useEffect(() => {
-    if (!slug || slug.length < 3) {
-      setCheck({ state: "idle" });
-      return;
-    }
-    setCheck({ state: "checking" });
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/marketplace/stores/check-slug?slug=${encodeURIComponent(slug)}`);
-        if (!res.ok) {
-          setCheck({ state: "idle" });
-          return;
-        }
-        const d = await res.json();
-        if (!d.valid) {
-          setCheck({ state: "invalid", message: d.message ?? "Slug inválido" });
-        } else if (d.available) {
-          setCheck({ state: "valid", isOwn: !!d.isOwn });
-        } else {
-          setCheck({ state: "taken", suggestions: Array.isArray(d.suggestions) ? d.suggestions : [] });
-        }
-      } catch {
-        setCheck({ state: "idle" });
-      }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [slug]);
-
-  if (check.state === "idle") return null;
-  if (check.state === "checking") {
-    return (
-      <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5">
-        <span className="h-3 w-3 border-2 border-[var(--text-tertiary)] border-t-transparent rounded-full animate-spin" />
-        Verificando…
-      </p>
-    );
-  }
-  if (check.state === "valid") {
-    return (
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-success)]">
-        <CheckCircle className="h-3.5 w-3.5" />
-        {check.isOwn ? "Es tu slug actual" : "Disponible"}
-      </p>
-    );
-  }
-  if (check.state === "invalid") {
-    return (
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-error)]">
-        <XCircle className="h-3.5 w-3.5" />
-        {check.message}
-      </p>
-    );
-  }
-  // taken con sugerencias
-  return (
-    <div className="space-y-1.5">
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-error)]">
-        <XCircle className="h-3.5 w-3.5" />
-        Ya está ocupado
-      </p>
-      {check.suggestions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--text-secondary)]">Prueba con:</span>
-          {check.suggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => onPick(s)}
-              className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StoreHoursEditor({
-  hours,
-  onChange,
-}: {
-  hours: Record<DayKey, StoreHours>;
-  onChange: (next: Record<DayKey, StoreHours>) => void;
-}) {
-  const setDay = (k: DayKey, patch: Partial<StoreHours>) => {
-    onChange({ ...hours, [k]: { ...hours[k], ...patch } });
-  };
-  return (
-    <div className="space-y-2">
-      {DAY_LABELS.map(({ key, label }) => {
-        const h = hours[key];
-        return (
-          <div key={key} className="grid grid-cols-[60px_1fr_auto] sm:grid-cols-[80px_1fr_1fr_auto] items-center gap-2">
-            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{label}</span>
-            {h.closed ? (
-              <span className="text-xs text-[var(--text-tertiary)] sm:col-span-2">Cerrado</span>
-            ) : (
-              <>
-                <input
-                  type="time"
-                  value={h.open}
-                  onChange={(e) => setDay(key, { open: e.target.value })}
-                  className="px-2 py-1 rounded-lg border border-[var(--rule-base)] bg-white text-xs"
-                />
-                <input
-                  type="time"
-                  value={h.close}
-                  onChange={(e) => setDay(key, { close: e.target.value })}
-                  className="px-2 py-1 rounded-lg border border-[var(--rule-base)] bg-white text-xs"
-                />
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setDay(key, { closed: !h.closed })}
-              title={h.closed ? "Abrir este día" : "Cerrar este día"}
-              className={cn(
-                "ml-auto sm:ml-0 px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition",
-                h.closed
-                  ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
-              )}
-            >
-              {h.closed ? "Cerrado" : "Cerrar"}
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function TiendaTab() {
-  const [store, setStore] = useState<StoreData>({
-    slug: "", name: "", description: "", logoUrl: "",
-    category: "Abarrotes", zone: "Centro", commissionRate: 5, isActive: false,
-    hours: DEFAULT_HOURS,
-  });
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const [saved, setSaved]       = useState(false);
-  const [copied, setCopied]     = useState(false);
-  // Tienda en construccion — flag separado del schema, persiste en
-  // lib/data/store-construction.json. Toggle dispara PUT inmediato sin
-  // esperar al "Guardar cambios" general.
-  const [underConstruction, setUnderConstruction] = useState(false);
-  const [underConstructionMsg, setUnderConstructionMsg] = useState("");
-  const [savingConstruction, setSavingConstruction] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/marketplace/stores?my=true")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && (d.slug || d.name)) setStore(d as StoreData);
-      })
-      .catch(() => setError("Error al cargar datos de la tienda."))
-      .finally(() => setLoading(false));
-    // Carga el flag de construccion en paralelo
-    fetch("/api/admin/marketplace/store-construction")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && typeof d.enabled === "boolean") {
-          setUnderConstruction(d.enabled);
-          setUnderConstructionMsg(typeof d.message === "string" ? d.message : "");
-        }
-      })
-      .catch(() => { /* fallback silent: false */ });
-  }, []);
-
-  const persistConstruction = useCallback(
-    async (enabled: boolean, message: string) => {
-      setSavingConstruction(true);
-      try {
-        await fetch("/api/admin/marketplace/store-construction", {
-          method: "PUT",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ enabled, message: message.trim() || undefined }),
-        });
-      } catch { /* silent — el toggle ya esta en UI; siguiente save lo persiste */ } finally {
-        setSavingConstruction(false);
-      }
-    },
-    [],
-  );
-
-  const handleSave = async () => {
-    if (!store.name?.trim()) {
-      setError("El nombre de la tienda es obligatorio.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/marketplace/stores", {
-        method: store.id ? "PUT" : "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(store),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Error al guardar");
-      }
-      const data = await res.json();
-      setStore(data);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al guardar la tienda. Intenta nuevamente.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCopyUrl = async () => {
-    if (!store.slug) return;
-    const url = `marketplace.com/${store.slug}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* noop */
-    }
-  };
-
-  if (loading) return <Spinner />;
-
-  const inputBase =
-    "w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
-
-  return (
-    <div className="space-y-6 pb-24">
-      {/* ── Status banner — encabezado de la tienda ─────────────────── */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-r from-white via-white to-[var(--accent-soft)]/40 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="h-14 w-14 rounded-2xl border border-[var(--rule-base)] bg-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
-          {store.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={store.logoUrl} alt={store.name} className="h-full w-full object-cover" />
-          ) : (
-            <Store className="h-6 w-6 text-[var(--text-tertiary)]" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <SectionTitle className="text-lg truncate">
-              {store.name || "Tu tienda en el marketplace"}
-            </SectionTitle>
-            <StatusPill isActive={store.isActive} vacationMode={store.vacationMode} />
-          </div>
-          {store.slug ? (
-            <button
-              type="button"
-              onClick={handleCopyUrl}
-              className="mt-1 inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-primary transition-colors"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span className="font-mono">marketplace.com/{store.slug}</span>
-              {copied ? (
-                <span className="text-[var(--data-success)] font-semibold">Copiado</span>
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </button>
-          ) : (
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-              Configura el slug abajo para tener tu URL pública.
-            </p>
-          )}
-        </div>
-        {store.slug && (
-          <a
-            href={`/${store.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Ver en marketplace
-          </a>
-        )}
-      </div>
-
-      {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
-      {/* ── Layout 2 columnas: form (lg:8) + preview/estado (lg:4) ───── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Columna izquierda: cards de configuración */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Identidad */}
-          <SectionCard
-            icon={Store}
-            title="Identidad"
-            hint="Cómo te encuentran y reconocen tus clientes"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5 sm:col-span-1">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
-                  <Globe className="h-3 w-3" /> URL (slug)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] pointer-events-none">
-                    /
-                  </span>
-                  <input
-                    type="text"
-                    value={store.slug}
-                    onChange={(e) =>
-                      setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))
-                    }
-                    placeholder="mi-bodega"
-                    className={cn(inputBase, "pl-6")}
-                  />
-                </div>
-                <SlugLiveStatus
-                  slug={store.slug}
-                  onPick={(s) => setStore((p) => ({ ...p, slug: s }))}
-                />
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  Solo minúsculas y guiones. No se puede cambiar fácilmente luego.
-                </p>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-1">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">
-                  Nombre visible <span className="text-[var(--data-error)]">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={store.name}
-                  onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Mi Bodega"
-                  className={inputBase}
-                />
-                <p className="text-xs text-[var(--text-tertiary)]">{store.name.length}/60 caracteres</p>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
-                <textarea
-                  rows={3}
-                  value={store.description}
-                  onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe tu bodega: horarios, especialidades, qué te hace única…"
-                  className={cn(inputBase, "resize-none")}
-                />
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  Aparece bajo el nombre en la tarjeta del marketplace ({store.description.length}/180).
-                </p>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Categorización */}
-          <SectionCard
-            icon={Tag}
-            title="Categorización"
-            hint="Aparece en filtros del marketplace y define tu comisión"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría principal</label>
-                <div className="relative">
-                  <select
-                    value={store.category}
-                    onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                    className={cn(inputBase, "appearance-none pr-9")}
-                  >
-                    {CATEGORIAS.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
-                  <MapPin className="h-3 w-3" /> Zona de cobertura
-                </label>
-                <div className="relative">
-                  <select
-                    value={store.zone}
-                    onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                    className={cn(inputBase, "appearance-none pr-9")}
-                  >
-                    {ZONAS.map((z) => (
-                      <option key={z} value={z}>
-                        {z}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
-                  <Percent className="h-3 w-3" /> Comisión acordada
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={0}
-                    max={30}
-                    step={0.5}
-                    value={store.commissionRate}
-                    onChange={(e) =>
-                      setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))
-                    }
-                    className={cn(inputBase, "pr-8")}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] pointer-events-none">
-                    %
-                  </span>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Imagen */}
-          <SectionCard
-            icon={ImageIcon}
-            title="Imagen de la tienda"
-            hint="Logo cuadrado 200×200 — se muestra en la tarjeta del marketplace"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-5 items-start">
-              <ImageUpload
-                value={store.logoUrl}
-                onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
-                onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
-                folder="marketplace-logos"
-                label=""
-                hint=""
-                aspectRatio="square"
-              />
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">
-                  …o pega una URL de imagen
-                </label>
-                <input
-                  type="url"
-                  value={store.logoUrl}
-                  onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
-                  placeholder="https://..."
-                  className={inputBase}
-                />
-                {store.logoUrl ? (
-                  <div className="flex items-center gap-1.5 text-xs text-[var(--data-success)]">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Logo configurado
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)]">
-                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                    Sin logo, usaremos la inicial de tu tienda como avatar.
-                  </div>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* MT2: Horario de atención */}
-          <SectionCard
-            icon={Calendar}
-            title="Horario de atención"
-            hint="Define los días y horas que tu tienda atiende pedidos"
-          >
-            <StoreHoursEditor
-              hours={store.hours ?? DEFAULT_HOURS}
-              onChange={(next) => setStore((p) => ({ ...p, hours: next }))}
-            />
-            <div className="mt-3 pt-3 border-t border-[var(--rule-base)] flex items-center gap-2 text-xs">
-              {isOpenNow(store.hours ?? DEFAULT_HOURS) ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] font-bold">
-                  <span className="h-2 w-2 rounded-full bg-[var(--data-success)] animate-pulse" />
-                  Abierto ahora
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] font-bold">
-                  <span className="h-2 w-2 rounded-full bg-[var(--text-tertiary)]" />
-                  Cerrado en este momento
-                </span>
-              )}
-              <span className="text-[var(--text-tertiary)]">según tu zona horaria</span>
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Columna derecha: vista previa + estado (sticky) */}
-        <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-4 self-start">
-          <SectionCard
-            icon={Eye}
-            title="Vista previa"
-            hint="Así verán los clientes tu tienda en el listado"
-          >
-            <StorePreviewCard store={store} />
-          </SectionCard>
-
-          <SectionCard icon={Power} title="Estado de la tienda">
-            <div className="space-y-1 -mx-2">
-              <ToggleRow
-                active={store.isActive}
-                onToggle={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
-                title="Publicada en marketplace"
-                desc={
-                  store.isActive
-                    ? "Visible y aceptando pedidos."
-                    : "Borrador — solo tú la ves."
-                }
-                tone="primary"
-              />
-              <div className="border-t border-[var(--rule-base)] mx-2" />
-              <ToggleRow
-                active={!!store.vacationMode}
-                onToggle={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
-                title="Modo vacaciones"
-                desc="Pausa pedidos sin despublicar."
-                tone="warning"
-              />
-              <div className="border-t border-[var(--rule-base)] mx-2" />
-              <ToggleRow
-                active={underConstruction}
-                onToggle={() => {
-                  const next = !underConstruction;
-                  setUnderConstruction(next);
-                  void persistConstruction(next, underConstructionMsg);
-                }}
-                title="Tienda en construcción"
-                desc="Muestra un overlay 'En construcción' sobre la portada en /tiendas."
-                tone="warning"
-              />
-            </div>
-
-            {store.vacationMode && (
-              <div className="mt-3 space-y-1.5 px-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">
-                  Mensaje para tus clientes
-                </label>
-                <input
-                  type="text"
-                  value={store.vacationMessage ?? ""}
-                  onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
-                  placeholder="Ej: Volvemos el lunes 15"
-                  className={cn(
-                    "w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all",
-                    "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
-                    "focus:ring-2 focus:ring-[var(--data-warning)]/30",
-                  )}
-                />
-              </div>
-            )}
-
-            {underConstruction && (
-              <div className="mt-3 space-y-1.5 px-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">
-                  Mensaje sobre la portada (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={underConstructionMsg}
-                  onChange={(e) => setUnderConstructionMsg(e.target.value)}
-                  onBlur={() => void persistConstruction(underConstruction, underConstructionMsg)}
-                  placeholder="Ej: Catálogo en construcción — abrimos pronto"
-                  maxLength={120}
-                  className={cn(
-                    "w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all",
-                    "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
-                    "focus:ring-2 focus:ring-[var(--data-warning)]/30",
-                  )}
-                />
-                {savingConstruction && (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Guardando…</p>
-                )}
-              </div>
-            )}
-          </SectionCard>
-        </aside>
-      </div>
-
-      {/* ── Action bar inferior — siempre visible al final ───────────── */}
-      <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 px-4 py-3 rounded-2xl border border-[var(--rule-base)] bg-white/95 backdrop-blur shadow-lg">
-        {saved && (
-          <span className="text-sm text-[var(--data-success)] font-semibold flex items-center gap-1">
-            <CheckCircle className="h-4 w-4" /> Guardado
-          </span>
-        )}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-        >
-          {saving ? (
-            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {saving ? "Guardando..." : "Guardar cambios"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────
 // Sub-tab: Productos
@@ -1509,9 +710,9 @@ interface QuickActionsState {
 function HealthGauge({ score }: { score: number }) {
   const c = Math.max(0, Math.min(100, Math.round(score)));
   const tone =
-    c >= 80 ? "text-[var(--data-success)]"
-    : c >= 50 ? "text-[var(--data-warning)]"
-    : "text-[var(--data-error)]";
+    c >= 80 ? "text-[var(--data-success-500)]"
+    : c >= 50 ? "text-[var(--data-warning-500)]"
+    : "text-[var(--data-error-500)]";
   const stroke =
     c >= 80 ? "var(--data-success)"
     : c >= 50 ? "var(--data-warning)"
@@ -1562,9 +763,9 @@ function HealthBreakdownBar({
   total?: number;
 }) {
   const tone =
-    pct >= 80 ? "bg-[var(--data-success)]"
-    : pct >= 50 ? "bg-[var(--data-warning)]"
-    : pct > 0 ? "bg-[var(--data-error)]"
+    pct >= 80 ? "bg-[var(--data-success-500)]"
+    : pct >= 50 ? "bg-[var(--data-warning-500)]"
+    : pct > 0 ? "bg-[var(--data-error-500)]"
     : "bg-[var(--rule-base)]";
   return (
     <div className="space-y-1">
@@ -1774,16 +975,16 @@ function MarketplaceQuickActions({
      Esto evita la saturación cromática de tener fondos rosa/amarillo grandes. */
   const toneStyles: Record<QuickAction["tone"], { bar: string; bg: string; iconBg: string; iconFg: string }> = {
     danger: {
-      bar: "before:bg-[var(--data-error)]",
+      bar: "before:bg-[var(--data-error-500)]",
       bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-      iconBg: "bg-[var(--data-error)]/10",
-      iconFg: "text-[var(--data-error)]",
+      iconBg: "bg-[var(--data-error-500)]/10",
+      iconFg: "text-[var(--data-error-500)]",
     },
     warning: {
-      bar: "before:bg-[var(--data-warning)]",
+      bar: "before:bg-[var(--data-warning-500)]",
       bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-      iconBg: "bg-[var(--data-warning)]/10",
-      iconFg: "text-[var(--data-warning)]",
+      iconBg: "bg-[var(--data-warning-500)]/10",
+      iconFg: "text-[var(--data-warning-500)]",
     },
     info: {
       bar: "before:bg-primary",
@@ -1792,10 +993,10 @@ function MarketplaceQuickActions({
       iconFg: "text-primary",
     },
     success: {
-      bar: "before:bg-[var(--data-success)]",
+      bar: "before:bg-[var(--data-success-500)]",
       bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-      iconBg: "bg-[var(--data-success)]/10",
-      iconFg: "text-[var(--data-success)]",
+      iconBg: "bg-[var(--data-success-500)]/10",
+      iconFg: "text-[var(--data-success-500)]",
     },
   };
 
@@ -1831,10 +1032,10 @@ function MarketplaceQuickActions({
               className={cn(
                 "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
                 healthScore >= 80
-                  ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                  ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                   : healthScore >= 50
-                  ? "bg-[var(--data-warning-50)] text-[var(--data-warning)]"
-                  : "bg-[var(--data-error-50)] text-[var(--data-error)]",
+                  ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
+                  : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
               )}
             >
               {healthScore >= 80 ? "Excelente" : healthScore >= 50 ? "Mejorable" : "Urgente"}
@@ -1898,7 +1099,7 @@ function MarketplaceQuickActions({
         ) : actions.length === 0 ? (
           <div className="text-center py-10">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] mb-3">
-              <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+              <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
             </span>
             <p className="font-display text-base font-bold text-[var(--text-primary)]">Todo en orden</p>
             <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
@@ -1985,10 +1186,10 @@ function CompletenessBadge({ product }: { product: MarketplaceProduct }) {
   if (product.retailPrice <= 0) issues.push("Sin precio");
 
   const tone = score >= 90
-    ? { ring: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle }
+    ? { ring: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: CheckCircle }
     : score >= 60
-    ? { ring: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", icon: AlertCircle }
-    : { ring: "bg-[var(--data-error-100)] text-[var(--data-error)]", icon: AlertCircle };
+    ? { ring: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: AlertCircle }
+    : { ring: "bg-[var(--data-error-100)] text-[var(--data-error-500)]", icon: AlertCircle };
   const Icon = tone.icon;
 
   return (
@@ -2108,7 +1309,10 @@ function ProductosTab() {
     setSyncResult(null);
     setError(null);
     try {
-      const res = await fetch("/api/marketplace/stores/my/sync", { method: "POST" });
+      const res = await fetch("/api/marketplace/stores/my/sync", {
+        method: "POST",
+        headers: csrfHeaders(),
+      });
       if (!res.ok) throw new Error("Error al sincronizar");
       const data = await res.json();
       const d = data.data;
@@ -2126,7 +1330,7 @@ function ProductosTab() {
     async (productId: string, patch: { isActive?: boolean; retailPrice?: number; wholesalePrice?: number }) => {
       const res = await fetch(`/api/marketplace/stores/my/products/${productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error("patch failed");
@@ -2242,14 +1446,14 @@ function ProductosTab() {
       </div>
 
       {syncResult && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl text-sm text-[var(--data-success)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl text-sm text-[var(--data-success-500)]">
           <CheckCircle className="h-4 w-4 shrink-0" />
           {syncResult}
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
@@ -2272,7 +1476,7 @@ function ProductosTab() {
                   isActive
                     ? "bg-primary text-white"
                     : hasIssues && count > 0
-                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:brightness-95"
+                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:brightness-95"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
                 )}
               >
@@ -2311,7 +1515,7 @@ function ProductosTab() {
             <button
               onClick={() => bulkSetActive(true)}
               disabled={bulking}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50"
             >
               <Eye className="h-3.5 w-3.5" /> Publicar
             </button>
@@ -2433,9 +1637,9 @@ function ProductosTab() {
                       <td className="px-4 py-3 text-right">
                         <span className={cn(
                           "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
-                          p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                            : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                          p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                         )}>
                           {p.stock}
                         </span>
@@ -2448,7 +1652,7 @@ function ProductosTab() {
                           className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors min-w-25 justify-center",
                             p.isActive
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"
                               : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
                           )}
                         >
@@ -2479,11 +1683,11 @@ function ProductosTab() {
 // ── Helpers de Órdenes ───────────────────────────────────────────────────────
 
 const ORDER_STAGES: Array<{ id: string; label: string; tone: string; next: string | null }> = [
-  { id: "pendiente",  label: "Pendiente",  tone: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", next: "confirmado" },
+  { id: "pendiente",  label: "Pendiente",  tone: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", next: "confirmado" },
   { id: "confirmado", label: "Confirmado", tone: "bg-blue-100 text-blue-700",                                next: "preparando" },
-  { id: "preparando", label: "Preparando", tone: "bg-[var(--data-info-100)] text-[var(--data-info)]",        next: "en_camino" },
-  { id: "en_camino",  label: "En camino",  tone: "bg-amber-100 text-amber-700",                              next: "entregado" },
-  { id: "entregado",  label: "Entregado",  tone: "bg-[var(--accent-soft)] text-[var(--data-success)]",      next: null },
+  { id: "preparando", label: "Preparando", tone: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",        next: "en_camino" },
+  { id: "en_camino",  label: "En camino",  tone: "bg-amber-100 text-[var(--data-warning-700)]",                              next: "entregado" },
+  { id: "entregado",  label: "Entregado",  tone: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",      next: null },
 ];
 
 const WHATSAPP_TEMPLATES: Array<{ id: string; label: string; build: (o: MarketplaceOrder) => string }> = [
@@ -2631,7 +1835,7 @@ function OrderCard({
           <button
             onClick={onRequestReview}
             title="Pedir reseña al cliente"
-            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--data-warning)] text-white text-xs font-bold hover:brightness-110 transition"
+            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--data-warning-500)] text-white text-xs font-bold hover:brightness-110 transition"
           >
             <Star className="h-3 w-3 fill-white" /> Pedir reseña
           </button>
@@ -2705,7 +1909,11 @@ function WhatsAppPicker({
   );
 }
 
-function OrdenesTab() {
+// DEPRECATED — Quedó como shadow durante el split del módulo. NO se usa
+// en el render (ver OrdenesTabReal arriba). Se mantiene para evitar errores
+// de compilación con helpers (OrderCard, WhatsAppPicker) que aún viven en
+// este archivo. Se eliminará cuando se migren esos helpers también.
+function OrdenesTabShadow_DEPRECATED() {
   const [orders, setOrders]       = useState<MarketplaceOrder[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
@@ -2771,7 +1979,7 @@ function OrdenesTab() {
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: stage.next }),
       });
       if (!res.ok) {
@@ -2810,7 +2018,7 @@ function OrdenesTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => load()} className="ml-auto text-xs underline">Reintentar</button>
@@ -2954,8 +2162,8 @@ function CommissionKpiCard({
 }) {
   const delta = fmtDelta(monthCurr, monthPrev);
   const palette: Record<typeof tone, { ring: string; text: string }> = {
-    warning: { ring: "bg-[var(--data-warning-50)]",  text: "text-[var(--data-warning)]" },
-    success: { ring: "bg-[var(--accent-soft)]",      text: "text-[var(--data-success)]" },
+    warning: { ring: "bg-[var(--data-warning-50)]",  text: "text-[var(--data-warning-500)]" },
+    success: { ring: "bg-[var(--accent-soft)]",      text: "text-[var(--data-success-500)]" },
     info:    { ring: "bg-blue-50",                   text: "text-blue-700" },
   };
   const p = palette[tone];
@@ -2976,9 +2184,9 @@ function CommissionKpiCard({
           className={cn(
             "px-1.5 py-0.5 rounded-full font-bold text-[length:var(--ts-2xs)]",
             delta.tone === "up"
-              ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
               : delta.tone === "down"
-              ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
+              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
               : "bg-gray-100 text-[var(--text-secondary)]",
           )}
           title={`vs mes anterior (${fmtMoney(monthPrev)})`}
@@ -3038,7 +2246,7 @@ function ComisionesTab() {
     try {
       const res = await fetch("/api/commissions/ledger", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: [entryId], status: "pagado" }),
       });
       if (!res.ok) throw new Error();
@@ -3066,7 +2274,7 @@ function ComisionesTab() {
     try {
       const res = await fetch("/api/commissions/ledger", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: settledIds, status: "pagado" }),
       });
       if (!res.ok) throw new Error();
@@ -3085,7 +2293,7 @@ function ComisionesTab() {
   return (
     <div className="space-y-5">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
@@ -3158,7 +2366,7 @@ function ComisionesTab() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-extrabold text-[var(--data-success)] whitespace-nowrap">
+                    <span className="text-sm font-extrabold text-[var(--data-success-500)] whitespace-nowrap">
                       {fmtMoney(Number(e.amount))}
                     </span>
                   </li>
@@ -3175,8 +2383,8 @@ function ComisionesTab() {
 
       {/* C6: toast de nuevos pagos */}
       {newlyPaid.length > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border border-[var(--data-success)]/40 bg-[var(--accent-soft)]">
-          <CheckCircle className="h-5 w-5 text-[var(--data-success)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-[var(--data-success-500)]/40 bg-[var(--accent-soft)]">
+          <CheckCircle className="h-5 w-5 text-[var(--data-success-500)] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">
               {newlyPaid.length === 1 ? "1 lote pagado nuevo" : `${newlyPaid.length} lotes pagados nuevos`}
@@ -3277,7 +2485,7 @@ function ComisionesTab() {
                           <button
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
                             title="Marcar como pagado"
                           >
                             <CheckCircle className="h-3 w-3" />
@@ -3448,8 +2656,8 @@ function CouponMiniBar({ pct, max }: { pct: number; max?: number | null }) {
     );
   }
   const tone =
-    pct >= 90 ? "bg-[var(--data-error)]"
-    : pct >= 60 ? "bg-[var(--data-warning)]"
+    pct >= 90 ? "bg-[var(--data-error-500)]"
+    : pct >= 60 ? "bg-[var(--data-warning-500)]"
     : "bg-primary";
   return (
     <div className="w-full">
@@ -3494,7 +2702,7 @@ function CuponesTab() {
     try {
       const res = await fetch("/api/marketplace/coupons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           code: form.code,
           description: form.description,
@@ -3517,7 +2725,7 @@ function CuponesTab() {
   const toggleActive = async (id: string, active: boolean) => {
     await fetch(`/api/marketplace/coupons/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !active }),
     });
     fetchCoupons();
@@ -3525,7 +2733,10 @@ function CuponesTab() {
 
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Eliminar este cupón?")) return;
-    await fetch(`/api/marketplace/coupons/${id}`, { method: "DELETE" });
+    await fetch(`/api/marketplace/coupons/${id}`, {
+      method: "DELETE",
+      headers: csrfHeaders(),
+    });
     fetchCoupons();
   };
 
@@ -3579,14 +2790,14 @@ function CuponesTab() {
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Descontado total</p>
-            <p className="text-xl font-extrabold text-[var(--data-warning)] mt-1">
+            <p className="text-xl font-extrabold text-[var(--data-warning-500)] mt-1">
               S/ {aggregate.discounted.toFixed(2)}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">estimado por usos × valor</p>
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Ventas atribuidas</p>
-            <p className="text-xl font-extrabold text-[var(--data-success)] mt-1">
+            <p className="text-xl font-extrabold text-[var(--data-success-500)] mt-1">
               S/ {aggregate.revenue.toFixed(2)}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">aprox. ticket promedio</p>
@@ -3747,7 +2958,7 @@ function CuponesTab() {
                         className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-semibold",
                           c.active && !expired
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                             : "bg-gray-200 text-[var(--text-secondary)]",
                         )}
                       >
@@ -3772,7 +2983,7 @@ function CuponesTab() {
                       {c.active ? (
                         <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />
                       ) : (
-                        <Eye className="h-4 w-4 text-[var(--data-success)]" />
+                        <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
                       )}
                     </button>
                     <button
@@ -3780,7 +2991,7 @@ function CuponesTab() {
                       title="Eliminar"
                       className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition"
                     >
-                      <X className="h-4 w-4 text-[var(--data-error)]" />
+                      <X className="h-4 w-4 text-[var(--data-error-500)]" />
                     </button>
                   </div>
                 </div>
@@ -3801,7 +3012,7 @@ function CuponesTab() {
                     <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
                       Descontado
                     </p>
-                    <p className="text-sm font-extrabold text-[var(--data-warning)]">
+                    <p className="text-sm font-extrabold text-[var(--data-warning-500)]">
                       S/ {m.discountedAmount.toFixed(2)}
                     </p>
                   </div>
@@ -3809,7 +3020,7 @@ function CuponesTab() {
                     <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
                       Ventas atribuidas
                     </p>
-                    <p className="text-sm font-extrabold text-[var(--data-success)]">
+                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">
                       S/ {m.attributedRevenue.toFixed(2)}
                     </p>
                   </div>
@@ -3823,7 +3034,7 @@ function CuponesTab() {
                       <p
                         className={cn(
                           "text-sm font-extrabold",
-                          m.roiPct >= 100 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]",
+                          m.roiPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]",
                         )}
                       >
                         {m.roiPct >= 0 ? "+" : ""}
@@ -3866,9 +3077,9 @@ interface LoyaltyData {
 }
 
 const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
-  bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "0 - 499" },
+  bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "0 - 499" },
   plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",   minPoints: "500 - 999" },
-  oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
+  oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "1000+" },
 };
 
 // ── Helpers Fidelidad ───────────────────────────────────────────────────────
@@ -4007,7 +3218,7 @@ function FidelidadTab() {
     try {
       const res = await fetch("/api/marketplace/loyalty", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action: "earn",
           phone: data.phone,
@@ -4044,7 +3255,7 @@ function FidelidadTab() {
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">tu tienda</span>
           </div>
           {rulesSaved && (
-            <span className="text-xs text-[var(--data-success)] font-semibold flex items-center gap-1">
+            <span className="text-xs text-[var(--data-success-500)] font-semibold flex items-center gap-1">
               <CheckCircle className="h-3.5 w-3.5" /> Guardado
             </span>
           )}
@@ -4109,7 +3320,7 @@ function FidelidadTab() {
       {/* F3: Top clientes frecuentes */}
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Star className="h-4 w-4 text-[var(--data-warning)]" />
+          <Star className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Top 10 clientes frecuentes</CardTitle>
         </div>
         {topLoading ? (
@@ -4142,7 +3353,7 @@ function FidelidadTab() {
                     <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.phone}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-[var(--data-success)]">
+                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">
                       S/ {c.totalSpent.toFixed(2)}
                     </p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{c.points} pts</p>
@@ -4162,7 +3373,7 @@ function FidelidadTab() {
       {/* F5: Recompensas canjeables */}
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Gift className="h-4 w-4 text-[var(--data-warning)]" />
+          <Gift className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Recompensas canjeables</CardTitle>
           <span className="text-xs text-[var(--text-secondary)]">
             · {rewards.filter((r) => r.active).length} activa(s)
@@ -4184,7 +3395,7 @@ function FidelidadTab() {
                     : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-60",
                 )}
               >
-                <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] flex items-center justify-center shrink-0">
+                <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] flex items-center justify-center shrink-0">
                   <Gift className="h-4 w-4" />
                 </span>
                 <div className="flex-1 min-w-0">
@@ -4206,7 +3417,7 @@ function FidelidadTab() {
                   className="p-1.5 rounded-lg hover:bg-gray-100 transition shrink-0"
                 >
                   {r.active ? (
-                    <Eye className="h-4 w-4 text-[var(--data-success)]" />
+                    <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
                   ) : (
                     <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />
                   )}
@@ -4216,7 +3427,7 @@ function FidelidadTab() {
                   title="Eliminar"
                   className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition shrink-0"
                 >
-                  <X className="h-4 w-4 text-[var(--data-error)]" />
+                  <X className="h-4 w-4 text-[var(--data-error-500)]" />
                 </button>
               </div>
             ))
@@ -4330,7 +3541,7 @@ function FidelidadTab() {
                 {data.transactions.map((tx) => (
                   <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
                     <div>
-                      <span className={tx.type === "earn" ? "text-[var(--data-success)] font-semibold" : "text-[var(--data-error)] font-semibold"}>
+                      <span className={tx.type === "earn" ? "text-[var(--data-success-500)] font-semibold" : "text-[var(--data-error-500)] font-semibold"}>
                         {tx.points > 0 ? "+" : ""}{tx.points} pts
                       </span>
                       <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
@@ -4365,9 +3576,9 @@ function FidelidadTab() {
 }
 
 const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 
 // ── Helpers Reseñas ──────────────────────────────────────────────────────────
@@ -4447,7 +3658,7 @@ function ResenasTab() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
@@ -4463,7 +3674,7 @@ function ResenasTab() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ adminReply: replyText.trim() }),
       });
       if (res.ok) {
@@ -4509,18 +3720,18 @@ function ResenasTab() {
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning)] flex items-center justify-center gap-1">
-            <Star className="h-5 w-5 fill-[var(--data-warning)]" />
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] flex items-center justify-center gap-1">
+            <Star className="h-5 w-5 fill-[var(--data-warning-500)]" />
             {avgRating > 0 ? avgRating.toFixed(1) : "—"}
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Rating promedio</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-error)]">{unrepliedCount}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{unrepliedCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Sin responder</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning)]">{pendingCount}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{pendingCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Por moderar</p>
         </div>
       </div>
@@ -4536,15 +3747,15 @@ function ResenasTab() {
               return (
                 <div key={star} className="flex items-center gap-2 text-xs">
                   <span className="flex items-center gap-0.5 w-12 text-[var(--text-secondary)] font-semibold">
-                    {star} <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
+                    {star} <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                   </span>
                   <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
-                        star >= 4 ? "bg-[var(--data-success)]"
-                        : star === 3 ? "bg-[var(--data-warning)]"
-                        : "bg-[var(--data-error)]",
+                        star >= 4 ? "bg-[var(--data-success-500)]"
+                        : star === 3 ? "bg-[var(--data-warning-500)]"
+                        : "bg-[var(--data-error-500)]",
                       )}
                       style={{ width: `${pct}%` }}
                     />
@@ -4580,7 +3791,7 @@ function ResenasTab() {
                   filter === f
                     ? "bg-primary text-white"
                     : isWarning
-                    ? "bg-[var(--data-error-50)] text-[var(--data-error)] hover:brightness-95"
+                    ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:brightness-95"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
                 )}
               >
@@ -4603,7 +3814,7 @@ function ResenasTab() {
               )}
             >
               {star}
-              <Star className={cn("h-3 w-3", filter === String(star) ? "fill-white" : "fill-[var(--data-warning)] text-[var(--data-warning)]")} />
+              <Star className={cn("h-3 w-3", filter === String(star) ? "fill-white" : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]")} />
               <span className="ml-0.5 opacity-70">({ratingCount(star)})</span>
             </button>
           ))}
@@ -4637,7 +3848,7 @@ function ResenasTab() {
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
-                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-gray-200")}
+                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-gray-200")}
                       />
                     ))}
                     <span className="text-xs text-[var(--text-tertiary)] ml-1">
@@ -4651,7 +3862,7 @@ function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "approved")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -4661,7 +3872,7 @@ function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "rejected")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="h-4 w-4" />
@@ -5109,7 +4320,7 @@ function OrdenTab() {
             {rows.length} {rows.length === 1 ? "categoría" : "categorías"}
           </span>
           {dirty && (
-            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-[var(--ts-xs)] font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-[var(--ts-xs)] font-bold">
               Cambios sin guardar
             </span>
           )}
@@ -5139,7 +4350,7 @@ function OrdenTab() {
 
       {/* Banner success */}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-success-50)] border border-[var(--data-success-500)] text-[var(--data-success)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-success-50)] border border-[var(--data-success-500)] text-[var(--data-success-500)]">
           <CheckCircle className="h-4 w-4 shrink-0" />
           <span className="text-[var(--ts-sm)] font-medium">{success}</span>
         </div>
@@ -5147,7 +4358,7 @@ function OrdenTab() {
 
       {/* Banner error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="text-[var(--ts-sm)] font-medium">{error}</span>
         </div>
@@ -5421,7 +4632,7 @@ function OrdenTab() {
 
                                   {/* Inactivo overlay badge */}
                                   {!prod.isActive && (
-                                    <span className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-md text-[var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-warning)] text-[var(--surface-canvas)]">
+                                    <span className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-md text-[var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-warning-500)] text-[var(--surface-canvas)]">
                                       Inactivo
                                     </span>
                                   )}
@@ -5581,6 +4792,9 @@ export default function MarketplaceModule() {
       >
         {tab === "resumen"     && (
           <>
+            <Suspense fallback={<div className="h-72 rounded-3xl bg-[var(--surface-sunken)] animate-pulse mb-5" />}>
+              <SalesFlowHero onNavigate={(id) => setTab(id)} />
+            </Suspense>
             <MarketplaceQuickActions onNavigate={(id) => setTab(id)} />
             <Suspense fallback={<Spinner />}>
               <MarketplaceDashboardTab kpis={kpis} loading={kpisLoading} />
@@ -5589,7 +4803,7 @@ export default function MarketplaceModule() {
         )}
         {tab === "tienda"      && <TiendaTab />}
         {tab === "productos"   && <ProductosTab />}
-        {tab === "ordenes"     && <OrdenesTab />}
+        {tab === "ordenes"     && <OrdenesTabReal />}
         {tab === "comisiones"  && <ComisionesTab />}
         {tab === "precios"     && (
           <Suspense fallback={<Spinner />}>
