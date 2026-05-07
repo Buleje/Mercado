@@ -497,7 +497,17 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data.items) && data.items.length > 0) {
-          dispatch({ type: "HYDRATE", payload: data.items });
+          // FIX 2026-05-07: filtrar items que NO son del tenant actual.
+          // El endpoint /api/cart/[phone] guarda carrito por phone (no por
+          // tenant), así que puede restaurar items del tenant equivocado.
+          // Si validProductIdsRef está cargado, solo aceptamos IDs del tenant.
+          const valid = validProductIdsRef.current;
+          const filtered = valid
+            ? data.items.filter((it: { id?: number }) => typeof it.id === "number" && valid.has(it.id))
+            : data.items;
+          if (filtered.length > 0) {
+            dispatch({ type: "HYDRATE", payload: filtered });
+          }
         }
       })
       .catch(() => { /* silent */ });
