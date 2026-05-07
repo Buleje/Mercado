@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getSessionPayload, SESSION } from "@/lib/session";
 import {
   getOrCreateStripeCustomer,
   createCheckoutSession,
@@ -19,6 +20,17 @@ import type { PlanId } from "@/lib/plans";
 export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "STRICT", "onboard-checkout");
   if (rl) return rl;
+
+  // F3: requerir sesión de onboarding — sin esto cualquiera con tenantSlug inicia
+  // un Stripe Checkout ajeno abusando del período de activación de 30 min.
+  const sessionToken = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  const adminSession = sessionToken ? await getSessionPayload(sessionToken) : null;
+  if (!adminSession) {
+    return NextResponse.json(
+      { error: "Auth requerida — completá signup primero" },
+      { status: 401 }
+    );
+  }
 
   let body: { tenantSlug?: string; plan?: string };
   try { body = await req.json(); } catch { body = {}; }
@@ -41,9 +53,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tenant = await prisma.tenant.findUnique({ where: { slug } });
+  // F3: tenant debe coincidir con la sesión activa — evita que un admin de tenant A
+  // inicie checkout de tenant B conociendo su slug.
+  const tenant = await prisma.tenant.findFirst({
+    where: { slug, id: adminSession.tenantId },
+  });
   if (!tenant) {
-    return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Tenant no coincide con sesión" },
+      { status: 403 }
+    );
   }
 
   // Security: only allow checkout for tenants created in the last 30 minutes
