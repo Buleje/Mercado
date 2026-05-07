@@ -56,8 +56,20 @@ export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
     // Período vencido sin renovación — caer a trial expirado.
   }
   // 2. Plan pagado vía Mercado Pago.
+  // F5-FIX: exigir también stripeCurrentPeriodEnd > now para MP, igual que Stripe.
+  // El campo stripeCurrentPeriodEnd es el único campo de fecha de período que existe
+  // en el schema para ambos proveedores (el webhook MP lo actualiza en el mismo campo).
+  // Sin este guard, si mp-subscribe guarda mpSubscriptionId antes de que MP confirme
+  // el cobro y el tenant tiene plan !== "free" por otra razón, clasificaría como paid.
+  // Con el guard: solo paid si el período no ha vencido.
   if (t.mpSubscriptionId && t.plan !== "free") {
-    return { kind: "paid", provider: "mp" };
+    const mpPeriodEnd = t.stripeCurrentPeriodEnd
+      ? new Date(t.stripeCurrentPeriodEnd).getTime()
+      : 0;
+    if (mpPeriodEnd > now) {
+      return { kind: "paid", provider: "mp" };
+    }
+    // Período MP vencido sin renovación confirmada — caer a trial check.
   }
   // 3. Plan free + trial vigente.
   if (t.trialEndsAt) {

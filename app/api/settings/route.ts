@@ -40,7 +40,12 @@ export async function GET(req: NextRequest) {
       sunatApiKey?: string;
       transferAccountNum?: string;
     };
-    return NextResponse.json(publicSettings, {
+    // [SECURITY F1] Agregar indicador booleano — el cliente sabe si hay pw
+    // sin recibir el valor real. "admin2024" es el default de fábrica.
+    const adminPasswordSet = Boolean(
+      _pw && _pw !== "admin2024" && _pw !== ""
+    );
+    return NextResponse.json({ ...publicSettings, adminPasswordSet }, {
       headers: {
         "Cache-Control": "private, no-cache, max-age=0",
       },

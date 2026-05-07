@@ -229,7 +229,7 @@ async function processMPPaymentApproved(opts: {
   // Buscar tenant por slug (external_reference siempre es el slug)
   const tenant = await prisma.tenant.findFirst({
     where: { slug: tenantSlug },
-    select: { id: true, slug: true, plan: true },
+    select: { id: true, slug: true, plan: true, stripeCurrentPeriodEnd: true },
   });
 
   if (!tenant) {
@@ -262,7 +262,15 @@ async function processMPPaymentApproved(opts: {
     return;
   }
 
-  const periodEnd = new Date(Date.now() + THIRTY_DAYS_MS);
+  // F2-FIX: extender desde el último período conocido, no desde Date.now().
+  // Si el webhook llega tarde y el período anterior aún está vigente, extendemos
+  // desde ese punto (evita rebobinar el reloj). Si ya venció, partimos desde now.
+  const lastPeriodEnd = tenant.stripeCurrentPeriodEnd
+    ? new Date(tenant.stripeCurrentPeriodEnd)
+    : null;
+  const baseDate =
+    lastPeriodEnd && lastPeriodEnd.getTime() > Date.now() ? lastPeriodEnd : new Date();
+  const periodEnd = new Date(baseDate.getTime() + THIRTY_DAYS_MS);
 
   await prisma.tenant.update({
     where: { id: tenant.id },
@@ -286,7 +294,7 @@ async function processMPPaymentApproved(opts: {
         tenantId: tenantSlug,
       },
     })
-    .catch(() => {});
+    .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
 
   logger.info("[MP Webhook] Plan actualizado", {
     tenantSlug,
@@ -390,6 +398,7 @@ async function handleSubscriptionNotification(opts: {
       slug: true,
       plan: true,
       mpSubscriptionId: true,
+      stripeCurrentPeriodEnd: true,
     },
   });
 
@@ -404,7 +413,7 @@ async function handleSubscriptionNotification(opts: {
         where: { stripeId: idempotencyKey },
         data: { processedAt: new Date(), lastError: "tenant_not_found" },
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
     return NextResponse.json({ received: true });
   }
 
@@ -436,7 +445,16 @@ async function handleSubscriptionNotification(opts: {
 
   // ── subscription_authorized_payment: cobro mensual exitoso ──
   if (type === "subscription_authorized_payment" && authorizedPaymentStatus === "approved") {
-    const periodEnd = new Date(Date.now() + THIRTY_DAYS_MS);
+    // F2-FIX: extender desde último período vigente para evitar rebobinar reloj
+    // en caso de webhook tardío o duplicado que pase la ventana de idempotencia.
+    const lastPeriodEndSub = tenant.stripeCurrentPeriodEnd
+      ? new Date(tenant.stripeCurrentPeriodEnd)
+      : null;
+    const baseDateSub =
+      lastPeriodEndSub && lastPeriodEndSub.getTime() > Date.now()
+        ? lastPeriodEndSub
+        : new Date();
+    const periodEnd = new Date(baseDateSub.getTime() + THIRTY_DAYS_MS);
 
     await prisma.tenant.update({
       where: { id: tenant.id },
@@ -464,7 +482,7 @@ async function handleSubscriptionNotification(opts: {
           tenantId: tenant.slug,
         },
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
   }
 
   // ── Marcar processedAt (lock ya creado arriba) ─────────────
@@ -476,7 +494,7 @@ async function handleSubscriptionNotification(opts: {
         eventType: `mp.${type}`,
       },
     })
-    .catch(() => {});
+    .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
 
   return NextResponse.json({ received: true });
 }
@@ -506,7 +524,7 @@ async function resolvePlanFromPaymentId(paymentId: string): Promise<PlanId | nul
           where: { id: pending.id },
           data: { status: "approved", resolvedAt: new Date() },
         })
-        .catch(() => {});
+        .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
 
       return pending.plan as PlanId;
     }

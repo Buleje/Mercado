@@ -18,7 +18,7 @@ export async function GET(
     }
 
     // F3: Strip tenantId del session — no exponer IDs internos en respuesta pública
-    const { session, ...restResult } = result as {
+    const { session, ...restResult } = result as unknown as {
       session: Record<string, unknown>;
       [key: string]: unknown;
     };

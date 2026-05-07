@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
+import { LiveSessionsDB, type LiveSession } from "@/lib/db/live-sessions.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -46,9 +46,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         data: {
-          active: stripTenantId(active as Record<string, unknown>[]),
-          upcoming: stripTenantId(upcoming as Record<string, unknown>[]),
-          past: stripTenantId(past as Record<string, unknown>[]),
+          active: stripTenantId(active as unknown as Record<string, unknown>[]),
+          upcoming: stripTenantId(upcoming as unknown as Record<string, unknown>[]),
+          past: stripTenantId(past as unknown as Record<string, unknown>[]),
         },
       },
       {

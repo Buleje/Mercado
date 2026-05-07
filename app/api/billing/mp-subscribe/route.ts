@@ -105,6 +105,16 @@ export async function POST(req: NextRequest) {
 
   // ── Guardar preapprovalId en Tenant ─────────────────────
   // El plan se actualiza cuando MP confirma el primer pago via webhook.
+  // F5-NOTE: guardamos solo el preapprovalId aquí (NO el plan, NO stripeCurrentPeriodEnd).
+  // trial-status.ts exige plan !== "free" && stripeCurrentPeriodEnd > now para
+  // clasificar como "paid" — ambas condiciones son falsas hasta que el webhook
+  // subscription_authorized_payment llegue. Intencional: el tenant no obtiene
+  // acceso hasta que MP confirme el cobro.
+  //
+  // FIXME: si se agrega un campo mpPendingSubscriptionId al schema Tenant,
+  // preferir ese campo aquí y solo mover a mpSubscriptionId desde el webhook
+  // (eliminando la posibilidad de que un preapprovalId huérfano quede en DB).
+  // Tarea: crear migration + actualizar handleSubscriptionNotification.
   await prisma.tenant.update({
     where: { id: tenant.id },
     data: { mpSubscriptionId: result.preapprovalId },
@@ -128,7 +138,7 @@ export async function POST(req: NextRequest) {
         tenantId: tenant.slug,
       },
     })
-    .catch(() => {});
+    .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
 
   return NextResponse.json({
     init_point: result.init_point,

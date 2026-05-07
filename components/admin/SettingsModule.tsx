@@ -496,7 +496,9 @@ export default function SettingsModule({
         if (d.yapePhone) setYapePhone(d.yapePhone);
         if (d.cashEnabled !== undefined) setCashEnabled(d.cashEnabled);
         if (Array.isArray(d.navLinks) && d.navLinks.length > 0) setNavLinks(d.navLinks);
-        if (d.adminPassword) setStoredAdminPw(d.adminPassword);
+        // [SECURITY F1] adminPassword nunca viaja al cliente. El GET retorna
+        // adminPasswordSet: boolean. Usamos "••••••" como indicador visual.
+        if (d.adminPasswordSet !== undefined) setStoredAdminPw(d.adminPasswordSet ? "••••••" : "admin2024");
         if (d.maintenanceMode !== undefined) setMaintenanceMode(d.maintenanceMode);
         if (d.maintenanceMessage) setMaintenanceMsg(d.maintenanceMessage);
         if (d.adminBypassLogin !== undefined) setBypassLogin(d.adminBypassLogin);
@@ -1066,7 +1068,7 @@ export default function SettingsModule({
           setMaintenanceMode(v);
           const msg = v && !maintenanceMsg ? "Estamos de vacaciones. ¡Volvemos pronto!" : maintenanceMsg;
           if (v && !maintenanceMsg) setMaintenanceMsg(msg);
-          await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ maintenanceMode: v, maintenanceMessage: msg }) });
+          await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ maintenanceMode: v, maintenanceMessage: msg }) });
         }} label={maintenanceMode ? "Modo activo — tienda bloqueada" : "Desactivado"} desc="Los clientes ven el catálogo pero no pueden comprar" />
         {maintenanceMode && (
           <div className="space-y-2">
@@ -1084,7 +1086,7 @@ export default function SettingsModule({
       <SectionCard title="Configuración de acceso">
         <Toggle enabled={bypassLogin} onChange={async v => {
           setBypassLogin(v);
-          await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ adminBypassLogin: v }) });
+          await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ adminBypassLogin: v }) });
         }} label="Acceso sin login" desc="Permite entrar al panel sin credenciales" danger />
         {bypassLogin && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
@@ -1732,9 +1734,10 @@ export default function SettingsModule({
                 <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100">Cancelar</button>
                 {restoreFile && <button onClick={async () => {
                   if (!restoreFile) return; setRestoring(true); setRestoreError(null);
-                  try { const text = await restoreFile.text(); const res = await fetch("/api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
-                    if (!res.ok) throw new Error(await res.text()); setRestoreSuccess(true); setTimeout(() => window.location.reload(), 2000);
-                  } catch (err: unknown) { setRestoreError(err instanceof Error ? err.message : "Error"); setRestoring(false); }
+                  // [SECURITY F3] /api/restore aún no implementado — bloqueado hasta
+                  // crear endpoint con Zod safeParse + requireAdmin(["admin"]) + dry-run mode.
+                  setRestoreError("Función de restauración aún no disponible. Contacta soporte para asistencia manual.");
+                  setRestoring(false);
                 }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}

@@ -35,6 +35,7 @@ export async function requireActiveSubscription(
         plan: true,
         trialEndsAt: true,
         stripeSubscriptionId: true,
+        stripeCurrentPeriodEnd: true,
         mpSubscriptionId: true,
       },
     });

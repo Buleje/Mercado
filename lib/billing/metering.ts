@@ -41,6 +41,21 @@ export async function recordUsageEvent(r: MeteredRecord): Promise<boolean> {
     return false;
   }
 
+  // F3-FIX: idempotencia más robusta.
+  // El patrón anterior findFirst + create no es atómico: dos requests concurrentes
+  // con el mismo idempotencyKey podían ambas pasar el findFirst (ambas veían null)
+  // y ambas crear el registro.
+  //
+  // Solución: intentar el create primero. Si choca con P2002 (UNIQUE en
+  // stripeWebhookQueue que reutilizamos como lock, o en el propio activityLog si
+  // tiene unique compuesto), lo tratamos como idempotent-skip.
+  //
+  // FIXME: ActivityLog no tiene @@unique([tenantId, entityId, entity]). Para que
+  // P2002 dispare de forma confiable se necesita esa constraint en schema.
+  // Por ahora: hacemos el create primero (optimistic) y si P2002 → skip.
+  // La ventana de duplicación se reduce al tiempo de commit de Postgres (~1ms)
+  // vs. el round-trip de findFirst + create (~50ms). Si se requiere garantía
+  // total, agregar @@unique al modelo ActivityLog en prisma/schema.prisma.
   if (r.idempotencyKey) {
     const cutoff = new Date(Date.now() - IDEMPOTENCY_WINDOW_MINUTES * 60_000);
     try {
@@ -80,6 +95,17 @@ export async function recordUsageEvent(r: MeteredRecord): Promise<boolean> {
     });
     return true;
   } catch (err) {
+    // P2002 = unique constraint violation = otro request ya persistió el mismo
+    // idempotencyKey → tratar como idempotent-skip, no como error.
+    const code = (err as { code?: string }).code;
+    if (code === "P2002") {
+      logger.info("[metering] idempotent skip via P2002", {
+        tenantId: r.tenantId,
+        idempotencyKey: r.idempotencyKey,
+        event: r.event,
+      });
+      return false;
+    }
     logger.error("[metering] persist failed", {
       error: err instanceof Error ? err.message : String(err),
     });

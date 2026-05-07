@@ -279,7 +279,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       break;
     }
 
-    // ── Invoice payment failed → log + notify tenant ───
+    // ── Invoice payment failed → log + suspend after 3 attempts ───
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       const subDetails2 = invoice.parent?.subscription_details;
@@ -287,20 +287,58 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       const subId = typeof subRef2 === "string" ? subRef2 : subRef2?.id;
       if (!subId) break;
 
+      // F4-FIX: leer attempt_count del invoice. Stripe envía este evento en cada
+      // reintento de cobro (1, 2, 3). Tras el 3er intento fallido (smart retries
+      // agotados) suspendemos el tenant proactivamente — no esperamos a que llegue
+      // customer.subscription.deleted (puede tardar días o no llegar si la config
+      // de Stripe tiene un grace period largo).
+      const attemptCount = (invoice as { attempt_count?: number }).attempt_count ?? 0;
+
       const failedTenant = await prisma.tenant.findFirst({
         where: { stripeSubscriptionId: subId },
         select: { id: true, slug: true, plan: true },
       });
 
-      logger.warn("[Stripe] Payment failed for subscription", { subId, tenant: failedTenant?.slug });
+      logger.warn("[Stripe] Payment failed for subscription", {
+        subId,
+        tenant: failedTenant?.slug,
+        attemptCount,
+      });
 
       if (failedTenant) {
+        if (attemptCount >= 3) {
+          // Smart retries agotados → suspender tenant
+          await prisma.tenant.update({
+            where: { id: failedTenant.id },
+            data: { active: false },
+          });
+          logger.error("[Stripe] Tenant suspendido por pagos fallidos reiterados", {
+            tenantSlug: failedTenant.slug,
+            subId,
+            attemptCount,
+          });
+          // Notificacion al tenant (fire-and-forget)
+          prisma.notification
+            .create({
+              data: {
+                tenantId: failedTenant.id,
+                type: "PAGO_FALLIDO_SUSPENDIDO",
+                severity: "HIGH",
+                title: "Tu suscripción fue suspendida",
+                body: `Tuvimos ${attemptCount} intentos fallidos de cobro. Actualiza tu método de pago en la sección Plan para reactivar tu cuenta.`,
+                actionUrl: "/admin?tab=plan",
+                actionLabel: "Actualizar método de pago",
+              },
+            })
+            .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
+        }
+
         await prisma.activityLog.create({
           data: {
             action: "payment_failed",
             entity: "tenant",
             entityId: failedTenant.slug,
-            detail: `Pago fallido para suscripción ${subId}. Stripe reintentará automáticamente.`,
+            detail: `Pago fallido (intento ${attemptCount}) para suscripción ${subId}.${attemptCount >= 3 ? " Tenant suspendido — retries agotados." : " Stripe reintentará automáticamente."}`,
             user: "stripe-webhook",
             tenantId: failedTenant.slug,
           },

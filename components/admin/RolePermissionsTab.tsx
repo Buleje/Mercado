@@ -76,11 +76,16 @@ export default function RolePermissionsTab() {
     setSaving(true);
     setSaveError(null);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ rolePermissions: perms }),
       });
+      // [SECURITY F4] Verificar res.ok antes de marcar como guardado.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Error al guardar permisos");
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
