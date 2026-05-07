@@ -43,18 +43,23 @@ export async function GET(req: NextRequest) {
     // Demanda últimos 365 días
     const last365 = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
     const productIds = active.map((p) => p.id);
+    // SECURITY: tenantId nested en order/sale para evitar cross-tenant leak.
+    // OrderItem/SaleItem no tienen tenantId propio — el guard real es el filtro
+    // anidado por la entidad padre (Order, Sale) que sí lo tiene.
     const [orderItems, saleItems] = await Promise.all([
+      // eslint-disable-next-line no-restricted-properties -- aggregate read scoped: order.tenantId guard cierra cross-tenant + filtro por productIds del tenant.
       prisma.orderItem.findMany({
         where: {
           productId: { in: productIds },
-          order: { createdAt: { gte: last365 }, status: { not: "cancelado" as never } },
+          order: { tenantId, createdAt: { gte: last365 }, status: { not: "cancelado" as never } },
         },
         select: { productId: true, quantity: true },
       }),
+      // eslint-disable-next-line no-restricted-properties -- aggregate read scoped: sale.tenantId guard cierra cross-tenant + filtro por productIds del tenant.
       prisma.saleItem.findMany({
         where: {
           productId: { in: productIds },
-          sale: { createdAt: { gte: last365 } },
+          sale: { tenantId, createdAt: { gte: last365 } },
         },
         select: { productId: true, quantity: true },
       }),

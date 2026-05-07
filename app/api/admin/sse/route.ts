@@ -30,45 +30,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Tenant capacity exceeded" }, { status: 503 });
   }
 
+  // SSE via TransformStream + writer (Next 16 + undici compat).
+  // Patrón anterior usaba ReadableStream({ start(controller) }) + controller.enqueue
+  // desde setInterval/subscriber, lo que disparaba en Next 16:
+  //   TypeError: controller[kState].transformAlgorithm is not a function
+  // El writer es async-safe y maneja correctamente el lifecycle del stream.
   const encoder = new TextEncoder();
-  let unsubscribe: (() => void) | null = null;
+  const stream = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = stream.writable.getWriter();
+  let closed = false;
 
-  const stream = new ReadableStream({
-    start(controller) {
-      const send = (data: string) => {
-        try {
-          controller.enqueue(encoder.encode(data));
-        } catch {
-          // client disconnected — will be cleaned up on abort
-        }
-      };
+  const send = (data: string) => {
+    if (closed) return;
+    writer.write(encoder.encode(data)).catch(() => {
+      closed = true;
+    });
+  };
 
-      unsubscribe = subscribeAdminSSE(auth.tenantId, send);
+  // Confirm connection
+  send(": connected\n\n");
 
-      // Confirm connection
-      controller.enqueue(encoder.encode(`: connected\n\n`));
+  const unsubscribe = subscribeAdminSSE(auth.tenantId, send);
 
-      // Keep-alive comment every 20s so proxies don't kill idle connections
-      const ping = setInterval(() => {
-        try {
-          controller.enqueue(encoder.encode(`: ping\n\n`));
-        } catch {
-          clearInterval(ping);
-        }
-      }, 20_000);
+  // Keep-alive every 20s — los proxies suelen matar conexiones idle a los 30s.
+  const ping = setInterval(() => send(": ping\n\n"), 20_000);
 
-      req.signal.addEventListener("abort", () => {
-        clearInterval(ping);
-        unsubscribe?.();
-        try { controller.close(); } catch { /* already closed */ }
-      });
-    },
-    cancel() {
-      unsubscribe?.();
-    },
-  });
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    clearInterval(ping);
+    unsubscribe?.();
+    writer.close().catch((err) => {
+      // Stream ya cerrado por el cliente — esperado en abort/disconnect.
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console -- dev-only diagnostic
+        console.debug("[admin/sse] writer close (stream already terminated)", String(err));
+      }
+    });
+  };
 
-  return new Response(stream, {
+  req.signal.addEventListener("abort", cleanup);
+
+  return new Response(stream.readable, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",

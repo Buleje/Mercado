@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withDbRetry } from "@/lib/db-retry";
-import { prisma } from "@/lib/prisma";
+import { DashboardDB } from "@/lib/db/dashboard.db";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     const cacheKey = `dashboard:${tid}`;
 
     const payload = await getOrSet(cacheKey, DASHBOARD_TTL_SEC, async () => {
+      // Reads centralizados en lib/db/dashboard.db.ts (regla #1 — sin prisma directo en routes).
       const [
         rawProducts,
         rawOrders,
@@ -29,134 +30,7 @@ export async function GET(req: NextRequest) {
         rawPayables,
         rawSuppliers,
         rawReviews,
-      ] = await withDbRetry(() =>
-        Promise.all([
-          // Products — only fields used by the dashboard (stock projection, category charts, cost calc)
-          prisma.product.findMany({
-            where: { tenantId: tid, deletedAt: null },
-            select: {
-              id: true, name: true, category: true,
-              price: true, costPrice: true,
-              image: true, unit: true,
-              stock: true, stockMin: true, stockMax: true,
-              active: true,
-            },
-            orderBy: { id: "asc" },
-          }),
-
-          // Orders — items needed for cost/revenue calc; skip heavy fields not used in dashboard
-          prisma.order.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true,
-              customerName: true, customerPhone: true,
-              customerLocation: true, customerReference: true,
-              total: true, status: true,
-              paymentMethod: true,
-              createdAt: true, updatedAt: true,
-              items: {
-                select: {
-                  productId: true, name: true,
-                  price: true, costPrice: true,
-                  quantity: true, unit: true, image: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-
-          // Sales — items needed for revenue/cost charts
-          prisma.sale.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true, total: true, totalCogs: true,
-              payment: true, amountPaid: true, change: true,
-              customerPhone: true, cashierId: true, createdAt: true,
-              comprobanteTipo: true, comprobanteRuc: true,
-              descuentoMonto: true, descuentoPorcentaje: true,
-              paymentDetails: true,
-              items: {
-                select: {
-                  productId: true, name: true,
-                  price: true, costPrice: true,
-                  quantity: true, unit: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-
-          // Customers — skip the `locations` relation (unused in dashboard)
-          prisma.customer.findMany({
-            where: { tenantId: tid },
-            select: {
-              phone: true, name: true, location: true,
-              reference: true, createdAt: true, updatedAt: true,
-              loyaltyPoints: true, loyaltyTier: true,
-              totalSpent: true, creditBalance: true, creditLimit: true,
-              activeLocationId: true, birthday: true,
-              aiNotes: true, aiNotesDate: true,
-              privateNotes: true, referralCode: true, referredBy: true,
-              tags: true, lat: true, lng: true,
-              notifOrderUpdates: true, notifPromotions: true, notifRestock: true,
-            },
-            orderBy: { updatedAt: "desc" },
-          }),
-
-          // Purchases — items needed for purchase analysis
-          prisma.purchaseOrder.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true, supplierId: true, supplierName: true,
-              total: true, status: true,
-              notes: true, paymentMethod: true,
-              deliveryDate: true, discount: true,
-              createdAt: true, updatedAt: true,
-              items: {
-                select: {
-                  productId: true, name: true,
-                  quantity: true, unitCost: true, unit: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-
-          // Payables — skip the `payments` relation (unused in dashboard)
-          prisma.payable.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true, supplierId: true, supplierName: true,
-              purchaseOrderId: true, description: true,
-              amount: true, paidAmount: true,
-              status: true, dueDate: true, createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-
-          // Suppliers — minimal fields (dashboard only uses .length + basic display)
-          prisma.supplier.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true, name: true, phone: true,
-              email: true, address: true, notes: true, createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-
-          // Reviews — all fields are small scalars, no relations needed
-          prisma.review.findMany({
-            where: { tenantId: tid },
-            select: {
-              id: true, name: true, location: true,
-              text: true, rating: true, phone: true,
-              productId: true, status: true, date: true,
-              adminReply: true, adminReplyDate: true,
-            },
-            orderBy: { date: "desc" },
-          }),
-        ])
-      );
+      ] = await withDbRetry(() => DashboardDB.fetchAll(tid));
 
       // ── Shape into the exact form the frontend expects ────────────────────────
 
