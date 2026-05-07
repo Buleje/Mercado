@@ -74,6 +74,17 @@ export default function DeliveryTab() {
   const hasRoutes = routesState.routes.length > 0;
   const [viewMode, setViewMode] = useState<ViewMode>(hasRoutes ? "split" : "map-focus");
   const [mobileTab, setMobileTab] = useState<MobileTab>("mapa");
+  const [autoLayoutDone, setAutoLayoutDone] = useState(false);
+
+  // FIX 2026-05-06: si las rutas llegan con delay (loading=true al montar),
+  // el viewMode quedaba fijo en "map-focus" aunque luego cargaran rutas.
+  // Ahora ajustamos a "split" la primera vez que detectamos rutas reales.
+  useEffect(() => {
+    if (!autoLayoutDone && hasRoutes) {
+      setViewMode("split");
+      setAutoLayoutDone(true);
+    }
+  }, [hasRoutes, autoLayoutDone]);
 
   // ── KPIs ─────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -326,12 +337,13 @@ export default function DeliveryTab() {
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {kpis.activeRoutes > 0 ? (
-                  <>
-                    🟢 <span className="font-bold text-[var(--text-primary)]">{kpis.activeRoutes}</span>{" "}
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-success-500)] animate-pulse" />
+                    <span><span className="font-bold text-[var(--text-primary)]">{kpis.activeRoutes}</span>{" "}
                     {kpis.activeRoutes === 1 ? "ruta activa" : "rutas activas"} con{" "}
                     <span className="font-bold text-[var(--text-primary)]">{kpis.driversInRoute}</span>{" "}
-                    {kpis.driversInRoute === 1 ? "repartidor en calle" : "repartidores en calle"}.
-                  </>
+                    {kpis.driversInRoute === 1 ? "repartidor en calle" : "repartidores en calle"}.</span>
+                  </span>
                 ) : hasRoutes ? (
                   <>Hay rutas planificadas. Cuando inicien, los verás moverse en el mapa en vivo.</>
                 ) : (
