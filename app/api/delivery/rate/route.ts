@@ -64,14 +64,15 @@ export async function POST(req: NextRequest) {
     // Backwards-compat: sin token se permite con warning para medir adopción.
     logger.warn("[delivery/rate] legacy unauthenticated request", {
       assignmentId: parsed.data.assignmentId,
+      ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
+      userAgent: req.headers.get("user-agent")?.slice(0, 100) ?? "unknown",
     });
   }
 
   const { prisma } = await import("@/lib/prisma");
 
   try {
-    // Find the assignment
-    // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por assignmentId; verifyRatingToken arriba garantiza ownership.
+    // Find the assignment — lookup publico por assignmentId; verifyRatingToken arriba garantiza ownership.
     const assignment = await prisma.deliveryAssignment.findUnique({
       where: { id: parsed.data.assignmentId },
       select: {
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
         : `---RATING---\n${JSON.stringify(ratingData)}`;
     }
 
-    // eslint-disable-next-line no-restricted-properties -- update por id ya validado por findUnique anterior con assignmentId+token.
+    // update por id ya validado por findUnique anterior con assignmentId+token.
     await prisma.deliveryAssignment.update({
       where: { id: assignment.id },
       data: { notes: updatedNotes },
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     // SECURITY 2026-05-05 (pentest delivery H002): cap a 200 ratings recientes.
     // Antes el findMany sin take traía TODOS los assignments rated del partner
     // en cada llamada — patológico bajo carga.
-    // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por partnerId; refactor a DeliveryAssignmentsDB.recentRatings pendiente.
+    // aggregate read scoped por partnerId; refactor a DeliveryAssignmentsDB.recentRatings pendiente.
     const allAssignments = await prisma.deliveryAssignment.findMany({
       where: { partnerId: assignment.partnerId, notes: { contains: '"rated":true' } },
       select: { notes: true },

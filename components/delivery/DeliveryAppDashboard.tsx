@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * @deprecated Usar PartnerDashboard. Este componente se mantendrá hasta
+ * confirmar que ningún tenant lo está usando en runtime.
+ * Última verificación: 2026-05-07
+ *
+ * Diferencias clave:
+ *  - PartnerDashboard usa session cookie (PARTNER_ID via /api/delivery/me)
+ *  - Este DeliveryAppDashboard ahora también lo hace, pero es legacy.
+ *  - Cuando confirmemos no-uso, eliminar este archivo.
+ */
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -232,6 +243,12 @@ export default function DeliveryAppDashboard() {
   const [locationStatus, setLocationStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
   // F2: partnerId via session cookie — NO localStorage (XSS-safe, server-validated).
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  useEffect(() => {
+    // @deprecated — componente legacy; emitir warning en cada mount para rastrear uso.
+    console.warn("[DeliveryAppDashboard] DEPRECATED — usá PartnerDashboard", {
+      path: typeof window !== "undefined" ? window.location.pathname : "ssr",
+    });
+  }, []);
   useEffect(() => {
     fetch("/api/delivery/me", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))

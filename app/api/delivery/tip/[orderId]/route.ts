@@ -52,7 +52,11 @@ export async function POST(
     }
   } else {
     // Backwards-compat: permitir sin token pero log para medir uso legacy.
-    logger.warn("[delivery/tip] legacy unauthenticated request", { orderId });
+    logger.warn("[delivery/tip] legacy unauthenticated request", {
+      orderId,
+      ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
+      userAgent: req.headers.get("user-agent")?.slice(0, 100) ?? "unknown",
+    });
   }
 
   // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por orderId; verifyRatingToken arriba garantiza ownership.

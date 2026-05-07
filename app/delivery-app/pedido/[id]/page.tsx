@@ -8,7 +8,6 @@ import {
 import {
   PackageIcon,
   PinIcon,
-  CashIcon,
   CheckBadge,
   PhoneRing,
   WhatsAppIcon,
@@ -84,6 +83,7 @@ export default function PedidoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const load = useCallback(async () => {
     if (!assignmentId) return;
@@ -464,17 +464,54 @@ export default function PedidoPage() {
             {assignment.status !== "delivered" && (
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm("¿Cancelar este pedido? Esto libera tu cuenta para otros.")) {
-                    advance("cancelled");
-                  }
-                }}
+                onClick={() => setShowCancelModal(true)}
                 disabled={submitting}
                 className="w-full h-11 inline-flex items-center justify-center text-sm font-extrabold text-[var(--brand-danger)] disabled:opacity-50"
               >
                 Cancelar pedido
               </button>
             )}
+          </div>
+        </div>
+      )}
+      {/* Modal de confirmacion de cancelacion — reemplaza confirm() nativo (bloqueante en mobile) */}
+      {showCancelModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cancel-modal-title"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-6 sm:pb-0"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6 space-y-4 shadow-2xl">
+            <h2
+              id="cancel-modal-title"
+              className="text-lg font-extrabold text-[var(--text-primary)]"
+            >
+              Cancelar pedido
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+              Esto libera tu cuenta para otros pedidos.
+            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  advance("cancelled");
+                }}
+                disabled={submitting}
+                className="w-full h-12 rounded-2xl bg-[var(--brand-danger)] text-base font-extrabold text-white disabled:opacity-50"
+              >
+                {submitting ? "Cancelando…" : "Si, cancelar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="w-full h-11 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-extrabold text-[var(--text-primary)]"
+              >
+                Volver
+              </button>
+            </div>
           </div>
         </div>
       )}
