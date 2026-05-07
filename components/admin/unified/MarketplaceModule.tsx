@@ -46,7 +46,10 @@ import {
   ArrowUpDown,
   Truck,
   Receipt,
-  PackageCheck } from "@buleje/design-system/icons";
+  PackageCheck,
+  Trophy,
+  Search,
+  TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -3699,59 +3702,102 @@ function FidelidadTab() {
     setSaving(false);
   };
 
+  const inputClass =
+    "w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium tabular-nums outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary";
+  const labelClass =
+    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] block mb-2";
+  const totalCustomers = topCustomers.length;
+  const activeRewardsCount = rewards.filter((r) => r.active).length;
+
   return (
     <div className="space-y-6">
-      {/* Info cards (tiers) */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
-          <div key={key} className={cn("rounded-xl p-2 text-xs font-semibold", cfg.className)}>
-            <p className="text-sm">{cfg.label}</p>
-            <p className="text-xs font-normal mt-0.5">{cfg.minPoints} pts</p>
+      {/* ── 1. Hero card con tiers ─────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start gap-3 mb-6">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Star className="h-5 w-5" />
+          </span>
+          <div>
+            <CardTitle className="font-display text-xl leading-tight">
+              Programa de fidelidad
+            </CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+              Asigna puntos por compra, definí recompensas canjeables y subí a tus clientes de nivel para fidelizarlos.
+            </p>
           </div>
-        ))}
+        </div>
+
+        <p className={labelClass}>Niveles de fidelidad</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
+            <div
+              key={key}
+              className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5"
+            >
+              <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold", cfg.className)}>
+                {cfg.label}
+              </span>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-3">
+                {cfg.minPoints}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                Puntos mínimos para acceder
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* F1: Reglas de puntos por tienda */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm">Reglas de puntos</CardTitle>
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">tu tienda</span>
+      {/* ── 2. Reglas de puntos ────────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Zap className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Reglas de puntos
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Cómo se otorgan puntos automáticamente en cada compra
+              </p>
+            </div>
           </div>
           {rulesSaved && (
-            <span className="text-xs text-[var(--data-success-500)] font-semibold flex items-center gap-1">
-              <CheckCircle className="h-3.5 w-3.5" /> Guardado
+            <span className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--accent-soft)] text-[var(--data-success-500)] text-sm font-bold border border-[var(--data-success-500)]/30">
+              <CheckCircle className="h-4 w-4" />
+              Guardado
             </span>
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Puntos por sol</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className={labelClass}>Puntos por sol</label>
             <input
               type="number"
               min={0}
               step={0.5}
               value={rules.pointsPerSol}
               onChange={(e) => persistRules({ ...rules, pointsPerSol: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={inputClass}
             />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">1 = 1pt por S/ 1</p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-2">1 = 1pt por cada S/ 1</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Mín orden (S/)</label>
+          <div>
+            <label className={labelClass}>Mín orden (S/)</label>
             <input
               type="number"
               min={0}
               step={1}
               value={rules.minOrder}
               onChange={(e) => persistRules({ ...rules, minOrder: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={inputClass}
             />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para ganar puntos</p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-2">Para ganar puntos</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Multiplicador finde</label>
+          <div>
+            <label className={labelClass}>Multiplicador finde</label>
             <input
               type="number"
               min={1}
@@ -3759,12 +3805,12 @@ function FidelidadTab() {
               step={0.5}
               value={rules.weekendMultiplier}
               onChange={(e) => persistRules({ ...rules, weekendMultiplier: parseFloat(e.target.value) || 1 })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={inputClass}
             />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sáb/Dom × N</p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-2">Sáb / Dom × N</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Multiplicador frescos</label>
+          <div>
+            <label className={labelClass}>Multiplicador frescos</label>
             <input
               type="number"
               min={1}
@@ -3772,59 +3818,85 @@ function FidelidadTab() {
               step={0.5}
               value={rules.freshCategoryMultiplier}
               onChange={(e) => persistRules({ ...rules, freshCategoryMultiplier: parseFloat(e.target.value) || 1 })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={inputClass}
             />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Frutas/Verduras × N</p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-2">Frutas / Verduras × N</p>
           </div>
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-3">
+        <p className="text-sm text-[var(--text-tertiary)] mt-5 pt-5 border-t border-[var(--rule-base)]">
           Estas reglas controlan cuántos puntos asigna automáticamente cada compra de tu tienda.
         </p>
       </div>
 
-      {/* F3: Top clientes frecuentes */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Star className="h-4 w-4 text-[var(--data-warning-500)]" />
-          <CardTitle className="text-sm">Top 10 clientes frecuentes</CardTitle>
+      {/* ── 3. Top clientes frecuentes ─────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Trophy className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Top 10 clientes frecuentes
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Los que más gastan en tu tienda — invitalos con un cupón VIP
+              </p>
+            </div>
+          </div>
+          {!topLoading && totalCustomers > 0 && (
+            <span className="px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider bg-[var(--surface-sunken)] text-[var(--text-tertiary)] tabular-nums shrink-0">
+              {totalCustomers} {totalCustomers === 1 ? "cliente" : "clientes"}
+            </span>
+          )}
         </div>
         {topLoading ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
+              <div key={i} className="h-16 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : topCustomers.length === 0 ? (
-          <p className="text-xs text-[var(--text-tertiary)] text-center py-6">
-            Aún no hay clientes con puntos en tu tienda.
-          </p>
+          <div className="text-center py-10">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+              <Trophy className="h-8 w-8 text-[var(--text-tertiary)]" />
+            </span>
+            <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+              Aún sin clientes recurrentes
+            </p>
+            <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+              Cuando empiecen a acumular puntos, los verás acá ordenados por gasto.
+            </p>
+          </div>
         ) : (
-          <ul className="divide-y divide-[var(--rule-base)]">
+          <ul className="divide-y divide-[var(--rule-soft)]">
             {topCustomers.slice(0, 10).map((c, i) => {
               const initial = (c.name || "C").trim().charAt(0).toUpperCase();
               const tierCfg = TIER_CONFIG[c.tier] ?? null;
               return (
-                <li key={`${c.phone}-${i}`} className="flex items-center gap-3 py-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-extrabold shrink-0">
+                <li key={`${c.phone}-${i}`} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary text-base font-extrabold shrink-0 tabular-nums">
                     {i + 1}
                   </span>
-                  <span className="h-9 w-9 rounded-full bg-[var(--accent-soft)] text-primary flex items-center justify-center text-sm font-extrabold shrink-0">
+                  <span className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-primary flex items-center justify-center text-lg font-extrabold shrink-0">
                     {initial}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                    <p className="text-base font-extrabold text-[var(--text-primary)] truncate leading-tight">
                       {c.name || "Sin nombre"}
                     </p>
-                    <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.phone}</p>
+                    <p className="text-sm text-[var(--text-tertiary)] font-mono mt-0.5">{c.phone}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">
+                    <p className="text-base font-extrabold tabular-nums text-[var(--data-success-500)]">
                       S/ {c.totalSpent.toFixed(2)}
                     </p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{c.points} pts</p>
+                    <p className="text-sm text-[var(--text-tertiary)] font-bold tabular-nums mt-0.5">
+                      {c.points} pts
+                    </p>
                   </div>
                   {tierCfg && (
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0", tierCfg.className)}>
+                    <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-sm font-bold shrink-0", tierCfg.className)}>
                       {tierCfg.label}
                     </span>
                   )}
@@ -3835,62 +3907,90 @@ function FidelidadTab() {
         )}
       </div>
 
-      {/* F5: Recompensas canjeables */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Gift className="h-4 w-4 text-[var(--data-warning-500)]" />
-          <CardTitle className="text-sm">Recompensas canjeables</CardTitle>
-          <span className="text-xs text-[var(--text-secondary)]">
-            · {rewards.filter((r) => r.active).length} activa(s)
+      {/* ── 4. Recompensas canjeables ──────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Gift className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Recompensas canjeables
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Lo que tus clientes pueden canjear con sus puntos
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider bg-[var(--surface-sunken)] text-[var(--text-tertiary)] tabular-nums shrink-0">
+            {activeRewardsCount} {activeRewardsCount === 1 ? "activa" : "activas"}
           </span>
         </div>
-        <div className="space-y-2 mb-3">
+
+        <div className="space-y-3 mb-6">
           {rewards.length === 0 ? (
-            <p className="text-xs text-[var(--text-tertiary)] text-center py-4">
-              Sin recompensas todavía. Crea una abajo.
-            </p>
+            <div className="text-center py-8 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
+              <Gift className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
+              <p className="text-base font-bold text-[var(--text-primary)]">
+                Sin recompensas todavía
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                Creá una abajo para empezar
+              </p>
+            </div>
           ) : (
             rewards.map((r) => (
               <div
                 key={r.id}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-xl border",
+                  "flex items-center gap-4 p-4 rounded-xl border transition-opacity",
                   r.active
-                    ? "border-[var(--rule-base)] bg-white"
-                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-60",
+                    ? "border-[var(--rule-base)] bg-[var(--surface-raised)]"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] opacity-70",
                 )}
               >
-                <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] flex items-center justify-center shrink-0">
-                  <Gift className="h-4 w-4" />
+                <span className="h-12 w-12 rounded-2xl bg-[var(--data-warning-50)] text-[var(--data-warning-500)] flex items-center justify-center shrink-0">
+                  <Gift className="h-5 w-5" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{r.label}</p>
+                  <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                    {r.label}
+                  </p>
                   {r.description && (
-                    <p className="text-xs text-[var(--text-secondary)]">{r.description}</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">{r.description}</p>
                   )}
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold whitespace-nowrap">
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-extrabold whitespace-nowrap tabular-nums shrink-0">
                   {r.costPoints} pts
                 </span>
                 <button
+                  type="button"
                   onClick={() =>
                     persistRewards(
                       rewards.map((x) => (x.id === r.id ? { ...x, active: !x.active } : x)),
                     )
                   }
                   title={r.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition shrink-0"
+                  className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition shrink-0"
                 >
                   {r.active ? (
-                    <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      Desactivar
+                    </>
                   ) : (
-                    <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    <>
+                      <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
+                      Activar
+                    </>
                   )}
                 </button>
                 <button
+                  type="button"
                   onClick={() => persistRewards(rewards.filter((x) => x.id !== r.id))}
                   title="Eliminar"
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition shrink-0"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] hover:border-[var(--data-error-500)]/40 transition shrink-0"
                 >
                   <X className="h-4 w-4 text-[var(--data-error-500)]" />
                 </button>
@@ -3898,141 +3998,251 @@ function FidelidadTab() {
             ))
           )}
         </div>
+
         {/* Form para nueva recompensa */}
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2 items-end pt-3 border-t border-[var(--rule-base)]">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Recompensa</label>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 space-y-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">
+            Crear nueva recompensa
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
+            <div>
+              <label className={labelClass}>Recompensa</label>
+              <input
+                type="text"
+                placeholder="Ej: S/ 10 off"
+                value={newReward.label}
+                onChange={(e) => setNewReward({ ...newReward, label: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Costo (pts)</label>
+              <input
+                type="number"
+                min={1}
+                placeholder="500"
+                value={newReward.costPoints}
+                onChange={(e) => setNewReward({ ...newReward, costPoints: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Descripción (opcional)</label>
             <input
               type="text"
-              placeholder="Ej: S/ 10 off"
-              value={newReward.label}
-              onChange={(e) => setNewReward({ ...newReward, label: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Costo pts</label>
-            <input
-              type="number"
-              min={1}
-              placeholder="500"
-              value={newReward.costPoints}
-              onChange={(e) => setNewReward({ ...newReward, costPoints: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-          </div>
-          <button
-            onClick={addReward}
-            disabled={!newReward.label.trim() || !newReward.costPoints}
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition disabled:opacity-50"
-          >
-            + Añadir
-          </button>
-          <div className="sm:col-span-3 space-y-1">
-            <input
-              type="text"
-              placeholder="Descripción (opcional, ej: aplica con compra mín S/ 30)"
+              placeholder="Ej: aplica con compra mín S/ 30"
               value={newReward.description}
               onChange={(e) => setNewReward({ ...newReward, description: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={inputClass}
             />
+          </div>
+          <div className="flex justify-end pt-2 border-t border-[var(--rule-base)]">
+            <button
+              type="button"
+              onClick={addReward}
+              disabled={!newReward.label.trim() || !newReward.costPoints}
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition disabled:opacity-50"
+            >
+              <Gift className="h-4 w-4" />
+              Añadir recompensa
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Buscador individual (existente) */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Teléfono del cliente (ej: 961234567)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-        />
-        <button
-          onClick={searchCustomer}
-          disabled={loading}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
-        >
-          {loading ? "Buscando…" : "Buscar"}
-        </button>
+      {/* ── 5. Buscador de cliente ─────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start gap-3 mb-5">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Search className="h-5 w-5" />
+          </span>
+          <div>
+            <CardTitle className="font-display text-xl leading-tight">
+              Buscar cliente
+            </CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
+              Consultá puntos, gasto total e historial — y asigná puntos manualmente
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Teléfono del cliente (ej: 961234567)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
+            className={cn(inputClass, "flex-1")}
+          />
+          <button
+            type="button"
+            onClick={searchCustomer}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition disabled:opacity-50 shrink-0"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Buscando…
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Buscar
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
+      {/* ── 6. Detalle del cliente ─────────────────────────────────── */}
       {data && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
-          {/* Customer info */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-sm">{data.name}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{data.phone}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
-                {TIER_CONFIG[data.tier]?.label ?? data.tier}
+        <div className="bg-[var(--surface-raised)] border-2 border-primary/30 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+          {/* Cabecera con info + puntos */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-4 min-w-0 flex-1">
+              <span className="h-14 w-14 rounded-2xl bg-[var(--accent-soft)] text-primary flex items-center justify-center text-xl font-extrabold shrink-0">
+                {(data.name || "C").trim().charAt(0).toUpperCase()}
               </span>
+              <div className="min-w-0">
+                <p className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">{data.name}</p>
+                <p className="text-sm font-mono text-[var(--text-tertiary)] mt-1">{data.phone}</p>
+                <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold mt-2", TIER_CONFIG[data.tier]?.className ?? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
+                  {TIER_CONFIG[data.tier]?.label ?? data.tier}
+                </span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Puntos disponibles
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-1">
+                {data.points}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1 tabular-nums">
+                Gasto total: <strong className="text-[var(--text-primary)]">S/ {data.totalSpent.toFixed(2)}</strong>
+              </p>
             </div>
           </div>
 
-          <p className="text-xs text-[var(--text-tertiary)]">Gasto total: S/{data.totalSpent.toFixed(2)}</p>
-
-          {/* Manual earn */}
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Asignar puntos</label>
+          {/* Asignar puntos manualmente */}
+          <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-5">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+              Asignar puntos manualmente
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="number"
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={cn(inputClass, "flex-1")}
               />
+              <button
+                type="button"
+                onClick={handleEarn}
+                disabled={saving || !earnPoints}
+                className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-bold hover:brightness-95 transition disabled:opacity-50 shrink-0"
+              >
+                {saving ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Guardando…
+                  </>
+                ) : (
+                  <>
+                    <Gift className="h-4 w-4" />
+                    Dar puntos
+                  </>
+                )}
+              </button>
             </div>
-            <button
-              onClick={handleEarn}
-              disabled={saving || !earnPoints}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-white hover:opacity-90 transition disabled:opacity-50"
-            >
-              {saving ? "…" : "+ Dar puntos"}
-            </button>
           </div>
 
-          {/* Transaction history */}
+          {/* Historial de transacciones */}
           {data.transactions.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Historial reciente</p>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+                Historial reciente
+              </p>
+              <ul className="divide-y divide-[var(--rule-soft)] max-h-64 overflow-y-auto">
                 {data.transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
-                    <div>
-                      <span className={tx.type === "earn" ? "text-[var(--data-success-500)] font-semibold" : "text-[var(--data-error-500)] font-semibold"}>
-                        {tx.points > 0 ? "+" : ""}{tx.points} pts
+                  <li
+                    key={tx.id}
+                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={cn(
+                          "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+                          tx.type === "earn"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
+                        )}
+                      >
+                        {tx.type === "earn" ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                       </span>
-                      <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "text-base font-extrabold tabular-nums leading-tight",
+                            tx.type === "earn" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
+                          )}
+                        >
+                          {tx.points > 0 ? "+" : ""}
+                          {tx.points} pts
+                        </p>
+                        <p className="text-sm text-[var(--text-secondary)] truncate mt-0.5">
+                          {tx.description}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-[var(--text-tertiary)] text-xs">
-                      {new Date(tx.createdAt).toLocaleDateString("es-PE")}
+                    <span className="text-sm text-[var(--text-tertiary)] font-bold tabular-nums shrink-0">
+                      {new Date(tx.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                     </span>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>
       )}
 
+      {/* ── 7. Empty state buscador ────────────────────────────────── */}
       {!data && !loading && (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Programa de Fidelidad</p>
-          <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
-          <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
-            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Reglas de puntos:</p>
-            <p className="text-xs text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
-            <p className="text-xs text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>
-            <p className="text-xs text-[var(--text-secondary)]">• 1000 pts = Nivel Oro (10% descuento)</p>
-            <p className="text-xs text-[var(--text-secondary)]">• 100 pts = S/1 de descuento al canjear</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Gift className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            Programa de fidelidad
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            Buscá un cliente por teléfono arriba para ver y gestionar sus puntos.
+          </p>
+          <div className="mt-6 max-w-md mx-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 text-left">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+              Reglas estándar
+            </p>
+            <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>1 punto por cada S/ 1 de compra</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>500 pts = Nivel Plata (5% descuento)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>1000 pts = Nivel Oro (10% descuento)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>100 pts = S/ 1 de descuento al canjear</span>
+              </li>
+            </ul>
           </div>
         </div>
       )}
