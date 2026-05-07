@@ -47,10 +47,21 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  // F3: Validar Content-Type multipart/form-data
+  const ct = req.headers.get("content-type") ?? "";
+  if (!ct.startsWith("multipart/form-data")) {
+    return NextResponse.json({ error: "Content-Type debe ser multipart/form-data" }, { status: 415 });
+  }
+
   const formData = await req.formData();
   const file = formData.get("file");
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: "Archivo CSV requerido" }, { status: 400 });
+  }
+
+  // F3: Validar tamaño ≤5 MB
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "Archivo demasiado grande. Máximo 5 MB" }, { status: 413 });
   }
 
   const text = await file.text();

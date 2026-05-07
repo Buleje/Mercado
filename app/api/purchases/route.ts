@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getOrSet } from "@/lib/cache";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -24,6 +25,7 @@ const PurchaseSchema = z.object({
   paymentMethod: z.enum(["contado", "credito_7", "credito_15", "credito_30", "transferencia"]).default("contado"),
   deliveryDate: z.string().optional(),
   discount: z.number().min(0).max(100).default(0),
+  idempotencyKey: z.string().min(1).max(100).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -49,6 +51,23 @@ export async function POST(req: NextRequest) {
     const parsed = PurchaseSchema.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
     const data = parsed.data;
+
+    // F1: Idempotency in-memory (cache TTL 10min) — si llega key y la PO ya
+    // se creó en los últimos 10min, devolver la existente. Defense contra
+    // doble-click. NOTA: no es durable (restart del proceso pierde el lock);
+    // refactor a campo @unique en DbPurchaseOrder pendiente.
+    if (data.idempotencyKey) {
+      const cached = await getOrSet<string | null>(
+        `po-idem:${auth.tenantId}:${data.idempotencyKey}`,
+        1, // 1 sec — minimal write si no existe
+        async () => null,
+      ).catch((err) => { logger.warn("[purchases] po-idem cache failed", { err: String(err) }); return null; });
+      if (cached) {
+        const existing = await PurchasesDB.getById(auth.tenantId, cached).catch((err) => { logger.warn("[purchases] getById failed", { err: String(err) }); return null; });
+        if (existing) return NextResponse.json(existing, { status: 200 });
+      }
+    }
+
     const now = new Date().toISOString();
     const id = `po-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const discountPct = data.discount ?? 0;
@@ -68,6 +87,15 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     }, auth.tenantId);
+
+    // Persistir idempotencyKey -> id en cache (TTL 10min)
+    if (data.idempotencyKey) {
+      await getOrSet<string>(
+        `po-idem:${auth.tenantId}:${data.idempotencyKey}`,
+        600,
+        async () => id,
+      ).catch(() => undefined);
+    }
 
     // F1: Crear Payable atómico si el pago es a crédito — dentro de $transaction
     if (data.paymentMethod.startsWith("credito_")) {

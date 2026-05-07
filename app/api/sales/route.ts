@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { conteoLockKey } from "@/app/api/inventory/conteo/route";
+import { getOrSet } from "@/lib/cache";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -127,6 +129,15 @@ export async function POST(req: NextRequest) {
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
   if (auth instanceof NextResponse) return auth;
+
+  // F6: Bloquear ventas durante conteo físico activo
+  const conteoActive = await getOrSet<string | null>(conteoLockKey(auth.tenantId), 1, async () => null).catch((err) => { logger.warn("[sales] conteo lock check failed", { err: String(err) }); return null; });
+  if (conteoActive === "1") {
+    return NextResponse.json(
+      { error: "Hay un conteo físico activo. Las ventas están bloqueadas hasta que se cierre el conteo." },
+      { status: 423 }
+    );
+  }
 
   const raw = await req.json();
   const parsed = SaleSchema.safeParse(raw);

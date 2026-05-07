@@ -11,6 +11,11 @@ export async function GET(req: NextRequest) {
   // Public endpoint — co-purchased data is read-only and safe for storefront
   const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
+  // F9: Validar tenantId antes de usar en raw SQL — prevenir SQL injection via header
+  if (!/^[a-z0-9_-]+$/i.test(tenantId)) {
+    return NextResponse.json({ error: "tenantId inválido" }, { status: 400 });
+  }
+
   const idsParam = req.nextUrl.searchParams.get("ids");
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 6, 20);
 

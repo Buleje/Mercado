@@ -5,6 +5,33 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getOrSet, invalidate } from "@/lib/cache";
+
+// F6: Helpers de lock de conteo activo — TTL 1 hora
+export function conteoLockKey(tenantId: string) {
+  return `tenant:${tenantId}:conteo-active`;
+}
+export async function setConteoLock(tenantId: string) {
+  // Guardamos flag en cache con TTL 1h (3600s)
+  await getOrSet(conteoLockKey(tenantId), 3600, async () => "1");
+}
+export async function isConteoLocked(tenantId: string): Promise<boolean> {
+  // Si la key existe, el callback no se ejecuta — devuelve "1".
+  // Si NO existe, ejecuta el callback que devuelve null (no setea nada útil).
+  // Para verificar SIN setear, usamos el path: lectura sin escribir.
+  const cached = await getOrSet<string | null>(
+    conteoLockKey(tenantId),
+    1, // 1 sec — minimal write si no existe
+    async () => null,
+  ).catch((err) => {
+    logger.warn("[conteo/lock] cache lookup failed", { err: String(err) });
+    return null;
+  });
+  return cached === "1";
+}
+export async function clearConteoLock(tenantId: string) {
+  invalidate(conteoLockKey(tenantId));
+}
 
 const CreateSchema = z.object({
   tipo: z.enum(["completo", "categoria", "ubicacion"]).default("completo"),
@@ -63,6 +90,9 @@ export async function POST(req: NextRequest) {
       },
       include: { items: true },
     });
+
+    // F6: Activar lock para bloquear nuevas ventas/pedidos durante el conteo
+    await setConteoLock(auth.tenantId);
 
     return NextResponse.json({
       id: conteo.id,

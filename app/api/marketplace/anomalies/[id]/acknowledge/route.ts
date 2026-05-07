@@ -5,7 +5,8 @@ import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAdmin(req, ["admin", "almacenero", "tienda_owner"]);
+    // F8: almacenero removido — no tiene scope sobre anomalías de ventas marketplace
+    const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
     if (auth instanceof NextResponse) return auth;
     const { id: anomalyId } = await params;
     const anomaly = await SalesAnomaliesDB.acknowledge(auth.tenantId, anomalyId);

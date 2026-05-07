@@ -5,6 +5,7 @@ import { chatModel } from "@/lib/ai/provider";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { aiCostGuard } from "@/lib/ai/cost-control";
 
 /**
  * POST /api/products/generate-description
@@ -32,8 +33,8 @@ const TONE_HINTS: Record<z.infer<typeof Input>["tone"], string> = {
 };
 
 export async function POST(req: NextRequest) {
-  // Rate limit anti-abuso
-  const rl = applyRateLimit(req, "STRICT", "ai:product-description");
+  // Rate limit anti-abuso (fix: faltaba await)
+  const rl = await applyRateLimit(req, "STRICT", "ai:product-description");
   if (rl) return rl;
 
   // Auth admin/almacenero
@@ -50,6 +51,23 @@ export async function POST(req: NextRequest) {
       );
     }
     const { name, category, attributes, tone } = parsed.data;
+
+    // F4: Cap mensual por plan de tenant — estimado ~0.001 USD por descripción (Haiku)
+    const estimatedCost = 0.001;
+    // auth.plan no existe en el JWT payload — fallback "free" (cap conservador).
+    if (!aiCostGuard.canSpend(auth.tenantId, estimatedCost, "free")) {
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(1);
+      const resetTs = Math.floor(nextMonth.getTime() / 1000);
+      return NextResponse.json(
+        { error: "Límite mensual de generaciones IA alcanzado. Actualizá tu plan o esperá el próximo mes." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(resetTs) },
+        },
+      );
+    }
 
     const prompt = `Generá una descripción de producto para una bodega/marketplace en Perú.
 
@@ -90,6 +108,9 @@ Devolvé EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown,
         { status: 502 },
       );
     }
+
+    // Registrar gasto real (fire-and-forget)
+    aiCostGuard.recordSpend(auth.tenantId, estimatedCost);
 
     return NextResponse.json({ description });
   } catch (err) {

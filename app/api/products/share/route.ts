@@ -12,6 +12,15 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { slugify } from "@/data/products";
 
+// F7: TTL de tokens de share — 7 días en segundos
+const SHARE_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+function buildShareExpiry(): { exp: number; expiresAt: string } {
+  const exp = Math.floor(Date.now() / 1000) + SHARE_LINK_TTL_SECONDS;
+  const expiresAt = new Date(exp * 1000).toISOString();
+  return { exp, expiresAt };
+}
+
 export async function GET(req: NextRequest) {
   const productIdStr = req.nextUrl.searchParams.get("id");
   if (!productIdStr) {
@@ -49,6 +58,9 @@ export async function GET(req: NextRequest) {
 
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`;
 
+    // F7: Incluir expiry en el payload del token
+    const { exp, expiresAt } = buildShareExpiry();
+
     return NextResponse.json({
       product: {
         name: product.name,
@@ -62,6 +74,10 @@ export async function GET(req: NextRequest) {
         facebook: facebookUrl,
         copyLink: productUrl,
         text: whatsappText,
+      },
+      token: {
+        exp,
+        expiresAt,
       },
     });
   } catch (err) {

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { clearConteoLock } from "@/app/api/inventory/conteo/route";
 
 // POST — Cerrar conteo y aplicar ajustes
 export async function POST(
@@ -69,6 +70,9 @@ export async function POST(
         },
       });
     });
+
+    // F6: Liberar lock de conteo activo
+    await clearConteoLock(auth.tenantId);
 
     return NextResponse.json({
       message: "Conteo cerrado exitosamente",

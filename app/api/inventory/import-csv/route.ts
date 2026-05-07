@@ -14,8 +14,9 @@ const CsvRowSchema = z.object({
   costo: z.number().min(0).optional(),
 });
 
+// F3: reducir límite de iteración 5000 → 500
 const ImportSchema = z.object({
-  rows: z.array(CsvRowSchema).min(1).max(5000),
+  rows: z.array(CsvRowSchema).min(1).max(500),
 });
 
 // POST /api/inventory/import-csv — bulk import/update products from parsed CSV
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       "Importar", "inventario",
       `Importación CSV: ${success} exitosos, ${errors.length} errores de ${parsed.data.rows.length} filas`,
       undefined, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[inventory/import-csv] activity log failed", { err: String(err) }));
 
     return NextResponse.json({ success, errors });
   } catch (e) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductsDB, PriceHistoryDB } from "@/lib/jsondb";
+import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
@@ -29,6 +30,8 @@ const ProductUpdateSchema = z.object({
   // generación AI lo llena. Sin esto los cambios al description se perdían
   // silenciosamente al guardar.
   description: z.string().max(2000).optional().nullable(),
+  // F2: razón requerida cuando el admin ajusta stock manualmente
+  adjustReason: z.string().max(500).optional(),
 });
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -82,6 +85,19 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     // Record price history when price actually changed
     if (body.price != null && body.price !== existing.price) {
       await PriceHistoryDB.record(numId, existing.price, body.price, auth.tenantId).catch((err) => logger.error("[products/id] PriceHistoryDB.record failed", { error: String(err) }));
+    }
+
+    // F2: Audit trail cuando el stock cambia manualmente
+    if (body.stock != null && existing.stock != null && body.stock !== existing.stock) {
+      const diff = body.stock - existing.stock;
+      InventoryMovementsDB.record({
+        tenantId: auth.tenantId,
+        productId: numId,
+        type: diff > 0 ? "ajuste_positivo" : "ajuste_negativo",
+        quantity: Math.abs(diff),
+        notes: body.adjustReason ?? "Ajuste manual sin razón documentada",
+        createdBy: auth.username ?? "admin",
+      }).catch((err) => logger.warn("[products/id] stock diff log failed", { error: String(err) }));
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;

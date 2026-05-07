@@ -16,8 +16,20 @@ const DiferenciaSchema = z.object({
   motivo: z.string().max(500).optional(),
 });
 
+// F5: Tabla de transiciones válidas para state machine
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pendiente: ["emitida", "cancelado"],
+  emitida:   ["parcial", "recibido", "cancelado"],
+  parcial:   ["recibido", "cancelado"],
+  recibido:  ["pagada"],
+  cancelado: [],
+  pagada:    [],
+};
+
 const PatchSchema = z.object({
-  status: z.enum(["pendiente", "recibido", "cancelado"]).optional(),
+  // F5: alineado con DbPurchaseOrder.status enum (lib/db/misc.db.ts).
+  // 'emitida' y 'pagada' no existen en DB todavia — pendiente migration.
+  status: z.enum(["pendiente", "parcial", "recibido", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
   diferencias: z.array(DiferenciaSchema).optional(),
 });
@@ -51,8 +63,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const existing = await PurchasesDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
 
+    // F5: Validar transición de estado
     const statusChanged = parsed.data.status && parsed.data.status !== existing.status;
-    const updated = await PurchasesDB.update(auth.tenantId, id, parsed.data);
+    if (statusChanged && parsed.data.status) {
+      const allowed = VALID_TRANSITIONS[existing.status as string] ?? [];
+      if (!allowed.includes(parsed.data.status)) {
+        return NextResponse.json(
+          { error: `Transición inválida: ${existing.status} → ${parsed.data.status}. Permitidas: [${allowed.join(", ")}]` },
+          { status: 422 }
+        );
+      }
+    }
+
+    // diferencias no es campo de DbPurchaseOrder — se procesa más abajo.
+    const { diferencias: _diferencias, ...patch } = parsed.data;
+    const updated = await PurchasesDB.update(auth.tenantId, id, patch);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
 
