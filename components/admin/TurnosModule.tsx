@@ -272,10 +272,17 @@ export default function TurnosModule() {
         cantidadVentas = 1; // At least 1
       }
 
-      // Mejora M4: Calcular ventas por hora para detectar tiempo muerto
+      // Mejora M4: Calcular ventas por hora para detectar tiempo muerto.
+      // T11: usar /api/sales con today=1 + cashierId scope (server-side
+      // filter) en vez de descargar todas las ventas del tenant.
       const ventasPorHora: { hora: string; total: number }[] = [];
       try {
-        const salesRes2 = await fetch("/api/sales");
+        const params = new URLSearchParams({
+          today: "1",
+          cashierId: turnoActivo.adminUserId,
+          limit: "1000",
+        });
+        const salesRes2 = await fetch(`/api/sales?${params.toString()}`);
         if (salesRes2.ok) {
           const salesData2 = await salesRes2.json();
           const allSales2 = Array.isArray(salesData2) ? salesData2 : salesData2.ventas ?? [];
@@ -284,7 +291,6 @@ export default function TurnosModule() {
           const startHour = turnoStart.getHours();
           const endHour = turnoEnd.getHours();
 
-          // Crear mapa de horas del turno
           for (let h = startHour; h <= endHour; h++) {
             const horaLabel = `${String(h).padStart(2, "0")}:00`;
             const ventasHora = allSales2.filter((s: Record<string, unknown>) => {

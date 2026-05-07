@@ -77,7 +77,7 @@ function ShiftCloseModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/sales?today=1");
+      const res = await fetch("/api/sales?today=1&limit=1000");
       if (!res.ok) throw new Error("No se pudo cargar las ventas");
       const sales = await res.json();
       const arr = Array.isArray(sales) ? sales : [];

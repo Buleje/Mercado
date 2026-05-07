@@ -36,6 +36,20 @@ const SaleSchema = z.object({
   idempotencyKey: z.string().max(100).optional(),
 }).strip(); // Strip unknown fields (e.g. _offlineId from offline queue)
 
+/**
+ * GET /api/sales
+ *
+ * Query params:
+ *   - limit (default 500, max 1000)
+ *   - page (1-indexed)
+ *   - today=1: filtra desde 00:00 de hoy
+ *   - from / to: ISO date filters
+ *   - cashierId: filtra por cajero (uselo para "mis ventas")
+ *   - all=1: bypass del cap default (use con cuidado, util para reportes)
+ *
+ * Default: 500 ventas mas recientes. Antes devolvia TODAS las ventas
+ * del tenant sin limit (perf issue audit ventas-caja P2 #11).
+ */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -44,12 +58,42 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page");
+    const todayParam = searchParams.get("today");
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+    const cashierIdParam = searchParams.get("cashierId");
+    const allParam = searchParams.get("all");
 
     let data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
+
+    // Filter: cashierId
+    if (cashierIdParam) {
+      data = data.filter((s) => s.cashierId === cashierIdParam);
+    }
+
+    // Filter: today=1
+    if (todayParam === "1") {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const cutoff = startOfDay.getTime();
+      data = data.filter((s) => new Date(s.createdAt).getTime() >= cutoff);
+    }
+
+    // Filter: from / to
+    if (fromParam) {
+      const fromTs = new Date(fromParam).getTime();
+      if (!Number.isNaN(fromTs)) data = data.filter((s) => new Date(s.createdAt).getTime() >= fromTs);
+    }
+    if (toParam) {
+      const toTs = new Date(toParam).getTime();
+      if (!Number.isNaN(toTs)) data = data.filter((s) => new Date(s.createdAt).getTime() <= toTs);
+    }
+
     const total = data.length;
 
-    if (limitParam) {
-      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
+    // Pagination — default 500 cap, bypass solo con ?all=1
+    if (allParam !== "1") {
+      const limit = Math.min(Math.max(parseInt(limitParam ?? "500", 10) || 500, 1), 1000);
       const page = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
       const start = (page - 1) * limit;
       data = data.slice(start, start + limit);
