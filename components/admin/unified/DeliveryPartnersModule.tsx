@@ -1384,138 +1384,250 @@ function RankingTab() {
     { id: "all",   label: "Todo" },
   ];
 
+  const periodLabel = PERIODS.find((p) => p.id === period)?.label.toLowerCase() ?? "";
+  const topPartner = data[0];
+
   return (
     <div className="space-y-6">
-      {/* Period selector */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPeriod(p.id)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-              period === p.id
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {/* ── 1. Hero card con period selector + KPIs ─────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)] text-[var(--data-warning-500)] shrink-0">
+              <Trophy className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Ranking de repartidores
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {topPartner
+                  ? <>👑 <span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered} entregas y rating {toNum(topPartner.rating).toFixed(1)}.</>
+                  : `Métricas de rendimiento ${periodLabel}. Aceptación, entregas, ratings y ganancias.`}
+              </p>
+            </div>
+          </div>
 
-      {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidores</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{summary.totalPartners}</p>
-          </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Entregados</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--data-success-500)]">{summary.totalDelivered}</p>
-          </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pagado a riders</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--accent)]">S/ {toNum(summary.totalEarnings).toFixed(0)}</p>
-          </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Completion</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{Math.round(summary.avgCompletionRate * 100)}%</p>
+          {/* Period pills */}
+          <div className="flex items-center gap-2">
+            {PERIODS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPeriod(p.id)}
+                className={cn(
+                  "px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                  period === p.id
+                    ? "bg-primary text-white border-primary"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
+        {summary ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Repartidores
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+                {summary.totalPartners}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Activos en ranking</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Entregados
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+                {summary.totalDelivered}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Total entregas</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Pagado a riders
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+                S/{toNum(summary.totalEarnings).toFixed(0)}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tarifas acumuladas</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <Trophy className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Completion avg
+              </p>
+              <p className={cn(
+                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+                summary.avgCompletionRate >= 0.85
+                  ? "text-[var(--data-success-500)]"
+                  : summary.avgCompletionRate >= 0.5
+                    ? "text-[var(--data-warning-500)]"
+                    : "text-[var(--data-error-500)]",
+              )}>
+                {Math.round(summary.avgCompletionRate * 100)}%
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tasa de éxito</p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {/* ── 2. Tabla / Empty / Loading ──────────────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : data.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No hay datos de ranking para este periodo</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Trophy className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            Sin datos de ranking
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            No hay entregas registradas {periodLabel}. Cambia el periodo o esperá a que tus repartidores acumulen actividad.
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--rule-soft)] text-left text-xs text-[var(--text-secondary)]">
-                <th className="pb-2 pr-2">#</th>
-                <th className="pb-2 pr-3">Repartidor</th>
-                <th className="pb-2 pr-3 text-center">Rating</th>
-                <th className="pb-2 pr-3 text-center">Aceptación</th>
-                <th className="pb-2 pr-3 text-center">Entregados</th>
-                <th className="pb-2 pr-3 text-center">Cancelados</th>
-                <th className="pb-2 pr-3 text-center">Avg min</th>
-                <th className="pb-2 pr-3 text-center">Ganado</th>
-                <th className="pb-2 text-center">Completion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((entry, idx) => (
-                <tr
-                  key={entry.id}
-                  className={cn(
-                    "border-b border-gray-50 hover:bg-gray-50/50 transition-colors",
-                    idx < 3 && "bg-[var(--data-warning-50)]/30"
-                  )}
-                >
-                  <td className="py-2.5 pr-2 font-bold text-[var(--text-tertiary)]">
-                    {idx < 3 ? RANK_MEDALS[idx] : idx + 1}
-                  </td>
-                  <td className="py-2.5 pr-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 bg-primary">
-                        {entry.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[var(--text-primary)] text-xs">{entry.name}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">{entry.vehicleType} · {entry.phone}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-2.5 pr-3 text-center">
-                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-[var(--data-warning-500)]">
-                      <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
-                      {toNum(entry.rating).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-3 text-center text-xs text-[var(--text-secondary)]">
-                    {Math.round(entry.acceptanceRate * 100)}%
-                  </td>
-                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--data-success-500)]">
-                    {entry.delivered}
-                    {entry.inProgress > 0 && (
-                      <span className="ml-1 text-[var(--text-tertiary)] font-normal">+{entry.inProgress}</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 pr-3 text-center text-xs text-[var(--text-tertiary)]">
-                    {entry.cancelled || "—"}
-                  </td>
-                  <td className="py-2.5 pr-3 text-center">
-                    <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
-                      <Clock className="h-3 w-3" />
-                      {entry.avgDeliveryMin != null ? `${Math.round(entry.avgDeliveryMin)}` : "—"}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--accent)]">
-                    S/ {toNum(entry.totalEarnings).toFixed(0)}
-                  </td>
-                  <td className="py-2.5 text-center">
-                    <span
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Tabla de posiciones · {periodLabel}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] font-bold">
+              {data.length} {data.length === 1 ? "repartidor" : "repartidores"}
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+                <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th className="px-6 py-4 w-16">#</th>
+                  <th className="px-6 py-4">Repartidor</th>
+                  <th className="px-4 py-4 text-center">Rating</th>
+                  <th className="px-4 py-4 text-center">Aceptación</th>
+                  <th className="px-4 py-4 text-center">Entregas</th>
+                  <th className="px-4 py-4 text-center">Cancel.</th>
+                  <th className="px-4 py-4 text-center">Avg min</th>
+                  <th className="px-4 py-4 text-right">Ganado</th>
+                  <th className="px-6 py-4 text-center">Completion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--rule-soft)]">
+                {data.map((entry, idx) => {
+                  const isPodium = idx < 3;
+                  const medalBg = idx === 0
+                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                    : idx === 1
+                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                      : idx === 2
+                        ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
+                  return (
+                    <tr
+                      key={entry.id}
                       className={cn(
-                        "inline-flex items-center justify-center h-7 px-2.5 rounded-full text-xs font-extrabold",
-                        entry.completionRate >= 0.85
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                          : entry.completionRate >= 0.5
-                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                        "transition-colors hover:bg-[var(--surface-sunken)]/50",
+                        isPodium && "bg-[var(--data-warning-50)]/30",
                       )}
                     >
-                      {Math.round(entry.completionRate * 100)}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td className="px-6 py-4">
+                        <span className={cn(
+                          "inline-flex items-center justify-center h-10 w-10 rounded-xl font-extrabold tabular-nums text-base",
+                          medalBg,
+                        )}>
+                          {isPodium ? RANK_MEDALS[idx] : idx + 1}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-primary bg-primary/10 shrink-0">
+                            {entry.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-extrabold text-[var(--text-primary)] text-base leading-tight truncate">
+                              {entry.name}
+                            </p>
+                            <p className="text-sm text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
+                              <span>{vehicleEmoji(entry.vehicleType)}</span>
+                              <span className="font-mono">{entry.phone}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex items-center justify-center gap-1 text-base font-extrabold text-[var(--data-warning-500)] tabular-nums">
+                          <Star className="h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+                          {toNum(entry.rating).toFixed(1)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center text-base font-bold text-[var(--text-secondary)] tabular-nums">
+                        {Math.round(entry.acceptanceRate * 100)}%
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums">
+                          {entry.delivered}
+                        </span>
+                        {entry.inProgress > 0 && (
+                          <span className="ml-1 text-sm text-[var(--text-tertiary)] font-bold">
+                            +{entry.inProgress}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center text-base text-[var(--text-tertiary)] tabular-nums font-bold">
+                        {entry.cancelled || "—"}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex items-center justify-center gap-1 text-base text-[var(--text-secondary)] font-bold tabular-nums">
+                          <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                          {entry.avgDeliveryMin != null ? `${Math.round(entry.avgDeliveryMin)}` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
+                        S/{toNum(entry.totalEarnings).toFixed(0)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={cn(
+                          "inline-flex items-center justify-center h-9 px-3 rounded-full text-sm font-extrabold tabular-nums",
+                          entry.completionRate >= 0.85
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            : entry.completionRate >= 0.5
+                              ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                              : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+                        )}>
+                          {Math.round(entry.completionRate * 100)}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
