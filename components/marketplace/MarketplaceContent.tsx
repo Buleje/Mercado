@@ -13,6 +13,7 @@ import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 import SectionDivider from "@/components/marketplace/home/SectionDivider";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
+import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
 
 // Audit P10 (sprint perf): below-fold sections diferidas para reducir
 // el initial bundle (138 → ~60 chunks meta). Cada `dynamic({ ssr: false })`
@@ -30,8 +31,8 @@ const MarketplaceStories = dynamic(
   () => import("@/components/marketplace/MarketplaceStories"),
   { ssr: false },
 );
-const MarketplaceTopToday = dynamic(
-  () => import("@/components/marketplace/MarketplaceTopToday"),
+const TrendingTodayWidget = dynamic(
+  () => import("@/components/marketplace/TrendingTodayWidget"),
   { ssr: false },
 );
 const MarketplaceFreeShippingBar = dynamic(
@@ -206,6 +207,14 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
       {/* Banner promocional rotativo (slot="bodegas" editable desde superadmin) */}
       <PromoBannerCarousel slot="bodegas" />
 
+      {/* Panel de fidelidad — solo visible para clientes con sesión.
+          Render nulo si no hay customer, sin placeholder vacío. */}
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
+        <div className="w-full lg:max-w-sm">
+          <MyFidelidadCard />
+        </div>
+      </div>
+
       {/* LiveActivityStrip y LiveStats eliminados (2026-04-20) — pedido del
           negocio: reducir ruido visual y compactar el home de bodegas. */}
 
@@ -221,7 +230,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
           {SHOW_SECONDARY_HOME_SECTIONS && (
             <BodegasSectionBox><LiveActivityFeed /></BodegasSectionBox>
           )}
-          <BodegasSectionBox><MarketplaceTopToday /></BodegasSectionBox>
+          <BodegasSectionBox><TrendingTodayWidget /></BodegasSectionBox>
           <BodegasSectionBox><MarketplaceJungleProducts /></BodegasSectionBox>
           <BodegasSectionBox><OfertasFlashSection /></BodegasSectionBox>
           <BodegasSectionBox>

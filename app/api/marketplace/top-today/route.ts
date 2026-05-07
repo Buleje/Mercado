@@ -18,6 +18,11 @@ import { logger } from "@/lib/logger";
  *
  * Response:
  *   { items: TopProduct[], window: "24h" | "7d", updatedAt: string }
+ *
+ * Cada item incluye `trendPct`: variación % vs el mismo período anterior.
+ *   - window "24h": compara 24h vs las 24h previas (48h→24h atrás)
+ *   - window "7d":  compara 7d vs los 7d previos
+ *   - null cuando no hay datos del período anterior (producto muy nuevo)
  */
 
 export async function GET(req: NextRequest) {
@@ -31,16 +36,21 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     const start24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const start7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const start48h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const start7d  = new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000);
+    const start14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    async function topInWindow(fromDate: Date) {
+    async function topInWindow(fromDate: Date, toDate?: Date) {
       return prisma.orderItem.groupBy({
         by: ["productId"],
         where: {
           order: {
             source: "marketplace",
             deletedAt: null,
-            createdAt: { gte: fromDate },
+            createdAt: {
+              gte: fromDate,
+              ...(toDate ? { lt: toDate } : {}),
+            },
           },
         },
         _sum: { quantity: true },
@@ -52,9 +62,13 @@ export async function GET(req: NextRequest) {
     let window: "24h" | "7d" = "24h";
     let ranking = await topInWindow(start24h).catch(() => []);
 
+    // Período de comparación: 24h previas (48h→24h atrás)
+    let prevWindow = { from: start48h, to: start24h };
+
     if (ranking.length < 5) {
       window = "7d";
       ranking = await topInWindow(start7d).catch(() => []);
+      prevWindow = { from: start14d, to: start7d };
     }
 
     if (ranking.length === 0) {
@@ -63,6 +77,30 @@ export async function GET(req: NextRequest) {
         { headers: { "Cache-Control": "public, max-age=120, s-maxage=120, stale-while-revalidate=600" } },
       );
     }
+
+    // Ventas del período previo para los mismos productIds → trendPct
+    const currentProductIds = ranking
+      .map((r) => r.productId)
+      .filter((x): x is number => x != null);
+
+    const prevRanking = await prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: currentProductIds },
+        order: {
+          source: "marketplace",
+          deletedAt: null,
+          createdAt: { gte: prevWindow.from, lt: prevWindow.to },
+        },
+      },
+      _sum: { quantity: true },
+    }).catch(() => []);
+
+    const prevQtyMap = new Map<number, number>(
+      prevRanking
+        .filter((r) => r.productId != null)
+        .map((r) => [r.productId as number, Number(r._sum.quantity ?? 0)]),
+    );
 
     const productIds = ranking
       .map((r) => r.productId)
@@ -114,6 +152,13 @@ export async function GET(req: NextRequest) {
         if (r.productId == null) return null;
         const sp = bestByProduct.get(r.productId);
         if (!sp) return null;
+        const soldNow  = Number(r._sum.quantity ?? 0);
+        const soldPrev = prevQtyMap.get(r.productId) ?? null;
+        // trendPct: % change vs período anterior. null si no hay dato previo.
+        const trendPct: number | null =
+          soldPrev != null && soldPrev > 0
+            ? Math.round(((soldNow - soldPrev) / soldPrev) * 100)
+            : null;
         return {
           storeProductId: sp.id,
           productId: sp.productId,
@@ -122,7 +167,8 @@ export async function GET(req: NextRequest) {
           image: sp.product.image,
           unit: sp.product.unit,
           stock: sp.product.stock ?? 0,
-          soldUnits: Number(r._sum.quantity ?? 0),
+          soldUnits: soldNow,
+          trendPct,
           store: {
             slug: sp.store.slug,
             name: sp.store.name,
