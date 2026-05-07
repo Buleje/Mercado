@@ -217,8 +217,8 @@ model ProductModifierOption {
 // NO multi-tenant — es global del SaaS.
 model VariantCatalogTemplate {
   id          String                 @id @default(cuid())
-  category    String                 // "Pollería" | "Pizzería" | "Heladería" | etc.
-  name        String                 // "Cremas para pollo" | "Presas" | "Toppings"
+  category    String // "Pollería" | "Pizzería" | "Heladería" | etc.
+  name        String // "Cremas para pollo" | "Presas" | "Toppings"
   description String?
   required    Boolean                @default(false)
   minSelect   Int                    @default(0)
@@ -234,15 +234,15 @@ model VariantCatalogTemplate {
 }
 
 model VariantCatalogOption {
-  id          String                 @id @default(cuid())
-  templateId  String
-  template    VariantCatalogTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  name        String                 // "Crema huancaína", "Pierna", "Pecho"
-  imageUrl    String?
-  priceDelta  Decimal                @default(0) @db.Decimal(12, 2)
-  position    Int                    @default(0)
-  isDefault   Boolean                @default(false)
-  createdAt   DateTime               @default(now())
+  id         String                 @id @default(cuid())
+  templateId String
+  template   VariantCatalogTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name       String // "Crema huancaína", "Pierna", "Pecho"
+  imageUrl   String?
+  priceDelta Decimal                @default(0) @db.Decimal(12, 2)
+  position   Int                    @default(0)
+  isDefault  Boolean                @default(false)
+  createdAt  DateTime               @default(now())
 
   @@index([templateId])
 }
@@ -408,6 +408,9 @@ model Order {
   cancelReason        String? // motivo de cancelación
   cancelledAt         DateTime? // cuándo se canceló
 
+  // Multi-vendor WhatsApp checkout: agrupa órdenes que comparten una PaymentApproval (Yape)
+  paymentApprovalId String?
+
   // ─── Bloque D1 — Delivery vivo (marketplace) ────────────────
   deliveryStatus      String? // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
   driverId            String?
@@ -438,6 +441,7 @@ model Order {
   @@index([tenantId, customerPhone])
   @@index([tenantId, deliveryStatus], name: "Order_deliveryStatus_idx")
   @@index([driverId], name: "Order_driverId_idx")
+  @@index([paymentApprovalId], name: "Order_paymentApprovalId_idx")
 }
 
 model OrderItem {
@@ -1171,8 +1175,8 @@ model AdminUser {
   updatedAt             DateTime  @updatedAt
 
   // ── 2FA TOTP (ADR-043) ──────────────────────────────────────
-  totpSecret    String? // Base32-encoded TOTP secret (RFC 6238). NULL = sin 2FA configurado
-  totpEnabledAt DateTime? // Timestamp de activación. NULL = TOTP no activo aún
+  totpSecret       String? // Base32-encoded TOTP secret (RFC 6238). NULL = sin 2FA configurado
+  totpEnabledAt    DateTime? // Timestamp de activación. NULL = TOTP no activo aún
   // SECURITY 2026-05-06 (pentest H002): replay protection. Persistir el último
   // step TOTP usado por user para rechazar reuse del mismo código (60s window).
   totpLastUsedStep Int? // Último step (Date.now()/30000) consumido en verify
@@ -2620,33 +2624,33 @@ model StoreProduct {
 }
 
 model DeliveryPartner {
-  id          String               @id @default(cuid())
-  name        String
-  phone       String
-  email       String?
-  zone        String
-  vehicleType String               @default("moto")
-  isActive    Boolean              @default(true)
-  rating      Float                @default(5.0)
-  fee         Decimal              @default(5.0) @db.Decimal(12, 2)
-  notes       String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
+  id             String               @id @default(cuid())
+  name           String
+  phone          String
+  email          String?
+  zone           String
+  vehicleType    String               @default("moto")
+  isActive       Boolean              @default(true)
+  rating         Float                @default(5.0)
+  fee            Decimal              @default(5.0) @db.Decimal(12, 2)
+  notes          String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
   // ── Rappi-style realtime fields (ADR-087) ─────────────────────────────
-  passwordHash    String? // bcrypt — null hasta que el partner active login
-  lat             Float? // GPS actual
-  lng             Float?
-  lastPingAt      DateTime? // heartbeat — ping cada 30s desde la app
-  isOnline        Boolean   @default(false) // si recibe ofertas
-  currentOrderId  String? // si está atendiendo, no recibe más ofertas
-  acceptanceRate  Float     @default(1.0) // % accept histórico (0..1)
-  maxRadiusKm     Float     @default(5.0) // radio max para ofertas
-  totalOffers     Int       @default(0)
-  totalAccepted   Int       @default(0)
-  score           Int       @default(0)
+  passwordHash   String? // bcrypt — null hasta que el partner active login
+  lat            Float? // GPS actual
+  lng            Float?
+  lastPingAt     DateTime? // heartbeat — ping cada 30s desde la app
+  isOnline       Boolean              @default(false) // si recibe ofertas
+  currentOrderId String? // si está atendiendo, no recibe más ofertas
+  acceptanceRate Float                @default(1.0) // % accept histórico (0..1)
+  maxRadiusKm    Float                @default(5.0) // radio max para ofertas
+  totalOffers    Int                  @default(0)
+  totalAccepted  Int                  @default(0)
+  score          Int                  @default(0)
   // ──────────────────────────────────────────────────────────────────────
-  tenantId    String
-  createdAt   DateTime             @default(now())
-  assignments DeliveryAssignment[]
-  offers      DeliveryOffer[]
+  tenantId       String
+  createdAt      DateTime             @default(now())
+  assignments    DeliveryAssignment[]
+  offers         DeliveryOffer[]
 
   @@index([tenantId])
   @@index([tenantId, isOnline, currentOrderId])
@@ -2678,23 +2682,23 @@ model DeliveryOffer {
 }
 
 model DeliveryAssignment {
-  id          String          @id @default(cuid())
-  orderId     String          @unique
-  order       Order           @relation(fields: [orderId], references: [id])
-  partnerId   String
-  partner     DeliveryPartner @relation(fields: [partnerId], references: [id])
-  status      String          @default("assigned")
-  fee         Decimal         @db.Decimal(12, 2)
-  tipAmount   Decimal         @default(0) @db.Decimal(12, 2)
-  tipMessage  String?
-  pickedUpAt      DateTime?
-  deliveredAt     DateTime?
-  routeStartedAt  DateTime?
-  proofPhotoUrl   String?
-  notes           String?
-  tenantId        String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  orderId        String          @unique
+  order          Order           @relation(fields: [orderId], references: [id])
+  partnerId      String
+  partner        DeliveryPartner @relation(fields: [partnerId], references: [id])
+  status         String          @default("assigned")
+  fee            Decimal         @db.Decimal(12, 2)
+  tipAmount      Decimal         @default(0) @db.Decimal(12, 2)
+  tipMessage     String?
+  pickedUpAt     DateTime?
+  deliveredAt    DateTime?
+  routeStartedAt DateTime?
+  proofPhotoUrl  String?
+  notes          String?
+  tenantId       String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([orderId])
   @@index([partnerId])
@@ -2715,6 +2719,7 @@ model DeliverySOSAlert {
   @@index([partnerId])
   @@index([status])
 }
+
 // ─── Bloque D1 — Delivery vivo ────────────────────────────
 
 // Schema alineado con MANUAL-marketplace-bloque-d1.sql aplicado 2026-04-08 (Supabase us-east-2).
@@ -4116,4 +4121,32 @@ model LiveViewerEvent {
   @@index([liveSessionId, eventType, createdAt])
   @@index([tenantId, createdAt])
   @@map("live_viewer_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentApproval — Yape Vision close-loop (cross-tenant, sin tenantId).
+// Tabla creada en migration 20260502120000_add_payment_approval. La IA Claude
+// Sonnet 4.6 Vision compara captura vs expectedAmount; humanos del equipo
+// Buleje revisan dudas en /superadmin/pagos-yape.
+// ─────────────────────────────────────────────────────────────────────────────
+model PaymentApproval {
+  id              String    @id
+  conversationId  String?
+  customerPhone   String
+  expectedAmount  Decimal   @db.Decimal(12, 2)
+  detectedAmount  Decimal?  @db.Decimal(12, 2)
+  imageUrl        String
+  visionResponse  Json?
+  yapeOpCode      String?
+  yapeLast4       String?
+  yapeDate        DateTime?
+  status          String    @default("pending") // pending|review_required|approved|rejected
+  rejectionReason String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([conversationId])
 }

@@ -16,11 +16,6 @@ import "server-only";
  * (no tenantId column — see prisma migration 20260502120000_add_payment_approval).
  * The multi-vendor WhatsApp checkout creates one Order per vendor and
  * stamps each with the same paymentApprovalId.
- *
- * SCHEMA DRIFT NOTE: the migration 20260502130000_add_payment_approval_link
- * adds Order.paymentApprovalId at the SQL layer but prisma/schema.prisma
- * has not been updated yet. Until the schema is synced and the Prisma
- * client regenerated, we use raw SQL — same pattern as payment-approval.db.ts.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -36,16 +31,6 @@ export interface LinkedOrder {
   storeName: string | null;
 }
 
-interface RawRow {
-  id: string;
-  tenantId: string;
-  status: string;
-  total: string | number;
-  customerPhone: string | null;
-  customerName: string | null;
-  tenantName: string | null;
-}
-
 export const OrderPaymentLinkDb = {
   /**
    * Returns every Order tagged with the given PaymentApproval.id.
@@ -53,31 +38,39 @@ export const OrderPaymentLinkDb = {
    */
   async findByApprovalId(approvalId: string): Promise<LinkedOrder[]> {
     try {
-      // eslint-disable-next-line no-restricted-properties -- schema drift: paymentApprovalId is in the migration but not yet in schema.prisma
-      const rows = await prisma.$queryRawUnsafe<RawRow[]>(
-        `SELECT
-           o.id,
-           o."tenantId",
-           o.status,
-           o.total,
-           o."customerPhone",
-           o."customerName",
-           t.name AS "tenantName"
-         FROM "Order" o
-         LEFT JOIN "Tenant" t ON t.id = o."tenantId"
-         WHERE o."paymentApprovalId" = $1
-         ORDER BY o."createdAt" ASC`,
-        approvalId,
-      );
+      // eslint-disable-next-line no-restricted-properties -- cross-tenant lookup by paymentApprovalId; PaymentApproval es entidad platform-level (sin tenantId).
+      const orders = await prisma.order.findMany({
+        where: { paymentApprovalId: approvalId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          tenantId: true,
+          status: true,
+          total: true,
+          customerPhone: true,
+          customerName: true,
+        },
+      });
 
-      return rows.map((r) => ({
-        id: String(r.id),
-        tenantId: String(r.tenantId),
-        status: String(r.status),
-        total: typeof r.total === "number" ? r.total : Number(r.total),
-        customerPhone: r.customerPhone ?? "",
-        customerName: r.customerName ?? "",
-        storeName: r.tenantName ?? null,
+      if (orders.length === 0) return [];
+
+      // Lookup nombres de tenant en una sola query
+      const tenantIds = Array.from(new Set(orders.map((o) => o.tenantId)));
+      // eslint-disable-next-line no-restricted-properties -- platform-level lookup limitado a los tenantIds del approval; sin riesgo cross-tenant porque el approvalId es el filtro principal.
+      const tenants = await prisma.tenant.findMany({
+        where: { id: { in: tenantIds } },
+        select: { id: true, name: true },
+      });
+      const nameByTenantId = new Map(tenants.map((t) => [t.id, t.name]));
+
+      return orders.map((o) => ({
+        id: o.id,
+        tenantId: o.tenantId,
+        status: o.status as unknown as string,
+        total: Number(o.total),
+        customerPhone: o.customerPhone ?? "",
+        customerName: o.customerName,
+        storeName: nameByTenantId.get(o.tenantId) ?? null,
       }));
     } catch (err) {
       logger.error("[order-payment-link] findByApprovalId failed", {
