@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   title: "Buleje Delivery",
   description: "Portal de repartidores Buleje — Gestiona tus entregas",
   robots: { index: false, follow: false },
+  // PWA manifest con start_url y scope acotados a /delivery-app
+  manifest: "/delivery-manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -12,7 +14,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "var(--accent)",
+  // Hex literal obligatorio — Next.js serializa themeColor como meta tag en
+  // <head> en build time; var(--accent) no resuelve en ese contexto y el
+  // navegador ignora el valor. #00B4A6 = token --accent resuelto en Buleje DS.
+  themeColor: "#00B4A6",
 };
 
 export default function DeliveryAppLayout({

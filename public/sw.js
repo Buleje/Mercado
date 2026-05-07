@@ -44,6 +44,12 @@ const STATIC_URLS = [
   "/tienda/categoria/limpieza",
   "/manifest.webmanifest",
   "/offline.html",
+  // Shell de la delivery app — riders con señal inestable conservan el
+  // panel offline. Se excluyen rutas de API (/api/delivery/*) porque son
+  // dinámicas y no deben servirse desde cache en modo offline.
+  "/delivery-app",
+  "/delivery-app/login",
+  "/delivery-manifest.json",
 ];
 const API_CACHE = "buleje-api-v4";
 const IMG_CACHE = "buleje-img-v4";

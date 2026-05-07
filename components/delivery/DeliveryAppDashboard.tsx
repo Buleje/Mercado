@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { logger } from "@/lib/logger";
 import {
   Wifi,
   WifiOff,
@@ -235,8 +236,12 @@ export default function DeliveryAppDashboard() {
   const [pulling, setPulling] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Interval para auto-envío de ubicación cuando hay pedidos en_tránsito
-  const geoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // watchPosition para auto-envío de ubicación cuando hay pedidos en_tránsito.
+  // Reemplaza el setInterval + getCurrentPosition anterior (cold-start cada 30s
+  // drenaba batería). watchPosition reutiliza la señal GPS del sistema; el throttle
+  // de 30s se gestiona con lastSentRef para no spamear el server.
+  const geoWatchRef = useRef<number | null>(null);
+  const lastSentRef = useRef<number>(0);
 
   // KPIs del día
   const todayDeliveries = assignments.filter((a) => a.status === "delivered").length;
@@ -275,23 +280,54 @@ export default function DeliveryAppDashboard() {
     loadAssignments();
   }, [loadAssignments]);
 
-  // Auto-envío de ubicación cada 30s si hay pedido en tránsito
+  // Auto-envío de ubicación vía watchPosition cuando hay pedido in_transit.
+  // watchPosition reutiliza la señal GPS del SO (sin cold-start por ciclo),
+  // y el throttle de LOCATION_THROTTLE_MS evita flood al server.
+  const LOCATION_THROTTLE_MS = 30_000;
   useEffect(() => {
     const hasInTransit = assignments.some((a) => a.status === "in_transit");
-    if (hasInTransit && isOnline) {
-      geoIntervalRef.current = setInterval(() => {
-        sendLocation(true);
-      }, 30_000);
+
+    if (hasInTransit && isOnline && navigator.geolocation) {
+      // Limpiar watch anterior si existía
+      if (geoWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+      }
+
+      geoWatchRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const now = Date.now();
+          if (now - lastSentRef.current < LOCATION_THROTTLE_MS) return;
+          lastSentRef.current = now;
+
+          const { latitude: lat, longitude: lng } = pos.coords;
+          const inTransitOrders = assignments.filter((a) => a.status === "in_transit");
+          // Fire-and-forget: fallo de tracking no debe interrumpir la UX del rider
+          Promise.allSettled(
+            inTransitOrders.map((a) =>
+              fetch("/api/delivery/tracking/update", {
+                method: "POST",
+                headers: csrfHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({ orderId: a.orderId, lat, lng }),
+              })
+            )
+          ).catch((err) => logger.warn?.("[GPS] tracking update failed", { error: String(err) }));
+        },
+        (err) => { logger.warn?.("[GPS] watchPosition error", { code: err.code, message: err.message }); },
+        { enableHighAccuracy: true, maximumAge: 25_000, timeout: 30_000 },
+      );
     } else {
-      if (geoIntervalRef.current) {
-        clearInterval(geoIntervalRef.current);
-        geoIntervalRef.current = null;
+      if (geoWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+        geoWatchRef.current = null;
       }
     }
+
     return () => {
-      if (geoIntervalRef.current) clearInterval(geoIntervalRef.current);
+      if (geoWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+        geoWatchRef.current = null;
+      }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignments, isOnline]);
 
   async function handleStatusUpdate(
