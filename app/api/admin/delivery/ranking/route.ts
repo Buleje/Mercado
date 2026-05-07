@@ -2,9 +2,11 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/delivery/ranking?period=week|month|all
+ *   También acepta sinónimos en es-PE: ?period=semana|mes|todo
  *
  * Devuelve ranking de partners del tenant ordenado por entregas exitosas
  * en el periodo. Incluye stats avanzados.
@@ -13,8 +15,14 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
+  try {
   const { searchParams } = new URL(req.url);
-  const period = searchParams.get("period") ?? "month";
+  // Acepta tanto en como es-PE (consolidación con /api/delivery/ranking)
+  const rawPeriod = searchParams.get("period") ?? "month";
+  const period = rawPeriod === "semana" ? "week"
+               : rawPeriod === "mes" ? "month"
+               : rawPeriod === "todo" ? "all"
+               : rawPeriod;
   const since = (() => {
     const d = new Date();
     if (period === "week") d.setDate(d.getDate() - 7);
@@ -88,4 +96,18 @@ export async function GET(req: NextRequest) {
           : 0,
     },
   });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    logger.error("[admin/delivery/ranking] GET failed", {
+      error: detail,
+      tenantId: auth.tenantId,
+    });
+    return NextResponse.json(
+      {
+        error: "Error del servidor",
+        ...(process.env.NODE_ENV !== "production" ? { detail } : {}),
+      },
+      { status: 503 },
+    );
+  }
 }

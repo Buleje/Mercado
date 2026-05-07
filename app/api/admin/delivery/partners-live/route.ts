@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/delivery/partners-live
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
+  try {
   const partners = await prisma.deliveryPartner.findMany({
     where: {
       tenantId: auth.tenantId,
@@ -92,4 +94,18 @@ export async function GET(req: NextRequest) {
       busy: enriched.filter((p) => p.currentOrderId != null).length,
     },
   });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    logger.error("[admin/delivery/partners-live] GET failed", {
+      error: detail,
+      tenantId: auth.tenantId,
+    });
+    return NextResponse.json(
+      {
+        error: "Error del servidor",
+        ...(process.env.NODE_ENV !== "production" ? { detail } : {}),
+      },
+      { status: 503 },
+    );
+  }
 }

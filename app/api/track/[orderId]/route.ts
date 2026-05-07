@@ -5,6 +5,7 @@ import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/track/[orderId]
@@ -52,9 +53,15 @@ function firstName(full: string): string {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> },
 ) {
+  // SECURITY 2026-05-06 (audit team): rate limit por IP — endpoint público
+  // sin auth permite enumeración de orderIds. Cache 15s mitiga repetidos pero
+  // scraping masivo aún era posible. STRICT = 60 req/min/IP.
+  const rl = await applyRateLimit(req, "STRICT", "track-public");
+  if (rl) return rl;
+
   const { orderId } = await params;
 
   // Gate — feature flag del endpoint público

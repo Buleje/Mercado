@@ -78,6 +78,20 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // AUDIT 2026-05-06: log el acceso al listado de KYC (DNI/licencia/SOAT
+    // visible). Trazabilidad ante admin malicioso descargando PII sin
+    // contexto operacional. Fire-and-forget, no bloquea response.
+    if (enriched.length > 0) {
+      const { logActivity } = await import("@/lib/activity-logger");
+      logActivity(
+        "ViewKYC",
+        "DriverApplication",
+        `Listado KYC consultado (${enriched.length} solicitudes)`,
+        undefined,
+        auth.username,
+      ).catch((err) => logger.error("[admin/driver-applications] audit log failed", { error: String(err) }));
+    }
+
     return NextResponse.json({ data: enriched });
   } catch (err) {
     logger.error("[admin/driver-applications] GET failed", { error: String(err) });
