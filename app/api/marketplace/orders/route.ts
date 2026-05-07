@@ -14,6 +14,7 @@ import { sendWhatsAppNotificationWithRetry, sendWhatsAppQueued } from "@/lib/wha
 import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
 // ── GET /api/marketplace/orders — órdenes del marketplace para el admin ─────
@@ -44,17 +45,24 @@ export async function GET(req: NextRequest) {
       take: 100,
     });
 
-    const result = orders.map((o) => ({
-      id: o.id,
-      customerName: o.customerName,
-      customerPhone: o.customerPhone ?? null,
-      customerLocation: o.customerLocation ?? "",
-      customerReference: o.customerReference ?? "",
-      total: Number(o.total),
-      status: o.status,
-      createdAt: o.createdAt.toISOString(),
-      itemsCount: o._count.items,
-    }));
+    // F7: enmascarar teléfono en listado masivo — solo últimos 4 dígitos
+    const result = orders.map((o) => {
+      const rawPhone = o.customerPhone ?? null;
+      const maskedPhone = rawPhone && rawPhone.length > 4
+        ? `***${rawPhone.slice(-4)}`
+        : rawPhone;
+      return {
+        id: o.id,
+        customerName: o.customerName,
+        customerPhone: maskedPhone,
+        customerLocation: o.customerLocation ?? "",
+        customerReference: o.customerReference ?? "",
+        total: Number(o.total),
+        status: o.status,
+        createdAt: o.createdAt.toISOString(),
+        itemsCount: o._count.items,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (err) {
@@ -120,6 +128,11 @@ export async function POST(req: NextRequest) {
 
   const traceId = newTraceId();
   try {
+    // F2: Idempotency-Key — evita doble pedido + doble cupón por doble click.
+    // TTL 300s (5 min): si la misma combinación key+phone llega de nuevo,
+    // devolvemos el orderId cacheado en vez de crear otra orden.
+    const idemKey = req.headers.get("Idempotency-Key") ?? null;
+
     const body = await req.json().catch(() => ({}));
     const parsed = CheckoutBodySchema.safeParse(body);
     if (!parsed.success) {
@@ -155,6 +168,19 @@ export async function POST(req: NextRequest) {
       items,
       scheduledFor,
     } = parsed.data;
+
+    // F2: Idempotency-Key — revisar caché antes de procesar para evitar doble pedido
+    if (idemKey && customerPhone) {
+      const idemCacheKey = `idem:order:${customerPhone}:${idemKey}`;
+      const cached = cacheStore.get<{ orderId: string }>(idemCacheKey);
+      if (cached && cached.orderId) {
+        logger.info("[marketplace/orders] idempotent replay", { idemKey, customerPhone });
+        return NextResponse.json(
+          { data: { orderId: cached.orderId }, message: "Pedido ya registrado." },
+          { status: 200 },
+        );
+      }
+    }
 
     // Block orders to stores in vacation mode
     let targetStore: { id: string; vacationMode: boolean; vacationMessage: string | null } | null = null;
@@ -219,6 +245,12 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       items,
     });
+
+    // F2: persistir idempotency en cache — doble-click en los próximos 300s devuelve este orderId
+    if (idemKey && customerPhone) {
+      const idemCacheKey = `idem:order:${customerPhone}:${idemKey}`;
+      cacheStore.set(idemCacheKey, { orderId: order.id }, 300);
+    }
 
     // Persist scheduledFor via raw query (columna fuera del schema Prisma).
     if (resolvedScheduledFor) {

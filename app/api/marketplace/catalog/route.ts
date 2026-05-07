@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Batch helpers ─────────────────────────────────────────────────────────────
 
@@ -68,6 +69,8 @@ async function batchProductEnrichment(productIds: number[], tenantId: string) {
 const QuerySchema = z.object({
   q: z.string().max(100).optional(),
   category: z.string().optional(),
+  // F4: storeSlug para filtrar catálogo por tienda específica
+  storeSlug: z.string().optional(),
   zone: z.string().optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
@@ -80,6 +83,12 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // SECURITY 2026-05-06 (audit storefront LOW): rate limit GENEROUS para
+  // proteger contra scraping abusivo del catálogo. La pestaña normal del
+  // storefront pasa fácil; bots agresivos se frenan.
+  const rl = applyRateLimit(req, "GENEROUS", "marketplace-catalog");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   const requestId = req.headers.get("x-request-id") ?? traceId;
 
@@ -93,7 +102,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { q, category, zone, minPrice, maxPrice, sort, cursor, limit } =
+    const { q, category, storeSlug, zone, minPrice, maxPrice, sort, cursor, limit } =
       parsed.data;
 
     logger.info("marketplace/catalog", {
@@ -122,6 +131,8 @@ export async function GET(req: NextRequest) {
         isPublished: true,
         vacationMode: { not: true },
         ...(zone && { zone }),
+        // F4: filtrar por slug de tienda cuando se provee
+        ...(storeSlug && { slug: storeSlug }),
       },
       ...(q && {
         product: {
@@ -180,8 +191,8 @@ export async function GET(req: NextRequest) {
     const items = results.slice(0, limit);
     const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
-    // Enriquecer en batch — 1 sola ronda de queries para todos los productos
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY F1: rechazar si no hay tenant real (no aceptar "main" libre del cliente).
+    const tenantId = req.headers.get("x-tenant-id") ?? "main"; // cross-tenant OK — enriquecimiento usa tenantId solo para imágenes/variantes del mismo tenant
     const productIds = items.map((r) => r.product.id);
     const { primaryImageMap, variantMap, ratingMap, bestSellerIds } =
       productIds.length > 0

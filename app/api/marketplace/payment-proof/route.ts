@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { z } from "zod";
+import { randomBytes } from "crypto";
 import { PaymentProofsDB, type PaymentMethod, type BillingCycle } from "@/lib/db/payment-proofs.db";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -43,6 +44,26 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const BUCKET = "media";
 
+/**
+ * F5: Validar magic bytes — el Content-Type puede ser spoofed fácilmente.
+ * Leemos los primeros 12 bytes del buffer para confirmar el formato real.
+ */
+function validateMagicBytes(buf: Buffer): boolean {
+  if (buf.length < 4) return false;
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true;
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return true;
+  // WebP: RIFF????WEBP (bytes 0-3 = RIFF, bytes 8-11 = WEBP)
+  if (
+    buf.length >= 12 &&
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) return true;
+  // HEIC/HEIF: no tienen magic bytes fijos confiables — aceptamos y dejamos que sharp lo valide
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "STRICT", "payment-proof-upload");
   if (rl) return rl;
@@ -77,14 +98,22 @@ export async function POST(req: NextRequest) {
   let optimized: Buffer;
   try {
     const buf = Buffer.from(await file.arrayBuffer());
+
+    // F5: validar magic bytes reales (el Content-Type del cliente puede estar spoofed)
+    const isHeic = file.type === "image/heic" || file.type === "image/heif";
+    if (!isHeic && !validateMagicBytes(buf)) {
+      return NextResponse.json({ error: "Tipo de archivo no permitido (magic bytes inválidos)" }, { status: 400 });
+    }
+
     optimized = await sharp(buf).rotate().resize({ width: 1000, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
   } catch (err) {
     logger.error("[payment-proof] sharp failed", { error: String(err) });
     return NextResponse.json({ error: "No pudimos procesar la imagen" }, { status: 500 });
   }
 
+  // F5: usar crypto.randomBytes en vez de Math.random para el nombre de archivo
   const ts = Date.now();
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = randomBytes(8).toString("hex");
   const path = `payment-proofs/${parsed.data.tenantSlug}-${ts}-${rand}.webp`;
 
   let publicUrl: string;

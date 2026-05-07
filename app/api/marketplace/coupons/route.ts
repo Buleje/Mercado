@@ -49,6 +49,19 @@ export async function GET(req: NextRequest) {
     }
 
     const storeIdFilter = req.nextUrl.searchParams.get("storeId");
+
+    // F8: si se provee storeId externo, validar que pertenece al tenant del admin.
+    // Sin esta validación, storeId de otro tenant devolvía [] confirmando que existe.
+    if (storeIdFilter && storeIdFilter !== store.id) {
+      const storeCheck = await prisma.store.findFirst({
+        where: { id: storeIdFilter, tenantId: auth.tenantId },
+        select: { id: true },
+      });
+      if (!storeCheck) {
+        return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
+      }
+    }
+
     const coupons = await CouponsDB.list(auth.tenantId, storeIdFilter ?? store.id);
 
     return NextResponse.json({ data: coupons });
