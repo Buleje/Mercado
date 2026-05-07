@@ -246,47 +246,22 @@ export default function TurnosModule() {
       const ventasTotal = Number(cerrado.ventasTotal ?? turnoActivo.ventasTotal ?? 0);
       const diferencia = Number(cerrado.diferencia ?? (monto - (turnoActivo.inicioEfectivo + ventasTotal)));
 
-      // Fetch sales details for the turno period to get payment methods and top products
+      // T6 (audit ventas-caja 2026-05-07): server-authoritative aggregation.
+      // Antes traiamos /api/sales completo y agregabamos en cliente, violando
+      // regla critica #6 (totales en backend) + perf issue. Ahora consumimos
+      // /api/turnos/[id]/summary que devuelve cantidadVentas + metodosPago +
+      // topProductos ya agregados desde DB con scope cashierId.
       let metodosPago: { metodo: string; total: number }[] = [];
       let topProductos: { nombre: string; cantidad: number }[] = [];
       let cantidadVentas = 0;
 
       try {
-        const salesRes = await fetch("/api/sales");
-        if (salesRes.ok) {
-          const salesData = await salesRes.json();
-          const allSales = Array.isArray(salesData) ? salesData : salesData.ventas ?? [];
-          // Filter sales that happened during this turno
-          const turnoStart = new Date(turnoActivo.abrioEn).getTime();
-          const sales = allSales.filter((s: Record<string, unknown>) => {
-            const createdAt = s.createdAt as string | undefined;
-            return createdAt && new Date(createdAt).getTime() >= turnoStart;
-          });
-          cantidadVentas = sales.length;
-
-          // Aggregate payment methods
-          const payMap = new Map<string, number>();
-          for (const s of sales) {
-            const method = s.payment || s.paymentMethod || "efectivo";
-            payMap.set(method, (payMap.get(method) ?? 0) + Number(s.total ?? 0));
-          }
-          metodosPago = Array.from(payMap.entries())
-            .map(([metodo, total]) => ({ metodo: metodo.charAt(0).toUpperCase() + metodo.slice(1), total }))
-            .sort((a, b) => b.total - a.total);
-
-          // Aggregate top products
-          const prodMap = new Map<string, number>();
-          for (const s of sales) {
-            const items = s.items ?? [];
-            for (const item of items) {
-              const name = item.name ?? item.productName ?? "Producto";
-              prodMap.set(name, (prodMap.get(name) ?? 0) + Number(item.quantity ?? 1));
-            }
-          }
-          topProductos = Array.from(prodMap.entries())
-            .map(([nombre, cantidad]) => ({ nombre, cantidad }))
-            .sort((a, b) => b.cantidad - a.cantidad)
-            .slice(0, 3);
+        const summaryRes = await fetch(`/api/turnos/${turnoActivo.id}/summary`);
+        if (summaryRes.ok) {
+          const summary = await summaryRes.json();
+          cantidadVentas = Number(summary.cantidadVentas ?? 0);
+          metodosPago = Array.isArray(summary.metodosPago) ? summary.metodosPago : [];
+          topProductos = Array.isArray(summary.topProductos) ? summary.topProductos.slice(0, 3) : [];
         }
       } catch {
         // Sales fetch failed — use basic data
