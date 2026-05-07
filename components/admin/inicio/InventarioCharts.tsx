@@ -357,7 +357,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
                   type="button"
                   onClick={handleSendAlert}
                   disabled={sendingAlert}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-[var(--data-warning)] text-white hover:bg-[var(--data-warning)]/90 shadow-sm transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-[var(--data-warning-500)] text-white hover:bg-[var(--data-warning-500)]/90 shadow-sm transition-all disabled:opacity-50"
                 >
                   <Bell className="h-3.5 w-3.5" />
                   {sendingAlert ? "Enviando..." : "Enviar alerta"}

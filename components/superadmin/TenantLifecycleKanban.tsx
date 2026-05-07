@@ -47,11 +47,11 @@ interface KanbanColumn {
 // -- Columnas --
 
 const COLUMNS: KanbanColumn[] = [
-  { stage: "trial", label: "Trial", icon: Clock, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
-  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
-  { stage: "active", label: "Activo", icon: Users, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
-  { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bgColor: "bg-amber-50 dark:bg-amber-900/20", borderColor: "border-amber-200 dark:border-amber-700" },
-  { stage: "churned", label: "Churned", icon: XCircle, color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bgColor: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-red-700" },
+  { stage: "trial", label: "Trial", icon: Clock, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-[var(--data-success-700)]" },
+  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-[var(--data-success-700)]" },
+  { stage: "active", label: "Activo", icon: Users, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
+  { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bgColor: "bg-amber-50 dark:bg-amber-900/20", borderColor: "border-amber-200 dark:border-[var(--data-warning-700)]" },
+  { stage: "churned", label: "Churned", icon: XCircle, color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bgColor: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-[var(--data-error-700)]" },
 ];
 
 // -- Componente tarjeta --
@@ -65,7 +65,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
       </div>
 
       {tenant.mrr > 0 && (
-        <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">S/{tenant.mrr}/mes</p>
+        <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">S/{tenant.mrr}/mes</p>
       )}
 
       {tenant.lastOrderDate && (
@@ -75,14 +75,14 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
       )}
 
       {tenant.signal && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1 flex items-center gap-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1 flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
           {tenant.signal}
         </p>
       )}
 
       {tenant.trialEndsAt && tenant.stage === "trial" && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] mt-1">
           Trial hasta: {new Date(tenant.trialEndsAt).toLocaleDateString("es-PE")}
         </p>
       )}
@@ -91,7 +91,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerPhone && (
           <button
             onClick={() => onAction("whatsapp", tenant)}
-            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/20 text-[var(--data-success)] transition-colors"
+            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
             title="WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -100,7 +100,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerEmail && (
           <button
             onClick={() => onAction("email", tenant)}
-            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/20 text-[var(--data-success)] transition-colors"
+            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
             title="Email"
           >
             <Mail className="h-3.5 w-3.5" />
@@ -211,7 +211,7 @@ export default function TenantLifecycleKanban() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-[var(--data-error)]">{error}</p>
+        <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         <button onClick={loadData} className="mt-3 text-sm font-bold text-primary hover:underline">Reintentar</button>
       </div>
     );

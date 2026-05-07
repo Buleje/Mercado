@@ -90,12 +90,12 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}
             </div>
           )}
 
-          <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl text-xs text-[var(--data-info)]">
+          <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-xs text-[var(--data-info-500)]">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <p>
               La gift card se genera con un código único y queda asociada a este admin.

@@ -39,7 +39,7 @@ export function LoyaltyBanner({
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl p-4",
-        "bg-[#00B4A6] dark:bg-[#1a3d2e]",
+        "bg-[var(--accent)] dark:bg-[#1a3d2e]",
         "text-white",
         className
       )}

@@ -176,7 +176,7 @@ export default function SupplierRegisterForm() {
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
             Te contactaremos en{" "}
-            <strong className="text-emerald-600 dark:text-emerald-400">
+            <strong className="text-[var(--data-success-600)] dark:text-emerald-400">
               24-48 horas
             </strong>{" "}
             para coordinar los siguientes pasos y entregarte tu API key.
@@ -184,7 +184,7 @@ export default function SupplierRegisterForm() {
           <div className="flex flex-col gap-2 pt-2">
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 text-sm transition"
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)] text-white font-semibold px-4 py-3 text-sm transition"
             >
               Volver al inicio
             </Link>
@@ -205,7 +205,7 @@ export default function SupplierRegisterForm() {
   return (
     <div className="mx-auto max-w-lg">
       <div className="text-center mb-6">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg mb-3">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-[var(--data-success-600)] flex items-center justify-center text-white text-2xl font-bold shadow-lg mb-3">
           B
         </div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -341,7 +341,7 @@ export default function SupplierRegisterForm() {
 
         {submitError && (
           <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3">
-            <p className="text-xs font-medium text-red-700 dark:text-red-300">
+            <p className="text-xs font-medium text-[var(--data-error-700)] dark:text-red-300">
               {submitError}
             </p>
           </div>
@@ -350,7 +350,7 @@ export default function SupplierRegisterForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold px-4 py-3 text-sm transition shadow-sm min-h-[48px]"
+          className="w-full rounded-xl bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold px-4 py-3 text-sm transition shadow-sm min-h-[48px]"
         >
           {submitting ? "Enviando…" : "Enviar solicitud"}
         </button>
@@ -387,7 +387,7 @@ function Field({
         htmlFor={htmlFor}
         className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1"
       >
-        {label} {required && <span className="text-red-500">*</span>}
+        {label} {required && <span className="text-[var(--data-error-500)]">*</span>}
         {hint && (
           <span className="ml-1 text-gray-400 dark:text-gray-500 font-normal">
             ({hint})
@@ -395,7 +395,7 @@ function Field({
         )}
       </label>
       {children}
-      {error && <p className="mt-1 text-[length:var(--ts-2xs)] text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">{error}</p>}
     </div>
   );
 }
@@ -404,10 +404,10 @@ function inputClass(invalid: boolean): string {
   return [
     "w-full px-3 py-2.5 rounded-xl border text-sm bg-white dark:bg-gray-800",
     "text-gray-900 dark:text-white placeholder:text-gray-400",
-    "focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500",
+    "focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/30 focus:border-[var(--data-success-500)]",
     "min-h-[44px]",
     invalid
-      ? "border-red-300 dark:border-red-700"
+      ? "border-red-300 dark:border-[var(--data-error-700)]"
       : "border-gray-200 dark:border-gray-700",
   ].join(" ");
 }

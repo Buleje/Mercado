@@ -57,9 +57,9 @@ const TYPE_CONFIG: Record<
   new_order: {
     label: "Nuevo pedido",
     Icon: ShoppingBag,
-    dot: "bg-teal-500",
+    dot: "bg-[var(--accent)]",
     bg: "bg-teal-50 dark:bg-teal-900/20",
-    text: "text-teal-700 dark:text-teal-400",
+    text: "text-[var(--accent-dark)] dark:text-teal-400",
     border: "border-teal-200 dark:border-teal-800",
   },
   order_status_changed: {
@@ -67,40 +67,40 @@ const TYPE_CONFIG: Record<
     Icon: Package,
     dot: "bg-[var(--accent-soft)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
-    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   low_stock: {
     label: "Stock bajo",
     Icon: AlertTriangle,
-    dot: "bg-[var(--data-error)]",
-    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
-    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    border: "border-[var(--data-error)] dark:border-[var(--data-error)]",
+    dot: "bg-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
+    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
   },
   payment: {
     label: "Pago recibido",
     Icon: CreditCard,
     dot: "bg-[var(--accent-soft)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
-    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   delivery: {
     label: "Delivery",
     Icon: Truck,
-    dot: "bg-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+    dot: "bg-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
   },
   fiado_vencido: {
     label: "Fiado vencido",
     Icon: Banknote,
-    dot: "bg-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+    dot: "bg-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
   },
 };
 
@@ -222,7 +222,7 @@ export default function LiveNotificationBell() {
 
           {/* Unread badge */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center leading-none ">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center leading-none ">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -231,7 +231,7 @@ export default function LiveNotificationBell() {
           <span
             className={cn(
               "absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-[var(--rule-base)]",
-              isConnected ? "bg-teal-500" : "bg-gray-400"
+              isConnected ? "bg-[var(--accent)]" : "bg-gray-400"
             )}
           />
         </button>
@@ -245,7 +245,7 @@ export default function LiveNotificationBell() {
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-bold text-[var(--text-primary)]">Tiempo real</span>
                 {unreadCount > 0 && (
-                  <span className="bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full">
                     {unreadCount}
                   </span>
                 )}
@@ -314,7 +314,7 @@ export default function LiveNotificationBell() {
                   <span
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      isConnected ? "bg-teal-500 animate-pulse" : "bg-gray-400"
+                      isConnected ? "bg-[var(--accent)] animate-pulse" : "bg-gray-400"
                     )}
                   />
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">

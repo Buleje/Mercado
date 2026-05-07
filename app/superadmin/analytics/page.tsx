@@ -45,9 +45,9 @@ interface AnalyticsData {
 
 const PLAN_LABELS: Record<PlanId, { label: string; color: string }> = {
   free:       { label: "Free",       color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
-  pro:        { label: "Pro",        color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300" },
+  pro:        { label: "Pro",        color: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900 dark:text-teal-300" },
   business:   { label: "Business",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
-  enterprise: { label: "Enterprise", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  enterprise: { label: "Enterprise", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
 };
 
 function PlanBadge({ plan }: { plan: PlanId }) {
@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
   if (error || !analytics) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-400">
-        <p className="text-[var(--data-error)]">{error || "Error desconocido"}</p>
+        <p className="text-[var(--data-error-500)]">{error || "Error desconocido"}</p>
         <button
           type="button"
           onClick={() => void loadData()}
@@ -296,9 +296,9 @@ export default function AnalyticsPage() {
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                             c.status === "paid"
-                              ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                              ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                               : c.status === "pending"
-                                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                           }`}
                         >
@@ -321,7 +321,7 @@ export default function AnalyticsPage() {
       {/* Tiendas en riesgo */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning)]" /> Tiendas en riesgo
+          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)]" /> Tiendas en riesgo
         </h3>
         <p className="text-gray-400 text-xs mb-4">
           Tiendas que cancelarán pronto, tienen trial vencido, o están suspendidas
@@ -348,12 +348,12 @@ export default function AnalyticsPage() {
                 <div className="flex items-center gap-2">
                   <PlanBadge plan={t.plan} />
                   {t.cancelAtPeriodEnd && (
-                    <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs flex items-center gap-1">
+                    <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs flex items-center gap-1">
                       <Clock className="w-3 h-3" /> Cancela pronto
                     </span>
                   )}
                   {!t.active && (
-                    <span className="text-[var(--data-error)] dark:text-[var(--data-error)] text-xs flex items-center gap-1">
+                    <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-xs flex items-center gap-1">
                       <XCircle className="w-3 h-3" /> Suspendida
                     </span>
                   )}

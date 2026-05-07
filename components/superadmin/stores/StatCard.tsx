@@ -23,9 +23,9 @@ export function StatCard({ icon, label, value, sub, trend }: StatCardProps) {
           <p
             className={`text-[length:var(--ts-xs)] font-semibold mt-0.5 flex items-center gap-0.5 ${
               trend === "up"
-                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : trend === "down"
-                  ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                  ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   : "text-gray-400"
             }`}
           >

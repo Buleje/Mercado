@@ -4,13 +4,13 @@ import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export const TAG_COLORS = {
-  teal:    { bg: "bg-teal-100 dark:bg-teal-900/40",    text: "text-[var(--accent)]",    dot: "bg-teal-500" },
-  blue:    { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",    dot: "bg-[var(--accent-soft)]" },
+  teal:    { bg: "bg-teal-100 dark:bg-teal-900/40",    text: "text-[var(--accent)]",    dot: "bg-[var(--accent)]" },
+  blue:    { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    dot: "bg-[var(--accent-soft)]" },
   violet:  { bg: "bg-[var(--surface-sunken)]",text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",dot: "bg-[var(--text-primary)]" },
-  amber:   { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",  text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  dot: "bg-[var(--data-warning)]" },
+  amber:   { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40",  text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  dot: "bg-[var(--data-warning-500)]" },
   rose:    { bg: "bg-[var(--surface-sunken)]",    text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",    dot: "bg-[var(--text-primary)]" },
-  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
-  orange:  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",dot: "bg-[var(--data-warning)]" },
+  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
+  orange:  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40",text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",dot: "bg-[var(--data-warning-500)]" },
   gray:    { bg: "bg-[var(--surface-sunken)]/60",    text: "text-[var(--text-secondary)]",    dot: "bg-gray-400" },
 } as const;
 

@@ -194,7 +194,7 @@ export default function AdminLoginPage() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(at 20% 0%, rgba(0,180,166,0.40) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(45,212,191,0.20) 0px, transparent 50%)",
+              "radial-gradient(at 20% 0%, color-mix(in oklab, var(--accent) 40%, transparent) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(45,212,191,0.20) 0px, transparent 50%)",
           }}
         />
         <div
@@ -221,7 +221,7 @@ export default function AdminLoginPage() {
               style={{
                 background:
                   "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
-                boxShadow: "0 12px 32px -8px rgba(0,180,166,0.5)",
+                boxShadow: "0 12px 32px -8px color-mix(in oklab, var(--accent) 50%, transparent)",
               }}
             >
               <Store className="h-6 w-6 text-white" strokeWidth={2.25} />
@@ -234,7 +234,7 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/8 border border-white/15 text-[length:var(--ts-2xs)] font-bold text-white/80 backdrop-blur-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" />
             En línea
           </span>
         </header>
@@ -258,8 +258,8 @@ export default function AdminLoginPage() {
                 <span
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border shrink-0"
                   style={{
-                    background: "rgba(0,180,166,0.10)",
-                    borderColor: "rgba(0,180,166,0.25)",
+                    background: "color-mix(in oklab, var(--accent) 10%, transparent)",
+                    borderColor: "color-mix(in oklab, var(--accent) 25%, transparent)",
                   }}
                 >
                   <f.icon className="h-4.5 w-4.5 text-[var(--accent)]" strokeWidth={2} />
@@ -384,7 +384,7 @@ export default function AdminLoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-[var(--data-error-500)]">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 {error}
               </div>
@@ -397,7 +397,7 @@ export default function AdminLoginPage() {
               style={{
                 background:
                   "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
-                boxShadow: "0 12px 24px -8px rgba(0,180,166,0.4)",
+                boxShadow: "0 12px 24px -8px color-mix(in oklab, var(--accent) 40%, transparent)",
               }}
             >
               {loading ? (

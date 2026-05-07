@@ -192,7 +192,7 @@ export default function DealsOfTheDayStrip() {
                     <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--accent)] leading-none">
                       {pen.format(item.price)}
                     </p>
-                    <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] tabular-nums leading-none">
+                    <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] tabular-nums leading-none">
                       Ahorrás {pen.format(item.price / 0.7 - item.price)}
                     </p>
                   </div>

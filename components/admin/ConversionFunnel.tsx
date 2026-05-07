@@ -67,14 +67,14 @@ async function fetchFunnelData(): Promise<FunnelStage[]> {
 
 const STAGE_COLORS = [
   "bg-primary",
-  "bg-[#33C4B8]",
+  "bg-[color-mix(in oklab, var(--accent) 70%, white)]",
   "bg-[#2dd4bf]",
   "bg-[#74c69d]",
 ];
 
 const STAGE_TEXT = [
   "text-primary dark:text-[#74c69d]",
-  "text-[#33C4B8] dark:text-primary",
+  "text-[color-mix(in oklab, var(--accent) 70%, white)] dark:text-primary",
   "text-[#2dd4bf]",
   "text-[#74c69d]",
 ];
@@ -116,9 +116,9 @@ export default function ConversionFunnel() {
 
   if (error || !current) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-6 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
         {error ?? "Sin datos"}
-        <button onClick={load} className="ml-3 underline text-[var(--data-error)] hover:text-[var(--data-error)]">Reintentar</button>
+        <button onClick={load} className="ml-3 underline text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Reintentar</button>
       </div>
     );
   }
@@ -160,8 +160,8 @@ export default function ConversionFunnel() {
                 <div className="flex items-center gap-3">
                   {prevStage && (
                     <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                      {deltaSign === "up" && <TrendingUp className="h-3 w-3 text-[var(--data-success)]" />}
-                      {deltaSign === "down" && <TrendingDown className="h-3 w-3 text-[var(--data-error)]" />}
+                      {deltaSign === "up" && <TrendingUp className="h-3 w-3 text-[var(--data-success-500)]" />}
+                      {deltaSign === "down" && <TrendingDown className="h-3 w-3 text-[var(--data-error-500)]" />}
                       {deltaSign === "same" && <Minus className="h-3 w-3 text-[var(--text-tertiary)]" />}
                       ant: {prevStage.value.toLocaleString("es-PE")}
                     </span>
@@ -184,10 +184,10 @@ export default function ConversionFunnel() {
                     <span className={cn(
                       "text-xs font-semibold px-2 py-0.5 rounded-full",
                       stage.conversionFromPrev >= 60
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                         : stage.conversionFromPrev >= 30
-                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
-                        : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
+                        : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                     )}>
                       {stage.conversionFromPrev}% conversion
                     </span>
@@ -204,7 +204,7 @@ export default function ConversionFunnel() {
         {/* Overall conversion */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <p className="text-xs text-[var(--text-tertiary)]">Conversion total</p>
-          <p className="text-2xl font-bold text-primary dark:text-[var(--data-success)] mt-1">
+          <p className="text-2xl font-bold text-primary dark:text-[var(--data-success-500)] mt-1">
             {current.stages[0]?.value > 0
               ? `${Math.round(((current.stages[current.stages.length - 1]?.value ?? 0) / current.stages[0].value) * 100)}%`
               : "—"}
@@ -222,7 +222,7 @@ export default function ConversionFunnel() {
 
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <p className="text-xs text-[var(--text-tertiary)]">Abandono en carrito</p>
-          <p className="text-2xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">
+          <p className="text-2xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">
             {current.stages[1]?.value > 0
               ? `${Math.round(((current.stages[1].value - (current.stages[2]?.value ?? 0)) / current.stages[1].value) * 100)}%`
               : "—"}

@@ -29,7 +29,7 @@ export default function CompareBar() {
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
               )}
-              <button onClick={() => remove(p.id)} aria-label={`Quitar ${p.name} de comparación`} className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center">
+              <button onClick={() => remove(p.id)} aria-label={`Quitar ${p.name} de comparación`} className="absolute -top-1 -right-1 h-4 w-4 bg-[var(--data-error-500)] text-white rounded-full flex items-center justify-center">
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -47,7 +47,7 @@ export default function CompareBar() {
         >
           Comparar ({items.length})
         </button>
-        <button onClick={clear} aria-label="Limpiar comparación" className="text-gray-400 hover:text-red-500 transition-colors">
+        <button onClick={clear} aria-label="Limpiar comparación" className="text-gray-400 hover:text-[var(--data-error-500)] transition-colors">
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
@@ -126,7 +126,7 @@ function CompareModal() {
                 return (
                   <div
                     key={`${row.label}-${i}`}
-                    className={`text-sm font-semibold text-center text-foreground ${isBestPrice ? "text-emerald-600 dark:text-emerald-400" : ""} ${isBestRating ? "text-amber-600 dark:text-amber-400" : ""} ${isOutOfStock ? "text-red-500" : ""}`}
+                    className={`text-sm font-semibold text-center text-foreground ${isBestPrice ? "text-[var(--data-success-600)] dark:text-emerald-400" : ""} ${isBestRating ? "text-[var(--data-warning-600)] dark:text-amber-400" : ""} ${isOutOfStock ? "text-[var(--data-error-500)]" : ""}`}
                   >
                     {row.type === "rating" && (items[i].rating ?? 0) > 0 && (
                       <div className="flex items-center justify-center gap-0.5 mb-0.5">
@@ -140,10 +140,10 @@ function CompareModal() {
                     )}
                     {val}
                     {isBestPrice && items.length > 1 && (
-                      <span className="block text-[length:var(--ts-2xs)] text-emerald-500 font-bold mt-0.5">Más barato</span>
+                      <span className="block text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold mt-0.5">Más barato</span>
                     )}
                     {isBestRating && items.length > 1 && (
-                      <span className="block text-[length:var(--ts-2xs)] text-amber-500 font-bold mt-0.5">Mejor valorado</span>
+                      <span className="block text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] font-bold mt-0.5">Mejor valorado</span>
                     )}
                   </div>
                 );
@@ -167,7 +167,7 @@ function CompareModal() {
         </div>
 
         <div className="p-5 pt-0 flex justify-end">
-          <button onClick={clear} className="text-sm font-semibold text-gray-400 hover:text-red-500 transition-colors">
+          <button onClick={clear} className="text-sm font-semibold text-gray-400 hover:text-[var(--data-error-500)] transition-colors">
             Limpiar comparación
           </button>
         </div>

@@ -125,7 +125,7 @@ function MiniCartSummary({
             <div className="flex items-center gap-1.5">
               <div
                 className="flex h-5 w-5 items-center justify-center rounded-md text-[length:var(--ts-2xs)] font-black text-white"
-                style={{ background: "linear-gradient(135deg,#00B4A6,#134e4a)" }}
+                style={{ background: "linear-gradient(135deg,var(--accent),#134e4a)" }}
               >
                 {g.storeName.slice(0, 1).toUpperCase()}
               </div>
@@ -612,7 +612,7 @@ export default function MarketplaceCheckoutModal({
                               "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm",
                               r.success
                                 ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-                                : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
+                                : "bg-red-50 dark:bg-red-950/30 text-[var(--data-error-700)] dark:text-red-400"
                             )}
                           >
                             <span>{r.success ? "✓" : "✗"}</span>
@@ -667,7 +667,7 @@ export default function MarketplaceCheckoutModal({
                         </p>
                         <button
                           onClick={handleQuickBuy}
-                          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-linear-to-r from-primary to-emerald-600 text-white text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all"
+                          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-600)] text-white text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all"
                         >
                           <Zap className="h-4 w-4" />
                           Comprar con un clic · {fmt(grandTotal)}
@@ -769,7 +769,7 @@ export default function MarketplaceCheckoutModal({
                       {referralResult && (
                         <p className={cn(
                           "text-xs",
-                          referralResult.success ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                          referralResult.success ? "text-green-600 dark:text-green-400" : "text-[var(--data-error-500)] dark:text-red-400"
                         )}>
                           {referralResult.message}
                         </p>
@@ -895,7 +895,7 @@ export default function MarketplaceCheckoutModal({
                                   "text-xs mt-1",
                                   couponR.valid
                                     ? "text-green-600 dark:text-green-400"
-                                    : "text-red-500 dark:text-red-400"
+                                    : "text-[var(--data-error-500)] dark:text-red-400"
                                 )}
                               >
                                 {couponR.valid
@@ -1229,7 +1229,7 @@ export default function MarketplaceCheckoutModal({
                   <motion.p
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 px-4 py-2 text-xs text-red-700 dark:text-red-400 border border-red-200/50 dark:border-red-800/30"
+                    className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 px-4 py-2 text-xs text-[var(--data-error-700)] dark:text-red-400 border border-red-200/50 dark:border-red-800/30"
                   >
                     {orderError}
                   </motion.p>
@@ -1270,7 +1270,7 @@ export default function MarketplaceCheckoutModal({
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm transition-all",
                       step === "confirmacion"
-                        ? "bg-linear-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98]"
+                        ? "bg-linear-to-r from-primary to-[var(--data-success-600)] text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98]"
                         : "bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/25 active:scale-[0.98]",
                       submitting && "opacity-70 pointer-events-none"
                     )}

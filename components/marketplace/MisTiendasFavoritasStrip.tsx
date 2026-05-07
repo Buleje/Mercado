@@ -160,7 +160,7 @@ function FavoriteStoreCard({
   return (
     <Link
       href={`/marketplace/${store.slug}`}
-      className="snap-start shrink-0 w-56 sm:w-auto group flex flex-col rounded-2xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(0,180,166,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      className="snap-start shrink-0 w-56 sm:w-auto group flex flex-col rounded-2xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_color-mix(in oklab, var(--accent) 18%, transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
     >
       {/* Banner area */}
       <div className="relative aspect-[4/3]">
@@ -228,7 +228,7 @@ function FavoriteStoreCard({
             {deliveryWindow}
           </span>
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] dark:text-emerald-400">
               <Truck className="h-3 w-3" aria-hidden />
               Gratis
             </span>

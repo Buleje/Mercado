@@ -18,8 +18,8 @@ export default function SuperAdminError({
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center p-4">
       <div className="bg-[var(--surface-raised)]/80 backdrop-blur-xl border border-[var(--rule-base)] rounded-3xl w-full max-w-md p-8 shadow-xl text-center">
-        <div className="mx-auto w-16 h-16 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 flex items-center justify-center mb-6">
-          <AlertTriangle className="w-8 h-8 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+        <div className="mx-auto w-16 h-16 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center mb-6">
+          <AlertTriangle className="w-8 h-8 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
         </div>
         <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
           Algo salió mal

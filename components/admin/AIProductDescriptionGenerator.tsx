@@ -115,9 +115,9 @@ export default function AIProductDescriptionGenerator({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-md bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] px-3 py-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0 mt-0.5" />
-          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">{error}</p>
+        <div className="flex items-start gap-2 rounded-md bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] px-3 py-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0 mt-0.5" />
+          <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{error}</p>
         </div>
       )}
 
@@ -159,7 +159,7 @@ export default function AIProductDescriptionGenerator({
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               used
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] cursor-default"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] cursor-default"
                 : "border border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
             )}
           >

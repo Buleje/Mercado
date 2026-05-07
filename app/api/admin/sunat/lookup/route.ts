@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
 
   const traceId = newTraceId();
   try {
-    const auth = await requireAdmin(req, ["admin", "cajero"]);
+    // SECURITY 2026-05-06 (pentest H11): rol admin solamente. Antes cajero
+    // podía iterar el padrón SUNAT (~30/min) y bajar datos masivos del RUC.
+    const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;
 
     const url = new URL(req.url);

@@ -23,7 +23,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPageBySlug(slug, false);
+  // SECURITY 2026-05-06: tenantId del header inyectado por proxy.ts.
+  const { headers } = await import("next/headers");
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id") ?? "main";
+  const page = await getPageBySlug(slug, tenantId, false);
 
   if (!page || page.status !== "PUBLISHED") {
     return {
@@ -77,7 +81,10 @@ async function DynamicPageContent({
   await connection();
   // Fetch page from database
   const { slug } = await params;
-  const page = await getPageBySlug(slug, true);
+  const { headers } = await import("next/headers");
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id") ?? "main";
+  const page = await getPageBySlug(slug, tenantId, true);
 
   // 404 if not found or not published
   if (!page || page.status !== "PUBLISHED") {

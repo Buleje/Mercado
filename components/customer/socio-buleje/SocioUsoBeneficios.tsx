@@ -99,7 +99,7 @@ function ProgressBar({ pct }: { pct: number }) {
         className={cn(
           "h-full rounded-full transition-all",
           pct >= 75
-            ? "bg-[var(--data-success)]"
+            ? "bg-[var(--data-success-500)]"
             : "bg-[var(--text-primary)]",
         )}
         style={{ width: `${pct}%` }}

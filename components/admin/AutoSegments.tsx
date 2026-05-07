@@ -103,27 +103,27 @@ export default function AutoSegments() {
         label: "VIP",
         description: "Mas de S/500/mes o mas de 20 pedidos",
         icon: Crown,
-        color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-        bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-        border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+        color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+        bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+        border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
       },
       {
         key: "regular",
         label: "Regular",
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
-        color: "text-primary dark:text-[var(--data-success)]",
+        color: "text-primary dark:text-[var(--data-success-500)]",
         bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-        border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+        border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {
         key: "ocasional",
         label: "Ocasional",
         description: "Menos de S/100 al mes",
         icon: User,
-        color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+        color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
         bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-        border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+        border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {
         key: "nuevo",
@@ -199,9 +199,9 @@ export default function AutoSegments() {
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
-          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : (
         <div className="space-y-3">

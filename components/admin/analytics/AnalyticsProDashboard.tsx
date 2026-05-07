@@ -288,17 +288,17 @@ export default function AnalyticsProDashboard() {
       {data?.alerts && (
         <div className="flex flex-wrap gap-3 mb-6">
           {data.alerts.lowStock > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">
               <span className="font-medium">{data.alerts.lowStock}</span> productos con stock bajo
             </div>
           )}
           {data.alerts.pendingOrders > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
               <span className="font-medium">{data.alerts.pendingOrders}</span> pedidos pendientes
             </div>
           )}
           {data.alerts.overduePayables > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">
               <span className="font-medium">{data.alerts.overduePayables}</span> pagos vencidos
             </div>
           )}
@@ -307,7 +307,7 @@ export default function AnalyticsProDashboard() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
+        <div className="mb-6 p-4 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">
           {error}. Verifica la conexion y vuelve a intentarlo.
         </div>
       )}

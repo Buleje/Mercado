@@ -82,13 +82,14 @@ export type TimelineStep = {
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pendiente: "Pendiente",
   confirmado: "Confirmado",
+  preparando: "Preparando",
   en_camino: "En camino",
   entregado: "Entregado",
   cancelado: "Cancelado",
 };
 
 export function getOrderTimeline(order: DbOrder): TimelineStep[] {
-  const statusFlow: OrderStatus[] = ["pendiente", "confirmado", "en_camino", "entregado"];
+  const statusFlow: OrderStatus[] = ["pendiente", "confirmado", "preparando", "en_camino", "entregado"];
   const isCanceled = order.status === "cancelado";
 
   // Find current status index

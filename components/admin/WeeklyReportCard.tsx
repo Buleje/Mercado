@@ -279,7 +279,7 @@ export default function WeeklyReportCard() {
         {loading ? (
           <LoadingState />
         ) : error ? (
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : data ? (
           <div className="space-y-5">
             {/* Periodo */}
@@ -293,7 +293,7 @@ export default function WeeklyReportCard() {
               </div>
               <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">
                 <p className="text-xs text-[var(--text-tertiary)] mb-1">Margen</p>
-                <p className="text-base font-bold text-primary dark:text-[var(--data-success)]">
+                <p className="text-base font-bold text-primary dark:text-[var(--data-success-500)]">
                   {data.margin.toFixed(1)}%
                 </p>
               </div>
@@ -346,9 +346,9 @@ export default function WeeklyReportCard() {
 
             {/* Stock bajo */}
             {data.lowStockCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] px-3 py-2">
-                <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] flex-shrink-0" />
-                <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] px-3 py-2">
+                <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex-shrink-0" />
+                <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                   {data.lowStockCount} {data.lowStockCount === 1 ? "producto" : "productos"} con stock bajo
                 </p>
               </div>

@@ -181,7 +181,7 @@ function FAQSection({ zone }: { zone: (typeof zones)[0] }) {
             key={faq.question}
             className="group rounded-xl border border-slate-200 bg-white"
           >
-            <summary className="cursor-pointer px-5 py-4 font-medium text-slate-700 hover:text-emerald-700 transition-colors list-none flex items-center justify-between">
+            <summary className="cursor-pointer px-5 py-4 font-medium text-slate-700 hover:text-[var(--data-success-700)] transition-colors list-none flex items-center justify-between">
               {faq.question}
               <svg
                 className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0"
@@ -253,7 +253,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
 
       {/* Hero H1 */}
       <header className="text-center mb-10">
-        <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-emerald-700 mb-4">
+        <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-[var(--data-success-700)] mb-4">
           Software ERP para Bodegas
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
@@ -262,7 +262,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
         <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
           {zone.description}
         </p>
-        <p className="mt-2 text-sm text-emerald-600 font-medium">
+        <p className="mt-2 text-sm text-[var(--data-success-600)] font-medium">
           Disponible en {zone.districts.join(", ")} y todo {zone.region}
         </p>
       </header>
@@ -271,7 +271,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <div className="text-center mb-10">
         <Link
           href="/registro"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 text-white font-semibold shadow-md hover:bg-emerald-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-8 py-3 text-white font-semibold shadow-md hover:bg-[var(--data-success-700)] transition-colors"
         >
           Prueba Buleje gratis
           <svg
@@ -328,10 +328,10 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
               <Link
                 key={d.slug}
                 href={`/zona/${zone.slug}/distrito/${d.slug}`}
-                className="group rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+                className="group rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-[var(--data-success-700)] transition-colors"
               >
                 {d.name}
-                <span className="block text-xs text-slate-400 group-hover:text-emerald-500 mt-0.5">
+                <span className="block text-xs text-slate-400 group-hover:text-[var(--data-success-500)] mt-0.5">
                   Ver bodegas y delivery
                 </span>
               </Link>
@@ -355,7 +355,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
               <Link
                 key={z.slug}
                 href={`/zona/${z.slug}`}
-                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+                className="text-sm text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {z.name}
               </Link>

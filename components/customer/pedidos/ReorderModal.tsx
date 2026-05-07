@@ -155,8 +155,8 @@ export default function ReorderModal({
       >
         {succeeded ? (
           <div className="p-8 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-[var(--data-success)]/10 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-[var(--data-success)]" aria-hidden />
+            <div className="mx-auto w-16 h-16 rounded-full bg-[var(--data-success-500)]/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-[var(--data-success-500)]" aria-hidden />
             </div>
             <h2 className="text-[length:var(--ts-lg)] font-bold text-[var(--text-primary)]">
               Pedido creado
@@ -251,7 +251,7 @@ export default function ReorderModal({
                       type="button"
                       onClick={() => removeItem(item.productId)}
                       aria-label={t("cart.remove")}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/5 transition-colors self-start"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5 transition-colors self-start"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                     </button>
@@ -282,8 +282,8 @@ export default function ReorderModal({
               )}
 
               {error && (
-                <div className="rounded-lg border border-[var(--data-error)]/30 bg-[var(--data-error)]/5 p-3">
-                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error)]">{error}</p>
+                <div className="rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-3">
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)]">{error}</p>
                 </div>
               )}
             </div>

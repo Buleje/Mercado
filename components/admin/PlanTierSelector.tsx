@@ -55,11 +55,11 @@ const ACCENT_CLASSES: Record<
   },
   max: {
     ring:
-      "border-amber-400 dark:border-amber-500/40 ring-2 ring-amber-500/15",
+      "border-amber-400 dark:border-[var(--data-warning-500)]/40 ring-2 ring-[var(--data-warning-500)]/15",
     badge:
-      "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-    icon: "text-amber-600 dark:text-amber-400",
-    iconBg: "bg-amber-50 dark:bg-amber-500/10",
+      "bg-amber-50 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-amber-400",
+    icon: "text-[var(--data-warning-600)] dark:text-amber-400",
+    iconBg: "bg-amber-50 dark:bg-[var(--data-warning-500)]/10",
     button:
       "bg-[var(--accent)] text-white hover:scale-[1.02] hover:shadow-lg",
   },
@@ -167,7 +167,7 @@ export default function PlanTierSelector({
         {justChangedTo && (
           <div
             role="status"
-            className="mt-4 flex items-center gap-2 rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/8 px-3 py-2 text-sm font-bold text-[var(--data-success)]"
+            className="mt-4 flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-2 text-sm font-bold text-[var(--data-success-500)]"
           >
             <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
             Plan cambiado a <strong>{PLANS[justChangedTo].label}</strong> · el
@@ -199,7 +199,7 @@ export default function PlanTierSelector({
               )}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] px-3 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white shadow-sm">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] px-3 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white shadow-sm">
                   <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                   Activo
                 </span>

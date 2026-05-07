@@ -42,7 +42,7 @@ interface CategoryDef {
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { id: "bodega", label: "Bodegas", icon: ShoppingBag, tone: "#00B4A6" },
+  { id: "bodega", label: "Bodegas", icon: ShoppingBag, tone: "var(--accent)" },
   { id: "restaurante", label: "Restaurantes", icon: ChefHat, tone: "#F59E0B" },
   { id: "polleria", label: "Pollerías", icon: Drumstick, tone: "#F43F5E" },
   { id: "panaderia", label: "Panaderías", icon: Croissant, tone: "#EAB308" },

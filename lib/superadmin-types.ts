@@ -26,6 +26,8 @@ export interface TenantRow {
   ownerEmail: string | null;
   ownerPhone: string | null;
   customDomain: string | null;
+  /** Logo del tenant — prioriza Settings.logoUrl (configurado por el admin), fallback a Tenant.logoUrl. */
+  logoUrl: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeCurrentPeriodEnd: string | null;

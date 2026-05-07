@@ -245,9 +245,9 @@ export default function BulkInvoiceGenerator() {
 
       {/* Error */}
       {errorOrders && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{errorOrders}</p>
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{errorOrders}</p>
         </div>
       )}
 
@@ -256,14 +256,14 @@ export default function BulkInvoiceGenerator() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">Resultado de la generación</p>
           <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl">
-              <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-              <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{successCount} generadas</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+              <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+              <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{successCount} generadas</span>
             </div>
             {errorCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl">
-                <XCircle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-                <span className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{errorCount} errores</span>
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl">
+                <XCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                <span className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{errorCount} errores</span>
               </div>
             )}
           </div>
@@ -279,11 +279,11 @@ export default function BulkInvoiceGenerator() {
           {errorCount > 0 && (
             <div className="space-y-1">
               {results.filter(r => !r.success).map(r => (
-                <div key={r.orderId} className="flex items-start gap-2 px-3 py-2 bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 rounded-lg">
-                  <XCircle className="h-3.5 w-3.5 text-[var(--data-error)] shrink-0 mt-0.5" />
+                <div key={r.orderId} className="flex items-start gap-2 px-3 py-2 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 rounded-lg">
+                  <XCircle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
                   <div>
                     <span className="text-xs font-bold text-[var(--text-secondary)]">{r.orderNumber}</span>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] ml-2">{r.error}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] ml-2">{r.error}</span>
                   </div>
                 </div>
               ))}

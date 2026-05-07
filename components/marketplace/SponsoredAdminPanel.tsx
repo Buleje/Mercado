@@ -54,7 +54,7 @@ const STATUS_CONFIG: Record<BoostStatus, { label: string; className: string }> =
   paused: { label: "Pausado", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400" },
   cancelled: { label: "Cancelado", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
   expired: { label: "Expirado", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
-  scheduled: { label: "Programado", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" },
+  scheduled: { label: "Programado", className: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-950/40 dark:text-emerald-400" },
 };
 
 const fmt = (n: number) =>
@@ -119,7 +119,7 @@ function ActionButtons({
           disabled={isLoading}
           aria-label="Cancelar boost"
           title="Cancelar"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400 hover:bg-red-100 disabled:opacity-50 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-red-400 hover:bg-red-100 disabled:opacity-50 transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -289,7 +289,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
 
           {/* Error */}
           {!loading && error && (
-            <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 py-3">
+            <div className="flex items-center gap-2 text-sm text-[var(--data-error-600)] dark:text-red-400 py-3">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
               <button onClick={fetchBoosts} className="underline font-semibold ml-1">Reintentar</button>

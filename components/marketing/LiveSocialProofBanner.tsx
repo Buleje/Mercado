@@ -34,7 +34,7 @@ export function LiveSocialProofBanner({
 
   const textColor = variant === "dark" ? "text-white/55" : "text-gray-500 dark:text-gray-400";
   const numberColor = variant === "dark" ? "text-white" : "text-gray-900 dark:text-white";
-  const dotColor = variant === "dark" ? "bg-emerald-400" : "bg-emerald-500";
+  const dotColor = variant === "dark" ? "bg-emerald-400" : "bg-[var(--data-success-500)]";
   const hotColor = variant === "dark" ? "text-orange-300" : "text-orange-600";
 
   const separator = <span className="hidden sm:inline text-white/20" aria-hidden>·</span>;

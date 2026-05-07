@@ -20,7 +20,7 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
   const range = max - min || 1;
   const W = 80, H = 28;
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / range) * H}`).join(" ");
-  const color = trend === "up" ? "#00B4A6" : trend === "down" ? "#ef4444" : "#6b7280";
+  const color = trend === "up" ? "var(--accent)" : trend === "down" ? "#ef4444" : "#6b7280";
   return (
     <svg width={W} height={H} className="overflow-visible">
       <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={pts} />
@@ -34,8 +34,8 @@ const COLOR_OPTIONS = [
   { label: "Verde", value: "bg-[var(--accent-soft)]" },
   { label: "Azul", value: "bg-[var(--accent-soft)]" },
   { label: "Violeta", value: "bg-[var(--text-primary)]" },
-  { label: "Ámbar", value: "bg-amber-500" },
-  { label: "Rojo", value: "bg-red-500" },
+  { label: "Ámbar", value: "bg-[var(--data-warning-500)]" },
+  { label: "Rojo", value: "bg-[var(--data-error-500)]" },
   { label: "Gris", value: "bg-gray-500" },
 ];
 
@@ -113,7 +113,7 @@ export default function CustomKPITab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Target className="h-6 w-6 text-primary" /> KPIs Personalizados
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Define y monitorea tus métricas clave de negocio</p>
         </div>
@@ -153,13 +153,13 @@ export default function CustomKPITab() {
             const progress = k.target > 0 ? Math.min((k.currentValue / k.target) * 100, 100) : 0;
             const inverse = k.name.toLowerCase().includes("tiempo") || k.name.toLowerCase().includes("agotamiento");
             const isGood = inverse ? k.currentValue <= k.target : k.currentValue >= k.target;
-            const trendColor = k.trend === "up" ? (inverse ? "text-[var(--data-error)]" : "text-[var(--data-success)]") : k.trend === "down" ? (inverse ? "text-[var(--data-success)]" : "text-[var(--data-error)]") : "text-[var(--text-tertiary)]";
+            const trendColor = k.trend === "up" ? (inverse ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]") : k.trend === "down" ? (inverse ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]") : "text-[var(--text-tertiary)]";
 
             return (
               <div key={k.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 relative group">
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => openEdit(k)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)]"><Pencil className="h-3 w-3" /></button>
-                  <button onClick={() => remove(k.id)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-3 w-3" /></button>
+                  <button onClick={() => remove(k.id)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3 w-3" /></button>
                 </div>
 
                 <div className="flex items-center gap-2 mb-2">
@@ -185,7 +185,7 @@ export default function CustomKPITab() {
                 {/* Barra progreso hacia meta */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")}
+                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")}
                       style={{ width: `${progress}%` }} />
                   </div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{fmt(k.target, k.unit)}</span>

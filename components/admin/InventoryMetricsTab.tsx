@@ -87,7 +87,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-const CHART_COLORS = ['#00B4A6', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a']
+const CHART_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a']
 
 const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   ENTRY: 'Entrada',
@@ -240,7 +240,7 @@ export default function InventoryMetricsTab() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <RefreshCw className="h-8 w-8 animate-spin text-[var(--data-success)] dark:text-[var(--data-success)]" />
+        <RefreshCw className="h-8 w-8 animate-spin text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         <p className="text-[var(--text-tertiary)] text-sm">
           Cargando métricas de inventario...
         </p>
@@ -253,8 +253,8 @@ export default function InventoryMetricsTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <AlertCircle className="h-10 w-10 text-[var(--data-error)]" />
-        <p className="text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">{error}</p>
+        <AlertCircle className="h-10 w-10 text-[var(--data-error-500)]" />
+        <p className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">{error}</p>
         <button
           onClick={fetchData}
           className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
@@ -294,7 +294,7 @@ export default function InventoryMetricsTab() {
         <KPICard
           icon={<Package className="h-5 w-5" />}
           iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
+          iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           label="Lotes activos"
           value={activeBatches.length.toString()}
         />
@@ -303,7 +303,7 @@ export default function InventoryMetricsTab() {
         <KPICard
           icon={<Clock className="h-5 w-5" />}
           iconBg="bg-amber-100 dark:bg-amber-900/40"
-          iconColor="text-amber-600 dark:text-amber-400"
+          iconColor="text-[var(--data-warning-600)] dark:text-amber-400"
           label="Por vencer (≤30d)"
           value={expiringBatches.length.toString()}
           alert={expiringBatches.length > 0}
@@ -313,7 +313,7 @@ export default function InventoryMetricsTab() {
         <KPICard
           icon={<XCircle className="h-5 w-5" />}
           iconBg="bg-red-100 dark:bg-red-900/40"
-          iconColor="text-red-600 dark:text-red-400"
+          iconColor="text-[var(--data-error-600)] dark:text-red-400"
           label="Vencidos"
           value={expiredBatches.length.toString()}
           alert={expiredBatches.length > 0}
@@ -324,7 +324,7 @@ export default function InventoryMetricsTab() {
         <KPICard
           icon={<DollarSign className="h-5 w-5" />}
           iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
+          iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           label="Valor inventario"
           value={formatCurrency(totalInventoryValue)}
         />
@@ -346,7 +346,7 @@ export default function InventoryMetricsTab() {
         {/* Movimientos por tipo */}
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <BarChart3 className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <BarChart3 className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             <CardTitle className="font-semibold text-[var(--text-primary)]">
               Movimientos por tipo
             </CardTitle>
@@ -371,7 +371,7 @@ export default function InventoryMetricsTab() {
                     fontSize: '13px',
                   }}
                 />
-                <Bar dataKey="cantidad" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cantidad" fill="var(--accent)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -380,7 +380,7 @@ export default function InventoryMetricsTab() {
         {/* Top 5 rotación */}
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <TrendingUp className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             <CardTitle className="font-semibold text-[var(--text-primary)]">
               Top 5 mayor rotación (30 días)
             </CardTitle>
@@ -431,7 +431,7 @@ export default function InventoryMetricsTab() {
       {/* ─── Critical Batches Table ───────────────────────────────────────────── */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           <CardTitle className="font-semibold text-[var(--text-primary)]">
             Lotes críticos
           </CardTitle>
@@ -439,7 +439,7 @@ export default function InventoryMetricsTab() {
             (vencidos + por vencer ≤7 días)
           </span>
           {criticalBatches.length > 0 && (
-            <span className="ml-auto inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
+            <span className="ml-auto inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full">
               {criticalBatches.length}
             </span>
           )}
@@ -503,17 +503,17 @@ export default function InventoryMetricsTab() {
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         {isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full">
                             <XCircle className="h-3 w-3" />
                             Vencido
                           </span>
                         ) : isExpiredToday ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full">
                             <AlertCircle className="h-3 w-3" />
                             Vence hoy
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded-full">
                             <Clock className="h-3 w-3" />
                             {days}d restantes
                           </span>
@@ -534,7 +534,7 @@ export default function InventoryMetricsTab() {
                   >
                     Valor total en riesgo:
                   </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-[var(--data-error)] dark:text-[var(--data-error)] tabular-nums">
+                  <td className="py-2.5 px-3 text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] tabular-nums">
                     {formatCurrency(
                       criticalBatches.reduce((s, b) => s + b.quantity * (b.costUnit || 0), 0)
                     )}
@@ -569,9 +569,9 @@ function KPICard({
   alertColor?: 'amber' | 'red' | 'orange'
 }) {
   const ringColors: Record<string, string> = {
-    amber: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
-    red: "ring-[var(--data-error)] dark:ring-[var(--data-error)]",
-    orange: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+    amber: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
+    red: "ring-[var(--data-error-500)] dark:ring-[var(--data-error-500)]",
+    orange: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
   }
 
   return (
@@ -603,7 +603,7 @@ function EmptyState({
     <div className="flex flex-col items-center justify-center py-10 text-center">
       {icon === 'check' ? (
         <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mb-3">
-          <Package className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+          <Package className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         </div>
       ) : (
         <div className="h-10 w-10 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center mb-3">

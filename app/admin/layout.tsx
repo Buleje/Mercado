@@ -1,5 +1,7 @@
 import { AdminProviders } from "./providers";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import DesignTokensProvider from "@/components/admin/DesignTokensProvider";
+import { cookies } from "next/headers";
 import "./print.css";
 
 /**
@@ -50,7 +52,12 @@ const TENANT_CACHE_GUARD_SCRIPT = `
 })();
 `.trim();
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Lee el slug del tenant desde la cookie (set por proxy.ts y por el
+  // path /t/[slug]). DesignTokensProvider usa esto para resolver el
+  // override custom o caer al preset global.
+  const cookieStore = await cookies();
+  const tenantSlug = cookieStore.get("active-tenant-slug")?.value ?? null;
   // AdminProviders contiene su propio Suspense boundary interno alrededor
   // de useSearchParams (ver providers.tsx). Requerido por Next 16 para no
   // marcar /admin como blocking-route.
@@ -71,7 +78,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminProviders>
         {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
         <SkipLink />
-        {children}
+        <DesignTokensProvider tenantId={tenantSlug}>
+          {children}
+        </DesignTokensProvider>
       </AdminProviders>
     </>
   );

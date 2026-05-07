@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { logActivity } from "@/lib/activity-logger";
 
 /**
  * lib/db/reviews.db.ts — Bloque D3 del Marketplace (Reviews verificadas)
@@ -144,6 +145,20 @@ export const ReviewsMarketplaceDB = {
     if (params.rating < 1 || params.rating > 5) {
       throw new Error("rating debe estar entre 1 y 5");
     }
+
+    // SECURITY 2026-05-06 (audit reviews #11): strip HTML tags + control chars
+    // del name y text. Antes el campo se persistía crudo y la UI lo renderea
+    // en un PDP — si algún componente futuro usa dangerouslySetInnerHTML →
+    // XSS stored al PDP de cualquier visitante.
+    const stripHtml = (s: string) =>
+      String(s ?? "")
+        // SECURITY: strip HTML + control chars (audit reviews #11)
+        .replace(/<[^>]*>/g, "")
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\u0000-\u001F\u007F]/g, "")
+        .trim();
+    params.name = stripHtml(params.name).slice(0, 100);
+    params.text = stripHtml(params.text).slice(0, 2000);
 
     // 1. Verificar el order
     const orders = await prisma.$queryRawUnsafe<
@@ -400,6 +415,7 @@ export const ReviewsMarketplaceDB = {
     tenantId: string,
     reviewId: string,
     status: ReviewStatus,
+    actorUsername?: string,
   ): Promise<void> {
     await prisma.$executeRawUnsafe(
       `UPDATE "Review"
@@ -410,8 +426,20 @@ export const ReviewsMarketplaceDB = {
       tenantId,
     );
     invalidateByPrefix(`reviews:${tenantId}`);
-    invalidateByPrefix(`reviews:agg`);
+    // SECURITY 2026-05-05 (audit reviews #4): la key real es
+    // `reviews:${tenantId}:agg:...`, no `reviews:agg`. Antes el invalidate
+    // por prefix `reviews:agg` nunca matcheaba y los aggregates quedaban
+    // stale tras moderate/delete.
+    invalidateByPrefix(`reviews:${tenantId}:agg`);
     logger.info("[Reviews] moderated", { tenantId, reviewId, status });
+    // SECURITY 2026-05-05 (audit reviews #5): audit trail.
+    logActivity(
+      "Moderar",
+      "review",
+      `Review ${reviewId} → ${status}`,
+      reviewId,
+      actorUsername,
+    ).catch((err) => logger.warn("[Reviews] moderate audit failed", { err: String(err) }));
   },
 
   /**
@@ -421,6 +449,7 @@ export const ReviewsMarketplaceDB = {
     tenantId: string,
     reviewId: string,
     replyText: string,
+    actorUsername?: string,
   ): Promise<void> {
     const now = new Date();
     await prisma.$executeRawUnsafe(
@@ -434,6 +463,14 @@ export const ReviewsMarketplaceDB = {
     );
     invalidateByPrefix(`reviews:${tenantId}`);
     logger.info("[Reviews] reply added", { tenantId, reviewId });
+    // SECURITY 2026-05-05 (audit reviews #5): audit trail.
+    logActivity(
+      "Responder",
+      "review",
+      `Reply en review ${reviewId} (${replyText.length} chars)`,
+      reviewId,
+      actorUsername,
+    ).catch((err) => logger.warn("[Reviews] reply audit failed", { err: String(err) }));
   },
 
   /**
@@ -450,7 +487,11 @@ export const ReviewsMarketplaceDB = {
       tenantId,
     );
     invalidateByPrefix(`reviews:${tenantId}`);
-    invalidateByPrefix(`reviews:agg`);
+    // SECURITY 2026-05-05 (audit reviews #4): la key real es
+    // `reviews:${tenantId}:agg:...`, no `reviews:agg`. Antes el invalidate
+    // por prefix `reviews:agg` nunca matcheaba y los aggregates quedaban
+    // stale tras moderate/delete.
+    invalidateByPrefix(`reviews:${tenantId}:agg`);
     logger.info("[Reviews] soft deleted", { tenantId, reviewId });
   },
 };

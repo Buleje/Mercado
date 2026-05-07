@@ -107,11 +107,11 @@ export default function QuickReorder() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-4 sm:p-5"
+        className="bg-[var(--surface-sunken)] rounded-2xl border border-[var(--accent)]/20 p-4 sm:p-5"
       >
         <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center flex-shrink-0">
-            <RotateCcw className="h-5 w-5 text-[#00B4A6] dark:text-[#2dd4bf]" />
+          <div className="h-10 w-10 rounded-xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 flex items-center justify-center flex-shrink-0">
+            <RotateCcw className="h-5 w-5 text-[var(--accent)] dark:text-[#2dd4bf]" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -133,7 +133,7 @@ export default function QuickReorder() {
             <div className="flex items-center gap-3 mt-3">
               <button
                 onClick={handleReorder}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-bold transition-all shadow-lg shadow-[#00B4A6]/20 active:scale-[0.98]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white text-sm font-bold transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-[0.98]"
               >
                 <ShoppingCart className="h-5 w-5" />
                 Repetir pedido · S/ {lastOrder.total.toFixed(2)}

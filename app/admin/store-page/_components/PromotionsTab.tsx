@@ -255,7 +255,7 @@ export default function PromotionsTab() {
                 <div className="flex items-center gap-2">
                   <p className="font-bold">{p.title}</p>
                   {p.active ? (
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                       Activa
                     </span>
                   ) : (
@@ -284,7 +284,7 @@ export default function PromotionsTab() {
                 title={p.active ? "Pausar" : "Activar"}
                 className={`p-2 rounded-lg ${
                   p.active
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                     : "bg-gray-100 text-[var(--text-secondary)]"
                 }`}
               >
@@ -296,7 +296,7 @@ export default function PromotionsTab() {
               </button>
               <button
                 onClick={() => remove(p.id)}
-                className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)]"
+                className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

@@ -11,11 +11,11 @@ import type { MarginResponse } from "@/app/api/analytics/margins/route";
 
 const fmt = (n: number) => `S/${n.toFixed(2)}`;
 const pctColor = (n: number) =>
-  n >= 30 ? "text-[var(--data-success)]" : n >= 15 ? "text-amber-600" : "text-red-500";
+  n >= 30 ? "text-[var(--data-success-500)]" : n >= 15 ? "text-[var(--data-warning-600)]" : "text-[var(--data-error-500)]";
 
 function MarginBar({ value }: { value: number }) {
   const pctClamped = Math.max(0, Math.min(100, value));
-  const color = value >= 30 ? "bg-[var(--accent-soft)]" : value >= 15 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
+  const color = value >= 30 ? "bg-[var(--accent-soft)]" : value >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="w-full bg-gray-100 dark:bg-surface rounded-full h-1.5">
       <div className={cn("h-1.5 rounded-full transition-all", color)} style={{ width: `${pctClamped}%` }} />
@@ -114,7 +114,7 @@ export default function MarginDashboardTab() {
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Margen global</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-          <div className="w-9 h-9 rounded-xl bg-[var(--data-warning)] flex items-center justify-center mb-3">
+          <div className="w-9 h-9 rounded-xl bg-[var(--data-warning-500)] flex items-center justify-center mb-3">
             <AlertCircle className="h-4 w-4 text-white" />
           </div>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
@@ -126,7 +126,7 @@ export default function MarginDashboardTab() {
 
       {/* Alerta de umbral */}
       <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-        <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0" />
+        <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
         <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
           Umbral de alerta de margen:
         </p>
@@ -140,14 +140,14 @@ export default function MarginDashboardTab() {
             onChange={(e) => setThreshold(Number(e.target.value))}
             className="w-32 accent-amber-500"
           />
-          <span className="text-sm font-bold text-[var(--data-warning)] w-10">{threshold}%</span>
+          <span className="text-sm font-bold text-[var(--data-warning-500)] w-10">{threshold}%</span>
         </div>
         {belowThreshold.length > 0 ? (
-          <span className="ml-auto text-sm font-bold text-[var(--data-error)]">
+          <span className="ml-auto text-sm font-bold text-[var(--data-error-500)]">
             {belowThreshold.length} producto{belowThreshold.length !== 1 ? "s" : ""} bajo umbral
           </span>
         ) : (
-          <span className="ml-auto text-sm font-bold text-[var(--data-success)]">Todos sobre el umbral</span>
+          <span className="ml-auto text-sm font-bold text-[var(--data-success-500)]">Todos sobre el umbral</span>
         )}
       </div>
 
@@ -217,7 +217,7 @@ export default function MarginDashboardTab() {
                     <td className="px-4 py-2.5 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{p.category}</td>
                     <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(p.revenue)}</td>
                     <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">
-                      {p.cost > 0 ? fmt(p.cost) : <span className="text-[var(--data-warning)]">—</span>}
+                      {p.cost > 0 ? fmt(p.cost) : <span className="text-[var(--data-warning-500)]">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground hidden md:table-cell">{fmt(p.grossProfit)}</td>
                     <td className="px-4 py-2.5 text-right">
@@ -258,7 +258,7 @@ export default function MarginDashboardTab() {
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Costo</p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[var(--data-success)]">{fmt(cat.grossProfit)}</p>
+                  <p className="text-sm font-bold text-[var(--data-success-500)]">{fmt(cat.grossProfit)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Ganancia</p>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export default function MarginDashboardTab() {
           {/* Top 10 mejores */}
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
             <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-              <CardTitle className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
                 <ChevronUp className="h-4 w-4" /> Top 10 mayor margen
               </CardTitle>
             </div>
@@ -299,7 +299,7 @@ export default function MarginDashboardTab() {
           {/* Top 10 peores */}
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
             <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--data-error-50)] dark:bg-red-950/20">
-              <CardTitle className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-2">
                 <ChevronDown className="h-4 w-4" /> Top 10 menor margen
               </CardTitle>
             </div>
@@ -326,28 +326,28 @@ export default function MarginDashboardTab() {
 
       {/* Productos bajo umbral — sección de alerta */}
       {belowThreshold.length > 0 && view !== "top" && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-4">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-4">
           <div className="flex items-start gap-2 mb-3">
-            <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {belowThreshold.length} producto{belowThreshold.length !== 1 ? "s" : ""} con margen menor a {threshold}%
               </p>
-              <p className="text-xs text-[var(--data-error)]/80">Revisa precios de venta o negocia mejor con proveedores</p>
+              <p className="text-xs text-[var(--data-error-500)]/80">Revisa precios de venta o negocia mejor con proveedores</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {belowThreshold.slice(0, 8).map((p) => (
               <span
                 key={p.productId}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-card border border-[var(--data-error)] dark:border-[var(--data-error)] text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-card border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold"
               >
                 {p.name}
                 <span className="font-extrabold">{p.marginPct.toFixed(0)}%</span>
               </span>
             ))}
             {belowThreshold.length > 8 && (
-              <span className="text-xs text-[var(--data-error)] self-center">+{belowThreshold.length - 8} más</span>
+              <span className="text-xs text-[var(--data-error-500)] self-center">+{belowThreshold.length - 8} más</span>
             )}
           </div>
         </div>

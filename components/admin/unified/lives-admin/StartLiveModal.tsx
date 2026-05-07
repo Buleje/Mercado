@@ -96,7 +96,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
       >
         <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[var(--data-error)] text-white flex items-center justify-center animate-pulse">
+            <div className="h-9 w-9 rounded-xl bg-[var(--data-error-500)] text-white flex items-center justify-center animate-pulse">
               <Radio className="h-4 w-4" />
             </div>
             <div>
@@ -137,14 +137,14 @@ export function StartLiveModal({ onClose, onStart }: Props) {
                   className={cn(
                     "w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-colors",
                     c.status === "ok"
-                      ? "border-[var(--data-success)] bg-[var(--data-success-50)]"
+                      ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   )}
                 >
                   <div className={cn(
                     "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
                     c.status === "ok"
-                      ? "bg-[var(--data-success-100)] text-[var(--data-success)]"
+                      ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]"
                       : "bg-gray-100 text-[var(--text-secondary)]"
                   )}>
                     {c.status === "ok" ? <CheckCircle className="h-4 w-4" /> : c.icon}
@@ -155,7 +155,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
                   </div>
                   <span className={cn(
                     "text-xs font-bold shrink-0",
-                    c.status === "ok" ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
+                    c.status === "ok" ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {c.status === "ok" ? "Listo" : "Verificar"}
                   </span>
@@ -166,7 +166,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
 
           {/* Warning */}
           {!allChecksOk && (
-            <div className="flex items-start gap-2 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl text-xs text-[var(--data-warning)]">
+            <div className="flex items-start gap-2 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl text-xs text-[var(--data-warning-500)]">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <p>Marca cada item del checklist cuando esté listo antes de iniciar la transmisión.</p>
             </div>
@@ -185,7 +185,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
               disabled={!canStart}
               className={cn(
                 "flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-colors",
-                canStart ? "bg-[var(--data-error)] hover:bg-[var(--data-error)]" : "bg-gray-300 cursor-not-allowed"
+                canStart ? "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]" : "bg-gray-300 cursor-not-allowed"
               )}
             >
               <Play className="h-4 w-4" />

@@ -60,8 +60,8 @@ function getUrgency(daysLeft: number): PlanItem["urgency"] {
 
 const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; label: string }> = {
   critical: {
-    badge: "bg-[var(--data-error-100)] text-[var(--data-error)]",
-    row: "border-[var(--data-error)] bg-[var(--data-error-50)]/50",
+    badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+    row: "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50",
     label: "Critico",
   },
   high: {
@@ -70,7 +70,7 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
     label: "Urgente",
   },
   medium: {
-    badge: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
     row: "border-[var(--rule-base)] bg-white",
     label: "Esta semana",
   },
@@ -225,9 +225,9 @@ export default function WeeklyPurchasePlanner() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--data-error-50)] border border-[var(--data-error)]">
-              <AlertTriangle className="w-3.5 h-3.5 text-[var(--data-error)]" />
-              <span className="text-xs font-semibold text-[var(--data-error)]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--data-error-50)] border border-[var(--data-error-500)]">
+              <AlertTriangle className="w-3.5 h-3.5 text-[var(--data-error-500)]" />
+              <span className="text-xs font-semibold text-[var(--data-error-500)]">
                 {plan.filter((i) => i.urgency === "critical").length} criticos
               </span>
             </div>

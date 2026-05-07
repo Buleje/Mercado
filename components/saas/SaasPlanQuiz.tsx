@@ -65,8 +65,8 @@ const PLAN_RESULTS: Record<string, PlanResult> = {
   },
   pro: {
     plan: "Pro",
-    color: "text-emerald-600",
-    gradient: "from-emerald-500 to-indigo-600",
+    color: "text-[var(--data-success-600)]",
+    gradient: "from-[var(--data-success-500)] to-indigo-600",
     icon: <Star className="h-6 w-6" />,
     description: "Tu negocio esta creciendo. Con Pro tendras mas productos, reportes avanzados y dominio personalizado.",
     price: "S/ 49/mes",
@@ -83,8 +83,8 @@ const PLAN_RESULTS: Record<string, PlanResult> = {
   },
   enterprise: {
     plan: "Enterprise",
-    color: "text-amber-600",
-    gradient: "from-amber-500 to-orange-600",
+    color: "text-[var(--data-warning-600)]",
+    gradient: "from-[var(--data-warning-500)] to-orange-600",
     icon: <Crown className="h-6 w-6" />,
     description: "Cadena de tiendas o distribucion. Soporte dedicado, SLA y personalizacion total.",
     price: "Personalizado",
@@ -146,7 +146,7 @@ export default function SaasPlanQuiz() {
                   key={i}
                   className={cn(
                     "flex-1 h-1.5 rounded-full transition-all",
-                    i < step ? "bg-teal-500" : i === step ? "bg-teal-400" : "bg-gray-200 dark:bg-gray-700"
+                    i < step ? "bg-[var(--accent)]" : i === step ? "bg-teal-400" : "bg-gray-200 dark:bg-gray-700"
                   )}
                 />
               ))}
@@ -165,10 +165,10 @@ export default function SaasPlanQuiz() {
                   className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-all text-left group"
                 >
                   <span className="text-xl">{opt.emoji}</span>
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-teal-700 dark:group-hover:text-teal-400">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-[var(--accent-dark)] dark:group-hover:text-teal-400">
                     {opt.label}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-gray-300 ml-auto group-hover:text-teal-500 transition-colors" />
+                  <ChevronRight className="h-4 w-4 text-gray-300 ml-auto group-hover:text-[var(--accent)] transition-colors" />
                 </button>
               ))}
             </div>
@@ -183,7 +183,7 @@ export default function SaasPlanQuiz() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Tu plan ideal</p>
               <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{result.plan}</h3>
-              <p className="text-2xl font-bold text-teal-600 mt-1">{result.price}</p>
+              <p className="text-2xl font-bold text-[var(--accent-dark)] mt-1">{result.price}</p>
             </div>
 
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">

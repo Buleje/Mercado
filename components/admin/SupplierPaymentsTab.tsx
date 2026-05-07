@@ -32,11 +32,11 @@ type SupplierPayment = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<PaymentStatus, { label: string; color: string; bg: string }> = {
-  pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  programado: { label: "Programado", color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  pagado:     { label: "Pagado",     color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  vencido:    { label: "Vencido",    color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
-  parcial:    { label: "Parcial",    color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  programado: { label: "Programado", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  pagado:     { label: "Pagado",     color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  vencido:    { label: "Vencido",    color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+  parcial:    { label: "Parcial",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -84,10 +84,10 @@ export default function SupplierPaymentsTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Por pagar", value: fmt(stats.totalPending), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
-          { label: "Vencido", value: fmt(stats.overdue), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
+          { label: "Por pagar", value: fmt(stats.totalPending), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
+          { label: "Vencido", value: fmt(stats.overdue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
           { label: "Desc. pronto pago", value: String(stats.earlyDiscounts), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: BadgePercent },
-          { label: "Pagado este mes", value: fmt(stats.paidThisMonth), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
+          { label: "Pagado este mes", value: fmt(stats.paidThisMonth), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -134,7 +134,7 @@ export default function SupplierPaymentsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.supplier}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(p.amount)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{fmt(p.paid)}</td>
-                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", p.amount - p.paid > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>{fmt(p.amount - p.paid)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", p.amount - p.paid > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{fmt(p.amount - p.paid)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] flex items-center gap-1"><Calendar className="h-3 w-3" />{p.dueDate}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] flex items-center gap-1"><Banknote className="h-3 w-3" />{p.paymentMethod}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[p.status].bg, STATUS_MAP[p.status].color)}>{STATUS_MAP[p.status].label}</span></td>

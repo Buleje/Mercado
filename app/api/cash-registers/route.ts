@@ -39,7 +39,17 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === "open") {
-      const openingAmount = Number(body.openingAmount) || 0;
+      // SECURITY 2026-05-05 (audit POS #6): validar openingAmount.
+      // Antes `Number(...) || 0` aceptaba negativos, NaN, y montos
+      // arbitrarios — cajero podía abrir caja con S/-1000 y descuadrar.
+      const rawAmount = Number(body.openingAmount);
+      const openingAmount = Number.isFinite(rawAmount) ? rawAmount : 0;
+      if (openingAmount < 0 || openingAmount > 50000) {
+        return NextResponse.json(
+          { error: "openingAmount fuera de rango (0–50000)" },
+          { status: 400 },
+        );
+      }
       // Check if there's already an open register
       const open = await CashRegistersDB.getOpen(auth.tenantId);
       if (open) {

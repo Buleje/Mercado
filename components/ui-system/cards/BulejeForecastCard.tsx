@@ -161,7 +161,7 @@ export const BulejeForecastCard = memo(function BulejeForecastCard({
           <p
             className={cn(
               "text-base font-extrabold tabular-nums tracking-[var(--ls-tight)] mt-1",
-              onTrack ? "text-[var(--data-success)]" : "text-[var(--data-warning)]",
+              onTrack ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]",
             )}
           >
             {prefix}

@@ -96,7 +96,7 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
                 {/* Remove button on hover */}
                 <button
                   onClick={() => removeChart(chart.id)}
-                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error)] dark:hover:border-[var(--data-error)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] "
+                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error-500)] dark:hover:border-[var(--data-error-500)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] "
                   title="Quitar gráfico"
                 >
                   <X className="h-4 w-4" />

@@ -151,7 +151,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
               className={cn(
                 "p-1.5 rounded-full transition-colors",
                 isListening
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-500 animate-pulse"
+                  ? "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-500)] animate-pulse"
                   : "hover:bg-gray-100 dark:hover:bg-accent text-gray-400",
               )}
               aria-label={isListening ? "Detener dictado" : "Buscar por voz"}
@@ -205,7 +205,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 <div className="text-right shrink-0">
                   <p className="text-sm font-extrabold text-primary">{fmt(product.price)}</p>
                   {product.stock != null && product.stock <= 5 && (
-                    <p className="text-[length:var(--ts-2xs)] text-amber-600 font-bold">Quedan {product.stock}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">Quedan {product.stock}</p>
                   )}
                 </div>
               </button>

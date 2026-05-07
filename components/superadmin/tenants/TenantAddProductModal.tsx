@@ -328,7 +328,7 @@ export default function TenantAddProductModal({
                         type="button"
                         onClick={() => removeOption(gIdx, oIdx)}
                         aria-label="Eliminar opción"
-                        className="p-1.5 rounded-lg text-[var(--data-error)] hover:bg-rose-50"
+                        className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-rose-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -346,7 +346,7 @@ export default function TenantAddProductModal({
                   <button
                     type="button"
                     onClick={() => removeGroup(gIdx)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--data-error)] hover:bg-rose-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--data-error-500)] hover:bg-rose-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Eliminar grupo
                   </button>
@@ -356,12 +356,12 @@ export default function TenantAddProductModal({
           </section>
 
           {error && (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-[var(--data-error)]">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-[var(--data-error-500)]">
               {error}
             </div>
           )}
           {success && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 flex items-center gap-2">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-[var(--data-success-700)] flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" /> Producto creado en {tenantName}.
             </div>
           )}

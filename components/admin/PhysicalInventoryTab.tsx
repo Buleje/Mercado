@@ -202,7 +202,7 @@ export default function PhysicalInventoryTab() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {bulkResult && (
-            <span className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {bulkResult.ok} registrado{bulkResult.ok !== 1 ? "s" : ""}{bulkResult.fail > 0 ? `, ${bulkResult.fail} con error` : ""}
             </span>
           )}
@@ -230,9 +230,9 @@ export default function PhysicalInventoryTab() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.total}</p></div>
-          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Contados</p><p className="text-xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{stats.counted}</p></div>
-          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Con Diferencias</p><p className="text-xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{stats.withDiff}</p></div>
-          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Unidades con ajuste</p><p className="text-xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">{stats.totalDiff}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Contados</p><p className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{stats.counted}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Con Diferencias</p><p className="text-xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{stats.withDiff}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Unidades con ajuste</p><p className="text-xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{stats.totalDiff}</p></div>
         </div>
       </div>
 
@@ -293,7 +293,7 @@ export default function PhysicalInventoryTab() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     {item.difference !== null ? (
-                      <span className={cn("font-extrabold", item.difference === 0 ? "text-[var(--data-success)]" : item.difference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                      <span className={cn("font-extrabold", item.difference === 0 ? "text-[var(--data-success-500)]" : item.difference > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                         {item.difference === 0 ? <Check className="inline h-4 w-4" /> : item.difference > 0 ? `+${item.difference}` : item.difference}
                       </span>
                     ) : "-"}
@@ -305,7 +305,7 @@ export default function PhysicalInventoryTab() {
                       </button>
                     )}
                     {item.status === "finalizado" && item.difference !== 0 && (
-                      <span className="inline-flex items-center justify-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]">
+                      <span className="inline-flex items-center justify-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]">
                         <AlertTriangle className="h-3 w-3" /> Revisar
                       </span>
                     )}
@@ -318,11 +318,11 @@ export default function PhysicalInventoryTab() {
       </div>
 
       {stats.withDiff > 0 && (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning)] dark:bg-amber-950/20">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning)]" />
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning-500)] dark:bg-amber-950/20">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning-500)]" />
           <div>
-            <CardTitle className="text-sm font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Diferencias Detectadas</CardTitle>
-            <p className="mt-1 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">Se encontraron <strong>{stats.withDiff} productos</strong> con diferencias entre el sistema y el conteo fisico. Revisa esas lineas para validar el ajuste.</p>
+            <CardTitle className="text-sm font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Diferencias Detectadas</CardTitle>
+            <p className="mt-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Se encontraron <strong>{stats.withDiff} productos</strong> con diferencias entre el sistema y el conteo fisico. Revisa esas lineas para validar el ajuste.</p>
           </div>
         </div>
       )}

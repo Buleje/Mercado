@@ -212,7 +212,7 @@ export function SADataTable<T = Record<string, unknown>>({
                   className={[
                     "w-7 h-7 rounded border transition-colors",
                     p === pagination.page
-                      ? "bg-teal-600 text-white border-teal-600"
+                      ? "bg-[var(--accent-dark)] text-white border-[var(--accent-dark)]"
                       : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
                   ].join(" ")}
                 >

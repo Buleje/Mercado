@@ -214,7 +214,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <ul className="mt-6 space-y-3">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success)]" strokeWidth={2.25} />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-500)]" strokeWidth={2.25} />
             {f}
           </li>
         ))}

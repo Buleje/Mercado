@@ -101,15 +101,15 @@ const TYPE_LABEL: Record<PendingItem["type"], string> = {
 };
 
 const TYPE_COLOR: Record<PendingItem["type"], string> = {
-  compra:        "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  eliminacion:   "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-  cambio_precio: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  compra:        "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  eliminacion:   "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+  cambio_precio: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
 };
 
 const STATUS_MAP: Record<PendingStatus, { label: string; color: string; Icon: typeof Clock }> = {
-  pendiente: { label: "Pendiente",  color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   Icon: Clock },
-  aprobado:  { label: "Aprobado",   color: "text-[var(--data-success)] dark:text-[var(--data-success)]", Icon: CheckCircle },
-  rechazado: { label: "Rechazado",  color: "text-[var(--data-error)] dark:text-[var(--data-error)]",       Icon: XCircle },
+  pendiente: { label: "Pendiente",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   Icon: Clock },
+  aprobado:  { label: "Aprobado",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", Icon: CheckCircle },
+  rechazado: { label: "Rechazado",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       Icon: XCircle },
 };
 
 function fmt(n: number) { return "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 }); }
@@ -161,7 +161,7 @@ function ResolveModal({
             onClick={() => onConfirm(note)}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
-              decision === "aprobado" ? "bg-primary hover:bg-primary-dark" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
+              decision === "aprobado" ? "bg-primary hover:bg-primary-dark" : "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"
             )}
           >
             {decision === "aprobado" ? "Confirmar aprobacion" : "Confirmar rechazo"}
@@ -313,7 +313,7 @@ export default function ApprovalWorkflow() {
       <div className="space-y-3">
         {pending.length === 0 && (
           <div className="text-center py-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
-            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-[var(--data-success)]" />
+            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-[var(--data-success-500)]" />
             <p className="text-sm">Sin solicitudes pendientes.</p>
           </div>
         )}
@@ -361,7 +361,7 @@ export default function ApprovalWorkflow() {
                 </button>
                 <button
                   onClick={() => setResolving({ item, decision: "rechazado" })}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-medium hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-medium hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                 >
                   <XCircle className="w-4 h-4" />
                   Rechazar

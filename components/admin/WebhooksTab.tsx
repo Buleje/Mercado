@@ -62,10 +62,10 @@ export default function WebhooksTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Webhooks totales", value: webhooks.length, color: "text-[var(--data-success)]" },
-          { label: "Activos", value: activeCount, color: "text-[var(--data-success)]" },
+          { label: "Webhooks totales", value: webhooks.length, color: "text-[var(--data-success-500)]" },
+          { label: "Activos", value: activeCount, color: "text-[var(--data-success-500)]" },
           { label: "Total llamadas", value: totalCalls.toLocaleString(), color: "text-[var(--text-secondary)]" },
-          { label: "Eventos disponibles", value: EVENTS.length, color: "text-[var(--data-warning)]" },
+          { label: "Eventos disponibles", value: EVENTS.length, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -87,7 +87,7 @@ export default function WebhooksTab() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <p className={cn("text-xs font-bold", wh.successRate >= 95 ? "text-[var(--data-success)]" : wh.successRate >= 80 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{wh.successRate}% éxito</p>
+                  <p className={cn("text-xs font-bold", wh.successRate >= 95 ? "text-[var(--data-success-500)]" : wh.successRate >= 80 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{wh.successRate}% éxito</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{wh.totalCalls} llamadas</p>
                 </div>
                 <Eye className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -105,13 +105,13 @@ export default function WebhooksTab() {
                   <div><span className="text-[var(--text-tertiary)]">Método:</span> <b className="text-[var(--text-primary)] dark:text-foreground">{wh.method}</b></div>
                   <div><span className="text-[var(--text-tertiary)]">Secret:</span> <b className="text-[var(--text-primary)] dark:text-foreground font-mono">{wh.secret}</b></div>
                   <div><span className="text-[var(--text-tertiary)]">Último:</span> <b className="text-[var(--text-primary)] dark:text-foreground">{fmtDate(wh.lastTriggered)}</b></div>
-                  <div><span className="text-[var(--text-tertiary)]">Estado:</span> <b className={cn(wh.active ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{wh.active ? "Activo" : "Inactivo"}</b></div>
+                  <div><span className="text-[var(--text-tertiary)]">Estado:</span> <b className={cn(wh.active ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{wh.active ? "Activo" : "Inactivo"}</b></div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: !w.active } : w))} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold", wh.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:bg-[var(--data-warning)]" : "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]")}>{wh.active ? "Pausar" : "Activar"}</button>
+                  <button onClick={() => setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: !w.active } : w))} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold", wh.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]")}>{wh.active ? "Pausar" : "Activar"}</button>
                   <button onClick={() => openEdit(wh)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"><Pencil className="h-3 w-3 inline mr-1" />Editar</button>
-                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]"><Send className="h-3 w-3 inline mr-1" />Test</button>
-                  <button onClick={() => setWebhooks(prev => prev.filter(w => w.id !== wh.id))} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] hover:bg-[var(--data-error)]"><Trash2 className="h-3 w-3 inline mr-1" />Eliminar</button>
+                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"><Send className="h-3 w-3 inline mr-1" />Test</button>
+                  <button onClick={() => setWebhooks(prev => prev.filter(w => w.id !== wh.id))} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"><Trash2 className="h-3 w-3 inline mr-1" />Eliminar</button>
                 </div>
               </div>
             )}

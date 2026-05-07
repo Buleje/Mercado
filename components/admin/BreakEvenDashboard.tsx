@@ -158,7 +158,7 @@ export default function BreakEvenDashboard() {
       </AdminModuleHeader>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-[length:var(--ts-sm)] text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-[length:var(--ts-sm)] text-[var(--data-error-500)]">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -212,10 +212,10 @@ export default function BreakEvenDashboard() {
                     className={cn(
                       "text-4xl font-extrabold tabular-nums tracking-tight leading-none mt-1",
                       stats.reached
-                        ? "text-[var(--data-success)]"
+                        ? "text-[var(--data-success-500)]"
                         : stats.progress > 60
-                          ? "text-[var(--data-warning)]"
-                          : "text-[var(--data-error)]",
+                          ? "text-[var(--data-warning-500)]"
+                          : "text-[var(--data-error-500)]",
                     )}
                   >
                     {stats.progress.toFixed(0)}%
@@ -258,8 +258,8 @@ export default function BreakEvenDashboard() {
                     className={cn(
                       "text-2xl font-extrabold tabular-nums",
                       stats.reached
-                        ? "text-[var(--data-success)]"
-                        : "text-[var(--data-error)]",
+                        ? "text-[var(--data-success-500)]"
+                        : "text-[var(--data-error-500)]",
                     )}
                   >
                     {stats.reached ? "Ganando" : fmt(stats.remaining)}
@@ -288,7 +288,7 @@ export default function BreakEvenDashboard() {
             className={cn(
               "rounded-xl border p-4 flex items-start gap-3",
               stats.reached
-                ? "border-[var(--data-success)]/30 bg-[var(--data-success)]/5"
+                ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5"
                 : "border-[var(--accent)]/30 bg-[var(--accent-soft)]",
             )}
           >
@@ -296,7 +296,7 @@ export default function BreakEvenDashboard() {
               className={cn(
                 "inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0",
                 stats.reached
-                  ? "bg-[var(--data-success)]/15 text-[var(--data-success)]"
+                  ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
                   : "bg-[var(--accent)]/15 text-[var(--accent)]",
               )}
             >
@@ -304,7 +304,7 @@ export default function BreakEvenDashboard() {
             </span>
             <div className="min-w-0 flex-1">
               {stats.reached ? (
-                <p className="text-[length:var(--ts-sm)] font-semibold text-[var(--data-success)]">
+                <p className="text-[length:var(--ts-sm)] font-semibold text-[var(--data-success-500)]">
                   Ya cubriste los costos fijos del dia. Cada sol adicional es ganancia neta.
                 </p>
               ) : stats.estimatedHour ? (

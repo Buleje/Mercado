@@ -21,11 +21,28 @@ export async function GET(req: NextRequest) {
   const tenantId =
     req.headers.get("x-tenant-id") ?? "main";
 
+  // Verificar credenciales antes de chequear feature flag — 500 silencioso
+  // por env vacías es muy frustrante. Brandon 2026-05-05.
+  const credsConfigured = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  );
+  if (!credsConfigured) {
+    logger.warn("[oauth/google] Missing GOOGLE_CLIENT_ID/SECRET", { tenantId });
+    return NextResponse.json(
+      {
+        error: "Google OAuth no configurado",
+        message: "Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el .env. Configurá ambos desde Google Cloud Console (APIs & Services → Credentials) y reiniciá el servidor.",
+        setupUrl: "https://console.cloud.google.com/apis/credentials",
+      },
+      { status: 503 }
+    );
+  }
+
   const enabled = isFeatureEnabled("oauth-google", tenantId);
   if (!enabled) {
-    logger.info("[oauth/google] OAuth not enabled for tenant", { tenantId });
+    logger.info("[oauth/google] OAuth flag disabled for tenant", { tenantId });
     return NextResponse.json(
-      { error: "Google OAuth not enabled for this tenant" },
+      { error: "Google OAuth está deshabilitado para este tenant. Activá el feature flag oauth-google." },
       { status: 404 }
     );
   }
@@ -46,18 +63,18 @@ export async function GET(req: NextRequest) {
   });
 
   const response = NextResponse.redirect(url);
-  response.cookies.set("oauth-state", state, {
+  response.cookies.set("__Host-oauth-state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     maxAge: 600, // 10 minutes
     path: "/",
   });
 
   // Persist tenantId so the callback can resolve it
-  response.cookies.set("oauth-tenant", tenantId, {
+  response.cookies.set("__Host-oauth-tenant", tenantId, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     maxAge: 600,
     path: "/",
@@ -65,9 +82,9 @@ export async function GET(req: NextRequest) {
 
   // Persist optional post-login redirect so the callback can honor it.
   if (safeRedirect.length > 0) {
-    response.cookies.set("oauth-redirect", safeRedirect, {
+    response.cookies.set("__Host-oauth-redirect", safeRedirect, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 600,
       path: "/",

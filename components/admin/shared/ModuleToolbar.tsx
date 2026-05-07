@@ -48,7 +48,7 @@ export default function ModuleToolbar({
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}
             placeholder={search.placeholder ?? "Buscar..."}
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--data-success)]/30 focus:ring-1 focus:ring-[var(--data-success)]/40 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--data-success-500)]/30 focus:ring-1 focus:ring-[var(--data-success-500)]/40 outline-none transition-all"
           />
         </div>
       )}

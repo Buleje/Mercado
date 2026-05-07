@@ -40,11 +40,11 @@ const HASHTAGS =
 
 const TYPE_COLORS: Record<PostType, string> = {
   oferta:
-    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   nuevo:
-    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   receta:
-    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   motivacional:
     "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
@@ -313,13 +313,13 @@ export default function SocialPostGenerator() {
             </div>
             {generatedText ? (
               <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--brand-ink)] p-5 dark:border-[var(--rule-base)]">
-                <div className="mb-1 text-xs font-bold text-[var(--data-warning)]">
+                <div className="mb-1 text-xs font-bold text-[var(--data-warning-500)]">
                   Buleje
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
                   {generatedText}
                 </p>
-                <p className="mt-3 text-xs text-[var(--data-success)]">{HASHTAGS}</p>
+                <p className="mt-3 text-xs text-[var(--data-success-500)]">{HASHTAGS}</p>
               </div>
             ) : (
               <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
@@ -337,7 +337,7 @@ export default function SocialPostGenerator() {
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
                 copied
                   ? "bg-[var(--accent-soft)] text-white"
-                  : "bg-[var(--data-warning)] text-white hover:bg-[#e08c4a]"
+                  : "bg-[var(--data-warning-500)] text-white hover:bg-[#e08c4a]"
               )}
             >
               {copied ? (
@@ -359,7 +359,7 @@ export default function SocialPostGenerator() {
             {HASHTAGS.split(" ").map((tag) => (
               <span
                 key={tag}
-                className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary dark:bg-primary/20 dark:text-[var(--data-success)]"
+                className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary dark:bg-primary/20 dark:text-[var(--data-success-500)]"
               >
                 <Hash className="h-3 w-3" />
                 {tag.replace("#", "")}
@@ -405,7 +405,7 @@ export default function SocialPostGenerator() {
                   </div>
                   <button
                     onClick={() => removeFromHistory(h.id)}
-                    className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                    className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

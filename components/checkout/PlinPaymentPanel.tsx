@@ -43,7 +43,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-cyan-600 uppercase tracking-wider">Pago con Plin</p>
         <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-          countdown > 120 ? "bg-cyan-200 text-cyan-700" : "bg-red-100 text-red-600 animate-pulse")}>
+          countdown > 120 ? "bg-cyan-200 text-cyan-700" : "bg-red-100 text-[var(--data-error-600)] animate-pulse")}>
           <Clock className="h-3 w-3" />
           {minutes}:{seconds.toString().padStart(2, "0")}
         </div>
@@ -60,7 +60,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
             className="flex items-center gap-2 mx-auto px-3 py-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition-colors"
           >
             <span className="text-sm font-bold text-gray-900">{plin.phone}</span>
-            {copied === "phone" ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5 text-gray-400" />}
+            {copied === "phone" ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5 text-gray-400" />}
           </button>
         )}
         {plin.name && (
@@ -76,7 +76,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
           className="flex items-center gap-2"
         >
           <span className="text-lg font-extrabold text-cyan-600">S/{finalTotal.toFixed(2)}</span>
-          {copied === "amount" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-gray-400" />}
+          {copied === "amount" ? <Check className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4 text-gray-400" />}
         </button>
       </div>
 
@@ -99,18 +99,18 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
             className={cn(
               "w-full px-4 py-3 rounded-xl border-2 text-sm font-bold outline-none transition-colors",
               opEntered
-                ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                ? "border-emerald-400 bg-emerald-50 text-[var(--data-success-700)]"
                 : "border-gray-200 bg-white text-gray-900 focus:border-cyan-400"
             )}
           />
           {opEntered && (
-            <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
+            <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]" />
           )}
         </div>
       </div>
 
       {countdown === 0 && (
-        <p className="text-xs text-red-600 font-bold text-center">
+        <p className="text-xs text-[var(--data-error-600)] font-bold text-center">
           Tiempo agotado. Si ya pagaste, ingresa el número de operacion.
         </p>
       )}

@@ -273,17 +273,17 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-            <X className="h-3.5 w-3.5 text-[var(--data-error)] shrink-0" />
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+            <X className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0" />
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
           </div>
         )}
 
         {/* Success */}
         {success && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-            <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success)] shrink-0" />
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">Cobro registrado</p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+            <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Cobro registrado</p>
           </div>
         )}
 

@@ -106,7 +106,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           {/* Pagos pendientes */}
           <AdminCard padding="lg">
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[var(--data-error)]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" />
               <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">Pagos pendientes</CardTitle>
             </div>
             <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Mes actual</p>
@@ -119,7 +119,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           {/* Cobros pendientes */}
           <AdminCard padding="lg">
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[var(--data-success)]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--data-success-500)]" />
               <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">Cobros pendientes</CardTitle>
             </div>
             <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Mes actual</p>
@@ -136,21 +136,21 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[var(--data-success)]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--data-success-500)]" />
                   <span className="text-sm text-[var(--text-secondary)]">Entradas</span>
                 </div>
                 <span className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtR(revenueThisMonth)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[var(--data-error)]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" />
                   <span className="text-sm text-[var(--text-secondary)]">Salidas</span>
                 </div>
                 <span className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtR(igvVentasMes + devoluciones)}</span>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[var(--data-success)]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--data-success-500)]" />
                   <span className="text-sm text-[var(--text-secondary)]">Saldo</span>
                 </div>
                 <span className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtR(revenueThisMonth - igvVentasMes - devoluciones)}</span>
@@ -166,15 +166,15 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           {/* Proximos pagos */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
-                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
+                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-                <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                <AlertTriangle className="w-3 h-3 text-[var(--data-error-500)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -191,7 +191,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                 })}
               </ul>
             ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-[var(--data-success)] font-medium">Sin pagos pendientes esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
@@ -200,7 +200,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-                <Users className="w-3.5 h-3.5 text-[var(--data-success)]" />
+                <Users className="w-3.5 h-3.5 text-[var(--data-success-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
             </div>
@@ -208,9 +208,9 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
@@ -220,8 +220,8 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           {/* Productos que se agotan */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
-                <Package className="w-3.5 h-3.5 text-[var(--data-error)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20">
+                <Package className="w-3.5 h-3.5 text-[var(--data-error-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Se agotan esta semana</span>
             </div>
@@ -233,9 +233,9 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                     <span className="text-[var(--text-tertiary)] ml-1">quedan {p.stock}</span>
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" :
-                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" :
-                      "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" :
+                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" :
+                      "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
                     )}>
                       {p.daysLeft}d
                     </span>
@@ -243,7 +243,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-[var(--data-success)] font-medium">Stock estable para esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
@@ -268,7 +268,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                   <p className="text-2xl font-bold font-mono text-[var(--text-primary)] dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">mes actual</p>
                 </div>
-                <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                   {monthDelta >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
                   {Math.abs(monthDelta).toFixed(1)}%
                 </div>

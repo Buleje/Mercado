@@ -85,8 +85,8 @@ export default function BackInStock() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border-b border-border">
           <div className="flex items-center gap-2">
-            <BellRing className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-bounce" />
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">¡De nuevo en stock!</span>
+            <BellRing className="w-4 h-4 text-[var(--data-success-600)] dark:text-emerald-400 animate-bounce" />
+            <span className="text-xs font-bold text-[var(--data-success-700)] dark:text-emerald-400">¡De nuevo en stock!</span>
           </div>
           <button type="button" onClick={dismiss} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
             <X className="w-3.5 h-3.5 text-muted" />

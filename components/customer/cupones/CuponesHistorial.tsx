@@ -50,7 +50,7 @@ export default function CuponesHistorial({ cupones }: Props) {
                 className={[
                   "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
                   wasUsed
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300"
                     : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
                 ].join(" ")}
               >

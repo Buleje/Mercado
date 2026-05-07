@@ -612,7 +612,7 @@ function PartnerRow({
               </span>
             )}
             {partner.isOnline && (
-              <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--data-success)]/10 text-[var(--data-success)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
                 <LiveSignal className="h-1.5 w-1.5" active />
                 Online
               </span>
@@ -653,7 +653,7 @@ function PartnerRow({
                 onClick={onApprove}
                 disabled={!kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="h-9 px-3 rounded-lg bg-[var(--data-success)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                className="h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
               >
                 Aprobar
               </button>
@@ -699,7 +699,7 @@ function StatusPill({ partner }: { partner: PartnerRow }) {
   }
   if (partner.isActive) {
     return (
-      <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--data-success)]/10 text-[var(--data-success)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
+      <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
         Activo
       </span>
     );
@@ -808,7 +808,7 @@ function DetailDrawer({
             <StatusPill partner={partner} />
             {partner.kyc && <KycPill kycOk={kycCheck.ok} missing={kycCheck.missing} />}
             {partner.isOnline && (
-              <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--data-success)]/10 text-[var(--data-success)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
                 <LiveSignal className="h-1.5 w-1.5" active />
                 En línea
               </span>
@@ -825,7 +825,7 @@ function DetailDrawer({
                 href={`https://wa.me/51${waPhone}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-8 px-2.5 rounded-lg bg-[var(--data-success)] text-xs font-bold text-white inline-flex items-center gap-1.5"
+                className="h-8 px-2.5 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white inline-flex items-center gap-1.5"
               >
                 <WhatsAppIcon className="h-3.5 w-3.5" />
                 WhatsApp
@@ -879,7 +879,7 @@ function DetailDrawer({
                 onClick={onApprove}
                 disabled={actioning || !kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="flex-[2] h-11 rounded-xl bg-[var(--data-success)] text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
               >
                 {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar repartidor"}
               </button>
@@ -1036,7 +1036,7 @@ function MetricasTab({ partner }: { partner: PartnerRow }) {
           value={partner.rating.toFixed(1)}
         />
         <MetricCard
-          icon={<TrendIcon className="h-4 w-4 text-[var(--data-success)]" />}
+          icon={<TrendIcon className="h-4 w-4 text-[var(--data-success-500)]" />}
           label="Aceptación"
           value={`${Math.round(partner.acceptanceRate * 100)}%`}
         />
@@ -1248,7 +1248,7 @@ function ApproveModal({
           type="button"
           onClick={() => onConfirm(notes.trim() || undefined)}
           disabled={actioning}
-          className="flex-[2] h-11 rounded-xl bg-[var(--data-success)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
         >
           {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar y notificar"}
         </button>

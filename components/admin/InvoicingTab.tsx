@@ -45,15 +45,15 @@ const TYPE_LABEL: Record<InvoiceType, string> = { factura: "Factura", boleta: "B
 const STATUS_LABEL: Record<InvoiceStatus, string> = { borrador: "Borrador", emitida: "Emitida", anulada: "Anulada", pagada: "Pagada" };
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
   borrador: "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted",
-  emitida:  "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  anulada:  "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-  pagada:   "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  emitida:  "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  anulada:  "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+  pagada:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
 };
 const TYPE_COLOR: Record<InvoiceType, string> = {
   factura:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  boleta:       "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",
-  nota_credito: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  nota_debito:  "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  boleta:       "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/30 dark:text-[var(--data-info-500)]",
+  nota_credito: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  nota_debito:  "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
 };
 
 function fmt(n: number) {
@@ -203,9 +203,9 @@ export default function InvoicingTab() {
           { label: "Comprobantes emitidos", value: String(invoices.filter(i => i.status === "emitida" || i.status === "pagada").length), icon: CheckCircle, tone: "neutral" as const },
         ]).map(({ label, value, icon: Icon, tone }) => {
           const iconCls =
-            tone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]";
+            tone === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]";
           const valueCls =
-            tone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]";
+            tone === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]";
           return (
             <div key={label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-card p-4">
               <Icon className={cn("h-5 w-5 mb-2", iconCls)} />
@@ -269,7 +269,7 @@ export default function InvoicingTab() {
                 )}
               </div>
               {form.customerDocType === "dni" && dniMsg && (
-                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
+                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                   {dniMsg.text}
                 </p>
               )}
@@ -314,7 +314,7 @@ export default function InvoicingTab() {
                 </div>
                 <div className="col-span-1 flex items-end pb-2">
                   {formItems.length > 1 && (
-                    <button onClick={() => setFormItems(p => p.filter((_, i) => i !== idx))} className="text-[var(--data-error)] hover:text-[var(--data-error)] transition-colors"><X className="h-4 w-4" /></button>
+                    <button onClick={() => setFormItems(p => p.filter((_, i) => i !== idx))} className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"><X className="h-4 w-4" /></button>
                   )}
                 </div>
               </div>
@@ -322,7 +322,7 @@ export default function InvoicingTab() {
             <div className="flex justify-end space-y-1 text-sm pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
               <div className="space-y-1 text-right">
                 <p className="text-[var(--text-secondary)] dark:text-muted">Subtotal: <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(subtotal)}</span></p>
-                <p className="text-[var(--text-secondary)] dark:text-muted">IGV (18%): <span className="font-semibold text-[var(--data-warning)]">{fmt(igv)}</span></p>
+                <p className="text-[var(--text-secondary)] dark:text-muted">IGV (18%): <span className="font-semibold text-[var(--data-warning-500)]">{fmt(igv)}</span></p>
                 <p className="text-[var(--text-primary)] dark:text-foreground font-bold">Total: <span className="text-primary text-base">{fmt(total)}</span></p>
               </div>
             </div>
@@ -378,7 +378,7 @@ export default function InvoicingTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmtDate(inv.issueDate)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
                   {fmt(inv.total)}
-                  <div className="text-xs font-normal text-[var(--data-warning)]">IGV {fmt(inv.igv)}</div>
+                  <div className="text-xs font-normal text-[var(--data-warning-500)]">IGV {fmt(inv.igv)}</div>
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", STATUS_COLOR[inv.status])}>{STATUS_LABEL[inv.status]}</span>
@@ -386,14 +386,14 @@ export default function InvoicingTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center hidden sm:table-cell" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-center gap-1">
                     {inv.status === "borrador" && (
-                      <button onClick={() => handleChangeStatus(inv.id, "emitida")} className="p-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Emitir"><Send className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleChangeStatus(inv.id, "emitida")} className="p-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Emitir"><Send className="h-3.5 w-3.5" /></button>
                     )}
                     {inv.status === "emitida" && (
-                      <button onClick={() => handleChangeStatus(inv.id, "pagada")} className="p-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Marcar pagado"><CheckCircle className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleChangeStatus(inv.id, "pagada")} className="p-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Marcar pagado"><CheckCircle className="h-3.5 w-3.5" /></button>
                     )}
                     <button className="p-1.5 rounded-lg bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Imprimir"><Printer className="h-3.5 w-3.5" /></button>
                     {inv.status !== "pagada" && (
-                      <button onClick={() => handleDelete(inv.id)} className="p-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors" title="Anular"><X className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleDelete(inv.id)} className="p-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors" title="Anular"><X className="h-3.5 w-3.5" /></button>
                     )}
                   </div>
                 </td>
@@ -434,7 +434,7 @@ export default function InvoicingTab() {
             </div>
             <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 space-y-1 text-sm">
               <div className="flex justify-between text-[var(--text-secondary)] dark:text-muted"><span>Subtotal</span><span>{fmt(selected.subtotal)}</span></div>
-              <div className="flex justify-between text-[var(--data-warning)]"><span>IGV (18%)</span><span>{fmt(selected.igv)}</span></div>
+              <div className="flex justify-between text-[var(--data-warning-500)]"><span>IGV (18%)</span><span>{fmt(selected.igv)}</span></div>
               <div className="flex justify-between font-extrabold text-[var(--text-primary)] dark:text-foreground text-base"><span>Total</span><span>{fmt(selected.total)}</span></div>
             </div>
             {selected.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted italic">{selected.notes}</p>}

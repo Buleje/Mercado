@@ -73,10 +73,10 @@ function inferSegment(c: Customer): Segment {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
-  frecuente: { label: "Frecuente", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", Icon: Crown,    variant: "success" },
-  ocasional: { label: "Ocasional", color: "text-[var(--data-success)] dark:text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",     Icon: Star,     variant: "info" },
+  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
+  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
   nuevo:     { label: "Nuevo",     color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]", Icon: UserPlus, variant: "pending" },
-  perdido:   { label: "Perdido",   color: "text-[var(--data-error)] dark:text-[var(--data-error)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error)] dark:border-[var(--data-error)]",       Icon: Moon,     variant: "error" },
+  perdido:   { label: "Perdido",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       Icon: Moon,     variant: "error" },
 };
 
 const PAGE_SIZE = 25;
@@ -323,7 +323,7 @@ export default function CRMTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-        <AlertCircle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertCircle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Error al cargar clientes</p>
         <button onClick={load} className="text-sm text-primary hover:underline">Reintentar</button>
       </div>
@@ -416,8 +416,8 @@ export default function CRMTab() {
       {/* ── KPIs neutros — bg unificado, color solo en el icono ──────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total clientes", value: String(stats.total),   icon: Users,      color: "text-[var(--data-success)]" },
-          { label: "Activos (30d)",  value: String(stats.activos), icon: UserCheck,  color: "text-[var(--data-success)]" },
+          { label: "Total clientes", value: String(stats.total),   icon: Users,      color: "text-[var(--data-success-500)]" },
+          { label: "Activos (30d)",  value: String(stats.activos), icon: UserCheck,  color: "text-[var(--data-success-500)]" },
           { label: "Nuevos",         value: String(stats.nuevos),  icon: UserPlus,   color: "text-primary" },
           { label: "CLV promedio",   value: fmt(stats.clvProm),    icon: TrendingUp, color: "text-[var(--text-secondary)]" },
         ].map(k => (
@@ -438,7 +438,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["var(--accent)", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {
@@ -638,8 +638,8 @@ export default function CRMTab() {
       {topCustomer && customers.length >= 3 && (
         <div className="flex items-center justify-between bg-[var(--surface-sunken)]/50 rounded-xl px-4 py-2.5 mb-1 text-xs flex-wrap gap-2">
           <span className="flex items-center gap-1.5">&#127942; Top: <strong>{topCustomer.name}</strong> &middot; {fmt(topCustomer.totalSpent ?? 0)}</span>
-          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-[var(--data-success)]" /> {customers.length} clientes</span>
-          <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-[var(--data-success)]" /> Prom: {fmt(avgSpent)}</span>
+          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> {customers.length} clientes</span>
+          <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> Prom: {fmt(avgSpent)}</span>
           <span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-[var(--text-secondary)]" /> Activos 30d: {stats.activos}</span>
         </div>
       )}
@@ -705,9 +705,9 @@ export default function CRMTab() {
                     <td className="px-3 py-3 text-center">
                       {(() => {
                         const rank = rankingMap.get(c.phone) ?? 999;
-                        if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-extrabold">1</span>;
+                        if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
                         if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-[var(--text-primary)] text-xs font-extrabold">2</span>;
-                        if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-extrabold">3</span>;
+                        if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">3</span>;
                         if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
                         return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                       })()}
@@ -800,12 +800,12 @@ export default function CRMTab() {
                         const days = Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000);
                         let label: string;
                         let colorClass: string;
-                        if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success)] dark:text-[var(--data-success)]"; }
-                        else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success)] dark:text-[var(--data-success)]"; }
-                        else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success)] dark:text-[var(--data-success)]"; }
+                        if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
+                        else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
+                        else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-yellow-600 dark:text-yellow-400"; }
                         else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-yellow-600 dark:text-yellow-400"; }
-                        else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-red-600 dark:text-red-400"; }
+                        else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-[var(--data-error-600)] dark:text-red-400"; }
                         else { label = "Inactivo"; colorClass = "text-[var(--text-tertiary)] dark:text-muted"; }
                         return <span className={cn("text-xs font-bold", colorClass)}>{label}</span>;
                       })()}
@@ -944,7 +944,7 @@ export default function CRMTab() {
                           <tr>
                             <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 S/{(values[i]).toFixed(0)}
                               </td>
                             ))}
@@ -959,7 +959,7 @@ export default function CRMTab() {
                           <tr>
                             <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 {values[i]}
                               </td>
                             ))}
@@ -977,7 +977,7 @@ export default function CRMTab() {
                           <tr>
                             <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -992,7 +992,7 @@ export default function CRMTab() {
                           <tr>
                             <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 {c._lastOrder ? fmtRelative(c._lastOrder) : "--"}
                               </td>
                             ))}
@@ -1007,7 +1007,7 @@ export default function CRMTab() {
                           <tr>
                             <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}

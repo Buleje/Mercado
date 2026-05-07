@@ -5,10 +5,15 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+// SECURITY 2026-05-06 (audit delivery #11): cap de tamaño en photo+signature
+// para evitar inflar la DB con base64 grandes (5+MB cada uno → bloat). Cada
+// imagen base64 ≤ ~7.5MB de string (≈5MB de imagen real).
+const MAX_BASE64_SIZE = 7_500_000;
+
 const BodySchema = z.object({
   orderId: z.string().min(1, "orderId requerido"),
-  photo: z.string().optional(),     // base64 PNG/JPEG
-  signature: z.string().optional(), // base64 PNG
+  photo: z.string().max(MAX_BASE64_SIZE, "photo excede el tamaño máximo (5MB)").optional(),
+  signature: z.string().max(MAX_BASE64_SIZE, "signature excede el tamaño máximo (5MB)").optional(),
   notes: z.string().max(500).optional(),
 });
 
@@ -38,9 +43,10 @@ export async function POST(req: NextRequest) {
 
     const { orderId, photo, signature, notes } = parsed.data;
 
-    // Verificar que la orden y su asignación existen
-    const assignment = await prisma.deliveryAssignment.findUnique({
-      where: { orderId },
+    // SECURITY 2026-05-05 (pentest delivery H004): tenant scope. Antes admin
+    // de A podía marcar como entregado un pedido de B con WhatsApp engañoso.
+    const assignment = await prisma.deliveryAssignment.findFirst({
+      where: { orderId, tenantId: auth.tenantId },
       include: {
         order: {
           select: {

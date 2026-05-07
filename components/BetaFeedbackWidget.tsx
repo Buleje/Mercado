@@ -90,7 +90,7 @@ export default function BetaFeedbackWidget() {
           {sent ? (
             /* Thank you state */
             <div className="px-4 py-8 flex flex-col items-center gap-3 text-center">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+              <CheckCircle2 className="h-10 w-10 text-[var(--data-success-500)]" />
               <p className="font-bold text-foreground">¡Gracias por tu feedback!</p>
               <p className="text-xs text-muted">Tu opinión ayuda a mejorar el proyecto.</p>
             </div>

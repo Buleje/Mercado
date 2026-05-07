@@ -1,21 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
+import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { withCronAuth } from "@/lib/cron-auth";
 
-// POST /api/prestamos/cron/recordatorios
-// Sends WhatsApp reminders for upcoming and overdue loan cuotas.
-// Called daily by Vercel cron (or manually).
-export async function POST(req: NextRequest) {
+// GET /api/prestamos/cron/recordatorios
+// SECURITY 2026-05-06: withCronAuth (timing-safe + fail-closed) + itera todos
+// los tenants activos (antes leía header con default "default" → solo 1).
+// Cambio POST→GET para Vercel cron.
+export const GET = withCronAuth("prestamos-recordatorios", async () => {
   try {
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const tenants = await prisma.tenant.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+
+    const aggregate = { vencidas: [] as Awaited<ReturnType<typeof PrestamosDB.getCuotasProximas>>["vencidas"], proximas: [] as Awaited<ReturnType<typeof PrestamosDB.getCuotasProximas>>["proximas"] };
+    for (const t of tenants) {
+      try {
+        const r = await PrestamosDB.getCuotasProximas(t.id, 7);
+        aggregate.vencidas.push(...r.vencidas);
+        aggregate.proximas.push(...r.proximas);
+      } catch (err) {
+        logger.error("[prestamos/cron/recordatorios] tenant failed", {
+          tenantId: t.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
-
-    const tenantId = req.headers.get("x-tenant-id") ?? "default";
-
-    const { vencidas, proximas } = await PrestamosDB.getCuotasProximas(tenantId, 7);
+    const vencidas = aggregate.vencidas;
+    const proximas = aggregate.proximas;
 
     let sent = 0;
     let skipped = 0;
@@ -73,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     logger.info("[prestamos/cron/recordatorios] Done", {
-      tenantId,
+      tenantsProcessed: tenants.length,
       overdueCount: vencidas.length,
       upcomingCount: proximas.length,
       sent,
@@ -82,6 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      tenantsProcessed: tenants.length,
       overdue: vencidas.length,
       upcoming: proximas.length,
       sent,
@@ -93,7 +108,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-}
+});
 
 function formatPhoneNumber(phone: string): string {
   const digits = phone.replace(/\D/g, "");

@@ -191,7 +191,7 @@ export function KeyboardShortcutsModal({
         </div>
         
         <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-          <p className="text-xs text-emerald-700 dark:text-emerald-300">
+          <p className="text-xs text-[var(--data-success-700)] dark:text-emerald-300">
             <span className="font-semibold">Tip:</span> En Windows/Linux, usa <KeyBadge>Ctrl</KeyBadge> en lugar de <KeyBadge>⌘</KeyBadge>
           </p>
         </div>

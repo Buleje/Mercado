@@ -142,19 +142,19 @@ export default function SimpleMovementsTab() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
-          <Package className="h-5 w-5 text-[var(--data-success)] mb-1" />
+          <Package className="h-5 w-5 text-[var(--data-success-500)] mb-1" />
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Movimientos hoy</p>
-          <p className="text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{stats.todayCount}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{stats.todayCount}</p>
         </div>
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
-          <ArrowUpCircle className="h-5 w-5 text-[var(--data-success)] mb-1" />
+          <ArrowUpCircle className="h-5 w-5 text-[var(--data-success-500)] mb-1" />
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Entradas hoy</p>
-          <p className="text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">+{stats.entries}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{stats.entries}</p>
         </div>
         <div className="rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 p-4">
-          <ArrowDownCircle className="h-5 w-5 text-[var(--data-warning)] mb-1" />
+          <ArrowDownCircle className="h-5 w-5 text-[var(--data-warning-500)] mb-1" />
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Salidas hoy</p>
-          <p className="text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">−{stats.exits}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">−{stats.exits}</p>
         </div>
       </div>
 
@@ -234,8 +234,8 @@ export default function SimpleMovementsTab() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-                      m.dir === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                        : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]"
+                      m.dir === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]"
                     )}>
                       <m.Icon className="h-3 w-3" strokeWidth={1.75} />
                       {m.label}
@@ -243,14 +243,14 @@ export default function SimpleMovementsTab() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("text-sm font-extrabold",
-                      m.dir === "in" ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                      m.dir === "in" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                     )}>
                       {m.dir === "in" ? `+${m.quantity}` : `−${m.quantity}`}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("text-sm font-bold",
-                      m.newStock === 0 ? "text-[var(--data-error)]" : m.newStock <= 5 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground"
+                      m.newStock === 0 ? "text-[var(--data-error-500)]" : m.newStock <= 5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground"
                     )}>
                       {m.newStock}
                     </span>

@@ -29,10 +29,10 @@ const QUADRANT_META: Record<BCGQuadrant, {
   label: string; icon: string; color: string;
   bg: string; text: string; recommendation: string;
 }> = {
-  star:     { label: "Estrellas",    icon: "↑↑", color: "#00B4A6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", recommendation: "Invertir para crecer — alta prioridad" },
-  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", recommendation: "Mantener y cosechar — generan caja" },
-  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success)] dark:text-[var(--data-success)]",  recommendation: "Evaluar potencial — requieren inversion" },
-  dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",    recommendation: "Reducir o descontinuar" },
+  star:     { label: "Estrellas",    icon: "↑↑", color: "var(--accent)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", recommendation: "Invertir para crecer — alta prioridad" },
+  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", recommendation: "Mantener y cosechar — generan caja" },
+  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  recommendation: "Evaluar potencial — requieren inversion" },
+  dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",    recommendation: "Reducir o descontinuar" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -210,21 +210,21 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
           <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
-          <div className="bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error)]/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
-          <div className="bg-[var(--data-warning-50)]/30 dark:bg-[var(--data-warning)]/10" />
+          <div className="bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error-500)]/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-[var(--data-warning-50)]/30 dark:bg-[var(--data-warning-500)]/10" />
         </div>
 
         {/* Quadrant labels in corners */}
-        <div className="absolute top-1 left-2 text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+        <div className="absolute top-1 left-2 text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
           Interrogantes
         </div>
-        <div className="absolute top-1 right-8 text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+        <div className="absolute top-1 right-8 text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
           Estrellas
         </div>
-        <div className="absolute bottom-4 left-2 text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
+        <div className="absolute bottom-4 left-2 text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
           Perros
         </div>
-        <div className="absolute bottom-4 right-8 text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
+        <div className="absolute bottom-4 right-8 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
           Vacas
         </div>
 
@@ -262,7 +262,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
                 <span
                   className={cn(
                     "font-medium",
-                    p.growth >= 0 ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    p.growth >= 0 ? "text-primary dark:text-primary" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   )}
                 >
                   {fmtPct(p.growth)}

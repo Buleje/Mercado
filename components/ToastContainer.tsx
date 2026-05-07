@@ -23,26 +23,26 @@ const TOAST_COLORS = {
   error: {
     bg: "bg-red-50 dark:bg-red-900/20",
     border: "border-red-200 dark:border-red-800",
-    icon: "text-red-600 dark:text-red-400",
+    icon: "text-[var(--data-error-600)] dark:text-red-400",
     title: "text-red-900 dark:text-red-100",
     message: "text-red-800 dark:text-red-200",
-    button: "text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100",
+    button: "text-[var(--data-error-700)] dark:text-red-300 hover:text-red-900 dark:hover:text-red-100",
   },
   warning: {
     bg: "bg-amber-50 dark:bg-amber-900/20",
     border: "border-amber-200 dark:border-amber-800",
-    icon: "text-amber-600 dark:text-amber-400",
+    icon: "text-[var(--data-warning-600)] dark:text-amber-400",
     title: "text-amber-900 dark:text-amber-100",
     message: "text-amber-800 dark:text-amber-200",
-    button: "text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100",
+    button: "text-[var(--data-warning-700)] dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100",
   },
   info: {
     bg: "bg-emerald-50 dark:bg-emerald-900/20",
     border: "border-emerald-200 dark:border-emerald-800",
-    icon: "text-emerald-600 dark:text-emerald-400",
+    icon: "text-[var(--data-success-600)] dark:text-emerald-400",
     title: "text-emerald-900 dark:text-emerald-100",
     message: "text-emerald-800 dark:text-emerald-200",
-    button: "text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100",
+    button: "text-[var(--data-success-700)] dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100",
   },
 } as const;
 

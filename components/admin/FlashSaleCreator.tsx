@@ -92,9 +92,9 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
   const pct = discountPct(product.price, salePrice);
 
   return (
-    <div className="rounded-xl border-2 border-[var(--data-warning)] bg-[var(--surface-raised)] overflow-hidden">
+    <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--surface-raised)] overflow-hidden">
       {/* Cabecera oferta */}
-      <div className="flex items-center justify-between bg-[var(--data-warning)] px-3 py-2">
+      <div className="flex items-center justify-between bg-[var(--data-warning-500)] px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Zap className="h-4 w-4 text-white" aria-hidden="true" />
           <span className="text-sm font-bold text-white">Oferta Relampago</span>
@@ -109,7 +109,7 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
           <span className="text-xl font-bold text-primary dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
           <span className="text-sm text-[var(--text-tertiary)] line-through">{fmtPrice(product.price)}</span>
           {pct > 0 && (
-            <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]">
+            <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]">
               -{pct}%
             </span>
           )}
@@ -241,8 +241,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
     >
       {/* Encabezado */}
       <div className="mb-4 flex items-center gap-2">
-        <div className="rounded-lg bg-[var(--data-warning)]/10 p-1.5">
-          <Zap className="h-5 w-5 text-[var(--data-warning)]" aria-hidden="true" />
+        <div className="rounded-lg bg-[var(--data-warning-500)]/10 p-1.5">
+          <Zap className="h-5 w-5 text-[var(--data-warning-500)]" aria-hidden="true" />
         </div>
         <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">Oferta Relampago</SectionTitle>
       </div>
@@ -331,7 +331,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               <label htmlFor="flash-sale-price" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Precio de oferta
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--data-warning)] bg-[var(--surface-raised)] px-3 py-2 focus-within:ring-2 focus-within:ring-[var(--data-warning)]">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--surface-raised)] px-3 py-2 focus-within:ring-2 focus-within:ring-[var(--data-warning-500)]">
                 <span className="text-sm font-medium text-[var(--text-tertiary)]">S/</span>
                 <input
                   id="flash-sale-price"
@@ -340,7 +340,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   step="0.10"
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
-                  className="w-full bg-transparent text-sm font-semibold text-[var(--data-warning)] focus:outline-none"
+                  className="w-full bg-transparent text-sm font-semibold text-[var(--data-warning-500)] focus:outline-none"
                   placeholder="0.00"
                 />
               </div>
@@ -350,7 +350,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Descuento calculado */}
         {selected && salePriceNum > 0 && salePriceNum < selected.price && (
-          <div className="mb-4 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
+          <div className="mb-4 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Descuento del{" "}
             <span className="font-bold">{discountPct(selected.price, salePriceNum)}%</span>
             {" "}— ahorro de{" "}
@@ -394,12 +394,12 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Error / Exito */}
         {error && (
-          <div role="alert" className="mb-3 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20 px-3 py-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+          <div role="alert" className="mb-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 px-3 py-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             {error}
           </div>
         )}
         {success && (
-          <div role="status" className="mb-3 rounded-lg border border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
+          <div role="status" className="mb-3 rounded-lg border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Oferta creada correctamente
           </div>
         )}
@@ -412,10 +412,10 @@ export function FlashSaleCreator({ className }: { className?: string }) {
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold",
               "transition-colors duration-[var(--dur-fast)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning-500)]",
               saving || !selected || salePriceNum <= 0
                 ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
-                : "bg-[var(--data-warning)] text-white hover:bg-[#e08c4a]"
+                : "bg-[var(--data-warning-500)] text-white hover:bg-[#e08c4a]"
             )}
           >
             {saving ? (

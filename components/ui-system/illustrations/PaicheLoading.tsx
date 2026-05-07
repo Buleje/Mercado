@@ -66,7 +66,7 @@ export function PaicheLoading({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(0,180,166,0.10) 0%, transparent 60%)",
+              "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%)",
           }}
         />
         {/* Ondas decorativas */}
@@ -107,7 +107,7 @@ export function PaicheLoading({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(0,180,166,0.06) 0%, transparent 70%)",
+            "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 6%, transparent) 0%, transparent 70%)",
         }}
       />
       <div className="relative text-[var(--accent)] paiche-loader-mascot">
@@ -131,11 +131,11 @@ function PaicheLoaderStyles() {
       }
       @keyframes paiche-pulse {
         0%, 100% {
-          filter: drop-shadow(0 0 0 rgba(0, 180, 166, 0));
+          filter: drop-shadow(0 0 0 transparent);
           transform: scale(1);
         }
         50% {
-          filter: drop-shadow(0 0 24px rgba(0, 180, 166, 0.45));
+          filter: drop-shadow(0 0 24px color-mix(in oklab, var(--accent) 45%, transparent));
           transform: scale(1.04);
         }
       }
@@ -147,7 +147,7 @@ function PaicheLoaderStyles() {
         height: 200px;
         margin-left: -100px;
         margin-top: -100px;
-        border: 2px solid rgba(0, 180, 166, 0.35);
+        border: 2px solid color-mix(in oklab, var(--accent) 35%, transparent);
         border-radius: 50%;
         opacity: 0;
         animation: paiche-wave-expand 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;

@@ -201,7 +201,7 @@ function ReviewForm({
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-[#00B4A6]/40 bg-[#00B4A6]/10 px-4 py-3 text-sm text-[#00B4A6] dark:border-[#00B4A6]/40 dark:bg-[#00B4A6]/10 dark:text-green-300">
+      <div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-4 py-3 text-sm text-[var(--accent)] dark:border-[var(--accent)]/40 dark:bg-[var(--accent)]/10 dark:text-green-300">
         Gracias por tu opinion. Tu resena esta en revision y se publicara pronto.
       </div>
     );
@@ -227,7 +227,7 @@ function ReviewForm({
           maxLength={60}
           className={cn(
             "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -254,7 +254,7 @@ function ReviewForm({
           required
           className={cn(
             "w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -262,15 +262,15 @@ function ReviewForm({
       </div>
 
       {formError && (
-        <p className="text-xs text-red-600 dark:text-red-400">{formError}</p>
+        <p className="text-xs text-[var(--data-error-600)] dark:text-red-400">{formError}</p>
       )}
 
       <button
         type="submit"
         disabled={isPending}
         className={cn(
-          "w-full rounded-lg bg-[#00B4A6] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
-          "hover:bg-[#009690] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
+          "w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
+          "hover:bg-[var(--accent-dark)] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
         )}
       >
         {isPending ? "Enviando..." : "Publicar resena"}
@@ -328,7 +328,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       )}
 
       {fetchError && (
-        <p className="text-sm text-red-600 dark:text-red-400">{fetchError}</p>
+        <p className="text-sm text-[var(--data-error-600)] dark:text-red-400">{fetchError}</p>
       )}
 
       {!loading && !fetchError && (

@@ -67,7 +67,7 @@ function PanelList({
 }) {
   const isBefore = side === "before";
   const iconBg  = isBefore ? "bg-red-200 dark:bg-red-800/60"    : "bg-teal-200 dark:bg-teal-800/60";
-  const iconCol = isBefore ? "text-red-600 dark:text-red-400"   : "text-teal-700 dark:text-teal-300";
+  const iconCol = isBefore ? "text-[var(--data-error-600)] dark:text-red-400"   : "text-[var(--accent-dark)] dark:text-teal-300";
   const textCol = isBefore
     ? "text-red-800 dark:text-red-300"
     : "text-teal-900 dark:text-teal-200 font-medium";
@@ -132,7 +132,7 @@ export default function SaasHowItWorks() {
         ? "bg-red-100/70 dark:bg-red-900/40 border-red-200 dark:border-red-800/50"
         : "bg-teal-100/70 dark:bg-teal-900/40 border-teal-200 dark:border-teal-800/50"
     }`}>
-      <span className={`font-black text-sm sm:text-base ${isBefore ? "text-red-700 dark:text-red-400" : "text-teal-700 dark:text-teal-300"}`}>
+      <span className={`font-black text-sm sm:text-base ${isBefore ? "text-[var(--data-error-700)] dark:text-red-400" : "text-[var(--accent-dark)] dark:text-teal-300"}`}>
         {label}
       </span>
     </div>
@@ -187,9 +187,9 @@ export default function SaasHowItWorks() {
                 if (e.key === "ArrowRight") setSliderPos(p => Math.min(98, p + 5));
               }}>
               <div className="absolute inset-y-0 w-[2px] bg-white dark:bg-[#f0f4f1] shadow-lg" />
-              <div className="relative z-20 w-10 h-10 rounded-full bg-white dark:bg-[#121f17] border-2 border-teal-500 dark:border-teal-400 flex items-center justify-center"
+              <div className="relative z-20 w-10 h-10 rounded-full bg-white dark:bg-[#121f17] border-2 border-[var(--accent)] dark:border-teal-400 flex items-center justify-center"
                 style={{ boxShadow: "0 4px 16px rgba(15,118,110,0.35)" }}>
-                <ArrowLeftRight className="w-4 h-4 text-teal-600 dark:text-teal-300" aria-hidden="true" />
+                <ArrowLeftRight className="w-4 h-4 text-[var(--accent-dark)] dark:text-teal-300" aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function SaasHowItWorks() {
               <motion.div key={num} custom={i} variants={vLeft} initial="hidden" whileInView="visible"
                 viewport={{ once: true }} className="relative flex flex-col items-center text-center flex-1">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 z-10"
-                  style={{ background: "linear-gradient(135deg,#00B4A6,#009690)", boxShadow: "0 4px 14px -2px rgba(15,118,110,0.4)" }}>
+                  style={{ background: "linear-gradient(135deg,var(--accent),var(--accent-dark))", boxShadow: "0 4px 14px -2px rgba(15,118,110,0.4)" }}>
                   <Icon className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
                 <span className="text-xs font-bold text-gray-900 dark:text-[#f0f4f1] leading-tight">{label}</span>

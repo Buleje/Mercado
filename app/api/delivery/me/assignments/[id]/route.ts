@@ -141,6 +141,31 @@ export async function PATCH(
         });
       }
 
+      // ── Auto-sync Order.status según el estado del DeliveryAssignment ──
+      // Sprint 3: el dueño quiere ver el pedido pasar de "preparando" a
+      // "en_camino" cuando el repartidor inicia ruta, y de "en_camino" a
+      // "entregado" cuando entrega con foto. Esto mantiene Order.status
+      // alineado con DeliveryAssignment.status sin tocar el frontend.
+      const ASSIGN_TO_ORDER_STATUS: Record<string, string> = {
+        picked_up: "en_camino",
+        in_transit: "en_camino",
+        nearby: "en_camino",
+        delivered: "entregado",
+        cancelled: "cancelado",
+      };
+      const nextOrderStatus = ASSIGN_TO_ORDER_STATUS[parsed.data.status];
+      if (nextOrderStatus) {
+        await tx.order.update({
+          where: { id: assignment.orderId },
+          data: {
+            status: nextOrderStatus as "en_camino" | "entregado" | "cancelado",
+            ...(nextOrderStatus === "entregado"
+              ? { deliveredAt: new Date() }
+              : {}),
+          },
+        });
+      }
+
       return { ok: true, orderId: assignment.orderId, newStatus: parsed.data.status };
     });
 

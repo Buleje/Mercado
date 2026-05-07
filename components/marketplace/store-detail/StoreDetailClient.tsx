@@ -30,6 +30,7 @@ import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreCatalog from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
 import StorePoliciesBlock from "./StorePoliciesBlock";
+import ClosedNowBanner from "./ClosedNowBanner";
 import { getStoreTagline } from "@/lib/store-tagline";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
 import type {
@@ -49,6 +50,10 @@ interface StoreDetailClientProps {
   paymentMethods?: string[];
   /** Mapa name → URL imagen (resolved server-side: per-store > global) */
   categoryImages?: Record<string, string>;
+  /** Horario configurado por el dueño (jsonb). Para mostrar en el banner cerrado. */
+  hoursJson?: unknown;
+  /** ISO timestamp de la próxima apertura — derivado server-side. */
+  nextOpeningAt?: string | null;
 }
 
 export default function StoreDetailClient({
@@ -60,6 +65,8 @@ export default function StoreDetailClient({
   isOpen = true,
   paymentMethods = ["yape", "efectivo"],
   categoryImages,
+  hoursJson,
+  nextOpeningAt,
 }: StoreDetailClientProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,6 +123,15 @@ export default function StoreDetailClient({
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
+      {/* ── Banner cerrado (si la tienda está fuera de horario) ──────────── */}
+      {!isOpen && (
+        <ClosedNowBanner
+          hours={hoursJson}
+          nextOpeningAt={nextOpeningAt ?? null}
+          storeName={store.name}
+        />
+      )}
+
       {/* ── Banner area (custom o default Buleje) ──────────────────────────── */}
       <StoreBannerArea
         banner={store.banner ?? null}

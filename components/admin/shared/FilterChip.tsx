@@ -16,7 +16,7 @@ type ChipColor = "emerald" | "violet" | "blue" | "amber" | "red";
 
 const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
   emerald: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     badge: "bg-[var(--accent-soft)] text-white",
   },
   violet: {
@@ -24,16 +24,16 @@ const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
     badge: "bg-[var(--accent)] text-white",
   },
   blue: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     badge: "bg-[var(--accent-soft)] text-white",
   },
   amber: {
-    chip: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    badge: "bg-[var(--data-warning)] text-white",
+    chip: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    badge: "bg-[var(--data-warning-500)] text-white",
   },
   red: {
-    chip: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)]",
-    badge: "bg-[var(--data-error)] text-white",
+    chip: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    badge: "bg-[var(--data-error-500)] text-white",
   },
 };
 

@@ -34,7 +34,7 @@ function Stars({ value }: { value: number }) {
           className={cn(
             "h-3.5 w-3.5",
             i <= value
-              ? "text-amber-500 fill-amber-500"
+              ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]"
               : "text-gray-300 dark:text-gray-600",
           )}
         />

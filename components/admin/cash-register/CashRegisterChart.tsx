@@ -52,8 +52,8 @@ export default function CashRegisterChart({
         <AreaChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <defs>
             <linearGradient id="sparkPos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="sparkNeg" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#ef4444" stopOpacity={0} />
@@ -64,7 +64,7 @@ export default function CashRegisterChart({
           <Area
             type="monotone"
             dataKey="pos"
-            stroke="#00B4A6"
+            stroke="var(--accent)"
             fill="url(#sparkPos)"
             strokeWidth={1.5}
             dot={false}

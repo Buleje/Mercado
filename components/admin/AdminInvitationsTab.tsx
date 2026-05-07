@@ -139,7 +139,7 @@ export default function AdminInvitationsTab() {
           <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 mb-1">
             ✓ Invitación enviada por WhatsApp
           </p>
-          <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80 mb-2">
+          <p className="text-xs text-[var(--data-success-500)]/80 dark:text-emerald-300/80 mb-2">
             Si no llega, podés copiar y compartir el link:
           </p>
           <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export default function AdminInvitationsTab() {
             </code>
             <button
               onClick={() => copy(lastInviteUrl, "last")}
-              className="h-9 px-3 inline-flex items-center gap-1 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+              className="h-9 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-600)] text-white text-xs font-bold"
             >
               {copiedId === "last" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copiedId === "last" ? "Copiado" : "Copiar"}
@@ -211,7 +211,7 @@ export default function AdminInvitationsTab() {
           </div>
 
           {error && (
-            <div className="rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-700 dark:text-red-300">
+            <div className="rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
               {error}
             </div>
           )}
@@ -275,7 +275,7 @@ export default function AdminInvitationsTab() {
                     {r.status === "pending" && (
                       <button
                         onClick={() => revoke(r.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/30"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[var(--data-error-700)] dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/30"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Revocar

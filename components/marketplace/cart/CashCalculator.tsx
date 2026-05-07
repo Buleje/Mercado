@@ -25,7 +25,7 @@ export function CashCalculator({ cashAmount, onCashAmountChange, finalTotal }: C
           onChange={(e) => onCashAmountChange(e.target.value)}
           placeholder={finalTotal.toFixed(2)}
           min={0}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>
       {cashAmount && Number(cashAmount) >= finalTotal && (
@@ -35,7 +35,7 @@ export function CashCalculator({ cashAmount, onCashAmountChange, finalTotal }: C
         </div>
       )}
       {cashAmount && Number(cashAmount) > 0 && Number(cashAmount) < finalTotal && (
-        <p className="text-xs text-red-500">El monto no alcanza (faltan {fmt(finalTotal - Number(cashAmount))})</p>
+        <p className="text-xs text-[var(--data-error-500)]">El monto no alcanza (faltan {fmt(finalTotal - Number(cashAmount))})</p>
       )}
       <div className="flex flex-wrap gap-1.5">
         {[5, 10, 20, 50, 100].map((v) => (

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac } from "crypto";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -37,9 +38,11 @@ export async function POST(req: NextRequest) {
 
     const { orderId, clienteDocTipo, clienteDocNumero, clienteNombre } = parsed.data;
 
-    // Get order with items
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    // SECURITY 2026-05-05 (audit SUNAT #6): tenantId scope. Antes
+    // `findUnique({where:{id:orderId}})` permitía a admin de tenant A emitir
+    // una boleta sobre orden de B (con su propio RUC pero contenido ajeno).
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, tenantId: auth.tenantId },
       include: { items: true },
     });
 
@@ -98,8 +101,21 @@ export async function POST(req: NextRequest) {
         igv: igv.toFixed(2),
         total: total.toFixed(2),
       },
-      // Hash/QR data para ticket
-      qrData: `${process.env.SUNAT_RUC ?? "00000000000"}|03|${serie}|${correlativo}|${igv.toFixed(2)}|${total.toFixed(2)}|${new Date().toISOString().slice(0, 10)}|${clienteDocTipo === "DNI" ? "1" : "6"}|${clienteDocNumero ?? "00000000"}`,
+      // SECURITY 2026-05-05 (audit SUNAT #9): QR payload sin firma permitia
+      // falsificacion de boletas imprimiendo un QR con totales alterados.
+      // Ahora el payload lleva sig=HMAC-SHA256(payload, AUTH_SECRET) como
+      // campo final. Si AUTH_SECRET no esta disponible se emite sin firma
+      // y se loggea warn para alertar al operador.
+      qrData: (() => {
+        const qrPayload = `${process.env.SUNAT_RUC ?? "00000000000"}|03|${serie}|${correlativo}|${igv.toFixed(2)}|${total.toFixed(2)}|${new Date().toISOString().slice(0, 10)}|${clienteDocTipo === "DNI" ? "1" : "6"}|${clienteDocNumero ?? "00000000"}`;
+        const secret = process.env.AUTH_SECRET;
+        if (!secret) {
+          logger.warn("[invoices/boleta] AUTH_SECRET no configurado — QR emitido sin firma HMAC");
+          return qrPayload;
+        }
+        const sig = createHmac("sha256", secret).update(qrPayload).digest("hex").slice(0, 32);
+        return `${qrPayload}|sig=${sig}`;
+      })(),
     };
 
     // Enviar a SUNAT via Nubefact (fire-and-forget si falla, no bloquea la venta)

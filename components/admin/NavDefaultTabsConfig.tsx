@@ -111,12 +111,12 @@ export function NavDefaultTabsConfig() {
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--rule-soft)] dark:border-white/5">
         <button
           onClick={handleReset}
-          className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+          className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
         >
           Restablecer todos
         </button>
         {saved && (
-          <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold flex items-center gap-1">
+          <span className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold flex items-center gap-1">
             <Check className="h-3 w-3" /> Guardado
           </span>
         )}

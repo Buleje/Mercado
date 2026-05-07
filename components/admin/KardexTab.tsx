@@ -57,12 +57,12 @@ type KardexLine = {
 };
 
 const TYPE_META: Record<string, { label: string; color: string; bg: string; dir: "in" | "out" }> = {
-  compra: { label: "Compra", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
-  devolucion: { label: "Devolucion", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
-  ajuste_positivo: { label: "Ajuste (+)", color: "text-[var(--data-info)] dark:text-[var(--data-info)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30", dir: "in" },
-  venta: { label: "Venta POS", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dir: "out" },
-  venta_online: { label: "Venta Online", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dir: "out" },
-  ajuste_negativo: { label: "Ajuste (-)", color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", dir: "out" },
+  compra: { label: "Compra", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  devolucion: { label: "Devolucion", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  ajuste_positivo: { label: "Ajuste (+)", color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/30", dir: "in" },
+  venta: { label: "Venta POS", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dir: "out" },
+  venta_online: { label: "Venta Online", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dir: "out" },
+  ajuste_negativo: { label: "Ajuste (-)", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", dir: "out" },
   merma: { label: "Pérdida", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
   transferencia: { label: "Transferencia", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
 };
@@ -375,9 +375,9 @@ export default function KardexTab() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
-        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-[var(--data-success)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
-        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-[var(--data-success)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
-        <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/30" />
+        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-[var(--data-success-500)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
+        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-[var(--data-success-500)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
+        <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-[var(--data-warning-600)]" bg="bg-amber-50 dark:bg-amber-950/30" />
         <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-[var(--text-secondary)]" bg="bg-[var(--surface-sunken)]" />
       </div>
 
@@ -416,8 +416,8 @@ export default function KardexTab() {
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Referencia</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripcion</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success)]">Entrada</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-error)]">Salida</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">Entrada</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-error-500)]">Salida</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Saldo</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo u.</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo total</th>
@@ -450,9 +450,9 @@ export default function KardexTab() {
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{line.reference}</td>
                     <td className="max-w-60 truncate px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{line.description}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-success)]">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-error)]">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-[var(--data-error)]" : line.balance <= 10 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{line.balance}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-success-500)]">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-error-500)]">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-[var(--data-error-500)]" : line.balance <= 10 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{line.balance}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(line.costUnit)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(line.totalCost)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)] dark:text-muted">{line.warehouse}</td>

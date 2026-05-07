@@ -50,14 +50,14 @@ export interface StoreCardData {
 function TrustBadges({ store }: { store: StoreCardData }) {
   const items: Array<{ label: string; cls: string }> = [];
   if (store.verified)     items.push({ label: "Verificada",   cls: "bg-blue-50 text-blue-700 border-blue-200" });
-  if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)]/30" });
+  if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30" });
   if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30" });
   if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-[var(--accent)] border-purple-200" });
   // TS-33: ofertas activas — color rojo para llamar atención
   if (store.activePromos && store.activePromos > 0) {
     items.push({
       label: `${store.activePromos} ${store.activePromos === 1 ? "oferta" : "ofertas"}`,
-      cls: "bg-rose-50 text-[var(--data-error)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error)] dark:border-rose-800",
+      cls: "bg-rose-50 text-[var(--data-error-500)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-rose-800",
     });
   }
   if (items.length === 0) return null;
@@ -90,8 +90,8 @@ function LastSaleHint({ minutes }: { minutes?: number }) {
     null;
   if (!text) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success)]">
-      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success-500)]">
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" />
       {text}
     </span>
   );

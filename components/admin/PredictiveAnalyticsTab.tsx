@@ -97,8 +97,8 @@ function ClockVisual({ hour }: { hour: number }) {
           );
         })}
         <line x1={50} y1={50} x2={x} y2={y}
-          stroke="#00B4A6" strokeWidth={3} strokeLinecap="round" />
-        <circle cx={50} cy={50} r={3} fill="#00B4A6" />
+          stroke="var(--accent)" strokeWidth={3} strokeLinecap="round" />
+        <circle cx={50} cy={50} r={3} fill="var(--accent)" />
       </svg>
       <div>
         <p className="text-3xl font-extrabold text-[var(--text-primary)]">{h12}:00 {ampm}</p>
@@ -145,7 +145,7 @@ export default function PredictiveAnalyticsTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-warning)]" />
+        <AlertTriangle className="h-8 w-8 text-[var(--data-warning-500)]" />
         <p className="text-sm text-[var(--text-tertiary)]">{error}</p>
         <button
           onClick={load}
@@ -180,14 +180,14 @@ export default function PredictiveAnalyticsTab() {
       </div>
 
       {/* Card 1: Ventas próxima semana */}
-      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-red-500"}>
+      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"}>
         <div className="flex items-end gap-3">
           <p className="text-4xl font-extrabold text-[var(--text-primary)]">S/{data.salesForecast.toFixed(2)}</p>
           <span className={cn(
             "text-sm font-bold px-2 py-0.5 rounded-full mb-1",
             data.trendPct >= 0
-              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-              : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+              : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
           )}>
             {data.trendPct >= 0 ? "+" : ""}{data.trendPct}%
           </span>
@@ -200,7 +200,7 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 2: Productos en riesgo */}
-      <PredCard icon={AlertTriangle} title="Productos que se agotan pronto" iconBg="bg-amber-500">
+      <PredCard icon={AlertTriangle} title="Productos que se agotan pronto" iconBg="bg-[var(--data-warning-500)]">
         {data.stockRisk.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">No hay productos en riesgo esta semana</p>
         ) : (
@@ -217,8 +217,8 @@ export default function PredictiveAnalyticsTab() {
                 <span className={cn(
                   "shrink-0 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   p.daysLeft <= 2
-                    ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
-                    : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                    ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                    : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
                 )}>
                   {p.daysLeft <= 0 ? "Hoy" : `${p.daysLeft}d`}
                 </span>

@@ -68,7 +68,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 export const TabError = () => (
   <div className="text-center py-12">
-    <p className="text-sm text-[var(--data-error)]">Error al cargar el módulo</p>
+    <p className="text-sm text-[var(--data-error-500)]">Error al cargar el módulo</p>
     <button onClick={() => window.location.reload()} className="mt-2 text-xs text-primary hover:underline">Recargar página</button>
   </div>
 );
@@ -312,8 +312,8 @@ function ComprasDashboard() {
       {/* === Alertas Compras === */}
       {(kpis.ocPendientes > 0 || kpis.deudaVencida > 0) && (
         <div className="flex flex-wrap gap-2">
-          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
-          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
+          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
+          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
         </div>
       )}
 
@@ -471,11 +471,11 @@ function ComprasDashboard() {
                 const isOverdue = p.days < 0;
                 const isUrgent = p.days >= 0 && p.days <= 7;
                 const badgeColor = isOverdue
-                  ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                  ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                   : isUrgent
-                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                    : "bg-[var(--accent-soft)] text-[var(--data-success)]";
-                const dotColor = isOverdue ? "bg-[var(--data-error)]" : isUrgent ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]";
+                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                    : "bg-[var(--accent-soft)] text-[var(--data-success-500)]";
+                const dotColor = isOverdue ? "bg-[var(--data-error-500)]" : isUrgent ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]";
 
                 return (
                   <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-soft)] bg-gray-50/50">
@@ -586,7 +586,7 @@ export default function ComprasModule() {
         description="Pedidos a proveedores, recepción y cuentas por pagar"
         icon={PackagePlus}
         bgTint="bg-amber-50"
-        iconColorClass="text-amber-600"
+        iconColorClass="text-[var(--data-warning-600)]"
       />
 
 

@@ -89,7 +89,7 @@ export default function PlansToggle() {
                 >
                   {b === "mensual" ? t("plans.monthly") : t("plans.annual")}
                   {b === "anual" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-xs font-black">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] text-white px-2 py-0.5 text-xs font-black">
                       <Sparkles className="h-3 w-3" strokeWidth={2.5} />
                       {t("plans.upTo25off")}
                     </span>
@@ -178,7 +178,7 @@ function PlanCard({
             >
               S/ {plan.monthlyPrice}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
               {plan.firstMonthDiscount === 100 ? t("plans.firstMonthFree") : `−${plan.firstMonthDiscount}%`}
             </span>
           </div>
@@ -192,7 +192,7 @@ function PlanCard({
             >
               S/ {plan.monthlyPrice}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
               −{plan.annualDiscount}%
             </span>
           </div>
@@ -260,7 +260,7 @@ function PlanCard({
           >
             <Check
               className={`h-4 w-4 mt-0.5 shrink-0 ${
-                recommended ? "text-[var(--accent)]" : "text-[var(--data-success)]"
+                recommended ? "text-[var(--accent)]" : "text-[var(--data-success-500)]"
               }`}
               strokeWidth={2.75}
             />

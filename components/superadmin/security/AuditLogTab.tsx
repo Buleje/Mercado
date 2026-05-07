@@ -209,7 +209,7 @@ export function AuditLogTab() {
             Cargando audit log…
           </div>
         ) : error ? (
-          <div role="alert" className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-4 flex items-start gap-2 text-[var(--data-error)]">
+          <div role="alert" className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4 flex items-start gap-2 text-[var(--data-error-500)]">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
           </div>

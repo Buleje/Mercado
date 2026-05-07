@@ -78,12 +78,12 @@ export default function ChatTab() {
             {threads.length} hilos
           </span>
           {totalUnread > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] px-3 py-1 font-semibold text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-500)] px-3 py-1 font-semibold text-white">
               {totalUnread} sin leer
             </span>
           )}
           {threadsError && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-3 py-1 font-semibold text-[var(--data-error)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-3 py-1 font-semibold text-[var(--data-error-500)]">
               <AlertCircle className="h-3.5 w-3.5" />
               error
             </span>
@@ -133,7 +133,7 @@ export default function ChatTab() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="inline-flex items-center gap-1 rounded-md border border-[var(--data-error)] px-2.5 py-1 text-xs font-semibold text-[var(--data-error)] transition hover:bg-[var(--data-error-50)]"
+                  className="inline-flex items-center gap-1 rounded-md border border-[var(--data-error-500)] px-2.5 py-1 text-xs font-semibold text-[var(--data-error-500)] transition hover:bg-[var(--data-error-50)]"
                 >
                   <XCircle className="h-3.5 w-3.5" />
                   Cerrar

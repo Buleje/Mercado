@@ -285,7 +285,7 @@ export default function PushNotificationManager() {
 
             {/* Send button */}
             {sendError && (
-              <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]">
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {sendError}
               </div>
@@ -299,7 +299,7 @@ export default function PushNotificationManager() {
                 sendState === "sent"
                   ? "bg-[var(--accent-soft)]"
                   : sendState === "error"
-                  ? "bg-[var(--data-error)]"
+                  ? "bg-[var(--data-error-500)]"
                   : "bg-primary hover:bg-[#245a40]",
                 "disabled:opacity-40"
               )}
@@ -393,8 +393,8 @@ export default function PushNotificationManager() {
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
                           n.status === "sent"
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         )}
                       >
                         {n.status === "sent" ? "Enviada" : "Fallida"}
@@ -417,7 +417,7 @@ export default function PushNotificationManager() {
                         {n.sent} enviadas
                       </span>
                       {openRate && (
-                        <span className="flex items-center gap-1 text-primary dark:text-[var(--data-success)]">
+                        <span className="flex items-center gap-1 text-primary dark:text-[var(--data-success-500)]">
                           <Eye className="h-3 w-3" />
                           {n.opened} abiertas ({openRate}%)
                         </span>

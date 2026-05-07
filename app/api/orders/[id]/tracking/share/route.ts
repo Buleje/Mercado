@@ -8,7 +8,8 @@
  * El token es stateless — no persistimos nada. HMAC con AUTH_SECRET asegura que
  * nadie puede forjar un token sin la llave del servidor.
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { tryAdmin } from "@/lib/require-admin";
 import { OrderTrackingDB } from "@/lib/db/order-tracking.db";
 import {
   OrderIdParamSchema,
@@ -16,9 +17,10 @@ import {
 } from "@/lib/validators/order-tracking";
 import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
   // Rate limit — evitar que un usuario genere miles de tokens.
@@ -52,8 +54,37 @@ export async function POST(
     );
   }
 
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  // SECURITY 2026-05-06 (pentest H002): autorizar emisión del token.
+  // Antes: cualquiera con un orderId podía generar token público (72h).
+  // Ahora: solo admins del tenant del order, o cliente que provee
+  // customerPhone matching el del order.
+  const session = await tryAdmin(req);
+  const order = await prisma.order.findUnique({
+    where: { id: parsedParams.data.orderId },
+    select: { id: true, tenantId: true, customerPhone: true },
+  });
+  if (!order) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  let tenantId: string;
+  if (session) {
+    if (session.tenantId !== order.tenantId) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    tenantId = session.tenantId;
+  } else {
+    // Cliente sin sesión admin: requiere customerPhone que matchee.
+    const callerPhone =
+      typeof (body as { customerPhone?: unknown }).customerPhone === "string"
+        ? ((body as { customerPhone: string }).customerPhone ?? "").replace(/\D/g, "")
+        : "";
+    const orderPhone = (order.customerPhone ?? "").replace(/\D/g, "");
+    if (!callerPhone || !orderPhone || callerPhone !== orderPhone) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    tenantId = order.tenantId;
+  }
 
   const ttlMs = bodyParsed.data.ttlSeconds
     ? bodyParsed.data.ttlSeconds * 1000

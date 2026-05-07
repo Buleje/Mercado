@@ -111,16 +111,16 @@ interface KPICardProps {
 
 function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProps) {
   const iconColor = {
-    emerald: "text-[var(--data-success)]",
-    red: "text-red-500",
-    amber: "text-amber-500",
+    emerald: "text-[var(--data-success-500)]",
+    red: "text-[var(--data-error-500)]",
+    amber: "text-[var(--data-warning-500)]",
     gray: "text-[var(--text-tertiary)]",
   }[accent];
 
   const valueColor = {
-    emerald: "text-[var(--data-success)] dark:text-[var(--data-success)]",
-    red: "text-red-700 dark:text-red-400",
-    amber: "text-amber-700 dark:text-amber-400",
+    emerald: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    red: "text-[var(--data-error-700)] dark:text-red-400",
+    amber: "text-[var(--data-warning-700)] dark:text-amber-400",
     gray: "text-[var(--text-primary)]",
   }[accent];
 
@@ -154,12 +154,12 @@ function StatusBadge({ status }: StatusBadgeProps) {
     VENCIDO: {
       label: "Vencido",
       className:
-        "bg-[var(--data-error-50)] text-[var(--data-error)] border border-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)] dark:border-[var(--data-error)]",
+        "bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
     },
     ACTIVO: {
       label: "Activo",
       className:
-        "bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30",
+        "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
     },
     PAGADO: {
       label: "Pagado",
@@ -192,7 +192,7 @@ function DaysInfo({ entry }: DaysInfoProps) {
   if (entry.status === "VENCIDO" && entry.dueDate) {
     const n = daysOverdue(entry.dueDate);
     return (
-      <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+      <span className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
         Vencido hace {n} {n === 1 ? "dia" : "dias"}
       </span>
     );
@@ -203,14 +203,14 @@ function DaysInfo({ entry }: DaysInfoProps) {
     if (d < 0) {
       const n = Math.abs(d);
       return (
-        <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <span className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           Vencido hace {n} {n === 1 ? "dia" : "dias"}
         </span>
       );
     }
     if (d === 0) {
       return (
-        <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <span className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           Vence hoy
         </span>
       );
@@ -355,7 +355,7 @@ export default function FiadosSection() {
             className={cn(
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
-                ? "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30"
+                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
                 : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
@@ -412,7 +412,7 @@ export default function FiadosSection() {
                   className={cn(
                     "text-sm font-medium text-right tabular-nums",
                     isVencido(entry)
-                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : "text-[var(--text-secondary)]"
                   )}
                 >
@@ -464,7 +464,7 @@ export default function FiadosSection() {
         </p>
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors shrink-0"
           onClick={() => {}}
         >
           Ir a Gestion de Fiados

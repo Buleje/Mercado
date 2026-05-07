@@ -217,7 +217,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
                       <td className="px-4 py-3 text-right">
                         <span className={cn(
                           "inline-flex items-center gap-0.5 text-xs font-bold",
-                          isUp ? "text-[var(--data-error)]" : "text-[var(--data-success)]"
+                          isUp ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
                         )}>
                           {isUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                           {pct != null ? `${isUp ? "+" : ""}${pct.toFixed(1)}%` : "N/A"}

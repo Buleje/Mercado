@@ -61,7 +61,7 @@ export default function CategoriasQuickAccess() {
                 className={cn(
                   "group flex flex-col items-center gap-2 rounded-xl py-4 sm:py-5 px-3",
                   "border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-                  "hover:border-[var(--accent)]/40 hover:-translate-y-1 hover:shadow-[0_8px_20px_-12px_rgba(0,180,166,0.25)]",
+                  "hover:border-[var(--accent)]/40 hover:-translate-y-1 hover:shadow-[0_8px_20px_-12px_color-mix(in oklab, var(--accent) 25%, transparent)]",
                   "transition-all duration-200",
                   "min-w-[88px] sm:min-w-0 shrink-0 sm:shrink",
                 )}

@@ -131,7 +131,7 @@ function ListProductRow({
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted">{product.unit}</p>
           {isLowStock && (
-            <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] dark:text-amber-400 bg-amber-50 dark:bg-[var(--data-warning-500)]/10 px-1.5 py-0.5 rounded-full animate-pulse">
               ¡Quedan {product.stock}!
             </span>
           )}
@@ -142,7 +142,7 @@ function ListProductRow({
           S/{product.price.toFixed(2)}
         </span>
         {isOutOfStock ? (
-          <span className="text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-full">
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-red-50 dark:bg-[var(--data-error-500)]/10 px-2 py-1 rounded-full">
             Agotado
           </span>
         ) : qty === 0 ? (
@@ -264,8 +264,8 @@ function QuickViewModal({
             className={cn(
               "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-md",
               fav
-                ? "bg-red-500 text-white"
-                : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500"
+                ? "bg-[var(--data-error-500)] text-white"
+                : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
             )}
             aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
           >
@@ -300,10 +300,10 @@ function QuickViewModal({
                   className={cn(
                     "text-xs font-semibold px-2.5 py-1 rounded-full",
                     product.stock <= 0
-                      ? "bg-red-50 text-red-500 dark:bg-red-500/10"
+                      ? "bg-red-50 text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10"
                       : product.stock <= (product.stockMin ?? 5)
-                        ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
-                        : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10"
+                        ? "bg-amber-50 text-[var(--data-warning-600)] dark:bg-[var(--data-warning-500)]/10"
+                        : "bg-emerald-50 text-[var(--data-success-600)] dark:bg-[var(--data-success-500)]/10"
                   )}
                 >
                   {product.stock <= 0

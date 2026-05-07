@@ -344,6 +344,34 @@ export function generateDistrictCategoryLD(
   };
 }
 
+/**
+ * SECURITY 2026-05-06 (audit XSS): escape seguro de JSON-LD para inyectar
+ * en `<script type="application/ld+json">`.
+ *
+ * `JSON.stringify` NO escapa la secuencia `</script>`. Si un campo del
+ * payload contiene `</script><script>alert(1)</script>`, se rompe el script
+ * tag y se ejecuta JS arbitrario en cualquier visitante de la página.
+ *
+ * El fix es escapar caracteres peligrosos en HTML después del stringify:
+ *   `<` → `<`
+ *   `>` → `>`
+ *   `&` → `&`
+ *   ` ` (LINE SEPARATOR) y ` ` (PARAGRAPH SEPARATOR) → escapados
+ *     para evitar romper expresiones JSON en JS legacy.
+ *
+ * Uso:
+ *   <script type="application/ld+json"
+ *     dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }} />
+ */
+export function safeJsonLdStringify(payload: unknown): string {
+  return JSON.stringify(payload)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/[\u2028]/g, "\\u2028")
+    .replace(/[\u2029]/g, "\\u2029");
+}
+
 /** District breadcrumb helper (extends `zoneBreadcrumbs`) */
 export function districtBreadcrumbs(
   district: District,

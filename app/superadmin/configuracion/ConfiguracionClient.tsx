@@ -136,7 +136,7 @@ export default function ConfiguracionClient() {
         </header>
 
         {error && (
-          <div className="mb-4 rounded-xl border-2 border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-700 dark:text-red-300 inline-flex items-center gap-2">
+          <div className="mb-4 rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-red-300 inline-flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
             <button onClick={() => setError(null)} className="ml-auto" aria-label="Cerrar">
@@ -540,7 +540,7 @@ function ImageField({
           {url && (
             <button
               onClick={onClear}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:border-red-500 hover:text-red-600"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)]"
             >
               <X className="h-3 w-3" /> Quitar
             </button>

@@ -218,8 +218,8 @@ export default function StoreAnalyticsModule() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 p-5 flex items-start gap-3">
-        <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" strokeWidth={2} />
+      <div className="rounded-xl bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 p-5 flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" strokeWidth={2} />
         <div className="flex-1">
           <p className="font-bold text-[var(--text-primary)]">No se pudieron cargar las analíticas</p>
           <p className="text-sm text-[var(--text-secondary)] mt-1">{error}</p>
@@ -321,14 +321,14 @@ export default function StoreAnalyticsModule() {
               value={kpis.addsToCart}
               max={funnelMax}
               pctTotal={kpis.views > 0 ? kpis.addsToCart / kpis.views : 0}
-              color="bg-amber-500"
+              color="bg-[var(--data-warning-500)]"
             />
             <FunnelBar
               label="Compraron"
               value={kpis.conversions}
               max={funnelMax}
               pctTotal={kpis.views > 0 ? kpis.conversions / kpis.views : 0}
-              color="bg-[var(--data-success)]"
+              color="bg-[var(--data-success-500)]"
             />
           </div>
         </div>

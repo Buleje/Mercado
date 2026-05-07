@@ -208,8 +208,8 @@ export default function PaymentCalendarView() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
@@ -221,24 +221,24 @@ export default function PaymentCalendarView() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-emerald-500">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+            <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar (7d)</p>
           </div>
-          <p className="text-lg font-extrabold font-mono text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(kpis.porCobrarSemana)}</p>
+          <p className="text-lg font-extrabold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(kpis.porCobrarSemana)}</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingDown className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+            <TrendingDown className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por pagar (7d)</p>
           </div>
-          <p className="text-lg font-extrabold font-mono text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmt(kpis.porPagarSemana)}</p>
+          <p className="text-lg font-extrabold font-mono text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(kpis.porPagarSemana)}</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Vencidos</p>
           </div>
-          <p className="text-lg font-extrabold font-mono text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(kpis.vencidos)}</p>
+          <p className="text-lg font-extrabold font-mono text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(kpis.vencidos)}</p>
         </div>
       </div>
 
@@ -324,10 +324,10 @@ export default function PaymentCalendarView() {
                   {hasAny && (
                     <div className="flex flex-wrap gap-0.5 mt-1">
                       {hasFiados && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-error)]" title="Fiados vencen" />
+                        <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-error-500)]" title="Fiados vencen" />
                       )}
                       {hasPrestamos && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-warning)]" title="Préstamos por cobrar" />
+                        <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-warning-500)]" title="Préstamos por cobrar" />
                       )}
                       {hasPayables && (
                         <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-soft)]" title="Cuentas por pagar" />
@@ -342,10 +342,10 @@ export default function PaymentCalendarView() {
           {/* Legend */}
           <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-white/5">
             <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
-              <span className="h-2 w-2 rounded-full bg-[var(--data-error)] inline-block" /> Fiados
+              <span className="h-2 w-2 rounded-full bg-[var(--data-error-500)] inline-block" /> Fiados
             </span>
             <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
-              <span className="h-2 w-2 rounded-full bg-[var(--data-warning)] inline-block" /> Préstamos
+              <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)] inline-block" /> Préstamos
             </span>
             <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
               <span className="h-2 w-2 rounded-full bg-[var(--accent-soft)] inline-block" /> Por pagar
@@ -371,14 +371,14 @@ export default function PaymentCalendarView() {
               {/* Fiados */}
               {selectedEvents.fiados.length > 0 && (
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-error)] mb-2 flex items-center gap-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-error-500)] mb-2 flex items-center gap-1">
                     <DollarSign className="h-3 w-3" /> Fiados ({selectedEvents.fiados.length})
                   </p>
                   <div className="space-y-1.5">
                     {selectedEvents.fiados.map(f => (
-                      <div key={f.id} className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-lg px-3 py-2">
+                      <div key={f.id} className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg px-3 py-2">
                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">{f.customerName}</p>
-                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{fmt(f.amount)}</p>
+                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">{fmt(f.amount)}</p>
                       </div>
                     ))}
                   </div>
@@ -388,14 +388,14 @@ export default function PaymentCalendarView() {
               {/* Préstamos */}
               {selectedEvents.prestamos.length > 0 && (
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-warning)] mb-2 flex items-center gap-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-warning-500)] mb-2 flex items-center gap-1">
                     <Clock className="h-3 w-3" /> Préstamos ({selectedEvents.prestamos.length})
                   </p>
                   <div className="space-y-1.5">
                     {selectedEvents.prestamos.map(p => (
-                      <div key={p.id} className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg px-3 py-2">
+                      <div key={p.id} className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">{p.customerName ?? p.borrowerName ?? "—"}</p>
-                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">{fmt(p.nextPaymentAmount)}</p>
+                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">{fmt(p.nextPaymentAmount)}</p>
                       </div>
                     ))}
                   </div>
@@ -405,15 +405,15 @@ export default function PaymentCalendarView() {
               {/* Payables */}
               {selectedEvents.payables.length > 0 && (
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-success)] mb-2 flex items-center gap-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-success-500)] mb-2 flex items-center gap-1">
                     <Building2 className="h-3 w-3" /> Por pagar ({selectedEvents.payables.length})
                   </p>
                   <div className="space-y-1.5">
                     {selectedEvents.payables.map(p => (
-                      <div key={p.id} className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg px-3 py-2">
+                      <div key={p.id} className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">{p.supplierName}</p>
                         {p.description && <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted truncate">{p.description}</p>}
-                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mt-0.5">{fmt(p.amount)}</p>
+                        <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-0.5">{fmt(p.amount)}</p>
                       </div>
                     ))}
                   </div>

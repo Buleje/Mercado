@@ -261,10 +261,10 @@ export default function CatalogView({
       {/* Error */}
       {error && (
         <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4">
-          <span className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</span>
+          <span className="text-sm text-[var(--data-error-700)] dark:text-red-400 flex-1">{error}</span>
           <button
             onClick={() => fetchProducts()}
-            className="text-xs font-bold text-red-600 hover:text-red-800 underline"
+            className="text-xs font-bold text-[var(--data-error-600)] hover:text-red-800 underline"
           >
             Reintentar
           </button>

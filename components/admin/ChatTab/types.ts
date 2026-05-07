@@ -55,7 +55,7 @@ export const STATUS_COLORS: Record<ThreadStatus, string> = {
   open: "bg-[#00B4A6]",
   closed: "bg-slate-500",
   archived: "bg-slate-400",
-  blocked: "bg-[var(--data-error)]",
+  blocked: "bg-[var(--data-error-500)]",
 };
 
 export const SENDER_LABELS: Record<SenderType, string> = {

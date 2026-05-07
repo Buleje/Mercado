@@ -1,6 +1,7 @@
 "use client";
 
-import { Clock, CheckCircle2 } from "@buleje/design-system/icons";
+import { Clock, CheckCircle2, Calendar, Zap } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 
 export interface CheckoutDeliveryScheduleProps {
   deliverySlot: string;
@@ -13,6 +14,13 @@ export interface CheckoutDeliveryScheduleProps {
   onUseCustomDateTimeChange: (v: boolean) => void;
 }
 
+/**
+ * CheckoutDeliverySchedule — selector de horario de entrega.
+ *
+ * Rediseño 2026-05-05: chips agrupados por día (Hoy / Mañana) con
+ * separadores visibles, "Lo antes posible" destacado como CTA primario,
+ * inputs de fecha/hora con tokens del DS y label brand-tinted.
+ */
 export function CheckoutDeliverySchedule({
   deliverySlot,
   onDeliverySlotChange,
@@ -23,31 +31,40 @@ export function CheckoutDeliverySchedule({
   useCustomDateTime,
   onUseCustomDateTimeChange,
 }: CheckoutDeliveryScheduleProps) {
+  const inputClass =
+    "w-full h-12 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-white dark:bg-card text-foreground focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors text-sm tabular-nums";
+
   return (
-    <div>
-      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
-        <Clock className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
-        Horario de entrega
+    <div className="space-y-3">
+      <label className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+        <Clock
+          className="h-4 w-4"
+          strokeWidth={2}
+          style={{ color: "var(--color-primary, #00B4A6)" }}
+        />
+        ¿Cuándo entregamos?
       </label>
 
       {useCustomDateTime ? (
         <div className="space-y-3">
-          <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                Fecha de entrega
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" strokeWidth={2.25} />
+                Fecha
               </label>
               <input
                 type="date"
                 value={deliveryDate}
                 onChange={(e) => onDeliveryDateChange(e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className={inputClass}
               />
             </div>
-            <div>
-              <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                Hora preferida
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" strokeWidth={2.25} />
+                Hora
               </label>
               <input
                 type="time"
@@ -55,30 +72,43 @@ export function CheckoutDeliverySchedule({
                 onChange={(e) => onDeliveryTimeChange(e.target.value)}
                 min="08:00"
                 max="20:00"
-                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className={inputClass}
               />
             </div>
           </div>
           {deliveryDate && deliveryTime && (
-            <div className="px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
-              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Entrega programada:{" "}
-                {new Date(deliveryDate + "T" + deliveryTime).toLocaleString(
-                  "es-PE",
-                  {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }
-                )}
+            <div
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
+              style={{
+                background:
+                  "color-mix(in oklch, var(--data-success-500) 8%, transparent)",
+                border:
+                  "1px solid color-mix(in oklch, var(--data-success-500) 30%, transparent)",
+              }}
+            >
+              <CheckCircle2
+                className="h-4 w-4 shrink-0"
+                strokeWidth={2.25}
+                style={{ color: "var(--data-success-600)" }}
+              />
+              <p
+                className="text-sm font-bold leading-tight"
+                style={{ color: "var(--data-success-700)" }}
+              >
+                {new Date(
+                  deliveryDate + "T" + deliveryTime,
+                ).toLocaleString("es-PE", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </p>
             </div>
           )}
-          <p className="text-[length:var(--ts-2xs)] text-gray-400 leading-relaxed">
-            Horario de atencion: Lunes a Domingo de 8:00 AM a 8:00 PM
+          <p className="text-xs text-muted leading-relaxed">
+            Atendemos lunes a domingo de 8:00 AM a 8:00 PM
           </p>
           <button
             type="button"
@@ -86,59 +116,151 @@ export function CheckoutDeliverySchedule({
               onUseCustomDateTimeChange(false);
               onDeliverySlotChange("lo-antes-posible");
             }}
-            className="w-full text-xs font-semibold text-primary hover:underline py-2"
+            className="w-full h-10 inline-flex items-center justify-center gap-1 text-sm font-bold rounded-xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary,#00B4A6)]/40 transition-colors"
+            style={{ color: "var(--color-primary, #00B4A6)" }}
           >
-            &larr; Volver a &ldquo;Lo antes posible&rdquo;
+            ← Volver a horarios rápidos
           </button>
         </div>
       ) : (
         <>
-          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mb-2">
-            Cuando quieres recibir tu pedido?
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {(() => {
-              const now = new Date(
-                new Date().toLocaleString("en-US", { timeZone: "America/Lima" })
-              );
-              const h = now.getHours();
-              const todaySlots = [
-                { id: "lo-antes-posible", label: "Lo antes posible", emoji: "⚡", disabled: false },
-                { id: "hoy-14-16", label: "Hoy 2-4pm", emoji: "🕑", disabled: h >= 15 },
-                { id: "hoy-16-18", label: "Hoy 4-6pm", emoji: "🕓", disabled: h >= 17 },
-                { id: "hoy-18-20", label: "Hoy 6-8pm", emoji: "🕕", disabled: h >= 19 },
-              ];
-              const tomorrowSlots = [
-                { id: "manana-8-10", label: "Manana 8-10am", emoji: "🌅", disabled: false },
-                { id: "manana-10-12", label: "Manana 10-12pm", emoji: "☀️", disabled: false },
-                { id: "manana-14-16", label: "Manana 2-4pm", emoji: "🕑", disabled: false },
-              ];
-              return [...todaySlots, ...tomorrowSlots].map((slot) => (
-                <button
-                  key={slot.id}
-                  type="button"
-                  disabled={slot.disabled}
-                  onClick={() => onDeliverySlotChange(slot.id)}
-                  className={`px-3 py-2 rounded-full text-xs font-bold transition-all ${
-                    deliverySlot === slot.id
-                      ? "bg-[#00B4A6] text-white shadow-md scale-105"
-                      : slot.disabled
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                        : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
-                  }`}
+          {/* Lo antes posible — destacado como opción primary */}
+          {(() => {
+            const isAsap = deliverySlot === "lo-antes-posible";
+            return (
+              <button
+                type="button"
+                onClick={() => onDeliverySlotChange("lo-antes-posible")}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-all text-left",
+                  isAsap
+                    ? "shadow-sm"
+                    : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-[var(--color-primary,#00B4A6)]/40",
+                )}
+                style={
+                  isAsap
+                    ? {
+                        borderColor: "var(--color-primary, #00B4A6)",
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+                      }
+                    : undefined
+                }
+              >
+                <div
+                  className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: isAsap
+                      ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+                      : "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                  }}
                 >
-                  {slot.emoji} {slot.label}
-                </button>
-              ));
-            })()}
-          </div>
+                  <Zap
+                    className="h-5 w-5"
+                    strokeWidth={2.25}
+                    style={{
+                      color: isAsap
+                        ? "white"
+                        : "var(--color-primary, #00B4A6)",
+                    }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-extrabold text-foreground leading-tight">
+                    Lo antes posible
+                  </p>
+                  <p className="text-xs text-muted leading-tight mt-0.5">
+                    Recomendado · ~30 min
+                  </p>
+                </div>
+                {isAsap && (
+                  <CheckCircle2
+                    className="h-5 w-5 shrink-0"
+                    strokeWidth={2.5}
+                    style={{ color: "var(--color-primary, #00B4A6)" }}
+                  />
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Slots por día */}
+          {(() => {
+            const now = new Date(
+              new Date().toLocaleString("en-US", {
+                timeZone: "America/Lima",
+              }),
+            );
+            const h = now.getHours();
+            const todaySlots = [
+              { id: "hoy-14-16", label: "2-4 pm", disabled: h >= 15 },
+              { id: "hoy-16-18", label: "4-6 pm", disabled: h >= 17 },
+              { id: "hoy-18-20", label: "6-8 pm", disabled: h >= 19 },
+            ];
+            const tomorrowSlots = [
+              { id: "manana-8-10", label: "8-10 am", disabled: false },
+              { id: "manana-10-12", label: "10-12 pm", disabled: false },
+              { id: "manana-14-16", label: "2-4 pm", disabled: false },
+            ];
+
+            const renderSlots = (
+              label: string,
+              slots: typeof todaySlots,
+            ) => (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted uppercase tracking-wider">
+                  {label}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {slots.map((slot) => {
+                    const active = deliverySlot === slot.id;
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        disabled={slot.disabled}
+                        onClick={() => onDeliverySlotChange(slot.id)}
+                        className={cn(
+                          "h-10 px-4 rounded-full text-sm font-bold transition-all border-2 tabular-nums",
+                          active
+                            ? "border-transparent text-white shadow-sm"
+                            : slot.disabled
+                              ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-muted opacity-50 cursor-not-allowed line-through"
+                              : "border-[var(--rule-soft)] bg-white dark:bg-card text-foreground hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)]",
+                        )}
+                        style={
+                          active
+                            ? {
+                                background:
+                                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                              }
+                            : undefined
+                        }
+                      >
+                        {slot.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+
+            return (
+              <div className="space-y-3">
+                {renderSlots("Hoy", todaySlots)}
+                {renderSlots("Mañana", tomorrowSlots)}
+              </div>
+            );
+          })()}
+
           <button
             type="button"
             onClick={() => onUseCustomDateTimeChange(true)}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border-2 border-dashed border-primary/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+            className="w-full h-10 flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-soft)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:bg-[var(--surface-sunken)]/40 text-sm font-bold transition-colors"
+            style={{ color: "var(--color-primary, #00B4A6)" }}
           >
-            <Clock className="h-3.5 w-3.5" />
-            Otra fecha y hora especifica?
+            <Calendar className="h-4 w-4" strokeWidth={2.25} />
+            Otra fecha y hora
           </button>
         </>
       )}

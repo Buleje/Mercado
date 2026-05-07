@@ -194,7 +194,7 @@ export default function HapticFeedback() {
 
       {/* Soporte del dispositivo */}
       {!haptic.isSupported && (
-        <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 px-4 py-3 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           Este dispositivo o navegador no soporta vibracion. El componente funciona silenciosamente.
         </div>
       )}

@@ -62,9 +62,9 @@ function KpiCard({
   color: "green" | "red" | "blue";
 }) {
   const colors = {
-    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
-    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error)]/20   text-[var(--data-error)]   dark:text-[var(--data-error)]   border-[var(--data-error)]   dark:border-[var(--data-error)]",
-    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success)]  dark:text-[var(--data-success)]  border-[var(--data-success)]/30  dark:border-[var(--data-success)]/30",
+    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error-500)]/20   text-[var(--data-error-500)]   dark:text-[var(--data-error-500)]   border-[var(--data-error-500)]   dark:border-[var(--data-error-500)]",
+    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
   };
   return (
     <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
@@ -225,7 +225,7 @@ export default function ReporteMensualTab() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -235,12 +235,12 @@ export default function ReporteMensualTab() {
       {result && (
         <div className="space-y-6">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-[var(--data-success)]" />
+            <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
             <span className="font-semibold text-[var(--text-primary)]">
               Reporte {result.period} generado
             </span>
             {result.emailSent && (
-              <span className="text-xs text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+              <span className="text-xs text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 Email enviado
               </span>
             )}
@@ -269,7 +269,7 @@ export default function ReporteMensualTab() {
           </div>
 
           {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <FileText className="h-4 w-4 shrink-0" />
             <span>
               PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,

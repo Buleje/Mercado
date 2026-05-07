@@ -17,17 +17,17 @@ const TIER_COLORS: Record<ModuleTier, { bg: string; active: string; ring: string
   principal: {
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     active: "bg-[var(--accent-soft)] text-white ",
-    ring: "ring-[var(--data-success)]/40 dark:ring-[var(--data-success)]/40",
+    ring: "ring-[var(--data-success-500)]/40 dark:ring-[var(--data-success-500)]/40",
   },
   intermedio: {
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    active: "bg-[var(--data-warning)] text-white ",
-    ring: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    active: "bg-[var(--data-warning-500)] text-white ",
+    ring: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
   },
   avanzado: {
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     active: "bg-[var(--accent-soft)] text-white ",
-    ring: "ring-[var(--data-success)]/40 dark:ring-[var(--data-success)]/40",
+    ring: "ring-[var(--data-success-500)]/40 dark:ring-[var(--data-success-500)]/40",
   },
 };
 
@@ -186,7 +186,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
             {overrides && Object.keys(overrides).length > 0 && onResetOverrides && (
               <button
                 onClick={onResetOverrides}
-                className="flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+                className="flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
               >
                 <RotateCcw className="h-2.5 w-2.5" />
                 Resetear

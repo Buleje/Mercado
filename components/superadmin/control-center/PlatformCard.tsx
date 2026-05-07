@@ -128,7 +128,7 @@ export function PlatformCard({
           )}
         >
           {copied ? (
-            <Check className="h-3.5 w-3.5 text-[var(--data-success)]" aria-hidden />
+            <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" aria-hidden />
           ) : (
             <Copy className="h-3.5 w-3.5" aria-hidden />
           )}

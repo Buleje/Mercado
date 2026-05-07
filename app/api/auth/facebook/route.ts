@@ -46,18 +46,18 @@ export async function GET(req: NextRequest) {
   });
 
   const response = NextResponse.redirect(url);
-  response.cookies.set("oauth-state", state, {
+  response.cookies.set("__Host-oauth-state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     maxAge: 600, // 10 minutes
     path: "/",
   });
 
   // Persist tenantId so the callback can resolve it
-  response.cookies.set("oauth-tenant", tenantId, {
+  response.cookies.set("__Host-oauth-tenant", tenantId, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
     maxAge: 600,
     path: "/",
@@ -65,9 +65,9 @@ export async function GET(req: NextRequest) {
 
   // Persist optional post-login redirect so the callback can honor it.
   if (safeRedirect.length > 0) {
-    response.cookies.set("oauth-redirect", safeRedirect, {
+    response.cookies.set("__Host-oauth-redirect", safeRedirect, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 600,
       path: "/",

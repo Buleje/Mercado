@@ -68,7 +68,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all",
                   "border border-[var(--rule-base)] dark:border-card-border",
                   "hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 )}
               >
                 {/* Badge */}
@@ -92,7 +92,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                     S/{totalPrice.toFixed(2)}
                   </p>
                   {savingsPct > 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
                       Mayor volumen
                     </p>
                   )}

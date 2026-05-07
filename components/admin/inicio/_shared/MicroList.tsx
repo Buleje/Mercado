@@ -12,7 +12,7 @@
  *       { name: "Coca Cola 1.5L", value: 320, label: "S/ 320" },
  *       { name: "Pan Frances", value: 240, label: "S/ 240" },
  *     ]}
- *     barColor="#00B4A6"
+ *     barColor="var(--accent)"
  *   />
  */
 
@@ -48,7 +48,7 @@ interface MicroListProps {
 
 export function MicroList({
   items,
-  barColor = "var(--data-5, #00B4A6)",
+  barColor = "var(--data-5, var(--accent))",
   showRank = true,
   emptyText = "Sin datos",
 }: MicroListProps) {

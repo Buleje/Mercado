@@ -7,7 +7,7 @@ export default function AdminNotFound() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)] p-4">
       <div className="text-center">
         <div className="mb-4 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[var(--data-info-50)] text-[var(--data-info)] dark:bg-[var(--data-info)]/20 dark:text-[var(--data-info)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[var(--data-info-50)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/20 dark:text-[var(--data-info-500)]">
             <Search className="h-8 w-8" />
           </div>
         </div>

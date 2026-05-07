@@ -30,10 +30,10 @@ const PRODUCTS: ReorderProduct[] = [];
 
 const CATEGORIES = ["Abarrotes", "Bebidas", "Lácteos", "Limpieza", "Higiene Personal", "Panadería", "Carnes y Embutidos", "Congelados", "Snacks", "Mascotas", "Otros"];
 const STATUS_CONFIG = {
-  urgente:    { label: "Urgente",     color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",           dot: "bg-[var(--data-error)]" },
-  pronto:     { label: "Pronto",      color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",   dot: "bg-[var(--data-warning)]" },
-  ok:         { label: "OK",          color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
-  sobrestock: { label: "Sobrestock",  color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",       dot: "bg-[var(--accent-soft)]" },
+  urgente:    { label: "Urgente",     color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",           dot: "bg-[var(--data-error-500)]" },
+  pronto:     { label: "Pronto",      color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   dot: "bg-[var(--data-warning-500)]" },
+  ok:         { label: "OK",          color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
+  sobrestock: { label: "Sobrestock",  color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       dot: "bg-[var(--accent-soft)]" },
 };
 
 /* ── component ──────────────────────────────────────────────── */
@@ -79,35 +79,35 @@ export default function DynamicReorderTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 ">
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">Reorden urgente</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{urgentCount}</p>
-          <p className="text-xs text-[var(--data-error)]">productos bajo ROP</p>
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] p-4 ">
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">Reorden urgente</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">{urgentCount}</p>
+          <p className="text-xs text-[var(--data-error-500)]">productos bajo ROP</p>
         </div>
-        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] p-4 ">
-          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">Reorden pronto</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">{prontCount}</p>
-          <p className="text-xs text-[var(--data-warning)]">próximos 7 días</p>
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] p-4 ">
+          <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">Reorden pronto</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{prontCount}</p>
+          <p className="text-xs text-[var(--data-warning-500)]">próximos 7 días</p>
         </div>
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4 ">
-          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Stock saludable</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
-          <p className="text-xs text-[var(--data-success)]">nivel adecuado</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 p-4 ">
+          <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Stock saludable</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
+          <p className="text-xs text-[var(--data-success-500)]">nivel adecuado</p>
         </div>
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4 ">
-          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Sobrestock</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{overstockCount}</p>
-          <p className="text-xs text-[var(--data-success)]">capital inmovilizado</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 p-4 ">
+          <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Sobrestock</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{overstockCount}</p>
+          <p className="text-xs text-[var(--data-success-500)]">capital inmovilizado</p>
         </div>
       </div>
 
       {/* Urgent alert */}
       {urgentCount > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">¡{urgentCount} producto(s) necesitan reorden inmediata!</h4>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{PRODUCTS.filter(p => p.status === "urgente").map(p => p.name).join(", ")}</p>
+            <h4 className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">¡{urgentCount} producto(s) necesitan reorden inmediata!</h4>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">{PRODUCTS.filter(p => p.status === "urgente").map(p => p.name).join(", ")}</p>
           </div>
         </div>
       )}
@@ -163,11 +163,11 @@ export default function DynamicReorderTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-primary">{p.dynamicROP}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.eoq}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-[var(--data-error)]" : p.daysUntilStockout <= 7 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{p.daysUntilStockout}d</span>
+                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-[var(--data-error-500)]" : p.daysUntilStockout <= 7 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{p.daysUntilStockout}d</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {p.trend === "up" && <TrendingUp className="h-4 w-4 text-[var(--data-success)] mx-auto" />}
-                      {p.trend === "down" && <TrendingDown className="h-4 w-4 text-[var(--data-error)] mx-auto" />}
+                      {p.trend === "up" && <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
+                      {p.trend === "down" && <TrendingDown className="h-4 w-4 text-[var(--data-error-500)] mx-auto" />}
                       {p.trend === "stable" && <span className="text-[var(--text-tertiary)]">→</span>}
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
@@ -221,8 +221,8 @@ export default function DynamicReorderTab() {
               <div className={cn("rounded-xl p-4 text-center", detail.status === "urgente" ? "bg-[var(--data-error-50)] dark:bg-red-950/20" : detail.status === "pronto" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : detail.status === "sobrestock" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
                 <p className="text-xl sm:text-3xl font-extrabold">{detail.daysUntilStockout}</p>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">días hasta agotamiento</p>
-                {detail.status === "urgente" && <p className="text-xs text-[var(--data-error)] font-bold mt-2">¡Realizar pedido de {detail.eoq} unidades HOY!</p>}
-                {detail.status === "sobrestock" && <p className="text-xs text-[var(--data-success)] font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
+                {detail.status === "urgente" && <p className="text-xs text-[var(--data-error-500)] font-bold mt-2">¡Realizar pedido de {detail.eoq} unidades HOY!</p>}
+                {detail.status === "sobrestock" && <p className="text-xs text-[var(--data-success-500)] font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
               </div>
             </div>
           </div>

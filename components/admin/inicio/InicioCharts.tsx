@@ -192,14 +192,14 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          p.diasRestantes < 7 ? "bg-[var(--data-error)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]",
+                          p.diasRestantes < 7 ? "bg-[var(--data-error-500)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]",
                         )}
                         style={{ width: `${Math.min((p.stock / Math.max(p.mínimo * 3, 1)) * 100, 100)}%` }}
                       />
                     </div>
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] font-bold whitespace-nowrap",
-                      p.diasRestantes < 7 ? "text-[var(--data-error)]" : p.diasRestantes < 14 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]",
+                      p.diasRestantes < 7 ? "text-[var(--data-error-500)]" : p.diasRestantes < 14 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]",
                     )}>{p.diasRestantes}d</span>
                   </div>
                 </div>

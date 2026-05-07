@@ -20,10 +20,10 @@ type Rule = {
 };
 
 const CATEGORIES: Record<Rule["category"], { label: string; color: string }> = {
-  inventario: { label: "Inventario", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  ventas: { label: "Ventas", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  inventario: { label: "Inventario", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  ventas: { label: "Ventas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   crm: { label: "CRM", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  finanzas: { label: "Finanzas", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
+  finanzas: { label: "Finanzas", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   rrhh: { label: "RRHH", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
 };
 
@@ -95,17 +95,17 @@ export default function BusinessRulesTab() {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</CardTitle>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", CATEGORIES[r.category].color)}>{CATEGORIES[r.category].label}</span>
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{r.description}</p>
 
                 {/* Rule flow visualization */}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
+                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <span className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-2.5 py-1.5 rounded-lg font-semibold">{r.condition}</span>
+                  <span className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.condition}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1.5 rounded-lg font-semibold">{r.action}</span>
+                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.action}</span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
@@ -116,7 +116,7 @@ export default function BusinessRulesTab() {
               <div className="flex items-center gap-1">
                 <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Play className="h-4 w-4" /></button>
                 <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => setRules(prev => prev.filter(x => x.id !== r.id))} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => setRules(prev => prev.filter(x => x.id !== r.id))} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </div>

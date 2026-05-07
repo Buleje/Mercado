@@ -13,7 +13,7 @@ interface Row {
 function Yes() {
   return (
     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full" style={{ background: "rgba(45,106,79,0.12)" }}>
-      <Check className="w-3.5 h-3.5" style={{ color: "#00B4A6" }} aria-hidden="true" />
+      <Check className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} aria-hidden="true" />
     </span>
   );
 }
@@ -32,7 +32,7 @@ const rows: Row[] = [
     cuaderno: <span className="text-xs text-gray-500 dark:text-[rgba(240,244,241,0.5)]">Gratis</span>,
     excel: <span className="text-xs text-gray-500 dark:text-[rgba(240,244,241,0.5)]">Gratis</span>,
     bodega: (
-      <span className="text-xs font-semibold" style={{ color: "#00B4A6" }}>
+      <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
         Desde S/ 0
       </span>
     ),
@@ -90,7 +90,7 @@ const rows: Row[] = [
     cuaderno: <No />,
     excel: <span className="text-xs text-gray-400 dark:text-[rgba(240,244,241,0.4)]">Manual</span>,
     bodega: (
-      <span className="text-xs font-semibold" style={{ color: "#00B4A6" }}>
+      <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
         Diario
       </span>
     ),
@@ -157,8 +157,8 @@ export default function SaasComparison() {
                       style={
                         isBodega
                           ? {
-                              color: "#00B4A6",
-                              borderBottom: "2px solid #00B4A6",
+                              color: "var(--accent)",
+                              borderBottom: "2px solid var(--accent)",
                               background: "rgba(45,106,79,0.08)",
                               borderTopLeftRadius: idx === 3 ? "0.75rem" : undefined,
                               borderTopRightRadius: idx === 3 ? "0.75rem" : undefined,
@@ -232,16 +232,16 @@ export default function SaasComparison() {
                     background: "rgba(45,106,79,0.08)",
                     borderLeft: "1px solid rgba(45,106,79,0.15)",
                     borderRight: "1px solid rgba(45,106,79,0.15)",
-                    borderBottom: "2px solid #00B4A6",
+                    borderBottom: "2px solid var(--accent)",
                     borderBottomLeftRadius: "0.75rem",
                     borderBottomRightRadius: "0.75rem",
                   }}
                 >
                   <a
                     href="#precios"
-                    className="inline-block px-4 py-2 rounded-xl text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+                    className="inline-block px-4 py-2 rounded-xl text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     style={{
-                      background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
+                      background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
                       boxShadow: "0 4px 16px -4px rgba(45,106,79,0.5)",
                     }}
                   >

@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tenantId = req.headers.get("x-tenant-id") || "main";
+    // BUG-FIX (audit 2026-05-05): usar tenantId del JWT validado, no del header
+    // crudo con fallback "main" — el fallback rompía aislamiento multi-tenant.
+    const tenantId = admin.tenantId;
     const allProducts = await ProductsDB.getAll(tenantId);
     const productMap = new Map(allProducts.map((p) => [String(p.id), p]));
 

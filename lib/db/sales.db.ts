@@ -200,7 +200,21 @@ export const CashRegistersDB = {
     const row = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
-  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }): Promise<DbCashMovement> {
+  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId?: string): Promise<DbCashMovement> {
+    // SECURITY 2026-05-06 (audit pagos H003 defense-in-depth): si llega
+    // tenantId, validar ownership de la caja antes de crear el movement.
+    // Caller actual (`app/api/cash-registers/[id]/route.ts`) ya valida
+    // ownership con `assertRegisterOwnership`; este check es redundante
+    // pero blinda contra futuros callers que olviden hacerlo.
+    if (tenantId) {
+      const reg = await prisma.cashRegister.findFirst({
+        where: { id: cashRegisterId, tenantId },
+        select: { id: true },
+      });
+      if (!reg) {
+        throw new Error("[cash-registers.addMovement] caja no pertenece al tenant");
+      }
+    }
     const row = await prisma.cashMovement.create({
       data: { cashRegisterId, ...movement },
     });

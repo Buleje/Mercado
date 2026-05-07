@@ -116,6 +116,24 @@ export async function DELETE(req: NextRequest) {
       details: beforeCounts,
     });
 
+    // COMPLIANCE 2026-05-06 (Ley 29733 Art. 18 + 11): audit trail OBLIGATORIO
+    // de la operación más destructiva del sistema. Antes solo iba a logger.
+    try {
+      const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
+      logSuperadminAction(
+        "nuclear_reset",
+        `Purga total ejecutada por ${session.username} — ${totalBefore} registros borrados de ${Object.keys(beforeCounts).length} tablas`,
+        {
+          deletedRows: totalBefore,
+          tables: Object.keys(beforeCounts),
+          ip: req.headers.get("x-forwarded-for") ?? null,
+          userAgent: req.headers.get("user-agent") ?? null,
+          timestamp: new Date().toISOString(),
+        },
+        session.username,
+      ).catch(() => {});
+    } catch { /* audit logger no disponible */ }
+
     return NextResponse.json({
       deletedRows: totalBefore,
       details: beforeCounts,

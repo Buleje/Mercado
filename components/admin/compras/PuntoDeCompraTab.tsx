@@ -160,7 +160,7 @@ function ProductCard({
           </div>
         )}
         {lowStock && (
-          <div className="absolute top-1.5 left-1.5 bg-[var(--data-warning)] text-white rounded-full p-1" title="Stock bajo">
+          <div className="absolute top-1.5 left-1.5 bg-[var(--data-warning-500)] text-white rounded-full p-1" title="Stock bajo">
             <AlertTriangle className="h-3 w-3" />
           </div>
         )}
@@ -684,7 +684,7 @@ export default function PuntoDeCompraTab() {
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors",
                         showLowStockOnly
-                          ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                          ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           : "border-[var(--rule-base)] text-[var(--text-secondary)]",
                       )}
                     >
@@ -781,10 +781,10 @@ export default function PuntoDeCompraTab() {
               {cart.length > 0 && (
                 <button
                   onClick={clearCart}
-                  className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                   title="Limpiar todo"
                 >
-                  <RotateCcw className="h-4 w-4 text-[var(--data-error)]" />
+                  <RotateCcw className="h-4 w-4 text-[var(--data-error-500)]" />
                 </button>
               )}
               <button
@@ -957,9 +957,9 @@ export default function PuntoDeCompraTab() {
                       </p>
                       <button
                         onClick={() => removeFromCart(item.productId)}
-                        className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors shrink-0"
+                        className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors shrink-0"
                       >
-                        <Trash2 className="h-3 w-3 text-[var(--data-error)]" />
+                        <Trash2 className="h-3 w-3 text-[var(--data-error-500)]" />
                       </button>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">
@@ -990,7 +990,7 @@ export default function PuntoDeCompraTab() {
                           />
                         </div>
                         {item.lastCost != null && item.unitCost !== item.lastCost && (
-                          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+                          <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
                             Antes: {fmtCurrency(item.lastCost)}
                           </p>
                         )}
@@ -1056,7 +1056,7 @@ export default function PuntoDeCompraTab() {
                 <span className="font-mono">{fmtCurrency(subtotal)}</span>
               </div>
               {globalDiscount > 0 && (
-                <div className="flex justify-between text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                <div className="flex justify-between text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                   <span>Descuento ({globalDiscount}%)</span>
                   <span className="font-mono">-{fmtCurrency(discountAmount)}</span>
                 </div>
@@ -1172,10 +1172,10 @@ export default function PuntoDeCompraTab() {
                                 className={cn(
                                   "font-medium",
                                   order.status === "recibido"
-                                    ? "text-[var(--data-success)]"
+                                    ? "text-[var(--data-success-500)]"
                                     : order.status === "cancelado"
-                                      ? "text-[var(--data-error)]"
-                                      : "text-[var(--data-warning)]",
+                                      ? "text-[var(--data-error-500)]"
+                                      : "text-[var(--data-warning-500)]",
                                 )}
                               >
                                 {order.status}
@@ -1418,7 +1418,7 @@ export default function PuntoDeCompraTab() {
                     </span>
                   </div>
                   {globalDiscount > 0 && (
-                    <div className="flex justify-between text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                    <div className="flex justify-between text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                       <span>Descuento</span>
                       <span className="font-medium">{globalDiscount}% (-{fmtCurrency(discountAmount)})</span>
                     </div>
@@ -1508,7 +1508,7 @@ export default function PuntoDeCompraTab() {
                 transition={{ type: "spring", damping: 12, delay: 0.1 }}
                 className="mx-auto mb-4 h-16 w-16 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center"
               >
-                <Check className="h-8 w-8 text-[var(--data-success)]" />
+                <Check className="h-8 w-8 text-[var(--data-success-500)]" />
               </m.div>
               <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-1">
                 ¡Orden Generada!

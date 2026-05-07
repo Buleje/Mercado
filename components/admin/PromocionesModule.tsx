@@ -37,11 +37,11 @@ const TIPO_LABELS: Record<PromoType, string> = {
 };
 
 const TIPO_BADGE: Record<PromoType, string> = {
-  porcentaje: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-  "2x1": "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-  "3x2": "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-  combo: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-  monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400",
+  porcentaje: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  "2x1": "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  "3x2": "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+  combo: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+  monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent-dark)] dark:text-teal-400",
 };
 
 const EMPTY_FORM = {
@@ -107,7 +107,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
 }) {
   const status = promoStatus(promo);
   const statusColor = status === "hoy"
-    ? "border-l-[#00B4A6]"
+    ? "border-l-[var(--accent)]"
     : status === "futura"
     ? "border-l-[#f97316]"
     : "border-l-gray-300 dark:border-l-gray-600";
@@ -135,7 +135,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             {fmtDate(promo.fechaInicio)} → {fmtDate(promo.fechaFin)}
           </p>
           {promo.condicion && (
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">Cond: {promo.condicion}</p>
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">Cond: {promo.condicion}</p>
           )}
           {promo.categorias.length > 0 && (
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
@@ -148,7 +148,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onToggle(promo.id)}
             disabled={loading}
             aria-label={promo.activa ? "Desactivar promoción" : "Activar promoción"}
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             {promo.activa
               ? <ToggleRight className="h-5 w-5 text-primary" />
@@ -159,9 +159,9 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onDelete(promo.id)}
             disabled={loading}
             aria-label="Eliminar promoción"
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
           >
-            <Trash2 className="h-4 w-4 text-[var(--data-error)]" />
+            <Trash2 className="h-4 w-4 text-[var(--data-error-500)]" />
           </button>
         </div>
       </div>
@@ -319,13 +319,13 @@ export default function PromocionesModule() {
             aria-label="Nueva promoción"
             className={cn(
               "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold transition-all",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               showForm
                 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                 : "text-white",
             )}
             style={showForm ? {} : {
-              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",
             }}
           >
@@ -337,17 +337,17 @@ export default function PromocionesModule() {
 
       {/* Mensaje de éxito */}
       {successMsg && (
-        <div className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl px-4 py-2.5 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           ✓ {successMsg}
         </div>
       )}
 
       {/* Stats rápido */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
           {activeToday} activas hoy
         </span>
-        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
           {promos.filter(p => promoStatus(p) === "futura").length} futuras
         </span>
         <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-medium">
@@ -359,12 +359,12 @@ export default function PromocionesModule() {
       {showForm && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5  space-y-4">
           <SectionTitle className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Tag className="h-4 w-4 text-[var(--data-warning)]" />
+            <Tag className="h-4 w-4 text-[var(--data-warning-500)]" />
             Nueva promoción
           </SectionTitle>
 
           {formError && (
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg px-3 py-2">
               {formError}
             </p>
           )}
@@ -474,9 +474,9 @@ export default function PromocionesModule() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] flex items-center justify-center gap-2"
+            className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-center gap-2"
             style={{
-              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",
             }}
           >
@@ -494,13 +494,13 @@ export default function PromocionesModule() {
             onClick={() => setFilter(f)}
             className={cn(
               "px-3 h-8 rounded-full text-xs font-medium transition-all capitalize",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               filter === f
                 ? "text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
             )}
             style={filter === f ? {
-              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
             } : {}}
           >
             {f === "todas" ? "Todas" : f === "hoy" ? "Activas hoy" : f === "futuras" ? "Futuras" : "Pasadas"}

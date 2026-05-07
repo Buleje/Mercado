@@ -277,7 +277,7 @@ export default function ProfitabilityCalculator() {
           )}
 
           {price <= cost && cost > 0 && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error)]">
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-500)]">
               <TrendingDown className="h-4 w-4 shrink-0" />
               El precio es menor o igual al costo. Estás vendiendo a pérdida.
             </div>
@@ -326,8 +326,8 @@ export default function ProfitabilityCalculator() {
                             className={cn(
                               "font-semibold",
                               diffVsCurrent(optimalPoint) > 0
-                                ? "text-[var(--data-success)]"
-                                : "text-[var(--data-error)]"
+                                ? "text-[var(--data-success-500)]"
+                                : "text-[var(--data-error-500)]"
                             )}
                           >
                             {diffVsCurrent(optimalPoint) > 0 ? "+" : ""}
@@ -410,8 +410,8 @@ export default function ProfitabilityCalculator() {
                           isCurrent
                             ? "text-[var(--text-tertiary)]"
                             : diff > 0
-                            ? "text-[var(--data-success)]"
-                            : "text-[var(--data-error)]"
+                            ? "text-[var(--data-success-500)]"
+                            : "text-[var(--data-error-500)]"
                         )}
                       >
                         {isCurrent ? "-" : `${diff > 0 ? "+" : ""}${fmt(diff)}`}

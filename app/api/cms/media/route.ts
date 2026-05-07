@@ -12,7 +12,8 @@ import { logger } from "@/lib/logger";
 // GET /api/cms/media - List all media
 // ═══════════════════════════════════════════════════════
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-06 (audit CMS #4): rol explícito.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -20,9 +21,9 @@ export async function GET(req: NextRequest) {
     const folder = searchParams.get("folder") || undefined;
     const query = searchParams.get("q");
 
-    const media = query 
-      ? await searchMedia(query)
-      : await getAllMedia(folder);
+    const media = query
+      ? await searchMedia(query, auth.tenantId)
+      : await getAllMedia(auth.tenantId, folder);
 
     return NextResponse.json(media);
   } catch (error) {
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
     const validated = parsed.data;
 
-    const media = await createMedia(validated);
+    const media = await createMedia(validated, auth.tenantId);
 
     return NextResponse.json(media, { status: 201 });
   } catch (error) {

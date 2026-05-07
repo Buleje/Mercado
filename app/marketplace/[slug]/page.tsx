@@ -252,6 +252,26 @@ export default async function StoreDetailPage({ params }: Props) {
   //    devuelve listas vacías y la UI muestra empty state honesto.
   const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.id);
 
+  // 5. Horario real de la tienda — leído de Store.hoursJson (columna jsonb
+  //    fuera del schema Prisma — fase expand). Si no hay hours configuradas,
+  //    cae al cómputo legacy (Settings.autoCloseTime).
+  const { prisma: prismaClient } = await import("@/lib/prisma");
+  const { isOpenNow: storeIsOpenNow, nextOpening } = await import("@/lib/marketplace-store-hours");
+  const NOW = new Date();
+  let hoursJson: unknown = null;
+  try {
+    const rows = await prismaClient.$queryRaw<Array<{ hoursJson: unknown }>>`
+      SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
+    `;
+    hoursJson = rows[0]?.hoursJson ?? null;
+  } catch {
+    hoursJson = null;
+  }
+  const isOpenReal = hoursJson
+    ? storeIsOpenNow(hoursJson as never, NOW)
+    : computeIsOpenNow();
+  const nextOpenAt = hoursJson ? nextOpening(hoursJson as never, NOW) : null;
+
   return (
     <>
       <StoreJsonLd
@@ -280,7 +300,9 @@ export default async function StoreDetailPage({ params }: Props) {
         categoryImages={categoryImages}
         reviewSummary={reviewSummary}
         reviews={reviews}
-        isOpen={computeIsOpenNow()}
+        isOpen={isOpenReal}
+        hoursJson={hoursJson}
+        nextOpeningAt={nextOpenAt ? nextOpenAt.toISOString() : null}
       />
 
       {/*

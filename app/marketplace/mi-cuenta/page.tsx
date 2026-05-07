@@ -63,7 +63,7 @@ function getStatusMeta(status: OrderStatus): {
       return {
         label: "Pendiente",
         Icon: Clock,
-        color: "text-amber-700 dark:text-amber-400",
+        color: "text-[var(--data-warning-700)] dark:text-amber-400",
         bg: "bg-amber-50 dark:bg-amber-950/30",
         pct: 25,
       };
@@ -87,7 +87,7 @@ function getStatusMeta(status: OrderStatus): {
       return {
         label: "Pendiente",
         Icon: Clock,
-        color: "text-amber-700 dark:text-amber-400",
+        color: "text-[var(--data-warning-700)] dark:text-amber-400",
         bg: "bg-amber-50 dark:bg-amber-950/30",
         pct: 25,
       };
@@ -231,7 +231,7 @@ export default function MiCuentaPage() {
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    activeOrder.status === "pendiente" && "bg-amber-500",
+                    activeOrder.status === "pendiente" && "bg-[var(--data-warning-500)]",
                     activeOrder.status === "confirmado" && "bg-blue-500",
                     activeOrder.status === "en_camino" && "bg-purple-500",
                   )}

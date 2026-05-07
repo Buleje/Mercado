@@ -44,7 +44,7 @@ export default function FavoritosClient() {
             <button
               type="button"
               onClick={clear}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-[var(--data-error-600)] hover:bg-red-50 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Vaciar lista
@@ -53,7 +53,7 @@ export default function FavoritosClient() {
         </div>
 
         <div className="flex items-center gap-3 mb-8">
-          <div className="h-11 w-11 rounded-xl bg-rose-100 text-[var(--data-error)] flex items-center justify-center">
+          <div className="h-11 w-11 rounded-xl bg-rose-100 text-[var(--data-error-500)] flex items-center justify-center">
             <Heart className="h-5 w-5 fill-current" />
           </div>
           <div>
@@ -72,7 +72,7 @@ export default function FavoritosClient() {
         {items.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
             <div className="mx-auto h-20 w-20 rounded-full bg-rose-50 flex items-center justify-center mb-4">
-              <Heart className="h-10 w-10 text-[var(--data-error)]" />
+              <Heart className="h-10 w-10 text-[var(--data-error-500)]" />
             </div>
             <h2 className="text-lg font-extrabold text-gray-800 dark:text-white">
               Tu lista está vacía
@@ -101,7 +101,7 @@ export default function FavoritosClient() {
                   type="button"
                   onClick={() => remove(item.productId, item.storeSlug)}
                   aria-label={`Quitar ${item.name} de favoritos`}
-                  className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-white/90 backdrop-blur border border-gray-200 text-[var(--data-error)] hover:bg-rose-50 transition-colors flex items-center justify-center"
+                  className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-white/90 backdrop-blur border border-gray-200 text-[var(--data-error-500)] hover:bg-rose-50 transition-colors flex items-center justify-center"
                 >
                   <Heart className="h-4 w-4 fill-current" />
                 </button>

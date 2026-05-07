@@ -92,7 +92,7 @@ export function OrderTrackingTimeline({
           </div>
         ) : currentStatus === "entregado" ? (
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
               <Check className="h-4 w-4" strokeWidth={2.5} />
             </span>
             <span className="text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">

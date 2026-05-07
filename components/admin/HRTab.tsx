@@ -56,16 +56,16 @@ function yearsOf(startDate: string): string {
 function today(): string { return new Date().toISOString().slice(0, 10); }
 
 const STATUS_EMP: Record<EmployeeStatus, { label: string; color: string; bg: string }> = {
-  activo:     { label: "Activo",      color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  activo:     { label: "Activo",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   inactivo:   { label: "Inactivo",    color: "text-[var(--text-secondary)] dark:text-muted",          bg: "bg-gray-100 dark:bg-surface" },
-  vacaciones: { label: "Vacaciones",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]",       bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  licencia:   { label: "Licencia",    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",     bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  vacaciones: { label: "Vacaciones",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  licencia:   { label: "Licencia",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 const STATUS_ATT: Record<AttendanceStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  presente: { label: "Presente", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  tarde:    { label: "Tarde",    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",      bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",    icon: Clock },
-  ausente:  { label: "Ausente",  color: "text-[var(--data-error)] dark:text-[var(--data-error)]",          bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",        icon: AlertTriangle },
-  permiso:  { label: "Permiso",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]",        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: UserCheck },
+  presente: { label: "Presente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  tarde:    { label: "Tarde",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",      bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: Clock },
+  ausente:  { label: "Ausente",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",          bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
+  permiso:  { label: "Permiso",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: UserCheck },
   vacacion: { label: "Vacación", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",    bg: "bg-[var(--surface-sunken)]", icon: Calendar },
 };
 
@@ -81,7 +81,7 @@ const EMPTY_EMP: Omit<Employee, "id" | "photoInitials" | "color"> = {
   startDate: "", baseSalary: 1025, status: "activo",
 };
 
-const COLORS = ["bg-[var(--text-primary)]", "bg-cyan-500", "bg-[var(--accent-soft)]", "bg-amber-500", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-sky-500", "bg-teal-500", "bg-orange-500", "bg-[var(--text-primary)]"];
+const COLORS = ["bg-[var(--text-primary)]", "bg-cyan-500", "bg-[var(--accent-soft)]", "bg-[var(--data-warning-500)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-sky-500", "bg-[var(--accent)]", "bg-orange-500", "bg-[var(--text-primary)]"];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -192,11 +192,11 @@ export default function HRTab() {
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
           { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Activos", value: stats.activo, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Con retraso", value: stats.tarde, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Ausentes hoy", value: stats.ausente, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Activos", value: stats.activo, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Con retraso", value: stats.tarde, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Ausentes hoy", value: stats.ausente, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-3 text-center", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -238,7 +238,7 @@ export default function HRTab() {
                 )}
               </div>
               {dniMsg && (
-                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
+                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                   {dniMsg.text}
                 </p>
               )}

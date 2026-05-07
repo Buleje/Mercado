@@ -16,12 +16,12 @@ interface AlertItem {
 }
 
 const TYPE_META = {
-  pedido:  { icon: ShoppingCart, color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30"  },
-  stock:   { icon: AlertTriangle,color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30"      },
-  venta:   { icon: TrendingUp,   color: "text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-  tarea:   { icon: Package,      color: "text-[var(--data-success)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
+  pedido:  { icon: ShoppingCart, color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30"  },
+  stock:   { icon: AlertTriangle,color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30"      },
+  venta:   { icon: TrendingUp,   color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  tarea:   { icon: Package,      color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
   sistema: { icon: Bell,         color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]"},
-  tiempo:  { icon: Clock,        color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30"},
+  tiempo:  { icon: Clock,        color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30"},
 };
 
 interface Props {
@@ -70,9 +70,9 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           urgent > 0
-            ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
+            ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
             : unread > 0
-            ? "text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30"
+            ? "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30"
             : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
         )}
         title="Centro de Alertas"
@@ -135,7 +135,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className={cn("text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-tight", !alert.read && "font-extrabold")}>{alert.title}</p>
-                          {alert.urgent && <span className="px-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-extrabold bg-[var(--data-error)] text-white shrink-0">URGENTE</span>}
+                          {alert.urgent && <span className="px-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-extrabold bg-[var(--data-error-500)] text-white shrink-0">URGENTE</span>}
                         </div>
                         <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{alert.body}</p>
                       </div>

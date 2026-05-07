@@ -13,9 +13,9 @@ interface Props {
 }
 
 const COLORS: Record<Status, string> = {
-  success: "bg-emerald-500",
-  warning: "bg-amber-500",
-  error: "bg-red-500",
+  success: "bg-[var(--data-success-500)]",
+  warning: "bg-[var(--data-warning-500)]",
+  error: "bg-[var(--data-error-500)]",
   info: "bg-sky-500",
   muted: "bg-gray-400 dark:bg-gray-600",
   accent: "bg-primary",

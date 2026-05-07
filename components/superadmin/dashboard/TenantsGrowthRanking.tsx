@@ -93,7 +93,7 @@ function DeltaPill({ value }: { value: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-sm font-bold ${
-        positive ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+        positive ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
       }`}
     >
       {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}

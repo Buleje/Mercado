@@ -43,8 +43,8 @@ function POSMockup() {
             Punto de Venta
           </span>
         </div>
-        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 inline-flex items-center gap-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-dot" />
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] pulse-dot" />
           En vivo
         </span>
       </div>
@@ -83,7 +83,7 @@ function POSMockup() {
               </p>
               <p className="text-[length:var(--ts-2xs)] text-gray-500">{p.qty} vendidos</p>
             </div>
-            <span className="text-xs font-extrabold text-emerald-600 tabular-nums">
+            <span className="text-xs font-extrabold text-[var(--data-success-600)] tabular-nums">
               S/{p.price.toFixed(2)}
             </span>
           </div>
@@ -116,7 +116,7 @@ function InventoryMockup() {
             Inventario
           </span>
         </div>
-        <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 inline-flex items-center gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] inline-flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />3 alertas
         </span>
       </div>
@@ -143,10 +143,10 @@ function InventoryMockup() {
                     className={cn(
                       "h-full rounded-full",
                       p.status === "critical"
-                        ? "bg-red-500"
+                        ? "bg-[var(--data-error-500)]"
                         : p.status === "low"
-                        ? "bg-amber-500"
-                        : "bg-emerald-500",
+                        ? "bg-[var(--data-warning-500)]"
+                        : "bg-[var(--data-success-500)]",
                     )}
                     style={{ width: `${Math.min(100, (p.stock / Math.max(p.min * 2, 1)) * 100)}%` }}
                   />
@@ -223,7 +223,7 @@ function AnalyticsMockup() {
             Analytics
           </span>
         </div>
-        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 inline-flex items-center gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] inline-flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
           +32%
         </span>
@@ -267,7 +267,7 @@ function AnalyticsMockup() {
           </div>
           <div>
             <p className="text-[length:var(--ts-2xs)] text-gray-500">Margen</p>
-            <p className="text-sm font-extrabold text-emerald-600 tabular-nums">
+            <p className="text-sm font-extrabold text-[var(--data-success-600)] tabular-nums">
               28%
             </p>
           </div>
@@ -394,7 +394,7 @@ export default function BusinessTabsShowcase() {
                         transition={{ delay: 0.1 + i * 0.08 }}
                         className="flex items-start gap-3"
                       >
-                        <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-emerald-100 text-[var(--data-success-600)] flex items-center justify-center">
                           <Check className="h-3 w-3" />
                         </span>
                         <span className="text-sm text-gray-700 dark:text-gray-300">

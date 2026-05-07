@@ -158,7 +158,7 @@ export default function CalificarEntregaPage() {
         </button>
 
         {status === "error" && (
-          <p className="mt-3 text-center text-sm text-red-500">
+          <p className="mt-3 text-center text-sm text-[var(--data-error-500)]">
             Hubo un error. Intenta de nuevo.
           </p>
         )}

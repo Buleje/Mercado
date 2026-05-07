@@ -74,9 +74,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
-  pendiente: { bg: "bg-amber-100 dark:bg-amber-950/40", fg: "text-amber-700 dark:text-amber-300" },
+  pendiente: { bg: "bg-amber-100 dark:bg-amber-950/40", fg: "text-[var(--data-warning-700)] dark:text-amber-300" },
   preparando: { bg: "bg-blue-100 dark:bg-blue-950/40", fg: "text-blue-700 dark:text-blue-300" },
-  asignado: { bg: "bg-teal-100 dark:bg-teal-950/40", fg: "text-teal-700 dark:text-teal-300" },
+  asignado: { bg: "bg-teal-100 dark:bg-teal-950/40", fg: "text-[var(--accent-dark)] dark:text-teal-300" },
   en_camino: { bg: "bg-indigo-100 dark:bg-indigo-950/40", fg: "text-[color:var(--brand-info)]" },
 };
 
@@ -204,7 +204,7 @@ export function PendingOrdersModal({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:bg-[var(--data-success-600)] transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" />
                   Avisar al dueño
@@ -395,7 +395,7 @@ export function PendingOrdersModal({
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600"
+                                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:bg-[var(--data-success-600)]"
                               >
                                 <Phone className="h-3.5 w-3.5" />
                                 WhatsApp cliente

@@ -13,10 +13,10 @@ type Message = {
 };
 
 const CHANNEL_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  sms: { label: "SMS", icon: Phone, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  sms: { label: "SMS", icon: Phone, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   email: { label: "Email", icon: Mail, color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  llamada: { label: "Llamada", icon: Phone, color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
+  llamada: { label: "Llamada", icon: Phone, color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
 };
 
 const SEED: Message[] = [];
@@ -60,9 +60,9 @@ export default function CommunicationHubTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Mensajes hoy", value: todayCount, color: "text-[var(--data-success)]" },
-          { label: "Pendientes", value: pendingCount, color: "text-[var(--data-error)]" },
-          { label: "Entrantes", value: inbound, color: "text-[var(--data-success)]" },
+          { label: "Mensajes hoy", value: todayCount, color: "text-[var(--data-success-500)]" },
+          { label: "Pendientes", value: pendingCount, color: "text-[var(--data-error-500)]" },
+          { label: "Entrantes", value: inbound, color: "text-[var(--data-success-500)]" },
           { label: "Salientes", value: outbound, color: "text-[var(--text-secondary)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 text-center">
@@ -96,7 +96,7 @@ export default function CommunicationHubTab() {
           const Ch = CHANNEL_CONFIG[m.channel];
           const Icon = Ch.icon;
           return (
-            <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5" : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Ch.color)}>
                   <Icon className="h-4 w-4" />
@@ -104,9 +104,9 @@ export default function CommunicationHubTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{m.customer}</span>
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
-                    {m.status === "pendiente" && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
+                    {m.status === "pendiente" && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{m.content}</p>

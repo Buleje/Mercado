@@ -141,11 +141,11 @@ export default function PeriodComparatorTab() {
       <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</CardTitle>
-          <span className="text-xs font-semibold text-[var(--data-success)]">{improvements}/{data.length} métricas mejoraron</span>
+          <span className="text-xs font-semibold text-[var(--data-success-500)]">{improvements}/{data.length} métricas mejoraron</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-3">
           <span>Métrica</span>
-          <span className="text-[var(--data-success)]">{current.aLabel}</span>
+          <span className="text-[var(--data-success-500)]">{current.aLabel}</span>
           <span className="text-[var(--text-secondary)]">{current.bLabel}</span>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function PeriodComparatorTab() {
             <div key={m.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{m.label}</span>
-                <span className={cn("flex items-center gap-0.5 text-xs font-bold", isGood ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                <span className={cn("flex items-center gap-0.5 text-xs font-bold", isGood ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   {diff === 0 ? <Minus className="h-3 w-3" /> : isGood ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                   {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
                 </span>
@@ -179,7 +179,7 @@ export default function PeriodComparatorTab() {
               <div className="space-y-2">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[var(--data-success)] font-semibold">{current.aLabel}</span>
+                    <span className="text-[var(--data-success-500)] font-semibold">{current.aLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmtNum(m.periodA, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">

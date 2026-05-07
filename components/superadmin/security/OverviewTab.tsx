@@ -163,12 +163,12 @@ export function OverviewTab() {
 
   if (error && !posture) {
     return (
-      <div role="alert" className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-4">
-        <div className="flex items-start gap-2 text-[var(--data-error)]">
+      <div role="alert" className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4">
+        <div className="flex items-start gap-2 text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
-            <BodyText className="font-semibold text-[var(--data-error)]">No se pudo cargar el panel</BodyText>
-            <Caption className="text-[var(--data-error)]/80">{error}</Caption>
+            <BodyText className="font-semibold text-[var(--data-error-500)]">No se pudo cargar el panel</BodyText>
+            <Caption className="text-[var(--data-error-500)]/80">{error}</Caption>
             <button onClick={reload} className="mt-2 text-xs font-bold underline">Reintentar</button>
           </div>
         </div>

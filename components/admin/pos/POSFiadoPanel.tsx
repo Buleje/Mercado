@@ -95,9 +95,9 @@ export default function POSFiadoPanel({
   // No data or no fiados
   if (!data || data.cantidadFiados === 0) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-        <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success)]" />
-        <span className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
+        <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin deudas pendientes
         </span>
       </div>
@@ -107,14 +107,14 @@ export default function POSFiadoPanel({
   // Has active fiados
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30">
-        <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+      <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+        <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+          <span className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             Fiado: {fmt(data.montoPendiente)} ({data.diasVencido} dias)
           </span>
           {data.hasFiadosVencidos && (
-            <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">
+            <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">
               VENCIDO
             </span>
           )}
@@ -122,7 +122,7 @@ export default function POSFiadoPanel({
         <div className="flex gap-1.5 shrink-0">
           <button
             onClick={() => setShowCobrar(!showCobrar)}
-            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded-lg transition-colors"
+            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded-lg transition-colors"
           >
             <HandCoins className="h-3 w-3 inline mr-0.5" />
             Cobrar

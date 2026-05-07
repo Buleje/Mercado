@@ -21,17 +21,17 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
   const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444" };
-  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"var(--accent)"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
   return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
-    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />}
+    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />}
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
-      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
+      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
@@ -55,11 +55,11 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
   const mins = Math.floor((now - new Date(createdAt).getTime()) / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  const color = mins > 60 ? "text-[var(--data-error)]" : mins > 30 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]";
+  const color = mins > 60 ? "text-[var(--data-error-500)]" : mins > 30 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]";
   return <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", color)}>\u23F1 {h > 0 ? `${h}h ${m}m` : `${m}m`}</div>;
 }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success)]", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-[var(--accent-soft)] text-[var(--data-success)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
+  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -87,17 +87,17 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-                <DollarSign className="h-3.5 w-3.5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               </div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Ventas</CardTitle>
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
-              <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-[var(--data-success)]" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
-              <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-[var(--data-success)]" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
+              <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-[var(--data-success-500)]" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
+              <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-[var(--data-success-500)]" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
               <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-[var(--text-secondary)]" delta={st.dTickets} sparklineData={st.sparklineOrders} />
-              <Kpi label="Cancelados" value={String(st.cancelados)} icon={AlertTriangle} accent="text-red-500" delta={st.dCancelados} invertTrend />
+              <Kpi label="Cancelados" value={String(st.cancelados)} icon={AlertTriangle} accent="text-[var(--data-error-500)]" delta={st.dCancelados} invertTrend />
             </div>
             <button
               onClick={exportVentas}
@@ -113,11 +113,11 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
               <div>
                 <div className="flex items-center gap-3 mb-2 justify-end flex-wrap">
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#00B4A6" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/></svg>
                     Ventas
                   </span>
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#00B4A6" strokeWidth="2" strokeDasharray="3 2"/></svg>
+                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="var(--accent)" strokeWidth="2" strokeDasharray="3 2"/></svg>
                     Utilidad
                   </span>
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
@@ -129,7 +129,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     Tendencia
                   </span>
                   {st.wowGrowth !== null && (
-                    <span className={cn("text-[length:var(--ts-xs)] font-bold", st.wowGrowth >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                    <span className={cn("text-[length:var(--ts-xs)] font-bold", st.wowGrowth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                       {st.wowGrowth >= 0 ? "↑" : "↓"} {Math.abs(st.wowGrowth).toFixed(1)}% sem/sem
                     </span>
                   )}
@@ -138,8 +138,8 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <svg viewBox={`0 0 ${st.daily.length * 50} 160`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
+                        <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.02" />
                       </linearGradient>
                     </defs>
                     {/* Grid lines */}
@@ -156,18 +156,18 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {/* Revenue line */}
                     <polyline
                       points={st.daily.map(([,v]: [string, number], i: number) => `${i*50+25},${140-((v/st.maxDaily)*130)}`).join(' ')}
-                      fill="none" stroke="#00B4A6" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {/* Profit line (dashed, emerald) */}
                     {st.dailyProfit.some((v: number) => v > 0) && (
                       <polyline
                         points={st.dailyProfit.map((v: number, i: number) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
-                        fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 3"
+                        fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 3"
                       />
                     )}
                     {/* Revenue dots */}
                     {st.daily.map(([,v]: [string, number], i: number) => (
-                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#00B4A6" stroke="white" strokeWidth="2" />
+                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="var(--accent)" stroke="white" strokeWidth="2" />
                     ))}
                     {/* 7-day moving average line (amber) */}
                     {st.movingAvg7.length >= 2 && (
@@ -309,8 +309,8 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 if (topHours.length === 0) return null;
                 return (
                   <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
-                    <div className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Horarios pico identificados</div>
-                    <div className="space-y-0.5 text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                    <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Horarios pico identificados</div>
+                    <div className="space-y-0.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                       {topHours.map(([key, count]) => {
                         const [dayIdx, hour] = key.split('-').map(Number);
                         return (
@@ -320,7 +320,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         );
                       })}
                     </div>
-                    <div className="mt-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                    <div className="mt-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                       → Asegurar disponibilidad máxima de personal y stock en estos horarios.
                     </div>
                   </div>
@@ -350,10 +350,10 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     return (
                       <div key={stage.label} className="relative">
                         <div className="flex flex-wrap items-center gap-3 mb-1.5">
-                          <StageIcon className={cn("h-4 w-4", idx === 4 ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} />
+                          <StageIcon className={cn("h-4 w-4", idx === 4 ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} />
                           <span className="text-xs font-medium text-[var(--text-secondary)]">{stage.label}</span>
                           {idx > 0 && dropoffRate > 0 && (
-                            <span className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-semibold ml-auto">
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] font-semibold ml-auto">
                               -{dropoffRate.toFixed(1)}% abandono
                             </span>
                           )}
@@ -387,51 +387,51 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-[var(--rule-base)]">
                   <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <Target className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Conversión Total</span>
+                      <Target className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Conversión Total</span>
                     </div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       {st.overallConversionRate.toFixed(1)}%
                     </div>
-                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/70 mt-0.5">
+                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70 mt-0.5">
                       Pedidos / Visitas
                     </div>
                   </div>
 
                   <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <ShoppingCart className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Abandono Carrito</span>
+                      <ShoppingCart className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Abandono Carrito</span>
                     </div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                       {st.basketAbandonmentRate.toFixed(1)}%
                     </div>
-                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-warning)]/70 dark:text-[var(--data-warning)]/70 mt-0.5">
+                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]/70 dark:text-[var(--data-warning-500)]/70 mt-0.5">
                       Carritos no finalizados
                     </div>
                   </div>
 
                   <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Checkout</span>
+                      <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Checkout</span>
                     </div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       {st.checkoutCompletionRate.toFixed(1)}%
                     </div>
-                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/70 mt-0.5">
+                    <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70 mt-0.5">
                       Tasa de finalización
                     </div>
                   </div>
                 </div>
 
                 {/* Insights */}
-                <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <div className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1.5 flex items-center gap-1.5">
+                <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1.5 flex items-center gap-1.5">
                     <Lightbulb className="h-3.5 w-3.5" />
                     Insights de conversión
                   </div>
-                  <div className="space-y-1 text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                  <div className="space-y-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     {st.basketAbandonmentRate > 40 && (
                       <div>• <strong>Alta tasa de abandono de carrito ({st.basketAbandonmentRate.toFixed(0)}%)</strong> - Considera revisar el proceso de checkout y ofrecer descuentos o envío gratis.</div>
                     )}
@@ -444,7 +444,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {st.overallConversionRate < 10 && st.overallConversionRate > 0 && (
                       <div>• <strong>Conversión baja ({st.overallConversionRate.toFixed(1)}%)</strong> - Optimiza landing pages, mejora fotos de productos y clarifica propuesta de valor.</div>
                     )}
-                    <div className="pt-1 mt-1 border-t border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]\">
+                    <div className="pt-1 mt-1 border-t border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]\">
                       Nota: Datos del funnel son estimaciones basadas en pedidos completados. Implementa analytics real para métricas precisas.
                     </div>
                   </div>
@@ -573,7 +573,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   className="px-1.5 py-0.5 rounded-md border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-foreground" />
                 {(dateFrom || dateTo) && (
                   <button onClick={() => { setDateFrom(""); setDateTo(""); }}
-                    className="text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:text-[var(--data-error)] font-bold">X</button>
+                    className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] font-bold">X</button>
                 )}
               </div>
             </div>
@@ -672,7 +672,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                             <a
                               href={`https://wa.me/51${o.customer.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${o.customer.name}, sobre tu pedido #${o.id.slice(-6)} en Buleje`)}`}
                               target="_blank" rel="noopener noreferrer"
-                              className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold hover:underline mt-0.5 flex items-center gap-0.5"
+                              className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold hover:underline mt-0.5 flex items-center gap-0.5"
                               title="Contactar por WhatsApp"
                             >WA</a>
                           )}

@@ -57,13 +57,13 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden hover:border-[#00B4A6] transition-colors cursor-pointer group"
+          className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden hover:border-[var(--accent)] transition-colors cursor-pointer group"
         >
           {logoPreview ? (
             <Image src={logoPreview} alt="Logo" fill className="object-cover" sizes="96px" unoptimized />
           ) : (
             <div className="text-center">
-              <svg className="w-8 h-8 mx-auto text-gray-400 group-hover:text-[#00B4A6] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-8 h-8 mx-auto text-gray-400 group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Logo</span>
@@ -92,7 +92,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.nombre}
             onChange={e => onChange({ ...data, nombre: e.target.value })}
             placeholder="Ej: Buleje"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.direccion}
             onChange={e => onChange({ ...data, direccion: e.target.value })}
             placeholder="Ej: Jr. Ucayali 123, Pucallpa"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
 
@@ -120,7 +120,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.telefono}
             onChange={e => onChange({ ...data, telefono: e.target.value })}
             placeholder="Ej: 961234567"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
       <button
         onClick={onNext}
         disabled={!isValid}
-        className="w-full py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-md shadow-[#00B4A6]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Empecemos &rarr;
       </button>

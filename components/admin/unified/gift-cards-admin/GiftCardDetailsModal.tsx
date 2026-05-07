@@ -35,10 +35,10 @@ const STATUS_LABELS: Record<GiftCardDetails["status"], string> = {
 };
 
 const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
-  pendiente: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  canjeada: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+  pendiente: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  canjeada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
   expirada: "bg-gray-100 text-[var(--text-secondary)]",
-  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error)]",
+  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 
 function fmt(n: number) {
@@ -123,7 +123,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
                 className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-primary hover:bg-primary/10 transition-colors"
                 title="Copiar código"
               >
-                {copied ? <CheckCircle className="h-4 w-4 text-[var(--data-success)]" /> : <Copy className="h-4 w-4" />}
+                {copied ? <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -170,7 +170,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {card.message && (
             <div className="space-y-2">
               <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Dedicatoria</p>
-              <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3">
+              <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3">
                 <p className="text-sm text-[var(--text-primary)] italic">&ldquo;{card.message}&rdquo;</p>
                 {card.senderName && (
                   <p className="text-xs text-[var(--text-secondary)] mt-2">— {card.senderName}</p>
@@ -211,7 +211,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
 
           {/* Extend form */}
           {extending && (
-            <div className="space-y-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl">
+            <div className="space-y-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl">
               <label className="text-xs font-bold text-[var(--text-secondary)]">Nueva fecha de vencimiento</label>
               <input
                 type="date"
@@ -248,7 +248,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
               </button>
               <button
                 onClick={() => onCancel(card.id)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
               >
                 Cancelar y reembolsar
               </button>

@@ -146,8 +146,9 @@ export async function GET(req: NextRequest) {
     let productoTop: string | null = null;
     if (productoTopRaw.length > 0) {
       const topProductId = productoTopRaw[0].productId;
-      const topProduct = await prisma.product.findUnique({
-        where: { id: topProductId },
+      // SECURITY 2026-05-05 (audit cross-tenant): defensive tenantId scope.
+      const topProduct = await prisma.product.findFirst({
+        where: { id: topProductId, tenantId },
         select: { name: true },
       });
       const qty = productoTopRaw[0]._sum?.quantity ?? 0;

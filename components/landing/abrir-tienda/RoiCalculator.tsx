@@ -142,7 +142,7 @@ export default function RoiCalculator() {
           </div>
 
           {/* ── Resultado ───────────────────────────────────── */}
-          <div className="relative rounded-3xl bg-gradient-to-br from-[var(--accent)] via-[var(--accent)] to-emerald-700 p-6 sm:p-10 text-white overflow-hidden">
+          <div className="relative rounded-3xl bg-gradient-to-br from-[var(--accent)] via-[var(--accent)] to-[var(--data-success-700)] p-6 sm:p-10 text-white overflow-hidden">
             <div aria-hidden className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
             <div aria-hidden className="absolute top-6 right-6 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur">
@@ -282,7 +282,7 @@ function SliderField({
 function Lever({ pct, label, desc }: { pct: string; label: string; desc: string }) {
   return (
     <div className="rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
-      <p className="inline-flex items-center gap-1.5 text-sm font-black text-[var(--data-success)]">
+      <p className="inline-flex items-center gap-1.5 text-sm font-black text-[var(--data-success-500)]">
         <TrendingUp className="h-3.5 w-3.5" strokeWidth={2.5} />
         {pct} {label.toLowerCase()}
       </p>

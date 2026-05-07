@@ -43,15 +43,29 @@ async function getActiveWebhooksForEvent(
 async function postToUrl(
   url: string,
   payload: Record<string, unknown>,
+  secret: string,
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5_000);
 
+    // SECURITY 2026-05-05 (audit webhooks #2): firma HMAC saliente.
+    // Antes los outgoing webhooks no llevaban firma — el receptor del tenant
+    // no podía verificar que el POST viniera de Buleje, permitiendo a un
+    // atacante registrar su propia URL y suplantar eventos.
+    const body = JSON.stringify(payload);
+    const crypto = await import("crypto");
+    const signature = crypto.createHmac("sha256", secret).update(body).digest("hex");
+    const ts = Math.floor(Date.now() / 1000).toString();
+
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Buleje-Signature": `sha256=${signature}`,
+        "X-Buleje-Timestamp": ts,
+      },
+      body,
       signal: controller.signal,
     });
 
@@ -89,9 +103,16 @@ export async function dispatchWebhook(
       data: payload,
     };
 
+    // SECURITY: firma HMAC compartida — clave por tenant (env), o fallback
+    // a AUTH_SECRET. Para soporte multi-tenant real, migrar a `webhookSecret`
+    // por tenant en Settings.
+    const dispatcherSecret =
+      process.env.WEBHOOK_DISPATCH_SECRET ?? process.env.AUTH_SECRET ?? "";
+    if (!dispatcherSecret) return; // fail-closed si no hay secret configurado
+
     await Promise.allSettled(
       webhooks.map(async (webhook) => {
-        const result = await postToUrl(webhook.url, envelope);
+        const result = await postToUrl(webhook.url, envelope, dispatcherSecret);
 
         const detail = result.ok
           ? `Webhook OK [${result.status}]: ${webhook.url} — evento: ${event}`

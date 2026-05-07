@@ -204,7 +204,7 @@ const EVENT_STREAM: LiveEvent[] = [
 
 const EVENT_META: Record<EventKind, { Icon: typeof ShoppingBag; tone: string }> = {
   order: { Icon: ShoppingBag, tone: "bg-[var(--data-success-500)]/25 text-[var(--data-success-500)]" },
-  payment: { Icon: Banknote, tone: "bg-emerald-500/25 text-emerald-400" },
+  payment: { Icon: Banknote, tone: "bg-[var(--data-success-500)]/25 text-emerald-400" },
   review: { Icon: Heart, tone: "bg-rose-500/25 text-rose-400" },
   delivery: { Icon: CheckCircle2, tone: "bg-sky-500/25 text-sky-400" },
 };
@@ -545,10 +545,10 @@ function KpiCard({
  * Cuando crucemos los 500 negocios reales podremos volver a métricas. */
 const FEATURE_POINTS = [
   { Icon: ShoppingBag, label: "Catálogo con fotos", tone: "text-[var(--accent)]" },
-  { Icon: Banknote, label: "Yape, Plin, efectivo", tone: "text-emerald-500" },
+  { Icon: Banknote, label: "Yape, Plin, efectivo", tone: "text-[var(--data-success-500)]" },
   { Icon: Bike, label: "Delivery propio o tuyo", tone: "text-fuchsia-500" },
   { Icon: TrendingUp, label: "Reportes diarios", tone: "text-[var(--data-success-500)]" },
-  { Icon: CheckCircle2, label: "Sin comisión 90 días", tone: "text-amber-500" },
+  { Icon: CheckCircle2, label: "Sin comisión 90 días", tone: "text-[var(--data-warning-500)]" },
   { Icon: Heart, label: "Soporte WhatsApp 1-a-1", tone: "text-rose-500" },
 ];
 

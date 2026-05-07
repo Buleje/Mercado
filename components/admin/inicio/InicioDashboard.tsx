@@ -292,7 +292,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       { etapa: "Recibidos", cantidad: allOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
       { etapa: "En camino", cantidad: allOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#8b5cf6" },
-      { etapa: "Entregados", cantidad: allOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" },
+      { etapa: "Entregados", cantidad: allOrders.filter(o => o.status === "entregado").length, color: "var(--accent)" },
     ];
 
     // ── Purchases by supplier ──
@@ -343,7 +343,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
   if (error && !lastUpdated) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
         <p className="text-sm font-medium text-[var(--text-secondary)]">{error}</p>
         <button onClick={() => void load()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
           <RefreshCw className="h-4 w-4 inline mr-2" />Reintentar
@@ -541,14 +541,14 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
             </p>
             <p className={cn(
               "font-display text-3xl sm:text-4xl font-semibold tabular-nums leading-none mt-1",
-              data.margenHoy >= 30 ? "text-[var(--data-success)]" : data.margenHoy >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+              data.margenHoy >= 30 ? "text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
             )}>
               {data.margenHoy.toFixed(1)}%
             </p>
           </div>
           <span className={cn(
             "text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full",
-            data.margenHoy >= 30 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning)]" : "bg-[var(--data-error-50)] text-[var(--data-error)]"
+            data.margenHoy >= 30 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
           )}>
             {data.margenHoy >= 30 ? "Excelente" : data.margenHoy >= 15 ? "Aceptable" : "Revisar"}
           </span>
@@ -557,7 +557,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              data.margenHoy >= 30 ? "bg-[var(--accent-soft)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+              data.margenHoy >= 30 ? "bg-[var(--accent-soft)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(data.margenHoy, 100)}%` }}
           />
@@ -578,11 +578,11 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 
 const COLOR_MAP = {
-  blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success-500)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success-500)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", badge: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20", icon: "text-amber-500", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
-  red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/20", icon: "text-red-500", badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
+  amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20", icon: "text-[var(--data-warning-500)]", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
+  red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/20", icon: "text-[var(--data-error-500)]", badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 } as const;
 
 function KPICard({
@@ -646,8 +646,8 @@ function DeltaBadge({ value }: { value: number }) {
   const color = value === 0
     ? "text-[var(--text-secondary)] bg-[var(--surface-sunken)]"
     : value > 0
-      ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-      : "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]";
+      ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+      : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]";
 
   return (
     <span className={cn("inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", color)}>

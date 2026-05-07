@@ -142,7 +142,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
           {success ? (
             /* Success state */
             <div className="text-center py-8 space-y-3">
-              <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success)]" />
+              <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success-500)]" />
               <p className="text-sm font-bold text-[var(--text-primary)]">
                 Pedido creado exitosamente
               </p>
@@ -181,7 +181,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         setSelectedCustomer(null);
                         setCustomerSearch("");
                       }}
-                      className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                      className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                     >
                       Cambiar
                     </button>
@@ -194,7 +194,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o teléfono..."
-                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />
@@ -288,7 +288,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
               {/* Error message */}
               {error && (
-                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg p-2">
+                <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg p-2">
                   {error}
                 </p>
               )}
@@ -302,7 +302,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors",
                   "bg-primary hover:bg-primary-dark text-white",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 )}
               >
                 {submitting ? (

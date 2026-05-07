@@ -9,10 +9,10 @@ import type { Customer } from "@/types/erp";
 type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
 
 const TIER_COLORS: Record<string, string> = {
-  bronce: "bg-[var(--data-warning)] text-white",
+  bronce: "bg-[var(--data-warning-500)] text-white",
   plata: "bg-gray-400 text-white",
-  oro: "bg-[var(--data-warning)] text-[var(--data-warning)]",
-  diamante: "bg-[var(--data-info)] text-[var(--data-info)]",
+  oro: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]",
+  diamante: "bg-[var(--data-info-500)] text-[var(--data-info-500)]",
 };
 
 export default function LoyaltyTab() {
@@ -156,8 +156,8 @@ export default function LoyaltyTab() {
 
   const getExpirationColor = (daysRemaining: number) => {
     if (daysRemaining > 60) return 'bg-[var(--accent-soft)]';
-    if (daysRemaining > 30) return 'bg-amber-500';
-    return 'bg-red-500';
+    if (daysRemaining > 30) return 'bg-[var(--data-warning-500)]';
+    return 'bg-[var(--data-error-500)]';
   };
 
   const generateReferralCode = async () => {
@@ -338,7 +338,7 @@ export default function LoyaltyTab() {
                   </button>
                 </div>
                 {redeemPts && Number(redeemPts) > 0 && (
-                  <p className="text-xs text-[var(--data-success)] flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />Descuento: S/{(Number(redeemPts) * 0.1).toFixed(2)}</p>
+                  <p className="text-xs text-[var(--data-success-500)] flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />Descuento: S/{(Number(redeemPts) * 0.1).toFixed(2)}</p>
                 )}
               </div>
 
@@ -365,7 +365,7 @@ export default function LoyaltyTab() {
               {/* Credit Balance */}
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
-                <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)]">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="number"
@@ -398,9 +398,9 @@ export default function LoyaltyTab() {
                       Vencimiento de Puntos
                     </h4>
                     {daysRemaining < 30 && (
-                      <div className="flex flex-wrap items-start gap-2 p-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-lg">
-                        <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
-                        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">Los puntos vencen pronto</p>
+                      <div className="flex flex-wrap items-start gap-2 p-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+                        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Los puntos vencen pronto</p>
                       </div>
                     )}
                     <div>
@@ -485,7 +485,7 @@ export default function LoyaltyTab() {
                           className="p-1.5 hover:bg-primary/10 rounded transition"
                         >
                           {copiedMessage === 'referral-code' ? (
-                            <span className="text-xs text-[var(--data-success)] font-bold">OK</span>
+                            <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
                           ) : (
                             <Copy className="h-4 w-4 text-primary" />
                           )}
@@ -505,8 +505,8 @@ export default function LoyaltyTab() {
                     </div>
 
                     {referredBy && (
-                      <div className="p-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-lg">
-                        <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                      <div className="p-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-lg">
+                        <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                           <span className="font-bold">Referido por:</span> {referredBy}
                         </p>
                       </div>
@@ -523,7 +523,7 @@ export default function LoyaltyTab() {
                           className="absolute top-2 right-2 p-1 hover:bg-gray-200 dark:hover:bg-card rounded transition"
                         >
                           {copiedMessage === 'referral-message' ? (
-                            <span className="text-xs text-[var(--data-success)] font-bold">OK</span>
+                            <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
                           ) : (
                             <Copy className="h-3 w-3 text-[var(--text-tertiary)]" />
                           )}

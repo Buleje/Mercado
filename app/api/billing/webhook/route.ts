@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { constructWebhookEvent, planFromSubscription } from "@/lib/stripe";
 import type Stripe from "stripe";
@@ -200,6 +201,11 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         },
       });
+      // SECURITY 2026-05-05 (audit Stripe #9): revalidar caches del tenant
+      // tras cambio de plan — antes el sidebar/feature-flags quedaban
+      // stale hasta 5min.
+      revalidateTag(`tenant:${tenantSlug}`, "max");
+      revalidateTag(`tenant:${tenantSlug}:plan`, "max");
       await prisma.activityLog.create({
         data: { action: "plan_changed", entity: "tenant", entityId: tenantSlug, detail: `Plan updated to: ${updatedPlan}${sub.cancel_at_period_end ? " (canceling)" : ""}`, user: "stripe-webhook", tenantId: tenantSlug },
       }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });

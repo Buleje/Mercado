@@ -85,8 +85,8 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
         <span>Media 7d</span>
         <span className="font-mono font-medium text-[var(--text-tertiary)]">S/ {d.movingAvg7d.toFixed(2)}</span>
       </p>
-      {d.isQuincena && <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5">Quincena</p>}
-      {d.isFeriado && <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
+      {d.isQuincena && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5">Quincena</p>}
+      {d.isFeriado && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
     </div>
   );
 }
@@ -233,13 +233,13 @@ export default function SalesTrendChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">
           No se pudieron cargar los datos de ventas
         </p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -287,7 +287,7 @@ export default function SalesTrendChart() {
         <ComposedChart data={predictedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00B4A6" />
+              <stop offset="0%" stopColor="var(--accent)" />
               <stop offset="100%" stopColor="#2dd4bf" />
             </linearGradient>
           </defs>
@@ -353,7 +353,7 @@ export default function SalesTrendChart() {
             type="monotone"
             dataKey="predictedHigh"
             stroke="none"
-            fill="#00B4A6"
+            fill="var(--accent)"
             fillOpacity={0.08}
             isAnimationActive={false}
           />
@@ -361,7 +361,7 @@ export default function SalesTrendChart() {
             type="monotone"
             dataKey="predictedLow"
             stroke="none"
-            fill="#00B4A6"
+            fill="var(--accent)"
             fillOpacity={0.08}
             isAnimationActive={false}
           />
@@ -399,7 +399,7 @@ export default function SalesTrendChart() {
           <Line
             type="monotone"
             dataKey="predicted"
-            stroke="#00B4A6"
+            stroke="var(--accent)"
             strokeDasharray="6 4"
             dot={false}
             strokeWidth={1.5}

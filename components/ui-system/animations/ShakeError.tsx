@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  *
  * @example
  * <ShakeError trigger={hasError}>
- *   <input className={hasError ? "border-red-500" : ""} />
+ *   <input className={hasError ? "border-[var(--data-error-500)]" : ""} />
  * </ShakeError>
  */
 

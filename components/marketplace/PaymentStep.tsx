@@ -311,8 +311,8 @@ function ManualPane({
 
   if (success) {
     return (
-      <div className="rounded-3xl bg-[var(--data-success)]/10 border-2 border-[var(--data-success)] p-8 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+      <div className="rounded-3xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-8 text-center">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
           <CheckCircle className="h-9 w-9" strokeWidth={2.5} />
         </div>
         <h3 className="mt-4 text-xl font-black">¡Comprobante recibido!</h3>
@@ -357,7 +357,7 @@ function ManualPane({
               onClick={copy}
               className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success)]" strokeWidth={3} /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" strokeWidth={3} /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Copiado" : "Copiar"}
             </button>
           </div>
@@ -422,7 +422,7 @@ function ManualPane({
       </div>
 
       {error && (
-        <div className="rounded-xl border-2 border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs font-bold text-red-700 dark:text-red-300">
+        <div className="rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-3 py-2.5 text-xs font-bold text-[var(--data-error-700)] dark:text-red-300">
           {error}
         </div>
       )}

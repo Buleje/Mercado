@@ -89,10 +89,10 @@ type DraftItem = {
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-gray-100",       dot: "bg-gray-400" },
-  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
-  EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning)]" },
-  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
-  ANULADA:     { label: "Anulada",     color: "text-[var(--data-error)]",         bg: "bg-[var(--data-error-100)]",         dot: "bg-[var(--data-error)]" },
+  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
+  EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning-500)]" },
+  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  ANULADA:     { label: "Anulada",     color: "text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)]",         dot: "bg-[var(--data-error-500)]" },
 };
 
 const _STATUS_ORDER: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
@@ -109,10 +109,10 @@ const MOTIVOS = [
 const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
   "":          { active: "bg-primary text-white",  inactive: "bg-gray-100 text-[var(--text-secondary)]" },
   BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 text-[var(--text-secondary)]" },
-  EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  EN_TRANSITO: { active: "bg-[var(--data-warning)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning)]" },
-  ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  ANULADA:     { active: "bg-[var(--data-error)] text-white",     inactive: "bg-[var(--data-error-50)] text-[var(--data-error)]" },
+  EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
+  ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  ANULADA:     { active: "bg-[var(--data-error-500)] text-white",     inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
 };
 
 const PER_PAGE = 10;
@@ -150,8 +150,8 @@ function emptyItem(): DraftItem {
 function _ValidationBadge({ status }: { status: "valid" | "invalid" | "empty" }) {
   if (status === "empty") return null;
   return status === "valid"
-    ? <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-    : <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />;
+    ? <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+    : <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />;
 }
 
 // ── GuiaPreview (tooltip on hover) ───────────────────────────────────────────
@@ -172,7 +172,7 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
       {guia.transportistaNombre && (
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
           <Truck className="h-3 w-3" /> {guia.transportistaNombre}
-          {placa && <span className="ml-1 px-1 bg-[var(--accent-soft)] text-[var(--data-success)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
+          {placa && <span className="ml-1 px-1 bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
         </p>
       )}
       <div className="border-t border-[var(--rule-soft)] pt-2">
@@ -272,10 +272,10 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
   if (!resumen) return null;
 
   const kpis = [
-    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
-    { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)]" },
-    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
-    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-gray-100" },
+    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]" },
+    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-gray-100" },
   ];
 
   return (
@@ -303,7 +303,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           <div className="space-y-2">
             {resumen.transportistasFrecuentes.slice(0, 3).map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] shrink-0">{i + 1}</div>
+                <div className="h-7 w-7 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] shrink-0">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{t.nombre}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">{t.ruc}</p>
@@ -827,10 +827,10 @@ export default function GuiasRemisionModule() {
             const pillColors: Record<string, { active: string; inactive: string }> = {
               "": { active: "bg-primary text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
               BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
-              EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-              EN_TRANSITO: { active: "bg-[var(--data-warning)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning)]" },
-              ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-              ANULADA: { active: "bg-[var(--data-error)] text-white", inactive: "bg-[var(--data-error-50)] text-[var(--data-error)]" },
+              EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
+              ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              ANULADA: { active: "bg-[var(--data-error-500)] text-white", inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
             };
             const colors = pillColors[s] ?? pillColors[""];
             return (
@@ -860,8 +860,8 @@ export default function GuiasRemisionModule() {
           <LoadingState />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-            <p className="text-sm text-[var(--data-error)]">{error}</p>
+            <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
             <button onClick={fetchGuias} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : guias.length === 0 ? (
@@ -903,7 +903,7 @@ export default function GuiasRemisionModule() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                              <Truck className="h-4 w-4 text-[var(--data-success)]" />
+                              <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                             </div>
                             <p className="font-medium text-[var(--text-primary)] truncate">{g.destinatarioNombre}</p>
                           </div>
@@ -965,7 +965,7 @@ export default function GuiasRemisionModule() {
                     )}
                     {selected.status !== "ANULADA" && selected.status !== "ENTREGADA" && (
                       <button onClick={() => setShowAnular(true)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors" title="Anular">
-                        <XCircle className="h-4 w-4 text-[var(--data-error)]" />
+                        <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                       </button>
                     )}
                     <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -994,18 +994,18 @@ export default function GuiasRemisionModule() {
                     {selected.transportistaNombre ? (
                       <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
                         <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                          <Truck className="h-4 w-4 text-[var(--data-success)]" />
+                          <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-[var(--text-primary)]">{selected.transportistaNombre}</p>
                           {selected.transportistaRuc && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">RUC: {selected.transportistaRuc}</p>}
                         </div>
                         {selected.transportistaPlaca ? (
-                          <span className="px-2 py-1 rounded-lg bg-[var(--accent-soft)] text-xs font-bold text-[var(--data-success)] flex items-center gap-1">
+                          <span className="px-2 py-1 rounded-lg bg-[var(--accent-soft)] text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1">
                             {selected.transportistaPlaca}
                           </span>
                         ) : (
-                          <span className="px-2 py-1 rounded-lg bg-[var(--data-warning-50)] text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
+                          <span className="px-2 py-1 rounded-lg bg-[var(--data-warning-50)] text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">
                             Agregar placa
                           </span>
                         )}
@@ -1099,10 +1099,10 @@ export default function GuiasRemisionModule() {
                       {selected.status === "ANULADA" && (
                         <div className="flex gap-3 items-center mt-1">
                           <div className="h-5 w-5 rounded-full bg-[var(--data-error-100)] flex items-center justify-center">
-                            <div className="h-2 w-2 rounded-full bg-[var(--data-error)]" />
+                            <div className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-[var(--data-error)]">ANULADA</p>
+                            <p className="text-xs font-bold text-[var(--data-error-500)]">ANULADA</p>
                             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(selected.updatedAt)}</p>
                           </div>
                         </div>
@@ -1118,7 +1118,7 @@ export default function GuiasRemisionModule() {
                     {(selected.items ?? []).map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                         <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                          <Package className="h-4 w-4 text-[var(--data-success)]" />
+                          <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.descripcion}</p>
@@ -1144,7 +1144,7 @@ export default function GuiasRemisionModule() {
                         </span>
                       </div>
                       {itemsSinPeso.length > 0 && (
-                        <p className="text-xs text-[var(--data-warning)] mt-1">
+                        <p className="text-xs text-[var(--data-warning-500)] mt-1">
                           {itemsSinPeso.length} item{itemsSinPeso.length !== 1 ? "s" : ""} sin peso registrado
                         </p>
                       )}
@@ -1315,7 +1315,7 @@ export default function GuiasRemisionModule() {
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
                           className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
-                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error)] hover:text-[var(--data-error)]"><X className="h-4 w-4" /></button>
+                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
                         )}
                       </div>
                     ))}
@@ -1336,7 +1336,7 @@ export default function GuiasRemisionModule() {
                           <span className="font-extrabold text-primary">{pesoTotal.toFixed(1)} kg</span>
                         </div>
                         {itemsSinPeso.length > 0 && (
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-1">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] mt-1">
                             {itemsSinPeso.length} item{itemsSinPeso.length !== 1 ? "s" : ""} sin peso registrado
                           </p>
                         )}
@@ -1345,7 +1345,7 @@ export default function GuiasRemisionModule() {
                   })()}
                 </div>
 
-                {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
+                {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
                 <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">

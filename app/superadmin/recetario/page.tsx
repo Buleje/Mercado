@@ -75,9 +75,9 @@ const CATEGORIAS = [
 const DIFICULTADES = ["Fácil", "Media", "Dificil"];
 
 const DIFICULTAD_BADGE: Record<string, string> = {
-  Fácil: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
-  Media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  Dificil: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  Fácil: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
+  Media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  Dificil: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 const inputCls = ADMIN_TOKENS.input;
@@ -310,7 +310,7 @@ export default function SuperAdminRecetarioPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <ChefHat className="w-6 h-6 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <ChefHat className="w-6 h-6 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             Recetario Global
           </h1>
           <p className="text-[var(--text-tertiary)] text-sm mt-1">
@@ -352,7 +352,7 @@ export default function SuperAdminRecetarioPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center justify-between gap-3 bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center justify-between gap-3 bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm">
           <span className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
@@ -410,7 +410,7 @@ export default function SuperAdminRecetarioPage() {
                     {/* Active/inactive overlay */}
                     {!r.activa && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold bg-[var(--data-error)]/80 px-3 py-1 rounded-full">
+                        <span className="text-white text-xs font-bold bg-[var(--data-error-500)]/80 px-3 py-1 rounded-full">
                           Inactiva
                         </span>
                       </div>
@@ -429,7 +429,7 @@ export default function SuperAdminRecetarioPage() {
                     {/* Meta badges */}
                     <div className="flex items-center flex-wrap gap-1.5 mt-2">
                       {r.categoria && (
-                        <span className="text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]">
+                        <span className="text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]">
                           {r.categoria}
                         </span>
                       )}
@@ -461,7 +461,7 @@ export default function SuperAdminRecetarioPage() {
                         title={r.activa ? "Desactivar" : "Activar"}
                       >
                         {r.activa ? (
-                          <ToggleRight className="w-5 h-5 text-[var(--data-success)]" />
+                          <ToggleRight className="w-5 h-5 text-[var(--data-success-500)]" />
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-gray-400" />
                         )}
@@ -479,7 +479,7 @@ export default function SuperAdminRecetarioPage() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(r)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -492,8 +492,8 @@ export default function SuperAdminRecetarioPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-xl bg-[var(--data-success-50)] dark:bg-[var(--data-success)]/20 flex items-center justify-center mb-4">
-                <ChefHat className="w-8 h-8 text-[var(--data-success)]" />
+              <div className="w-16 h-16 rounded-xl bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/20 flex items-center justify-center mb-4">
+                <ChefHat className="w-8 h-8 text-[var(--data-success-500)]" />
               </div>
               <h3 className="font-semibold text-[var(--text-primary)] mb-1">
                 {search ? "Sin resultados" : "Sin recetas aun"}
@@ -507,7 +507,7 @@ export default function SuperAdminRecetarioPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="mt-4 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] underline hover:no-underline"
+                  className="mt-4 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] underline hover:no-underline"
                 >
                   Limpiar busqueda
                 </button>
@@ -524,7 +524,7 @@ export default function SuperAdminRecetarioPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
               <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                <ChefHat className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
                 {editingId ? "Editar Receta" : "Nueva Receta"}
               </h2>
               <button
@@ -695,11 +695,11 @@ export default function SuperAdminRecetarioPage() {
                   className="flex items-center gap-2 text-sm"
                 >
                   {form.activa ? (
-                    <ToggleRight className="w-6 h-6 text-[var(--data-success)]" />
+                    <ToggleRight className="w-6 h-6 text-[var(--data-success-500)]" />
                   ) : (
                     <ToggleLeft className="w-6 h-6 text-gray-400" />
                   )}
-                  <span className={form.activa ? "text-[var(--data-success)] font-semibold" : "text-gray-400"}>
+                  <span className={form.activa ? "text-[var(--data-success-500)] font-semibold" : "text-gray-400"}>
                     {form.activa ? "Activa" : "Inactiva"}
                   </span>
                 </button>
@@ -707,7 +707,7 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Error */}
               {formError && (
-                <div className="flex items-center gap-2 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl px-3 py-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {formError}
                 </div>
@@ -727,7 +727,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? "Guardar cambios" : "Crear receta"}
@@ -742,7 +742,7 @@ export default function SuperAdminRecetarioPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 text-center">
             <div className="w-14 h-14 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-7 h-7 text-[var(--data-error)]" />
+              <Trash2 className="w-7 h-7 text-[var(--data-error-500)]" />
             </div>
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">
               Eliminar receta
@@ -764,7 +764,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleDelete()}
                 disabled={deleting}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                 Eliminar
@@ -778,7 +778,7 @@ export default function SuperAdminRecetarioPage() {
       {toast && (
         <div
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${
-            toast.ok ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]"
+            toast.ok ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]"
           }`}
         >
           {toast.ok ? (

@@ -87,9 +87,9 @@ export default function ShareCartButton() {
           isEmpty
             ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600"
             : status === "copied"
-            ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-400"
+            ? "border-emerald-300 bg-emerald-50 text-[var(--data-success-700)] dark:border-[var(--data-success-500)]/50 dark:bg-emerald-950/30 dark:text-emerald-400"
             : status === "error"
-            ? "border-red-200 bg-red-50 text-red-600 dark:border-red-800/40 dark:bg-red-950/20 dark:text-red-400"
+            ? "border-red-200 bg-red-50 text-[var(--data-error-600)] dark:border-red-800/40 dark:bg-red-950/20 dark:text-red-400"
             : "border-gray-200 bg-white text-gray-600 hover:border-primary/40 hover:text-primary dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-primary/30 dark:hover:text-primary",
         ].join(" ")}
       >

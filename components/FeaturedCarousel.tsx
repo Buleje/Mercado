@@ -60,7 +60,7 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
   if (featured.length === 0) return showEmpty ? <SectionPlaceholder title="Productos Destacados" hint="Los productos con badge Popular u Oferta apareceran aqui" cols={6} variant={emptyVariant} publicTitle="Productos destacados" /> : null;
 
   return (
-    <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(0,180,166,0.05), transparent)" }}>
+    <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, color-mix(in oklab, var(--accent) 5%, transparent), transparent)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 mb-4">
           <Star className="h-4 w-4 text-secondary fill-secondary" />

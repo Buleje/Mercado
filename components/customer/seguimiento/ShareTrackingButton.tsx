@@ -119,7 +119,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
       )}
 
       {status === "error" && (
-        <p className="mt-3 text-xs text-red-600 dark:text-red-400">
+        <p className="mt-3 text-xs text-[var(--data-error-600)] dark:text-red-400">
           No pudimos generar el link. Vuelve a intentarlo.
         </p>
       )}
@@ -136,7 +136,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
               aria-label="Copiar link"
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-gray-300 dark:hover:border-card-border/80 text-muted hover:text-foreground transition-colors"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-teal-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-[var(--accent-dark)]" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -156,7 +156,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 text-teal-600" strokeWidth={2} />
+                  <Check className="h-4 w-4 text-[var(--accent-dark)]" strokeWidth={2} />
                   Copiado
                 </>
               ) : (

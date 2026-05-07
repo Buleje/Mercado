@@ -26,7 +26,13 @@ export interface CuentaLayoutShellProps {
 
 export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas))",
+      }}
+    >
       <AnnouncementBar />
       <Header />
 

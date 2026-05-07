@@ -92,16 +92,16 @@ export default function OrderTimeline({
                   className={cn(
                     "h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
                     isCancelled
-                      ? "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30"
+                      ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30"
                       : isCompleted
-                        ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-white"
+                        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-white"
                         : isCurrent
-                          ? "border-[var(--data-warning)] bg-[var(--data-warning)]/10 text-[var(--data-warning)]"
+                          ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]"
                           : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                   )}
                 >
                   {isCancelled ? (
-                    <X className="h-4 w-4 text-[var(--data-error)]" />
+                    <X className="h-4 w-4 text-[var(--data-error-500)]" />
                   ) : isCompleted ? (
                     <Check className="h-4 w-4" />
                   ) : isCurrent ? (
@@ -120,11 +120,11 @@ export default function OrderTimeline({
                 <p className={cn(
                   "text-[length:var(--ts-2xs)] font-bold mt-1 text-center",
                   isCancelled
-                    ? "text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)]"
                     : isCompleted
-                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                       : isCurrent
-                        ? "text-[var(--data-warning)]"
+                        ? "text-[var(--data-warning-500)]"
                         : "text-[var(--text-tertiary)]"
                 )}>
                   {step.label}
@@ -143,7 +143,7 @@ export default function OrderTimeline({
                     className={cn(
                       "absolute top-4 h-0.5 z-0",
                       isCancelled
-                        ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]/30"
+                        ? "bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30"
                         : isCompleted
                           ? "bg-[var(--accent-soft)]"
                           : "bg-gray-200 dark:bg-gray-700"
@@ -162,9 +162,9 @@ export default function OrderTimeline({
 
       {/* Cancelled banner */}
       {isCancelled && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30">
-          <X className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-          <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Pedido cancelado</p>
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+          <X className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Pedido cancelado</p>
         </div>
       )}
 
@@ -186,7 +186,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus("cancelado")}
             disabled={updating}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] text-xs font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" /> Cancelar
           </button>

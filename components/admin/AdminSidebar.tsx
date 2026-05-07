@@ -339,9 +339,9 @@ function SidebarBadge({ moduleId, count }: { moduleId: string; count: number }) 
   }, [count]);
 
   const colorClass =
-    moduleId === "pedidos" ? "bg-[var(--data-error)] text-white" :
-    moduleId === "inventario" ? "bg-[var(--data-warning)] text-white" :
-    moduleId === "fiados" ? "bg-[var(--data-warning)] text-white" :
+    moduleId === "pedidos" ? "bg-[var(--data-error-500)] text-white" :
+    moduleId === "inventario" ? "bg-[var(--data-warning-500)] text-white" :
+    moduleId === "fiados" ? "bg-[var(--data-warning-500)] text-white" :
     moduleId === "compras" ? "bg-[var(--accent)] text-white" :
     "bg-gray-500 text-white";
 
@@ -627,7 +627,7 @@ function FlyoutPanel({
               <Ic className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-left text-xs truncate">{mod.label}</span>
               {badge > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error)] text-white min-w-4 text-center">
+                <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white min-w-4 text-center">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
@@ -1273,7 +1273,7 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl",
                 "text-[var(--text-secondary)] hover:bg-[var(--data-error-50)]",
-                "hover:text-[var(--data-error)] transition-all duration-[var(--dur-base)] group",
+                "hover:text-[var(--data-error-500)] transition-all duration-[var(--dur-base)] group",
                 isCollapsed ? "justify-center" : ""
               )}
               title={isCollapsed ? "Cerrar sesion" : undefined}

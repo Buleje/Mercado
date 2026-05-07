@@ -93,7 +93,7 @@ const PLAN_LABEL: Record<AdminPlan, string> = {
 const PLAN_BADGE: Record<AdminPlan, string> = {
   free: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
   pro: "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
-  enterprise: "bg-[var(--data-warning)]/10 text-[var(--data-warning)] border border-[var(--data-warning)]/30",
+  enterprise: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30",
 };
 
 interface PresetMode {
@@ -541,7 +541,7 @@ export function PlantillaPanelTab() {
           <button
             type="button"
             onClick={handleResetAll}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Restaurar a fábrica
@@ -592,7 +592,7 @@ export function PlantillaPanelTab() {
                             onClick={() => updateOverride(m.id, { visible: !isVisible })}
                             className={`inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0 transition-colors ${
                               isVisible
-                                ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
+                                ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
                                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] border border-[var(--rule-base)]"
                             }`}
                             aria-label={isVisible ? `Ocultar ${label}` : `Mostrar ${label}`}
@@ -619,7 +619,7 @@ export function PlantillaPanelTab() {
                                   <button
                                     type="button"
                                     onClick={commitEditLabel}
-                                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--data-success)] text-white hover:opacity-90"
+                                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--data-success-500)] text-white hover:opacity-90"
                                     aria-label="Guardar etiqueta"
                                   >
                                     <Save className="h-4 w-4" />
@@ -686,7 +686,7 @@ export function PlantillaPanelTab() {
                             <button
                               type="button"
                               onClick={() => updateOverride(m.id, { visible: m.defaultVisible, plan: m.defaultPlan, label: m.defaultLabel })}
-                              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
+                              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                               title="Restaurar este módulo al default"
                             >
                               <RotateCcw className="h-3 w-3" />
@@ -717,7 +717,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, intent }: StatCardProps) {
   const valueColor =
-    intent === "warning" ? "text-[var(--data-warning)]" :
+    intent === "warning" ? "text-[var(--data-warning-500)]" :
     intent === "accent" ? "text-[var(--accent)]" :
     "text-[var(--text-primary)]";
   return (

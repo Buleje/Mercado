@@ -43,7 +43,7 @@ export function LivePlayer({ live, large = false, onOpen }: LivePlayerProps) {
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-500)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow">
             <CircleDot className="h-3 w-3 animate-pulse" aria-hidden />
             En vivo
           </span>

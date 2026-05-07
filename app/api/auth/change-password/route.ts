@@ -56,6 +56,19 @@ export async function POST(req: NextRequest) {
       data: { passwordHash: newHash },
     });
 
+    // COMPLIANCE 2026-05-06 (audit Ley 29733 #5): trazar cambio de password.
+    // Acción crítica de seguridad sin trazabilidad antes — Art. 18 lo requiere.
+    try {
+      const { logActivity } = await import("@/lib/activity-logger");
+      logActivity(
+        "password_change",
+        "admin",
+        `Password actualizado por ${payload.username}`,
+        payload.username,
+        payload.username,
+      ).catch(() => {});
+    } catch { /* logger not available */ }
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "failed to change password" }, { status: 500 });

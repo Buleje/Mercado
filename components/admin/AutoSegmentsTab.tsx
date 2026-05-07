@@ -22,12 +22,12 @@ const FIELDS = [
   { id: "puntos",              label: "Puntos de fidelidad" },
 ];
 const OPERATORS = ["<", ">", "=", ">=", "<="];
-const COLORS = ["bg-[var(--accent-soft)]","bg-[var(--accent-soft)]","bg-amber-500","bg-red-500","bg-[var(--text-primary)]","bg-[var(--text-primary)]","bg-cyan-500"];
+const COLORS = ["bg-[var(--accent-soft)]","bg-[var(--accent-soft)]","bg-[var(--data-warning-500)]","bg-[var(--data-error-500)]","bg-[var(--text-primary)]","bg-[var(--text-primary)]","bg-cyan-500"];
 
 const DEFAULT_SEGMENTS: Omit<Segment, "customerCount" | "avgTicket" | "avgFrequency" | "matchedCustomers">[] = [
-  { id: "sg-perdido",   name: "Clientes perdidos",    description: "Sin comprar en 60+ días",              rules: [{ field: "dias_sin_compra",    operator: ">",  value: "60"  }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-error)]",     active: true },
-  { id: "sg-riesgo",   name: "En riesgo",             description: "Sin comprar entre 30 y 60 días",       rules: [{ field: "dias_sin_compra",    operator: ">",  value: "30"  }, { field: "dias_sin_compra", operator: "<=", value: "60" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning)]",   active: true },
-  { id: "sg-vip",      name: "VIP potencial",         description: "Gastaron más de S/500",                rules: [{ field: "total_comprado",     operator: ">=", value: "500" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning)]",  active: true },
+  { id: "sg-perdido",   name: "Clientes perdidos",    description: "Sin comprar en 60+ días",              rules: [{ field: "dias_sin_compra",    operator: ">",  value: "60"  }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-error-500)]",     active: true },
+  { id: "sg-riesgo",   name: "En riesgo",             description: "Sin comprar entre 30 y 60 días",       rules: [{ field: "dias_sin_compra",    operator: ">",  value: "30"  }, { field: "dias_sin_compra", operator: "<=", value: "60" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning-500)]",   active: true },
+  { id: "sg-vip",      name: "VIP potencial",         description: "Gastaron más de S/500",                rules: [{ field: "total_comprado",     operator: ">=", value: "500" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning-500)]",  active: true },
   { id: "sg-frecuente",name: "Clientes frecuentes",   description: "Más de 5 pedidos",                     rules: [{ field: "frecuencia_pedidos", operator: ">",  value: "5"   }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--accent-soft)]", active: true },
 ];
 
@@ -147,7 +147,7 @@ export default function AutoSegmentsTab() {
 
   if (error) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error al cargar datos</p>
       <button onClick={reload} className="text-xs text-primary font-bold flex items-center gap-1"><RefreshCw className="h-3.5 w-3.5" />Reintentar</button>
     </div>
@@ -174,8 +174,8 @@ export default function AutoSegmentsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Segmentos creados",    value: segments.length,      color: "text-[var(--data-success)]" },
-          { label: "Segmentos activos",    value: activeCount,          color: "text-[var(--data-success)]" },
+          { label: "Segmentos creados",    value: segments.length,      color: "text-[var(--data-success-500)]" },
+          { label: "Segmentos activos",    value: activeCount,          color: "text-[var(--data-success-500)]" },
           { label: "Clientes segmentados", value: totalSegmented,       color: "text-[var(--text-secondary)]" },
           { label: "Total en base",        value: allCustomers.length,  color: "text-[var(--text-secondary)]" },
         ].map(k => (
@@ -205,7 +205,7 @@ export default function AutoSegmentsTab() {
                       {sg.active ? <ToggleRight className="h-5 w-5 text-primary" /> : <ToggleLeft className="h-5 w-5" />}
                     </button>
                     <button onClick={() => openEdit(sg)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => deleteSegment(sg.id)} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => deleteSegment(sg.id)} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1 mb-3">{sg.description}</p>
@@ -261,7 +261,7 @@ export default function AutoSegmentsTab() {
                           <span>{c.orderCount} pedidos</span>
                           <span className="font-semibold">S/{c.totalSpent.toFixed(0)}</span>
                           {c.daysSinceLast !== null && (
-                            <span className={cn("text-[length:var(--ts-2xs)] font-bold", c.daysSinceLast > 60 ? "text-[var(--data-error)]" : c.daysSinceLast > 30 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")}>
+                            <span className={cn("text-[length:var(--ts-2xs)] font-bold", c.daysSinceLast > 60 ? "text-[var(--data-error-500)]" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")}>
                               {c.daysSinceLast}d
                             </span>
                           )}
@@ -328,7 +328,7 @@ export default function AutoSegmentsTab() {
                       {OPERATORS.map(o => <option key={o}>{o}</option>)}
                     </select>
                     <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], value: e.target.value }; setFormRules(nr); }} className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="valor" />
-                    {formRules.length > 1 && <button onClick={() => setFormRules(formRules.filter((_, j) => j !== i))} className="text-[var(--data-error)] hover:text-[var(--data-error)]"><X className="h-4 w-4" /></button>}
+                    {formRules.length > 1 && <button onClick={() => setFormRules(formRules.filter((_, j) => j !== i))} className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>}
                   </div>
                 ))}
                 <button onClick={() => setFormRules([...formRules, { field: FIELDS[0].id, operator: ">", value: "" }])} className="text-xs text-primary font-bold">+ Agregar regla</button>

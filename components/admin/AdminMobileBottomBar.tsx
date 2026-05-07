@@ -79,7 +79,7 @@ export function AdminMobileBottomBar({
           {alerts[id] ? (
             <span className="relative inline-flex">
               <Icon className="h-5 w-5" />
-              <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
+              <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
                 {alerts[id]}
               </span>
             </span>
@@ -99,7 +99,7 @@ export function AdminMobileBottomBar({
         <span className="relative inline-flex">
           <Menu className="h-5 w-5" />
           {otherAlerts > 0 && (
-            <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
+            <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
               {otherAlerts}
             </span>
           )}

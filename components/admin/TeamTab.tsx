@@ -47,8 +47,8 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  cajero: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+  cajero: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
 interface FormData {
@@ -184,7 +184,7 @@ export default function TeamTab() {
             "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
             toast.ok
               ? "bg-[var(--accent-soft)] text-white"
-              : "bg-[var(--data-error)] text-white"
+              : "bg-[var(--data-error-500)] text-white"
           )}
         >
           {toast.ok ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -262,7 +262,7 @@ export default function TeamTab() {
                   title={u.active ? "Desactivar" : "Activar"}
                   className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
-                  {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success)]" /> : <XCircle className="w-4 h-4" />}
+                  {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openEdit(u)}
@@ -272,7 +272,7 @@ export default function TeamTab() {
                 </button>
                 <button
                   onClick={() => handleDelete(u)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-muted hover:text-[var(--data-error)]"
+                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

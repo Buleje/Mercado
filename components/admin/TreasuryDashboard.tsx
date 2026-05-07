@@ -83,9 +83,9 @@ function urgencyLabel(days: number): string {
 }
 
 function urgencyBadge(days: number): string {
-  if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400";
-  if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]";
+  if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-400";
+  if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400";
+  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 }
 
 // ── Custom Tooltip ─────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ export default function TreasuryDashboard() {
         title="Tesorería"
         description="Flujo de caja, vencimientos y cobranzas"
         icon={DollarSign}
-        iconColor="#00B4A6"
+        iconColor="var(--accent)"
       >
         <button
           onClick={() => setRefreshKey(k => k + 1)}
@@ -269,7 +269,7 @@ export default function TreasuryDashboard() {
           className={cn(
             "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
             "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             loading && "animate-spin opacity-60",
           )}
         >
@@ -279,7 +279,7 @@ export default function TreasuryDashboard() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al cargar datos: {error}</span>
         </div>
@@ -297,7 +297,7 @@ export default function TreasuryDashboard() {
               label="Saldo del mes"
               value={fmt(kpis.saldoActual)}
               icon={kpis.saldoActual >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.saldoActual >= 0 ? "#00B4A6" : "#e63946"}
+              color={kpis.saldoActual >= 0 ? "var(--accent)" : "#e63946"}
               alert={kpis.saldoActual < 0}
               subtitle={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
             />
@@ -320,7 +320,7 @@ export default function TreasuryDashboard() {
               label="Flujo neto proyectado"
               value={fmt(kpis.flujoProyectado)}
               icon={kpis.flujoProyectado >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.flujoProyectado >= 0 ? "#00B4A6" : "#e63946"}
+              color={kpis.flujoProyectado >= 0 ? "var(--accent)" : "#e63946"}
               alert={kpis.flujoProyectado < 0}
               subtitle="Saldo + cobrar − pagar"
             />
@@ -341,7 +341,7 @@ export default function TreasuryDashboard() {
               Ingresos
             </span>
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-[var(--data-warning)]" />
+              <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" />
               Gastos
             </span>
           </div>
@@ -353,8 +353,8 @@ export default function TreasuryDashboard() {
             <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="ingGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
@@ -377,7 +377,7 @@ export default function TreasuryDashboard() {
                 width={56}
               />
               <Tooltip content={<FlowTooltip />} />
-              <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="#00B4A6" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
+              <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="var(--accent)" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
               <Area type="monotone" dataKey="gastos" name="gastos" stroke="#f97316" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
@@ -390,7 +390,7 @@ export default function TreasuryDashboard() {
         {/* Tabla de vencimientos */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-4 w-4 text-[var(--data-warning)]" />
+            <Calendar className="h-4 w-4 text-[var(--data-warning-500)]" />
             <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Próximos vencimientos</SectionTitle>
             <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingPayables.length} pendientes</span>
           </div>
@@ -482,7 +482,7 @@ export default function TreasuryDashboard() {
                         </td>
                         <td className="py-2.5 text-right">
                           {moraDays > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]">
+                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                               {moraDays}d mora
                             </span>
                           ) : (

@@ -88,7 +88,7 @@ function LabelCard({
             {fmt(product.price)}
           </p>
           <p
-            className="text-center font-extrabold text-[var(--data-error)]"
+            className="text-center font-extrabold text-[var(--data-error-500)]"
             style={{ fontSize: isBig ? 14 : isMed ? 11 : 9 }}
           >
             {fmt(product.salePrice)}
@@ -287,7 +287,7 @@ export default function PriceTagGenerator() {
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition",
                       isSelected
-                        ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-[var(--data-success)]"
+                        ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-[var(--data-success-500)]"
                         : "text-[var(--text-primary)] hover:bg-gray-50 dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
                     )}
                   >
@@ -369,14 +369,14 @@ export default function PriceTagGenerator() {
                         onClick={() =>
                           setShowSaleInputFor(showSaleInputFor === p.id ? null : p.id)
                         }
-                        className="flex items-center gap-1 rounded-md border border-[var(--data-warning)]/50 px-2 py-0.5 text-xs text-[var(--data-warning)] hover:bg-[var(--data-warning)]/10"
+                        className="flex items-center gap-1 rounded-md border border-[var(--data-warning-500)]/50 px-2 py-0.5 text-xs text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/10"
                       >
                         Oferta
                         <ChevronDown className="h-3 w-3" />
                       </button>
                       <button
                         onClick={() => toggleSelect(p)}
-                        className="text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                        className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                       >
                         <X className="h-4 w-4" />
                       </button>

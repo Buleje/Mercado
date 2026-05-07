@@ -103,10 +103,10 @@ export default function DeliveryMap({
           className: "",
           html: `<div style="
             width:16px; height:16px;
-            background:#00B4A6;
+            background:var(--accent);
             border:3px solid white;
             border-radius:50%;
-            box-shadow:0 0 0 4px rgba(0,180,166,0.25);
+            box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 25%, transparent);
           "></div>`,
           iconAnchor: [8, 8],
         });
@@ -147,7 +147,7 @@ export default function DeliveryMap({
       />
 
       {locationError && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+        <p className="text-xs text-[var(--data-warning-600)] dark:text-amber-400 text-center">
           No se pudo obtener tu ubicacion para mostrarla en el mapa
         </p>
       )}
@@ -161,7 +161,7 @@ export default function DeliveryMap({
           className="
             flex items-center justify-center gap-2
             min-h-[48px] rounded-xl
-            bg-emerald-600 hover:bg-emerald-700
+            bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]
             text-white font-bold text-sm
             active:scale-95 transition-all
           "

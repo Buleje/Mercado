@@ -67,8 +67,8 @@ export default function OrderTrackerNavBadge({
             aria-hidden
             className="absolute -top-0.5 -right-0.5 flex h-2 w-2"
           >
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success)] opacity-75 animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success)] ring-1 ring-white" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-500)] ring-1 ring-white" />
           </span>
         </span>
         <span

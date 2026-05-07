@@ -176,8 +176,8 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-[#00B4A6]" />
+            <div className="h-10 w-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-[var(--accent)]" />
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Lista de mercado</h2>
@@ -200,7 +200,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder={"2 kg arroz\n1 leche gloria\naceite 1 litro\n3 tomates\nfideos\njugo de naranja"}
-              className="w-full h-40 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
+              className="w-full h-40 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 transition-all"
               autoFocus
             />
             <p className="text-xs text-gray-400 mt-1.5">Escribe un producto por linea. Puedes poner cantidad y unidad.</p>
@@ -211,7 +211,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
             <div className="space-y-2">
               <h3 className="text-sm font-bold text-[var(--text-secondary)] flex items-center gap-2">
                 Resultados
-                {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4A6]" />}
+                {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" />}
               </h3>
               <AnimatePresence>
                 {results.map((r, idx) => (
@@ -249,8 +249,8 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                     ) : r.status === "multiple" ? (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <HelpCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                          <p className="text-sm text-amber-700 dark:text-amber-300">
+                          <HelpCircle className="h-4 w-4 text-[var(--data-warning-600)] dark:text-amber-400 flex-shrink-0" />
+                          <p className="text-sm text-[var(--data-warning-700)] dark:text-amber-300">
                             &quot;{r.parsed.searchTerm}&quot; — {r.matches.length} opciones:
                           </p>
                         </div>
@@ -259,7 +259,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                             <button
                               key={m.id}
                               onClick={() => selectProduct(idx, m)}
-                              className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-amber-300 dark:border-amber-700 text-xs font-medium text-[var(--text-secondary)] hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                              className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-amber-300 dark:border-[var(--data-warning-700)] text-xs font-medium text-[var(--text-secondary)] hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                             >
                               {m.name} · S/{m.price.toFixed(2)}
                             </button>
@@ -268,8 +268,8 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                        <p className="text-sm text-red-600 dark:text-red-400">
+                        <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] flex-shrink-0" />
+                        <p className="text-sm text-[var(--data-error-600)] dark:text-red-400">
                           &quot;{r.parsed.searchTerm}&quot; — No encontrado
                         </p>
                       </div>
@@ -286,7 +286,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
           <div className="border-t border-[var(--rule-base)] p-5">
             <button
               onClick={handleAddAll}
-              className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
+              className="w-full py-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[var(--accent)]/25 active:scale-[0.98]"
             >
               <ShoppingCart className="h-5 w-5" />
               Agregar {foundItems.length} producto{foundItems.length !== 1 ? "s" : ""} al carrito · S/ {totalPrice.toFixed(2)}

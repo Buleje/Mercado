@@ -68,7 +68,7 @@ export default function ROICalculator() {
               value={monthlySales}
               onChange={(e) => setMonthlySales(Number(e.target.value))}
               aria-label="Ventas mensuales"
-              className="mt-6 w-full h-2 rounded-full appearance-none cursor-pointer bg-linear-to-r from-emerald-400 to-emerald-600 accent-emerald-600"
+              className="mt-6 w-full h-2 rounded-full appearance-none cursor-pointer bg-linear-to-r from-emerald-400 to-[var(--data-success-600)] accent-emerald-600"
             />
             <div className="mt-2 flex justify-between text-xs text-gray-400 font-bold tabular-nums">
               <span>S/2k</span>
@@ -77,7 +77,7 @@ export default function ROICalculator() {
             </div>
 
             <div className="mt-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
               <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                 Estimación basada en promedio de bodegas activas: +18% ventas online,
                 2h/día ahorradas y 3% menos pérdidas.

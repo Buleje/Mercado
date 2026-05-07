@@ -51,11 +51,11 @@ function fmtDate(iso: string) {
 function EstadoBadge({ estado }: { estado: InvoiceRecord["estado"] }) {
   const styles = {
     emitido:
-      "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30",
+      "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
     anulado:
-      "bg-[var(--data-error-50)] text-[var(--data-error)] border-[var(--data-error)] dark:bg-red-950/20 dark:text-[var(--data-error)] dark:border-[var(--data-error)]/30",
+      "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)] dark:bg-red-950/20 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30",
     pendiente:
-      "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)] dark:bg-amber-950/20 dark:text-[var(--data-warning)] dark:border-[var(--data-warning)]/30",
+      "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30",
   };
 
   const labels = { emitido: "Emitido", anulado: "Anulado", pendiente: "Pendiente" };
@@ -195,8 +195,8 @@ export default function InvoiceHistory() {
         <LoadingState />
       ) : error ? (
         <div className="text-center py-8">
-          <XCircle className="h-8 w-8 text-[var(--data-error)] mx-auto mb-2" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{error}</p>
+          <XCircle className="h-8 w-8 text-[var(--data-error-500)] mx-auto mb-2" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{error}</p>
           <button
             onClick={fetchRecords}
             className="mt-2 text-xs font-bold text-primary hover:underline"
@@ -239,7 +239,7 @@ export default function InvoiceHistory() {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                           record.tipo === "factura"
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                             : "bg-primary/10 text-primary"
                         }`}
                       >
@@ -285,7 +285,7 @@ export default function InvoiceHistory() {
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                       record.tipo === "factura"
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                         : "bg-primary/10 text-primary"
                     }`}
                   >

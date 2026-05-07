@@ -60,10 +60,10 @@ const NIVEL_META: Record<
     label: "Recordatorio amable",
     descripcion: "WhatsApp amable",
     colorBadge:
-      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]",
+      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]",
     colorRow: "hover:bg-[var(--accent-soft)]/50",
     colorBtn:
-      "bg-[var(--data-success)] hover:opacity-90 text-white",
+      "bg-[var(--data-success-500)] hover:opacity-90 text-white",
     icon: MessageCircle,
     rango: "1-3 días",
   },
@@ -71,10 +71,10 @@ const NIVEL_META: Record<
     label: "Segundo aviso",
     descripcion: "WhatsApp + descuento 5%",
     colorBadge:
-      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)]",
+      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning-500)]",
     colorRow: "hover:bg-[color-mix(in_oklch,var(--data-warning)_6%,transparent)]",
     colorBtn:
-      "bg-[var(--data-warning)] hover:opacity-90 text-white",
+      "bg-[var(--data-warning-500)] hover:opacity-90 text-white",
     icon: Gift,
     rango: "4-7 días",
   },
@@ -82,10 +82,10 @@ const NIVEL_META: Record<
     label: "Aviso urgente",
     descripcion: "WhatsApp urgente + llamar",
     colorBadge:
-      "bg-[color-mix(in_oklch,var(--data-warning)_18%,transparent)] text-[var(--data-warning)]",
+      "bg-[color-mix(in_oklch,var(--data-warning)_18%,transparent)] text-[var(--data-warning-500)]",
     colorRow: "hover:bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
     colorBtn:
-      "bg-[var(--data-warning)] hover:opacity-80 text-white",
+      "bg-[var(--data-warning-500)] hover:opacity-80 text-white",
     icon: AlertTriangle,
     rango: "8-15 días",
   },
@@ -93,10 +93,10 @@ const NIVEL_META: Record<
     label: "Bloqueo de crédito",
     descripcion: "Bloquear fiado + contacto personal",
     colorBadge:
-      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
+      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-500)]",
     colorRow: "hover:bg-[color-mix(in_oklch,var(--data-error)_6%,transparent)]",
     colorBtn:
-      "bg-[var(--data-error)] hover:opacity-90 text-white",
+      "bg-[var(--data-error-500)] hover:opacity-90 text-white",
     icon: Ban,
     rango: "16+ días",
   },
@@ -243,7 +243,7 @@ function ModalDescuento({
               {nombre}
             </span>{" "}
             · Deuda:{" "}
-            <span className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <span className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               S/{fiado.saldo.toFixed(2)}
             </span>
           </p>
@@ -380,8 +380,8 @@ export default function CobranzaInteligente() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button
           onClick={fetchFiados}
           className="text-xs text-primary hover:underline font-semibold"
@@ -427,7 +427,7 @@ export default function CobranzaInteligente() {
           value={String(enNivel1)}
           sub="Recordatorio amable"
           icon={CheckCircle2}
-          colorClass="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+          colorClass="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
         />
         <KpiCard
           label="Nivel 2 o más"
@@ -441,7 +441,7 @@ export default function CobranzaInteligente() {
           value={String(fiados.filter((f) => f.diasVencido === 0).length)}
           sub="Al día o por vencer"
           icon={Users}
-          colorClass="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+          colorClass="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
         />
       </div>
 
@@ -568,7 +568,7 @@ export default function CobranzaInteligente() {
                         <div className="flex items-center gap-2">
                           {(() => {
                             const avatarColors = [
-                              "#00B4A6",
+                              "var(--accent)",
                               "#f97316",
                               "#e63946",
                               "#457b9d",
@@ -607,7 +607,7 @@ export default function CobranzaInteligente() {
 
                       {/* Monto */}
                       <td className="px-4 py-3 text-right">
-                        <span className="font-extrabold font-mono text-[var(--data-error)] dark:text-[var(--data-error)]">
+                        <span className="font-extrabold font-mono text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                           S/{f.saldo.toFixed(2)}
                         </span>
                         {f.total !== f.saldo && (
@@ -654,14 +654,14 @@ export default function CobranzaInteligente() {
                         {f.nivel === 3 && (
                           <a
                             href={`tel:${f.customerId.replace(/\D/g, "")}`}
-                            className="inline-flex items-center gap-1 text-xs text-[var(--data-warning)] hover:underline font-bold mt-0.5"
+                            className="inline-flex items-center gap-1 text-xs text-[var(--data-warning-500)] hover:underline font-bold mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
                             Llamar
                           </a>
                         )}
                         {f.nivel === 4 && (
-                          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-bold mt-0.5">
+                          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold mt-0.5">
                             Bloquear credito
                           </p>
                         )}
@@ -715,7 +715,7 @@ export default function CobranzaInteligente() {
             </p>
             <p className="text-xs font-extrabold text-[var(--text-primary)] font-mono">
               Total:{" "}
-              <span className="text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 S/
                 {fiadosFiltrados
                   .reduce((s, f) => s + f.saldo, 0)

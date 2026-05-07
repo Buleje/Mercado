@@ -121,11 +121,11 @@ function ProductSEOCard({
         />
       </div>
       <div className="p-3 flex-1 flex flex-col">
-        <h3 className="text-sm font-medium text-slate-800 line-clamp-2 group-hover:text-emerald-700 transition-colors">
+        <h3 className="text-sm font-medium text-slate-800 line-clamp-2 group-hover:text-[var(--data-success-700)] transition-colors">
           {product.name}
         </h3>
         <div className="mt-auto pt-2 flex items-baseline gap-1">
-          <span className="text-lg font-bold text-emerald-700">
+          <span className="text-lg font-bold text-[var(--data-success-700)]">
             S/{product.price.toFixed(2)}
           </span>
           <span className="text-xs text-slate-400">/{product.unit}</span>
@@ -199,7 +199,7 @@ async function CategoryZoneContent({
 
       {/* Hero H1 */}
       <header className="mb-8">
-        <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-emerald-700 mb-2">
+        <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-[var(--data-success-700)] mb-2">
           Buleje ERP
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
@@ -228,7 +228,7 @@ async function CategoryZoneContent({
           </p>
           <Link
             href="/registro"
-            className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
             Registrate gratis
           </Link>
@@ -246,7 +246,7 @@ async function CategoryZoneContent({
         </p>
         <Link
           href="/registro"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-emerald-700 transition-colors"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-[var(--data-success-700)] transition-colors"
         >
           Probar gratis
         </Link>
@@ -287,7 +287,7 @@ async function CategoryZoneContent({
               key={faq.question}
               className="group rounded-xl border border-slate-200 bg-white"
             >
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700 hover:text-emerald-700 transition-colors list-none flex items-center justify-between">
+              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700 hover:text-[var(--data-success-700)] transition-colors list-none flex items-center justify-between">
                 {faq.question}
                 <svg
                   className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 shrink-0"
@@ -324,7 +324,7 @@ async function CategoryZoneContent({
               <Link
                 key={z.slug}
                 href={`/zona/${z.slug}/${cat.id}`}
-                className="text-xs text-slate-400 hover:text-emerald-600 transition-colors"
+                className="text-xs text-slate-400 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {cat.label} en {z.name}
               </Link>

@@ -17,11 +17,11 @@ import { cn } from "@/lib/utils";
 import { Kicker } from "@/components/ui-system/Kicker";
 import { EmptyState } from "@/components/ui-system/EmptyState";
 import { CanastaVacia, CorazonLatiendo } from "@/components/ui-system/illustrations";
-import {
-  MOCK_WISHLIST_PRODUCTS,
-  MOCK_SUGGESTIONS,
-  type WishlistProduct,
-} from "@/lib/mock-wishlist";
+import { useWishlist } from "@/contexts/wishlist-context";
+import { useStoreProducts } from "@/hooks/use-store-products";
+import { useCart } from "@/contexts/cart-context";
+import { useSettings } from "@/contexts/settings-context";
+import type { WishlistProduct } from "@/lib/mock-wishlist";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -98,7 +98,7 @@ function WishlistProductCard({
           className={cn(
             "absolute top-2 right-2 h-7 w-7 rounded-full flex items-center justify-center",
             "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-            "text-gray-400 hover:text-red-500 dark:hover:text-red-400",
+            "text-gray-400 hover:text-[var(--data-error-500)] dark:hover:text-red-400",
             "hover:border-red-200 dark:hover:border-red-800 transition-colors shadow-sm"
           )}
         >
@@ -107,7 +107,7 @@ function WishlistProductCard({
 
         {/* Heart filled indicador */}
         <div className="absolute top-2 left-2 h-5 w-5 flex items-center justify-center">
-          <Heart className="h-3.5 w-3.5 fill-rose-400 text-[var(--data-error)]" />
+          <Heart className="h-3.5 w-3.5 fill-rose-400 text-[var(--data-error-500)]" />
         </div>
       </div>
 
@@ -179,18 +179,42 @@ function SuggestionCard({ product }: { product: WishlistProduct }) {
 // ── Main Page ──────────────────────────────────────────────────────
 
 export default function FavoritosPage() {
-  // MVP: los items vienen del mock (en production vendrían del contexto/API)
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  // Datos REALES — wishlist context + catalogo de productos del tenant.
+  // Sin mock; si no hay favoritos, mostramos el empty state.
+  const { items: wishlistItems, removeFromWishlist } = useWishlist();
+  const { products: storeProducts } = useStoreProducts();
+  const { addItem } = useCart();
+  const { businessName, storeTheme } = useSettings();
+  const storeName = storeTheme?.name || businessName || "Tu tienda";
+
   const [sort, setSort] = useState<SortKey>("reciente");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
 
-  const allProducts = useMemo(
-    () => MOCK_WISHLIST_PRODUCTS.filter((p) => !removedIds.has(p.id)),
-    [removedIds]
-  );
+  // Resolver wishlist productIds → producto real del catálogo del tenant.
+  const allProducts: WishlistProduct[] = useMemo(() => {
+    const productMap = new Map(storeProducts.map((p) => [String(p.id), p]));
+    const resolved: WishlistProduct[] = [];
+    for (const w of wishlistItems) {
+      const p = productMap.get(String(w.productId));
+      if (!p) continue;
+      resolved.push({
+        id: String(p.id),
+        name: p.name,
+        price: p.price,
+        category: p.category ?? "general",
+        unit: p.unit ?? "unidad",
+        inStock: (p.stock ?? 1) > 0 && (p as { active?: boolean }).active !== false,
+        storeName,
+        storeSlug: "",
+        imageUrl: (p.image as string | null) ?? null,
+        addedAt: w.addedAt,
+      });
+    }
+    return resolved;
+  }, [wishlistItems, storeProducts, storeName]);
 
   const sortedProducts = useMemo(
     () => sortProducts(allProducts, sort, onlyInStock),
@@ -201,22 +225,28 @@ export default function FavoritosPage() {
   const isEmpty = allProducts.length === 0;
 
   function handleRemove(id: string) {
-    setRemovedIds((prev) => new Set([...prev, id]));
+    removeFromWishlist(id);
   }
 
   function handleClearAll() {
-    setRemovedIds(new Set(MOCK_WISHLIST_PRODUCTS.map((p) => p.id)));
+    for (const item of wishlistItems) {
+      removeFromWishlist(item.productId);
+    }
     setShowConfirmClear(false);
   }
 
   function handleAddToCart(product: WishlistProduct) {
-    // Preview UI only — totales en backend (regla crítica #1)
-    void product;
+    const real = storeProducts.find((p) => String(p.id) === product.id);
+    if (!real) return;
+    addItem(real);
   }
 
   function handleAddAllToCart() {
     const inStockProducts = sortedProducts.filter((p) => p.inStock);
-    void inStockProducts;
+    for (const item of inStockProducts) {
+      const real = storeProducts.find((p) => String(p.id) === item.id);
+      if (real) addItem(real);
+    }
   }
 
   function handleCopyLink() {
@@ -235,7 +265,13 @@ export default function FavoritosPage() {
   const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Más reciente";
 
   return (
-    <div className="min-h-screen bg-[var(--surface-bg)] dark:bg-background">
+    <div
+      className="min-h-screen dark:bg-background"
+      style={{
+        background:
+          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-bg, #f9fafb))",
+      }}
+    >
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
@@ -246,51 +282,99 @@ export default function FavoritosPage() {
       <AnnouncementBar />
       <Header />
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
+      {/* ── Hero — brand gradient ───────────────────────────────── */}
       <div
-        className="pt-32 sm:pt-36 pb-10 border-b border-gray-200 dark:border-gray-800"
-        style={{ background: "#060a0d" }}
+        className="relative overflow-hidden pt-36 sm:pt-44 pb-10 sm:pb-14"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+        }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div
+          className="absolute -top-16 -right-16 h-64 w-64 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.10)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.07)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none opacity-15"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-6"
+            className="flex items-center gap-1.5 text-xs text-white/75 mb-6 font-semibold"
           >
-            <Link href="/" className="hover:text-white/60 transition-colors">Inicio</Link>
-            <span>/</span>
-            <Link href="/cuenta" className="hover:text-white/60 transition-colors">Mi cuenta</Link>
-            <span>/</span>
-            <span className="text-white/55">Favoritos</span>
+            <Link href="/" className="hover:text-white transition-colors">
+              Inicio
+            </Link>
+            <span className="text-white/45">/</span>
+            <Link
+              href="/mi-panel"
+              className="hover:text-white transition-colors"
+            >
+              Mi panel
+            </Link>
+            <span className="text-white/45">/</span>
+            <span className="text-white">Favoritos</span>
           </nav>
 
           <div className="flex items-end justify-between gap-6">
-            <div className="flex-1">
-              <Kicker className="text-white/40 mb-2">FAVORITOS</Kicker>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
+            <div className="flex-1 min-w-0">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-white/85 mb-2">
+                <Heart className="h-3.5 w-3.5 fill-white" strokeWidth={2.25} />
+                Favoritos
+              </span>
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-white leading-[1.05] tracking-tight">
                 Lo que quieres, guardado
               </h1>
-              <p className="text-sm text-white/50 mt-2 max-w-sm leading-relaxed">
+              <p className="text-base text-white/85 mt-2 max-w-md leading-relaxed">
                 Productos que apartaste para comprar después
               </p>
-              <p className="text-xs text-white/30 mt-3 tabular-nums">
-                {isEmpty
-                  ? "Lista vacía"
-                  : `${allProducts.length} producto${allProducts.length !== 1 ? "s" : ""} en tu lista`}
-              </p>
+              {!isEmpty && (
+                <span className="inline-flex items-center gap-1.5 mt-4 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 border border-white/25 text-sm font-extrabold text-white">
+                  <Heart
+                    className="h-4 w-4 fill-white"
+                    strokeWidth={2.25}
+                  />
+                  {allProducts.length} producto
+                  {allProducts.length !== 1 ? "s" : ""} en tu lista
+                </span>
+              )}
             </div>
 
-            {/* Ilustración contextual — corazón editorial */}
+            {/* Ilustración contextual — corazón en círculo glassmorphism */}
             <div className="hidden sm:flex items-center justify-center shrink-0">
-              <div className="w-28 h-28 rounded-2xl bg-teal-900/30 border border-teal-700/30 flex items-center justify-center">
-                <CorazonLatiendo size={88} className="text-teal-400/70" />
+              <div
+                className="w-32 h-32 rounded-3xl flex items-center justify-center"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <CorazonLatiendo size={88} className="text-white" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8 pb-28">
+      <main
+        id="main-content"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-28"
+      >
 
         {/* ── Toolbar ───────────────────────────────────────────── */}
         {!isEmpty && (
@@ -389,7 +473,7 @@ export default function FavoritosPage() {
                   className={cn(
                     "flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[var(--rule-soft)]",
                     "text-xs font-medium text-[var(--text-tertiary)]",
-                    "hover:border-red-300 hover:text-red-500 dark:hover:border-red-800 dark:hover:text-red-400",
+                    "hover:border-red-300 hover:text-[var(--data-error-500)] dark:hover:border-red-800 dark:hover:text-red-400",
                     "transition-colors"
                   )}
                 >
@@ -397,12 +481,12 @@ export default function FavoritosPage() {
                 </button>
               ) : (
                 <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg px-3 py-1.5">
-                  <span className="text-[length:var(--ts-2xs)] text-red-600 dark:text-red-400 font-medium">
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--data-error-600)] dark:text-red-400 font-medium">
                     Confirmar?
                   </span>
                   <button
                     onClick={handleClearAll}
-                    className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 hover:underline"
+                    className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-600)] dark:text-red-400 hover:underline"
                   >
                     Si, vaciar
                   </button>
@@ -438,22 +522,33 @@ export default function FavoritosPage() {
           <h2 id="wishlist-heading" className="sr-only">Tus productos favoritos</h2>
 
           {isEmpty ? (
-            <div className="bg-[var(--surface-canvas)] border border-[var(--rule-soft)] rounded-xl">
+            <div
+              className="rounded-3xl"
+              style={{
+                background: "var(--color-card)",
+                border:
+                  "1px solid var(--color-card-border)",
+                boxShadow:
+                  "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+              }}
+            >
               <EmptyState
                 illustration={<CanastaVacia size={140} />}
                 eyebrow="Favoritos"
-                title="No tienes favoritos aún"
+                title="Aún no tienes favoritos"
                 description="Tocá el corazón en cualquier producto para guardarlo aquí y comprarlo después."
                 action={
                   <Link
                     href="/tienda"
-                    className={cn(
-                      "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg",
-                      "bg-[var(--brand-primary)] text-white text-sm font-bold",
-                      "hover:opacity-90 transition-opacity"
-                    )}
+                    className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl text-sm font-extrabold text-white active:scale-[0.98] transition-transform"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      boxShadow:
+                        "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                    }}
                   >
-                    <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />
+                    <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
                     Explorar productos
                   </Link>
                 }
@@ -506,9 +601,35 @@ export default function FavoritosPage() {
               </h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {MOCK_SUGGESTIONS.map((product) => (
-                <SuggestionCard key={product.id} product={product} />
-              ))}
+              {/* Sugerencias REALES: productos del catálogo que NO están en
+                  favoritos, top 4 más nuevos / disponibles. Sin mock. */}
+              {storeProducts
+                .filter(
+                  (p) =>
+                    (p.stock ?? 1) > 0 &&
+                    (p as { active?: boolean }).active !== false &&
+                    !wishlistItems.some(
+                      (w) => String(w.productId) === String(p.id),
+                    ),
+                )
+                .slice(0, 4)
+                .map((p) => {
+                  const suggestion: WishlistProduct = {
+                    id: String(p.id),
+                    name: p.name,
+                    price: p.price,
+                    category: p.category ?? "general",
+                    unit: p.unit ?? "unidad",
+                    inStock: true,
+                    storeName,
+                    storeSlug: "",
+                    imageUrl: (p.image as string | null) ?? null,
+                    addedAt: Date.now(),
+                  };
+                  return (
+                    <SuggestionCard key={suggestion.id} product={suggestion} />
+                  );
+                })}
             </div>
           </section>
         )}

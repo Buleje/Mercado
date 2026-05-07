@@ -75,7 +75,7 @@ export default function ImageBankClient() {
           {loading ? "Cargando…" : (
             <>
               <strong>{categories.length}</strong> categorías ·{" "}
-              <strong>{totalItems}</strong> items · <strong className="text-[var(--data-success)]">{itemsWithImage}</strong> con foto
+              <strong>{totalItems}</strong> items · <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong> con foto
             </>
           )}
         </div>
@@ -89,7 +89,7 @@ export default function ImageBankClient() {
       </div>
 
       {error && (
-        <div role="alert" className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+        <div role="alert" className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -193,7 +193,7 @@ function NewCategoryModal({ open, onOpenChange, onSaved }: { open: boolean; onOp
                 className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
-            {err && <p className="text-xs text-[var(--data-error)] flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{err}</p>}
+            {err && <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{err}</p>}
           </div>
           <div className="px-5 py-4 border-t border-[var(--rule-soft)] flex justify-end gap-2">
             <button onClick={() => onOpenChange(false)} className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
@@ -285,7 +285,7 @@ function CategorySummaryCard({
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
               {category.items.length} item{category.items.length === 1 ? "" : "s"}
               {" · "}
-              <strong className="text-[var(--data-success)]">{itemsWithImage} con foto</strong>
+              <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
             </p>
             {category.description && (
               <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{category.description}</p>
@@ -302,7 +302,7 @@ function CategorySummaryCard({
             <button
               onClick={() => setConfirmRemove(true)}
               title="Eliminar categoría"
-              className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/5 transition-colors"
+              className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -368,7 +368,7 @@ function CategoryDetailModal({
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                 {category.items.length} item{category.items.length === 1 ? "" : "s"}
                 {" · "}
-                <strong className="text-[var(--data-success)]">{itemsWithImage} con foto</strong>
+                <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
                 {category.description ? ` · ${category.description}` : ""}
               </p>
             </div>
@@ -457,7 +457,7 @@ function ConfirmDialog({
   onConfirm: () => void;
 }) {
   const confirmClass = variant === "danger"
-    ? "bg-[var(--data-error)] hover:brightness-110 text-white"
+    ? "bg-[var(--data-error-500)] hover:brightness-110 text-white"
     : "bg-primary hover:bg-primary/90 text-white";
 
   return (
@@ -467,8 +467,8 @@ function ConfirmDialog({
         <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl p-5">
           <div className="flex items-start gap-3">
             {variant === "danger" && (
-              <div className="w-10 h-10 rounded-xl bg-[var(--data-error)]/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-error-500)]/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -479,7 +479,7 @@ function ConfirmDialog({
                 </AlertDialog.Description>
               )}
               {error && (
-                <p role="alert" className="mt-2 text-xs text-[var(--data-error)] flex items-center gap-1">
+                <p role="alert" className="mt-2 text-xs text-[var(--data-error-500)] flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   {error}
                 </p>
@@ -626,7 +626,7 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
           <button
             onClick={() => setConfirmRemove(true)}
             aria-label={`Eliminar "${item.name}"`}
-            className="inline-flex items-center justify-center px-2 py-1 rounded-lg text-[var(--data-error)] border border-[var(--rule-soft)] hover:bg-[var(--data-error)]/5"
+            className="inline-flex items-center justify-center px-2 py-1 rounded-lg text-[var(--data-error-500)] border border-[var(--rule-soft)] hover:bg-[var(--data-error-500)]/5"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -726,7 +726,7 @@ function ItemForm({
         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
       />
       <ImageDropzone value={imageUrl} onChange={setImageUrl} />
-      {err && <p className="text-xs text-[var(--data-error)]">{err}</p>}
+      {err && <p className="text-xs text-[var(--data-error-500)]">{err}</p>}
       <div className="flex justify-end gap-2">
         <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50">
@@ -794,7 +794,7 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="preview" className="h-16 w-16 rounded-lg object-cover border border-[var(--rule-soft)]" />
             <p className="flex-1 text-xs font-mono text-[var(--text-secondary)] truncate">{value}</p>
-            <button type="button" onClick={(e) => { e.stopPropagation(); onChange(""); }} className="text-xs text-[var(--data-error)] font-bold">Quitar</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onChange(""); }} className="text-xs text-[var(--data-error-500)] font-bold">Quitar</button>
           </div>
         ) : (
           <div className="flex flex-col items-center text-center py-2">
@@ -813,7 +813,7 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
           </div>
         )}
       </div>
-      {error && <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)]">{error}</p>}
+      {error && <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">{error}</p>}
     </div>
   );
 }

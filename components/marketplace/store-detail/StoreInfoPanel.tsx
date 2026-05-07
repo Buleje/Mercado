@@ -95,7 +95,7 @@ export default function StoreInfoPanel({
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] backdrop-blur-sm border",
               isOpen
-                ? "bg-emerald-500/95 border-emerald-300/40 text-white"
+                ? "bg-[var(--data-success-500)]/95 border-emerald-300/40 text-white"
                 : "bg-gray-900/80 border-white/20 text-white",
             )}
           >
@@ -146,7 +146,7 @@ export default function StoreInfoPanel({
               {Math.max(15, deliveryMin - 10)}–{deliveryMin + 5} min
             </p>
             {freeDelivery && (
-              <span className="inline-flex items-center gap-1 mt-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 mt-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] dark:text-emerald-400">
                 <CheckCircle2 className="h-3 w-3" aria-hidden />
                 Gratis
               </span>

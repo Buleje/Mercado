@@ -137,6 +137,21 @@ Reglas:
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY/CRITICAL 2026-05-06 (audit AI #4): rate limit + cost guard.
+  // Antes anónimo + sin cap. ~$0.003/llamada × abuse = $50-100/día.
+  const { applyRateLimit } = await import("@/lib/rate-limit");
+  const rl = applyRateLimit(req, "STRICT", "chef-ia");
+  if (rl) return rl;
+  const { aiCostGuard } = await import("@/lib/ai/cost-control");
+  const ESTIMATED_COST_USD = 0.003;
+  if (!aiCostGuard.canSpend("__chef_ia__", ESTIMATED_COST_USD, "free")) {
+    return NextResponse.json(
+      { error: "Chef IA quota exceeded. Try again later." },
+      { status: 429 },
+    );
+  }
+  aiCostGuard.recordSpend("__chef_ia__", ESTIMATED_COST_USD);
+
   let body: unknown;
   try {
     body = await req.json();

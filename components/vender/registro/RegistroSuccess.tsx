@@ -44,7 +44,7 @@ export default function RegistroSuccess({
         </div>
 
         <div className="space-y-2">
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success)]/30 bg-[var(--data-success)]/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
             <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
             Solicitud recibida
           </p>

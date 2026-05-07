@@ -120,8 +120,8 @@ export const UnifiedKPITile = memo(function UnifiedKPITile({
     : isNeutralDelta
       ? "text-[var(--text-tertiary)]"
       : isPositiveDelta
-        ? "text-[var(--data-success)]"
-        : "text-[var(--data-error)]";
+        ? "text-[var(--data-success-500)]"
+        : "text-[var(--data-error-500)]";
 
   const deltaBgColor = !hasDelta
     ? ""
@@ -133,9 +133,9 @@ export const UnifiedKPITile = memo(function UnifiedKPITile({
 
   // Intent top-bar (accent thin stripe if intent !== neutral)
   const intentBar = {
-    success: "bg-[var(--data-success)]",
-    warning: "bg-[var(--data-warning)]",
-    danger: "bg-[var(--data-error)]",
+    success: "bg-[var(--data-success-500)]",
+    warning: "bg-[var(--data-warning-500)]",
+    danger: "bg-[var(--data-error-500)]",
     neutral: "",
   }[intent];
 

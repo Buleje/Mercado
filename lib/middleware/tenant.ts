@@ -89,7 +89,19 @@ export function resolveTenantFromHost(req: NextRequest): string {
 export async function resolveTenantMultiSource(req: NextRequest, baseTenant: string): Promise<string> {
   if (baseTenant !== DEFAULT_TENANT_ID) return baseTenant;
 
-  // Source 1 (HIGHEST): Admin session JWT — canonical tenantId (CUID).
+  // ── Source 0 (TOP PRIORITY 2026-05-06): URL path `/t/[slug]/...` ─────
+  // Si el usuario está navegando explícitamente a un tenant via path, ese
+  // slug es la VERDAD. Bloquea el bug donde un admin con JWT.tenantId="main"
+  // navega a /t/mi-pollo/admin y el JWT pisa el path → datos de "main"
+  // mezclados con UI de "mi-pollo". Esto es la guarda de aislamiento más
+  // fuerte porque no se puede falsificar (la URL es explícita del usuario).
+  const pathname = req.nextUrl.pathname;
+  const pathTenantMatch = pathname.match(/^\/t\/([^/]+)(\/|$)/);
+  if (pathTenantMatch) {
+    return decodeURIComponent(pathTenantMatch[1]);
+  }
+
+  // Source 1: Admin session JWT — canonical tenantId (CUID).
   // SECURITY FIX (P0 #2): verifica HMAC via getSessionPayload() antes de
   // extraer tenantId. Tokens con firma inválida o expirados son ignorados
   // y el resolver cae al siguiente origen (Source 2 → Source 3).

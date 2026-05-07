@@ -366,9 +366,9 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           {/* ── Error ────────────────────────────────────────────────── */}
           {state === "error" && (
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-                <AlertCircle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
-                <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                <AlertCircle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   {error}
                 </p>
               </div>
@@ -386,17 +386,17 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           {state === "results" && invoiceData && (
             <div className="space-y-6">
               {/* Proveedor info */}
-              <div className="p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                <p className="text-sm font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <div className="p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <p className="text-sm font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   {invoiceData.proveedor.nombre}
                   {invoiceData.proveedor.ruc && (
-                    <span className="ml-2 text-xs font-normal text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <span className="ml-2 text-xs font-normal text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       RUC: {invoiceData.proveedor.ruc}
                     </span>
                   )}
                 </p>
                 {invoiceData.fecha && (
-                  <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-0.5">
+                  <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-0.5">
                     Fecha: {invoiceData.fecha}
                   </p>
                 )}
@@ -476,7 +476,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                           <button
                             type="button"
                             onClick={() => removeItem(idx)}
-                            className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors"
+                            className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors"
                             aria-label={`Eliminar ${item.nombre}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />

@@ -68,7 +68,7 @@ function ModuleTooltip() {
           <p className="font-bold text-[var(--text-primary)] dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Timer className="h-4 w-4 text-primary" /> ¿Qué es Control de Turnos?</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Registra quién trabaja en caja, cuándo entra y sal, y cuánto vendió durante su turno.</p>
           <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Ejemplo:</p>
-          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre turno a las 8am con S/200 de fondo. Cierra a las 2pm. El sistema muestra: S/850 en ventas, S/600 en efectivo, S/250 digital. Diferencia en caja: <span className="text-[var(--data-success)] font-semibold">Conforme</span>.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre turno a las 8am con S/200 de fondo. Cierra a las 2pm. El sistema muestra: S/850 en ventas, S/600 en efectivo, S/250 digital. Diferencia en caja: <span className="text-[var(--data-success-500)] font-semibold">Conforme</span>.</p>
           <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
             <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">KPIs</span> — ventas y pedidos del día en tiempo real.</p>
             <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Abrir turno</span> — registra cajero, rol y fondo inicial.</p>
@@ -272,10 +272,10 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Turnos activos", value: String(stats.activeCount), icon: Timer, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-[var(--data-success)]" : stats.totalDifference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: stats.totalDifference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Turnos activos", value: String(stats.activeCount), icon: Timer, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-[var(--data-success-500)]" : stats.totalDifference > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: stats.totalDifference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -289,7 +289,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {showOpenForm && (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Play className="h-4 w-4 text-[var(--data-success)]" /> Abrir nuevo turno</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Play className="h-4 w-4 text-[var(--data-success-500)]" /> Abrir nuevo turno</CardTitle>
             <button onClick={() => setShowOpenForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -322,7 +322,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
         <div className="modal-backdrop p-4" onClick={() => setShowCloseForm(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-[var(--data-error)]" /> Cerrar turno</CardTitle>
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-[var(--data-error-500)]" /> Cerrar turno</CardTitle>
               <button onClick={() => setShowCloseForm(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2 text-sm">
@@ -330,7 +330,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Turno abierto</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtDatetime(showCloseForm.openedAt)}</span></div>
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Duración</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{duration(showCloseForm.openedAt)}</span></div>
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Ventas</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(showCloseForm.totalSales)}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-[var(--data-success)]">{fmt(showCloseForm.expectedCash)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-[var(--data-success-500)]">{fmt(showCloseForm.expectedCash)}</span></div>
             </div>
             <div className="space-y-3">
               <div>
@@ -347,7 +347,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 />
               </div>
               {closeForm.closingCash && (
-                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                   <span>Diferencia:</span>
                   <span>{parseFloat(closeForm.closingCash) >= showCloseForm.expectedCash ? "+" : ""}{fmt(parseFloat(closeForm.closingCash) - showCloseForm.expectedCash)}</span>
                 </div>
@@ -359,7 +359,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setShowCloseForm(null)} className="flex-1 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
-              <button onClick={handleCloseShift} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--data-error)] text-white font-semibold hover:bg-[var(--data-error)]">Cerrar turno</button>
+              <button onClick={handleCloseShift} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--data-error-500)] text-white font-semibold hover:bg-[var(--data-error-500)]">Cerrar turno</button>
             </div>
           </div>
         </div>
@@ -405,7 +405,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
         {visible.map(sh => {
           const isOpen = sh.status === "abierto";
           return (
-            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 transition-all", isOpen ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 " : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 transition-all", isOpen ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 " : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-[var(--accent-soft)]" : "bg-gray-400 dark:bg-surface")}>
@@ -417,16 +417,16 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
                     {isOpen ? "Activo" : sh.status === "revisando" ? "Revisando" : `Cerrado — ${duration(sh.openedAt, sh.closedAt)}`}
                   </span>
                   {isOpen && (
-                    <button onClick={() => { setShowCloseForm(sh); setCloseForm({ closingCash: "", notes: "" }); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] text-xs font-semibold hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors">
+                    <button onClick={() => { setShowCloseForm(sh); setCloseForm({ closingCash: "", notes: "" }); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs font-semibold hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors">
                       <Square className="h-3.5 w-3.5" /> Cerrar
                     </button>
                   )}
                   {!isOpen && (
-                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] text-xs font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] text-xs font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
                       <Printer className="h-3.5 w-3.5" /> Recibo
                     </button>
                   )}
@@ -520,7 +520,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 }
 
 function SCell({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  const col = accent === "blue" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : accent === "violet" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : accent === "amber" ? "text-amber-600 dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : accent === "red" ? "text-red-500 dark:text-red-400" : "text-[var(--text-primary)] dark:text-foreground";
+  const col = accent === "blue" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : accent === "violet" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : accent === "amber" ? "text-[var(--data-warning-600)] dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : accent === "red" ? "text-[var(--data-error-500)] dark:text-red-400" : "text-[var(--text-primary)] dark:text-foreground";
   return (
     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl px-3 py-2.5">
       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">{label}</p>

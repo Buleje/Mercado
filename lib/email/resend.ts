@@ -19,32 +19,41 @@ export async function sendOrderConfirmation(to: string, order: { id: string; tot
 }
 
 export async function sendFiadoReminder(to: string, fiado: { customerName: string; amount: number; dueDate: string }) {
+  // SECURITY 2026-05-06 (audit email #2): escapar customerName.
+  const { escapeHtml } = await import("./escape-html");
+  const safeName = escapeHtml(fiado.customerName);
+  const safeDate = escapeHtml(fiado.dueDate);
   return resend.emails.send({
     from: FROM,
     to,
     subject: `Recordatorio de fiado — S/ ${fiado.amount.toFixed(2)}`,
     html: `
-      <h2>Hola ${fiado.customerName}</h2>
+      <h2>Hola ${safeName}</h2>
       <p>Te recordamos que tienes un fiado pendiente de <strong>S/ ${fiado.amount.toFixed(2)}</strong>.</p>
-      <p>Fecha limite: ${fiado.dueDate}</p>
+      <p>Fecha limite: ${safeDate}</p>
       <p>Puedes pagar en la bodega o por Yape.</p>
     `,
   }).catch(() => {});
 }
 
 export async function sendWelcomeTenant(to: string, tenant: { name: string; slug: string }) {
+  // SECURITY 2026-05-06 (audit email #7): escapar tenant.name (controlado por
+  // el usuario al registrar la tienda).
+  const { escapeHtml } = await import("./escape-html");
+  const safeName = escapeHtml(tenant.name);
+  const safeSlug = encodeURIComponent(tenant.slug);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.buleje.pe";
   const adminUrl = `${baseUrl}/admin`;
-  const storeUrl = `${baseUrl}/marketplace/${tenant.slug}`;
+  const storeUrl = `${baseUrl}/marketplace/${safeSlug}`;
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `🎉 ¡${tenant.name} ya está en Buleje!`,
+    subject: `🎉 ¡${safeName} ya está en Buleje!`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; color: #111;">
         <h1 style="font-size: 24px; margin: 0 0 12px;">¡Tu tienda fue aprobada! 🎉</h1>
         <p style="font-size: 16px; line-height: 1.5; margin: 0 0 16px;">
-          Hola, <strong>${tenant.name}</strong> ya está visible en el Marketplace
+          Hola, <strong>${safeName}</strong> ya está visible en el Marketplace
           de Buleje. Los clientes pueden encontrarte y hacer pedidos directo a tu panel.
         </p>
 

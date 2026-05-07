@@ -88,7 +88,7 @@ const STATUS_META: Record<
   pendiente: {
     label: "Pendiente",
     icon: Clock,
-    tone: "text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300",
+    tone: "text-[var(--data-warning-700)] bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300",
     dot: "bg-amber-400",
   },
   confirmado: {
@@ -106,13 +106,13 @@ const STATUS_META: Record<
   entregado: {
     label: "Entregado",
     icon: CheckCircle2,
-    tone: "text-teal-700 bg-teal-50 dark:bg-teal-900/20 dark:text-teal-300",
+    tone: "text-[var(--accent-dark)] bg-teal-50 dark:bg-teal-900/20 dark:text-teal-300",
     dot: "bg-teal-400",
   },
   cancelado: {
     label: "Cancelado",
     icon: XCircle,
-    tone: "text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300",
+    tone: "text-[var(--data-error-700)] bg-red-50 dark:bg-red-900/20 dark:text-red-300",
     dot: "bg-red-400",
   },
 };
@@ -296,8 +296,8 @@ export default function PedidosPage() {
           </section>
         ) : error ? (
           <section className="rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/40 dark:bg-red-900/10 px-6 py-8 text-center">
-            <XCircle className="h-8 w-8 mx-auto text-red-500" />
-            <p className="mt-3 text-sm font-semibold text-red-700 dark:text-red-300">
+            <XCircle className="h-8 w-8 mx-auto text-[var(--data-error-500)]" />
+            <p className="mt-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
               No pudimos cargar tus pedidos
             </p>
             <p className="mt-1 text-xs text-muted">{error}</p>

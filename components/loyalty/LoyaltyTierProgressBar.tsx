@@ -20,7 +20,7 @@ const TIER_THRESHOLDS: Record<Tier, number> = {
 const TIER_COLORS: Record<Tier, { bg: string; text: string; bar: string }> = {
   Bronce: { bg: "bg-orange-100", text: "text-orange-900", bar: "bg-orange-500" },
   Plata: { bg: "bg-slate-100", text: "text-slate-900", bar: "bg-slate-500" },
-  Oro: { bg: "bg-amber-100", text: "text-amber-900", bar: "bg-amber-500" },
+  Oro: { bg: "bg-amber-100", text: "text-amber-900", bar: "bg-[var(--data-warning-500)]" },
   Diamante: { bg: "bg-sky-100", text: "text-sky-900", bar: "bg-sky-500" },
 };
 
@@ -73,8 +73,8 @@ export default function LoyaltyTierProgressBar({ points, compact = false }: Prop
           <span className="uppercase">{next}</span>.
         </div>
       ) : (
-        <div className={`mt-2 text-xs ${colors.text} opacity-80`}>
-          Nivel máximo alcanzado 🎉
+        <div className={`mt-2 text-xs font-bold ${colors.text} opacity-90`}>
+          Nivel máximo alcanzado
         </div>
       )}
     </div>

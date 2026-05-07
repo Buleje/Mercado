@@ -672,10 +672,10 @@ export default function PuntoCompraView() {
           <button
             type="button"
             onClick={() => { setSoloReponer(true); setPage(1); }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error)] border border-[var(--data-error)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error)]/5 px-2.5 py-1 rounded-full transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error-500)]/5 px-2.5 py-1 rounded-full transition-colors"
             title="Ver solo los productos que necesitan reponerse"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
             {needsReorderCount} a reponer
           </button>
         )}
@@ -683,7 +683,7 @@ export default function PuntoCompraView() {
 
       {/* Aviso reposición destacado */}
       {needsReorderCount > 5 && !soloReponer && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning)]">
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-500)]">
           <span className="shrink-0">●</span>
           <p>
             Tenés <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
@@ -735,7 +735,7 @@ export default function PuntoCompraView() {
           className={cn(
             "px-3 py-1.5 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
             soloReponer
-              ? "bg-[var(--data-error)] text-white"
+              ? "bg-[var(--data-error-500)] text-white"
               : "bg-gray-100 text-[var(--text-secondary)]",
           )}
         >
@@ -766,7 +766,7 @@ export default function PuntoCompraView() {
         <button
           type="button"
           onClick={() => setShowInvoiceScanner(true)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--data-success)] transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)] transition-colors"
           title="Escanear factura con cámara"
         >
           <Camera className="h-3.5 w-3.5 shrink-0" /> Factura
@@ -862,24 +862,24 @@ export default function PuntoCompraView() {
 
       {/* Banner offline */}
       {!isOnline && (
-        <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl px-3 py-2 text-xs text-[var(--data-error)] flex items-center gap-2 mb-3">
-          <span className="h-2 w-2 rounded-full bg-[var(--data-error)] animate-pulse shrink-0" />
+        <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl px-3 py-2 text-xs text-[var(--data-error-500)] flex items-center gap-2 mb-3">
+          <span className="h-2 w-2 rounded-full bg-[var(--data-error-500)] animate-pulse shrink-0" />
           Sin conexion — tu canasta se guardo automaticamente. Se enviara cuando vuelva el internet.
         </div>
       )}
 
       {/* Banner de promociones activas */}
       {activePromos.length > 0 && (
-        <div className="mb-3 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl">
+        <div className="mb-3 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <Tag className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" />
-            <span className="text-xs font-semibold text-[var(--data-warning)]">
+            <Tag className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
+            <span className="text-xs font-semibold text-[var(--data-warning-500)]">
               {activePromos.length} promo{activePromos.length > 1 ? "s" : ""} activa{activePromos.length > 1 ? "s" : ""} hoy
             </span>
             {appliedPromo && (
               <button
                 onClick={() => { setAppliedPromo(null); setDiscount(0); }}
-                className="ml-auto text-xs text-[var(--data-warning)] hover:text-[var(--data-warning)] underline"
+                className="ml-auto text-xs text-[var(--data-warning-500)] hover:text-[var(--data-warning-500)] underline"
               >
                 Quitar aplicada
               </button>
@@ -901,8 +901,8 @@ export default function PuntoCompraView() {
                 className={cn(
                   "text-xs px-2 py-1 rounded-lg font-medium border transition-all",
                   appliedPromo?.id === promo.id
-                    ? "bg-[var(--data-warning)] text-white border-[var(--data-warning)]"
-                    : "bg-white text-[var(--data-warning)] border-[var(--data-warning)] hover:bg-[var(--data-warning-100)]",
+                    ? "bg-[var(--data-warning-500)] text-white border-[var(--data-warning-500)]"
+                    : "bg-white text-[var(--data-warning-500)] border-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)]",
                 )}
               >
                 {promo.tipo === "porcentaje" ? `${promo.valor}% OFF` :
@@ -917,7 +917,7 @@ export default function PuntoCompraView() {
             ))}
           </div>
           {appliedPromo && (
-            <p className="text-xs text-[var(--data-warning)] mt-1.5">
+            <p className="text-xs text-[var(--data-warning-500)] mt-1.5">
               ✓ Aplicando: <strong>{appliedPromo.nombre}</strong>
               {appliedPromo.tipo === "porcentaje" && ` — ${appliedPromo.valor}% de descuento en esta OC`}
               {appliedPromo.tipo === "2x1" && " — compra 2, paga 1 (por cada 2 unidades, 1 es gratis)"}
@@ -998,7 +998,7 @@ export default function PuntoCompraView() {
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {needs && (
-                              <span className="text-xs font-bold px-1 py-0.5 rounded bg-[var(--data-error-100)] text-[var(--data-error)]">
+                              <span className="text-xs font-bold px-1 py-0.5 rounded bg-[var(--data-error-100)] text-[var(--data-error-500)]">
                                 REPONER
                               </span>
                             )}
@@ -1015,7 +1015,7 @@ export default function PuntoCompraView() {
                         <td className="p-3 text-right text-[var(--text-secondary)]">
                           {p.stock ?? "—"} {p.unit}
                         </td>
-                        <td className="p-3 text-right text-[var(--data-success)] font-medium">
+                        <td className="p-3 text-right text-[var(--data-success-500)] font-medium">
                           {sug}
                         </td>
                         <td className="p-3 text-right">
@@ -1114,7 +1114,7 @@ export default function PuntoCompraView() {
                   Canasta
                 </span>
                 {hasDraft && cart.length === 0 && (
-                  <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning)] px-1.5 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full font-medium">
                     Borrador
                   </span>
                 )}
@@ -1132,7 +1132,7 @@ export default function PuntoCompraView() {
                   type="button"
                   onClick={clearCart}
                   disabled={processing}
-                  className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Limpiar
                 </button>
@@ -1260,8 +1260,8 @@ export default function PuntoCompraView() {
                           <span className={cn(
                             "text-xs font-bold px-1 rounded",
                             (item.product.costPrice ?? item.product.price) > priceHistory[item.product.id]
-                              ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
-                              : "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                              : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           )}>
                             {(item.product.costPrice ?? item.product.price) > priceHistory[item.product.id] ? "↑" : "↓"}
                             {Math.abs(((item.product.costPrice ?? item.product.price) - priceHistory[item.product.id]) / priceHistory[item.product.id] * 100).toFixed(0)}%
@@ -1270,7 +1270,7 @@ export default function PuntoCompraView() {
                         {appliedPromo && (appliedPromo.tipo === "2x1" || appliedPromo.tipo === "3x2") &&
                           itemMatchesPromo(item, appliedPromo) &&
                           freeUnits(item.quantity, appliedPromo.tipo) > 0 && (
-                          <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning)] px-1 rounded font-bold uppercase tracking-wider">
+                          <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1 rounded font-bold uppercase tracking-wider">
                             +{freeUnits(item.quantity, appliedPromo.tipo)} gratis
                           </span>
                         )}
@@ -1314,7 +1314,7 @@ export default function PuntoCompraView() {
                           <span className="line-through text-[var(--text-tertiary)] text-xs font-normal">
                             S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
                           </span>
-                          <span className="text-[var(--data-warning)]">
+                          <span className="text-[var(--data-warning-500)]">
                             S/{((item.product.costPrice ?? item.product.price) * computeEffectiveQty(item.quantity, appliedPromo.tipo)).toFixed(2)}
                           </span>
                         </span>
@@ -1329,7 +1329,7 @@ export default function PuntoCompraView() {
                       onClick={() => removeItem(item.product.id)}
                       disabled={processing}
                       aria-label={`Eliminar ${item.product.name} de la canasta`}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ✕
                     </button>
@@ -1373,7 +1373,7 @@ export default function PuntoCompraView() {
                     <span className="font-mono">S/{subtotal.toFixed(2)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="flex justify-between text-[var(--data-error)]">
+                    <div className="flex justify-between text-[var(--data-error-500)]">
                       <span>Descuento {discount}%</span>
                       <span className="font-mono">
                         -S/{discountAmount.toFixed(2)}
@@ -1450,9 +1450,9 @@ export default function PuntoCompraView() {
 
                 {lastOC && (
                   <div className="bg-[var(--accent-soft)] rounded-xl p-3 space-y-2">
-                    <p className="text-xs font-bold text-[var(--data-success)]">✓ OC Creada</p>
-                    <p className="text-xs text-[var(--data-success)]">ID: {lastOC.id}</p>
-                    <p className="text-xs text-[var(--data-success)]">{lastOC.items} productos — S/{lastOC.total.toFixed(2)}</p>
+                    <p className="text-xs font-bold text-[var(--data-success-500)]">✓ OC Creada</p>
+                    <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
+                    <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{lastOC.total.toFixed(2)}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1460,7 +1460,7 @@ export default function PuntoCompraView() {
                         const event = new CustomEvent("compras-navigate-tab", { detail: "ordenes-compra" });
                         window.dispatchEvent(event);
                       }}
-                      className="w-full text-center text-xs font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] rounded-lg py-1.5 transition-colors"
+                      className="w-full text-center text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] rounded-lg py-1.5 transition-colors"
                     >
                       Ver en Órdenes →
                     </button>
@@ -1483,7 +1483,7 @@ export default function PuntoCompraView() {
                           <button type="button" onClick={() => loadTemplate(tpl)} className="text-xs font-medium text-[var(--text-primary)] hover:text-primary">
                             {tpl.name}
                           </button>
-                          <button type="button" onClick={() => deleteTemplate(idx)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] ml-0.5">✕</button>
+                          <button type="button" onClick={() => deleteTemplate(idx)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] ml-0.5">✕</button>
                         </div>
                       ))}
                     </div>
@@ -1693,16 +1693,16 @@ export default function PuntoCompraView() {
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                   )}
                   {rucLookup.status === "ok" && (
-                    <CheckIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success)]" />
+                    <CheckIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
                   )}
                 </div>
                 {rucLookup.status !== "idle" && rucLookup.msg && (
                   <p className={cn(
                     "text-xs mt-1 font-medium",
-                    rucLookup.status === "ok"       ? "text-[var(--data-success)]" :
-                    rucLookup.status === "notfound" ? "text-[var(--data-warning)]" :
+                    rucLookup.status === "ok"       ? "text-[var(--data-success-500)]" :
+                    rucLookup.status === "notfound" ? "text-[var(--data-warning-500)]" :
                     rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
-                    "text-[var(--data-error)]"
+                    "text-[var(--data-error-500)]"
                   )}>
                     {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
                   </p>
@@ -1711,7 +1711,7 @@ export default function PuntoCompraView() {
 
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-name">
-                  Nombre comercial <span className="text-[var(--data-error)]">*</span>
+                  Nombre comercial <span className="text-[var(--data-error-500)]">*</span>
                 </label>
                 <input
                   id="ns-name"

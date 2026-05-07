@@ -68,6 +68,20 @@ export function clearAllTenantCache(): number {
   if (typeof window === "undefined") return 0;
   let removed = 0;
   try {
+    // 0) sessionStorage: cualquier key con prefijo de tenant
+    try {
+      const sessionKeys: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k) sessionKeys.push(k);
+      }
+      for (const k of sessionKeys) {
+        if (TENANT_SCOPED_PREFIXES.some((p) => k.startsWith(p))) {
+          sessionStorage.removeItem(k);
+          removed++;
+        }
+      }
+    } catch { /* sessionStorage no disponible */ }
     // 1) Keys exactas conocidas
     for (const k of TENANT_SCOPED_KEYS) {
       if (localStorage.getItem(k) !== null) {
@@ -93,6 +107,20 @@ export function clearAllTenantCache(): number {
     }
   } catch {
     // localStorage no disponible
+  }
+  // 3) Service Worker / fetch caches — fire-and-forget. Si hay un SW que cachea
+  // /api/admin/* o assets de tenant, los borramos para que la próxima petición
+  // golpee al server con el JWT del nuevo tenant.
+  if (typeof window !== "undefined" && "caches" in window) {
+    void caches.keys()
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((n) => n.includes("admin") || n.includes("tenant") || n.startsWith("workbox"))
+            .map((n) => caches.delete(n)),
+        ),
+      )
+      .catch(() => {});
   }
   return removed;
 }

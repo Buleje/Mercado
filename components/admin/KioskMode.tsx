@@ -195,8 +195,8 @@ export default function KioskMode() {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all",
               callingStaff
-                ? "bg-[var(--data-warning)] text-white animate-pulse"
-                : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] hover:bg-[var(--data-warning-100)]"
+                ? "bg-[var(--data-warning-500)] text-white animate-pulse"
+                : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)]"
             )}
           >
             <Phone className="h-4 w-4" />
@@ -317,7 +317,7 @@ export default function KioskMode() {
                       className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
                       <Plus className="h-3 w-3" />
                     </button>
-                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)]">
+                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]">
                       <X className="h-3 w-3" />
                     </button>
                   </div>
@@ -383,7 +383,7 @@ export default function KioskMode() {
         <div className="absolute inset-0 flex items-center justify-center bg-white/95 dark:bg-gray-950/95 z-50">
           <div className="text-center space-y-4">
             <div className="w-24 h-24 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto">
-              <CheckCircle className="h-12 w-12 text-[var(--data-success)]" />
+              <CheckCircle className="h-12 w-12 text-[var(--data-success-500)]" />
             </div>
             <SectionTitle className="text-3xl font-bold text-[var(--text-primary)] dark:text-foreground">Pago registrado</SectionTitle>
             <p className="text-[var(--text-secondary)] dark:text-muted text-lg">Gracias por tu compra</p>

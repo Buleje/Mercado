@@ -133,8 +133,17 @@ export function usePOSOffline() {
   const addToQueue = useCallback(
     (sale: Record<string, unknown>) => {
       const queue = getQueue();
+      // SECURITY 2026-05-05 (audit POS #5): idempotencyKey por venta. Si el
+      // cajero abre 2 pestañas o el POST timeoutea-pero-llega, el server
+      // dedupe por la misma clave. Antes generaba `_offlineId: Date.now()`
+      // colisionable y sin reach al server.
+      const idempotencyKey =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `pos-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       queue.push({
         ...sale,
+        idempotencyKey,
         _offlineId: Date.now(),
         _synced: false,
       } as OfflineSale);

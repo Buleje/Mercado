@@ -146,7 +146,7 @@ export default function PerfilPage() {
           tone="amber"
         />
         <Stat
-          icon={<CheckBadge className="h-6 w-6 text-[var(--data-success)]" />}
+          icon={<CheckBadge className="h-6 w-6 text-[var(--data-success-500)]" />}
           value={`${Math.round(me.acceptanceRate * 100)}%`}
           label="Aceptación"
           tone="success"
@@ -202,7 +202,7 @@ export default function PerfilPage() {
             <div
               className={`rounded-2xl px-4 py-3 text-sm font-bold mb-3 border-2 ${
                 pwdMsg.type === "ok"
-                  ? "bg-[var(--data-success)]/10 border-[var(--data-success)]/30 text-[var(--data-success)]"
+                  ? "bg-[var(--data-success-500)]/10 border-[var(--data-success-500)]/30 text-[var(--data-success-500)]"
                   : "bg-[var(--brand-danger)]/10 border-[var(--brand-danger)]/30 text-[var(--brand-danger)]"
               }`}
             >
@@ -272,7 +272,7 @@ function Stat({
 }) {
   const ring: Record<typeof tone, string> = {
     accent: "bg-[var(--accent-soft)]",
-    success: "bg-[var(--data-success)]/10",
+    success: "bg-[var(--data-success-500)]/10",
     amber: "bg-[var(--brand-secondary)]/10",
   } as const;
   return (

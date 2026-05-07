@@ -123,7 +123,7 @@ export function Kpi({
         <div
           className={cn(
             "absolute top-0 left-0 right-0 h-1",
-            delta >= 0 ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]",
+            delta >= 0 ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]",
           )}
         />
       )}
@@ -140,8 +140,8 @@ export function Kpi({
               className={cn(
                 "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold tabular-nums",
                 delta >= 0
-                  ? "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]"
-                  : "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
+                  ? "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]"
+                  : "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-500)]",
               )}
             >
               {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -195,10 +195,10 @@ export function Card({
  */
 export function DBadge({ children, color }: { children: React.ReactNode; color: "green" | "red" | "amber" | "blue" | "purple" | "gray" }) {
   const variantMap: Record<typeof color, string> = {
-    green: "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]",
-    red: "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
-    amber: "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)]",
-    blue: "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info)]",
+    green: "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]",
+    red: "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-500)]",
+    amber: "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning-500)]",
+    blue: "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info-500)]",
     purple: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
     gray: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   };
@@ -215,9 +215,9 @@ export function FlowRow({
   tone?: "success" | "danger" | "warning" | "neutral" | "accent";
 }) {
   const toneClass = {
-    success: "text-[var(--data-success)]",
-    danger: "text-[var(--data-error)]",
-    warning: "text-[var(--data-warning)]",
+    success: "text-[var(--data-success-500)]",
+    danger: "text-[var(--data-error-500)]",
+    warning: "text-[var(--data-warning-500)]",
     neutral: "text-[var(--text-secondary)]",
     accent: "text-[var(--accent)]",
   }[tone];
@@ -245,10 +245,10 @@ export function ElapsedTimer({ createdAt }: { createdAt: string }) {
   const m = mins % 60;
   const colorToken =
     mins > 60
-      ? "text-[var(--data-error)]"
+      ? "text-[var(--data-error-500)]"
       : mins > 30
-        ? "text-[var(--data-warning)]"
-        : "text-[var(--data-success)]";
+        ? "text-[var(--data-warning-500)]"
+        : "text-[var(--data-success-500)]";
   return (
     <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", colorToken)}>
       ⏱ {h > 0 ? `${h}h ${m}m` : `${m}m`}

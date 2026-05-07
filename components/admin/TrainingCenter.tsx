@@ -170,7 +170,7 @@ export default function TrainingCenter() {
             <Award
               className={cn(
                 "h-5 w-5",
-                allDone ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
+                allDone ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
               )}
             />
             <span className="font-semibold text-[var(--text-primary)]">
@@ -180,7 +180,7 @@ export default function TrainingCenter() {
           <span
             className={cn(
               "text-sm font-semibold",
-              allDone ? "text-[var(--data-warning)]" : "text-primary"
+              allDone ? "text-[var(--data-warning-500)]" : "text-primary"
             )}
           >
             {progress} de {total} completados
@@ -190,13 +190,13 @@ export default function TrainingCenter() {
           <div
             className={cn(
               "h-full transition-all duration-[var(--dur-slow)]",
-              allDone ? "bg-[var(--data-warning)]" : "bg-primary"
+              allDone ? "bg-[var(--data-warning-500)]" : "bg-primary"
             )}
             style={{ width: `${pct}%` }}
           />
         </div>
         {allDone && (
-          <p className="mt-2 text-center text-sm font-semibold text-[var(--data-warning)]">
+          <p className="mt-2 text-center text-sm font-semibold text-[var(--data-warning-500)]">
             Todos los tutoriales completados. Excelente trabajo!
           </p>
         )}
@@ -214,7 +214,7 @@ export default function TrainingCenter() {
               className={cn(
                 "rounded-xl border transition",
                 isDone
-                  ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]"
+                  ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
                   : "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
               )}
             >
@@ -226,7 +226,7 @@ export default function TrainingCenter() {
                   title={isDone ? "Marcar como pendiente" : "Marcar como completado"}
                 >
                   {isDone ? (
-                    <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+                    <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
                   ) : (
                     <Circle className="h-6 w-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
                   )}
@@ -238,7 +238,7 @@ export default function TrainingCenter() {
                       className={cn(
                         "font-semibold",
                         isDone
-                          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : "text-[var(--text-primary)]"
                       )}
                     >
@@ -273,7 +273,7 @@ export default function TrainingCenter() {
                   <ol className="space-y-3">
                     {tutorial.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary dark:bg-primary/20 dark:text-[var(--data-success)]">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary dark:bg-primary/20 dark:text-[var(--data-success-500)]">
                           {step.id}
                         </span>
                         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">

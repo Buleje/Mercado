@@ -39,18 +39,18 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const pct = (n: number) => n.toFixed(1) + "%";
 
 const TYPE_META: Record<CampaignType, { label: string; icon: typeof Mail; color: string }> = {
-  email: { label: "Email", icon: Mail, color: "text-[var(--data-success)]" },
-  sms:   { label: "SMS",   icon: Smartphone, color: "text-[var(--data-success)]" },
+  email: { label: "Email", icon: Mail, color: "text-[var(--data-success-500)]" },
+  sms:   { label: "SMS",   icon: Smartphone, color: "text-[var(--data-success-500)]" },
   push:  { label: "Push",  icon: Megaphone, color: "text-[var(--text-secondary)]" },
-  mixto: { label: "Mixto", icon: Users, color: "text-[var(--data-warning)]" },
+  mixto: { label: "Mixto", icon: Users, color: "text-[var(--data-warning-500)]" },
 };
 
 const STATUS_META: Record<CampaignStatus, { label: string; color: string; bg: string }> = {
   borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
-  activa:     { label: "Activa",     color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  pausada:    { label: "Pausada",    color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  completada: { label: "Completada", color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  activa:     { label: "Activa",     color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  pausada:    { label: "Pausada",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  completada: { label: "Completada", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 const TRIGGER_LABELS: Record<TriggerType, string> = {
@@ -107,10 +107,10 @@ export default function MarketingAutomationTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Campañas activas", value: String(stats.active), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Campañas activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "ROI campañas", value: pct(stats.roi), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "ROI campañas", value: pct(stats.roi), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -169,9 +169,9 @@ export default function MarketingAutomationTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{c.sentCount.toLocaleString("es-PE")}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.openRate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.clickRate)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success)]">{c.conversions}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">{c.conversions}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}
@@ -192,7 +192,7 @@ export default function MarketingAutomationTab() {
           const steps = [
             { label: "Enviados", value: totalSent, color: "bg-[var(--accent-soft)]" },
             { label: "Abiertos", value: totalOpened, color: "bg-[var(--text-primary)]" },
-            { label: "Clicks", value: totalClicked, color: "bg-[var(--data-warning)]" },
+            { label: "Clicks", value: totalClicked, color: "bg-[var(--data-warning-500)]" },
             { label: "Conversiones", value: totalConv, color: "bg-[var(--accent-soft)]" },
           ];
           return (

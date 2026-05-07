@@ -43,16 +43,16 @@ function getUrgency(daysToStockout: number): Urgency {
 }
 
 const URGENCY_META: Record<Urgency, { label: string; color: string; bg: string }> = {
-  urgente: { label: "Urgente",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
-  pronto:  { label: "Pronto",   color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  normal:  { label: "Normal",   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  ok:      { label: "OK",       color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  urgente: { label: "Urgente",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+  pronto:  { label: "Pronto",   color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  normal:  { label: "Normal",   color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  ok:      { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
 };
 
 const TREND_ICON: Record<Trend, { icon: typeof ArrowUp; color: string; label: string }> = {
-  subiendo: { icon: ArrowUp,   color: "text-[var(--data-success)]", label: "Subiendo" },
+  subiendo: { icon: ArrowUp,   color: "text-[var(--data-success-500)]", label: "Subiendo" },
   estable:  { icon: Minus,     color: "text-[var(--text-tertiary)]",    label: "Estable" },
-  bajando:  { icon: ArrowDown, color: "text-[var(--data-error)]",     label: "Bajando" },
+  bajando:  { icon: ArrowDown, color: "text-[var(--data-error-500)]",     label: "Bajando" },
 };
 
 const CATEGORIES = ["Bebidas", "Abarrotes", "Lácteos", "Limpieza", "Snacks", "Licores"];
@@ -103,10 +103,10 @@ export default function PurchasePlanningTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Productos", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: BarChart3 },
-          { label: "Necesitan reorden", value: String(stats.needReorder), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: ShoppingCart },
-          { label: "Urgentes", value: String(stats.urgent), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
-          { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
+          { label: "Productos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: BarChart3 },
+          { label: "Necesitan reorden", value: String(stats.needReorder), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: ShoppingCart },
+          { label: "Urgentes", value: String(stats.urgent), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
+          { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -168,7 +168,7 @@ export default function PurchasePlanningTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{i.avgDailyDemand}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{i.reorderPoint}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                      <span className={cn("font-bold text-xs", i.suggestedQty > 0 ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>
+                      <span className={cn("font-bold text-xs", i.suggestedQty > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>
                         {i.suggestedQty > 0 ? `+${num(i.suggestedQty)}` : "—"}
                       </span>
                     </td>
@@ -184,11 +184,11 @@ export default function PurchasePlanningTab() {
       </div>
 
       {/* Algorithm note */}
-      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
         <p className="font-bold mb-1">Algoritmo de sugerencia</p>
         <p>Punto de reorden = demanda_diaria × plazo_entrega × (1 + factor_seguridad)</p>
         <p>Cantidad sugerida = máx(0, punto_reorden − stock_actual)</p>
-        <p className="mt-1 text-[var(--data-success)] dark:text-[var(--data-success)]">El factor de seguridad varía por producto (20-30%) según variabilidad de demanda.</p>
+        <p className="mt-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">El factor de seguridad varía por producto (20-30%) según variabilidad de demanda.</p>
       </div>
     </div>
   );

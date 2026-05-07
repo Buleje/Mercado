@@ -153,14 +153,14 @@ function ExpirySection({
                         <button
                           onClick={() => onLiquidar(row)}
                           title="Liquidar — crear promoción"
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors min-h-[32px]"
                         >
                           <Tag className="h-3 w-3" /> Liquidar
                         </button>
                         <button
                           onClick={() => onDarBaja(row)}
                           title="Dar de baja"
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors min-h-[32px]"
                         >
                           <Trash2 className="h-3 w-3" /> Dar baja
                         </button>
@@ -281,8 +281,8 @@ export default function ExpiryAlertsDashboard() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
@@ -293,7 +293,7 @@ export default function ExpiryAlertsDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[var(--data-warning)] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[var(--data-warning-500)] text-white flex items-center justify-center  shrink-0">
             <CalendarClock className="h-5 w-5" />
           </div>
           <div>
@@ -324,33 +324,33 @@ export default function ExpiryAlertsDashboard() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-amber-500">
           <div className="flex items-center gap-2 mb-1">
-            <Package className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+            <Package className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Productos</p>
           </div>
-          <p className="text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{batches.length}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{batches.length}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">por vencer en 30d</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+            <DollarSign className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Valor en riesgo</p>
           </div>
-          <p className="text-lg font-extrabold font-mono text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(totalValor)}</p>
+          <p className="text-lg font-extrabold font-mono text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(totalValor)}</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Lotes afectados</p>
           </div>
-          <p className="text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{lotesAfectados}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{lotesAfectados}</p>
         </div>
       </div>
 
       {/* Loading overlay for actions */}
       {actionLoading && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--data-success)] dark:text-[var(--data-success)]" />
-          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">Procesando acción...</p>
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
+          <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Procesando acción...</p>
         </div>
       )}
 
@@ -359,7 +359,7 @@ export default function ExpiryAlertsDashboard() {
         id="7d"
         label="Vencen en 7 días"
         rows={rows7}
-        colorClass="text-red-600 dark:text-red-400"
+        colorClass="text-[var(--data-error-600)] dark:text-red-400"
         bgClass="bg-red-100 dark:bg-red-900/30"
         borderClass="border-red-200 dark:border-red-800/40"
         collapsed={collapsed["7d"]}

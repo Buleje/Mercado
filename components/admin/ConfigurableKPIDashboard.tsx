@@ -176,7 +176,7 @@ function GaugeArc({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${dash} ${half}`}
         className={cn(
-          clamped >= 100 ? "stroke-primary" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]"
+          clamped >= 100 ? "stroke-primary" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning-500)]" : "stroke-[var(--data-error-500)]"
         )}
       />
     </svg>
@@ -235,9 +235,9 @@ function KpiCard({
         <div className={cn(
           "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
           trend > 0
-            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
             : trend < 0
-            ? "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]"
+            ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]"
             : "bg-gray-50 text-[var(--text-tertiary)] dark:bg-gray-800"
         )}>
           {trend > 0 ? <TrendingUp className="h-3 w-3" /> : trend < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
@@ -264,7 +264,7 @@ function KpiCard({
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              pct >= 100 ? "bg-primary" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+              pct >= 100 ? "bg-primary" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}
           />
@@ -290,7 +290,7 @@ function KpiCard({
         ) : (
           <button
             onClick={() => { setDraft(String(goal)); setEditing(true); }}
-            className="text-xs font-medium text-primary dark:text-[var(--data-success)] hover:underline"
+            className="text-xs font-medium text-primary dark:text-[var(--data-success-500)] hover:underline"
           >
             {fmtValue(goal, def.unit)}
           </button>

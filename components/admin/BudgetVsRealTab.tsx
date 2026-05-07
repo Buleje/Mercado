@@ -142,16 +142,16 @@ function ProgressBar({
   // Para ventas: verde >80%, amarillo 50-80%, rojo <50%
   // Para gastos: verde <80%, amarillo 80-100%, rojo >100%
   let color = "bg-[var(--accent-soft)]";
-  let textColor = "text-[var(--data-success)]";
+  let textColor = "text-[var(--data-success-500)]";
   let bgLight = "bg-[var(--accent-soft)]";
   if (isSales) {
-    if (pct >= 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success)]"; bgLight = "bg-[var(--accent-soft)]"; }
-    else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-amber-600"; bgLight = "bg-amber-100"; }
-    else { color = "bg-red-500"; textColor = "text-red-600"; bgLight = "bg-red-100"; }
+    if (pct >= 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-[var(--accent-soft)]"; }
+    else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-[var(--data-warning-600)]"; bgLight = "bg-amber-100"; }
+    else { color = "bg-[var(--data-error-500)]"; textColor = "text-[var(--data-error-600)]"; bgLight = "bg-red-100"; }
   } else {
-    if (pct < 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success)]"; bgLight = "bg-[var(--accent-soft)]"; }
-    else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-amber-600"; bgLight = "bg-amber-100"; }
-    else { color = "bg-red-500"; textColor = "text-red-600"; bgLight = "bg-red-100"; }
+    if (pct < 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-[var(--accent-soft)]"; }
+    else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-[var(--data-warning-600)]"; bgLight = "bg-amber-100"; }
+    else { color = "bg-[var(--data-error-500)]"; textColor = "text-[var(--data-error-600)]"; bgLight = "bg-red-100"; }
   }
 
   return (
@@ -201,7 +201,7 @@ function CategoryChart({
               <span className="font-semibold text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-none">
                 {c.label}
               </span>
-              <span className={cn("font-bold", isOver ? "text-[var(--data-error)]" : isUnder ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]")}>
+              <span className={cn("font-bold", isOver ? "text-[var(--data-error-500)]" : isUnder ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]")}>
                 {fmtPct(variance)}
               </span>
             </div>
@@ -219,7 +219,7 @@ function CategoryChart({
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Real</span>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error)]" : isUnder ? "bg-[var(--accent-soft)]" : "bg-primary")}
+                  className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error-500)]" : isUnder ? "bg-[var(--accent-soft)]" : "bg-primary")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
                 />
               </div>
@@ -233,7 +233,7 @@ function CategoryChart({
       <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[var(--text-tertiary)]">
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Presupuestado</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary" /> Real (OK)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--data-error)]" /> Real (exceso)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--data-error-500)]" /> Real (exceso)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Real (ahorro)</span>
       </div>
     </div>
@@ -400,7 +400,7 @@ export default function BudgetVsRealTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="text-[var(--text-secondary)] text-sm">Error cargando datos</p>
         <button
           onClick={load}
@@ -536,8 +536,8 @@ export default function BudgetVsRealTab() {
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ventas proyectadas</p>
               <div className="flex items-center gap-2">
                 {projection.sales >= (budgetConfig.salesGoal || projection.sales)
-                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-[var(--data-warning)] shrink-0" />}
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />}
                 <span className="text-lg font-extrabold text-[var(--text-primary)]">
                   {fmt(projection.sales)}
                 </span>
@@ -550,8 +550,8 @@ export default function BudgetVsRealTab() {
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Gastos proyectados</p>
               <div className="flex items-center gap-2">
                 {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
-                  ? <TrendingUp className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-[var(--data-success)] shrink-0" />}
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />}
                 <span className="text-lg font-extrabold text-[var(--text-primary)]">
                   {fmt(projection.expenses)}
                 </span>
@@ -564,11 +564,11 @@ export default function BudgetVsRealTab() {
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ganancia proyectada</p>
               <div className="flex items-center gap-2">
                 {(projection.sales - projection.expenses) >= 0
-                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-[var(--data-error)] shrink-0" />}
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />}
                 <span className={cn(
                   "text-lg font-extrabold",
-                  (projection.sales - projection.expenses) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                  (projection.sales - projection.expenses) >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                 )}>
                   {fmt(projection.sales - projection.expenses)}
                 </span>
@@ -597,22 +597,22 @@ export default function BudgetVsRealTab() {
         </div>
         <div className={cn(
           "bg-white rounded-xl border p-4",
-          totals.variance > 0 ? "border-[var(--data-error)]" : "border-[var(--data-success)]/30"
+          totals.variance > 0 ? "border-[var(--data-error-500)]" : "border-[var(--data-success-500)]/30"
         )}>
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Desviación gastos</p>
-          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
             {totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}
           </p>
-          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
             {fmtPct(totals.pct)}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-[var(--data-error)] font-extrabold text-lg">{overBudgetCount}</span>
+            <span className="text-[var(--data-error-500)] font-extrabold text-lg">{overBudgetCount}</span>
             <span className="text-xs text-[var(--text-tertiary)]">sobre</span>
-            <span className="text-[var(--data-success)] font-extrabold text-lg">{underBudgetCount}</span>
+            <span className="text-[var(--data-success-500)] font-extrabold text-lg">{underBudgetCount}</span>
             <span className="text-xs text-[var(--text-tertiary)]">bajo</span>
           </div>
         </div>
@@ -719,7 +719,7 @@ export default function BudgetVsRealTab() {
                     <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>
                     <td className={cn(
                       "px-4 py-3 text-right font-bold",
-                      status === "over" ? "text-[var(--data-error)]" : status === "under" ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]"
+                      status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
                     )}>
                       {fmtPct(variance)}
                     </td>
@@ -728,7 +728,7 @@ export default function BudgetVsRealTab() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            status === "over" ? "bg-[var(--data-error)]" : status === "under" ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]"
+                            status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]"
                           )}
                           style={{ width: `${Math.min(pctUsed, 100)}%` }}
                         />
@@ -736,17 +736,17 @@ export default function BudgetVsRealTab() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {status === "ok" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold">
                           <CheckCircle className="h-3 w-3" /> OK
                         </span>
                       )}
                       {status === "over" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error)] text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
                           <AlertTriangle className="h-3 w-3" /> Exceso
                         </span>
                       )}
                       {status === "under" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold">
                           <TrendingDown className="h-3 w-3" /> Ahorro
                         </span>
                       )}

@@ -15,9 +15,9 @@ type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; reven
 
 /* ── Config ── */
 const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
-  estrella: { label: "Estrellas", Icon: Star, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
-  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  estrella: { label: "Estrellas", Icon: Star, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
+  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
   perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
@@ -53,7 +53,7 @@ export default function BCGMatrixTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Star className="h-6 w-6 text-[var(--data-warning)]" /> Matriz BCG
+            <Star className="h-6 w-6 text-[var(--data-warning-500)]" /> Matriz BCG
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
         </div>
@@ -87,13 +87,13 @@ export default function BCGMatrixTab() {
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
             <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-[var(--data-success)]/40 dark:text-[var(--data-success)]/40">Estrellas</span>
+              <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Estrellas</span>
             </div>
             <div className="border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-[var(--data-success)]/40 dark:text-[var(--data-success)]/40">Interrogantes</span>
+              <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Interrogantes</span>
             </div>
             <div className="border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-[var(--data-warning)]/40 dark:text-[var(--data-warning)]/40">Vacas Lecheras</span>
+              <span className="text-sm font-semibold text-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]/40">Vacas Lecheras</span>
             </div>
             <div className="bg-[var(--data-error-50)]/50 dark:bg-red-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--text-secondary)]/40 dark:text-[var(--text-tertiary)]/40">Perros</span>
@@ -109,7 +109,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-[var(--accent-soft)] text-white" : p.quadrant === "vaca" ? "bg-[var(--data-warning)] text-white" : p.quadrant === "interrogante" ? "bg-[var(--accent-soft)] text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-[var(--accent-soft)] text-white" : p.quadrant === "vaca" ? "bg-[var(--data-warning-500)] text-white" : p.quadrant === "interrogante" ? "bg-[var(--accent-soft)] text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -141,7 +141,7 @@ export default function BCGMatrixTab() {
                     <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
-                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
+                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
                     <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
                     <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="px-5 py-3 text-center">
@@ -183,7 +183,7 @@ export default function BCGMatrixTab() {
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
               <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3">
@@ -198,7 +198,7 @@ export default function BCGMatrixTab() {
                   );
                 })()}
               </div>
-              <div className="col-span-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Recomendación</span><p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Recomendación</span><p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
           </div>
         </div>

@@ -58,14 +58,14 @@ type WidgetSize = "mini" | "medium" | "large";
 
 // Mejora 30: Grouped Quick Actions by category
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40", category: "Prioridades" },
-  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", category: "Análisis" },
-  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30 border-[var(--data-error)] dark:border-[var(--data-error)]/40", category: "Prioridades" },
-  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", category: "Estrategia" },
+  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40", category: "Prioridades" },
+  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Análisis" },
+  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40", category: "Prioridades" },
+  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Estrategia" },
   { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Estrategia" },
   { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Análisis" },
-  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30 border-[var(--data-info)] dark:border-[var(--data-info)]/40", category: "Análisis" },
-  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40", category: "Prioridades" },
+  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30 border-[var(--data-info-500)] dark:border-[var(--data-info-500)]/40", category: "Análisis" },
+  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40", category: "Prioridades" },
 ];
 
 const GREETING: Message = {
@@ -632,7 +632,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               <span className="font-bold">{pct}%</span>
             </div>
             <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-[var(--accent-soft)]" : pct > 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${pct}%` }} />
+              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-[var(--accent-soft)]" : pct > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -690,9 +690,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         {msg.actions.map((action, i) => (
           <div key={i} className={cn(
             "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] border transition-all",
-            action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" :
-            action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]" :
-            action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)]" :
+            action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+            action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
+            action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]" :
             "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)]"
           )}>
             {action.status === "pending" && (
@@ -701,8 +701,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               </button>
             )}
             {action.status === "executing" && <Loader2 className="h-3 w-3 animate-spin" />}
-            {action.status === "done" && <Check className="h-3 w-3 text-[var(--data-success)]" />}
-            {action.status === "error" && <XCircle className="h-3 w-3 text-[var(--data-error)]" />}
+            {action.status === "done" && <Check className="h-3 w-3 text-[var(--data-success-500)]" />}
+            {action.status === "error" && <XCircle className="h-3 w-3 text-[var(--data-error-500)]" />}
             <span className="flex-1">{action.result ?? action.label}</span>
             {/* Mejora 31: Direct navigate if action has a module target */}
             {action.status === "done" && !!action.payload.module && (
@@ -774,7 +774,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const renderMessages = () => (
     <>
       {isOffline && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           <WifiOff className="h-3.5 w-3.5 shrink-0" />
           <span>Sin conexión — respuestas pre-calculadas</span>
         </div>
@@ -813,7 +813,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             {msg.role === "user" && msg.content.length > 5 && (
               <button onClick={() => setFavorites(toggleFavorite(msg.content))}
                 className={cn("mt-0.5 text-[length:var(--ts-2xs)] flex items-center gap-0.5 transition-colors",
-                  favorites.includes(msg.content) ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)] hover:text-[var(--data-warning)]"
+                  favorites.includes(msg.content) ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)]"
                 )}>
                 <Star className="h-2.5 w-2.5" fill={favorites.includes(msg.content) ? "currentColor" : "none"} />
                 {favorites.includes(msg.content) ? "Favorita" : "Guardar"}
@@ -865,7 +865,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             rows={1}
             className={cn(
               "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
-              isListening ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-card-border"
+              isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-card-border"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
             disabled={loading}
@@ -873,7 +873,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         </div>
         <button onClick={toggleVoice}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
-            isListening ? "bg-[var(--data-error)] text-white hover:bg-[var(--data-error)] animate-pulse" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
           )}
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -1012,7 +1012,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <Bot className="h-7 w-7" />
           {/* Mejora 29: Badge with notification count */}
           {notifications.length > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[var(--data-error)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[var(--data-error-500)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1">
               {notifications.length}
             </span>
           )}
@@ -1020,7 +1020,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {notifications.length === 0 && (
             <span className={cn("absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-card",
               healthScore !== null
-                ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning)] animate-pulse" : "bg-[var(--data-error)] animate-pulse"
+                ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning-500)] animate-pulse" : "bg-[var(--data-error-500)] animate-pulse"
                 : "bg-[var(--accent-soft)] animate-pulse"
             )} />
           )}
@@ -1091,7 +1091,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 {isOffline ? "Modo offline" : "IA en tiempo real"}
                 {healthScore !== null && !isOffline && (
                   <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    healthScore > 70 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : healthScore > 40 ? "bg-[var(--data-warning)]/30 text-[var(--data-warning)]" : "bg-[var(--data-error)]/30 text-[var(--data-error)]"
+                    healthScore > 70 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
                   )}>
                     Salud: {healthScore}%
                   </span>
@@ -1125,14 +1125,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
           {/* Mejora 29: Enhanced notifications */}
           {notifications.length > 0 && showPanel === "chat" && (
-            <div className="px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 shrink-0">
+            <div className="px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border-b border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 shrink-0">
               <div className="flex items-center gap-2 mb-1">
-                <Bell className="h-3.5 w-3.5 text-[var(--data-error)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Alertas ({notifications.length})</span>
-                <button onClick={() => setNotifications([])} className="ml-auto text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:underline">Cerrar</button>
+                <Bell className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Alertas ({notifications.length})</span>
+                <button onClick={() => setNotifications([])} className="ml-auto text-[length:var(--ts-2xs)] text-[var(--data-error-500)] hover:underline">Cerrar</button>
               </div>
               {notifications.map((n, i) => (
-                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] leading-relaxed">{n}</p>
+                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] leading-relaxed">{n}</p>
               ))}
             </div>
           )}
@@ -1157,7 +1157,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                         <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Hoy</div>
                       </div>
                       <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center col-span-2">
-                        <div className="text-xl font-extrabold text-[var(--data-success)]">{stats.avgMs > 0 ? `${(stats.avgMs / 1000).toFixed(1)}s` : "—"}</div>
+                        <div className="text-xl font-extrabold text-[var(--data-success-500)]">{stats.avgMs > 0 ? `${(stats.avgMs / 1000).toFixed(1)}s` : "—"}</div>
                         <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Tiempo promedio</div>
                       </div>
                     </div>
@@ -1174,10 +1174,10 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                     {/* Mejora 34: Favorites section */}
                     {favorites.length > 0 && (
                       <div>
-                        <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase mb-1.5 flex items-center gap-1"><Star className="h-3 w-3 text-[var(--data-warning)]" /> Favoritas</p>
+                        <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase mb-1.5 flex items-center gap-1"><Star className="h-3 w-3 text-[var(--data-warning-500)]" /> Favoritas</p>
                         {favorites.map((f, i) => (
                           <button key={i} onClick={() => { setShowPanel("chat"); sendMessage(f); }} className="block w-full text-left text-[length:var(--ts-2xs)] text-[var(--text-secondary)] hover:text-primary py-1 truncate flex items-center gap-1.5">
-                            <Star className="h-3 w-3 shrink-0 text-[var(--data-warning)]" aria-hidden />
+                            <Star className="h-3 w-3 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
                             {f}
                           </button>
                         ))}

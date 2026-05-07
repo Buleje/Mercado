@@ -157,7 +157,7 @@ export default function WelcomeSurveyModal() {
             {/* Name */}
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                ¿Cuál es tu nombre? <span className="text-red-500">*</span>
+                ¿Cuál es tu nombre? <span className="text-[var(--data-error-500)]">*</span>
               </label>
               <input
                 type="text"
@@ -173,7 +173,7 @@ export default function WelcomeSurveyModal() {
             {/* Devices */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                ¿Desde dónde nos visitas? <span className="text-red-500">*</span>
+                ¿Desde dónde nos visitas? <span className="text-[var(--data-error-500)]">*</span>
               </label>
               <p className="text-xs text-gray-400 dark:text-gray-500">Puedes marcar más de uno</p>
               <div className="grid grid-cols-3 gap-2">
@@ -203,7 +203,7 @@ export default function WelcomeSurveyModal() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-xl">
+              <p className="text-sm text-[var(--data-error-500)] bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-xl">
                 {error}
               </p>
             )}

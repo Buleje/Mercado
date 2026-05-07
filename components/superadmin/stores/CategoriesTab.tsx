@@ -395,7 +395,7 @@ export function CategoriesTab() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-[var(--data-error)]">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -408,17 +408,17 @@ export function CategoriesTab() {
               <AlertTriangle className="h-5 w-5" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1 space-y-1.5">
-              <p className="text-sm font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <p className="text-sm font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {unlinkedReport.length === 1
                   ? "1 elemento sin tienda vinculada"
                   : `${unlinkedReport.length} elementos sin tienda vinculada`}
               </p>
-              <p className="text-xs text-[var(--data-error)]/80 dark:text-[var(--data-error)]/80 leading-snug">
+              <p className="text-xs text-[var(--data-error-500)]/80 dark:text-[var(--data-error-500)]/80 leading-snug">
                 Estos no aparecen poblados en <code>/tiendas</code> porque no hay tienda asignada.
                 Asigná al menos una tienda en el bloque &quot;Paso 1 · Categoría principal&quot;
                 o &quot;Tiendas vinculadas&quot; (subcategoría).
               </p>
-              <ul className="mt-1 space-y-0.5 max-h-32 overflow-y-auto text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <ul className="mt-1 space-y-0.5 max-h-32 overflow-y-auto text-[length:var(--ts-xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {unlinkedReport.map((it, i) =>
                   it.kind === "category" ? (
                     <li key={`cat-${it.catId}-${i}`} className="flex items-center gap-1.5">
@@ -426,7 +426,7 @@ export function CategoriesTab() {
                         Categoría
                       </span>
                       <span className="font-bold">{it.catLabel}</span>
-                      <span className="text-[var(--data-error)]/70">· {it.catId}</span>
+                      <span className="text-[var(--data-error-500)]/70">· {it.catId}</span>
                     </li>
                   ) : (
                     <li key={`sub-${it.catId}-${it.subId}-${i}`} className="flex items-center gap-1.5">
@@ -434,7 +434,7 @@ export function CategoriesTab() {
                         Subcat
                       </span>
                       <span className="font-bold">{it.subLabel}</span>
-                      <span className="text-[var(--data-error)]/70">en {it.catLabel}</span>
+                      <span className="text-[var(--data-error-500)]/70">en {it.catLabel}</span>
                     </li>
                   ),
                 )}
@@ -541,7 +541,7 @@ function CategoryRow({
               Categoría · {cat.id}
             </span>
             {dirty && (
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase text-amber-600">Sin guardar</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--data-warning-600)]">Sin guardar</span>
             )}
           </div>
 
@@ -576,7 +576,7 @@ function CategoryRow({
               className={
                 "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-colors " +
                 (isHidden
-                  ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--data-warning)]"
+                  ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")
               }
             >
@@ -600,7 +600,7 @@ function CategoryRow({
               className={
                 "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors " +
                 (status === "saved"
-                  ? "bg-emerald-100 text-emerald-700"
+                  ? "bg-emerald-100 text-[var(--data-success-700)]"
                   : dirty && status !== "saving"
                     ? "bg-[var(--accent)] text-white hover:opacity-90"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed")
@@ -626,7 +626,7 @@ function CategoryRow({
           </div>
 
           {status === "error" && errorMsg && (
-            <div className="flex items-start gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[length:var(--ts-xs)] text-[var(--data-error)]">
+            <div className="flex items-start gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[length:var(--ts-xs)] text-[var(--data-error-500)]">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -749,7 +749,7 @@ function SubCategoryCard({
               "inline-flex h-6 w-6 items-center justify-center rounded border transition-colors " +
               (sub.active
                 ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                : "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--data-warning)]")
+                : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)]")
             }
           >
             {sub.active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
@@ -758,7 +758,7 @@ function SubCategoryCard({
             type="button"
             onClick={onRemove}
             title="Eliminar"
-            className="inline-flex h-6 w-6 items-center justify-center rounded border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:border-rose-300"
+            className="inline-flex h-6 w-6 items-center justify-center rounded border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-rose-300"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -832,7 +832,7 @@ function SubCategoryCard({
                     />
                     <span className="truncate flex-1">{s.name}</span>
                     {ownZone && (
-                      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-success)]">
+                      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">
                         <MapPin className="h-2.5 w-2.5" />
                         {ownZone}
                       </span>
@@ -867,7 +867,7 @@ function SubCategoryCard({
                   </span>
                   {hasOwnZone ? (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[var(--data-success)] font-bold"
+                      className="inline-flex items-center gap-0.5 text-[var(--data-success-500)] font-bold"
                       title="Zona declarada por la propia tienda — autoritaria"
                     >
                       <MapPin className="h-2.5 w-2.5" />
@@ -970,7 +970,7 @@ function PrimaryStoreLinker({
                     type="button"
                     onClick={() => toggle(s.slug)}
                     title="Desvincular tienda"
-                    className="inline-flex h-6 w-6 items-center justify-center rounded border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:border-rose-300 shrink-0"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-rose-300 shrink-0"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -984,11 +984,11 @@ function PrimaryStoreLinker({
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 min-w-0">
                     <MapPin
-                      className={`h-3.5 w-3.5 shrink-0 ${hasOwnZone ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"}`}
+                      className={`h-3.5 w-3.5 shrink-0 ${hasOwnZone ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"}`}
                     />
                     {hasOwnZone ? (
                       <span
-                        className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] truncate max-w-[140px]"
+                        className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] truncate max-w-[140px]"
                         title={`Zona auto: ${ownZone}`}
                       >
                         {ownZone}
@@ -1056,7 +1056,7 @@ function PrimaryStoreLinker({
                     />
                     <span className="truncate flex-1">{s.name}</span>
                     {ownZone && (
-                      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-success)]">
+                      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">
                         <MapPin className="h-2.5 w-2.5" />
                         {ownZone}
                       </span>

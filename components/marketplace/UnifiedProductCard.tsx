@@ -283,7 +283,7 @@ export default function UnifiedProductCard({
         "group relative flex w-full flex-col overflow-hidden rounded-xl",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
         "transition-[border-color,box-shadow,transform] duration-200",
-        "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_rgba(0,180,166,0.28)]",
+        "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_color-mix(in oklab, var(--accent) 28%, transparent)]",
         isOutOfStock && "opacity-70",
       )}
       onMouseEnter={onMouseEnter}
@@ -475,14 +475,14 @@ export default function UnifiedProductCard({
                 className={cn(
                   "mt-1 inline-flex items-center gap-1 text-xs font-bold",
                   product.stock <= 3
-                    ? "text-[var(--data-error)] uppercase tracking-wider"
+                    ? "text-[var(--data-error-500)] uppercase tracking-wider"
                     : product.stock <= 5
-                      ? "text-[var(--data-warning)] uppercase tracking-wider"
+                      ? "text-[var(--data-warning-500)] uppercase tracking-wider"
                       : "text-[var(--text-tertiary)] font-medium normal-case tracking-normal",
                 )}
               >
                 {product.stock <= 3 && (
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)] animate-pulse" />
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)] animate-pulse" />
                 )}
                 {product.stock <= 5
                   ? `Quedan ${product.stock}${product.stock <= 3 ? " — se agota" : ""}`
@@ -512,7 +512,7 @@ export default function UnifiedProductCard({
                 isOutOfStock
                   ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded
-                    ? "bg-emerald-500 text-white scale-90 ring-emerald-600/30"
+                    ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
                     : inCartQty > 0
                       ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/40"
                       : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
@@ -554,7 +554,7 @@ export default function UnifiedProductCard({
         {compareLimitMsg && (
           <p
             role="alert"
-            className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-xs)] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+            className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-xs)] text-[var(--data-warning-700)] dark:bg-amber-950/30 dark:text-amber-400"
           >
             Máximo 3 productos para comparar
           </p>

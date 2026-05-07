@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { compare, hash } from "bcryptjs";
+import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { createPartnerToken, setPartnerCookie } from "@/lib/delivery/partner-session";
@@ -33,8 +33,12 @@ export async function POST(req: NextRequest) {
   }
 
   const phoneDigits = parsed.data.phone.replace(/\D/g, "");
-  const partner = await prisma.deliveryPartner.findFirst({
-    where: { phone: phoneDigits },
+  // SECURITY 2026-05-06 (audit delivery #12): si hay partners con el mismo
+  // phone en tenants distintos, probamos contra TODOS y el password matcheo
+  // identifica al partner real (mismo patrón que admin login). Antes
+  // findFirst devolvía un partner arbitrario.
+  const candidates = await prisma.deliveryPartner.findMany({
+    where: { phone: phoneDigits, isActive: true },
     select: {
       id: true,
       name: true,
@@ -42,34 +46,34 @@ export async function POST(req: NextRequest) {
       isActive: true,
       passwordHash: true,
     },
+    take: 10,
   });
 
-  if (!partner) {
+  if (candidates.length === 0) {
     return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
   }
-  if (!partner.isActive) {
-    return NextResponse.json(
-      { error: "Tu cuenta está pendiente de aprobación" },
-      { status: 403 },
-    );
+
+  let partner: (typeof candidates)[number] | null = null;
+  for (const c of candidates) {
+    if (!c.passwordHash) continue;
+    if (await compare(parsed.data.password, c.passwordHash)) {
+      partner = c;
+      break;
+    }
   }
 
-  // Auto-bootstrap: si no hay passwordHash, primer login = phone como password.
-  // Tras login se obliga a cambiar (TODO endpoint /me/password).
-  let passwordOk = false;
-  if (partner.passwordHash) {
-    passwordOk = await compare(parsed.data.password, partner.passwordHash);
-  } else if (parsed.data.password === phoneDigits) {
-    passwordOk = true;
-    // Persistir el hash bootstrapeado para próximos logins.
-    const hashed = await hash(phoneDigits, 10);
-    await prisma.deliveryPartner.update({
-      where: { id: partner.id },
-      data: { passwordHash: hashed },
-    });
-  }
-
-  if (!passwordOk) {
+  if (!partner) {
+    // Detectar si todos los matches son partners sin passwordHash → mensaje específico
+    const allBootstrap = candidates.every((c) => !c.passwordHash);
+    if (allBootstrap) {
+      logger.warn("[delivery/me/login] partner sin passwordHash — bootstrap manual requerido", {
+        candidates: candidates.length,
+      });
+      return NextResponse.json(
+        { error: "Tu cuenta está pendiente de configuración. Pide al administrador que te envíe el password inicial." },
+        { status: 403 },
+      );
+    }
     return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
   }
 
@@ -82,7 +86,11 @@ export async function POST(req: NextRequest) {
   logger.info("[delivery/me/login] success", { partnerId: partner.id });
   return res;
   } catch (err) {
-    logger.error("[delivery/me/login] error", { error: String(err), stack: err instanceof Error ? err.stack : null });
-    return NextResponse.json({ error: "login failed", detail: String(err) }, { status: 500 });
+    // SECURITY 2026-05-06: no filtrar `detail` con stack al cliente.
+    logger.error("[delivery/me/login] error", {
+      error: String(err),
+      stack: err instanceof Error ? err.stack : null,
+    });
+    return NextResponse.json({ error: "login failed" }, { status: 500 });
   }
 }

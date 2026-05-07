@@ -86,7 +86,7 @@ export default function ChatBubble({
             <MessageCircle className="h-6 w-6" />
             {unread > 0 && (
               <span
-                className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[length:var(--ts-2xs)] font-bold"
+                className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1.5 text-[length:var(--ts-2xs)] font-bold"
                 aria-label={`${unread} mensajes sin leer`}
               >
                 {unread > 99 ? "99+" : unread}
@@ -109,7 +109,7 @@ export default function ChatBubble({
           aria-label={`Chat con ${storeName}`}
         >
           {/* Header */}
-          <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-[#00B4A6] p-3 text-white dark:border-slate-700">
+          <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-[var(--accent)] p-3 text-white dark:border-slate-700">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
                 <StoreIcon className="h-5 w-5" />
@@ -173,7 +173,7 @@ export default function ChatBubble({
               </div>
 
               {error && (
-                <div className="border-t border-red-200 bg-red-50 p-2 text-center text-[length:var(--ts-2xs)] text-red-700 dark:border-red-900 dark:bg-red-950">
+                <div className="border-t border-red-200 bg-red-50 p-2 text-center text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:border-red-900 dark:bg-red-950">
                   {error}
                 </div>
               )}
@@ -222,7 +222,7 @@ function StartForm({
           onChange={(e) => setName(e.target.value)}
           required
           maxLength={150}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           placeholder="María"
         />
       </label>
@@ -236,7 +236,7 @@ function StartForm({
           required
           minLength={6}
           maxLength={20}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           placeholder="+51 987 654 321"
         />
       </label>
@@ -249,13 +249,13 @@ function StartForm({
           required
           maxLength={4000}
           rows={3}
-          className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           placeholder="Hola, ¿tienen arroz costeño?"
         />
       </label>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-2 text-[length:var(--ts-2xs)] text-red-700 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-md bg-red-50 p-2 text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:bg-red-950 dark:text-red-300">
           {error}
         </div>
       )}
@@ -263,7 +263,7 @@ function StartForm({
       <button
         type="submit"
         disabled={loading || !name.trim() || !phone.trim() || !message.trim()}
-        className="rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00B4A6]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
       >
         {loading ? "Abriendo chat…" : "Iniciar chat"}
       </button>
@@ -294,7 +294,7 @@ function MessageRow({ msg }: { msg: import("./types").PublicMessageView }) {
       <div
         className={cn(
           "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-white",
-          isBuyer ? "bg-slate-400" : "bg-[#00B4A6]",
+          isBuyer ? "bg-slate-400" : "bg-[var(--accent)]",
         )}
       >
         {isBuyer ? <User className="h-3.5 w-3.5" /> : <StoreIcon className="h-3.5 w-3.5" />}
@@ -305,7 +305,7 @@ function MessageRow({ msg }: { msg: import("./types").PublicMessageView }) {
             "rounded-2xl px-3 py-1.5 text-sm",
             isBuyer
               ? "rounded-br-sm bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100"
-              : "rounded-bl-sm bg-[#00B4A6] text-white",
+              : "rounded-bl-sm bg-[var(--accent)] text-white",
           )}
         >
           <div className="whitespace-pre-wrap break-words">{msg.body}</div>
@@ -362,14 +362,14 @@ function Composer({
         maxLength={4000}
         disabled={disabled || sending}
         placeholder="Escribí un mensaje…"
-        className="flex-1 resize-none rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:border-[#00B4A6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20 dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900 disabled:opacity-60"
+        className="flex-1 resize-none rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:border-[var(--accent)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900 disabled:opacity-60"
         style={{ minHeight: "36px", maxHeight: "100px" }}
       />
       <button
         type="button"
         onClick={handleSend}
         disabled={disabled || sending || !body.trim()}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00B4A6] text-white transition hover:bg-[#00B4A6]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
         aria-label="Enviar"
       >
         <Send className={cn("h-4 w-4", sending && "animate-pulse")} />

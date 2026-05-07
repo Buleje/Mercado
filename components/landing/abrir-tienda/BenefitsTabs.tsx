@@ -45,7 +45,7 @@ const CATEGORIES: Category[] = [
     // Brandon mayo 2026: quitar métricas inventadas + paleta consistente
     // (no naranja/rosa). Ahora un beneficio real verificable.
     metric: { value: "24/7", label: "disponible para tus clientes" },
-    bg: "from-[var(--accent)] via-[var(--accent)] to-emerald-700",
+    bg: "from-[var(--accent)] via-[var(--accent)] to-[var(--data-success-700)]",
   },
   {
     id: "cobrar",
@@ -60,7 +60,7 @@ const CATEGORIES: Category[] = [
       "Facturación SUNAT integrada",
     ],
     metric: { value: "Yape · Plin · Tarjeta", label: "todos los métodos del país" },
-    bg: "from-[var(--accent)] via-teal-600 to-emerald-700",
+    bg: "from-[var(--accent)] via-[var(--accent-dark)] to-[var(--data-success-700)]",
   },
   {
     id: "entregar",
@@ -90,7 +90,7 @@ const CATEGORIES: Category[] = [
       "Reseñas y reputación pública",
     ],
     metric: { value: "CRM completo", label: "cada cliente, cada compra, en un lugar" },
-    bg: "from-[var(--accent)] via-emerald-600 to-emerald-800",
+    bg: "from-[var(--accent)] via-[var(--data-success-600)] to-emerald-800",
   },
 ];
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   UserCog, Plus, Pencil, Trash2, KeyRound, X, Check,
   Loader2, ShieldCheck, ShieldAlert, ShieldOff, Eye, EyeOff,
@@ -21,9 +21,9 @@ type AdminUserRow = {
 };
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
-  admin: { label: "Administrador", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", variant: "error", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", variant: "info", icon: ShieldAlert },
-  almacenero: { label: "Almacenero", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", variant: "warning", icon: ShieldOff },
+  admin: { label: "Administrador", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", variant: "error", icon: ShieldCheck },
+  cajero: { label: "Cajero", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", variant: "info", icon: ShieldAlert },
+  almacenero: { label: "Almacenero", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", variant: "warning", icon: ShieldOff },
 };
 
 type FormMode = "create" | "edit-info" | "reset-password" | null;
@@ -96,9 +96,18 @@ export default function AdminUsersTab() {
     setShowPw(false);
   }
 
+  // BUG-FIX (audit 2026-05-05): cleanup del setTimeout para evitar
+  // setState después de unmount cuando navegan a otra tab antes del flash.
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
   function flash(msg: string) {
     setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3000);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setSuccessMsg(null), 3000);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -177,6 +186,15 @@ export default function AdminUsersTab() {
   }
 
   async function handleDelete(id: string) {
+    // BUG-FIX (audit 2026-05-05): guard contra borrar el último owner activo —
+    // el lock-out total del tenant es irreversible sin acceso a BD.
+    const target = users.find((u) => u.id === id);
+    const activeOwners = users.filter((u) => u.role === "owner" && u.active !== false);
+    if (target?.role === "owner" && activeOwners.length <= 1) {
+      setError("No se puede eliminar el último owner activo del tenant. Creá otro owner primero o desactivalo en lugar de eliminar.");
+      setConfirmDeleteId(null);
+      return;
+    }
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin-users/${id}`, { method: "DELETE" });
@@ -210,14 +228,14 @@ export default function AdminUsersTab() {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Check className="h-4 w-4 shrink-0" /> {successMsg}
         </div>
       )}
 
       {/* Global error */}
       {error && !formMode && (
-        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold border border-[var(--data-error)] dark:border-[var(--data-error)]">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-semibold border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
           <X className="h-4 w-4 shrink-0" /> {error}
         </div>
       )}
@@ -279,14 +297,14 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openResetPw(u)}
                           title="Cambiar contraseña"
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success-500)] transition-colors"
                         >
                           <KeyRound className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => { setConfirmDeleteId(u.id); setError(null); }}
                           title="Eliminar usuario"
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)] transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -407,15 +425,15 @@ export default function AdminUsersTab() {
         <div className="modal-backdrop p-4" onClick={() => setConfirmDeleteId(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 flex items-center justify-center shrink-0">
-                <Trash2 className="h-5 w-5 text-[var(--data-error)]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center shrink-0">
+                <Trash2 className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
                 <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Eliminar usuario</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer</p>
               </div>
             </div>
-            {error && <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">{error}</p>}
+            {error && <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">{error}</p>}
             <div className="flex flex-wrap gap-3 mt-2">
               <button
                 onClick={() => { setConfirmDeleteId(null); setError(null); }}
@@ -426,7 +444,7 @@ export default function AdminUsersTab() {
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
                 disabled={deleting}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-60"
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-60"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Eliminar"}
               </button>
@@ -467,7 +485,7 @@ function RoleSelect({ value, onChange }: { value: string; onChange: (v: string) 
 function FormError({ msg }: { msg: string | null }) {
   if (!msg) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm border border-[var(--data-error)] dark:border-[var(--data-error)]">
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
       <X className="h-4 w-4 shrink-0" /> {msg}
     </div>
   );

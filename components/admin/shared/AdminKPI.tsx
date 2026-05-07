@@ -45,7 +45,7 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
                 <span
                   className={cn(
                     "text-xs font-medium inline-flex items-center gap-0.5",
-                    trend.value >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                    trend.value >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                   )}
                 >
                   {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value).toFixed(1)}%

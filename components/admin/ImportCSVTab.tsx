@@ -253,8 +253,8 @@ export default function ImportCSVTab() {
 
       {/* Success */}
       {phase === "success" && (
-        <div className="bg-white dark:bg-card border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-6 text-center">
-          <CheckCircle className="h-10 w-10 text-[var(--data-success)] mx-auto mb-3" />
+        <div className="bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-6 text-center">
+          <CheckCircle className="h-10 w-10 text-[var(--data-success-500)] mx-auto mb-3" />
           <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
             Importación exitosa
           </p>
@@ -262,14 +262,14 @@ export default function ImportCSVTab() {
             {importedCount} producto{importedCount !== 1 ? "s" : ""} importado{importedCount !== 1 ? "s" : ""} correctamente
           </p>
           {errors.length > 0 && (
-            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-              <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-1">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
+              <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-1">
                 <AlertCircle className="h-3 w-3 inline mr-1" />
                 {errors.length} fila{errors.length !== 1 ? "s" : ""} con advertencias:
               </p>
               <div className="max-h-32 overflow-y-auto space-y-1">
                 {errors.map((err, i) => (
-                  <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                  <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                     Fila {err.row}: {err.message}
                   </p>
                 ))}
@@ -284,15 +284,15 @@ export default function ImportCSVTab() {
 
       {/* Error */}
       {phase === "error" && (
-        <div className="bg-white dark:bg-card border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-6 text-center">
-          <X className="h-10 w-10 text-[var(--data-error)] mx-auto mb-3" />
+        <div className="bg-white dark:bg-card border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-6 text-center">
+          <X className="h-10 w-10 text-[var(--data-error-500)] mx-auto mb-3" />
           <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
             Error en la importación
           </p>
-          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-error)] dark:border-[var(--data-error)]/30">
+          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
             <div className="max-h-32 overflow-y-auto space-y-1">
               {errors.map((err, i) => (
-                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)]">
+                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   {err.row > 0 ? `Fila ${err.row}: ` : ""}{err.message}
                 </p>
               ))}
@@ -306,9 +306,9 @@ export default function ImportCSVTab() {
 
       {/* Help box */}
       {phase === "idle" && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-          <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Formato esperado del CSV</p>
-          <code className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] block bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-2">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+          <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Formato esperado del CSV</p>
+          <code className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] block bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-2">
             sku,nombre,precio,stock,costo<br />
             PRD001,Arroz Extra 5kg,25.50,100,18.00<br />
             PRD002,Aceite Vegetal 1L,12.90,50,9.50

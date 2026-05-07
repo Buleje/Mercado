@@ -247,9 +247,9 @@ export default function ImportExportTab() {
                 <LoadingState message="Procesando archivo..." />
               ) : importResult ? (
                 <div className="flex flex-col items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[var(--data-success)]" />
-                  <p className="text-sm font-bold text-[var(--data-success)]">{importResult.count} registros importados</p>
-                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning)]">{importResult.errors} errores encontrados</p>}
+                  <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
+                  <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} registros importados</p>
+                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} errores encontrados</p>}
                   <button onClick={() => setImportResult(null)} className="text-xs text-primary font-bold underline">Importar otro</button>
                 </div>
               ) : (
@@ -267,10 +267,10 @@ export default function ImportExportTab() {
           </div>
 
           {/* Rules */}
-          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/10 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 p-4">
+          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/10 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 p-4">
             <div className="flex flex-wrap items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0 mt-0.5" />
-              <div className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
+              <div className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                 <p className="font-bold mb-1">Reglas para subir archivos:</p>
                 <ul className="list-disc ml-4 space-y-0.5">
                   <li>La primera fila debe contener los encabezados</li>
@@ -301,7 +301,7 @@ export default function ImportExportTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.records}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>

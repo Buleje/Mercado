@@ -330,7 +330,7 @@ export default function SupplierDashboard({
               onClick={() => setActiveTab(t.id)}
               className={`min-h-[44px] flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${
                 activeTab === t.id
-                  ? "bg-teal-700 text-white shadow-sm"
+                  ? "bg-[var(--accent-dark)] text-white shadow-sm"
                   : "text-gray-600 hover:bg-white/50 dark:text-gray-400 dark:hover:bg-white/5"
               }`}
             >
@@ -343,7 +343,7 @@ export default function SupplierDashboard({
         {activeTab === "products" && (
           <section aria-label="Mis productos">
             {errorProducts && (
-              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
                 {errorProducts}{" "}
                 <button onClick={fetchProducts} className="underline hover:no-underline">
                   Reintentar
@@ -397,7 +397,7 @@ export default function SupplierDashboard({
                             disabled={updatingId === p.id}
                             aria-label={p.isActive ? "Despublicar producto" : "Publicar producto"}
                             className={`relative inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:opacity-50 ${
-                              p.isActive ? "bg-teal-600" : "bg-gray-300 dark:bg-gray-600"
+                              p.isActive ? "bg-[var(--accent-dark)]" : "bg-gray-300 dark:bg-gray-600"
                             }`}
                           >
                             <span
@@ -420,7 +420,7 @@ export default function SupplierDashboard({
         {activeTab === "orders" && (
           <section aria-label="Órdenes mayoristas">
             {errorOrders && (
-              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
                 {errorOrders}{" "}
                 <button onClick={fetchOrders} className="underline hover:no-underline">
                   Reintentar
@@ -483,14 +483,14 @@ export default function SupplierDashboard({
                                 <button
                                   onClick={() => updateOrderStatus(o.id, "approved")}
                                   disabled={updatingId === o.id}
-                                  className="min-h-[36px] rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                                  className="min-h-[36px] rounded-lg bg-[var(--accent-dark)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent-dark)] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
                                 >
                                   Aprobar
                                 </button>
                                 <button
                                   onClick={() => updateOrderStatus(o.id, "rejected")}
                                   disabled={updatingId === o.id}
-                                  className="min-h-[36px] rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500"
+                                  className="min-h-[36px] rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-[var(--data-error-700)] hover:bg-red-200 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500"
                                 >
                                   Rechazar
                                 </button>
@@ -500,7 +500,7 @@ export default function SupplierDashboard({
                               <button
                                 onClick={() => updateOrderStatus(o.id, "shipped")}
                                 disabled={updatingId === o.id}
-                                className="min-h-[36px] rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-900/30 dark:text-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
+                                className="min-h-[36px] rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-[var(--data-success-700)] hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-900/30 dark:text-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
                               >
                                 Marcar enviado
                               </button>
@@ -538,14 +538,14 @@ export default function SupplierDashboard({
                   </div>
                   <div className="rounded-2xl p-5" style={{ background: "rgba(15,118,110,0.10)", border: "1px solid rgba(15,118,110,0.20)" }}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Neto a cobrar</p>
-                    <p className="mt-1 text-2xl font-bold text-teal-700 dark:text-teal-400">{fmt(netAmount)}</p>
+                    <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)] dark:text-teal-400">{fmt(netAmount)}</p>
                   </div>
                 </>
               )}
             </div>
 
             {errorComm && (
-              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+              <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
                 {errorComm}{" "}
                 <button onClick={fetchCommissions} className="underline hover:no-underline">
                   Reintentar

@@ -49,13 +49,13 @@ export function SidebarFlyout({
   const themeStyles = {
     cristal: {
       bg: "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]",
-      arrow: "bg-[#0b1f2b] border-[rgba(0,180,166,0.2)]",
-      border: "border-[rgba(0,180,166,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(52,212,190,0.08)]",
-      activeBg: "bg-linear-to-r from-[rgba(52,212,190,0.22)] via-[rgba(0,180,166,0.14)] to-[rgba(0,180,166,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#34d4be]",
+      arrow: "bg-[#0b1f2b] border-[color-mix(in_oklab,var(--accent)_30%,transparent)]",
+      border: "border-[color-mix(in_oklab,var(--accent)_30%,transparent)] shadow-[var(--shadow-lg)] ring-1 ring-[color-mix(in_oklab,var(--accent)_15%,transparent)]",
+      activeBg: "bg-linear-to-r from-[color-mix(in_oklab,var(--accent)_35%,transparent)] via-[color-mix(in_oklab,var(--accent)_22%,transparent)] to-[color-mix(in_oklab,var(--accent)_8%,transparent)] text-white font-semibold shadow-[inset_3px_0_0_var(--accent)]",
       inactiveText: "text-white/70",
       hoverBg: "hover:bg-white/[0.05] hover:text-white",
-      indicator: "bg-[#34d4be]",
-      activeIcon: "text-[#5eead4] drop-shadow-[0_0_4px_rgba(52,212,190,0.5)]",
+      indicator: "bg-[var(--accent)]",
+      activeIcon: "text-[color-mix(in_oklab,var(--accent)_70%,white)] drop-shadow-[0_0_4px_color-mix(in_oklab,var(--accent)_55%,transparent)]",
       inactiveIcon: "text-white/45",
     },
     dark: {
@@ -65,8 +65,8 @@ export function SidebarFlyout({
       activeBg: "bg-white/[0.08] text-white",
       inactiveText: "text-zinc-300",
       hoverBg: "hover:bg-white/[0.04] hover:text-white",
-      indicator: "bg-[var(--data-success)]",
-      activeIcon: "text-[var(--data-success)]",
+      indicator: "bg-[var(--data-success-500)]",
+      activeIcon: "text-[var(--data-success-500)]",
       inactiveIcon: "text-zinc-500",
     },
     light: {

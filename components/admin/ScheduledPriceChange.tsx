@@ -77,10 +77,10 @@ function localNowPlus(hours: number) {
 }
 
 const STATUS_STYLES: Record<PriceChangeEvent["status"], { label: string; cls: string }> = {
-  pending:   { label: "Pendiente", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
-  active:    { label: "Activo",    cls: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  pending:   { label: "Pendiente", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
+  active:    { label: "Activo",    cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   done:      { label: "Finalizado", cls: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
-  cancelled: { label: "Cancelado", cls: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
+  cancelled: { label: "Cancelado", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };
 
 // ── Add event form ─────────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Precio nuevo
             {priceDiff !== null && (
-              <span className={cn("ml-2 font-semibold", isIncrease ? "text-[var(--data-error)]" : "text-primary")}>
+              <span className={cn("ml-2 font-semibold", isIncrease ? "text-[var(--data-error-500)]" : "text-primary")}>
                 {isIncrease ? "+" : ""}{priceDiff}%
               </span>
             )}
@@ -363,7 +363,7 @@ export default function ScheduledPriceChange() {
                     <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                       {event.productName}
                     </span>
-                    <span className={cn("text-xs font-semibold", isIncrease ? "text-[var(--data-error)]" : "text-primary")}>
+                    <span className={cn("text-xs font-semibold", isIncrease ? "text-[var(--data-error-500)]" : "text-primary")}>
                       {isIncrease ? "sube" : "baja"} {Math.abs(parseFloat(diff))}%
                     </span>
                   </div>
@@ -386,14 +386,14 @@ export default function ScheduledPriceChange() {
                   {status === "pending" && (
                     <button
                       onClick={() => handleCancel(event.id)}
-                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-warning)] px-2 py-1 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors"
+                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] px-2 py-1 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors"
                     >
                       Cancelar
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 rounded-lg transition-colors"
                     aria-label="Eliminar"
                   >
                     <Trash2 size={13} />

@@ -10,6 +10,7 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { toNumOrZero } from "@/lib/decimal-utils";
@@ -121,6 +122,10 @@ type RawResult = {
 };
 
 export async function GET(req: NextRequest) {
+  // SECURITY 2026-05-06: rate limit GENEROUS para frenar scraping.
+  const rl = applyRateLimit(req, "GENEROUS", "marketplace-search");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   const requestId = req.headers.get("x-request-id") ?? traceId;
 
@@ -235,6 +240,7 @@ export async function GET(req: NextRequest) {
     }
 
     const topItems = finalResults.slice(0, 50);
+    // F1: cross-tenant público — "main" es fallback legítimo para enriquecimiento de imágenes
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
     const productIds = topItems.map((r) => r.product.id);
 

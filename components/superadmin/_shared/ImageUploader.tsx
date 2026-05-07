@@ -202,7 +202,7 @@ export default function ImageUploader({
       />
 
       {errorMsg && (
-        <div className="mt-1 flex items-start gap-1 text-[length:var(--ts-2xs)] text-[var(--data-error)]">
+        <div className="mt-1 flex items-start gap-1 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
           <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
           <span className="leading-tight">{errorMsg}</span>
         </div>
@@ -212,7 +212,7 @@ export default function ImageUploader({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] hover:underline"
+          className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] hover:underline"
         >
           <Trash2 className="h-3 w-3" />
           Quitar

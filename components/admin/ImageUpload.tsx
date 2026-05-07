@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { validateProductImage, type ImageValidationResult } from "@/lib/image-validator";
 import { ImageValidationPanel } from "@/components/admin/shared/ImageValidationPanel";
 import { installDragGuard, uninstallDragGuard, compressIfLarge } from "@/lib/image-upload-utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ImageUploadProps = {
   value?: string;
@@ -87,8 +88,12 @@ export default function ImageUpload({
         formData.append("file", finalFile);
         formData.append("folder", folder);
 
+        // CSRF: proxy.ts valida X-CSRF-Token en mutaciones (POST/PUT/PATCH/DELETE).
+        // Sin este header, devuelve 403. No seteamos Content-Type — el browser lo
+        // genera con boundary correcto para multipart/form-data.
         const res = await fetch("/api/upload", {
           method: "POST",
+          headers: csrfHeaders(),
           body: formData,
         });
 
@@ -202,7 +207,7 @@ export default function ImageUpload({
             <button
               type="button"
               onClick={handleClear}
-              className="bg-[var(--data-error)]/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--data-error)] transition-colors"
+              className="bg-[var(--data-error-500)]/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--data-error-500)] transition-colors"
             >
               Quitar
             </button>
@@ -270,7 +275,7 @@ export default function ImageUpload({
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-1.5 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <X className="h-3 w-3" />
           {error}
         </div>

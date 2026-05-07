@@ -40,7 +40,7 @@ const RECIPES: Recipe[] = [
     emoji: "🥗",
     time: "10 min",
     servings: 2,
-    gradient: "linear-gradient(135deg, #00B4A6, #009690)",
+    gradient: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
     ingredients: ["lechuga", "tomate", "palta", "limón", "aceite"],
   },
   {
@@ -85,7 +85,7 @@ export default function RecipeSuggestions() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className={`text-center mb-10 sm:mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <span className="inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             Inspiración
           </span>

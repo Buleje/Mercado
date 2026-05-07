@@ -170,7 +170,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                   )}
                 >
                   {isDown ? (
-                    <TrendingDown className="h-4 w-4 text-red-500" />
+                    <TrendingDown className="h-4 w-4 text-[var(--data-error-500)]" />
                   ) : (
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   )}
@@ -183,7 +183,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                     <span
                       className={cn(
                         "font-bold",
-                        isDown ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+                        isDown ? "text-[var(--data-error-600)] dark:text-red-400" : "text-green-600 dark:text-green-400"
                       )}
                     >
                       {pct}%

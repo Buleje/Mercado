@@ -151,8 +151,8 @@ export const BulejeMetricTableCard = memo(function BulejeMetricTableCard({
                   <span
                     className={cn(
                       "block text-[length:var(--ts-2xs)] font-bold tabular-nums",
-                      dir === "up" && "text-[var(--data-success)]",
-                      dir === "down" && "text-[var(--data-error)]",
+                      dir === "up" && "text-[var(--data-success-500)]",
+                      dir === "down" && "text-[var(--data-error-500)]",
                       dir === "flat" && "text-[var(--text-tertiary)]",
                     )}
                   >

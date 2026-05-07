@@ -34,6 +34,27 @@ export async function POST(req: NextRequest) {
 
     const { phone } = parsed.data;
 
+    // SECURITY 2026-05-06 (audit privacy): si hay customer-session, exigir
+    // que el phone matchee el del JWT. Sin session, devolver respuesta
+    // mínima (items vacíos) — antes cualquier visitante podía leer hábitos
+    // de compra de otros con solo conocer el phone.
+    try {
+      const { CUSTOMER_SESSION, getCustomerPayload } = await import("@/lib/auth/customer-session");
+      const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+      if (sessionToken) {
+        const payload = await getCustomerPayload(sessionToken);
+        const sessionPhone = (payload?.customerId ?? "").replace(/\D/g, "");
+        const queryPhone = phone.replace(/\D/g, "");
+        if (sessionPhone && sessionPhone !== queryPhone) {
+          return NextResponse.json({ items: [] });
+        }
+      } else {
+        // Anónimo: no exponer carrito. Antes cualquiera con phone target
+        // veía storeSlug + customerName + itemsJson + total.
+        return NextResponse.json({ items: [] });
+      }
+    } catch { /* noop */ }
+
     // SECURITY (2026-04-29): scope por tenantId del request — antes era
     // cross-tenant. Si no hay tenant resuelto, no devolvemos nada.
     const tenantId = req.headers.get("x-tenant-id");

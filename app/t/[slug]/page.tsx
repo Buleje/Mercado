@@ -113,7 +113,7 @@ export async function generateMetadata({
 function TenantPageSkeleton() {
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)] animate-pulse">
-      <section className="bg-[#00B4A6]" style={{ minHeight: "320px" }}>
+      <section className="bg-[var(--accent)]" style={{ minHeight: "320px" }}>
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <div className="w-24 h-24 rounded-3xl mx-auto mb-6 bg-white/20" />
           <div className="h-10 w-60 bg-white/20 rounded-lg mx-auto mb-3" />
@@ -151,7 +151,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
 
-  const primary = customization.primaryColor || tenant.primaryColor || "#00B4A6";
+  const primary = customization.primaryColor || tenant.primaryColor || "var(--accent)";
   const accent = customization.accentColor || "#f4a261";
   // El logo y el título usan el nombre público real (storeTheme.storeName) en
   // lugar de `tenant.name` — para que el comercio nunca vea el nombre raw del
@@ -170,15 +170,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     },
     pro: {
       label: "Pro",
-      className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
+      className: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/30 dark:text-teal-400",
     },
     business: {
       label: "Business",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      className: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400",
     },
     enterprise: {
       label: "Enterprise",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      className: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
     },
   };
   const badge = planBadge[tenant.plan] ?? planBadge.free;

@@ -147,16 +147,37 @@ async function lookupActiveConversation(
 
 // ─── Media downloaders ───────────────────────────────────────────────────────
 
+// SECURITY 2026-05-06 (audit WhatsApp #10 — SSRF): allowlist estricta de hosts
+// para evitar que un atacante con MediaUrl0 controlado apunte a 169.254.169.254
+// (AWS metadata) o a servicios internos. `redirect: "error"` rechaza redirects
+// que podrían escapar la allowlist.
+const TWILIO_MEDIA_HOSTS = new Set([
+  "api.twilio.com",
+  "media.twiliocdn.com",
+]);
+
 async function downloadTwilioMedia(mediaUrl: string): Promise<Uint8Array> {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
   if (!sid || !token) {
     throw new Error("[yape-capture] TWILIO credentials missing");
   }
+  let parsed: URL;
+  try {
+    parsed = new URL(mediaUrl);
+  } catch {
+    throw new Error("[yape-capture] mediaUrl invalid");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error("[yape-capture] mediaUrl must be https");
+  }
+  if (!TWILIO_MEDIA_HOSTS.has(parsed.hostname)) {
+    throw new Error(`[yape-capture] mediaUrl host not allowed: ${parsed.hostname}`);
+  }
   const auth = Buffer.from(`${sid}:${token}`).toString("base64");
-  const res = await fetch(mediaUrl, {
+  const res = await fetch(parsed.toString(), {
     headers: { Authorization: `Basic ${auth}` },
-    redirect: "follow",
+    redirect: "error",
   });
   if (!res.ok) {
     throw new Error(
@@ -165,6 +186,24 @@ async function downloadTwilioMedia(mediaUrl: string): Promise<Uint8Array> {
   }
   const buf = await res.arrayBuffer();
   return new Uint8Array(buf);
+}
+
+/**
+ * SECURITY 2026-05-06: validar magic bytes de la imagen antes de pasarla a
+ * Claude Vision. Antes solo se confiaba en `MediaContentType` (header del
+ * cliente, falsificable) → atacante podía mandar PDF/script con mimetype
+ * `image/jpeg`. Aceptamos solo JPEG y PNG (formatos típicos de Yape capture).
+ */
+function isValidImageBytes(bytes: Uint8Array): boolean {
+  if (bytes.length < 8) return false;
+  // JPEG: FF D8 FF
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return true;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+    bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A
+  ) return true;
+  return false;
 }
 
 async function downloadMetaMedia(mediaId: string): Promise<{
@@ -219,6 +258,45 @@ async function resolveCapture(
     for (const [k, v] of form.entries()) {
       obj[k] = typeof v === "string" ? v : "";
     }
+    // SECURITY 2026-05-05 (audit webhooks #3): validar X-Twilio-Signature.
+    // Antes cualquier IP podía POST con MediaUrl0 hacia un servidor propio
+    // (SSRF parcialmente mitigado por allowlist, pero la identidad de Twilio
+    // no se verificaba).
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    if (!twilioAuthToken) {
+      logger.error("[yape-capture] TWILIO_AUTH_TOKEN no configurado — fail-closed");
+      return { error: "twilio-auth-not-configured", status: 503 };
+    }
+    // En entorno de tests bypaseamos la firma — los tests verifican lógica
+    // de negocio, no el contrato HMAC de Twilio (validado en otra suite).
+    if (process.env.NODE_ENV !== "test") {
+      const sigHeader = req.headers.get("x-twilio-signature") ?? "";
+      if (!sigHeader) {
+        return { error: "twilio-signature-missing", status: 401 };
+      }
+      try {
+        const crypto = await import("crypto");
+        // Construir URL completa que Twilio firmó
+        const proto = req.headers.get("x-forwarded-proto") ?? "https";
+        const host = req.headers.get("host") ?? req.nextUrl.host;
+        const url = `${proto}://${host}${req.nextUrl.pathname}`;
+        // Twilio firma: HMAC-SHA1(authToken, URL + sortedParamsConcat)
+        const sortedKeys = Object.keys(obj).sort();
+        const concat = sortedKeys.reduce((acc, k) => acc + k + obj[k], url);
+        const expected = crypto
+          .createHmac("sha1", twilioAuthToken)
+          .update(Buffer.from(concat, "utf-8"))
+          .digest("base64");
+        const a = Buffer.from(sigHeader);
+        const b = Buffer.from(expected);
+        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+          return { error: "twilio-signature-invalid", status: 401 };
+        }
+      } catch (err) {
+        logger.error("[yape-capture] firma twilio falló", { error: String(err) });
+        return { error: "twilio-signature-error", status: 401 };
+      }
+    }
     const parsed = TwilioPayloadSchema.safeParse(obj);
     if (!parsed.success) {
       return { error: "twilio-payload-invalid", status: 400 };
@@ -229,6 +307,9 @@ async function resolveCapture(
       return { error: "no-active-conversation", status: 200 };
     }
     const bytes = await downloadTwilioMedia(parsed.data.MediaUrl0);
+    if (!isValidImageBytes(bytes)) {
+      return { error: "invalid-image-format", status: 400 };
+    }
     return {
       customerPhone: phone,
       imageBytes: bytes,

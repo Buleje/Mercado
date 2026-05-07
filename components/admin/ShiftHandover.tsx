@@ -125,9 +125,9 @@ export default function ShiftHandover() {
 
       {/* Notas del turno anterior */}
       {lastHandover && view === "current" && (
-        <div className="rounded-xl border border-[var(--data-warning)]/40 bg-[var(--data-warning)]/5 dark:bg-[var(--data-warning)]/5 p-4">
+        <div className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/5 dark:bg-[var(--data-warning-500)]/5 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-[var(--data-warning)]" />
+            <Clock className="w-4 h-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-medium text-[var(--text-primary)]">
               Notas del turno anterior —{" "}
               <span className="font-bold">{lastHandover.cashierName}</span>
@@ -162,7 +162,7 @@ export default function ShiftHandover() {
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -329,7 +329,7 @@ export default function ShiftHandover() {
                       </div>
                     </div>
                     {h.notes && (
-                      <div className="rounded-lg bg-[var(--data-warning)]/5 border border-[var(--data-warning)]/20 px-3 py-2">
+                      <div className="rounded-lg bg-[var(--data-warning-500)]/5 border border-[var(--data-warning-500)]/20 px-3 py-2">
                         <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Notas</p>
                         <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">
                           {h.notes}

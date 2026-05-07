@@ -47,14 +47,14 @@ const STATUS_CONFIG: Record<
   Assignment["status"],
   { label: string; badge: string; next?: Assignment["status"]; nextLabel?: string; nextColor?: string }
 > = {
-  assigned:   { label: "Asignado",    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",   next: "picked_up",  nextLabel: "Recogí el pedido", nextColor: "bg-[#33C4B8] hover:bg-teal-700" },
-  picked_up:  { label: "Recogido",    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",       next: "in_transit", nextLabel: "En camino",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
-  in_transit: { label: "En camino",   badge: "bg-purple-100 text-[var(--accent)] dark:bg-purple-900/30 dark:text-purple-300", next: "delivered", nextLabel: "Entregado",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
-  delivered:  { label: "Entregado",   badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+  assigned:   { label: "Asignado",    badge: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-300",   next: "picked_up",  nextLabel: "Recogí el pedido", nextColor: "bg-[color-mix(in oklab, var(--accent) 70%, white)] hover:bg-[var(--accent-dark)]" },
+  picked_up:  { label: "Recogido",    badge: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300",       next: "in_transit", nextLabel: "En camino",        nextColor: "bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]" },
+  in_transit: { label: "En camino",   badge: "bg-purple-100 text-[var(--accent)] dark:bg-purple-900/30 dark:text-purple-300", next: "delivered", nextLabel: "Entregado",        nextColor: "bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]" },
+  delivered:  { label: "Entregado",   badge: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300" },
 };
 
 // ── Confetti simple ────────────────────────────────────────────────────────
-const CONFETTI_COLORS = ["#33C4B8", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
+const CONFETTI_COLORS = ["color-mix(in oklab, var(--accent) 70%, white)", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
 function MiniConfetti() {
   // Lazy-init random particle config once per mount (React Compiler purity rule forbids Math.random during render)
   const [particles] = useState(() =>
@@ -107,7 +107,7 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
       {/* Header de la card */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-[#33C4B8]" />
+          <Package className="h-4 w-4 text-[color-mix(in oklab, var(--accent) 70%, white)]" />
           <span className="font-mono text-xs font-bold text-gray-500 dark:text-gray-400">
             #{assignment.orderId.slice(-8).toUpperCase()}
           </span>
@@ -385,7 +385,7 @@ export default function DeliveryAppDashboard() {
       {showConfetti && <MiniConfetti />}
 
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-[#33C4B8] text-white px-4 py-3 shadow-md"
+      <header className="sticky top-0 z-30 bg-[color-mix(in oklab, var(--accent) 70%, white)] text-white px-4 py-3 shadow-md"
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
         <div className="flex items-center gap-3">
@@ -403,7 +403,7 @@ export default function DeliveryAppDashboard() {
               transition-colors border-2 border-white/30
               ${isOnline
                 ? "bg-white/20 text-white"
-                : "bg-red-500/20 text-red-200"
+                : "bg-[var(--data-error-500)]/20 text-red-200"
               }
             `}
           >
@@ -429,7 +429,7 @@ export default function DeliveryAppDashboard() {
         {/* Indicador pull-to-refresh */}
         {pulling && (
           <div className="flex justify-center py-3">
-            <RefreshCw className="h-5 w-5 text-[#33C4B8] animate-spin" />
+            <RefreshCw className="h-5 w-5 text-[color-mix(in oklab, var(--accent) 70%, white)] animate-spin" />
           </div>
         )}
 
@@ -437,7 +437,7 @@ export default function DeliveryAppDashboard() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-800 text-center">
-              <p className="text-3xl font-extrabold text-[#33C4B8]">{todayDeliveries}</p>
+              <p className="text-3xl font-extrabold text-[color-mix(in oklab, var(--accent) 70%, white)]">{todayDeliveries}</p>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 leading-tight">
                 Entregas hoy
               </p>
@@ -463,9 +463,9 @@ export default function DeliveryAppDashboard() {
               transition-all active:scale-95
               disabled:opacity-60 disabled:cursor-not-allowed
               ${locationStatus === "ok"
-                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                ? "bg-emerald-100 dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300"
                 : locationStatus === "error"
-                ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                ? "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-300"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }
             `}
@@ -497,11 +497,11 @@ export default function DeliveryAppDashboard() {
           {/* Error */}
           {error && !loading && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-center">
-              <p className="text-sm text-red-700 dark:text-red-400 font-semibold">{error}</p>
+              <p className="text-sm text-[var(--data-error-700)] dark:text-red-400 font-semibold">{error}</p>
               <button
                 type="button"
                 onClick={loadAssignments}
-                className="mt-3 text-sm text-[#33C4B8] font-bold underline"
+                className="mt-3 text-sm text-[color-mix(in oklab, var(--accent) 70%, white)] font-bold underline"
               >
                 Reintentar
               </button>

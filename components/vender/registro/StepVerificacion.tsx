@@ -25,7 +25,7 @@ interface StepVerificacionProps {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-xs font-medium text-[var(--data-error)]" role="alert">
+    <p className="mt-1.5 text-xs font-medium text-[var(--data-error-500)]" role="alert">
       {message}
     </p>
   );
@@ -49,9 +49,9 @@ function UploadTile({ Icon, title, hint, uploaded, error, onToggle }: UploadTile
         className={cn(
           "flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed bg-[var(--surface-canvas)] p-6 text-center transition-colors",
           uploaded
-            ? "border-[var(--data-success)] bg-[var(--data-success)]/5"
+            ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/5"
             : error
-              ? "border-[var(--data-error)]"
+              ? "border-[var(--data-error-500)]"
               : "border-[var(--rule-base)] hover:border-[var(--rule-strong)]",
         )}
         aria-pressed={uploaded}
@@ -60,7 +60,7 @@ function UploadTile({ Icon, title, hint, uploaded, error, onToggle }: UploadTile
           className={cn(
             "flex h-12 w-12 items-center justify-center rounded-full",
             uploaded
-              ? "bg-[var(--data-success)] text-white"
+              ? "bg-[var(--data-success-500)] text-white"
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
           )}
           aria-hidden="true"

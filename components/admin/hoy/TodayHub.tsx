@@ -243,9 +243,9 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, clas
                     : Info;
               const iconColor =
                 alert.severity === "danger"
-                  ? "text-[var(--data-error)]"
+                  ? "text-[var(--data-error-500)]"
                   : alert.severity === "warning"
-                    ? "text-[var(--data-warning)]"
+                    ? "text-[var(--data-warning-500)]"
                     : "text-[var(--text-tertiary)]";
               return (
                 <li key={alert.id}>

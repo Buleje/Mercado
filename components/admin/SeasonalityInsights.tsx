@@ -124,7 +124,7 @@ function SalesBar({
         <div
           className={cn(
             "relative w-full rounded-t-sm transition-all",
-            month.total > (compareVal ?? 0) ? "bg-primary" : "bg-[var(--data-warning)]"
+            month.total > (compareVal ?? 0) ? "bg-primary" : "bg-[var(--data-warning-500)]"
           )}
           style={{ height: `${Math.max(pct, 2)}%` }}
         />
@@ -256,7 +256,7 @@ export default function SeasonalityInsights() {
         </div>
         <div className="flex items-center gap-2">
           {error && (
-            <span className="text-xs text-[var(--data-warning)]">{error}</span>
+            <span className="text-xs text-[var(--data-warning-500)]">{error}</span>
           )}
           {loading && <RefreshCw className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
           <div className="flex rounded-lg border border-[var(--rule-base)] dark:border-gray-600">
@@ -291,7 +291,7 @@ export default function SeasonalityInsights() {
               <span className="text-[var(--text-secondary)]">{currentYear - 1}</span>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning)]" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning-500)]" />
               <span className="text-[var(--text-secondary)]">Menor que año anterior</span>
             </div>
           </div>
@@ -344,8 +344,8 @@ export default function SeasonalityInsights() {
                           className={cn(
                             "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold",
                             p.pctChange >= 0
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                              : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                              : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                           )}
                         >
                           {p.pctChange >= 0 ? (
@@ -381,9 +381,9 @@ export default function SeasonalityInsights() {
 
       {/* Notable insights */}
       {notable.length > 0 && (
-        <div className="rounded-xl border border-[var(--data-warning)]/30 bg-[var(--data-warning)]/5 p-5 dark:bg-[var(--data-warning)]/10">
+        <div className="rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/5 p-5 dark:bg-[var(--data-warning-500)]/10">
           <div className="mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Alertas de estacionalidad
             </p>
@@ -391,14 +391,14 @@ export default function SeasonalityInsights() {
           <div className="flex flex-col gap-2">
             {notable.map((p) => (
               <div key={p.month} className="flex items-center gap-2 text-sm">
-                <ChevronRight className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+                <ChevronRight className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
                 <span className="text-[var(--text-secondary)]">{p.recommendation}</span>
                 <span
                   className={cn(
                     "ml-auto text-xs font-bold",
                     p.pctChange >= 0
-                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                      : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   )}
                 >
                   {p.pctChange > 0 ? "+" : ""}{p.pctChange.toFixed(0)}%

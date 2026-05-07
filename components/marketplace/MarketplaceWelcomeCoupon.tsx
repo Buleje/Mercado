@@ -138,7 +138,7 @@ export default function MarketplaceWelcomeCoupon() {
               {COUPON_CODE}
             </span>
             {copied ? (
-              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-300 dark:text-emerald-600">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-300 dark:text-[var(--data-success-600)]">
                 <Check className="h-3 w-3" strokeWidth={2} />
                 Copiado
               </span>

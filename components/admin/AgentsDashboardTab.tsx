@@ -82,17 +82,17 @@ const DOMAIN_ACTIONS: Record<string, string[]> = {
 };
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-  pending:   { label: "Pendiente",  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  running:   { label: "Ejecutando", color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  completed: { label: "Completado", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  failed:    { label: "Fallido",    color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  pending:   { label: "Pendiente",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  running:   { label: "Ejecutando", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  completed: { label: "Completado", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  failed:    { label: "Fallido",    color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
   cancelled: { label: "Cancelado",  color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
 };
 
 const CIRCUIT_META: Record<string, { label: string; color: string; bg: string }> = {
-  closed:    { label: "Cerrado",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  open:      { label: "Abierto",    color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
-  "half-open": { label: "Semi-abierto", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  closed:    { label: "Cerrado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  open:      { label: "Abierto",    color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+  "half-open": { label: "Semi-abierto", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 
 const AUTO_REFRESH_MS = 5_000;
@@ -332,11 +332,11 @@ export default function AgentsDashboardTab() {
         )}
 
         {healthError && !healthLoading && (
-          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Error de conexión</p>
-              <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{healthError}</p>
+              <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">Error de conexión</p>
+              <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">{healthError}</p>
             </div>
           </div>
         )}
@@ -354,13 +354,13 @@ export default function AgentsDashboardTab() {
                 <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Estado</p>
                 <div className="flex items-center gap-2">
                   {health.status === "healthy" ? (
-                    <CheckCircle className="h-5 w-5 text-[var(--data-success)]" />
+                    <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-[var(--data-error)]" />
+                    <XCircle className="h-5 w-5 text-[var(--data-error-500)]" />
                   )}
                   <span className={cn(
                     "text-lg font-extrabold",
-                    health.status === "healthy" ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                    health.status === "healthy" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                   )}>
                     {health.status === "healthy" ? "Saludable" : "Degradado"}
                   </span>
@@ -368,7 +368,7 @@ export default function AgentsDashboardTab() {
               </div>
               <div className="rounded-xl p-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
                 <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Agentes</p>
-                <p className="text-xl font-extrabold text-[var(--data-success)]">{health.agents.length}</p>
+                <p className="text-xl font-extrabold text-[var(--data-success-500)]">{health.agents.length}</p>
               </div>
               <div className="rounded-xl p-4 bg-[var(--surface-sunken)]">
                 <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Tareas Activas</p>
@@ -402,8 +402,8 @@ export default function AgentsDashboardTab() {
                         className={cn(
                           "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                           agent.status === "active"
-                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
-                            : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)]"
+                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
+                            : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
                         )}
                       >
                         {agent.status === "active" ? "Activo" : "Inactivo"}
@@ -497,17 +497,17 @@ export default function AgentsDashboardTab() {
 
           {/* Execution result */}
           {execError && (
-            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-3 flex items-start gap-2">
-              <XCircle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
-              <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{execError}</p>
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-3 flex items-start gap-2">
+              <XCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+              <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{execError}</p>
             </div>
           )}
 
           {execResult && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 space-y-2">
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-                <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+                <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   Tarea ejecutada
                 </span>
                 <span
@@ -547,7 +547,7 @@ export default function AgentsDashboardTab() {
                 </div>
               </div>
               {execResult.error && (
-                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg p-2">
+                <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg p-2">
                   {execResult.error}
                 </p>
               )}
@@ -563,7 +563,7 @@ export default function AgentsDashboardTab() {
             Tareas Recientes
           </SectionTitle>
           {recentTasks.some((t) => t.status === "running" || t.status === "pending") && (
-            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               <RefreshCw className="h-3 w-3 animate-spin" />
               Auto-actualizando
             </span>
@@ -737,8 +737,8 @@ export default function AgentsDashboardTab() {
 // ── TaskRow sub-component ─────────────────────────────────────────────────────
 
 const PRIORITY_LABELS: Record<TaskPriority, { label: string; color: string }> = {
-  critical: { label: "Crítica",  color: "text-[var(--data-error)] font-bold" },
-  high:     { label: "Alta",     color: "text-[var(--data-warning)] font-semibold" },
+  critical: { label: "Crítica",  color: "text-[var(--data-error-500)] font-bold" },
+  high:     { label: "Alta",     color: "text-[var(--data-warning-500)] font-semibold" },
   normal:   { label: "Normal",   color: "text-[var(--text-secondary)]" },
   low:      { label: "Baja",     color: "text-[var(--text-tertiary)]" },
 };

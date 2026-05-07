@@ -88,8 +88,11 @@ export function initAgentHooks(): void {
 
   import("@/lib/sse-emitter")
     .then(({ emitAdminSSE }) => {
+      // SECURITY 2026-05-06 (audit notifs #1): SSE tenant-scoped. Cada evento
+      // solo va al bucket de su propio tenantId (no fan-out global).
       agentBus.on("task:completed", (data) => {
-        emitAdminSSE("agent:task-completed", {
+        if (!data.tenantId) return;
+        emitAdminSSE(data.tenantId, "agent:task-completed", {
           taskId: data.taskId,
           domain: data.domain,
           success: data.success,
@@ -98,7 +101,8 @@ export function initAgentHooks(): void {
       });
 
       agentBus.on("task:failed", (data) => {
-        emitAdminSSE("agent:task-failed", {
+        if (!data.tenantId) return;
+        emitAdminSSE(data.tenantId, "agent:task-failed", {
           taskId: data.taskId,
           domain: data.domain,
           error: data.error,
@@ -107,7 +111,10 @@ export function initAgentHooks(): void {
       });
 
       agentBus.on("agent:alert", (data) => {
-        emitAdminSSE("agent:alert", {
+        // agent:alert global sin tenantId → no broadcast (por seguridad).
+        const tenantId = (data as { tenantId?: string }).tenantId;
+        if (!tenantId) return;
+        emitAdminSSE(tenantId, "agent:alert", {
           domain: data.domain,
           level: data.level,
           message: data.message,

@@ -103,9 +103,9 @@ const THEME_CLASSES: Record<UnifiedHeroTheme, string> = {
 };
 
 const DOT_INTENT_CLASSES = {
-  success: "bg-[var(--data-success)]",
-  warning: "bg-[var(--data-warning)]",
-  danger: "bg-[var(--data-error)]",
+  success: "bg-[var(--data-success-500)]",
+  warning: "bg-[var(--data-warning-500)]",
+  danger: "bg-[var(--data-error-500)]",
   accent: "bg-[var(--accent)]",
 } as const;
 

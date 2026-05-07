@@ -301,19 +301,19 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     // Mejora 6: Alertas inteligentes Ventas
     ...(pedidosPendientes > 0 || fiadoTotal > 0 ? [
       <div key="alertas" className="flex flex-wrap gap-2">
-        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
-        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
+        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
+        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
       </div>,
     ] : []),
     // Section 1: KPIs with sparklines (Mejora 8) and comparativo (Mejora 7)
     <div key="kpis" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
         { label: "Ventas periodo", value: `S/ ${ventasPeriodo.toFixed(0)}`, color: "border-b-4 border-primary", spark: true, strokeColor: "var(--color-primary)", sparkVal: ventasPeriodo },
-        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-[var(--data-success)]/30", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
+        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-[var(--data-success-500)]/30", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
         { label: "Ticket promedio", value: `S/ ${ticketPromedio.toFixed(0)}`, color: "border-b-4 border-[var(--rule-base)]0", spark: true, strokeColor: "#8b5cf6", sparkVal: ticketPromedio },
-        { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-[var(--data-warning)]", spark: false, strokeColor: "", sparkVal: 0 },
-        { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-[var(--data-warning)]", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
-        { label: "Total ventas mes", value: `S/ ${ventasMes.toFixed(0)}`, color: "border-b-4 border-[var(--data-info)]", spark: false, strokeColor: "", sparkVal: 0 },
+        { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-[var(--data-warning-500)]", spark: false, strokeColor: "", sparkVal: 0 },
+        { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-[var(--data-warning-500)]", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
+        { label: "Total ventas mes", value: `S/ ${ventasMes.toFixed(0)}`, color: "border-b-4 border-[var(--data-info-500)]", spark: false, strokeColor: "", sparkVal: 0 },
       ].map((k, idx) => {
         // Valores determinísticos (no Math.random — pureza en render). Placeholder hasta que
         // venga un cálculo real de trend vs periodo anterior desde el backend.
@@ -323,7 +323,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
-              <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
+              <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
             </div>
             {k.spark && (
               <div className="h-8 w-20 mt-1">
@@ -539,12 +539,12 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month2]}</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-warning)]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-warning-500)]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
           <p className="text-xs text-[var(--text-tertiary)]">{monthComparisonData.count2} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Diferencia</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
             {monthComparisonData.diffPct >= 0 ? "+" : ""}{monthComparisonData.diffPct}%
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
@@ -817,7 +817,7 @@ function ShiftCloseModal({
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-sm text-[var(--data-error)] bg-[var(--data-error-50)] rounded-xl p-4 text-center">
+            <div className="text-sm text-[var(--data-error-500)] bg-[var(--data-error-50)] rounded-xl p-4 text-center">
               {error}
               <button onClick={fetchSummary} className="block mx-auto mt-2 text-xs font-bold underline">Reintentar</button>
             </div>
@@ -840,15 +840,15 @@ function ShiftCloseModal({
                 <p className="text-xs font-extrabold text-[var(--text-tertiary)] pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
+                  <div className="col-span-2 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
                     <div className="absolute -right-4 -top-4 h-16 w-16 bg-[var(--accent-soft)] rounded-full blur-xl group-hover:bg-[var(--accent-soft)] transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
                       <div className="h-10 w-10 bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
-                        <Banknote className="h-5 w-5 text-[var(--data-success)]" />
+                        <Banknote className="h-5 w-5 text-[var(--data-success-500)]" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[var(--data-success)]/80">Efectivo (Caja)</p>
-                        <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.efectivo)}</p>
+                        <p className="text-xs font-bold text-[var(--data-success-500)]/80">Efectivo (Caja)</p>
+                        <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.efectivo)}</p>
                       </div>
                     </div>
                   </div>
@@ -861,28 +861,28 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
-                      <p className="text-xs font-bold text-[var(--data-success)]/80">Plin</p>
+                      <p className="text-xs font-bold text-[var(--data-success-500)]/80">Plin</p>
                     </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.plin)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-3 w-3 text-[var(--data-success)]" />
-                      <p className="text-xs font-bold text-[var(--data-success)]/80">Tarjeta / POS</p>
+                      <CreditCard className="h-3 w-3 text-[var(--data-success-500)]" />
+                      <p className="text-xs font-bold text-[var(--data-success-500)]/80">Tarjeta / POS</p>
                     </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.tarjeta)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.tarjeta)}</p>
                   </div>
 
-                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Wallet className="h-3 w-3 text-[var(--data-warning)]" />
-                      <p className="text-xs font-bold text-[var(--data-warning)]/80">Fiado</p>
+                      <Wallet className="h-3 w-3 text-[var(--data-warning-500)]" />
+                      <p className="text-xs font-bold text-[var(--data-warning-500)]/80">Fiado</p>
                     </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-warning)]">{fmt(summary.fiado)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-warning-500)]">{fmt(summary.fiado)}</p>
                   </div>
                 </div>
               </div>
@@ -901,7 +901,7 @@ function ShiftCloseModal({
           <button
             onClick={handleConfirm}
             disabled={loading || !!error || confirming}
-            className="flex-1 py-2.5 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
           >
             {confirming ? "Cerrando..." : "Confirmar Cierre"}
             {!confirming && <ArrowRight className="h-4 w-4" />}
@@ -989,14 +989,14 @@ export default function POSCajaModule() {
             className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
               turnoAbierto
-                ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]/80"
+                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]/80"
                 : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
             )}
             title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}
           >
             <span className={cn(
               "w-1.5 h-1.5 rounded-full",
-              turnoAbierto ? "bg-[var(--data-success)] animate-pulse" : "bg-[var(--text-tertiary)]",
+              turnoAbierto ? "bg-[var(--data-success-500)] animate-pulse" : "bg-[var(--text-tertiary)]",
             )} aria-hidden />
             {turnoAbierto ? "Turno abierto" : "Sin turno"}
           </button>
@@ -1008,7 +1008,7 @@ export default function POSCajaModule() {
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno

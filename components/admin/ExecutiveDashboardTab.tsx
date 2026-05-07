@@ -4,7 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { Gauge, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, BarChart3, Eye, Download, Star, RefreshCw } from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, safeNumber } from "@/lib/utils";
 import type { Product, Sale, Customer } from "@/types/erp";
 
 type Period = "hoy" | "semana" | "mes" | "trimestre";
@@ -83,26 +83,29 @@ export default function ExecutiveDashboardTab() {
     const sales      = data.sales.filter(s => inPeriod(s.createdAt, period));
     const prevSales  = data.sales.filter(s => prevPeriod(s.createdAt, period));
 
-    const revenue     = orders.reduce((s, o) => s + o.total, 0) + sales.reduce((s, sl) => s + sl.total, 0);
-    const prevRevenue = prevOrders.reduce((s, o) => s + o.total, 0) + prevSales.reduce((s, sl) => s + sl.total, 0);
-    const revDelta    = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : 0;
+    // BUG-FIX (audit 2026-05-05): wrap todos los reduces y deltas con safeNumber
+    // para evitar NaN propagation cuando el dataset tiene valores corruptos
+    // (orders sin total, products sin costPrice, etc).
+    const revenue     = safeNumber(orders.reduce((s, o) => s + safeNumber(o.total), 0) + sales.reduce((s, sl) => s + safeNumber(sl.total), 0));
+    const prevRevenue = safeNumber(prevOrders.reduce((s, o) => s + safeNumber(o.total), 0) + prevSales.reduce((s, sl) => s + safeNumber(sl.total), 0));
+    const revDelta    = prevRevenue > 0 ? safeNumber(((revenue - prevRevenue) / prevRevenue) * 100) : 0;
 
     const tickets      = orders.length + sales.length;
     const prevTickets  = prevOrders.length + prevSales.length;
-    const tickDelta    = prevTickets > 0 ? ((tickets - prevTickets) / prevTickets) * 100 : 0;
+    const tickDelta    = prevTickets > 0 ? safeNumber(((tickets - prevTickets) / prevTickets) * 100) : 0;
 
     const phones      = new Set([...orders.map(o => o.customer?.phone).filter(Boolean), ...sales.map(s => s.customerPhone).filter(Boolean)]);
     const prevPhones  = new Set([...prevOrders.map(o => o.customer?.phone).filter(Boolean), ...prevSales.map(s => s.customerPhone).filter(Boolean)]);
-    const cliDelta    = prevPhones.size > 0 ? ((phones.size - prevPhones.size) / prevPhones.size) * 100 : 0;
+    const cliDelta    = prevPhones.size > 0 ? safeNumber(((phones.size - prevPhones.size) / prevPhones.size) * 100) : 0;
 
     const costMap: Record<string, number> = {};
     data.products.forEach(p => { if (p.costPrice) costMap[p.id] = p.costPrice; });
-    const totalCost   = [...orders.flatMap(o => o.items), ...sales.flatMap(s => s.items ?? [])].reduce((s, i) => s + (costMap[i.id as string] ?? 0) * i.quantity, 0);
+    const totalCost   = safeNumber([...orders.flatMap(o => o.items), ...sales.flatMap(s => s.items ?? [])].reduce((s, i) => s + safeNumber(costMap[i.id as string]) * safeNumber(i.quantity), 0));
     const utilidad    = revenue - totalCost;
-    const margen      = revenue > 0 ? (utilidad / revenue) * 100 : 0;
-    const prevCost    = [...prevOrders.flatMap(o => o.items), ...prevSales.flatMap(s => s.items ?? [])].reduce((s, i) => s + (costMap[i.id as string] ?? 0) * i.quantity, 0);
+    const margen      = revenue > 0 ? safeNumber((utilidad / revenue) * 100) : 0;
+    const prevCost    = safeNumber([...prevOrders.flatMap(o => o.items), ...prevSales.flatMap(s => s.items ?? [])].reduce((s, i) => s + safeNumber(costMap[i.id as string]) * safeNumber(i.quantity), 0));
     const prevUtil    = prevRevenue - prevCost;
-    const utilDelta   = prevUtil !== 0 ? ((utilidad - prevUtil) / Math.abs(prevUtil)) * 100 : 0;
+    const utilDelta   = prevUtil !== 0 ? safeNumber(((utilidad - prevUtil) / Math.abs(prevUtil)) * 100) : 0;
 
     // 7-day sparklines (last 7 calendar days)
     const last7 = Array.from({ length: 7 }, (_, i) => {
@@ -201,8 +204,8 @@ export default function ExecutiveDashboardTab() {
   );
   if (error) return (
     <div className="flex flex-col items-center justify-center py-24 gap-2 sm:gap-4">
-      <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-      <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">Error cargando datos</p>
+      <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+      <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">Error cargando datos</p>
       <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
         Reintentar
       </button>
@@ -237,7 +240,7 @@ export default function ExecutiveDashboardTab() {
 
       {/* ── System health banner ── */}
       {(criticalCount > 0 || warningCount > 0) && (
-        <div className={cn("rounded-xl p-3 flex items-center gap-3 text-sm font-semibold border", criticalCount > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)] border-[var(--data-error)] dark:border-[var(--data-error)]/30" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] border-[var(--data-warning)] dark:border-[var(--data-warning)]/30")}>
+        <div className={cn("rounded-xl p-3 flex items-center gap-3 text-sm font-semibold border", criticalCount > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30")}>
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <span>
             {criticalCount > 0 && `${criticalCount} módulo${criticalCount > 1 ? "s" : ""} crítico${criticalCount > 1 ? "s" : ""}`}
@@ -247,7 +250,7 @@ export default function ExecutiveDashboardTab() {
         </div>
       )}
       {criticalCount === 0 && warningCount === 0 && (
-        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3 text-sm font-semibold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3 text-sm font-semibold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <CheckCircle className="h-5 w-5 shrink-0" />
           Sistema operando normalmente — todos los módulos en verde
         </div>
@@ -257,10 +260,10 @@ export default function ExecutiveDashboardTab() {
       {kpis && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-[var(--data-success)]", bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  spark: kpis.revSpark,    sparkColor: "#00B4A6" },
-            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-[var(--data-success)]",    bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
+            { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-[var(--data-success-500)]", bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  spark: kpis.revSpark,    sparkColor: "var(--accent)" },
+            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-[var(--data-success-500)]",    bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
             { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-[var(--text-secondary)]", bgColor: "bg-[var(--surface-sunken)]",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
-            { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-[var(--data-warning)]",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
+            { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-[var(--data-warning-500)]",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
             <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -271,7 +274,7 @@ export default function ExecutiveDashboardTab() {
               </div>
               <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">{kpi.value}</p>
               <div className="flex items-center justify-between mt-2">
-                <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   {kpi.delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                   {Math.abs(kpi.delta).toFixed(1)}%
                 </div>
@@ -332,13 +335,13 @@ export default function ExecutiveDashboardTab() {
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
                   "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-sm",
-                  h.status === "critical" ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : h.status === "warning" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border",
+                  h.status === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : h.status === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border",
                   expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{h.module}</span>
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : h.status === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : h.status === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                     {h.status === "ok" ? "OK" : h.status === "warning" ? "Alerta" : "Crítico"}
                   </span>
                 </div>
@@ -346,9 +349,9 @@ export default function ExecutiveDashboardTab() {
                 <div className="flex items-end justify-between">
                   <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">
                     {h.isCurrency ? fmtShort(h.value) : h.isDecimal ? h.value.toFixed(1) : h.value}
-                    {h.isDecimal && <Star className="h-3 w-3 text-[var(--data-warning)] fill-[var(--data-warning)] inline ml-1 mb-1" />}
+                    {h.isDecimal && <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] inline ml-1 mb-1" />}
                   </span>
-                  <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                  <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                     {h.trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {h.trend > 0 ? "+" : ""}{h.trend.toFixed ? h.trend.toFixed(1) : h.trend}
                   </span>
@@ -363,7 +366,7 @@ export default function ExecutiveDashboardTab() {
                           <span className="font-bold text-[var(--text-secondary)] dark:text-foreground">{pct.toFixed(0)}%</span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                          <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-[var(--accent-soft)]" : h.status === "warning" ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${pct}%` }} />
+                          <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-[var(--accent-soft)]" : h.status === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
                         </div>
                       </>
                     )}
@@ -378,11 +381,11 @@ export default function ExecutiveDashboardTab() {
       {/* ── Recommendations ── */}
       <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Acciones recomendadas
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Acciones recomendadas
         </CardTitle>
         <div className="space-y-2">
           {recommendations.map((action, i) => (
-            <div key={i} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm", action.severity === "high" ? "bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error)] dark:text-[var(--data-error)]" : action.severity === "medium" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]")}>
+            <div key={i} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm", action.severity === "high" ? "bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : action.severity === "medium" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>
               {action.severity === "high" ? <AlertTriangle className="h-4 w-4 shrink-0" /> : action.severity === "medium" ? <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" /> : <CheckCircle className="h-4 w-4 shrink-0" />}
               <span className="font-semibold">{action.text}</span>
             </div>

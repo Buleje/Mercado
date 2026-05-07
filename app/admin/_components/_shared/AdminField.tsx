@@ -47,7 +47,7 @@ export function AdminField({
         >
           {label}
           {required && (
-            <span className="text-[var(--data-error)] ml-1" aria-hidden>
+            <span className="text-[var(--data-error-500)] ml-1" aria-hidden>
               *
             </span>
           )}
@@ -55,7 +55,7 @@ export function AdminField({
       )}
       {children}
       {error ? (
-        <p className="text-xs text-[var(--data-error)] mt-1">{error}</p>
+        <p className="text-xs text-[var(--data-error-500)] mt-1">{error}</p>
       ) : hint ? (
         <p className={`${ADMIN_TOKENS.hint} mt-1`}>{hint}</p>
       ) : null}

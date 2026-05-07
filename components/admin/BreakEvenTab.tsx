@@ -232,7 +232,7 @@ export default function BreakEvenTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
@@ -253,7 +253,7 @@ export default function BreakEvenTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Target className="h-6 w-6 text-[var(--data-error)]" /> Análisis Break-Even
+            <Target className="h-6 w-6 text-[var(--data-error-500)]" /> Análisis Break-Even
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
             Punto de equilibrio basado en {enrichedProducts.length} productos, {expenses.length} gastos y {sales.length} ventas reales
@@ -290,7 +290,7 @@ export default function BreakEvenTab() {
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-bold transition-colors",
             selectedProduct === "general"
-              ? "bg-[var(--data-error)] text-white"
+              ? "bg-[var(--data-error-500)] text-white"
               : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
           )}
         >
@@ -307,7 +307,7 @@ export default function BreakEvenTab() {
             className={cn(
               "px-3 py-2 rounded-xl text-sm font-bold transition-colors",
               selectedProduct === p.id
-                ? "bg-[var(--data-error)] text-white"
+                ? "bg-[var(--data-error-500)] text-white"
                 : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
             )}
           >
@@ -347,7 +347,7 @@ export default function BreakEvenTab() {
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <span className="text-sm font-bold text-[var(--text-secondary)]">Total:</span>
-          <span className="text-lg font-extrabold text-[var(--data-error)]">{fmt(totalFixed)}</span>
+          <span className="text-lg font-extrabold text-[var(--data-error-500)]">{fmt(totalFixed)}</span>
           <input
             value={customFixed}
             onChange={(e) => setCustomFixed(e.target.value.replace(/[^\d.]/g, ""))}
@@ -373,7 +373,7 @@ export default function BreakEvenTab() {
             </div>
             <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto de equilibrio</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">
                 {generalAnalysis.breakEvenRevenue === Infinity ? "∞" : fmt(generalAnalysis.breakEvenRevenue)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">necesitas vender esto al mes</p>
@@ -383,16 +383,16 @@ export default function BreakEvenTab() {
               <p
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
-                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                 )}
               >
                 {fmt(generalAnalysis.currentProfit)}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 {generalAnalysis.currentProfit >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-[var(--data-success)]" />
+                  <TrendingUp className="h-3 w-3 text-[var(--data-success-500)]" />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-[var(--data-error)]" />
+                  <TrendingDown className="h-3 w-3 text-[var(--data-error-500)]" />
                 )}
                 <p className="text-xs text-[var(--text-tertiary)]">
                   {generalAnalysis.currentProfit >= 0 ? "Ganancia" : "Pérdida"} este mes
@@ -405,10 +405,10 @@ export default function BreakEvenTab() {
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
                   generalAnalysis.safetyMargin >= 20
-                    ? "text-[var(--data-success)]"
+                    ? "text-[var(--data-success-500)]"
                     : generalAnalysis.safetyMargin >= 0
-                    ? "text-[var(--data-warning)]"
-                    : "text-[var(--data-error)]"
+                    ? "text-[var(--data-warning-500)]"
+                    : "text-[var(--data-error-500)]"
                 )}
               >
                 {generalAnalysis.safetyMargin.toFixed(1)}%
@@ -422,21 +422,21 @@ export default function BreakEvenTab() {
             className={cn(
               "rounded-xl border p-5 flex flex-wrap items-start gap-3",
               generalAnalysis.currentProfit >= 0
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
-                : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
             )}
           >
             <Target
               className={cn(
                 "h-6 w-6 shrink-0 mt-0.5",
-                generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
               )}
             />
             <div>
               <p
                 className={cn(
                   "font-extrabold text-lg",
-                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}
               >
                 {generalAnalysis.breakEvenRevenue === Infinity
@@ -464,7 +464,7 @@ export default function BreakEvenTab() {
                 {/* Línea de ingresos */}
                 <polyline
                   fill="none"
-                  stroke="#00B4A6"
+                  stroke="var(--accent)"
                   strokeWidth="2.5"
                   points={chartPoints
                     .map(
@@ -519,7 +519,7 @@ export default function BreakEvenTab() {
                     y1="0"
                     x2={(generalAnalysis.totalRevenue / maxChartVal) * 380 + 20}
                     y2="200"
-                    stroke="#00B4A6"
+                    stroke="var(--accent)"
                     strokeWidth="1.5"
                     strokeDasharray="4 2"
                     opacity="0.6"
@@ -539,13 +539,13 @@ export default function BreakEvenTab() {
                 <div className="w-4 h-0.5 bg-[var(--accent-soft)]" /> Ingresos
               </span>
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 bg-[var(--data-error)]" /> Costos totales
+                <div className="w-4 h-0.5 bg-[var(--data-error-500)]" /> Costos totales
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-4 h-px bg-gray-400" style={{ borderTop: "1.5px dashed" }} /> Costos fijos
               </span>
               <span className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[var(--data-error)] border-2 border-white" /> Punto equilibrio
+                <div className="w-3 h-3 rounded-full bg-[var(--data-error-500)] border-2 border-white" /> Punto equilibrio
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-px h-3 bg-primary opacity-60" style={{ borderLeft: "1.5px dashed" }} /> Ventas actuales
@@ -591,14 +591,14 @@ export default function BreakEvenTab() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Contribución/Unidad</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">
                 {fmt(productAnalysis.contrib)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">por cada unidad vendida</p>
             </div>
             <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto equilibrio</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">
                 {productAnalysis.breakEvenUnits === Infinity
                   ? "∞"
                   : productAnalysis.breakEvenUnits.toLocaleString()}
@@ -621,7 +621,7 @@ export default function BreakEvenTab() {
               <p
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
-                  productAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                  productAnalysis.currentProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                 )}
               >
                 {fmt(productAnalysis.currentProfit)}
@@ -636,7 +636,7 @@ export default function BreakEvenTab() {
               Progreso hacia el Punto de Equilibrio
             </CardTitle>
             {productAnalysis.breakEvenUnits === Infinity ? (
-              <p className="text-sm text-[var(--data-warning)] font-semibold">
+              <p className="text-sm text-[var(--data-warning-500)] font-semibold">
                 El precio debe ser mayor al costo para calcular el break-even.
               </p>
             ) : (
@@ -647,7 +647,7 @@ export default function BreakEvenTab() {
                       "h-full rounded-full transition-all",
                       productAnalysis.monthlySales >= productAnalysis.breakEvenUnits
                         ? "bg-[var(--accent-soft)]"
-                        : "bg-[var(--data-warning)]"
+                        : "bg-[var(--data-warning-500)]"
                     )}
                     style={{
                       width: `${Math.min(

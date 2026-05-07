@@ -82,11 +82,11 @@ export interface ReviewItem {
 // ── Status badge helpers (solo data, sin iconos — los iconos se inyectan en cada tab) ──
 
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
   en_camino:   { label: "En camino",  className: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  entregado:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+  entregado:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 
 // ── UI primitivos compartidos (sin "use client" — son componentes puros) ───

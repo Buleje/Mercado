@@ -15,21 +15,21 @@ const METHODS = [
     name: "Plin",
     desc: "Transferencia rápida",
     icon: QrCode,
-    iconBg: "bg-teal-500",
+    iconBg: "bg-[var(--accent)]",
     accentGradient: "linear-gradient(to bottom, rgba(20,184,166,0.12), rgba(20,184,166,0.03))",
   },
   {
     name: "Efectivo",
     desc: "Contra entrega",
     icon: Banknote,
-    iconBg: "bg-emerald-500",
+    iconBg: "bg-[var(--data-success-500)]",
     accentGradient: "linear-gradient(to bottom, rgba(16,185,129,0.12), rgba(16,185,129,0.03))",
   },
   {
     name: "Tarjeta",
     desc: "Visa / Mastercard",
     icon: CreditCard,
-    iconBg: "bg-emerald-500",
+    iconBg: "bg-[var(--data-success-500)]",
     accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), rgba(59,130,246,0.03))",
   },
 ];
@@ -89,7 +89,7 @@ export default function PaymentMethods() {
 
         {/* Trust note */}
         <p className={`text-center text-sm text-muted mt-8 transition-all duration-700 delay-300 ${inView ? "opacity-100" : "opacity-0"}`}>
-          <span className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-semibold px-4 py-2 rounded-full">
+          <span className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-[var(--data-success-700)] dark:text-emerald-400 font-semibold px-4 py-2 rounded-full">
             <ShieldCheck className="w-4 h-4" />
             Tus datos están protegidos. No almacenamos información de pago.
           </span>

@@ -15,12 +15,13 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-06 (audit CMS #4): rol explícito.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
   try {
-    const page = await getPageById(id);
+    const page = await getPageById(id, auth.tenantId);
 
     if (!page) {
       return NextResponse.json(
@@ -61,7 +62,10 @@ export async function PUT(
     }
     const validated = parsed.data;
 
-    const page = await updatePage(id, validated);
+    const page = await updatePage(id, auth.tenantId, validated);
+    if (!page) {
+      return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
+    }
 
     return NextResponse.json(page);
   } catch (error) {
@@ -85,7 +89,10 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    await deletePage(id);
+    const deleted = await deletePage(id, auth.tenantId);
+    if (!deleted) {
+      return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error("[cms/pages/id] DELETE error", { err: error instanceof Error ? error.message : String(error) });

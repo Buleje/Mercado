@@ -89,12 +89,12 @@ function calcularVuelto(monto: number): string {
 const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; label: string }> = {
   200: { color: "bg-[var(--accent-muted)] text-white", shape: "rect", label: "S/200" },
   100: { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/100" },
-  50:  { color: "bg-[var(--data-warning)] text-white", shape: "rect", label: "S/50" },
+  50:  { color: "bg-[var(--data-warning-500)] text-white", shape: "rect", label: "S/50" },
   20:  { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/20" },
-  10:  { color: "bg-[var(--data-warning)] text-white", shape: "rect", label: "S/10" },
-  5:   { color: "bg-[var(--data-warning)] text-[var(--data-warning)]", shape: "circle", label: "S/5" },
+  10:  { color: "bg-[var(--data-warning-500)] text-white", shape: "rect", label: "S/10" },
+  5:   { color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]", shape: "circle", label: "S/5" },
   2:   { color: "bg-gray-300 text-[var(--text-primary)]", shape: "circle", label: "S/2" },
-  1:   { color: "bg-[var(--data-warning)] text-white", shape: "circle", label: "S/1" },
+  1:   { color: "bg-[var(--data-warning-500)] text-white", shape: "circle", label: "S/1" },
   0.5: { color: "bg-gray-400 text-white", shape: "circle", label: "S/.50" },
   0.2: { color: "bg-gray-500 text-white", shape: "circle", label: "S/.20" },
 };
@@ -251,16 +251,16 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.categoria && (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
                       {c.categoria}
                     </span>
                   )}
                   {c.creditBalance != null && c.creditBalance > 0 ? (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)]">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]">
                       Fiado S/{c.creditBalance.toFixed(2)}
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
                       Sin deuda
                     </span>
                   )}
@@ -523,7 +523,7 @@ export default function POSPaymentModal({
             {fmt(total)}
           </p>
           {discountAmount > 0 && (
-            <p className="text-sm text-[var(--data-error)] font-semibold mt-2">
+            <p className="text-sm text-[var(--data-error-500)] font-semibold mt-2">
               Subtotal {fmt(subtotal)} — descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}% ` : ""}-{fmt(discountAmount)}
             </p>
           )}
@@ -584,7 +584,7 @@ export default function POSPaymentModal({
                 <Percent className="h-4 w-4" />
                 Descuento
                 {discountAmount > 0 && (
-                  <span className="text-[var(--data-error)] font-bold">
+                  <span className="text-[var(--data-error-500)] font-bold">
                     (-{fmt(discountAmount)})
                   </span>
                 )}
@@ -641,7 +641,7 @@ export default function POSPaymentModal({
                         setDiscountValue("");
                         setShowDiscount(false);
                       }}
-                      className="text-sm font-semibold text-[var(--data-error)] hover:underline"
+                      className="text-sm font-semibold text-[var(--data-error-500)] hover:underline"
                     >
                       Quitar
                     </button>
@@ -671,7 +671,7 @@ export default function POSPaymentModal({
                       <span>Subtotal</span>
                       <span className="tabular-nums">{fmt(subtotal)}</span>
                     </div>
-                    <div className="flex justify-between text-[var(--data-error)] font-semibold">
+                    <div className="flex justify-between text-[var(--data-error-500)] font-semibold">
                       <span>Descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}</span>
                       <span className="tabular-nums">-{fmt(discountAmount)}</span>
                     </div>
@@ -693,11 +693,11 @@ export default function POSPaymentModal({
 
             {/* Fiado warning banner */}
             {isFiado && (
-              <div className="mb-4 p-4 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+              <div className="mb-4 p-4 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Modo Fiado</p>
-                  <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">
+                  <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Modo Fiado</p>
+                  <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">
                     La venta se registra como deuda. El cliente debe estar seleccionado.
                   </p>
                 </div>
@@ -747,7 +747,7 @@ export default function POSPaymentModal({
                     if (!w) return;
                     w.document.write(`
                       <html><head><title>QR ${isYape ? "Yape" : "Plin"}</title>
-                      <style>body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "#33C4B8"}}img{margin:20px auto}</style>
+                      <style>body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "color-mix(in oklab, var(--accent) 70%, white)"}}img{margin:20px auto}</style>
                       </head><body>
                       <h2>Paga con ${isYape ? "Yape" : "Plin"}</h2>
                       <img src="https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8" width="250" height="250" />
@@ -768,7 +768,7 @@ export default function POSPaymentModal({
                     )}>
                       <p className={cn(
                         "text-xs font-bold mb-2 text-center",
-                        isYape ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-teal-700 dark:text-teal-400"
+                        isYape ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-[var(--accent-dark)] dark:text-teal-400"
                       )}>
                         {isYape ? "Yape" : "Plin"} &middot; {fmt(total)}
                       </p>
@@ -864,7 +864,7 @@ export default function POSPaymentModal({
                           className={cn(
                             "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary",
                             isFiado
-                              ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning)] cursor-not-allowed"
+                              ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] cursor-not-allowed"
                               : "border-[var(--rule-base)] dark:border-card-border"
                           )}
                           autoFocus={idx === 0 && !isFiado}
@@ -873,7 +873,7 @@ export default function POSPaymentModal({
                       {paymentLines.length > 1 && (
                         <button
                           onClick={() => removeLine(idx)}
-                          className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+                          className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -923,13 +923,13 @@ export default function POSPaymentModal({
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-[var(--text-tertiary)]">Billetes recibidos</span>
                       {billetes.length > 0 && (
-                        <button onClick={limpiarBilletes} className="text-sm font-semibold text-[var(--data-error)] hover:underline">Limpiar</button>
+                        <button onClick={limpiarBilletes} className="text-sm font-semibold text-[var(--data-error-500)] hover:underline">Limpiar</button>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {[200, 100, 50, 20, 10].map(b => (
                         <button key={b} onClick={() => addBillete(b)}
-                          className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold cursor-pointer hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                          className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold cursor-pointer hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
                           S/{b}
                         </button>
                       ))}
@@ -944,7 +944,7 @@ export default function POSPaymentModal({
 
                 {/* Fiado info */}
                 {isFiado && (
-                  <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-3 text-center">
+                  <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-3 text-center">
                     Deuda: {fmt(total)} — se registrará a nombre del cliente
                   </p>
                 )}
@@ -975,8 +975,8 @@ export default function POSPaymentModal({
                         className={cn(
                           "font-bold",
                           pendiente <= 0.01
-                            ? "text-[var(--data-success)]"
-                            : "text-[var(--data-error)]"
+                            ? "text-[var(--data-success-500)]"
+                            : "text-[var(--data-error-500)]"
                         )}
                       >
                         {fmt(linesTotal)}
@@ -994,17 +994,17 @@ export default function POSPaymentModal({
 
           {/* Change display */}
           {vuelto > 0 && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 text-center">
-              <p className="text-sm text-[var(--data-success)] font-semibold uppercase tracking-wide">
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-center">
+              <p className="text-sm text-[var(--data-success-500)] font-semibold uppercase tracking-wide">
                 Vuelto
               </p>
-              <p className="text-3xl sm:text-4xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1 tabular-nums">
+              <p className="text-3xl sm:text-4xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1 tabular-nums">
                 {fmt(vuelto)}
               </p>
               {vuelto >= 0.2 && (
                 <>
                   <VueltoVisual monto={vuelto} />
-                  <p className="text-sm text-[var(--data-success)]/80 dark:text-[var(--data-success)]/80 mt-2 flex items-center justify-center gap-1">
+                  <p className="text-sm text-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)]/80 mt-2 flex items-center justify-center gap-1">
                     <span>{calcularVuelto(vuelto)}</span>
                   </p>
                 </>
@@ -1014,8 +1014,8 @@ export default function POSPaymentModal({
 
           {/* Pendiente warning */}
           {pendiente > 0.01 && (
-            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg p-3 text-center">
-              <span className="text-sm font-bold text-[var(--data-warning)]">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg p-3 text-center">
+              <span className="text-sm font-bold text-[var(--data-warning-500)]">
                 Falta: {fmt(pendiente)}
               </span>
             </div>
@@ -1027,11 +1027,11 @@ export default function POSPaymentModal({
               <p className={cn(
                 "text-sm font-semibold",
                 isFiado
-                  ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                  ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                   : "text-[var(--text-secondary)] dark:text-muted"
               )}>
                 Cliente {isFiado ? (
-                  <span className="font-extrabold text-[var(--data-error)]">* requerido</span>
+                  <span className="font-extrabold text-[var(--data-error-500)]">* requerido</span>
                 ) : (
                   "(opcional)"
                 )}
@@ -1039,7 +1039,7 @@ export default function POSPaymentModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowNewCustomer(!showNewCustomer)}
-                  className="text-sm font-semibold text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm font-semibold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Nuevo
@@ -1056,14 +1056,14 @@ export default function POSPaymentModal({
 
             {/* Formulario inline nuevo cliente — grande y legible */}
             {showNewCustomer && (
-              <div className="mb-3 p-5 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 space-y-4">
+              <div className="mb-3 p-5 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success)]/15 flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-[var(--data-success)]" />
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success-500)]/15 flex items-center justify-center">
+                    <Plus className="h-5 w-5 text-[var(--data-success-500)]" />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo cliente</p>
-                    <p className="text-sm text-[var(--data-success)]/80 dark:text-[var(--data-success)]/80">Nombre + celular, y listo</p>
+                    <p className="text-base font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo cliente</p>
+                    <p className="text-sm text-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)]/80">Nombre + celular, y listo</p>
                   </div>
                 </div>
 
@@ -1118,7 +1118,7 @@ export default function POSPaymentModal({
                       } catch { /* ignore */ }
                       setSavingCustomer(false);
                     }}
-                    className="flex-1 py-3 rounded-xl bg-[var(--data-success)] text-white text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--data-success)]/90 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-xl bg-[var(--data-success-500)] text-white text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--data-success-500)]/90 transition-colors flex items-center justify-center gap-2"
                   >
                     {savingCustomer ? (
                       <>
@@ -1196,7 +1196,7 @@ export default function POSPaymentModal({
               )}
             </div>
             {(comprobanteTipo === "cotizacion" || comprobanteTipo === "proforma") && (
-              <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-2 font-medium">
+              <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-2 font-medium">
                 Se generará {comprobanteTipo === "cotizacion" ? "cotización" : "proforma"} con los items del carrito
               </p>
             )}
@@ -1221,12 +1221,12 @@ export default function POSPaymentModal({
                   className={cn(
                     "w-full px-3 py-3 rounded-lg border text-sm text-[var(--text-primary)] dark:text-foreground outline-none transition-colors",
                     rucError
-                      ? "border-[var(--data-error)] focus:border-[var(--data-error)]"
+                      ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]"
                       : "border-[var(--rule-base)] dark:border-card-border focus:border-primary"
                   )}
                 />
                 {rucError && (
-                  <p className="text-sm text-[var(--data-error)] mt-1.5">{rucError}</p>
+                  <p className="text-sm text-[var(--data-error-500)] mt-1.5">{rucError}</p>
                 )}
                 {comprobanteRuc.length > 0 &&
                   comprobanteRuc.length < 11 && (
@@ -1242,7 +1242,7 @@ export default function POSPaymentModal({
         {/* Footer — CTA grande y claro */}
         <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
           {isFiado && !customerPhone && (
-            <p className="text-sm text-[var(--data-error)] font-semibold text-center mb-3">
+            <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar
             </p>
           )}
@@ -1252,7 +1252,7 @@ export default function POSPaymentModal({
             className={cn(
               "w-full py-4 rounded-xl font-bold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 text-white",
               isFiado
-                ? "bg-[var(--data-warning)] hover:bg-[var(--data-warning)]"
+                ? "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]"
                 : "bg-primary hover:bg-primary-dark"
             )}
           >

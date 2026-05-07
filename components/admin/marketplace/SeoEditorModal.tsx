@@ -95,7 +95,7 @@ function SerpPreview({ title, description }: { title: string; description: strin
         <p className="text-[#1558d6] text-[length:var(--ts-base)] leading-snug hover:underline cursor-pointer truncate font-normal">
           {displayTitle.slice(0, 70)}
         </p>
-        <p className="text-[#006621] dark:text-[var(--data-success)] text-xs">
+        <p className="text-[#006621] dark:text-[var(--data-success-500)] text-xs">
           bodegasanmartin.pe › producto
         </p>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed line-clamp-2">
@@ -205,7 +205,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
+                    form.metaTitle.length > 70 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaTitle.length}/70
                   </span>
@@ -217,13 +217,13 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   className={cn(
                     "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary",
                     errors.metaTitle
-                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                      ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                       : "border-[var(--rule-base)]"
                   )}
                   placeholder="Título optimizado para Google"
                 />
                 {errors.metaTitle && (
-                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>
+                  <p className="text-xs text-[var(--data-error-500)] mt-1">{errors.metaTitle}</p>
                 )}
               </div>
 
@@ -235,7 +235,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
+                    form.metaDescription.length > 160 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaDescription.length}/160
                   </span>
@@ -247,13 +247,13 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   className={cn(
                     "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none",
                     errors.metaDescription
-                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                      ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                       : "border-[var(--rule-base)]"
                   )}
                   placeholder="Descripción que aparecerá en los resultados de búsqueda"
                 />
                 {errors.metaDescription && (
-                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>
+                  <p className="text-xs text-[var(--data-error-500)] mt-1">{errors.metaDescription}</p>
                 )}
               </div>
 
@@ -317,7 +317,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
       {toast && (
         <div className={cn(
           "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error-500)] text-white"
         )}>
           {toast.type === "success"
             ? <CheckCircle className="h-4 w-4 shrink-0" />

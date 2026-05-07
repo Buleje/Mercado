@@ -100,12 +100,12 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
-        <span className="font-mono font-medium text-[var(--data-error)]">{formatCurrency(d.nuevos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrency(d.nuevos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
-          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error)]")}>{formatCurrency(neto)}</span>
+          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrency(neto)}</span>
         </p>
       </div>
     </div>
@@ -165,7 +165,7 @@ export default function FiadoAnalyticsPanel() {
 
     // Donut by aging
     const buckets = [
-      { rango: "0-7 dias", monto: 0, count: 0, color: "#00B4A6" },
+      { rango: "0-7 dias", monto: 0, count: 0, color: "var(--accent)" },
       { rango: "8-30 dias", monto: 0, count: 0, color: "#f97316" },
       { rango: "31-60 dias", monto: 0, count: 0, color: "#f77f00" },
       { rango: "+60 dias", monto: 0, count: 0, color: "#e63946" },
@@ -237,11 +237,11 @@ export default function FiadoAnalyticsPanel() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de fiados</p>
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudieron cargar los datos de fiados</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -260,10 +260,10 @@ export default function FiadoAnalyticsPanel() {
   }
 
   const kpiCards = [
-    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
-    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-    { label: "Tasa recuperacion", value: `${totales.tasaRecuperacion.toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Tasa recuperacion", value: `${totales.tasaRecuperacion.toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   ];
 
   const donutData = (distribucion ?? []).filter((d) => d.monto > 0);
@@ -379,8 +379,8 @@ export default function FiadoAnalyticsPanel() {
                 <Tooltip content={<TrendTooltip />} />
                 <defs>
                   <linearGradient id="fiado-green" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="fiado-red" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#e63946" stopOpacity={0.3} />
@@ -390,7 +390,7 @@ export default function FiadoAnalyticsPanel() {
                 <Area
                   type="monotone"
                   dataKey="cobrados"
-                  stroke="#00B4A6"
+                  stroke="var(--accent)"
                   fill="url(#fiado-green)"
                   strokeWidth={1.5}
                   dot={false}
@@ -441,16 +441,16 @@ export default function FiadoAnalyticsPanel() {
                   </td>
                   <td className={cn(
                     "py-1.5 text-right font-mono",
-                    d.dias > 30 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : d.dias > 15 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-secondary)]"
+                    d.dias > 30 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : d.dias > 15 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"
                   )} style={{ fontVariantNumeric: "tabular-nums" }}>
                     {d.dias}d
                   </td>
                   <td className="py-1.5 text-right">
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
-                      d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
-                        : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                      d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
+                        : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
+                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                     )}>
                       {d.status === "vencido" ? "Vencido" : d.status === "riesgo" ? "Riesgo" : "Al dia"}
                     </span>

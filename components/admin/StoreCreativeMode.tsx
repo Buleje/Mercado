@@ -73,7 +73,7 @@ interface StoreCreativeModeProps {
 }
 
 const INPUT_CLASS =
-  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-[var(--data-success)]/30 transition-colors placeholder:text-[var(--text-secondary)]";
+  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-[var(--data-success-500)]/30 transition-colors placeholder:text-[var(--text-secondary)]";
 const LABEL_CLASS =
   "block text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] mb-1";
 
@@ -203,6 +203,54 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     >
       <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
+  );
+}
+
+/**
+ * PreviewBrowserFrame — chrome estilo Chrome con dots, URL bar y iframe.
+ * Hace que la vista previa se sienta como una ventana de browser real,
+ * no como un cuadrado flotante. Resuelve el problema visual de que el
+ * preview "se veía como modo móvil" aunque estuviera en escritorio.
+ */
+function PreviewBrowserFrame({
+  url,
+  iframeKey,
+  src,
+  title,
+}: {
+  url: string;
+  iframeKey: number;
+  src: string;
+  title: string;
+}) {
+  return (
+    <div
+      className="bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 w-full"
+      style={{ height: "calc(100vh - 130px)" }}
+    >
+      {/* Browser chrome */}
+      <div className="bg-gray-100 dark:bg-gray-100 border-b border-gray-200 px-3 py-2 flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+          <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+          <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+        </div>
+        <div className="flex-1 mx-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-mono text-gray-600 truncate">
+          {typeof window !== "undefined" ? window.location.origin : ""}{url}
+        </div>
+        <div className="flex items-center gap-1 shrink-0 text-gray-400">
+          <RefreshCw className="h-3.5 w-3.5" />
+        </div>
+      </div>
+      {/* Content iframe */}
+      <iframe
+        key={iframeKey}
+        src={src}
+        title={title}
+        className="w-full border-0"
+        style={{ height: "calc(100% - 36px)" }}
+      />
+    </div>
   );
 }
 
@@ -446,125 +494,209 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-gray-950">
-      <header className="flex items-center justify-between h-12 px-4 bg-gray-900 border-b border-gray-800 shrink-0">
+      {/* Header reorganizado: branding | viewport (center) | actions (right).
+       * Cada grupo separado por hairline. Active states más obvios. */}
+      <header className="grid grid-cols-3 items-center h-14 px-4 bg-gray-900/95 border-b border-gray-800 shrink-0 backdrop-blur-md">
+        {/* LEFT — branding + exit */}
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors text-sm font-semibold"
+          >
             <X className="h-4 w-4" />
             Salir
           </button>
-          <div className="h-4 w-px bg-gray-700" />
-          <span className="text-xs font-bold text-[var(--data-success)]">Modo Creativo · {draft.storeName || tenantSlug}</span>
+          <div className="h-5 w-px bg-gray-700" />
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-[var(--data-success-500)]/15 flex items-center justify-center">
+              <WandSparkles className="h-4 w-4 text-[var(--data-success-500)]" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--data-success-500)]">Modo Creativo</p>
+              <p className="text-xs font-semibold text-white truncate max-w-[200px]">{draft.storeName || tenantSlug}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
-          {VIEWPORTS.map((vp) => (
+        {/* CENTER — viewport switcher */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center gap-1 bg-gray-800/80 rounded-xl p-1 border border-gray-700/60">
+            {VIEWPORTS.map((vp) => {
+              const active = viewport === vp.id;
+              return (
+                <button
+                  key={vp.id}
+                  onClick={() => setViewport(vp.id)}
+                  title={vp.label}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all",
+                    active
+                      ? "bg-[var(--data-success-500)] text-gray-950 shadow-md shadow-[var(--data-success-500)]/30"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/60",
+                  )}
+                >
+                  <vp.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{vp.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT — actions */}
+        <div className="flex items-center justify-end gap-1.5">
+          {/* Undo / Redo */}
+          <div className="flex items-center gap-0.5 bg-gray-800/60 rounded-lg p-0.5 border border-gray-700/40">
             <button
-              key={vp.id}
-              onClick={() => setViewport(vp.id)}
-              title={vp.label}
-              className={cn("p-1.5 rounded-md transition-colors", viewport === vp.id ? "bg-[var(--accent-soft)] text-white" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-700")}
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              title={`Deshacer (${history.length} pasos)`}
             >
-              <vp.icon className="h-4 w-4" />
+              <Undo2 className="h-4 w-4" />
             </button>
-          ))}
-        </div>
+            <button
+              onClick={handleRedo}
+              disabled={future.length === 0}
+              className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              title={`Rehacer (${future.length} pasos)`}
+            >
+              <Redo2 className="h-4 w-4" />
+            </button>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={handleUndo} disabled={history.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
-            <Undo2 className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={handleRedo} disabled={future.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
-            <Redo2 className="h-3.5 w-3.5" />
-          </button>
-          <div className="h-4 w-px bg-gray-700" />
-          <button
-            onClick={() => setLivePreview((v) => !v)}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
-              livePreview ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800",
+          {/* Preview controls */}
+          <div className="flex items-center gap-0.5 bg-gray-800/60 rounded-lg p-0.5 border border-gray-700/40">
+            <button
+              onClick={() => setLivePreview((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs font-bold transition-all",
+                livePreview
+                  ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
+                  : "text-gray-300 hover:text-white hover:bg-gray-700",
+              )}
+              title={livePreview ? "Volver al mockup estático" : "Activar preview en vivo"}
+            >
+              <Monitor className="h-3.5 w-3.5" />
+              {livePreview ? "En vivo" : "Preview"}
+            </button>
+            {livePreview && (
+              <>
+                <button
+                  onClick={() => setIframeKey((k) => k + 1)}
+                  className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                  title="Recargar vista previa"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setSplitPreview((v) => !v)}
+                  className={cn(
+                    "p-1.5 rounded-md transition-colors",
+                    splitPreview ? "bg-gray-700 text-white" : "text-gray-300 hover:text-white hover:bg-gray-700",
+                  )}
+                  title={splitPreview ? "Vista simple" : "Comparar antes/después"}
+                >
+                  <Columns2 className="h-3.5 w-3.5" />
+                </button>
+              </>
             )}
-            title={livePreview ? "Volver al mockup" : "Vista previa en vivo"}
-          >
-            <Monitor className="h-3.5 w-3.5" />
-            {livePreview ? "En vivo" : "Preview"}
-          </button>
-          {livePreview && (
-            <button
-              onClick={() => setIframeKey((k) => k + 1)}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs"
-              title="Recargar vista previa"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          )}
+          </div>
+
           <a
             href={`/t/${tenantSlug}?preview=true`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors text-xs font-semibold"
             title="Abrir tienda en nueva pestaña"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Ver tienda
+            <span className="hidden xl:inline">Ver tienda</span>
           </a>
-          {livePreview && (
-            <button
-              onClick={() => setSplitPreview((v) => !v)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                splitPreview ? "bg-[var(--accent)]/20 text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800",
-              )}
-              title={splitPreview ? "Vista simple" : "Comparar antes/después"}
-            >
-              <Columns2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <div className="h-4 w-px bg-gray-700" />
+
+          {/* Save — botón hero */}
           <button
             onClick={handleApply}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--data-success-500)] text-white text-sm font-bold shadow-lg shadow-[var(--data-success-500)]/20 hover:bg-[var(--data-success-500)]/90 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {saving ? <Sparkles className="h-3.5 w-3.5 animate-pulse" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
           </button>
         </div>
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="w-72 bg-gray-900 border-r border-gray-800 overflow-y-auto shrink-0">
-          <nav className="p-2 space-y-1">
-            {panelItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setPanel(item.id)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-left",
-                  panel === item.id ? "bg-[var(--accent-soft)] text-[var(--data-success)] font-semibold" : "text-[var(--text-tertiary)] hover:text-gray-200 hover:bg-gray-800",
-                )}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {item.label}
-              </button>
-            ))}
+        <aside className="w-80 bg-gray-900 border-r border-gray-800 overflow-y-auto shrink-0">
+          {/* Sidebar nav — items con icono en bg + label, active state pronunciado */}
+          <nav className="p-3 space-y-1">
+            <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
+            {panelItems.map((item) => {
+              const active = panel === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setPanel(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-2.5 h-10 rounded-xl text-sm font-semibold transition-all text-left group",
+                    active
+                      ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
+                      : "text-gray-300 hover:text-white hover:bg-gray-800 border border-transparent",
+                  )}
+                >
+                  <span className={cn(
+                    "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                    active ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)]" : "bg-gray-800 text-gray-400 group-hover:bg-gray-700 group-hover:text-gray-200"
+                  )}>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  {item.label}
+                  {active && <Check className="h-3.5 w-3.5 ml-auto" />}
+                </button>
+              );
+            })}
           </nav>
 
-          <div className="p-3 border-t border-gray-800 mt-2 space-y-4">
+          <div className="p-3 border-t border-gray-800 mt-2 space-y-3">
             {panel === "plantillas" && (
               <>
-                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Plantillas rapidas</p>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">⚡ Plantillas listas</p>
+                  <p className="text-xs text-gray-400 leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
+                </div>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.id}
                     type="button"
                     onClick={() => applyTemplate(tpl)}
-                    className="w-full text-left p-2.5 rounded-lg bg-gray-800/70 border border-gray-700 hover:border-[var(--data-success)]/30 transition-colors"
+                    className="group w-full text-left rounded-xl bg-gray-800/70 border border-gray-700 hover:border-[var(--data-success-500)]/40 hover:shadow-lg hover:shadow-[var(--data-success-500)]/10 transition-all overflow-hidden"
                   >
-                    <p className="text-xs font-bold text-white">{tpl.name}</p>
-                    <div className="mt-2 flex gap-1">
-                      <span className="h-4 w-4 rounded-full" style={{ backgroundColor: tpl.primaryColor }} />
-                      <span className="h-4 w-4 rounded-full" style={{ backgroundColor: tpl.secondaryColor }} />
-                      <span className="h-4 w-4 rounded-full" style={{ backgroundColor: tpl.accentColor }} />
+                    {/* Mini-mockup: gradient banner con los 3 colores */}
+                    <div
+                      className="h-16 w-full relative overflow-hidden"
+                      style={{
+                        background: `linear-gradient(135deg, ${tpl.primaryColor}, ${tpl.accentColor})`,
+                      }}
+                    >
+                      <div className="absolute inset-x-2 bottom-2 flex items-center gap-1.5">
+                        <div className="h-1.5 w-12 rounded-full bg-white/40" />
+                        <div className="h-3 w-8 rounded-md ml-auto" style={{ backgroundColor: tpl.secondaryColor }} />
+                      </div>
+                      {/* Sparkle decoration */}
+                      <Sparkles className="absolute top-2 right-2 h-3.5 w-3.5 text-white/50" />
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-white">{tpl.name}</p>
+                        <div className="flex gap-1 shrink-0">
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.primaryColor }} />
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.secondaryColor }} />
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.accentColor }} />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1 group-hover:text-[var(--data-success-500)]/80 transition-colors">
+                        Click para aplicar →
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -674,7 +806,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-xs text-gray-200 block">{TIENDA_SECTION_LABELS[key]}</span>
-                          <span className={cn("text-[length:var(--ts-2xs)]", count > 0 ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]")}>
+                          <span className={cn("text-[length:var(--ts-2xs)]", count > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]")}>
                             {count > 0 ? `${count} productos` : "Sin productos"}
                           </span>
                         </div>
@@ -699,7 +831,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className={LABEL_CLASS}>Redondez</label>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold">{draft.borderRadius}px</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold">{draft.borderRadius}px</span>
                   </div>
                   <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success)]" />
                 </div>
@@ -872,7 +1004,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
-                          className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] hover:text-[var(--data-success)] transition-colors"
+                          className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
                         >
                           Restaurar
                         </button>
@@ -897,47 +1029,61 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           </div>
         </aside>
 
-        <main className="flex-1 bg-gray-950 flex items-start justify-center p-4 overflow-auto">
+        <main className="flex-1 bg-gradient-to-br from-gray-950 to-gray-900 flex items-start justify-center p-6 overflow-auto">
           {livePreview ? (
-            <div className={cn("flex gap-4 w-full justify-center", splitPreview && "items-start")}>
+            <div className={cn("flex gap-6 w-full justify-center items-start", !splitPreview && "h-full")}>
               {splitPreview && (
-                <div className="flex flex-col items-center gap-1 shrink-0">
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase">Guardado</span>
-                  <div
-                    className="bg-white rounded-lg overflow-hidden"
-                    style={{ width: viewport === "mobile" ? "320px" : "48%", maxWidth: "50%", height: "calc(100vh - 100px)" }}
-                  >
-                    <iframe
-                      src={`/t/${tenantSlug}`}
-                      title="Versión actual"
-                      className="w-full h-full border-0"
-                    />
-                  </div>
-                </div>
-              )}
-              <div className={cn("flex flex-col items-center gap-1", splitPreview && "shrink-0")}>
-                {splitPreview && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] uppercase">Borrador</span>}
-                <div
-                  className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
-                  style={{
-                    width: splitPreview ? (viewport === "mobile" ? "320px" : "48%") : activeViewport.width,
-                    maxWidth: splitPreview ? "50%" : "100%",
-                    height: "calc(100vh - 100px)",
-                  }}
-                >
-                  <iframe
-                    key={iframeKey}
-                    src={`/t/${tenantSlug}?preview=true`}
-                    title="Vista previa en vivo"
-                    className="w-full h-full border-0"
+                <div className="flex flex-col items-center gap-2 shrink-0" style={{ width: "48%", maxWidth: "640px" }}>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    <Clock className="h-3 w-3" />
+                    Guardado
+                  </span>
+                  <PreviewBrowserFrame
+                    url={`/t/${tenantSlug}`}
+                    iframeKey={0}
+                    src={`/t/${tenantSlug}`}
+                    title="Versión actual"
                   />
                 </div>
+              )}
+              <div
+                className={cn("flex flex-col items-center gap-2", splitPreview && "shrink-0")}
+                style={
+                  splitPreview
+                    ? { width: "48%", maxWidth: "640px" }
+                    : viewport === "mobile"
+                    ? { width: "390px" }
+                    : viewport === "tablet"
+                    ? { width: "768px" }
+                    : { width: "100%", maxWidth: "1280px" }
+                }
+              >
+                {splitPreview && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/15 text-xs font-bold text-[var(--data-success-500)] uppercase tracking-wider">
+                    <Sparkles className="h-3 w-3" />
+                    Borrador
+                  </span>
+                )}
+                <PreviewBrowserFrame
+                  url={`/t/${tenantSlug}?preview=true`}
+                  iframeKey={iframeKey}
+                  src={`/t/${tenantSlug}?preview=true`}
+                  title="Vista previa en vivo"
+                />
               </div>
             </div>
           ) : (
           <div
-            className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
-            style={{ width: activeViewport.width, maxWidth: "100%", minHeight: "calc(100vh - 80px)", fontFamily }}
+            className="bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
+            style={{
+              ...(viewport === "mobile"
+                ? { width: "390px" }
+                : viewport === "tablet"
+                ? { width: "768px" }
+                : { width: "100%", maxWidth: "1280px" }),
+              minHeight: "calc(100vh - 130px)",
+              fontFamily,
+            }}
           >
             <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-[var(--text-primary)]")}>
               <div className="px-4 py-3 border-b" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb", background: draft.navbarStyle === "transparent" ? "transparent" : draft.primaryColor }}>
@@ -1035,10 +1181,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl p-3 border" style={{ borderColor: draft.darkModeDefault ? "#374151" : "#e5e7eb" }}>
                   <p className="text-xs font-bold mb-2">Herramientas activas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">{draft.cartStyle}</span>
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">{draft.buttonStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">{draft.cartStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">{draft.buttonStyle}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">{draft.animations}</span>
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)]">{draft.backgroundPattern}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">{draft.backgroundPattern}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
                   </div>
                 </div>

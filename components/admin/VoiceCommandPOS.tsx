@@ -277,11 +277,11 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
                   voiceState === "listening"
                     ? "bg-primary text-white animate-pulse focus:ring-primary/30"
                     : voiceState === "processing"
-                    ? "bg-[var(--data-warning)] text-white cursor-not-allowed"
+                    ? "bg-[var(--data-warning-500)] text-white cursor-not-allowed"
                     : voiceState === "success"
-                    ? "bg-[var(--accent-soft)] text-white focus:ring-[var(--data-success)]/40"
+                    ? "bg-[var(--accent-soft)] text-white focus:ring-[var(--data-success-500)]/40"
                     : voiceState === "error"
-                    ? "bg-[var(--data-error)] text-white focus:ring-[var(--data-error)]"
+                    ? "bg-[var(--data-error-500)] text-white focus:ring-[var(--data-error-500)]"
                     : "bg-primary/10 text-primary hover:bg-primary hover:text-white focus:ring-primary/30"
                 )}
                 aria-label={voiceState === "listening" ? "Detener" : "Hablar"}
@@ -327,8 +327,8 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
             {/* Last action */}
             {lastAction && voiceState === "success" && (
-              <div className="px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">{lastAction}</p>
+              <div className="px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">{lastAction}</p>
               </div>
             )}
 

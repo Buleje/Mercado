@@ -45,9 +45,9 @@ const MOTIVOS = [
 ];
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
-  PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-  ENVIADA:   "bg-[var(--accent-soft)] text-[var(--data-success)]",
-  RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success)]",
+  PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+  ENVIADA:   "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
 };
 
 const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
@@ -328,18 +328,18 @@ export default function DevolucionesProveedorModule() {
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
-                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
+                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">{conteos.ENVIADA} enviadas</p>
               </div>
-              <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
+              <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resueltas</p>
-                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success)]">{conteos.RESUELTA}</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{conteos.RESUELTA}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">{devoluciones.length > 0 ? Math.round((conteos.RESUELTA / devoluciones.length) * 100) : 0}% completadas</p>
               </div>
-              <CheckCircle2 className="h-5 w-5 text-[var(--data-success)] shrink-0" />
+              <CheckCircle2 className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
@@ -467,7 +467,7 @@ export default function DevolucionesProveedorModule() {
                 {items.length > 1 && (
                   <button
                     onClick={() => quitarItem(index)}
-                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -585,7 +585,7 @@ export default function DevolucionesProveedorModule() {
                       <div>
                         <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Motivo</p>
                         <div className="flex items-start gap-1.5">
-                          <AlertCircle className="h-3.5 w-3.5 text-[var(--data-warning)] mt-0.5 shrink-0" />
+                          <AlertCircle className="h-3.5 w-3.5 text-[var(--data-warning-500)] mt-0.5 shrink-0" />
                           <span className="text-sm text-[var(--text-primary)]">{dev.motivo}</span>
                         </div>
                       </div>
@@ -614,7 +614,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => eliminar(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-medium transition-colors min-h-[36px] px-2 disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)] font-medium transition-colors min-h-[36px] px-2 disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         Eliminar registro
@@ -671,9 +671,9 @@ export default function DevolucionesProveedorModule() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: "Total", value: devoluciones.length, color: "text-[var(--text-primary)]" },
-                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-[var(--data-warning)]" },
-                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-[var(--data-success)]" },
-                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-[var(--data-success)]" },
+                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-[var(--data-warning-500)]" },
+                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-[var(--data-success-500)]" },
+                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-[var(--data-success-500)]" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-white border border-[var(--rule-soft)] rounded-xl p-3 text-center">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -697,7 +697,7 @@ export default function DevolucionesProveedorModule() {
                       formatter={(val) => { const n = Number(val); return [`${n} devoluci${n === 1 ? "ón" : "ones"}`, ""] as [string, string]; }}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                    <Bar dataKey="total" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

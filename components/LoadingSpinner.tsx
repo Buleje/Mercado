@@ -28,7 +28,7 @@ export function LoadingSpinner({
       role="status"
       aria-label={text ?? 'Cargando...'}
     >
-      <Loader2 className={`${sizeClasses[size]} animate-spin text-emerald-600`} aria-hidden="true" />
+      <Loader2 className={`${sizeClasses[size]} animate-spin text-[var(--data-success-600)]`} aria-hidden="true" />
       {text && <p className="text-sm text-gray-600 animate-pulse" aria-hidden="true">{text}</p>}
     </div>
   );

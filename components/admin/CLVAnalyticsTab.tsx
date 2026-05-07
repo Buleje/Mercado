@@ -53,7 +53,7 @@ export default function CLVAnalyticsTab() {
   );
   if (error || !data) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error cargando datos CLV</p>
     </div>
   );
@@ -87,7 +87,7 @@ export default function CLVAnalyticsTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <KPI label="Clientes activos"       value={String(data.summary.totalCustomers)} icon={Users}        color="bg-[var(--accent-soft)]" />
         <KPI label="CLV promedio"           value={fmt(data.summary.avgLTV)}            icon={TrendingUp}   color="bg-[var(--accent-soft)]" sub={momChange ? `${Number(momChange) >= 0 ? "+" : ""}${momChange}% vs mes ant.` : undefined} />
-        <KPI label="Pedidos por cliente"    value={String(data.summary.avgOrderCount)}  icon={ShoppingCart} color="bg-amber-500" />
+        <KPI label="Pedidos por cliente"    value={String(data.summary.avgOrderCount)}  icon={ShoppingCart} color="bg-[var(--data-warning-500)]" />
         <KPI label="Cohortes identificadas" value={String(data.cohorts.length)}         icon={Calendar}     color="bg-[var(--text-primary)]" />
       </div>
 
@@ -113,7 +113,7 @@ export default function CLVAnalyticsTab() {
       {view === "top10" && (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-            <Medal className="h-4 w-4 text-[var(--data-warning)]" /> Top 10 Clientes más valiosos
+            <Medal className="h-4 w-4 text-[var(--data-warning-500)]" /> Top 10 Clientes más valiosos
           </CardTitle>
           {top10.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Sin datos</p>
@@ -135,7 +135,7 @@ export default function CLVAnalyticsTab() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalSpent)}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-semibold">Proy. 6m: {fmt(predicted)}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-semibold">Proy. 6m: {fmt(predicted)}</p>
                       </div>
                     </div>
                     <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
@@ -176,7 +176,7 @@ export default function CLVAnalyticsTab() {
                 })}
               </div>
               {momChange !== null && (
-                <p className={cn("text-xs font-semibold mt-3 text-center", Number(momChange) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                <p className={cn("text-xs font-semibold mt-3 text-center", Number(momChange) >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   CLV promedio {Number(momChange) >= 0 ? "subió" : "bajó"} {Math.abs(Number(momChange))}% vs mes anterior
                 </p>
               )}
@@ -206,9 +206,9 @@ export default function CLVAnalyticsTab() {
                         <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{cohort.customers}</td>
                         <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cohort.totalRevenue)}</td>
                         <td className="px-4 py-2.5 text-right">
-                          <span className="text-[var(--data-success)] font-semibold">{fmt(cohort.avgLTV)}</span>
+                          <span className="text-[var(--data-success-500)] font-semibold">{fmt(cohort.avgLTV)}</span>
                           {prev && (
-                            <span className={cn("ml-1.5 text-[length:var(--ts-2xs)] font-bold", delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                            <span className={cn("ml-1.5 text-[length:var(--ts-2xs)] font-bold", delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                               {delta >= 0 ? "+" : "-"}{Math.abs(delta).toFixed(0)}
                             </span>
                           )}
@@ -247,7 +247,7 @@ export default function CLVAnalyticsTab() {
                   <tr><td colSpan={8} className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted">No se encontraron clientes</td></tr>
                 )}
                 {filtered.map((c, idx) => {
-                  const urgency = c.daysSinceLast > 60 ? "text-red-500 font-semibold" : c.daysSinceLast > 30 ? "text-amber-500 font-semibold" : "text-[var(--text-secondary)] dark:text-muted";
+                  const urgency = c.daysSinceLast > 60 ? "text-[var(--data-error-500)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted";
                   const predicted = predictFutureCLV(c);
                   return (
                     <tr key={c.phone} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
@@ -260,7 +260,7 @@ export default function CLVAnalyticsTab() {
                       <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{c.orderCount}</td>
                       <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{fmt(c.avgOrderValue)}</td>
                       <td className="px-4 py-2.5 text-right hidden md:table-cell">
-                        <span className="text-[var(--data-success)] font-semibold text-xs">{fmt(predicted)}</span>
+                        <span className="text-[var(--data-success-500)] font-semibold text-xs">{fmt(predicted)}</span>
                       </td>
                       <td className="px-4 py-2.5 text-xs text-[var(--text-secondary)] dark:text-muted hidden lg:table-cell">{fmtMonth(c.cohortMonth)}</td>
                       <td className={cn("px-4 py-2.5 text-right text-xs hidden md:table-cell", urgency)}>hace {c.daysSinceLast}d</td>

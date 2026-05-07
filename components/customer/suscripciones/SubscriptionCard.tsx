@@ -358,7 +358,7 @@ function MenuButton({
         "w-full flex items-center gap-2 px-3 py-2 text-[length:var(--ts-sm)]",
         "hover:bg-[var(--surface-sunken)] transition-colors text-left",
         destructive
-          ? "text-[var(--data-error)]"
+          ? "text-[var(--data-error-500)]"
           : "text-[var(--text-primary)]",
       )}
     >

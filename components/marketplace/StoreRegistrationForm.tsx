@@ -246,10 +246,10 @@ export default function StoreRegistrationForm() {
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[var(--surface-sunken)]">
         <div className="max-w-xl w-full">
           <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 sm:p-10 shadow-sm text-center">
-            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--data-success)]/10 text-[var(--data-success)]">
+            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
               <CheckCircle className="h-10 w-10" strokeWidth={2} />
             </div>
-            <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+            <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
               Solicitud enviada
             </p>
@@ -333,9 +333,9 @@ export default function StoreRegistrationForm() {
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-xs font-bold",
                     b.tone === "amber" &&
-                      "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400",
+                      "border-amber-300 bg-amber-50 text-[var(--data-warning-700)] dark:border-[var(--data-warning-500)]/30 dark:bg-[var(--data-warning-500)]/10 dark:text-amber-400",
                     b.tone === "success" &&
-                      "border-[var(--data-success)]/30 bg-[var(--data-success)]/8 text-[var(--data-success)]",
+                      "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 text-[var(--data-success-500)]",
                     b.tone === "accent" &&
                       "border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[var(--accent)]",
                   )}
@@ -394,7 +394,7 @@ export default function StoreRegistrationForm() {
                       step === "info"
                         ? "bg-[var(--accent)] text-white"
                         : stepIndex > 1
-                          ? "bg-[var(--data-success)] text-white"
+                          ? "bg-[var(--data-success-500)] text-white"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                     )}
                   >
@@ -468,7 +468,7 @@ export default function StoreRegistrationForm() {
               {error && (
                 <div
                   role="alert"
-                  className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error)]/30 bg-[var(--data-error)]/5 px-4 py-3.5 text-sm font-bold text-[var(--data-error)]"
+                  className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 px-4 py-3.5 text-sm font-bold text-[var(--data-error-500)]"
                 >
                   <span aria-hidden className="text-lg leading-none">!</span>
                   <span>{error}</span>
@@ -481,7 +481,7 @@ export default function StoreRegistrationForm() {
                   <div>
                     <label htmlFor="reg-owner-name" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <User className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
-                      Tu nombre completo <span className="text-[var(--data-error)]">*</span>
+                      Tu nombre completo <span className="text-[var(--data-error-500)]">*</span>
                     </label>
                     <input
                       id="reg-owner-name"
@@ -499,7 +499,7 @@ export default function StoreRegistrationForm() {
                   <div>
                     <label htmlFor="reg-owner-phone" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <Phone className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
-                      Tu WhatsApp <span className="text-[var(--data-error)]">*</span>
+                      Tu WhatsApp <span className="text-[var(--data-error-500)]">*</span>
                     </label>
                     <input
                       id="reg-owner-phone"
@@ -568,7 +568,7 @@ export default function StoreRegistrationForm() {
                   <div>
                     <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <Store className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
-                      Nombre de tu tienda <span className="text-[var(--data-error)]">*</span>
+                      Nombre de tu tienda <span className="text-[var(--data-error-500)]">*</span>
                     </label>
                     <input
                       type="text"
@@ -630,7 +630,7 @@ export default function StoreRegistrationForm() {
                     </div>
 
                     {geoError && (
-                      <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
+                      <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-[var(--data-error-700)] dark:bg-red-950 dark:text-red-300">
                         {geoError}
                       </p>
                     )}
@@ -830,7 +830,7 @@ export default function StoreRegistrationForm() {
                     "Cancelás cuando quieras",
                   ].map((vp) => (
                     <li key={vp} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
+                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
                         <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
                       <span className="text-sm font-semibold text-[var(--text-primary)]">

@@ -221,7 +221,7 @@ export default function SponsoredCreateModal({
                     "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
                     "outline-none transition-colors",
                     errors.productId
-                      ? "border-red-400 dark:border-red-600 focus:ring-2 focus:ring-red-300"
+                      ? "border-red-400 dark:border-[var(--data-error-600)] focus:ring-2 focus:ring-red-300"
                       : "border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20"
                   )}
                 >
@@ -231,7 +231,7 @@ export default function SponsoredCreateModal({
                   ))}
                 </select>
                 {errors.productId && (
-                  <p className="mt-1 text-xs text-red-500">{errors.productId}</p>
+                  <p className="mt-1 text-xs text-[var(--data-error-500)]">{errors.productId}</p>
                 )}
               </div>
 
@@ -255,12 +255,12 @@ export default function SponsoredCreateModal({
                       "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
                       "outline-none transition-colors",
                       errors.bidAmount
-                        ? "border-red-400 dark:border-red-600"
+                        ? "border-red-400 dark:border-[var(--data-error-600)]"
                         : "border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     )}
                   />
                   {errors.bidAmount && (
-                    <p className="mt-1 text-xs text-red-500">{errors.bidAmount}</p>
+                    <p className="mt-1 text-xs text-[var(--data-error-500)]">{errors.bidAmount}</p>
                   )}
                 </div>
                 <div>
@@ -280,12 +280,12 @@ export default function SponsoredCreateModal({
                       "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
                       "outline-none transition-colors",
                       errors.maxBudgetPen
-                        ? "border-red-400 dark:border-red-600"
+                        ? "border-red-400 dark:border-[var(--data-error-600)]"
                         : "border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     )}
                   />
                   {errors.maxBudgetPen && (
-                    <p className="mt-1 text-xs text-red-500">{errors.maxBudgetPen}</p>
+                    <p className="mt-1 text-xs text-[var(--data-error-500)]">{errors.maxBudgetPen}</p>
                   )}
                 </div>
               </div>
@@ -307,12 +307,12 @@ export default function SponsoredCreateModal({
                       "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
                       "outline-none transition-colors",
                       errors.startDate
-                        ? "border-red-400 dark:border-red-600"
+                        ? "border-red-400 dark:border-[var(--data-error-600)]"
                         : "border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     )}
                   />
                   {errors.startDate && (
-                    <p className="mt-1 text-xs text-red-500">{errors.startDate}</p>
+                    <p className="mt-1 text-xs text-[var(--data-error-500)]">{errors.startDate}</p>
                   )}
                 </div>
                 <div>
@@ -330,12 +330,12 @@ export default function SponsoredCreateModal({
                       "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
                       "outline-none transition-colors",
                       errors.endDate
-                        ? "border-red-400 dark:border-red-600"
+                        ? "border-red-400 dark:border-[var(--data-error-600)]"
                         : "border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     )}
                   />
                   {errors.endDate && (
-                    <p className="mt-1 text-xs text-red-500">{errors.endDate}</p>
+                    <p className="mt-1 text-xs text-[var(--data-error-500)]">{errors.endDate}</p>
                   )}
                 </div>
               </div>
@@ -343,8 +343,8 @@ export default function SponsoredCreateModal({
               {/* Error global */}
               {submitError && (
                 <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2.5">
-                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-                  <p className="text-xs text-red-600 dark:text-red-400">{submitError}</p>
+                  <AlertCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                  <p className="text-xs text-[var(--data-error-600)] dark:text-red-400">{submitError}</p>
                 </div>
               )}
 

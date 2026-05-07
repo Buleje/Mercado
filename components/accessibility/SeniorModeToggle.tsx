@@ -57,7 +57,7 @@ export default function SeniorModeToggle() {
       type="button"
       onClick={toggle}
       aria-pressed={enabled}
-      className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]"
     >
       <span aria-hidden className="text-lg">
         {enabled ? "👀" : "🔍"}

@@ -83,7 +83,7 @@ export default function WizardStepNav({
                   isCurrent
                     ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
                     : isDone
-                      ? "bg-[var(--data-success)] text-white"
+                      ? "bg-[var(--data-success-500)] text-white"
                       : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]",
                 )}
                 aria-hidden="true"

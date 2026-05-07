@@ -64,7 +64,7 @@ import { POST } from "@/app/api/whatsapp/yape-capture/route";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const FAKE_IMAGE_BYTES = new Uint8Array([137, 80, 78, 71]); // PNG magic
+const FAKE_IMAGE_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]); // PNG full magic (8 bytes)
 
 function makeCreatedApproval(id = "pap_new_001") {
   return {
@@ -72,7 +72,7 @@ function makeCreatedApproval(id = "pap_new_001") {
     customerPhone: "51987654321",
     expectedAmount: 50.0,
     status: "pending",
-    imageUrl: "https://cdn.twilio.com/media/abc.jpg",
+    imageUrl: "https://api.twilio.com/2010-04-01/Accounts/AC123/Messages/MM123/Media/ME123",
     conversationId: "conv-001",
     detectedAmount: null,
     visionResponse: null,
@@ -90,7 +90,7 @@ function makeCreatedApproval(id = "pap_new_001") {
 function makeTwilioRequest(overrides: Record<string, string> = {}) {
   const form = new URLSearchParams({
     From: "whatsapp:+51987654321",
-    MediaUrl0: "https://cdn.twilio.com/media/abc.jpg",
+    MediaUrl0: "https://api.twilio.com/2010-04-01/Accounts/AC123/Messages/MM123/Media/ME123",
     NumMedia: "1",
     ...overrides,
   });
@@ -271,7 +271,7 @@ describe("POST /api/whatsapp/yape-capture", () => {
   it("Twilio payload sin From → 400", async () => {
     // Arrange
     const form = new URLSearchParams({
-      MediaUrl0: "https://cdn.twilio.com/media/abc.jpg",
+      MediaUrl0: "https://api.twilio.com/2010-04-01/Accounts/AC123/Messages/MM123/Media/ME123",
       NumMedia: "1",
       // From ausente
     });

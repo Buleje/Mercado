@@ -49,7 +49,7 @@ export default function TenantAdminGateway() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[var(--surface-canvas)]">
-      <Loader2 className="w-8 h-8 animate-spin text-[#00B4A6]" />
+      <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
       <p className="text-sm text-[var(--text-tertiary)]">
         Cargando panel de <strong className="text-[var(--text-secondary)]">{slug}</strong>…
       </p>

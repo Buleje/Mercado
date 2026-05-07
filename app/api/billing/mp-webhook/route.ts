@@ -65,22 +65,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, skipped: true });
   }
 
-  // ── Verificar firma x-signature (opcional pero recomendado) ─
+  // ── Verificar firma x-signature ──────────────────────────────
+  // SECURITY 2026-05-05 (audit webhooks #1): fail-CLOSED. Antes, si
+  // `MERCADOPAGO_WEBHOOK_SECRET` no estaba configurado, el webhook aceptaba
+  // cualquier IP → atacante activa planes pagos enviando un dataId arbitrario.
+  // Ahora: si falta el secret, retornamos 503 (servicio no disponible).
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-  if (secret) {
-    const xSignature = req.headers.get("x-signature") ?? "";
-    const xRequestId = req.headers.get("x-request-id") ?? "";
+  if (!secret) {
+    logger.error("[MP Webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado — fail-closed");
+    return NextResponse.json(
+      { error: "Webhook signing not configured" },
+      { status: 503 },
+    );
+  }
 
-    const valid = verifyMPWebhookSignature({
-      xSignature,
-      xRequestId,
-      dataId,
-      secret,
-    });
+  const xSignature = req.headers.get("x-signature") ?? "";
+  const xRequestId = req.headers.get("x-request-id") ?? "";
 
-    if (!valid) {
-      logger.warn("[MP Webhook] Firma inválida", { dataId, xSignature: xSignature.slice(0, 30) });
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  const valid = verifyMPWebhookSignature({
+    xSignature,
+    xRequestId,
+    dataId,
+    secret,
+  });
+
+  if (!valid) {
+    logger.warn("[MP Webhook] Firma inválida", { dataId, xSignature: xSignature.slice(0, 30) });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  // SECURITY 2026-05-05 (audit webhooks #4): timestamp validation
+  // (anti-replay). x-signature MP incluye `ts=<unix>` — rechazar si la firma
+  // tiene más de 5 minutos. Si no viene `ts`, dejamos pasar (verifySignature
+  // ya falló por arriba si es inválida).
+  const tsMatch = xSignature.match(/ts=(\d+)/);
+  if (tsMatch) {
+    const sigSec = parseInt(tsMatch[1], 10);
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (Number.isFinite(sigSec) && Math.abs(nowSec - sigSec) > 300) {
+      logger.warn("[MP Webhook] Replay attack — timestamp >5min", { dataId, sigSec, nowSec });
+      return NextResponse.json({ error: "Stale signature" }, { status: 400 });
     }
   }
 
@@ -282,18 +306,34 @@ async function handleSubscriptionNotification(opts: {
 }): Promise<NextResponse> {
   const { type, dataId } = opts;
 
-  // ── Idempotencia ─────────────────────────────────────────
+  // ── Idempotencia atómica con UNIQUE constraint ──────────
+  // SECURITY 2026-05-05 (audit webhooks #7): antes findUnique + upsert
+  // posterior NO era atómico — dos eventos paralelos podían renovar el
+  // período dos veces. Ahora `create` con UNIQUE = atómico (P2002 = lock
+  // tomado).
   const idempotencyKey = `mp_sub_${dataId}`;
-  const alreadyProcessed = await prisma.stripeWebhookQueue
-    .findUnique({
-      where: { stripeId: idempotencyKey },
-      select: { processedAt: true },
-    })
-    .catch(() => null);
-
-  if (alreadyProcessed?.processedAt) {
-    logger.info("[MP Webhook] Evento de suscripción duplicado, ignorado", { dataId, type });
-    return NextResponse.json({ received: true, duplicate: true });
+  try {
+    await prisma.stripeWebhookQueue.create({
+      data: {
+        stripeId: idempotencyKey,
+        eventType: `mp.subscription.${type}.processing`,
+        payload: JSON.stringify({ dataId, type }),
+        attempts: 1,
+        lastError: "",
+        nextRetryAt: new Date(),
+        processedAt: null,
+      },
+    });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "P2002") {
+      logger.info("[MP Webhook] Suscripción duplicada o procesando, ignorada", { dataId, type });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    logger.error("[MP Webhook] Error tomando lock de idempotencia (sub)", {
+      dataId, err: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json({ received: true, error: "lock_failed" });
   }
 
   // ── Obtener estado de la suscripción desde MP ────────────
@@ -358,20 +398,11 @@ async function handleSubscriptionNotification(opts: {
       preapprovalId,
       type,
     });
-    // Registrar igualmente para idempotencia
+    // El lock ya fue creado arriba — solo marcar como processed.
     prisma.stripeWebhookQueue
-      .upsert({
+      .update({
         where: { stripeId: idempotencyKey },
-        create: {
-          stripeId: idempotencyKey,
-          eventType: `mp.${type}.no_tenant`,
-          payload: JSON.stringify({ dataId, preapprovalId }),
-          attempts: 1,
-          lastError: "tenant_not_found",
-          nextRetryAt: new Date(),
-          processedAt: new Date(),
-        },
-        update: { processedAt: new Date() },
+        data: { processedAt: new Date(), lastError: "tenant_not_found" },
       })
       .catch(() => {});
     return NextResponse.json({ received: true });
@@ -436,20 +467,11 @@ async function handleSubscriptionNotification(opts: {
       .catch(() => {});
   }
 
-  // ── Registrar idempotencia (fire-and-forget) ─────────────
+  // ── Marcar processedAt (lock ya creado arriba) ─────────────
   prisma.stripeWebhookQueue
-    .upsert({
+    .update({
       where: { stripeId: idempotencyKey },
-      create: {
-        stripeId: idempotencyKey,
-        eventType: `mp.${type}`,
-        payload: JSON.stringify({ dataId, preapprovalId, authorizedPaymentStatus }),
-        attempts: 1,
-        lastError: "",
-        nextRetryAt: new Date(),
-        processedAt: new Date(),
-      },
-      update: {
+      data: {
         processedAt: new Date(),
         eventType: `mp.${type}`,
       },

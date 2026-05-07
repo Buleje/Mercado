@@ -174,21 +174,21 @@ export default function CronDeadLettersPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className={`${ADMIN_TOKENS.card} p-4`}>
             <p className={ADMIN_TOKENS.hint}>Dead Letters</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--data-error)]">{totalDead}</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--data-error-500)]">{totalDead}</p>
           </div>
           <div className={`${ADMIN_TOKENS.card} p-4`}>
             <p className={ADMIN_TOKENS.hint}>Jobs afectados</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--data-warning)]">{summary.length}</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--data-warning-500)]">{summary.length}</p>
           </div>
           <div className={`${ADMIN_TOKENS.card} p-4`}>
             <p className={ADMIN_TOKENS.hint}>Crons activos (24h)</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--data-success)]">
+            <p className="mt-1 text-2xl font-bold text-[var(--data-success-500)]">
               {health.filter((h) => h.successCount24h > 0).length}
             </p>
           </div>
           <div className={`${ADMIN_TOKENS.card} p-4`}>
             <p className={ADMIN_TOKENS.hint}>Crons con fallos (24h)</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--data-warning)]">
+            <p className="mt-1 text-2xl font-bold text-[var(--data-warning-500)]">
               {health.filter((h) => h.failureCount24h > 0).length}
             </p>
           </div>
@@ -217,10 +217,10 @@ export default function CronDeadLettersPage() {
                       <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">
                         {h.jobName}
                       </td>
-                      <td className="px-4 py-3 text-center text-[var(--data-success)]">
+                      <td className="px-4 py-3 text-center text-[var(--data-success-500)]">
                         {h.successCount24h}
                       </td>
-                      <td className="px-4 py-3 text-center text-[var(--data-error)]">
+                      <td className="px-4 py-3 text-center text-[var(--data-error-500)]">
                         {h.failureCount24h || "—"}
                       </td>
                       <td className="px-4 py-3 text-center text-[var(--text-secondary)]">
@@ -228,7 +228,7 @@ export default function CronDeadLettersPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {h.deadLetters > 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-50)] px-2 py-0.5 text-xs font-semibold text-[var(--data-error)]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-50)] px-2 py-0.5 text-xs font-semibold text-[var(--data-error-500)]">
                             <AlertTriangle size={10} aria-hidden /> {h.deadLetters}
                           </span>
                         ) : (
@@ -259,7 +259,7 @@ export default function CronDeadLettersPage() {
                     <p className="font-mono text-xs text-[var(--text-primary)] truncate">
                       {s.jobName}
                     </p>
-                    <p className="text-xs text-[var(--data-error)]">
+                    <p className="text-xs text-[var(--data-error-500)]">
                       {s.failureCount} fallo{s.failureCount !== 1 ? "s" : ""}
                     </p>
                   </div>
@@ -273,7 +273,7 @@ export default function CronDeadLettersPage() {
                     <button
                       onClick={() => clearByJob(s.jobName)}
                       disabled={deletingJob === s.jobName}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-error-50)] px-2 py-1 text-xs font-semibold text-[var(--data-error)] hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-error-50)] px-2 py-1 text-xs font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                     >
                       <Trash2 size={12} aria-hidden />
                       Limpiar
@@ -320,7 +320,7 @@ export default function CronDeadLettersPage() {
                         <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">
                           {entry.jobName}
                         </td>
-                        <td className="max-w-xs px-4 py-3 text-xs text-[var(--data-error)]">
+                        <td className="max-w-xs px-4 py-3 text-xs text-[var(--data-error-500)]">
                           <span title={entry.error}>{truncate(entry.error, 80)}</span>
                         </td>
                         <td className="px-4 py-3 text-center text-xs text-[var(--text-secondary)]">
@@ -333,7 +333,7 @@ export default function CronDeadLettersPage() {
                           <button
                             onClick={() => clearById(entry.id)}
                             disabled={deletingId === entry.id}
-                            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] disabled:opacity-50 transition-colors"
+                            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
                             title="Eliminar entrada"
                             aria-label="Eliminar entrada"
                           >

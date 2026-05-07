@@ -60,7 +60,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error-500)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
       {msg}
@@ -86,6 +86,10 @@ function ProductFormModal({
   const [nameDuplicate, setNameDuplicate] = useState(false);
   const [nameChecking, setNameChecking] = useState(false);
   const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // BUG-FIX (audit 2026-05-05): AbortController para cancelar fetches stale.
+  // Evita race condition donde el último query escrito puede ser sobreescrito
+  // por la respuesta de un query anterior.
+  const nameAbortRef = useRef<AbortController | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
   // ── AV-19: Secciones colapsables ────────────────────────────────────────────
@@ -301,11 +305,15 @@ function ProductFormModal({
 
   const checkNameDuplicate = (name: string) => {
     if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+    // BUG-FIX (audit 2026-05-05): cancela fetch stale anterior
+    if (nameAbortRef.current) nameAbortRef.current.abort();
     if (name.trim().length < 2) { setNameDuplicate(false); return; }
     setNameChecking(true);
     nameDebounceRef.current = setTimeout(async () => {
+      const ctrl = new AbortController();
+      nameAbortRef.current = ctrl;
       try {
-        const res = await fetch(`/api/products?search=${encodeURIComponent(name.trim())}`);
+        const res = await fetch(`/api/products?search=${encodeURIComponent(name.trim())}`, { signal: ctrl.signal });
         if (res.ok) {
           const products: Product[] = await res.json();
           const exists = products.some(
@@ -315,10 +323,16 @@ function ProductFormModal({
           );
           setNameDuplicate(exists);
         }
-      } catch {
-        // Si falla la consulta, no bloqueamos
+      } catch (err) {
+        // AbortError es esperado al cancelar — no log ni bloqueo
+        if (err instanceof Error && err.name !== "AbortError") {
+          // Si falla por otro motivo, no bloqueamos
+        }
       } finally {
-        setNameChecking(false);
+        if (nameAbortRef.current === ctrl) {
+          nameAbortRef.current = null;
+          setNameChecking(false);
+        }
       }
     }, 300);
   };
@@ -457,7 +471,7 @@ function ProductFormModal({
                 className={cn(
                   "mt-1 w-full px-3 min-h-[44px] rounded-lg border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
                   nameDuplicate
-                    ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] focus:ring-[var(--data-warning)]"
+                    ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] focus:ring-[var(--data-warning-500)]"
                     : "border-[var(--rule-base)] dark:border-card-border focus:ring-primary/30"
                 )}
               />
@@ -465,7 +479,7 @@ function ProductFormModal({
                 <p className="mt-1 text-xs text-[var(--text-tertiary)]">Verificando nombre...</p>
               )}
               {nameDuplicate && !nameChecking && (
-                <p className="mt-1 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-1">
+                <p className="mt-1 text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   Ya existe un producto con este nombre
                 </p>
@@ -534,7 +548,7 @@ function ProductFormModal({
                   className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {form.costPrice != null && form.price > 0 && (
-                  <p className="text-xs text-[var(--data-success)] mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
+                  <p className="text-xs text-[var(--data-success-500)] mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
                 )}
               </div>
               <div>
@@ -1095,7 +1109,7 @@ export default function ProductsAdminTab() {
           </button>
           <button
             onClick={() => setShowExcelImporter(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 transition-colors"
             title="Importar productos desde Excel (.xlsx)"
           >
             <Upload className="h-4 w-4" /> Excel
@@ -1205,7 +1219,7 @@ export default function ProductsAdminTab() {
                   {/* Stock */}
                   <span className={cn(
                     "text-xs font-bold w-16 text-center",
-                    isOut ? "text-[var(--data-error)]" : isLow ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
+                    isOut ? "text-[var(--data-error-500)]" : isLow ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]"
                   )}>
                     {p.stock !== undefined ? p.stock : "—"}
                   </span>
@@ -1216,8 +1230,8 @@ export default function ProductsAdminTab() {
                       className={cn(
                         "h-7 w-7 rounded-lg flex items-center justify-center transition-colors",
                         p.active === false
-                          ? "text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
-                          : "text-[var(--data-success)] hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-surface"
+                          ? "text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                          : "text-[var(--data-success-500)] hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-surface"
                       )}
                       title={p.active === false ? "Activar" : "Ocultar"}
                     >
@@ -1239,7 +1253,7 @@ export default function ProductsAdminTab() {
                     </button>
                     <button
                       onClick={() => setDeleteTarget(p)}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1315,8 +1329,8 @@ export default function ProductsAdminTab() {
                       <span
                         className={cn(
                           "text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm backdrop-blur-sm",
-                          stockLevel === "out" && "bg-[var(--data-error)] text-white",
-                          stockLevel === "low" && "bg-[var(--data-warning)] text-white",
+                          stockLevel === "out" && "bg-[var(--data-error-500)] text-white",
+                          stockLevel === "low" && "bg-[var(--data-warning-500)] text-white",
                           stockLevel === "ok" && "bg-white/90 dark:bg-card/90 text-[var(--text-primary)]"
                         )}
                       >
@@ -1351,7 +1365,7 @@ export default function ProductsAdminTab() {
                     </button>
                     <button
                       onClick={() => setDeleteTarget(p)}
-                      className="h-9 w-9 rounded-lg bg-white text-[var(--data-error)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white text-[var(--data-error-500)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1479,7 +1493,7 @@ function CategorySuggestion({
   if (detection.id === currentCategory) {
     return (
       <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
-        <CheckCircle className="h-3 w-3 text-emerald-500" />
+        <CheckCircle className="h-3 w-3 text-[var(--data-success-500)]" />
         Categoría coincide con la detección automática.
       </p>
     );

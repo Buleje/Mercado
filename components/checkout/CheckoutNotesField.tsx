@@ -1,26 +1,46 @@
 "use client";
 
+import { MessageCircle, Sparkles, Gift, Home } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
+
 export interface CheckoutNotesFieldProps {
   notes: string;
   onNotesChange: (v: string) => void;
   rows?: number;
 }
 
-const QUICK_NOTES = [
-  { emoji: "🎂", text: "Feliz cumpleaños! " },
-  { emoji: "🎁", text: "Es un regalo. " },
-  { emoji: "📦", text: "Dejar en porteria. " },
+const QUICK_NOTES: ReadonlyArray<{
+  label: string;
+  text: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+}> = [
+  { label: "Cumpleaños", text: "Feliz cumpleaños! ", icon: Sparkles },
+  { label: "Regalo", text: "Es un regalo. ", icon: Gift },
+  { label: "Portería", text: "Dejar en porteria. ", icon: Home },
 ];
 
+/**
+ * CheckoutNotesField — textarea para mensaje especial del pedido
+ * con chips rápidos para insertar templates comunes.
+ *
+ * Rediseño 2026-05-05: label con icono brand, chips con icono propio,
+ * textarea con tokens del DS (sin gray-200 hardcoded).
+ */
 export function CheckoutNotesField({
   notes,
   onNotesChange,
   rows = 2,
 }: CheckoutNotesFieldProps) {
   return (
-    <div>
-      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
-        Mensaje especial (opcional)
+    <div className="space-y-2">
+      <label className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+        <MessageCircle
+          className="h-4 w-4"
+          strokeWidth={2}
+          style={{ color: "var(--color-primary, #00B4A6)" }}
+        />
+        Mensaje especial
+        <span className="text-xs text-muted font-medium">(opcional)</span>
       </label>
       <textarea
         value={notes}
@@ -28,29 +48,36 @@ export function CheckoutNotesField({
           if (e.target.value.length <= 200) onNotesChange(e.target.value);
         }}
         rows={rows}
-        placeholder="Ej: Feliz cumpleanos Maria, Dejar en porteria, etc."
-        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none"
+        placeholder="Ej: Feliz cumpleaños María, dejar en portería..."
+        className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-white dark:bg-card text-foreground placeholder:text-muted/60 px-4 py-3 text-sm focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors resize-none"
       />
-      <div className="flex items-center justify-between mt-1.5">
-        <div className="flex gap-1.5">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-1.5">
           {QUICK_NOTES.map((q) => (
             <button
-              key={q.emoji}
+              key={q.label}
               type="button"
               onClick={() => {
                 const next = (notes + q.text).slice(0, 200);
                 onNotesChange(next);
               }}
-              className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium hover:bg-[#f97316]/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 h-8 rounded-full border-2 border-[var(--rule-soft)] bg-white dark:bg-card text-xs font-bold text-foreground hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)] transition-colors"
             >
-              {q.emoji} {q.text.trim().split(" ")[0]}
+              <q.icon
+                className="h-3.5 w-3.5"
+                strokeWidth={2.25}
+              />
+              {q.label}
             </button>
           ))}
         </div>
         <span
-          className={`text-[length:var(--ts-2xs)] font-semibold ${
-            notes.length > 180 ? "text-amber-500" : "text-gray-300"
-          }`}
+          className={cn(
+            "text-xs font-semibold tabular-nums shrink-0",
+            notes.length > 180
+              ? "text-[var(--data-warning-600)]"
+              : "text-muted",
+          )}
         >
           {notes.length}/200
         </span>

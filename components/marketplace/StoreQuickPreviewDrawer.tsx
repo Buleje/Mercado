@@ -327,7 +327,7 @@ function ListView({
               className={[
                 "shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg transition-all active:scale-95",
                 flashing
-                  ? "bg-[var(--data-success)] text-white"
+                  ? "bg-[var(--data-success-500)] text-white"
                   : "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90",
               ].join(" ")}
             >

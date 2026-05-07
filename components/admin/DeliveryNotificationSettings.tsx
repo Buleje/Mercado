@@ -140,13 +140,13 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
       </div>
 
       {error && (
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
 
       {saved && (
-        <p className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2">
           Configuracion guardada correctamente
         </p>
       )}

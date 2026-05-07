@@ -82,14 +82,14 @@ type NCTemplate = {
 
 const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR: { label: "Borrador", color: "text-[var(--text-primary)]", bg: "bg-gray-100", dot: "bg-gray-400" },
-  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
-  ANULADA:  { label: "Anulada",  color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error)]" },
+  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  ANULADA:  { label: "Anulada",  color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error-500)]" },
 };
 
 const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--accent-soft)] text-[var(--data-success)]", label: "Factura", accent: "text-[var(--data-success)]" },
-  boleta:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--accent-soft)] text-[var(--data-success)]", label: "Boleta", accent: "text-[var(--data-success)]" },
-  ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning)]", icon: "\u{1F3AB}", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", label: "Ticket", accent: "text-[var(--data-warning)]" },
+  factura: { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
+  boleta:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
+  ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", icon: "\u{1F3AB}", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", label: "Ticket", accent: "text-[var(--data-warning-500)]" },
 };
 
 const PICKER_TABS: { id: PickerDocType; label: string; icon: string }[] = [
@@ -207,7 +207,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
           <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
@@ -229,12 +229,12 @@ function StaleDraftsBanner({ notas, onFilter }: { notas: NotaCredito[]; onFilter
   const stale = notas.filter(nc => nc.status === "BORRADOR" && (nowTs - new Date(nc.createdAt).getTime()) > 48 * 3600000);
   if (stale.length === 0) return null;
   return (
-    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)] text-sm">
-      <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
-      <span className="text-[var(--data-warning)]">
+    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] text-sm">
+      <AlertCircle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+      <span className="text-[var(--data-warning-500)]">
         Tienes <strong>{stale.length}</strong> borrador{stale.length !== 1 ? "es" : ""} sin emitir desde hace m{"\u00e1"}s de 48 horas.
       </span>
-      <button onClick={onFilter} className="ml-auto text-xs font-bold text-[var(--data-warning)] hover:underline shrink-0">Ver borradores</button>
+      <button onClick={onFilter} className="ml-auto text-xs font-bold text-[var(--data-warning-500)] hover:underline shrink-0">Ver borradores</button>
     </div>
   );
 }
@@ -282,7 +282,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       )}>
       {/* Color accent strip */}
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" :
-        doc.comprobanteTipo === "factura" ? "bg-[var(--accent-soft)]" : doc.comprobanteTipo === "boleta" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]"
+        doc.comprobanteTipo === "factura" ? "bg-[var(--accent-soft)]" : doc.comprobanteTipo === "boleta" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ",
@@ -373,7 +373,7 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
             <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-full rounded-full bg-[var(--data-error)]" />
+              className="h-full rounded-full bg-[var(--data-error-500)]" />
           </div>
           <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
             <span>NC: {formatCurrency(total)}</span>
@@ -387,12 +387,12 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
           <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(monto)}</p>
         </div>
         <div className="bg-[var(--data-warning-50)] rounded-xl p-3 text-center">
-          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-warning)] mb-1">IGV 18%</p>
-          <p className="text-lg font-extrabold text-[var(--data-warning)]">{formatCurrency(igv)}</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-warning-500)] mb-1">IGV 18%</p>
+          <p className="text-lg font-extrabold text-[var(--data-warning-500)]">{formatCurrency(igv)}</p>
         </div>
-        <div className="bg-[var(--data-error-50)] rounded-xl p-3 text-center border border-[var(--data-error)]">
-          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-error)] mb-1">Total NC</p>
-          <p className="text-lg font-extrabold text-[var(--data-error)]">{formatCurrency(total)}</p>
+        <div className="bg-[var(--data-error-50)] rounded-xl p-3 text-center border border-[var(--data-error-500)]">
+          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-error-500)] mb-1">Total NC</p>
+          <p className="text-lg font-extrabold text-[var(--data-error-500)]">{formatCurrency(total)}</p>
         </div>
       </div>
     </div>
@@ -814,10 +814,10 @@ export default function NotasCreditoModule() {
 
   // ── Semáforo de salud ─────────────────────────────────────────────────────
   const semaforo = useMemo(() => {
-    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" };
-    if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)]" };
-    if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]" };
-    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" };
+    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
+    if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)]" };
+    if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]" };
+    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
   }, [kpis]);
 
   // ── Distribución por día de semana (mes actual) ───────────────────────────
@@ -885,9 +885,9 @@ export default function NotasCreditoModule() {
         <div className="space-y-3">
           {/* Semáforo de salud */}
           <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold", semaforo.bg,
-            semaforo.nivel === "rojo" ? "border-[var(--data-error)]" :
-            semaforo.nivel === "amarillo" ? "border-[var(--data-warning)]" :
-            "border-[var(--data-success)]/30")}>
+            semaforo.nivel === "rojo" ? "border-[var(--data-error-500)]" :
+            semaforo.nivel === "amarillo" ? "border-[var(--data-warning-500)]" :
+            "border-[var(--data-success-500)]/30")}>
             <semaforo.Icon className={cn("h-4 w-4 shrink-0", semaforo.color)} />
             <span className={semaforo.color}>Salud de devoluciones: <strong>{semaforo.label}</strong></span>
             <span className="text-[var(--text-tertiary)] text-xs font-normal ml-1">
@@ -904,14 +904,14 @@ export default function NotasCreditoModule() {
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Monto devuelto</p>
-              <p className="text-2xl font-extrabold text-[var(--data-error)]">{formatCurrency(kpis.total)}</p>
+              <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{formatCurrency(kpis.total)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">solo NCs emitidas este mes</p>
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">vs Mes anterior</p>
               <div className="flex items-center gap-1">
-                {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-[var(--data-error)]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-success)]" />}
-                <p className={cn("text-2xl font-extrabold", kpis.trend > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>{kpis.trend > 0 ? "+" : ""}{kpis.trend.toFixed(0)}%</p>
+                {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-[var(--data-error-500)]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-success-500)]" />}
+                <p className={cn("text-2xl font-extrabold", kpis.trend > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>{kpis.trend > 0 ? "+" : ""}{kpis.trend.toFixed(0)}%</p>
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
             </div>
@@ -934,7 +934,7 @@ export default function NotasCreditoModule() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="week" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Line type="monotone" dataKey="count" stroke="#00B4A6" strokeWidth={2} dot={{ r: 3, fill: "#00B4A6" }} />
+                <Line type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: "var(--accent)" }} />
                 <RechartsTooltip />
               </LineChart>
             </ResponsiveContainer>
@@ -968,7 +968,7 @@ export default function NotasCreditoModule() {
                 <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                   <YAxis tick={{ fontSize: 9 }} allowDecimals={false} />
-                  <Bar dataKey="count" fill="#00B4A6" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="count" fill="var(--accent)" radius={[3, 3, 0, 0]} />
                   <RechartsTooltip />
                 </BarChart>
               </ResponsiveContainer>
@@ -1015,7 +1015,7 @@ export default function NotasCreditoModule() {
             <button onClick={() => setShowAdvFilters(s => !s)}
               className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
               <Filter className="h-4 w-4" />
-              {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
+              {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
             <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1">
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
@@ -1115,7 +1115,7 @@ export default function NotasCreditoModule() {
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
-                              className="p-1 rounded hover:bg-[var(--accent-soft)] text-[var(--data-success)]" title="Emitir">
+                              className="p-1 rounded hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
                               <Send className="h-3 w-3" />
                             </button>
                           )}
@@ -1141,8 +1141,8 @@ export default function NotasCreditoModule() {
           <LoadingState />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-            <p className="text-sm text-[var(--data-error)]">{error}</p>
+            <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
             <button onClick={fetchNotas} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : filteredNotas.length === 0 ? (
@@ -1211,7 +1211,7 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
@@ -1231,12 +1231,12 @@ export default function NotasCreditoModule() {
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success)]" title="Emitir">
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
                                 <Send className="h-3.5 w-3.5" />
                               </button>
                             )}
                             {nc.status !== "ANULADA" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error)]" title="Anular">
+                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1293,7 +1293,7 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
@@ -1304,17 +1304,17 @@ export default function NotasCreditoModule() {
                     </button>
                   )}
                   {selected.status !== "ANULADA" && (
-                    <button onClick={() => handleAnular(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] transition-colors">
+                    <button onClick={() => handleAnular(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />Anular
                     </button>
                   )}
                   <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">
                     <Copy className="h-3.5 w-3.5" />Duplicar
                   </button>
-                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors" title="Enviar por WhatsApp">
+                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Enviar por WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                   </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors" title="Descargar PDF">
+                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Descargar PDF">
                     <FileDown className="h-3.5 w-3.5" />PDF
                   </button>
                 </div>
@@ -1330,7 +1330,7 @@ export default function NotasCreditoModule() {
                   <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--rule-base)]">
                     <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.monto)}</p></div>
                     <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">IGV</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total</p><p className="text-sm font-bold text-[var(--data-error)]">{formatCurrency(selected.total)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total</p><p className="text-sm font-bold text-[var(--data-error-500)]">{formatCurrency(selected.total)}</p></div>
                   </div>
                 </div>
 
@@ -1364,15 +1364,15 @@ export default function NotasCreditoModule() {
 
                 {/* ── Impacto en ventas ───────────────────────────────── */}
                 {impactoVentas !== null && (
-                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-4">
-                    <p className="text-xs font-bold text-[var(--data-warning)] mb-1 flex items-center gap-1.5">
+                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-4">
+                    <p className="text-xs font-bold text-[var(--data-warning-500)] mb-1 flex items-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />Impacto en devoluciones del mes
                     </p>
-                    <p className="text-sm text-[var(--data-warning)]">
+                    <p className="text-sm text-[var(--data-warning-500)]">
                       Esta NC representa el <strong>{impactoVentas.toFixed(1)}%</strong> del total devuelto este mes (<strong>{formatCurrency(kpis.total)}</strong>)
                     </p>
                     <div className="mt-2 h-2 bg-[var(--data-warning-100)] rounded-full overflow-hidden">
-                      <m.div className="h-full bg-[var(--data-warning)] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
+                      <m.div className="h-full bg-[var(--data-warning-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
                     </div>
                   </div>
                 )}
@@ -1388,7 +1388,7 @@ export default function NotasCreditoModule() {
                     ) : (
                       <p className="text-xs text-[var(--text-secondary)]">
                         Este cliente tiene <strong className="text-[var(--text-primary)]">{clienteHistorial}</strong> nota{clienteHistorial !== 1 ? "s" : ""} de crédito anteriore{clienteHistorial !== 1 ? "s" : ""}
-                        {clienteHistorial >= 3 && <span className="ml-1 text-[var(--data-warning)] font-semibold">{"\u26a0\ufe0f"} Cliente con múltiples devoluciones</span>}
+                        {clienteHistorial >= 3 && <span className="ml-1 text-[var(--data-warning-500)] font-semibold">{"\u26a0\ufe0f"} Cliente con múltiples devoluciones</span>}
                       </p>
                     )}
                   </div>
@@ -1482,11 +1482,11 @@ export default function NotasCreditoModule() {
                                   <span className="text-xs text-[var(--text-tertiary)]">{"\u00b7"} {selectedVenta.clienteNombre}</span>
                                   <span className="text-sm font-bold text-[var(--text-primary)]">{"\u00b7"} {formatCurrency(selectedVenta.total)}</span>
                                 </div>
-                                <button onClick={() => setSelectedVenta(null)} className="text-xs font-bold text-[var(--data-error)] hover:underline px-2 py-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
+                                <button onClick={() => setSelectedVenta(null)} className="text-xs font-bold text-[var(--data-error-500)] hover:underline px-2 py-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
                                   Quitar
                                 </button>
                               </div>
-                              <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold flex items-center gap-1">
+                              <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold flex items-center gap-1">
                                 <span>{"\u2713"}</span> Documento seleccionado {"\u2014"} en el paso siguiente podr{"\u00e1"}s elegir qu{"\u00e9"} items devolver
                               </div>
                             </div>
@@ -1539,11 +1539,11 @@ export default function NotasCreditoModule() {
                     <div className="space-y-6">
                       {/* ── Templates guardados ─────────────────────────── */}
                       {templates.length > 0 && (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3">
-                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-[var(--data-success)]">
+                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3">
+                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-[var(--data-success-500)]">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
-                            <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--data-success)]">{showTemplates ? "Ocultar" : "Ver"}</span>
+                            <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">{showTemplates ? "Ocultar" : "Ver"}</span>
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
@@ -1554,8 +1554,8 @@ export default function NotasCreditoModule() {
                                       <span className="flex-1 text-xs text-[var(--text-primary)]">
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
-                                      <button onClick={() => loadTemplate(t)} className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] hover:underline shrink-0">Usar</button>
-                                      <button onClick={() => deleteTemplate(t.id)} className="text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:text-[var(--data-error)] shrink-0">x</button>
+                                      <button onClick={() => loadTemplate(t)} className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:underline shrink-0">Usar</button>
+                                      <button onClick={() => deleteTemplate(t.id)} className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] shrink-0">x</button>
                                     </div>
                                   ))}
                                 </div>
@@ -1570,7 +1570,7 @@ export default function NotasCreditoModule() {
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-xs font-bold text-[var(--text-secondary)]">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
                           {form.codigoMotivo && (
-                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] hover:underline">
+                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
                             </button>
                           )}
@@ -1664,19 +1664,19 @@ export default function NotasCreditoModule() {
 
                       {/* Return stock toggle */}
                       {esDevolucion && (
-                        <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3">
+                        <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3">
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
                                 devolverStock ? "bg-primary" : "bg-gray-300")}>
                               <span className={cn("inline-block h-4 w-4 rounded-full bg-white transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
                             </button>
-                            <span className="text-xs font-bold text-[var(--data-warning)]">{"\u{1F4E6}"} Devolver items al stock</span>
+                            <span className="text-xs font-bold text-[var(--data-warning-500)]">{"\u{1F4E6}"} Devolver items al stock</span>
                           </div>
                         </div>
                       )}
 
-                      {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
+                      {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                       {/* Navigation */}
                       <div className="flex gap-2 pt-2">
@@ -1745,14 +1745,14 @@ export default function NotasCreditoModule() {
                           </div>
                         </div>
                         {esDevolucion && devolverStock && (
-                          <p className="text-xs text-[var(--data-warning)] mt-2 flex items-center gap-1">{"\u{1F4E6}"} Se devolver{"\u00e1"}n items al stock</p>
+                          <p className="text-xs text-[var(--data-warning-500)] mt-2 flex items-center gap-1">{"\u{1F4E6}"} Se devolver{"\u00e1"}n items al stock</p>
                         )}
                       </div>
 
                       {/* Amount Breakdown */}
                       <AmountBreakdown monto={montoNum} igv={computedIgv} total={computedTotal} originalTotal={selectedVenta?.total} />
 
-                      {createError && <p className="text-xs text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{createError}</p>}
+                      {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{createError}</p>}
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">

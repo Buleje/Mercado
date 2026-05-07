@@ -155,7 +155,29 @@ export const CouponsDB = {
   },
 
   /**
-   * Increment the used count of a coupon.
+   * Atomically reserve a coupon use.
+   *
+   * SECURITY 2026-05-06 (audit promotions #2): UPDATE atómico con guard
+   * `usedCount < maxUses` en una sola query SQL — sin TOCTOU. Antes el
+   * patrón findFirst+updateMany dejaba ventana de race que permitía
+   * over-use bajo concurrencia.
+   */
+  async reserveUsage(tenantId: string, id: string): Promise<boolean> {
+    // eslint-disable-next-line no-restricted-properties -- guard atómico contra TOCTOU
+    const result = await prisma.$executeRawUnsafe(
+      `UPDATE "Coupon"
+          SET "usedCount" = "usedCount" + 1
+        WHERE id = $1 AND "tenantId" = $2
+          AND ("maxUses" IS NULL OR "usedCount" < "maxUses")`,
+      id,
+      tenantId,
+    );
+    return result > 0;
+  },
+
+  /**
+   * Legacy increment — usar `reserveUsage` para nuevos callers.
+   * Mantenido para backward compat.
    */
   async incrementUsage(tenantId: string, id: string): Promise<void> {
     await prisma.coupon.updateMany({

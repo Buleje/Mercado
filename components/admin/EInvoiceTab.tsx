@@ -45,18 +45,18 @@ type EmitForm = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  factura:        { label: "Factura",         color: "text-[var(--data-success)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
 const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  emitido:   { label: "Emitido",   color: "text-[var(--data-success)]",    icon: Send },
-  aceptado:  { label: "Aceptado",  color: "text-[var(--data-success)]", icon: CheckCircle2 },
-  rechazado: { label: "Rechazado", color: "text-[var(--data-error)]",     icon: XCircle },
+  emitido:   { label: "Emitido",   color: "text-[var(--data-success-500)]",    icon: Send },
+  aceptado:  { label: "Aceptado",  color: "text-[var(--data-success-500)]", icon: CheckCircle2 },
+  rechazado: { label: "Rechazado", color: "text-[var(--data-error-500)]",     icon: XCircle },
   anulado:   { label: "Anulado",   color: "text-[var(--text-secondary)]",    icon: XCircle },
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)]",   icon: Clock },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   icon: Clock },
 };
 
 const EMPTY_FORM: EmitForm = {
@@ -274,8 +274,8 @@ export default function EInvoiceTab() {
             <p
               className={cn(
                 "text-xl font-extrabold tabular-nums",
-                intent === "warning" ? "text-[var(--data-warning)]" :
-                intent === "danger" ? "text-[var(--data-error)]" :
+                intent === "warning" ? "text-[var(--data-warning-500)]" :
+                intent === "danger" ? "text-[var(--data-error-500)]" :
                 "text-[var(--text-primary)]",
               )}
             >
@@ -299,11 +299,11 @@ export default function EInvoiceTab() {
       </div>
 
       {stats.rejected > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] mt-0.5 shrink-0" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Hay {stats.rejected} comprobante(s) rechazados por SUNAT</p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">Revise los errores y reenvíe los documentos corregidos antes de la declaración mensual.</p>
+            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Hay {stats.rejected} comprobante(s) rechazados por SUNAT</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">Revise los errores y reenvíe los documentos corregidos antes de la declaración mensual.</p>
           </div>
         </div>
       )}
@@ -382,7 +382,7 @@ export default function EInvoiceTab() {
                             href={d.pdfUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-[var(--data-success)] hover:underline"
+                            className="text-xs font-bold text-[var(--data-success-500)] hover:underline"
                             title="Ver PDF"
                           >
                             PDF
@@ -531,7 +531,7 @@ export default function EInvoiceTab() {
             </div>
 
             {emitError && (
-              <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold flex items-start gap-2">
+              <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold flex items-start gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {emitError}
               </div>
             )}

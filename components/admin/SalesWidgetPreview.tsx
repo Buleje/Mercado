@@ -42,28 +42,28 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
   return (
     <div className="w-full rounded-xl bg-primary p-4 text-white">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--data-success)]">Buleje</span>
-        <span className="text-xs text-[var(--data-success)]">hoy</span>
+        <span className="text-xs font-medium text-[var(--data-success-500)]">Buleje</span>
+        <span className="text-xs text-[var(--data-success-500)]">hoy</span>
       </div>
 
       <div className="mb-1 text-2xl font-bold">
         {stats.currency} {fmt(stats.salesTotal)}
       </div>
-      <div className="mb-3 text-xs text-[var(--data-success)]">ventas del día</div>
+      <div className="mb-3 text-xs text-[var(--data-success-500)]">ventas del día</div>
 
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/20">
         <div
-          className="h-full rounded-full bg-[var(--data-warning)] transition-all duration-[var(--dur-slower)]"
+          className="h-full rounded-full bg-[var(--data-warning-500)] transition-all duration-[var(--dur-slower)]"
           style={{ width: `${pct}%` }}
         />
       </div>
 
       <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1 text-[var(--data-success)]">
+        <div className="flex items-center gap-1 text-[var(--data-success-500)]">
           <ShoppingBag className="h-3 w-3" />
           {stats.ordersCount} pedidos
         </div>
-        <div className="text-[var(--data-success)]">
+        <div className="text-[var(--data-success-500)]">
           Meta: {Math.round(pct)}%
         </div>
       </div>
@@ -101,8 +101,8 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
 
         {/* App grid placeholder */}
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-red-500", "bg-yellow-500",
-            "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-teal-500"].map((color, i) => (
+          {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-[var(--data-error-500)]", "bg-yellow-500",
+            "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--accent)]"].map((color, i) => (
             <div
               key={i}
               className={cn(
@@ -225,16 +225,16 @@ export default function SalesWidgetPreview() {
 
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-            <Target className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+            <Target className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
             Meta
           </div>
           <p
             className={cn(
               "text-lg font-bold",
               pct >= 100
-                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : pct >= 60
-                ? "text-[var(--data-warning)]"
+                ? "text-[var(--data-warning-500)]"
                 : "text-[var(--text-primary)]"
             )}
           >
@@ -327,13 +327,13 @@ export default function SalesWidgetPreview() {
           </div>
 
           {/* Info box */}
-          <div className="flex items-start gap-3 rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             <div>
-              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Sin descargar nada
               </p>
-              <p className="mt-0.5 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <p className="mt-0.5 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Como PWA, la bodega funciona sin Play Store ni App Store. Se instala directo
                 desde el navegador y puede funcionar sin conexion con datos guardados localmente.
               </p>

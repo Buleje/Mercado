@@ -1,5 +1,5 @@
 import "server-only";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -106,6 +106,9 @@ export const PromotionsDB = {
     if (patch.expiresAt !== undefined) data.expiresAt = patch.expiresAt ? new Date(patch.expiresAt) : null;
     // Use updateMany with tenantId to avoid IDOR race condition
     await prisma.promotion.updateMany({ where: { id, tenantId }, data });
+    // SECURITY 2026-05-05 (audit promotions #11): invalidar cache tras write.
+    // Antes los cambios no se reflejaban hasta que expirara revalidate (5min).
+    revalidateTag(`tenant:${tenantId}:promotions`, "max");
     const row = await prisma.promotion.findFirst({ where: { id, tenantId } });
     return row ? mapPromotion(row) : null;
   },
@@ -113,6 +116,7 @@ export const PromotionsDB = {
     await prisma.promotion.deleteMany({ where: { id, tenantId } }).catch((err) => {
       logger.error("[promotions.db] delete failed", { id, error: String(err) });
     });
+    revalidateTag(`tenant:${tenantId}:promotions`, "max");
   },
 };
 

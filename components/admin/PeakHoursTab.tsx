@@ -79,7 +79,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-        <AlertCircle className="h-8 w-8 text-[var(--data-error)]" />
+        <AlertCircle className="h-8 w-8 text-[var(--data-error-500)]" />
         <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Error al cargar datos</p>
         <button onClick={load} className="text-xs text-primary font-bold hover:underline">Reintentar</button>
       </div>
@@ -130,7 +130,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs px-3 py-2">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           No se pudo conectar con el endpoint. Mostrando datos vacíos.
         </div>
@@ -172,9 +172,9 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                     className={cn(
                       "w-full rounded-t-[4px] transition-all",
                       isTop
-                        ? "bg-[var(--data-warning)]"
+                        ? "bg-[var(--data-warning-500)]"
                         : isPeak
-                          ? "bg-[var(--data-warning)]/80"
+                          ? "bg-[var(--data-warning-500)]/80"
                           : isValley
                             ? "bg-gray-300 dark:bg-gray-600"
                             : h.count > 0
@@ -223,7 +223,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                     <div
                       className={cn(
                         "h-full rounded-full transition-all flex items-center justify-end pr-3",
-                        isTop ? "bg-[var(--data-warning)]" : "bg-primary/60 dark:bg-primary/50 hover:bg-primary/80"
+                        isTop ? "bg-[var(--data-warning-500)]" : "bg-primary/60 dark:bg-primary/50 hover:bg-primary/80"
                       )}
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     >

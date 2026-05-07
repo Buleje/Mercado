@@ -114,7 +114,7 @@ export default function WishListAdminTab() {
   );
   if (error) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error al cargar datos</p>
     </div>
   );
@@ -134,19 +134,19 @@ export default function WishListAdminTab() {
 
       {/* Feedback banner */}
       {notifyFeedback && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
-          <Bell className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-          <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">{notifyFeedback}</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
+          <Bell className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+          <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{notifyFeedback}</p>
         </div>
       )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Listas activas",        value: String(lists.length),         color: "text-[var(--data-success)]" },
+          { label: "Listas activas",        value: String(lists.length),         color: "text-[var(--data-success-500)]" },
           { label: "Productos deseados",     value: String(totalItems),           color: "text-[var(--text-secondary)]" },
-          { label: "Agotados en wishlists",  value: String(outOfStock),           color: "text-[var(--data-error)]" },
-          { label: "Tasa conversión",        value: `${conversionRate}%`,         color: "text-[var(--data-success)]" },
+          { label: "Agotados en wishlists",  value: String(outOfStock),           color: "text-[var(--data-error-500)]" },
+          { label: "Tasa conversión",        value: `${conversionRate}%`,         color: "text-[var(--data-success-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -187,16 +187,16 @@ export default function WishListAdminTab() {
                           <button
                             onClick={() => handleNotify(p.productId, p.name)}
                             disabled={isNotified}
-                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", isNotified ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)] hover:bg-[var(--data-error)]")}
+                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", isNotified ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]")}
                           >
                             {isNotified ? <><BellOff className="h-3 w-3" />Notificado</> : <><Bell className="h-3 w-3" />Notificar</>}
                           </button>
                         )}
-                        {p.inStock && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-lg">En stock</span>}
+                        {p.inStock && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-lg">En stock</span>}
                       </div>
                     </div>
                     <div className="h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                      <div className={cn("h-full rounded-full transition-all", p.inStock ? "bg-primary" : "bg-[var(--data-error)]")} style={{ width: `${barPct}%` }} />
+                      <div className={cn("h-full rounded-full transition-all", p.inStock ? "bg-primary" : "bg-[var(--data-error-500)]")} style={{ width: `${barPct}%` }} />
                     </div>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{p.count} cliente{p.count !== 1 ? "s" : ""} lo desean</p>
                   </div>
@@ -246,7 +246,7 @@ export default function WishListAdminTab() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {l.items.some(i => !i.inStock) && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)] px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] px-2 py-0.5 rounded-full">
                         {l.items.filter(i => !i.inStock).length} agotado{l.items.filter(i => !i.inStock).length !== 1 ? "s" : ""}
                       </span>
                     )}
@@ -265,7 +265,7 @@ export default function WishListAdminTab() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(i.price)}</span>
-                          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                             {i.inStock ? "En stock" : "Agotado"}
                           </span>
                           {!i.inStock && (

@@ -47,7 +47,7 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
       <button
         type="button"
         onClick={handlePrint}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 text-xs font-bold transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 text-xs font-bold transition-colors"
         title="Descargar / Imprimir PDF"
       >
         <FileText className="h-3.5 w-3.5" />
@@ -56,7 +56,7 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
       <button
         type="button"
         onClick={handleWhatsApp}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
         title="Enviar por WhatsApp"
       >
         <MessageCircle className="h-3.5 w-3.5" />

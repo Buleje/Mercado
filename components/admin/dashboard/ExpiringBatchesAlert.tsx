@@ -87,9 +87,9 @@ export default function ExpiringBatchesAlert() {
   // Sin alertas y sin carga: no renderizar nada
   if (!loading && !error && batches.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
-        <Package className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0" />
-        <span className="text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+        <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
+        <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin lotes por vencer en los próximos 7 días
         </span>
       </div>
@@ -106,17 +106,17 @@ export default function ExpiringBatchesAlert() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center gap-3 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/50 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-4 py-3"
+            className="flex items-center gap-3 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-4 py-3"
           >
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0" />
-            <span className="text-xs font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)] flex-1">
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0" />
+            <span className="text-xs font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex-1">
               {batches.length} lote{batches.length > 1 ? "s" : ""} por vencer en los próximos 7 días
             </span>
             <button
               onClick={fetchExpiring}
               disabled={loading}
               title="Actualizar"
-              className="h-6 w-6 flex items-center justify-center rounded-lg text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/40 transition-colors disabled:opacity-40"
+              className="h-6 w-6 flex items-center justify-center rounded-lg text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/40 transition-colors disabled:opacity-40"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             </button>
@@ -126,7 +126,7 @@ export default function ExpiringBatchesAlert() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {error} —{" "}
           <button onClick={fetchExpiring} className="underline font-medium">
             Reintentar
@@ -160,20 +160,20 @@ export default function ExpiringBatchesAlert() {
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                           isUrgent
-                            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30"
+                            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30"
                             : isSoon
-                            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30"
-                            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20"
+                            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30"
+                            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20"
                         )}
                       >
                         <Calendar
                           className={cn(
                             "h-4 w-4",
                             isUrgent
-                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : isSoon
-                              ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                              : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           )}
                         />
                       </div>
@@ -195,10 +195,10 @@ export default function ExpiringBatchesAlert() {
                           className={cn(
                             "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                             isUrgent
-                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : isSoon
-                              ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                              : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                              : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           )}
                         >
                           {days}d
@@ -214,7 +214,7 @@ export default function ExpiringBatchesAlert() {
             <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
               <a
                 href="/admin?tab=inventario-almacenes"
-                className="flex items-center gap-1 text-xs font-semibold text-primary dark:text-[var(--data-success)] hover:underline"
+                className="flex items-center gap-1 text-xs font-semibold text-primary dark:text-[var(--data-success-500)] hover:underline"
               >
                 Ver todos los lotes
                 <ChevronRight className="h-3.5 w-3.5" />

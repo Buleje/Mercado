@@ -29,7 +29,7 @@ const REGION_LABELS: Record<Locale, string> = {
 };
 
 const TONE_BG: Record<Locale, string> = {
-  es: "var(--brand-primary, #00B4A6)",
+  es: "var(--brand-primary, var(--accent))",
   en: "#0ea5e9",
   shi: "#16a34a",
   qu: "#d97706",
@@ -131,7 +131,7 @@ export default function LanguageSwitcher({ variant = "ghost", className }: Props
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
                       active
-                        ? "bg-[var(--accent-soft,rgba(0,180,166,0.08))]"
+                        ? "bg-[var(--accent-soft,color-mix(in oklab, var(--accent) 8%, transparent))]"
                         : "hover:bg-[var(--surface-sunken)]",
                     )}
                   >

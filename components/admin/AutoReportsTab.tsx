@@ -56,10 +56,10 @@ export default function AutoReportsTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Reportes configurados", value: reports.length, color: "text-[var(--data-success)]" },
-          { label: "Activos", value: activeCount, color: "text-[var(--data-success)]" },
+          { label: "Reportes configurados", value: reports.length, color: "text-[var(--data-success-500)]" },
+          { label: "Activos", value: activeCount, color: "text-[var(--data-success-500)]" },
           { label: "Total generados", value: reports.reduce((s, r) => s + r.runCount, 0), color: "text-[var(--text-secondary)]" },
-          { label: "Destinatarios únicos", value: new Set(reports.flatMap(r => r.recipients)).size, color: "text-[var(--data-warning)]" },
+          { label: "Destinatarios únicos", value: new Set(reports.flatMap(r => r.recipients)).size, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -75,7 +75,7 @@ export default function AutoReportsTab() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</CardTitle>
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.format === "PDF" ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" : r.format === "Excel" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]")}>{r.format}</span>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.format === "PDF" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" : r.format === "Excel" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]")}>{r.format}</span>
                   <span className="text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded-full">{SCHEDULE_LABELS[r.schedule]}</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-2">{r.description}</p>
@@ -92,11 +92,11 @@ export default function AutoReportsTab() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => setReports(prev => prev.map(x => x.id === r.id ? { ...x, active: !x.active } : x))} className={cn("p-1.5 rounded-lg", r.active ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")} title={r.active ? "Pausar" : "Activar"}>
+                <button onClick={() => setReports(prev => prev.map(x => x.id === r.id ? { ...x, active: !x.active } : x))} className={cn("p-1.5 rounded-lg", r.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")} title={r.active ? "Pausar" : "Activar"}>
                   {r.active ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                 </button>
                 <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => setReports(prev => prev.filter(x => x.id !== r.id))} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => setReports(prev => prev.filter(x => x.id !== r.id))} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </div>

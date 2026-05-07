@@ -178,7 +178,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Tasa de conversión"
               value={`${data!.conversionRate}%`}
               icon={TrendingUp}
-              color="bg-[var(--data-warning)]"
+              color="bg-[var(--data-warning-500)]"
             />
             <KpiCard
               label="Ingresos"
@@ -220,7 +220,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                   type="monotone"
                   dataKey="views"
                   name="Visitas"
-                  stroke="#00B4A6"
+                  stroke="var(--accent)"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}

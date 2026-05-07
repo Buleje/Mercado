@@ -182,19 +182,19 @@ function ensurePinStyles(): void {
       left: 0;
       width: 38px;
       height: 38px;
-      background: var(--brand-primary, #00b4a6);
+      background: var(--brand-primary, var(--accent));
       border: 2.5px solid #fff;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,180,166,0.45);
+      box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 45%, transparent);
       transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
     }
     .buleje-store-pin:hover .buleje-store-pin__body {
       transform: rotate(-45deg) scale(1.18) translate(2px, -2px);
-      box-shadow: 0 8px 22px rgba(0,180,166,0.7);
+      box-shadow: 0 8px 22px color-mix(in oklab, var(--accent) 70%, transparent);
     }
     .buleje-store-pin__emoji {
       transform: rotate(45deg);
@@ -272,7 +272,7 @@ function ensurePinStyles(): void {
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--brand-primary, #00b4a6);
+      color: var(--brand-primary, var(--accent));
       margin-bottom: 2px;
     }
     .buleje-popup__name {
@@ -318,7 +318,7 @@ function ensurePinStyles(): void {
       width: 100%;
       margin-top: 8px;
       padding: 8px 12px;
-      background: var(--brand-primary, #00b4a6);
+      background: var(--brand-primary, var(--accent));
       color: #fff;
       border-radius: 10px;
       text-decoration: none;
@@ -329,7 +329,7 @@ function ensurePinStyles(): void {
     }
     .buleje-popup__cta:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0,180,166,0.45);
+      box-shadow: 0 6px 16px color-mix(in oklab, var(--accent) 45%, transparent);
     }
 
     /* Tile fade-in suave al montar el mapa */

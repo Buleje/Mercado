@@ -102,7 +102,7 @@ function pillCls(error?: boolean) {
     "placeholder:text-[var(--text-tertiary)]",
     "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]",
     error
-      ? "border-[var(--data-error)] focus:ring-[var(--data-error)]/30"
+      ? "border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/30"
       : "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent-soft)]",
   );
 }
@@ -676,7 +676,7 @@ export default function CheckoutEntregaPage() {
             </button>
 
             {geoError && (
-              <div className="mt-1 flex items-start gap-2 rounded-2xl border border-[var(--data-error)]/30 bg-[var(--data-error-50)] px-4 py-3 text-[length:var(--ts-xs)] text-[var(--data-error)]">
+              <div className="mt-1 flex items-start gap-2 rounded-2xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-4 py-3 text-[length:var(--ts-xs)] text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
                 <p className="leading-relaxed font-semibold">{geoError}</p>
               </div>
@@ -697,7 +697,7 @@ export default function CheckoutEntregaPage() {
                 className={pillCls(showAddressError)}
               />
               {showAddressError && (
-                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error)]">
+                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
                   Ingresá una dirección válida (mínimo 5 caracteres).
                 </p>
               )}
@@ -827,7 +827,7 @@ export default function CheckoutEntregaPage() {
                   </p>
                 )}
                 {cashShort && (
-                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] font-semibold">
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)] font-semibold">
                     Faltan {fmt(grandTotal - cashAmount)} para cubrir el total.
                   </p>
                 )}
@@ -926,7 +926,7 @@ export default function CheckoutEntregaPage() {
                         <button
                           type="button"
                           onClick={() => removeCoupon(slug)}
-                          className="inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+                          className="inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
                         >
                           Quitar
                         </button>
@@ -961,7 +961,7 @@ export default function CheckoutEntregaPage() {
                       </div>
                     )}
                     {err && !applied && (
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] inline-flex items-center gap-1 ml-4">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] inline-flex items-center gap-1 ml-4">
                         <AlertCircle className="h-3 w-3" strokeWidth={2} aria-hidden />
                         {err}
                       </p>

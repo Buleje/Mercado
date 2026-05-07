@@ -3,7 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { X, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import type { OrderFilters, FiltersAction } from "./types";
+import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
 import type { OrderStatus } from "@/lib/jsondb";
 
@@ -70,6 +70,27 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   />
                   <span className="text-sm font-semibold">{STATUS_LABELS[status]}</span>
                 </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Origen */}
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Origen</p>
+            <div className="flex gap-2">
+              {(["", "direct", "marketplace"] as OrderSource[]).map(src => (
+                <button
+                  key={src || "all"}
+                  onClick={() => dispatch({ type: "SET_SOURCE", value: src })}
+                  className={cn(
+                    "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                    filters.source === src
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
+                  )}
+                >
+                  {src === "" ? "Todos" : src === "direct" ? "Tienda Personal" : "Marketplace"}
+                </button>
               ))}
             </div>
           </div>

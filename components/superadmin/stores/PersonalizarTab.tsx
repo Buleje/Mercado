@@ -51,8 +51,8 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <div
           className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg transition-all ${
             toast.ok
-              ? "bg-[var(--data-success-50)] text-[var(--data-success)] border border-[var(--data-success)] dark:bg-green-950/80 dark:text-[var(--data-success)] dark:border-[var(--data-success)]"
-              : "bg-[var(--data-error-50)] text-[var(--data-error)] border border-[var(--data-error)] dark:bg-red-950/80 dark:text-[var(--data-error)] dark:border-[var(--data-error)]"
+              ? "bg-[var(--data-success-50)] text-[var(--data-success-500)] border border-[var(--data-success-500)] dark:bg-green-950/80 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]"
+              : "bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:bg-red-950/80 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
           }`}
         >
           {toast.ok ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -92,7 +92,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
       {/* Published Stores */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <Eye className="w-4 h-4 text-[var(--data-success)]" />
+          <Eye className="w-4 h-4 text-[var(--data-success-500)]" />
           Tiendas visibles en el Marketplace
           <span className="ml-auto text-xs font-normal text-gray-400">{published.length} tiendas</span>
         </h3>
@@ -127,12 +127,12 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                     <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                       {store.name}
                     </span>
-                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[var(--data-warning)]" />}
+                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />}
                     <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-xs text-gray-400 capitalize">{store.category}</span>
-                    <span className="text-xs text-[var(--data-warning)] flex items-center gap-0.5">
+                    <span className="text-xs text-[var(--data-warning-500)] flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-current" /> {store.rating.toFixed(1)}
                     </span>
                     <span className="text-xs text-gray-400">{store._count.products} productos</span>
@@ -161,7 +161,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                       <button
                         onClick={() => void saveCommission(store.id)}
                         disabled={saving === store.id}
-                        className="p-1 rounded-lg text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/30"
+                        className="p-1 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/30"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -190,7 +190,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 <button
                   onClick={() => void togglePublished(store)}
                   disabled={saving === store.id}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)] dark:hover:bg-[var(--data-error)]/30 transition-colors disabled:opacity-40"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors disabled:opacity-40"
                   title="Ocultar del marketplace"
                 >
                   {saving === store.id ? (
@@ -255,7 +255,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 <button
                   onClick={() => void togglePublished(store)}
                   disabled={saving === store.id}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--data-success-50)] text-[var(--data-success)] hover:bg-[var(--data-success-100)] dark:bg-[var(--data-success)]/20 dark:text-[var(--data-success)] dark:hover:bg-[var(--data-success)]/30 transition-colors disabled:opacity-40"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--data-success-50)] text-[var(--data-success-500)] hover:bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)] dark:hover:bg-[var(--data-success-500)]/30 transition-colors disabled:opacity-40"
                   title="Publicar en marketplace"
                 >
                   {saving === store.id ? (
@@ -292,7 +292,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-4 h-4 text-[var(--data-warning)]" />
+              <Crown className="w-4 h-4 text-[var(--data-warning-500)]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">
                 Tiendas Destacadas
               </span>
@@ -300,25 +300,25 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               Las tiendas en posición 1-3 arriba aparecen primero en el marketplace
             </p>
-            <p className="text-[length:var(--ts-xs)] text-[var(--data-success)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] mt-2 font-medium">
               Reordena la lista de arriba para priorizar tiendas
             </p>
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Percent className="w-4 h-4 text-[var(--data-success)]" />
+              <Percent className="w-4 h-4 text-[var(--data-success-500)]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">Comisiones</span>
             </div>
             <p className="text-xs text-gray-400">
               Haz clic en el porcentaje de cada tienda para editar su comisión por venta
             </p>
-            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-2 font-medium">
               Promedio actual: {avgCommission}%
             </p>
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <ToggleRight className="w-4 h-4 text-[var(--data-success)]" />
+              <ToggleRight className="w-4 h-4 text-[var(--data-success-500)]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">Visibilidad</span>
             </div>
             <p className="text-xs text-gray-400">

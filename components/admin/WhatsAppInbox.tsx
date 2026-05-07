@@ -260,7 +260,7 @@ export default function WhatsAppInbox() {
             <LoadingState />
           ) : errorConvs ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm text-[var(--data-error)]">Error al cargar conversaciones</p>
+              <p className="text-sm text-[var(--data-error-500)]">Error al cargar conversaciones</p>
               <button
                 onClick={fetchConversations}
                 className="mt-2 text-xs text-primary underline"
@@ -407,7 +407,7 @@ export default function WhatsAppInbox() {
                           <p
                             className={cn(
                               "mt-1 text-right text-[length:var(--ts-2xs)]",
-                              isAdmin ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]",
+                              isAdmin ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]",
                             )}
                           >
                             {formatTime(msg.createdAt)}

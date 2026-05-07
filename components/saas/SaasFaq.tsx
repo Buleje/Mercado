@@ -68,7 +68,7 @@ function AccordionItem({ item, index, isOpen, onToggle }: AccordionItemProps) {
         type="button"
         onClick={() => onToggle(index)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between gap-4 py-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[44px]"
+        className="w-full flex items-center justify-between gap-4 py-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] min-h-[44px]"
       >
         <span className="font-semibold text-gray-900 dark:text-[#f0f4f1] text-sm sm:text-base">
           {item.q}

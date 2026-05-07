@@ -14,6 +14,7 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tool
 import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
@@ -90,22 +91,22 @@ type Resumen = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<PrestamoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2 },
-  VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle },
+  ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2 },
+  VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban },
 };
 
 const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string; icon: typeof Landmark }> = {
-  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)]",     icon: User },
+  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Building2 },
-  TERCERO:   { label: "Tercero",   color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)]", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)]",     icon: Coins },
+  TERCERO:   { label: "Tercero",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]", icon: ArrowUpDown },
+  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
-  DADO:     { label: "Préstamo Dado",     shortLabel: "Dado",     color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)]",     icon: ArrowUpFromLine },
-  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", icon: ArrowDownToLine },
+  DADO:     { label: "Préstamo Dado",     shortLabel: "Dado",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)]",     icon: ArrowUpFromLine },
+  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: ArrowDownToLine },
 };
 
 const SISTEMA_LABELS: Record<SistemaAmortizacion, string> = {
@@ -322,7 +323,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
             title="Mora Acumulada"
             description={
               <span>
-                <span className="block text-3xl font-extrabold font-mono text-[var(--data-warning)]">
+                <span className="block text-3xl font-extrabold font-mono text-[var(--data-warning-500)]">
                   {formatCurrency(moraAcumulada)}
                 </span>
                 <span className="block text-xs mt-0.5">En prestamos con cuotas vencidas</span>
@@ -333,7 +334,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                 <p className="text-xs text-[var(--text-secondary)]">{cuotasVencidas} cuots. vencidas</p>
                 <div className="mt-1 h-2 w-24 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[var(--data-warning)] rounded-full"
+                    className="h-full bg-[var(--data-warning-500)] rounded-full"
                     style={{ width: `${Math.min(100, (cuotasVencidas / Math.max(1, prestamos.reduce((s,p)=>s+p.cuotas.length,0))) * 100 * 10)}%` }}
                   />
                 </div>
@@ -434,29 +435,29 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           {/* Mejora 6: Resumen por dirección con barras comparativas */}
           <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-[var(--data-success)]" /> Dado vs Recibido
+              <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
             </CardTitle>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
-                    <ArrowUpFromLine className="h-3.5 w-3.5 text-[var(--data-error)]" />
+                    <ArrowUpFromLine className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
                     <span className="text-xs font-bold text-[var(--text-secondary)]">Dados</span>
                   </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-error)]">{formatCurrency(totalDados)}</span>
+                  <span className="text-xs font-bold font-mono text-[var(--data-error-500)]">{formatCurrency(totalDados)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--data-error)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
+                  <m.div className="h-full bg-[var(--data-error-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
-                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                     <span className="text-xs font-bold text-[var(--text-secondary)]">Recibidos</span>
                   </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-success)]">{formatCurrency(totalRecibidos)}</span>
+                  <span className="text-xs font-bold font-mono text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                   <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
@@ -465,7 +466,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
               </div>
               <div className="pt-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">Balance neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
                   {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
@@ -481,6 +482,11 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PrestamosModule() {
+  const { businessName, storeTheme } = useSettings();
+  const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
+    || businessName?.trim()
+    || "Tu Tienda";
+  const storeLocation = (storeTheme as { address?: string } | null)?.address || "Pucallpa, Perú";
   const [activeTab, setActiveTab] = useState<"dashboard" | "activos" | "cobros" | "calculadora" | "historial">("dashboard");
 
   // Mejora nueva: Filtro por estado en prestamos
@@ -1000,7 +1006,7 @@ export default function PrestamosModule() {
             {t.id === "cobros" && <Bell className="h-3.5 w-3.5" />}
             {t.label}
             {"badge" in t && t.badge != null && t.badge > 0 && (
-              <span className="ml-0.5 bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 leading-none">{t.badge}</span>
+              <span className="ml-0.5 bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 leading-none">{t.badge}</span>
             )}
           </button>
         ))}
@@ -1040,7 +1046,7 @@ export default function PrestamosModule() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-white border border-[var(--rule-base)] rounded-xl  hover:shadow-sm transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Landmark className="h-4 w-4 text-[var(--data-info)]" />
+                  <Landmark className="h-4 w-4 text-[var(--data-info-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total prestado</p>
                 </div>
                 <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{formatCurrency(totalPrestado)}</p>
@@ -1050,23 +1056,23 @@ export default function PrestamosModule() {
                   <DollarSign className="h-4 w-4 text-secondary" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar</p>
                 </div>
-                <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error)]")}>{formatCurrency(porCobrar)}</p>
+                <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error-500)]")}>{formatCurrency(porCobrar)}</p>
               </div>
-              <div className={cn("bg-white border rounded-xl  hover:shadow-sm transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error)]" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-white border rounded-xl  hover:shadow-sm transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
-                  <XCircle className="h-4 w-4 text-[var(--data-error)]" />
+                  <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas vencidas</p>
                 </div>
-                <p className={cn("text-2xl font-extrabold font-mono", cuotasVencidas > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+                <p className={cn("text-2xl font-extrabold font-mono", cuotasVencidas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
                   {cuotasVencidas}
                 </p>
               </div>
-              <div className={cn("bg-white border rounded-xl  hover:shadow-sm transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success)]/30" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-white border rounded-xl  hover:shadow-sm transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-[var(--data-success)]" />
+                  <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa recuperacion</p>
                 </div>
-                <p className={cn("text-2xl font-extrabold font-mono", tasaRecuperacion > 80 ? "text-[var(--data-success)]" : tasaRecuperacion > 50 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                <p className={cn("text-2xl font-extrabold font-mono", tasaRecuperacion > 80 ? "text-[var(--data-success-500)]" : tasaRecuperacion > 50 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                   {tasaRecuperacion.toFixed(1)}%
                 </p>
               </div>
@@ -1102,11 +1108,11 @@ export default function PrestamosModule() {
         if (venciendoProx.length === 0) return null;
         return (
           <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] border-l-2 border-l-[var(--data-warning)] p-3 flex items-center gap-3">
-            <Bell className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+            <Bell className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-xs text-[var(--text-secondary)] font-semibold flex-1">
               {venciendoProx.length} préstamo{venciendoProx.length > 1 ? "s" : ""} con cuotas venciendo esta semana
             </p>
-            <button onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className="text-xs font-semibold text-[var(--data-warning)] hover:underline shrink-0">Ver</button>
+            <button onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className="text-xs font-semibold text-[var(--data-warning-500)] hover:underline shrink-0">Ver</button>
           </m.div>
         );
       })()}
@@ -1139,7 +1145,7 @@ export default function PrestamosModule() {
                     <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Tipo</label><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
                     <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Dirección</label><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></div>
                     <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Sistema amort.</label><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></div>
-                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error)] bg-gray-100 hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
+                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-gray-100 hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
               </m.div>
@@ -1153,9 +1159,9 @@ export default function PrestamosModule() {
         const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
         const pills = [
           { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent)] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
-          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30" },
+          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
           { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-red-500 text-white", inactiveClass: "bg-red-50 text-red-700 border border-red-200" },
+          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-red-50 text-[var(--data-error-700)] border border-red-200" },
           { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-gray-700 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
         ];
         return (
@@ -1175,7 +1181,7 @@ export default function PrestamosModule() {
                   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
                   const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
                 }} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-[var(--accent)] hover:text-[var(--data-error)]"><X className="h-3 w-3" /></button>
+                <button onClick={() => setSelectedIds(new Set())} className="text-[var(--accent)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
               </div>
             )}
           </div>
@@ -1187,8 +1193,8 @@ export default function PrestamosModule() {
             <LoadingState />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-              <p className="text-sm text-[var(--data-error)]">{error}</p>
+              <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+              <p className="text-sm text-[var(--data-error-500)]">{error}</p>
               <button onClick={fetchPrestamos} className="text-xs text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : displayList.length === 0 ? (
@@ -1196,7 +1202,7 @@ export default function PrestamosModule() {
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
               <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent)] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success)]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent)] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1233,10 +1239,10 @@ export default function PrestamosModule() {
                       const rowNow = new Date(); const rowSemana = new Date(); rowSemana.setDate(rowNow.getDate() + 7);
                       const tieneVenc = p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) < rowNow);
                       const venceSemana = !tieneVenc && p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) <= rowSemana);
-                      const riskDot = tieneVenc ? "bg-[var(--data-error)]" : venceSemana ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]";
+                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]";
                       // Mejora 12: Badge de sistema de amortización
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
-                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]";
+                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
                         <tr key={p.id} className={cn("border-b border-gray-50 hover:bg-gray-50 transition-colors", selectedIds.has(p.id) && "bg-[var(--accent-soft)]")}>
                           <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
@@ -1255,7 +1261,7 @@ export default function PrestamosModule() {
                                 </div>
                                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
                                 {proxVence && (
-                                  <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning)] px-1.5 py-0.5 rounded-full">
+                                  <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
                                     {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
                                   </span>
                                 )}
@@ -1306,7 +1312,7 @@ export default function PrestamosModule() {
           <div className="flex items-center justify-between">
             <div>
               <SectionTitle className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <Bell className="h-4 w-4 text-[var(--data-warning)]" /> Centro de Cobros
+                <Bell className="h-4 w-4 text-[var(--data-warning-500)]" /> Centro de Cobros
               </SectionTitle>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">Cuotas vencidas y próximas a vencer (30 días)</p>
             </div>
@@ -1327,10 +1333,10 @@ export default function PrestamosModule() {
           {!cobrosLoading && cobrosData && (
             <>
               {/* Vencidas */}
-              <div className="bg-white border border-[var(--data-error)] rounded-xl  overflow-hidden">
-                <div className="bg-[var(--data-error-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-error)]">
-                  <XCircle className="h-4 w-4 text-[var(--data-error)]" />
-                  <span className="text-sm font-bold text-[var(--data-error)]">
+              <div className="bg-white border border-[var(--data-error-500)] rounded-xl  overflow-hidden">
+                <div className="bg-[var(--data-error-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-error-500)]">
+                  <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
+                  <span className="text-sm font-bold text-[var(--data-error-500)]">
                     Cuotas Vencidas ({cobrosData.vencidas.length})
                   </span>
                 </div>
@@ -1341,7 +1347,7 @@ export default function PrestamosModule() {
                     {cobrosData.vencidas.map((c) => {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const msg = encodeURIComponent(
-                        `🏪 *Buleje*\n━━━━━━━━━━━━━━━━━━━\n⚠️ *CUOTA VENCIDA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTienes una cuota de préstamo vencida:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Venció hace *${c.diasAtraso} día${c.diasAtraso !== 1 ? "s" : ""}*\n\nPor favor, regulariza tu pago para evitar mora adicional.\n\n_Buleje — Pucallpa_ 🙏`
+                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n⚠️ *CUOTA VENCIDA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTienes una cuota de préstamo vencida:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Venció hace *${c.diasAtraso} día${c.diasAtraso !== 1 ? "s" : ""}*\n\nPor favor, regulariza tu pago para evitar mora adicional.\n\n_${storeName}_ 🙏`
                       );
                       const waLink = c.phone
                         ? `https://wa.me/${c.phone.replace(/\D/g, "").length === 9 ? `51${c.phone.replace(/\D/g, "")}` : c.phone.replace(/\D/g, "")}?text=${msg}`
@@ -1351,7 +1357,7 @@ export default function PrestamosModule() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-[var(--text-primary)] truncate">{c.nombre}</span>
-                              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 {c.diasAtraso}d atraso
                               </span>
                             </div>
@@ -1359,7 +1365,7 @@ export default function PrestamosModule() {
                               Cuota N°{c.numeroCuota} · Vencía {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                             </p>
                           </div>
-                          <span className="text-sm font-extrabold font-mono text-[var(--data-error)] shrink-0">
+                          <span className="text-sm font-extrabold font-mono text-[var(--data-error-500)] shrink-0">
                             {symbol}{c.monto.toFixed(2)}
                           </span>
                           {waLink && (
@@ -1382,10 +1388,10 @@ export default function PrestamosModule() {
               </div>
 
               {/* Próximas */}
-              <div className="bg-white border border-[var(--data-warning)] rounded-xl  overflow-hidden">
-                <div className="bg-[var(--data-warning-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-warning)]">
-                  <Clock className="h-4 w-4 text-[var(--data-warning)]" />
-                  <span className="text-sm font-bold text-[var(--data-warning)]">
+              <div className="bg-white border border-[var(--data-warning-500)] rounded-xl  overflow-hidden">
+                <div className="bg-[var(--data-warning-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-warning-500)]">
+                  <Clock className="h-4 w-4 text-[var(--data-warning-500)]" />
+                  <span className="text-sm font-bold text-[var(--data-warning-500)]">
                     Próximas a vencer — 30 días ({cobrosData.proximas.length})
                   </span>
                 </div>
@@ -1397,7 +1403,7 @@ export default function PrestamosModule() {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const isUrgent = c.diasRestantes <= 3;
                       const msg = encodeURIComponent(
-                        `🏪 *Buleje*\n━━━━━━━━━━━━━━━━━━━\n📅 *RECORDATORIO DE CUOTA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTe recordamos que tienes una cuota próxima:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Vence en *${c.diasRestantes} día${c.diasRestantes !== 1 ? "s" : ""}*\n\n¡Ten listo tu pago a tiempo! 🙏\n\n_Buleje — Pucallpa_`
+                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n📅 *RECORDATORIO DE CUOTA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTe recordamos que tienes una cuota próxima:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Vence en *${c.diasRestantes} día${c.diasRestantes !== 1 ? "s" : ""}*\n\n¡Ten listo tu pago a tiempo! 🙏\n\n_${storeName}_`
                       );
                       const waLink = c.phone
                         ? `https://wa.me/${c.phone.replace(/\D/g, "").length === 9 ? `51${c.phone.replace(/\D/g, "")}` : c.phone.replace(/\D/g, "")}?text=${msg}`
@@ -1410,8 +1416,8 @@ export default function PrestamosModule() {
                               <span className={cn(
                                 "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
-                                  ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                                  : "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                                  ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                                  : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                               )}>
                                 {c.diasRestantes}d restantes
                               </span>
@@ -1497,10 +1503,10 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)]  transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success)]/30 hover:text-[var(--data-success)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1535,8 +1541,8 @@ export default function PrestamosModule() {
                       <tr key={r.num} className="border-b border-gray-50">
                         <td className="px-4 py-2 text-center text-[var(--text-secondary)]">{r.num}</td>
                         <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-error)]">{formatCurrency(r.interes)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-success)]">{formatCurrency(r.capital)}</td>
+                        <td className="px-4 py-2 text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
+                        <td className="px-4 py-2 text-right text-[var(--data-success-500)]">{formatCurrency(r.capital)}</td>
                         <td className="px-4 py-2 text-right text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
                       </tr>
                     ))}
@@ -1550,7 +1556,7 @@ export default function PrestamosModule() {
           {amortizacion.length > 0 && (
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[var(--data-info)]" /> Evolución Capital vs Interés ({calcSistema})
+                <TrendingUp className="h-4 w-4 text-[var(--data-info-500)]" /> Evolución Capital vs Interés ({calcSistema})
               </CardTitle>
               <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <LineChart data={amortizacion}>
@@ -1575,7 +1581,7 @@ export default function PrestamosModule() {
             const montoBase = parseFloat(calcMonto) || 0;
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-[var(--text-primary)]" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-[var(--data-error)]" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[var(--accent)]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-[var(--data-warning)]" }].map(kpi => (
+                {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-[var(--text-primary)]" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-[var(--data-error-500)]" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[var(--accent)]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-[var(--data-warning-500)]" }].map(kpi => (
                   <div key={kpi.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3  text-center">
                     <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
@@ -1592,7 +1598,7 @@ export default function PrestamosModule() {
             return (
               <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                  <Scale className="h-4 w-4 text-[var(--data-success)]" /> Comparador — mismo monto, tasa y plazo
+                  <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Comparador — mismo monto, tasa y plazo
                 </CardTitle>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {sistemas.map(([sis, tabla]) => {
@@ -1603,7 +1609,7 @@ export default function PrestamosModule() {
                         <p className="text-xs font-bold text-[var(--text-primary)] mb-2">{SISTEMA_LABELS[sis]}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">1ª cuota: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[0]?.cuota ?? 0)}</strong></p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Última: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[tabla.length-1]?.cuota ?? 0)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error)]">{formatCurrency(intTotal)}</strong></p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error-500)]">{formatCurrency(intTotal)}</strong></p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Total: <strong className="text-[var(--text-primary)]">{formatCurrency(total)}</strong></p>
                         <button onClick={() => { setCalcSistema(sis); setShowComparador(false); }} className="mt-2 w-full text-[length:var(--ts-2xs)] font-bold py-1.5 rounded-lg transition-colors" style={{ backgroundColor: colores[sis] + "20", color: colores[sis] }}>Usar este sistema</button>
                       </div>
@@ -1682,7 +1688,7 @@ export default function PrestamosModule() {
                     const moraAcum = Math.max(0, pagadas.reduce((s, c) => s + ((c.montoPagado||c.monto) - c.monto), 0));
                     return (
                       <div className="mt-3 pt-3 border-t border-[var(--rule-base)] grid grid-cols-2 gap-2">
-                        {[{ label: "Pagado", val: formatCurrency(totalPagado), col: "text-[var(--data-success)]" }, { label: "Pendiente", val: formatCurrency(totalPendiente), col: "text-secondary" }, { label: "Intereses pag.", val: formatCurrency(interesesPag), col: "text-red-500" }, { label: "Mora acum.", val: formatCurrency(moraAcum), col: moraAcum > 0 ? "text-amber-600" : "text-[var(--text-tertiary)]" }].map(item => (
+                        {[{ label: "Pagado", val: formatCurrency(totalPagado), col: "text-[var(--data-success-500)]" }, { label: "Pendiente", val: formatCurrency(totalPendiente), col: "text-secondary" }, { label: "Intereses pag.", val: formatCurrency(interesesPag), col: "text-[var(--data-error-500)]" }, { label: "Mora acum.", val: formatCurrency(moraAcum), col: moraAcum > 0 ? "text-[var(--data-warning-600)]" : "text-[var(--text-tertiary)]" }].map(item => (
                           <div key={item.label} className="bg-gray-50 rounded-lg p-2 text-center">
                             <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)]">{item.label}</p>
                             <p className={cn("text-sm font-extrabold font-mono", item.col)}>{item.val}</p>
@@ -1722,7 +1728,7 @@ export default function PrestamosModule() {
                     {selected.moraInteres > 0 && (
                       <div className="flex justify-between">
                         <span className="text-[var(--text-secondary)]">Mora:</span>
-                        <span className="font-bold text-[var(--data-error)]">{selected.moraInteres}%</span>
+                        <span className="font-bold text-[var(--data-error-500)]">{selected.moraInteres}%</span>
                       </div>
                     )}
                     {selected.periodoGracia > 0 && (
@@ -1827,16 +1833,16 @@ export default function PrestamosModule() {
                                     <td className="py-1.5 px-1 font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
                                     <td className="py-1.5 px-1 text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
                                     <td className="py-1.5 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-error)]/70">{formatCurrency(c.interes)}</td>
+                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
                                     <td className="py-1.5 px-1 text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success)]">{formatCurrency(c.saldo)}</td>
+                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
                                     <td className="py-1.5 px-1 text-center">
                                       {c.pagadoEn ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded">PAGADA</span>
+                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
+                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
                                       ) : (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
+                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
                                       )}
                                     </td>
                                   </tr>
@@ -1846,7 +1852,7 @@ export default function PrestamosModule() {
                                 <tr className="border-t-2 border-[var(--rule-base)] font-bold">
                                   <td colSpan={2} className="py-2 px-1 text-[var(--text-secondary)]">TOTAL</td>
                                   <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--data-error)]">{formatCurrency(totalInteres)}</td>
+                                  <td className="py-2 px-1 text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
                                   <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
                                   <td colSpan={2}></td>
                                 </tr>
@@ -1867,36 +1873,36 @@ export default function PrestamosModule() {
                         const pagoAnticipado = capitalPendiente + (pendientes[0]?.interes || 0);
                         const ahorro = totalPendiente - pagoAnticipado;
                         return (
-                          <div className="mt-3 bg-[var(--accent-soft)] rounded-xl p-3 border border-[var(--data-success)]/30">
+                          <div className="mt-3 bg-[var(--accent-soft)] rounded-xl p-3 border border-[var(--data-success-500)]/30">
                             <button
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
                             >
-                              <span className="text-xs font-bold text-[var(--data-success)] flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                                 <Calculator className="h-3.5 w-3.5" /> Pago anticipado total
                               </span>
-                              {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-[var(--data-success)]" /> : <ChevronDown className="h-3.5 w-3.5 text-[var(--data-success)]" />}
+                              {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <ChevronDown className="h-3.5 w-3.5 text-[var(--data-success-500)]" />}
                             </button>
                             {showPagoAnticipado && (
-                              <div className="mt-2 pt-2 border-t border-[var(--data-success)]/30 space-y-1.5">
+                              <div className="mt-2 pt-2 border-t border-[var(--data-success-500)]/30 space-y-1.5">
                                 <div className="flex justify-between text-[length:var(--ts-xs)]">
-                                  <span className="text-[var(--data-success)]">Capital pendiente:</span>
+                                  <span className="text-[var(--data-success-500)]">Capital pendiente:</span>
                                   <span className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(capitalPendiente)}</span>
                                 </div>
                                 <div className="flex justify-between text-[length:var(--ts-xs)]">
-                                  <span className="text-[var(--data-success)]">Intereses pendientes:</span>
-                                  <span className="font-mono text-[var(--data-error)]">{formatCurrency(interesPendiente)}</span>
+                                  <span className="text-[var(--data-success-500)]">Intereses pendientes:</span>
+                                  <span className="font-mono text-[var(--data-error-500)]">{formatCurrency(interesPendiente)}</span>
                                 </div>
                                 <div className="flex justify-between text-[length:var(--ts-xs)]">
-                                  <span className="text-[var(--data-success)]">Interés mes actual:</span>
+                                  <span className="text-[var(--data-success-500)]">Interés mes actual:</span>
                                   <span className="font-mono text-[var(--text-secondary)]">{formatCurrency(pendientes[0]?.interes || 0)}</span>
                                 </div>
-                                <div className="flex justify-between text-xs pt-1 border-t border-[var(--data-success)]/30">
-                                  <span className="font-bold text-[var(--data-success)]">Liquidación hoy:</span>
-                                  <span className="font-extrabold font-mono text-[var(--data-success)]">{formatCurrency(pagoAnticipado)}</span>
+                                <div className="flex justify-between text-xs pt-1 border-t border-[var(--data-success-500)]/30">
+                                  <span className="font-bold text-[var(--data-success-500)]">Liquidación hoy:</span>
+                                  <span className="font-extrabold font-mono text-[var(--data-success-500)]">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold bg-[var(--accent-soft)] rounded-lg px-2 py-1 text-center">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-[var(--accent-soft)] rounded-lg px-2 py-1 text-center">
                                     Ahorro de {formatCurrency(ahorro)} en intereses futuros
                                   </p>
                                 )}
@@ -1919,15 +1925,15 @@ export default function PrestamosModule() {
 <style>
   @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   body { font-family: Arial, sans-serif; color: #333; padding: 20px; }
-  h1 { color: #00B4A6; font-size: 16px; margin-bottom: 4px; text-align: center; }
+  h1 { color: var(--accent); font-size: 16px; margin-bottom: 4px; text-align: center; }
   .sub { text-align: center; color: #666; font-size: 12px; margin-bottom: 20px; }
   .info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; font-size: 13px; }
-  .info b { color: #00B4A6; }
+  .info b { color: var(--accent); }
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #00B4A6; color: white; padding: 8px; text-align: left; }
+  th { background: var(--accent); color: white; padding: 8px; text-align: left; }
   td { padding: 6px 8px; border-bottom: 1px solid #eee; }
   tr:nth-child(even) { background: #f9f9f9; }
-  .paid { color: #00B4A6; font-weight: bold; }
+  .paid { color: var(--accent); font-weight: bold; }
   .pending { color: #d97706; }
   .total-row { background: #f0fdf4 !important; font-weight: bold; }
   .right { text-align: right; }
@@ -1935,7 +1941,7 @@ export default function PrestamosModule() {
   .firma { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 4px; margin-top: 40px; }
 </style></head><body>
 <h1>CRONOGRAMA DE AMORTIZACIÓN</h1>
-<p class="sub">Buleje — Pucallpa</p>
+<p class="sub">${storeName}</p>
 <div class="info">
   <div><b>Cliente:</b> ${selected.customerId || selected.entidadNombre || "—"}</div>
   <div><b>Monto:</b> ${selected.moneda === "USD" ? "$" : "S/"}${selected.monto.toFixed(2)}</div>
@@ -1986,16 +1992,16 @@ ${cuotas.map(c => { const row = `<tr>
 <style>
   @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   body { font-family: 'Courier New', monospace; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; }
-  .header { text-align: center; border-top: 3px double #00B4A6; border-bottom: 3px double #00B4A6; padding: 12px 0; margin-bottom: 20px; }
-  .header h1 { color: #00B4A6; font-size: 16px; margin: 0; }
+  .header { text-align: center; border-top: 3px double var(--accent); border-bottom: 3px double var(--accent); padding: 12px 0; margin-bottom: 20px; }
+  .header h1 { color: var(--accent); font-size: 16px; margin: 0; }
   .header p { color: #666; font-size: 11px; margin: 4px 0 0; }
   .section { border-top: 1px dashed #999; padding: 12px 0; font-size: 13px; }
   .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .row b { color: #00B4A6; }
+  .row b { color: var(--accent); }
   table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
   th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
   td { padding: 5px 6px; border: 1px solid #eee; }
-  .paid { color: #00B4A6; }
+  .paid { color: var(--accent); }
   .pend { color: #d97706; }
   .right { text-align: right; }
   .firma-section { margin-top: 50px; }
@@ -2004,7 +2010,7 @@ ${cuotas.map(c => { const row = `<tr>
 </style></head><body>
 <div class="header">
   <h1>RESUMEN DE DEUDA</h1>
-  <p>Buleje — Pucallpa, Peru</p>
+  <p>${storeName} — ${storeLocation}</p>
 </div>
 <div class="section">
   <div class="row"><span>Cliente:</span><b>${selected.customerId || selected.entidadNombre || "—"}</b></div>
@@ -2041,7 +2047,7 @@ ${cuotas.map(c => { const row = `<tr>
 <div class="firma-section">
   <div class="firma-line">Firma del deudor</div>
 </div>
-<p class="footer-text">Buleje — Pucallpa, Peru — ${hoy}</p>
+<p class="footer-text">${storeName} — ${storeLocation} — ${hoy}</p>
 </body></html>`);
                             w.document.close();
                             setTimeout(() => w.print(), 300);
@@ -2067,7 +2073,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
                                     isSelected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:border-gray-300",
-                                    isOverdue && !isSelected && "border-[var(--data-error)] bg-[var(--data-error-50)]/50"
+                                    isOverdue && !isSelected && "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50"
                                   )}
                                 >
                                   <input
@@ -2085,7 +2091,7 @@ ${cuotas.map(c => { const row = `<tr>
                                     <span className="text-[var(--text-secondary)] ml-1">— {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
                                   </span>
                                   <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
-                                  {isOverdue && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
+                                  {isOverdue && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
                                 </label>
                               );
                             })}
@@ -2096,7 +2102,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)] disabled:opacity-50  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2107,7 +2113,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)]  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2124,10 +2130,10 @@ ${cuotas.map(c => { const row = `<tr>
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
-                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)]">
+                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
                               <Ban className="h-3.5 w-3.5" /> Cancelar
                             </button>
                           </div>
@@ -2137,14 +2143,14 @@ ${cuotas.map(c => { const row = `<tr>
                       {/* Mejora 17: Documentos adjuntos */}
                       <div>
                         <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-                          <Paperclip className="h-4 w-4 text-[var(--data-success)]" /> Documentos
+                          <Paperclip className="h-4 w-4 text-[var(--data-success-500)]" /> Documentos
                           <span className="text-xs text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
                         </h4>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
                               <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-gray-50 transition-colors">
-                                <FileText className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+                                <FileText className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
                                 <span className="text-xs text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
                                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
                               </a>
@@ -2156,7 +2162,7 @@ ${cuotas.map(c => { const row = `<tr>
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
                             try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
-                          {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info)]" />}
+                          {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info-500)]" />}
                           <span className="text-xs text-[var(--text-secondary)]">Subir documento</span>
                         </label>
                       </div>
@@ -2168,7 +2174,7 @@ ${cuotas.map(c => { const row = `<tr>
                         return (
                           <div>
                             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-                              <History className="h-4 w-4 text-[var(--data-info)]" /> Historial de pagos ({pagadas.length})
+                              <History className="h-4 w-4 text-[var(--data-info-500)]" /> Historial de pagos ({pagadas.length})
                             </h4>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
@@ -2178,8 +2184,8 @@ ${cuotas.map(c => { const row = `<tr>
                                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm font-bold text-[var(--data-success)]">{formatCurrency(c.montoPagado || c.monto)}</p>
-                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
+                                    <p className="text-sm font-bold text-[var(--data-success-500)]">{formatCurrency(c.montoPagado || c.monto)}</p>
+                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
                                   </div>
                                 </div>
                               ))}
@@ -2204,16 +2210,16 @@ ${cuotas.map(c => { const row = `<tr>
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
               <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success)]" /> Refinanciar Préstamo</CardTitle>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
                   <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40" /></div>
+                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
+                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
+                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
                   <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
                 </div>
-                {refinanciarError && <p className="text-xs text-[var(--data-error)] font-semibold">{refinanciarError}</p>}
+                {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Cancelar</button>
                   <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50">
@@ -2233,17 +2239,17 @@ ${cuotas.map(c => { const row = `<tr>
             <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
             <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
               <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error)]">
-                  <AlertCircle className="h-6 w-6 text-[var(--data-error)] shrink-0" />
+                <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
+                  <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
                   <div>
-                    <p className="text-sm font-bold text-[var(--data-error)]">¿Cancelar este préstamo?</p>
-                    <p className="text-xs text-[var(--data-error)] mt-0.5">Esta acción cambiará el estado a CANCELADO. Las cuotas pendientes no se cobrarán.</p>
+                    <p className="text-sm font-bold text-[var(--data-error-500)]">¿Cancelar este préstamo?</p>
+                    <p className="text-xs text-[var(--data-error-500)] mt-0.5">Esta acción cambiará el estado a CANCELADO. Las cuotas pendientes no se cobrarán.</p>
                   </div>
                 </div>
                 <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
                 <div className="flex gap-2">
                   <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Volver</button>
-                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50">
+                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
                     {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
                   </button>
                 </div>
@@ -2286,7 +2292,7 @@ ${cuotas.map(c => { const row = `<tr>
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
                 </div>
-                {pagoError && <p className="text-xs text-[var(--data-error)] font-semibold">{pagoError}</p>}
+                {pagoError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
                     Cancelar
@@ -2294,7 +2300,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)] disabled:opacity-50  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2331,7 +2337,7 @@ ${cuotas.map(c => { const row = `<tr>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                       Paso {createStep} de 2
                     </span>
                   </div>
@@ -2361,7 +2367,7 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
@@ -2411,7 +2417,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
                                 <span className="block text-[length:var(--ts-2xs)] opacity-60">TEA ~{preset.teaRef}%</span>
@@ -2487,7 +2493,7 @@ ${cuotas.map(c => { const row = `<tr>
                       />
                     </div>
 
-                    {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -2495,7 +2501,7 @@ ${cuotas.map(c => { const row = `<tr>
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)]  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2663,7 +2669,7 @@ ${cuotas.map(c => { const row = `<tr>
                       />
                     </div>
 
-                    {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -2672,7 +2678,7 @@ ${cuotas.map(c => { const row = `<tr>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success)] disabled:opacity-50  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

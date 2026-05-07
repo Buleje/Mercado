@@ -156,8 +156,8 @@ export default function HistorialCierresTab() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className={`font-bold ${
-                          dif > 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-                          dif < 0 ? "text-[var(--data-error)]" :
+                          dif > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+                          dif < 0 ? "text-[var(--data-error-500)]" :
                           "text-[var(--text-secondary)] dark:text-foreground"
                         }`}>
                           {s.efectivoContado != null ? (
@@ -263,7 +263,7 @@ export default function HistorialCierresTab() {
 
                 {/* Caja */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Caja</p>
+                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Caja</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Contado</p>
@@ -277,7 +277,7 @@ export default function HistorialCierresTab() {
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Diferencia</p>
                       {detail.efectivoContado != null ? (
                         <p className={`text-base font-bold ${
-                          Number(detail.diferenciaCaja) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                          Number(detail.diferenciaCaja) >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                         }`}>
                           {Number(detail.diferenciaCaja) >= 0 ? "+" : ""}S/ {Number(detail.diferenciaCaja).toFixed(2)}
                         </p>
@@ -292,19 +292,19 @@ export default function HistorialCierresTab() {
 
                 {/* Fiados */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Fiados</p>
+                  <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Fiados</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Cobrados</p>
-                      <p className="text-base font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatMoney(detail.fiadosCobrados)}</p>
+                      <p className="text-base font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatMoney(detail.fiadosCobrados)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Nuevos</p>
-                      <p className="text-base font-bold text-[var(--data-warning)]">{formatMoney(detail.fiadosNuevos)}</p>
+                      <p className="text-base font-bold text-[var(--data-warning-500)]">{formatMoney(detail.fiadosNuevos)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Vencidos</p>
-                      <p className={`text-base font-bold ${detail.fiadosVencidos > 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)] dark:text-foreground"}`}>
+                      <p className={`text-base font-bold ${detail.fiadosVencidos > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)] dark:text-foreground"}`}>
                         {detail.fiadosVencidos}
                       </p>
                     </div>
@@ -316,7 +316,7 @@ export default function HistorialCierresTab() {
                   <>
                     <div className="h-px bg-gray-100 dark:bg-card-border" />
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Alertas de stock</p>
+                      <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Alertas de stock</p>
                       <div className="text-sm text-[var(--text-secondary)] dark:text-muted space-y-1">
                         {(() => {
                           try {
@@ -324,7 +324,7 @@ export default function HistorialCierresTab() {
                             return items.map((item, i) => (
                               <div key={i} className="flex justify-between">
                                 <span className="truncate mr-2">{item.nombre}</span>
-                                <span className="font-bold text-[var(--data-error)] shrink-0">{item.stock}/{item.stockMin}</span>
+                                <span className="font-bold text-[var(--data-error-500)] shrink-0">{item.stock}/{item.stockMin}</span>
                               </div>
                             ));
                           } catch {

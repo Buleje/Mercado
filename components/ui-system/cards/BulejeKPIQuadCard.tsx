@@ -124,8 +124,8 @@ function KPICellRender({ kpi }: { kpi: KPICell }) {
           <span
             className={cn(
               "inline-flex items-center gap-0.5 text-xs font-bold tabular-nums",
-              dir === "up" && "text-[var(--data-success)]",
-              dir === "down" && "text-[var(--data-error)]",
+              dir === "up" && "text-[var(--data-success-500)]",
+              dir === "down" && "text-[var(--data-error-500)]",
               dir === "flat" && "text-[var(--text-tertiary)]",
             )}
           >

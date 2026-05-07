@@ -338,7 +338,7 @@ export default function SuperAdminLoginPage() {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-red-300">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   {error}
                 </div>
@@ -403,7 +403,7 @@ export default function SuperAdminLoginPage() {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-red-300">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   {error}
                 </div>

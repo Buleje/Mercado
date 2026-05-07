@@ -34,10 +34,10 @@ interface DashboardData {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  recibido: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  parcial: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  cancelado: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  pendiente: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
+  recibido: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400",
+  parcial: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400",
+  cancelado: "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400",
 };
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -76,7 +76,7 @@ function KpiCard({
         {label}
       </p>
       <p
-        className={`mt-1 text-2xl font-bold ${accent ? "text-[#00B4A6]" : "text-gray-900 dark:text-white"}`}
+        className={`mt-1 text-2xl font-bold ${accent ? "text-[var(--accent)]" : "text-gray-900 dark:text-white"}`}
       >
         {value}
       </p>
@@ -98,7 +98,7 @@ function BarChart({ data }: { data: { label: string; value: number }[] }) {
             style={{
               height: `${Math.round((d.value / max) * 100) * 0.6}px`,
               minHeight: d.value > 0 ? "4px" : "0px",
-              background: "#00B4A6",
+              background: "var(--accent)",
               opacity: 0.85,
             }}
           />
@@ -161,7 +161,7 @@ export default function SupplierDashboardPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#00B4A6] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function SupplierDashboardPage() {
         <button
           onClick={load}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: "#00B4A6" }}
+          style={{ background: "var(--accent)" }}
         >
           Reintentar
         </button>
@@ -251,7 +251,7 @@ export default function SupplierDashboardPage() {
           <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
             Alertas de reorden
             {stockAlerts.length > 0 && (
-              <span className="ml-2 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
+              <span className="ml-2 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-bold text-[var(--data-error-600)] dark:text-red-400">
                 {stockAlerts.length}
               </span>
             )}
@@ -270,7 +270,7 @@ export default function SupplierDashboardPage() {
                   <span className="truncate text-gray-700 dark:text-gray-300 max-w-[60%]">
                     {a.name}
                   </span>
-                  <span className="text-xs text-red-500 dark:text-red-400 font-medium">
+                  <span className="text-xs text-[var(--data-error-500)] dark:text-red-400 font-medium">
                     Stock: {a.stock} / mín {a.stockMin}
                   </span>
                 </li>

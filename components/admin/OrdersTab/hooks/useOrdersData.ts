@@ -44,6 +44,35 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
 
   useEffect(() => { void load(); }, [load]);
 
+  // ── Auto-refresh: polling cada 15s + listener SSE para "new_order" ────
+  // Bug 2026-05-05: el admin no veía nuevos pedidos sin recargar manualmente.
+  // Ahora hay polling permanente + un listener al evento `new_order` que
+  // emite `lib/sse-emitter.ts` desde `/api/orders` POST y `/api/marketplace/orders`.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void load();
+    }, 15_000);
+
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource("/api/admin/sse");
+      es.addEventListener("new_order", () => {
+        void load();
+      });
+      // refresca también en cualquier evento status-change para mantener Kanban en sync
+      es.addEventListener("order_status_changed", () => {
+        void load();
+      });
+    } catch {
+      /* SSE no disponible — polling cubre el caso */
+    }
+
+    return () => {
+      clearInterval(interval);
+      try { es?.close(); } catch {}
+    };
+  }, [load]);
+
   useEffect(() => {
     fetch("/api/settings")
       .then(r => r.ok ? r.json() : null)

@@ -42,8 +42,8 @@ export function CustomerVerifiedCard({
     <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-primary/10 bg-white/60 dark:bg-black/10">
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+          <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)]" />
+          <span className="text-xs font-bold text-[var(--data-success-700)] dark:text-emerald-400 uppercase tracking-wider">
             {variant === "found" ? "Cuenta verificada" : "Datos guardados"}
           </span>
         </div>
@@ -85,8 +85,8 @@ export function CustomerVerifiedCard({
         )}
         {loyaltyPoints !== null && loyaltyPoints > 0 && (
           <div className="flex items-center gap-2.5 px-3 py-1.5 bg-amber-50/60 dark:bg-amber-900/10">
-            <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+            <Award className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
+            <span className="text-xs font-bold text-[var(--data-warning-700)] dark:text-amber-400">
               {loyaltyPoints} pts
             </span>
           </div>

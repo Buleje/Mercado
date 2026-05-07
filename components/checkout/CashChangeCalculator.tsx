@@ -11,12 +11,12 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
   return (
     <div className="mt-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
       <div className="flex items-center gap-2 mb-3">
-        <Banknote className="h-5 w-5 text-emerald-600" />
+        <Banknote className="h-5 w-5 text-[var(--data-success-600)]" />
         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
           Pago contra entrega — Total: S/{finalTotal.toFixed(2)}
         </p>
       </div>
-      <p className="text-xs text-emerald-700 dark:text-emerald-300 mb-2">
+      <p className="text-xs text-[var(--data-success-700)] dark:text-emerald-300 mb-2">
         ¿Con cuánto vas a pagar? Así preparamos tu vuelto
       </p>
       <div className="flex flex-wrap gap-2">
@@ -27,8 +27,8 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
             onClick={() => setSelected(prev => prev === bill ? null : bill)}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               selected === bill
-                ? "bg-emerald-600 text-white shadow-md scale-105"
-                : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
+                ? "bg-[var(--data-success-600)] text-white shadow-md scale-105"
+                : "bg-white dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300 border border-emerald-300 dark:border-[var(--data-success-700)] hover:border-[var(--data-success-500)]"
             }`}
           >
             S/{bill}
@@ -39,15 +39,15 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
           onClick={() => setSelected(null)}
           className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
             selected === null
-              ? "bg-emerald-600 text-white shadow-md"
-              : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
+              ? "bg-[var(--data-success-600)] text-white shadow-md"
+              : "bg-white dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300 border border-emerald-300 dark:border-[var(--data-success-700)] hover:border-[var(--data-success-500)]"
           }`}
         >
           Monto exacto
         </button>
       </div>
       {change !== null && change > 0 && (
-        <div className="mt-3 p-2.5 rounded-lg bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700">
+        <div className="mt-3 p-2.5 rounded-lg bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-[var(--data-success-700)]">
           <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
             Tu vuelto: S/{change.toFixed(2)}
           </p>

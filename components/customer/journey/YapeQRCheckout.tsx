@@ -160,7 +160,7 @@ export function YapeQRCheckout({
             >
               {recipientPhone}
               {copiedField === "phone" ? (
-                <Check className="h-3.5 w-3.5 text-[var(--data-success)]" strokeWidth={2.5} />
+                <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" strokeWidth={2.5} />
               ) : (
                 <Copy className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} />
               )}
@@ -177,7 +177,7 @@ export function YapeQRCheckout({
             >
               S/ {amount.toFixed(2)}
               {copiedField === "amount" ? (
-                <Check className="h-4 w-4 text-[var(--data-success)]" strokeWidth={2.5} />
+                <Check className="h-4 w-4 text-[var(--data-success-500)]" strokeWidth={2.5} />
               ) : (
                 <Copy className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} />
               )}
@@ -289,9 +289,9 @@ export function YapeQRCheckout({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--data-success)] bg-emerald-50 dark:bg-emerald-950/30 p-8"
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--data-success-500)] bg-emerald-50 dark:bg-emerald-950/30 p-8"
             >
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
                 <Check className="h-6 w-6" strokeWidth={2.5} />
               </span>
               <div className="text-center">
@@ -312,8 +312,8 @@ export function YapeQRCheckout({
               animate={{ opacity: 1 }}
               className="space-y-3"
             >
-              <div className="rounded-xl border border-[var(--data-error)] bg-red-50 dark:bg-red-950/20 p-4">
-                <p className="text-sm font-extrabold text-[var(--data-error)] mb-1">
+              <div className="rounded-xl border border-[var(--data-error-500)] bg-red-50 dark:bg-red-950/20 p-4">
+                <p className="text-sm font-extrabold text-[var(--data-error-500)] mb-1">
                   No pudimos validar
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">

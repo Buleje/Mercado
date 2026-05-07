@@ -228,8 +228,8 @@ export default function TreasuryTab() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-[var(--data-success)]"><TrendingUp className="h-3.5 w-3.5" />{fmt(totalCredits)}</span>
-              <span className="flex items-center gap-1 text-[var(--data-error)]"><TrendingDown className="h-3.5 w-3.5" />{fmt(totalDebits)}</span>
+              <span className="flex items-center gap-1 text-[var(--data-success-500)]"><TrendingUp className="h-3.5 w-3.5" />{fmt(totalCredits)}</span>
+              <span className="flex items-center gap-1 text-[var(--data-error-500)]"><TrendingDown className="h-3.5 w-3.5" />{fmt(totalDebits)}</span>
             </div>
             <button onClick={() => setShowNewTxn(v => !v)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90">
               <Plus className="h-3.5 w-3.5" /> Movimiento
@@ -294,13 +294,13 @@ export default function TreasuryTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">
                   <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface capitalize text-[var(--text-secondary)] dark:text-muted">{t.category}</span>
                 </td>
-                <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", t.type === "credito" ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", t.type === "credito" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   {t.type === "credito" ? "+" : "−"}{fmt(t.amount)}
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center hidden sm:table-cell">
                   <button onClick={() => toggleReconcile(t.id)} title={t.reconciled ? "Conciliado" : "Marcar como conciliado"}>
                     {t.reconciled
-                      ? <CheckCircle className="h-4 w-4 text-[var(--data-success)] mx-auto" />
+                      ? <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />
                       : <div className="h-4 w-4 rounded-full border-2 border-[var(--rule-base)] dark:border-muted mx-auto hover:border-primary transition-colors" />}
                   </button>
                 </td>

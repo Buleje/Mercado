@@ -167,7 +167,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
         className="px-5 py-6 text-white"
         style={{
           background:
-            "linear-gradient(135deg, #009690 0%, #00B4A6 55%, #33C4B8 100%)",
+            "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 55%, color-mix(in oklab, var(--accent) 70%, white) 100%)",
         }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -217,9 +217,9 @@ function BalanceCard({ data, level }: BalanceCardProps) {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-white/50 mt-1.5">
+            <p className="text-xs text-white/60 mt-1.5 font-semibold">
               {toNext > 0
-                ? `Faltan ${formatPoints(toNext)} pts para ${nextMeta.label} ${nextMeta.emoji}`
+                ? `Faltan ${formatPoints(toNext)} pts para llegar a ${nextMeta.label}`
                 : `¡Ya eres ${nextMeta.label}!`}
             </p>
           </div>
@@ -227,10 +227,10 @@ function BalanceCard({ data, level }: BalanceCardProps) {
 
         {/* Nivel máximo */}
         {!nextMeta && (
-          <div className="mt-4 flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2">
-            <span className="text-lg">🏆</span>
-            <p className="text-xs text-white/80 font-medium">
-              Nivel máximo alcanzado — ¡eres VIP Diamante!
+          <div className="mt-4 flex items-center gap-2.5 bg-white/15 rounded-xl px-3.5 py-2.5">
+            <Trophy className="h-5 w-5 text-amber-300" strokeWidth={2} aria-hidden="true" />
+            <p className="text-xs text-white/90 font-bold">
+              Nivel máximo alcanzado — sos VIP Diamante.
             </p>
           </div>
         )}
@@ -306,9 +306,11 @@ function LevelLadder({ currentLevel }: LevelLadderProps) {
                   : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700/60",
               )}
             >
-              <span className="text-xl shrink-0" role="img" aria-hidden="true">
-                {meta.emoji}
-              </span>
+              <meta.Icon
+                className={cn("h-5 w-5 shrink-0", isActive ? meta.textColor : "text-muted")}
+                strokeWidth={2.25}
+                aria-hidden="true"
+              />
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
@@ -412,9 +414,9 @@ function TransactionList({ transactions }: TransactionListProps) {
               aria-hidden="true"
             >
               {isEarn ? (
-                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <TrendingUp className="h-4 w-4 text-[var(--data-success-600)] dark:text-emerald-400" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />
+                <TrendingDown className="h-4 w-4 text-[var(--data-error-500)] dark:text-red-400" />
               )}
             </div>
 
@@ -433,8 +435,8 @@ function TransactionList({ transactions }: TransactionListProps) {
               className={cn(
                 "text-sm font-extrabold tabular-nums shrink-0",
                 isEarn
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-500 dark:text-red-400",
+                  ? "text-[var(--data-success-600)] dark:text-emerald-400"
+                  : "text-[var(--data-error-500)] dark:text-red-400",
               )}
               aria-label={`${isEarn ? "Ganaste" : "Canjeaste"} ${Math.abs(tx.amount)} puntos`}
             >
@@ -511,7 +513,7 @@ function RewardCatalog({ rewards, currentPoints }: RewardCatalogProps) {
                   {formatPoints(reward.pointsCost)} pts
                 </p>
                 {canRedeem ? (
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] dark:text-emerald-400">
                     Disponible
                   </span>
                 ) : (
@@ -715,7 +717,7 @@ export default function LoyaltyDashboard() {
                 <p
                   id={phoneErrorId}
                   role="alert"
-                  className="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
+                  className="mt-1.5 text-xs text-[var(--data-error-500)] dark:text-red-400 flex items-center gap-1"
                 >
                   <AlertCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
                   {phoneError}
@@ -766,16 +768,16 @@ export default function LoyaltyDashboard() {
           className="flex items-start gap-3 rounded-2xl border border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-900/15 px-5 py-4 mb-6"
         >
           <AlertCircle
-            className="h-5 w-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5"
+            className="h-5 w-5 text-[var(--data-error-500)] dark:text-red-400 shrink-0 mt-0.5"
             aria-hidden="true"
           />
           <div className="flex-1">
-            <p className="text-sm font-medium text-red-600 dark:text-red-300">
+            <p className="text-sm font-medium text-[var(--data-error-600)] dark:text-red-300">
               {fetchError}
             </p>
             <button
               onClick={handleReset}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-red-500 dark:text-red-400 hover:underline focus-visible:outline-none focus-visible:underline"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[var(--data-error-500)] dark:text-red-400 hover:underline focus-visible:outline-none focus-visible:underline"
             >
               <RefreshCw className="h-3 w-3" aria-hidden="true" />
               Intentar con otro número

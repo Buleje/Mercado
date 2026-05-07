@@ -373,7 +373,7 @@ export default function MassMessageSender({
           <p className="mt-1 text-xs text-[var(--text-tertiary)]">
             {template.length} caracteres
             {template.length > 160 && (
-              <span className="ml-1 text-[var(--data-warning)]">(SMS multipart)</span>
+              <span className="ml-1 text-[var(--data-warning-500)]">(SMS multipart)</span>
             )}
           </p>
         </div>
@@ -393,7 +393,7 @@ export default function MassMessageSender({
             className={cn(
               "flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors min-h-[44px]",
               copied
-                ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
+                ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
                 : "bg-primary text-white hover:bg-primary/90",
               "disabled:opacity-40"
             )}
@@ -415,7 +415,7 @@ export default function MassMessageSender({
             disabled={filtered.length === 0 || !template.trim()}
             className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors min-h-[44px] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40"
           >
-            <MessageSquare className="h-4 w-4 text-[var(--data-success)]" />
+            <MessageSquare className="h-4 w-4 text-[var(--data-success-500)]" />
             Links WhatsApp
           </button>
         </div>
@@ -425,7 +425,7 @@ export default function MassMessageSender({
       {showWaLinks && filtered.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[var(--data-success)]" />
+            <MessageSquare className="h-4 w-4 text-[var(--data-success-500)]" />
             Links de WhatsApp ({filtered.length} clientes)
           </CardTitle>
           <p className="text-xs text-[var(--text-secondary)] mb-3">
@@ -444,11 +444,11 @@ export default function MassMessageSender({
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[var(--data-success)]/30 hover:border-[var(--data-success)]/30 transition-colors"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 transition-colors"
                   >
                     <span className="font-bold text-[var(--text-primary)] truncate">{c.name}</span>
                     <span className="text-[var(--text-tertiary)] text-xs">{c.phone}</span>
-                    <span className="ml-auto text-[var(--data-success)] text-xs font-bold">Abrir</span>
+                    <span className="ml-auto text-[var(--data-success-500)] text-xs font-bold">Abrir</span>
                   </a>
                 </div>
               );

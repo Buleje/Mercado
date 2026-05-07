@@ -219,8 +219,8 @@ export default function ExpiredBatchesWidget() {
       <div className="space-y-3">
         {/* Encabezado */}
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 flex items-center justify-center">
-            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center">
+            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           </div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Lotes Vencidos con Stock
@@ -228,9 +228,9 @@ export default function ExpiredBatchesWidget() {
         </div>
 
         {/* Sin vencidos */}
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
-          <Package className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0" />
-          <span className="text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+          <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
+          <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             No hay lotes vencidos con stock
           </span>
         </div>
@@ -243,8 +243,8 @@ export default function ExpiredBatchesWidget() {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 flex items-center justify-center">
-            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center">
+            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           </div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Lotes Vencidos con Stock
@@ -268,20 +268,20 @@ export default function ExpiredBatchesWidget() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3"
+            className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3"
           >
             <m.div
               animate={{ scale: [1, 1.15, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
             >
-              <AlertOctagon className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0" />
+              <AlertOctagon className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0" />
             </m.div>
-            <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex-1">
+            <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
               {batches.length} lote{batches.length > 1 ? "s" : ""} vencido
               {batches.length > 1 ? "s" : ""} con stock disponible
             </span>
             {hasCostData && (
-              <span className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0">
+              <span className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0">
                 Pérdida potencial: {fmtCurrency(totalLoss)}
               </span>
             )}
@@ -291,7 +291,7 @@ export default function ExpiredBatchesWidget() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {error} —{" "}
           <button onClick={fetchExpired} className="underline font-medium">
             Reintentar
@@ -347,20 +347,20 @@ export default function ExpiredBatchesWidget() {
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                           isVeryOld
-                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
+                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40"
                             : isOld
-                            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30"
-                            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20"
+                            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30"
+                            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20"
                         )}
                       >
                         <TrendingDown
                           className={cn(
                             "h-4 w-4",
                             isVeryOld
-                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : isOld
-                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                              : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           )}
                         />
                       </div>
@@ -382,7 +382,7 @@ export default function ExpiredBatchesWidget() {
                           {lossAmount !== null && (
                             <>
                               <span className="text-gray-200 dark:text-card-border">·</span>
-                              <span className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
+                              <span className="text-[length:var(--ts-xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
                                 Pérdida: {fmtCurrency(lossAmount)}
                               </span>
                             </>
@@ -402,10 +402,10 @@ export default function ExpiredBatchesWidget() {
                           className={cn(
                             "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
                             isVeryOld
-                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : isOld
-                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
-                              : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                              : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           )}
                         >
                           {expired}d vencido
@@ -421,7 +421,7 @@ export default function ExpiredBatchesWidget() {
             <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex items-center justify-between gap-2">
               <a
                 href="/admin?tab=inventario-almacenes"
-                className="text-xs font-semibold text-primary dark:text-[var(--data-success)] hover:underline"
+                className="text-xs font-semibold text-primary dark:text-[var(--data-success-500)] hover:underline"
               >
                 Ver todos los lotes
               </a>
@@ -429,9 +429,9 @@ export default function ExpiredBatchesWidget() {
                 type="button"
                 onClick={openModal}
                 className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold
-                  bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]
-                  border border-[var(--data-error)] dark:border-[var(--data-error)]/50
-                  hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/40 transition-colors"
+                  bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]
+                  border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50
+                  hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/40 transition-colors"
               >
                 <ClipboardList className="h-3.5 w-3.5" />
                 Registrar merma
@@ -456,8 +456,8 @@ export default function ExpiredBatchesWidget() {
             className={cn(
               "mt-2 rounded-xl border px-4 py-2.5 text-xs font-medium",
               modal.toast.type === "success"
-                ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-                : "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
             {modal.toast.message}
@@ -488,7 +488,7 @@ export default function ExpiredBatchesWidget() {
               {/* Cabecera */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+                  <ClipboardList className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
                   <SectionTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
                     Registrar merma
                   </SectionTitle>
@@ -519,12 +519,12 @@ export default function ExpiredBatchesWidget() {
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-colors",
                         checked
-                          ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
+                          ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
                           : "border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface/40"
                       )}
                     >
                       {checked
-                        ? <CheckSquare className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0" />
+                        ? <CheckSquare className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0" />
                         : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
@@ -566,7 +566,7 @@ export default function ExpiredBatchesWidget() {
                     exit={{ opacity: 0, height: 0 }}
                     className="px-5 pb-2"
                   >
-                    <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+                    <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                       {modal.toast.message}
                     </div>
                   </m.div>
@@ -587,7 +587,7 @@ export default function ExpiredBatchesWidget() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={modal.submitting || modal.selected.size === 0}
-                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-white bg-[var(--data-error)] dark:bg-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-white bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {modal.submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Confirmar registro ({modal.selected.size})

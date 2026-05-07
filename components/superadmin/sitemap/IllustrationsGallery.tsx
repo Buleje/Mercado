@@ -267,7 +267,7 @@ export default function IllustrationsGallery() {
                       className={[
                         "absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-md transition-colors",
                         isCopied
-                          ? "bg-[var(--data-success)] text-white"
+                          ? "bg-[var(--data-success-500)] text-white"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
                       ].join(" ")}
                       aria-hidden="true"

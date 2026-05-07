@@ -37,7 +37,7 @@ export default function ConfirmacionClient() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:py-24">
-        <span className="inline-flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-400">
+        <span className="inline-flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-[var(--data-success-600)] dark:border-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-400">
           <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
         </span>
         <h1 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
@@ -60,7 +60,7 @@ export default function ConfirmacionClient() {
           <div className="mx-auto mt-8 max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left dark:border-amber-900 dark:bg-amber-900/10">
             <div className="flex items-start gap-3">
               <ShieldAlert
-                className="mt-0.5 h-5 w-5 flex-none text-amber-600 dark:text-amber-400"
+                className="mt-0.5 h-5 w-5 flex-none text-[var(--data-warning-600)] dark:text-amber-400"
                 aria-hidden="true"
               />
               <div className="flex-1">

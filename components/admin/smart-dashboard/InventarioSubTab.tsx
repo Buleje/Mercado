@@ -71,15 +71,15 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           {/* Proximos pagos */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
-                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
+                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-                <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                <AlertTriangle className="w-3 h-3 text-[var(--data-error-500)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -96,7 +96,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                 })}
               </ul>
             ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-[var(--data-success)] font-medium">Sin pagos pendientes esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
@@ -105,7 +105,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-                <Users className="w-3.5 h-3.5 text-[var(--data-success)]" />
+                <Users className="w-3.5 h-3.5 text-[var(--data-success-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
             </div>
@@ -113,9 +113,9 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
@@ -125,8 +125,8 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           {/* Productos que se agotan */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
-                <Package className="w-3.5 h-3.5 text-[var(--data-error)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20">
+                <Package className="w-3.5 h-3.5 text-[var(--data-error-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Se agotan esta semana</span>
             </div>
@@ -138,9 +138,9 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                     <span className="text-[var(--text-tertiary)] ml-1">quedan {p.stock}</span>
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" :
-                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" :
-                      "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" :
+                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" :
+                      "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
                     )}>
                       {p.daysLeft}d
                     </span>
@@ -148,7 +148,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-[var(--data-success)] font-medium">Stock estable para esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
@@ -164,9 +164,9 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             <Package className="w-4 h-4 text-[var(--text-tertiary)]" />
             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Stock muerto</span>
             {deadStockData.value > 500 ? (
-              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)] px-1.5 py-0.5 rounded-full">Capital atrapado</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full">Capital atrapado</span>
             ) : (
-              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
             )}
           </div>
           <p className="text-lg font-bold font-mono text-[var(--text-primary)] dark:text-zinc-100">{fmtR(deadStockData.value)} <span className="text-xs font-normal text-[var(--text-tertiary)]">en {deadStockData.count} productos sin vender 30+ dias</span></p>

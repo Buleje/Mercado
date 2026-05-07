@@ -60,12 +60,12 @@ export default function TipWidget({ orderId, partnerName }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 p-5 text-center">
-        <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-600 dark:text-emerald-400" strokeWidth={2.25} />
-        <p className="mt-2 text-base font-extrabold text-emerald-700 dark:text-emerald-300">
+      <div className="rounded-2xl border-2 border-emerald-300 dark:border-[var(--data-success-700)] bg-emerald-50 dark:bg-emerald-950/30 p-5 text-center">
+        <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success-600)] dark:text-emerald-400" strokeWidth={2.25} />
+        <p className="mt-2 text-base font-extrabold text-[var(--data-success-700)] dark:text-emerald-300">
           ¡Gracias por tu propina!
         </p>
-        <p className="mt-1 text-sm text-emerald-700/80 dark:text-emerald-300/80">
+        <p className="mt-1 text-sm text-[var(--data-success-500)]/80 dark:text-emerald-300/80">
           {partnerName} la recibirá directo en su cuenta.
         </p>
       </div>
@@ -135,7 +135,7 @@ export default function TipWidget({ orderId, partnerName }: Props) {
       </div>
 
       {error && (
-        <div className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
+        <div className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
           <AlertTriangle className="inline h-4 w-4 mr-1.5 mb-0.5" />
           {error}
         </div>

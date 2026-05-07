@@ -169,7 +169,7 @@ export default function PickListGenerator() {
           </p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[var(--data-success)]">
+          <p className="text-2xl font-bold text-[var(--data-success-500)]">
             {checkedCount}/{totalCount}
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">Recogidos</p>
@@ -179,9 +179,9 @@ export default function PickListGenerator() {
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
-          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : !generated ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">
@@ -213,7 +213,7 @@ export default function PickListGenerator() {
               <span
                 className={cn(
                   "font-semibold",
-                  allDone ? "text-[var(--data-success)]" : "text-primary"
+                  allDone ? "text-[var(--data-success-500)]" : "text-primary"
                 )}
               >
                 {checkedCount}/{totalCount}
@@ -231,7 +231,7 @@ export default function PickListGenerator() {
               />
             </div>
             {allDone && (
-              <p className="mt-2 text-center text-sm font-semibold text-[var(--data-success)]">
+              <p className="mt-2 text-center text-sm font-semibold text-[var(--data-success-500)]">
                 Lista completa — todos los productos recogidos
               </p>
             )}
@@ -262,7 +262,7 @@ export default function PickListGenerator() {
                     className="mt-0.5 shrink-0 print:hidden"
                   >
                     {item.checked ? (
-                      <CheckSquare className="h-5 w-5 text-[var(--data-success)]" />
+                      <CheckSquare className="h-5 w-5 text-[var(--data-success-500)]" />
                     ) : (
                       <Square className="h-5 w-5 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
                     )}

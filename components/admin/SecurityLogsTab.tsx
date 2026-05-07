@@ -7,16 +7,16 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { SecurityLogEntry } from "@/app/api/security-logs/route";
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   data:     { label: "Datos",         icon: Eye,      color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  config:   { label: "Configuración", icon: Settings, color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
-  security: { label: "Seguridad",     icon: Shield,   color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
+  config:   { label: "Configuración", icon: Settings, color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
+  security: { label: "Seguridad",     icon: Shield,   color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };
 
 const SEVERITY_COLORS = {
   info:     "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]",
-  warning:  "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  critical: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  warning:  "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  critical: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 function fmtDate(iso: string) {
@@ -80,7 +80,7 @@ export default function SecurityLogsTab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Lock className="h-6 w-6 text-primary" /> Logs de Seguridad
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Auditoría de accesos, cambios y eventos de seguridad</p>
         </div>
@@ -97,9 +97,9 @@ export default function SecurityLogsTab() {
 
       {/* Alerta crítica */}
       {!loading && criticalCount > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl p-3 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl p-3 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">
             {criticalCount} evento{criticalCount > 1 ? "s" : ""} crítico{criticalCount > 1 ? "s" : ""} detectado{criticalCount > 1 ? "s" : ""}. Revisa los logs marcados en rojo.
           </p>
         </div>
@@ -108,9 +108,9 @@ export default function SecurityLogsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Eventos hoy",           value: todayCount,    color: "text-[var(--data-success)]" },
-          { label: "Alertas críticas",       value: criticalCount, color: criticalCount > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
-          { label: "Intentos fallidos auth", value: failedAuth,   color: failedAuth > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]" },
+          { label: "Eventos hoy",           value: todayCount,    color: "text-[var(--data-success-500)]" },
+          { label: "Alertas críticas",       value: criticalCount, color: criticalCount > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]" },
+          { label: "Intentos fallidos auth", value: failedAuth,   color: failedAuth > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]" },
           { label: "Cambios de config",      value: roleChanges,  color: "text-[var(--text-secondary)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
@@ -194,7 +194,7 @@ export default function SecurityLogsTab() {
             const Cat = CATEGORY_CONFIG[l.category] ?? CATEGORY_CONFIG.auth;
             const CatIcon = Cat.icon;
             return (
-              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-[var(--data-error)] dark:border-[var(--data-error)]/30" : l.severity === "warning" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]/20" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : l.severity === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20" : "border-[var(--rule-base)] dark:border-card-border")}>
                 <div className="flex flex-wrap items-start gap-3">
                   <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Cat.color)}>
                     <CatIcon className="h-4 w-4" />
@@ -204,7 +204,7 @@ export default function SecurityLogsTab() {
                       <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{l.action}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", SEVERITY_COLORS[l.severity])}>{l.severity}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
-                        l.success ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+                        l.success ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                         {l.success ? <CheckCircle className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
                         {l.success ? "Éxito" : "Fallo"}
                       </span>

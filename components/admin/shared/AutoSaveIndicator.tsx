@@ -31,10 +31,10 @@ interface Props {
 
 const STATUS_META: Record<AutoSaveStatus, { icon: typeof Check; label: string; color: string }> = {
   idle: { icon: Check, label: "Guardado", color: "text-[var(--text-tertiary)]" },
-  dirty: { icon: Clock, label: "Cambios sin guardar", color: "text-[var(--data-warning)]" },
+  dirty: { icon: Clock, label: "Cambios sin guardar", color: "text-[var(--data-warning-500)]" },
   saving: { icon: Loader2, label: "Guardando...", color: "text-[var(--text-secondary)]" },
-  saved: { icon: Check, label: "Guardado", color: "text-[var(--data-success)]" },
-  error: { icon: AlertCircle, label: "Error al guardar", color: "text-[var(--data-error)]" },
+  saved: { icon: Check, label: "Guardado", color: "text-[var(--data-success-500)]" },
+  error: { icon: AlertCircle, label: "Error al guardar", color: "text-[var(--data-error-500)]" },
 };
 
 export function AutoSaveIndicator({ status, errorMessage, hideIdle = true, className }: Props) {

@@ -16,13 +16,26 @@
 import { useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
-  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight,
+  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
 import { STATUS_LABELS } from "./types";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  closestCorners,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 
 interface OrdersKanbanProps {
   activeOrders: DbOrder[];
@@ -40,7 +53,7 @@ interface OrdersKanbanProps {
   onDeleteOrder: (id: string) => void;
 }
 
-type ColumnId = "pendiente" | "confirmado" | "en_camino";
+type ColumnId = "pendiente" | "confirmado" | "preparando" | "en_camino";
 
 interface ColumnConfig {
   id: ColumnId;
@@ -50,26 +63,41 @@ interface ColumnConfig {
   emptyMessage: string;
 }
 
-const COLUMNS: ColumnConfig[] = [
+const COLUMNS: Array<ColumnConfig & { Icon: React.ElementType; iconColor: string }> = [
   {
     id: "pendiente",
     label: "Por confirmar",
-    description: "Yape por verificar · Pago a aprobar",
-    accentVar: "var(--data-warning)",
+    description: "Yape por verificar · pago a aprobar",
+    accentVar: "var(--data-warning-500)",
+    Icon: Clock,
+    iconColor: "text-[var(--data-warning-700)]",
     emptyMessage: "Sin pedidos por confirmar",
   },
   {
     id: "confirmado",
-    label: "Preparando",
-    description: "Confirmados · Esperan motorizado",
+    label: "Confirmado",
+    description: "Aprobados · listos para preparar",
     accentVar: "var(--accent)",
+    Icon: ShoppingBasket,
+    iconColor: "text-[var(--accent-dark)]",
+    emptyMessage: "Nada confirmado",
+  },
+  {
+    id: "preparando",
+    label: "Preparando",
+    description: "En cocina · armando el pedido",
+    accentVar: "var(--data-warning-500)",
+    Icon: ChefHat,
+    iconColor: "text-[var(--data-warning-700)]",
     emptyMessage: "Nada en preparación",
   },
   {
     id: "en_camino",
     label: "En camino",
-    description: "Asignado · Rumbo al cliente",
-    accentVar: "var(--text-primary)",
+    description: "Asignado · rumbo al cliente",
+    accentVar: "var(--data-info-500)",
+    Icon: Bike,
+    iconColor: "text-[var(--data-info-700)]",
     emptyMessage: "Ningún motorizado en ruta",
   },
 ];
@@ -131,6 +159,8 @@ function OrderCard({
   } else if (order.status === "pendiente") {
     primaryAction = { label: "Confirmar", icon: Check, onClick: () => onUpdateStatus("confirmado"), variant: "primary" };
   } else if (order.status === "confirmado") {
+    primaryAction = { label: "Preparando", icon: ChefHat, onClick: () => onUpdateStatus("preparando"), variant: "primary" };
+  } else if (order.status === "preparando") {
     primaryAction = { label: "En camino", icon: ArrowRight, onClick: () => onUpdateStatus("en_camino"), variant: "primary" };
   } else if (order.status === "en_camino") {
     primaryAction = { label: "Entregado", icon: Check, onClick: () => onUpdateStatus("entregado"), variant: "primary" };
@@ -148,13 +178,13 @@ function OrderCard({
     >
       {/* Top stripe — urgencia */}
       {u === "u2h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-error)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)] animate-pulse">
+        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-error-500)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)] animate-pulse">
           <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />
           +2h sin avanzar
         </div>
       )}
       {u === "u1h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-warning)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)]">
+        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-warning-500)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)]">
           <Clock className="h-3 w-3" strokeWidth={2.5} />
           +1h sin avanzar
         </div>
@@ -209,6 +239,28 @@ function OrderCard({
 
         {/* Meta chips */}
         <div className="flex items-center gap-1.5 flex-wrap mt-3">
+          {/* Chip origen */}
+          {(order as DbOrder & { source?: string }).source === "marketplace" ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
+              style={{
+                background: "color-mix(in oklab, var(--color-secondary, #f4a261) 12%, transparent)",
+                color: "var(--color-secondary, #f4a261)",
+                borderColor: "color-mix(in oklab, var(--color-secondary, #f4a261) 30%, transparent)",
+              }}
+            >
+              <Boxes className="h-3 w-3" strokeWidth={2} aria-hidden /> MKT
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
+              style={{
+                background: "color-mix(in oklab, var(--color-primary, #2d6a4f) 12%, transparent)",
+                color: "var(--color-primary-dark, #1b4332)",
+                borderColor: "color-mix(in oklab, var(--color-primary, #2d6a4f) 30%, transparent)",
+              }}
+            >
+              <Store className="h-3 w-3" strokeWidth={2} aria-hidden /> TIENDA
+            </span>
+          )}
           {order.paymentMethod && (
             <span
               className={cn(
@@ -222,7 +274,7 @@ function OrderCard({
             </span>
           )}
           {order.paymentMethod === "efectivo" && order.deuda && (
-            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error)]/10 text-[var(--data-error)] border border-[var(--data-error)]/30">
+            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border border-[var(--data-error-500)]/30">
               Deuda
             </span>
           )}
@@ -252,8 +304,8 @@ function OrderCard({
               type="button"
               onClick={primaryAction.onClick}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-colors",
-                "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)]",
+                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-all",
+                "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-sm shadow-[var(--accent)]/25 hover:shadow-md hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
               )}
             >
               <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -264,7 +316,7 @@ function OrderCard({
             <button
               type="button"
               onClick={onRejectYape}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--data-error)] bg-[var(--data-error)]/10 hover:bg-[var(--data-error)]/20 border border-[var(--data-error)]/30 transition-colors"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
               title="Rechazar Yape"
               aria-label="Rechazar Yape (pago falso)"
             >
@@ -275,7 +327,7 @@ function OrderCard({
             <button
               type="button"
               onClick={onMarkDeudaPaid}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/20 border border-[var(--data-success)]/30 transition-colors"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/20 border border-[var(--data-success-500)]/30 transition-colors"
               title="Marcar deuda como cobrada"
             >
               <Check className="h-3.5 w-3.5" /> Cobrado
@@ -284,6 +336,27 @@ function OrderCard({
         </div>
       </div>
     </article>
+  );
+}
+
+// ── Draggable wrapper ─────────────────────────────────────────────────────────
+function DraggableOrderCard(props: OrderCardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: props.order.id,
+    data: { order: props.order },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "outline-none touch-none",
+        isDragging ? "opacity-30 cursor-grabbing" : "cursor-grab",
+      )}
+    >
+      <OrderCard {...props} />
+    </div>
   );
 }
 
@@ -303,9 +376,12 @@ interface KanbanColumnProps extends ColumnConfig {
 }
 
 function KanbanColumn({
+  id,
   label,
   description,
   accentVar,
+  Icon,
+  iconColor,
   emptyMessage,
   orders,
   selectedOrderIds,
@@ -313,29 +389,69 @@ function KanbanColumn({
   storeLon,
   nowMs,
   driverColor,
+  isActiveTarget,
   onSelectOrder,
   onToggleSelect,
   onUpdateStatus,
   onVerifyYape,
   onRejectYape,
   onMarkDeudaPaid,
-}: KanbanColumnProps) {
+}: KanbanColumnProps & {
+  Icon: React.ElementType;
+  iconColor: string;
+  isActiveTarget?: boolean;
+}) {
   const total = orders.reduce((s, o) => s + o.total, 0);
+  const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div className="flex flex-col min-h-0">
-      {/* Column header — patrón estándar (SectionTitle DS, sin tipografía editorial) */}
-      <div className="flex items-baseline justify-between gap-2 px-1 pb-3 mb-3 border-b-2" style={{ borderColor: accentVar }}>
-        <div className="min-w-0">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5">
+    <div
+      ref={setNodeRef}
+      style={
+        isOver || isActiveTarget
+          ? { borderColor: accentVar, backgroundColor: `color-mix(in oklab, ${accentVar} 6%, var(--surface-canvas))` }
+          : undefined
+      }
+      className={cn(
+        "flex flex-col min-h-0 rounded-2xl border-2 p-3 transition-all",
+        isOver
+          ? "scale-[1.01] shadow-lg ring-4 ring-offset-0"
+          : isActiveTarget
+          ? "border-dashed"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
+      )}
+    >
+      {/* Header editorial Buleje — chip pill con icono accent + label + counters */}
+      <div
+        className="flex items-center gap-3 px-4 h-14 rounded-xl bg-[var(--surface-raised)] border-2 mb-3 shrink-0"
+        style={{ borderColor: `color-mix(in oklab, ${accentVar} 35%, transparent)` }}
+      >
+        <span
+          aria-hidden
+          className="inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0"
+          style={{ backgroundColor: `color-mix(in oklab, ${accentVar} 15%, transparent)` }}
+        >
+          <Icon className={cn("h-4 w-4", iconColor)} strokeWidth={2.5} />
+        </span>
+        <div className="flex-1 min-w-0 leading-tight">
+          <p className="text-[length:var(--ts-sm)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
+            {label}
+          </p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate mt-0.5">
             {description}
           </p>
-          <SectionTitle>{label}</SectionTitle>
         </div>
-        <div className="text-right shrink-0">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
+        <div className="text-right shrink-0 leading-tight">
+          <p
+            className="inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-full font-mono tabular-nums text-[length:var(--ts-sm)] font-extrabold"
+            style={{
+              backgroundColor: `color-mix(in oklab, ${accentVar} 12%, transparent)`,
+              color: accentVar,
+            }}
+            aria-label={`${orders.length} pedidos en ${label}`}
+          >
+            {orders.length}
           </p>
-          <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-secondary)] mt-1">
             S/{total.toFixed(0)}
           </p>
         </div>
@@ -344,13 +460,13 @@ function KanbanColumn({
       {/* Cards */}
       <div className="flex-1 space-y-3 min-h-[200px]">
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-4 rounded-2xl border-2 border-dashed border-[var(--rule-soft)] text-center">
-            <ShoppingBasket className="h-8 w-8 text-[var(--text-tertiary)] opacity-40" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center py-10 px-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]/60 text-center">
+            <Icon className={cn("h-8 w-8 opacity-40", iconColor)} strokeWidth={1.5} />
             <p className="mt-2 text-xs font-bold text-[var(--text-tertiary)]">{emptyMessage}</p>
           </div>
         ) : (
           orders.map((o) => (
-            <OrderCard
+            <DraggableOrderCard
               key={o.id}
               order={o}
               selected={selectedOrderIds.has(o.id)}
@@ -392,11 +508,38 @@ export function OrdersKanban({
   // eslint-disable-next-line react-hooks/purity -- intencional para urgency
   const nowMs = useMemo(() => Date.now(), []);
 
+  // ── Drag & drop state ──────────────────────────────────────────────────────
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
+
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveDragId(String(e.active.id));
+  };
+  const handleDragEnd = (e: DragEndEvent) => {
+    setActiveDragId(null);
+    const overId = e.over?.id;
+    const activeId = String(e.active.id);
+    if (!overId) return;
+    const target = COLUMNS.find((c) => c.id === overId);
+    if (!target) return;
+    const order = activeOrders.find((o) => o.id === activeId);
+    if (!order || order.status === target.id) return;
+    onUpdateStatus(activeId, target.id as OrderStatus);
+  };
+
+  const draggedOrder = activeDragId
+    ? activeOrders.find((o) => o.id === activeDragId) ?? null
+    : null;
+
   const columnsData = useMemo(() => {
-    const map: Record<ColumnId, DbOrder[]> = { pendiente: [], confirmado: [], en_camino: [] };
+    const map: Record<ColumnId, DbOrder[]> = { pendiente: [], confirmado: [], preparando: [], en_camino: [] };
     for (const o of activeOrders) {
       if (o.status === "pendiente") map.pendiente.push(o);
       else if (o.status === "confirmado") map.confirmado.push(o);
+      else if (o.status === "preparando") map.preparando.push(o);
       else if (o.status === "en_camino") map.en_camino.push(o);
     }
     return map;
@@ -404,8 +547,8 @@ export function OrdersKanban({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {[1, 2, 3].map((c) => (
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        {[1, 2, 3, 4].map((c) => (
           <div key={c} className="space-y-3">
             <div className="h-12 skeleton-shimmer rounded-lg" />
             {[1, 2, 3].map((i) => (
@@ -429,7 +572,12 @@ export function OrdersKanban({
   }
 
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       {/* Mobile: segmented control */}
       <div className="lg:hidden flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
         {COLUMNS.map((col) => {
@@ -483,28 +631,54 @@ export function OrdersKanban({
         ))}
       </div>
 
-      {/* Desktop 3 columns */}
-      <div className="hidden lg:grid lg:grid-cols-3 gap-5">
-        {COLUMNS.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            {...col}
-            orders={columnsData[col.id]}
-            selectedOrderIds={selectedOrderIds}
-            storeLat={storeLat}
-            storeLon={storeLon}
-            nowMs={nowMs}
-            driverColor={driverColor}
-            onSelectOrder={onSelectOrder}
-            onToggleSelect={onToggleSelect}
-            onUpdateStatus={onUpdateStatus}
-            onVerifyYape={onVerifyYape}
-            onRejectYape={onRejectYape}
-            onMarkDeudaPaid={onMarkDeudaPaid}
-          />
-        ))}
+      {/* Desktop 4 columns */}
+      <div className="hidden lg:grid lg:grid-cols-4 gap-5">
+        {COLUMNS.map((col) => {
+          const draggedFromOther = !!draggedOrder && draggedOrder.status !== col.id;
+          return (
+            <KanbanColumn
+              key={col.id}
+              {...col}
+              orders={columnsData[col.id]}
+              selectedOrderIds={selectedOrderIds}
+              storeLat={storeLat}
+              storeLon={storeLon}
+              nowMs={nowMs}
+              driverColor={driverColor}
+              isActiveTarget={draggedFromOther}
+              onSelectOrder={onSelectOrder}
+              onToggleSelect={onToggleSelect}
+              onUpdateStatus={onUpdateStatus}
+              onVerifyYape={onVerifyYape}
+              onRejectYape={onRejectYape}
+              onMarkDeudaPaid={onMarkDeudaPaid}
+            />
+          );
+        })}
       </div>
-    </>
+
+      {/* Drag overlay — preview de la card flotante */}
+      <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }}>
+        {draggedOrder ? (
+          <div className="rotate-2 scale-105 shadow-2xl ring-2 ring-[var(--accent)] rounded-2xl">
+            <OrderCard
+              order={draggedOrder}
+              selected={false}
+              storeLat={storeLat}
+              storeLon={storeLon}
+              nowMs={nowMs}
+              driverColor={driverColor}
+              onSelect={() => {}}
+              onToggleSelect={() => {}}
+              onUpdateStatus={() => {}}
+              onVerifyYape={() => {}}
+              onRejectYape={() => {}}
+              onMarkDeudaPaid={() => {}}
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 

@@ -734,7 +734,20 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           />
           {!isTiendasOnly && (
             <div className="mt-1">
-              <QuickFilterChips activeChips={activeChips} onToggle={handleChipToggle} />
+              <QuickFilterChips
+                activeChips={activeChips}
+                onToggle={handleChipToggle}
+                stores={stores as unknown as ReadonlyArray<{
+                  rating?: number;
+                  isOpenNow?: boolean;
+                  freeDelivery?: boolean;
+                  paymentMethods?: string[] | null;
+                  minimumOrder?: number | null;
+                  hours24h?: boolean;
+                  createdAt?: string | Date | null;
+                  hasOffers?: boolean;
+                }>}
+              />
             </div>
           )}
         </div>

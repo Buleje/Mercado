@@ -32,11 +32,11 @@ export default function PushNotificationPrompt() {
       return (
         <div className="bg-white border border-emerald-200 rounded-xl p-4 flex items-center gap-3 mx-4 mt-3">
           <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-5 h-5 text-[var(--data-success-600)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-sm text-emerald-700 font-medium">
+          <p className="text-sm text-[var(--data-success-700)] font-medium">
             Notificaciones activadas. Te avisaremos sobre tus pedidos y ofertas.
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function PushNotificationPrompt() {
         {/* Bell icon */}
         <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
           <svg
-            className="w-5 h-5 text-emerald-600"
+            className="w-5 h-5 text-[var(--data-success-600)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -90,7 +90,7 @@ export default function PushNotificationPrompt() {
           </p>
 
           {error && (
-            <p className="text-xs text-red-500 mt-1">{error}</p>
+            <p className="text-xs text-[var(--data-error-500)] mt-1">{error}</p>
           )}
 
           {/* Action buttons */}
@@ -99,7 +99,7 @@ export default function PushNotificationPrompt() {
               type="button"
               onClick={handleActivate}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--data-success-600)] text-white text-sm font-medium rounded-lg hover:bg-[var(--data-success-700)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

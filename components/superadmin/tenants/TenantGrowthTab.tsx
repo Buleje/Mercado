@@ -157,9 +157,9 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                     className={
                       "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold " +
                       (store.growthPct > 0
-                        ? "bg-[var(--data-success-100)] text-[var(--data-success)]"
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]"
                         : store.growthPct < 0
-                          ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                          ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")
                     }
                   >

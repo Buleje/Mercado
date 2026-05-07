@@ -175,17 +175,19 @@ export const MODULE_INFO: Partial<Record<Tab, { priority: "core" | "high" | "med
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pendiente: "Pendiente",
   confirmado: "Confirmado",
+  preparando: "Preparando",
   en_camino: "En camino",
   entregado: "Entregado",
   cancelado: "Cancelado",
 };
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-  confirmado: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+  confirmado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  preparando: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
   en_camino: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  entregado: "bg-[var(--accent-soft)] text-[var(--data-success)]",
-  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error)]",
+  entregado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 
 // ── 7 basic modules + extras ──

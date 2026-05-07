@@ -242,7 +242,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
               <span
                 className={
                   "text-sm font-extrabold tabular-nums " +
-                  (proyPct >= 100 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")
+                  (proyPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")
                 }
               >
                 {proyPct}%
@@ -255,10 +255,10 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
             className={
               "h-full rounded-full transition-all duration-500 " +
               (metaPct >= 75
-                ? "bg-[var(--data-success)]"
+                ? "bg-[var(--data-success-500)]"
                 : metaPct >= 40
                   ? "bg-primary"
-                  : "bg-[var(--data-warning)]")
+                  : "bg-[var(--data-warning-500)]")
             }
             style={{ width: `${metaPct}%` }}
           />
@@ -295,16 +295,16 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
 
       {/* ── Footer alerta rápida ── */}
       {criticalStock > 0 && (
-        <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-5 py-3 flex items-center gap-3 flex-wrap">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-5 py-3 flex items-center gap-3 flex-wrap">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
             Atención
           </span>
-          <span className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
+          <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
             {criticalStock} {criticalStock === 1 ? "producto" : "productos"} con stock crítico
           </span>
           <a
             href="/admin?module=operar&section=inventario&filter=critical"
-            className="ml-auto text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] underline underline-offset-2 hover:opacity-80"
+            className="ml-auto text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] underline underline-offset-2 hover:opacity-80"
           >
             Revisar inventario →
           </a>

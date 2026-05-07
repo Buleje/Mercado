@@ -86,7 +86,7 @@ export default function StoreHours() {
             <div className="relative flex items-center gap-3">
               <span className="relative flex h-3.5 w-3.5">
                 <span className={`absolute inset-0 rounded-full ${closingSoon ? "bg-amber-400 animate-ping" : isOpen ? "bg-emerald-400 animate-ping" : "bg-red-400"} opacity-75`} />
-                <span className={`relative inline-flex h-3.5 w-3.5 rounded-full ${closingSoon ? "bg-amber-400" : isOpen ? "bg-emerald-400" : "bg-red-500"}`} />
+                <span className={`relative inline-flex h-3.5 w-3.5 rounded-full ${closingSoon ? "bg-amber-400" : isOpen ? "bg-emerald-400" : "bg-[var(--data-error-500)]"}`} />
               </span>
               <span className="text-white font-bold text-base">
                 {closingSoon ? "Cierra pronto" : isOpen ? "Abierto ahora" : "Cerrado"}

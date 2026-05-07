@@ -15,10 +15,10 @@ function getGrade(
   thresholds: [number, number]
 ): { label: string; color: string; bg: string } {
   if (value <= thresholds[0])
-    return { label: "Bueno", color: "text-[var(--data-success)]", bg: "stroke-[var(--data-success)]" };
+    return { label: "Bueno", color: "text-[var(--data-success-500)]", bg: "stroke-[var(--data-success-500)]" };
   if (value <= thresholds[1])
-    return { label: "Regular", color: "text-[var(--data-warning)]", bg: "stroke-[var(--data-warning)]" };
-  return { label: "Pobre", color: "text-[var(--data-error)]", bg: "stroke-[var(--data-error)]" };
+    return { label: "Regular", color: "text-[var(--data-warning-500)]", bg: "stroke-[var(--data-warning-500)]" };
+  return { label: "Pobre", color: "text-[var(--data-error-500)]", bg: "stroke-[var(--data-error-500)]" };
 }
 
 function CircularGauge({

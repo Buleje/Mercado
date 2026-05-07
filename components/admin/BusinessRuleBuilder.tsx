@@ -59,9 +59,9 @@ const ACTION_SUMMARY: Record<ActionType, (v: string) => string> = {
 };
 
 const ACTION_COLOR: Record<ActionType, string> = {
-  create_alert:   "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  send_whatsapp:  "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  create_order:   "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  create_alert:   "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  send_whatsapp:  "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  create_order:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   apply_discount: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
@@ -173,7 +173,7 @@ export default function BusinessRuleBuilder() {
       </div>
 
       {atLimit && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Limite de {MAX_RULES} reglas alcanzado. Elimina una para agregar otra.
         </div>
@@ -206,12 +206,12 @@ export default function BusinessRuleBuilder() {
                     placeholder={conditionMeta.placeholder}
                     className={cn(
                       "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-                      errors.conditionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+                      errors.conditionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
                     )}
                   />
                   <span className="text-xs text-[var(--text-tertiary)] whitespace-nowrap">{conditionMeta.unit}</span>
                 </div>
-                {errors.conditionValue && <p className="text-xs text-[var(--data-error)]">{errors.conditionValue}</p>}
+                {errors.conditionValue && <p className="text-xs text-[var(--data-error-500)]">{errors.conditionValue}</p>}
               </div>
             </div>
           </div>
@@ -237,10 +237,10 @@ export default function BusinessRuleBuilder() {
                   placeholder={actionMeta.valuePlaceholder}
                   className={cn(
                     "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-                    errors.actionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+                    errors.actionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 />
-                {errors.actionValue && <p className="text-xs text-[var(--data-error)]">{errors.actionValue}</p>}
+                {errors.actionValue && <p className="text-xs text-[var(--data-error-500)]">{errors.actionValue}</p>}
               </div>
             </div>
           </div>
@@ -317,7 +317,7 @@ export default function BusinessRuleBuilder() {
                 <button
                   onClick={() => handleDelete(rule.id)}
                   title="Eliminar"
-                  className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
+                  className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

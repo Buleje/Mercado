@@ -38,9 +38,9 @@ const button = tv({
         "focus-visible:ring-primary/30",
       ],
       danger: [
-        "bg-red-600 text-white border border-red-600",
-        "hover:bg-red-700",
-        "focus-visible:ring-red-500/30",
+        "bg-[var(--data-error-600)] text-white border border-[var(--data-error-600)]",
+        "hover:bg-[var(--data-error-700)]",
+        "focus-visible:ring-[var(--data-error-500)]/30",
       ],
       link: [
         "text-[var(--text-primary)] underline-offset-4 hover:underline",

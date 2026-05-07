@@ -208,9 +208,9 @@ export function buildCSP(pathname: string, nonce?: string): string {
   const directives: Record<string, string> = {
     "default-src":               "'self'",
     "script-src":                scriptSrc,
-    "style-src":                 "'self' 'unsafe-inline'",
+    "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src":                   "* data: blob:",
-    "font-src":                  "'self' data:",
+    "font-src":                  "'self' data: https://fonts.gstatic.com",
     "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
     "media-src":                 "'self'",
     "object-src":                "'none'",

@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
+import { tryAdmin } from "@/lib/require-admin";
+
+/**
+ * SECURITY/CRITICAL 2026-05-06 (pentest H001): autorización obligatoria.
+ * Antes este endpoint era totalmente público — cualquiera con un phone
+ * target apagaba notifs de pedidos a víctimas y enumeraba customers.
+ *
+ * Ahora exige una de:
+ *   1. Admin del tenant del customer (puede consultar/editar prefs)
+ *   2. Customer-session con phone matching el query
+ */
+async function authorizePhoneAccess(
+  req: NextRequest,
+  phone: string,
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  // 1. Admin
+  const admin = await tryAdmin(req);
+  if (admin) {
+    return { ok: true };
+  }
+  // 2. Customer-session
+  const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  if (!sessionToken) return { ok: false, status: 401, error: "unauthorized" };
+  const payload = await getCustomerPayload(sessionToken);
+  const sessionPhone = (payload?.customerId ?? "").replace(/\D/g, "");
+  const queryPhone = phone.replace(/\D/g, "");
+  if (!sessionPhone || sessionPhone !== queryPhone) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
+  return { ok: true };
+}
 
 // GET /api/customer-preferences?phone=XXX
 export async function GET(req: NextRequest) {
@@ -10,6 +42,9 @@ export async function GET(req: NextRequest) {
 
   const phone = normalizePhone(req.nextUrl.searchParams.get("phone") ?? "");
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
+
+  const auth = await authorizePhoneAccess(req, phone);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const customer = await prisma.customer.findUnique({
     where: { phone },
@@ -21,7 +56,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(customer);
 }
 
-// PATCH /api/customer-preferences  body: { phone, notifOrderUpdates?, notifPromotions?, notifRestock? }
+// PATCH /api/customer-preferences body: { phone, notifOrderUpdates?, notifPromotions?, notifRestock? }
 export async function PATCH(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "cust-prefs");
   if (rl) return rl;
@@ -35,6 +70,9 @@ export async function PATCH(req: NextRequest) {
 
   const phone = normalizePhone(String(body.phone ?? ""));
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
+
+  const auth = await authorizePhoneAccess(req, phone);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const data: Record<string, boolean> = {};
   if (typeof body.notifOrderUpdates === "boolean") data.notifOrderUpdates = body.notifOrderUpdates;

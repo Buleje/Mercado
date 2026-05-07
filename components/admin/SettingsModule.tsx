@@ -68,31 +68,31 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
 //   5) Sistema avanzado (seguridad, auditoría, backup, módulos, shortcuts)
 const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
   // ── Setup inicial ──
-  { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+  { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
   { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambiá cuando quieras", color: "text-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   // ── Operación diaria ──
-  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
   // ── Comunicación ──
   { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+  { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
   // ── Personalización ──
   { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
   // ── Sistema avanzado ──
   { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
-  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
+  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
   { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
-  { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
-  { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
+  { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-[var(--accent)] bg-teal-50 dark:bg-teal-950/30" },
+  { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+  { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
   // ── Equipo y navegación (antes sueltos en TabRouter) ──
-  { id: "team", icon: <User className="h-5 w-5" />, title: "Gestión de Equipo", desc: "Tu equipo y control de acceso por rol", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-blue-950/30" },
+  { id: "team", icon: <User className="h-5 w-5" />, title: "Gestión de Equipo", desc: "Tu equipo y control de acceso por rol", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-blue-950/30" },
   { id: "nav-defaults", icon: <SlidersHorizontal className="h-5 w-5" />, title: "Navegación", desc: "Qué tab se abre por defecto en cada sección", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "sidebar-order", icon: <ArrowUpDown className="h-5 w-5" />, title: "Reordenar barra lateral", desc: "Cambia el orden de las secciones en tu menú", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { id: "tutorial", icon: <ClipboardList className="h-5 w-5" />, title: "Tutorial de bienvenida", desc: "Repasa cómo funciona cada sección del panel", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
+  { id: "tutorial", icon: <ClipboardList className="h-5 w-5" />, title: "Tutorial de bienvenida", desc: "Repasa cómo funciona cada sección del panel", color: "text-[var(--accent)] bg-teal-50 dark:bg-teal-950/30" },
 ];
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
@@ -171,7 +171,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
         onClick={() => onChange(!enabled)}
         className={cn(
           "relative w-11 h-6 rounded-full transition-colors shrink-0",
-          enabled ? (danger ? "bg-[var(--data-error)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
+          enabled ? (danger ? "bg-[var(--data-error-500)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
         )}
       >
         <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", enabled && "translate-x-5")} />
@@ -215,9 +215,9 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
 function StatusDot({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")} />
+      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")} />
       <span className="text-xs text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
-      <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{ok ? "Conectado" : "No configurado"}</span>
+      <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{ok ? "Conectado" : "No configurado"}</span>
     </div>
   );
 }
@@ -229,10 +229,10 @@ function ProgressBar({ value, max, label, unit }: { value: number; max: number; 
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
         <span className="text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
-        <span className={cn("font-bold", isHigh ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)] dark:text-muted")}>{value}/{max} {unit}</span>
+        <span className={cn("font-bold", isHigh ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)] dark:text-muted")}>{value}/{max} {unit}</span>
       </div>
       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", isHigh ? "bg-[var(--data-warning)]" : "bg-primary")} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full transition-all", isHigh ? "bg-[var(--data-warning-500)]" : "bg-primary")} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -259,11 +259,11 @@ function OverviewCard({ section, completionPct, onClick }: {
         <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
           <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-[var(--accent-soft)]" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
         </div>
-        <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{completionPct}%</span>
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{completionPct}%</span>
       </div>
       {completionPct === 100 && (
         <div className="absolute top-2.5 right-2.5">
-          <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
+          <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
         </div>
       )}
     </m.button>
@@ -359,7 +359,7 @@ export default function SettingsModule({
   const [bypassLogin, setBypassLogin] = useState(false);
 
   // Appearance
-  const [primaryColor, setPrimaryColor] = useState("#00B4A6");
+  const [primaryColor, setPrimaryColor] = useState("var(--accent)");
   const [secondaryColor, setSecondaryColor] = useState("#f97316");
   const [slogan, setSlogan] = useState("Productos frescos, precios justos");
 
@@ -776,7 +776,7 @@ export default function SettingsModule({
           <div className="space-y-3">
             {customShortcuts.map(sc => (
               <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
-                <Zap className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+                <Zap className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
                 <input
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
@@ -790,7 +790,7 @@ export default function SettingsModule({
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors">
+                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -802,8 +802,8 @@ export default function SettingsModule({
             </button>
           )}
         </SectionCard>
-        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 rounded-xl p-3">
-          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-xl p-3">
+          <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
         </div>
       </div>
     );
@@ -817,10 +817,10 @@ export default function SettingsModule({
           {(["whatsapp", "checkout"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn(
               "flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
+              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}>
-              {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
-              <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
+              {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
+              <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success-500)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
             </button>
           ))}
         </div>
@@ -851,7 +851,7 @@ export default function SettingsModule({
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -868,7 +868,7 @@ export default function SettingsModule({
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
@@ -1017,9 +1017,9 @@ export default function SettingsModule({
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
           {storedAdminPw === "admin2024" && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
-              <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0 mt-0.5" />
-              <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Estás usando la contraseña por defecto. Te recomendamos cambiarla abajo.</p>
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
+              <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Estás usando la contraseña por defecto. Te recomendamos cambiarla abajo.</p>
             </div>
           )}
         </div>
@@ -1047,13 +1047,13 @@ export default function SettingsModule({
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error)]" : strength <= 2 ? "bg-[var(--data-warning)]" : strength <= 3 ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error-500)]" : strength <= 2 ? "bg-[var(--data-warning-500)]" : strength <= 3 ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]") : "bg-gray-200 dark:bg-surface")} />;
                 })}
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
             </div>
           )}
-          {pwChangeError && <p className="text-xs text-[var(--data-error)] font-semibold">{pwChangeError}</p>}
+          {pwChangeError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pwChangeError}</p>}
           <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
@@ -1072,9 +1072,9 @@ export default function SettingsModule({
           <div className="space-y-2">
             <FieldLabel>Mensaje para clientes</FieldLabel>
             <TextInput value={maintenanceMsg} onChange={setMaintenanceMsg} placeholder="Ej: Estamos de vacaciones. Volvemos el lunes." />
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
               <span className="text-lg">🏖</span>
-              <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium flex-1">{maintenanceMsg || "Vista previa..."}</p>
+              <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium flex-1">{maintenanceMsg || "Vista previa..."}</p>
             </div>
           </div>
         )}
@@ -1087,9 +1087,9 @@ export default function SettingsModule({
           await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ adminBypassLogin: v }) });
         }} label="Acceso sin login" desc="Permite entrar al panel sin credenciales" danger />
         {bypassLogin && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">⚠️ RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+            <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">⚠️ RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
           </div>
         )}
       </SectionCard>
@@ -1270,7 +1270,7 @@ export default function SettingsModule({
           {adjustReasons.map((reason, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <TextInput value={reason} onChange={v => setAdjustReasons(p => p.map((r, i) => i === idx ? v : r))} />
-              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setAdjustReasons(p => [...p, ""])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar motivo</button>
@@ -1315,27 +1315,27 @@ export default function SettingsModule({
                 <FieldLabel>QR de Yape</FieldLabel>
                 <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage, "yape", "payments")} />
-                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button></div>}
+                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
             </div>
           )}
           <Toggle enabled={plinEnabled} onChange={setPlinEnabled} label="Plin" desc="Pago con Plin" />
           {plinEnabled && (
-            <div className="pl-4 border-l-2 border-[var(--data-success)]/30 space-y-3">
+            <div className="pl-4 border-l-2 border-[var(--data-success-500)]/30 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={plinName} onChange={setPlinName} /></div>
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success)]/30 hover:border-[var(--data-success)]/30 text-sm font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage, "plin", "payments")} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--accent-soft)] rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error)]">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--accent-soft)] rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
             </div>
           )}
           <Toggle enabled={transferEnabled} onChange={setTransferEnabled} label="Transferencia bancaria" desc="Deposito o transferencia" />
           {transferEnabled && (
-            <div className="pl-4 border-l-2 border-[var(--data-success)]/30 space-y-3">
+            <div className="pl-4 border-l-2 border-[var(--data-success-500)]/30 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div><FieldLabel icon={<Landmark className="h-3.5 w-3.5" />}>Banco</FieldLabel><TextInput value={transferBankName} onChange={setTransferBankName} placeholder="BCP" /></div>
                 <div><FieldLabel>N° de cuenta</FieldLabel><TextInput value={transferAccountNum} onChange={setTransferAccountNum} mono /></div>
@@ -1379,7 +1379,7 @@ export default function SettingsModule({
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">min</span>
                 </div>
               </div>
-              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-[var(--data-error)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setDeliveryZones(p => [...p, { name: "", fee: 0, estimatedMin: 30 }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar zona</button>
@@ -1410,7 +1410,7 @@ export default function SettingsModule({
                 <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
                 <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
               </div>
-              <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setRiders(p => [...p, { name: "", phone: "", zone: "" }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Plus className="h-3.5 w-3.5" /> Agregar repartidor</button>
@@ -1480,9 +1480,9 @@ export default function SettingsModule({
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border")}>
-              {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
-              <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border")}>
+              {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success-500)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
+              <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -1651,9 +1651,9 @@ export default function SettingsModule({
           const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / 86400000) : null;
           const needsBackup = !lastDate || (daysSince !== null && daysSince > 7);
           return (
-            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30")}>
+            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30")}>
               <div className="flex items-center gap-2.5">
-                {needsBackup ? <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" /> : <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />}
+                {needsBackup ? <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" /> : <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />}
                 <p className="text-xs font-medium">{lastDate ? `Último respaldo: hace ${daysSince} día${daysSince !== 1 ? "s" : ""}` : "No hay respaldos recientes"}</p>
               </div>
             </div>
@@ -1667,10 +1667,10 @@ export default function SettingsModule({
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)]">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info)] bg-white hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info)]">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info-500)] bg-white hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -1693,10 +1693,10 @@ export default function SettingsModule({
             <div className="px-6 py-5 space-y-4">
               {!restoreSuccess && !restoreFile && (
                 <>
-                  <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-4">
+                  <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0" />
-                      <div><p className="text-sm font-bold text-[var(--data-error)]">ADVERTENCIA</p><p className="text-xs text-[var(--data-error)] mt-1">Esta acción <strong>sobrescribirá todos los datos actuales</strong>.</p></div>
+                      <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0" />
+                      <div><p className="text-sm font-bold text-[var(--data-error-500)]">ADVERTENCIA</p><p className="text-xs text-[var(--data-error-500)] mt-1">Esta acción <strong>sobrescribirá todos los datos actuales</strong>.</p></div>
                     </div>
                   </div>
                   <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={async e => {
@@ -1706,10 +1706,10 @@ export default function SettingsModule({
                       setRestoreFile(file); setRestorePreview({ date: data.exportDate || "?", products: data.products?.length || 0, orders: data.orders?.length || 0, customers: data.customers?.length || 0, size: (file.size / 1024).toFixed(2) + " KB" });
                     } catch { setRestoreError("JSON inválido"); }
                   }} />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-[var(--data-info)] bg-[var(--data-info-50)] text-[var(--data-info)] hover:border-[var(--data-info)] hover:bg-[var(--data-info-100)] transition-colors">
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-500)] hover:border-[var(--data-info-500)] hover:bg-[var(--data-info-100)] transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2" /><p className="text-sm font-semibold">Seleccionar archivo .json</p>
                   </button>
-                  {restoreError && <p className="text-xs text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{restoreError}</p>}
+                  {restoreError && <p className="text-xs text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{restoreError}</p>}
                 </>
               )}
               {restoreFile && !restoreSuccess && restorePreview && (
@@ -1724,7 +1724,7 @@ export default function SettingsModule({
                 </div>
               )}
               {restoreSuccess && (
-                <div className="text-center py-6"><CheckCircle className="h-12 w-12 text-[var(--data-success)] mx-auto mb-2" /><p className="text-lg font-bold">¡Restauración exitosa!</p><p className="text-sm text-[var(--text-secondary)]">Recargando...</p></div>
+                <div className="text-center py-6"><CheckCircle className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-2" /><p className="text-lg font-bold">¡Restauración exitosa!</p><p className="text-sm text-[var(--text-secondary)]">Recargando...</p></div>
               )}
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--rule-soft)]">
@@ -1735,7 +1735,7 @@ export default function SettingsModule({
                   try { const text = await restoreFile.text(); const res = await fetch("/api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
                     if (!res.ok) throw new Error(await res.text()); setRestoreSuccess(true); setTimeout(() => window.location.reload(), 2000);
                   } catch (err: unknown) { setRestoreError(err instanceof Error ? err.message : "Error"); setRestoring(false); }
-                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1840,7 +1840,7 @@ export default function SettingsModule({
         <span className={cn(
           "text-xs font-bold px-2 py-0.5 rounded-full",
           overallCompletion === 100
-            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
             : "bg-primary/10 text-primary"
         )}>
           {overallCompletion}% completo
@@ -1894,11 +1894,11 @@ export default function SettingsModule({
               </div>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Completas</p>
-                <p className="text-2xl font-extrabold text-[var(--data-success)]">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
+                <p className="text-2xl font-extrabold text-[var(--data-success-500)]">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
               </div>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pendientes</p>
-                <p className="text-2xl font-extrabold text-[var(--data-warning)]">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
+                <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
               </div>
             </div>
 
@@ -2035,7 +2035,7 @@ export default function SettingsModule({
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />
@@ -2166,7 +2166,7 @@ function MockHeader({ logoUrl }: { logoUrl: string }) {
   return (
     <div className="rounded-md bg-[#0b1f2b] text-white/80 px-2 py-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)]">
       <div className="w-1 h-3 bg-white/15 rounded-sm" />
-      <div className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[rgba(52,212,190,0.3)] bg-[rgba(52,212,190,0.1)] text-[#5eead4] font-bold">
+      <div className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] font-bold">
         {logoUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img src={logoUrl} alt="" className="h-3 w-3 rounded object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />

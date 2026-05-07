@@ -136,7 +136,7 @@ function OfferModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}
             </div>
           )}
@@ -178,9 +178,9 @@ function OfferModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-[var(--data-success-50)] rounded-xl border border-[var(--data-success)]">
+          <div className="flex items-center justify-between p-3 bg-[var(--data-success-50)] rounded-xl border border-[var(--data-success-500)]">
             <span className="text-sm font-semibold text-[var(--text-primary)]">Descuento Socio</span>
-            <span className="text-lg font-extrabold text-[var(--data-success)]">{discount}%</span>
+            <span className="text-lg font-extrabold text-[var(--data-success-500)]">{discount}%</span>
           </div>
 
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
@@ -252,7 +252,7 @@ export function ExclusiveOffersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl text-sm text-[var(--data-info)]">
+      <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-sm text-[var(--data-info-500)]">
         <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
         <div>
           <p className="font-semibold">Ofertas exclusivas Socio Buleje</p>
@@ -308,7 +308,7 @@ export function ExclusiveOffersTab() {
                       {fmt(o.socioPrice)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-success-100)] text-[var(--data-success)]">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-success-100)] text-[var(--data-success-500)]">
                         <TrendingDown className="h-3 w-3" />
                         -{o.discount}%
                       </span>
@@ -319,7 +319,7 @@ export function ExclusiveOffersTab() {
                     <td className="px-4 py-3 text-center">
                       <span className={cn(
                         "inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                        o.active ? "bg-[var(--data-success-100)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]"
+                        o.active ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)]"
                       )}>
                         {o.active ? "Activa" : "Inactiva"}
                       </span>
@@ -335,7 +335,7 @@ export function ExclusiveOffersTab() {
                         </button>
                         <button
                           onClick={() => handleDelete(o.id)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />

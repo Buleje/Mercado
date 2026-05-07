@@ -150,9 +150,9 @@ export default function CustomerHeatmap() {
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3">
-          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : (
         /* Horizontal bar chart */

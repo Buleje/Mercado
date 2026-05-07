@@ -48,7 +48,7 @@ function getSpendTier(totalSpent: number): "high" | "medium" | "low" {
 function getTierColor(tier: "high" | "medium" | "low"): string {
   switch (tier) {
     case "high":
-      return "#00B4A6";
+      return "var(--accent)";
     case "medium":
       return "#f97316";
     case "low":
@@ -262,8 +262,8 @@ export default function CustomerGeoMap({ className }: Props) {
           max: 1,
           minOpacity: 0.4,
           gradient: {
-            0.2: "#00B4A6",
-            0.4: "#33C4B8",
+            0.2: "var(--accent)",
+            0.4: "color-mix(in oklab, var(--accent) 70%, white)",
             0.6: "#2dd4bf",
             0.8: "#f97316",
             1.0: "#e63946",
@@ -453,9 +453,9 @@ export default function CustomerGeoMap({ className }: Props) {
           <LoadingState variant="overlay" message="" />
         </div>
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-8">
-          <AlertCircle className="h-5 w-5 shrink-0 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-8">
+          <AlertCircle className="h-5 w-5 shrink-0 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : totalCustomers === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-16">
@@ -504,7 +504,7 @@ export default function CustomerGeoMap({ className }: Props) {
               <div className="flex-1 bg-primary-light" />
               <div className="flex-1 bg-[#2dd4bf]" />
               <div className="flex-1 bg-secondary" />
-              <div className="flex-1 bg-[var(--data-error)]" />
+              <div className="flex-1 bg-[var(--data-error-500)]" />
             </div>
             <span className="text-[var(--text-tertiary)]">Alto</span>
           </div>

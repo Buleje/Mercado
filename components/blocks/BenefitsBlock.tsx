@@ -17,25 +17,25 @@ export const BenefitsBlockSchema = z.object({
     icon: z.string().default("Truck"),
     title: z.string(),
     description: z.string(),
-    iconBg: z.string().default("bg-emerald-500"),
+    iconBg: z.string().default("bg-[var(--data-success-500)]"),
   })).default([
     {
       icon: "Truck",
       title: "Delivery Rápido",
       description: "Entrega a domicilio en toda tu zona.",
-      iconBg: "bg-emerald-500",
+      iconBg: "bg-[var(--data-success-500)]",
     },
     {
       icon: "BadgePercent",
       title: "Pago con Yape o Efectivo",
       description: "Paga fácil con Yape o en efectivo contra entrega.",
-      iconBg: "bg-amber-500",
+      iconBg: "bg-[var(--data-warning-500)]",
     },
     {
       icon: "ShieldCheck",
       title: "Calidad Garantizada",
       description: "Productos seleccionados y verificados para tu familia.",
-      iconBg: "bg-emerald-500",
+      iconBg: "bg-[var(--data-success-500)]",
     },
     {
       icon: "Leaf",

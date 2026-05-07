@@ -36,9 +36,13 @@ export async function GET(req: NextRequest) {
     let partnerId: string | undefined = partnerIdHeader ?? undefined;
 
     if (!partnerId) {
+      // SECURITY 2026-05-05 (pentest delivery H009): scope tenant.
+      // Antes el match `name equals insensitive` cruzaba tenants — un partner
+      // "Juan Pérez" del tenant A veía órdenes del partner homónimo en B.
       const partner = await prisma.deliveryPartner.findFirst({
         where: {
           name: { equals: auth.username, mode: "insensitive" },
+          tenantId: auth.tenantId,
           isActive: true,
         },
         select: { id: true },
@@ -46,8 +50,10 @@ export async function GET(req: NextRequest) {
       partnerId = partner?.id;
     }
 
-    // Si no se encontró partner pero el rol es admin/cajero, devolver todas las de hoy
+    // SECURITY 2026-05-05 (pentest delivery H010+H012): scope tenant en el
+    // listado para evitar ver assignments con tenantId divergente.
     const where: Record<string, unknown> = {
+      tenantId: auth.tenantId,
       createdAt: { gte: from, lte: to },
       ...(partnerId ? { partnerId } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),

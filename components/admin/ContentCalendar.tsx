@@ -12,6 +12,7 @@ import {
   List,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,13 +30,13 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "oferta",
     label: "Oferta",
-    color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-    dot: "bg-[var(--data-warning)]",
+    color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+    dot: "bg-[var(--data-warning-500)]",
   },
   {
     value: "receta",
     label: "Receta",
-    color: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
     dot: "bg-[var(--accent-soft)]",
   },
   {
@@ -47,7 +48,7 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "evento",
     label: "Evento",
-    color: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
     dot: "bg-[var(--accent-soft)]",
   },
 ];
@@ -101,19 +102,46 @@ export default function ContentCalendar() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  // Load from localStorage
+  // Load: backend primero, localStorage como cache local instantáneo + fallback.
+  // Audit 2026-05-05 (P2-2): antes solo vivía en localStorage → al limpiar
+  // navegador o cambiar de dispositivo, el dueño perdía todo el calendario.
   useEffect(() => {
+    // Cargar cache local primero para evitar flash de calendario vacío
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) setEntries(JSON.parse(raw));
     } catch {}
+
+    // Sync con backend
+    let cancelled = false;
+    fetch("/api/admin/content-calendar")
+      .then((r) => (r.ok ? r.json() : { entries: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data?.entries) && data.entries.length > 0) {
+          setEntries(data.entries);
+          try { localStorage.setItem(LS_KEY, JSON.stringify(data.entries)); } catch {}
+        }
+      })
+      .catch(() => { /* silent: queda con cache local */ });
+    return () => { cancelled = true; };
   }, []);
 
+  // Persiste en localStorage (instant) + backend (durable). Si backend falla,
+  // el local sigue válido y el próximo save reintenta.
   const save = (next: CalendarEntry[]) => {
     setEntries(next);
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(next));
     } catch {}
+    // Fire-and-forget — el cache local cubre el caso de error de red
+    fetch("/api/admin/content-calendar", {
+      method: "PUT",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ entries: next }),
+    }).catch((err) => {
+      console.warn("[ContentCalendar] persist falló, cache local OK:", err);
+    });
   };
 
   const idCounter = useRef(0);

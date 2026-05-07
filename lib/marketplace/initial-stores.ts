@@ -29,6 +29,15 @@ export interface InitialStore {
   /** "Tienda en construccion" — overlay sobre la portada en /tiendas. */
   underConstruction?: boolean;
   underConstructionMessage?: string | null;
+  /** Horario configurado por el dueño (jsonb). null si no hay hours custom. */
+  openHours?:
+    | Array<{ open: number; openMin: number; close: number; closeMin: number }>
+    | Record<string, unknown>
+    | null;
+  /** Derivado server-side desde openHours. Default true para tiendas legacy. */
+  isOpenNow?: boolean;
+  /** ISO timestamp de la próxima apertura — null si todos los días closed. */
+  nextOpeningAt?: string | null;
 }
 
 /**
@@ -74,15 +83,20 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     // al SSR de /tiendas y la card del marketplace usa solo el logo.
     const ids = rows.map((r) => r.id);
     let coverMap = new Map<string, string | null>();
+    let hoursMap = new Map<string, unknown>();
     if (ids.length > 0) {
       try {
-        const covers = await prisma.$queryRawUnsafe<Array<{ id: string; cover: string | null }>>(
-          `SELECT id, cover FROM "Store" WHERE id = ANY($1::text[])`,
+        // Patch cover y hoursJson juntos — ambas columnas viven fuera del schema Prisma.
+        const patches = await prisma.$queryRawUnsafe<
+          Array<{ id: string; cover: string | null; hoursJson: unknown }>
+        >(
+          `SELECT id, cover, "hoursJson" FROM "Store" WHERE id = ANY($1::text[])`,
           ids,
         );
-        coverMap = new Map(covers.map((c) => [c.id, c.cover]));
+        coverMap = new Map(patches.map((c) => [c.id, c.cover]));
+        hoursMap = new Map(patches.map((c) => [c.id, c.hoursJson]));
       } catch {
-        // sin cover → fallback a logo en el render
+        // sin cover/hours → fallback al render sin overlay closed
       }
     }
 
@@ -93,8 +107,20 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     const constructionMap: Record<string, { enabled: boolean; message?: string; updatedAt: string }> =
       await listConstructionMode().catch(() => ({}));
 
+    // Helpers de horario para derivar isOpenNow + nextOpening en SSR.
+    const { isOpenNow: storeIsOpenNow, nextOpening } = await import(
+      "@/lib/marketplace-store-hours"
+    );
+    const NOW = new Date();
+
     return rows.map((s) => {
       const construction = constructionMap[s.slug];
+      const hoursJson = hoursMap.get(s.id);
+      const hasOwnHours = hoursJson && typeof hoursJson === "object";
+      const isOpenNowVal = hasOwnHours
+        ? storeIsOpenNow(hoursJson as never, NOW)
+        : true; // legacy: sin hours → asumimos abierto
+      const nextOpenAt = hasOwnHours ? nextOpening(hoursJson as never, NOW) : null;
       return {
         id: s.id,
         slug: s.slug,
@@ -109,6 +135,10 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         description: s.description,
         underConstruction: Boolean(construction?.enabled),
         underConstructionMessage: construction?.message ?? null,
+        // ── Horario derivado ──
+        openHours: hasOwnHours ? (hoursJson as never) : null,
+        isOpenNow: isOpenNowVal,
+        nextOpeningAt: nextOpenAt ? nextOpenAt.toISOString() : null,
       };
     });
   } catch {

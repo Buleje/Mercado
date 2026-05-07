@@ -255,7 +255,7 @@ export default function SupplierPortalLink() {
                       </div>
                       <button
                         onClick={() => deleteConfig(config.token)}
-                        className="text-xs text-[var(--data-error)] hover:underline flex-shrink-0"
+                        className="text-xs text-[var(--data-error-500)] hover:underline flex-shrink-0"
                       >
                         Revocar
                       </button>
@@ -284,7 +284,7 @@ export default function SupplierPortalLink() {
                       </button>
                       <button
                         onClick={() => sendWhatsApp(config)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-[var(--accent-soft)] text-white border border-[var(--data-success)]/30"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-[var(--accent-soft)] text-white border border-[var(--data-success-500)]/30"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         WhatsApp

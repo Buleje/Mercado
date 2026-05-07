@@ -275,7 +275,7 @@ export default function SettingsPage() {
       {/* Controles de plataforma */}
       <section className={ADMIN_TOKENS.cardPadded}>
         <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
-          <Settings className="w-5 h-5 text-[var(--data-warning)]" aria-hidden /> Controles de plataforma
+          <Settings className="w-5 h-5 text-[var(--data-warning-500)]" aria-hidden /> Controles de plataforma
         </h3>
         <div className="space-y-4">
           {([

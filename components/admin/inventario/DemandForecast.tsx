@@ -70,7 +70,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   if (error) {
     return (
       <div className="p-4">
-        <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 rounded-lg text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       </div>
@@ -86,10 +86,10 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   }
 
   const trendIcon = data.trend === 'SUBIENDO' ? '\u2191' : data.trend === 'BAJANDO' ? '\u2193' : '\u2192';
-  const trendColor = data.trend === 'SUBIENDO' ? 'text-[var(--data-success)]' : data.trend === 'BAJANDO' ? "text-[var(--data-error)]" : 'text-[var(--text-secondary)]';
+  const trendColor = data.trend === 'SUBIENDO' ? 'text-[var(--data-success-500)]' : data.trend === 'BAJANDO' ? "text-[var(--data-error-500)]" : 'text-[var(--text-secondary)]';
 
-  const stockColor = data.daysOfStock < 3 ? "text-[var(--data-error)]" : data.daysOfStock < 7 ? "text-[var(--data-warning)]" : 'text-[var(--data-success)]';
-  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" : 'bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]';
+  const stockColor = data.daysOfStock < 3 ? "text-[var(--data-error-500)]" : data.daysOfStock < 7 ? "text-[var(--data-warning-500)]" : 'text-[var(--data-success-500)]';
+  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" : 'bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]';
 
   // Format chart data
   const chartData = data.historicalSales.map(s => ({
@@ -148,7 +148,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
                   fill: '#f97316',
                 }}
               />
-              <Bar dataKey="qty" fill="#00B4A6" radius={[2, 2, 0, 0]} name="Vendidos" />
+              <Bar dataKey="qty" fill="var(--accent)" radius={[2, 2, 0, 0]} name="Vendidos" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -183,7 +183,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Comprar cuando llegues a</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[var(--data-warning)]">{data.reorderPoint}</span>
+            <span className="text-xl font-bold text-[var(--data-warning-500)]">{data.reorderPoint}</span>
             <span className="text-xs text-[var(--text-secondary)]">unidades</span>
           </div>
           <div className="text-xs text-[var(--text-secondary)] mt-1">Buffer de 1 semana</div>
@@ -201,8 +201,8 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Seasonal note */}
       {data.seasonalNote && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4">
-          <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4">
+          <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
             {data.seasonalNote}
           </p>
         </div>

@@ -27,7 +27,7 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string): string {
   if (status === "pendiente") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-  if (status === "confirmado") return "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]";
+  if (status === "confirmado") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
   return "bg-gray-100 text-[var(--text-primary)]";
 }
 
@@ -36,11 +36,11 @@ export function VendorPendingOrders({ orders }: Props) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-          <Package className="h-5 w-5 text-[var(--data-warning)]" />
+          <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
         </CardTitle>
         <div className="text-center py-8">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--data-success)] dark:text-[var(--data-success)] mb-2">
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">
             <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} />
           </div>
           <p className="mt-2 text-sm font-semibold text-[var(--text-secondary)]">
@@ -58,9 +58,9 @@ export function VendorPendingOrders({ orders }: Props) {
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-          <Package className="h-5 w-5 text-[var(--data-warning)]" />
+          <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
-          <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning)] text-white text-xs font-bold">
+          <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-bold">
             {orders.length}
           </span>
         </CardTitle>

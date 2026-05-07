@@ -139,7 +139,7 @@ function FAQSection({
             key={faq.question}
             className="group rounded-xl border border-slate-200 bg-white"
           >
-            <summary className="cursor-pointer px-5 py-3 font-medium text-slate-700 hover:text-emerald-700 transition-colors list-none flex items-center justify-between">
+            <summary className="cursor-pointer px-5 py-3 font-medium text-slate-700 hover:text-[var(--data-success-700)] transition-colors list-none flex items-center justify-between">
               {faq.question}
               <svg
                 className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 shrink-0"
@@ -210,7 +210,7 @@ async function DistrictContent({
 
       {/* Hero */}
       <header className="text-center mb-10">
-        <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-emerald-700 mb-4">
+        <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-[var(--data-success-700)] mb-4">
           Bodegas en {district.name}
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
@@ -219,7 +219,7 @@ async function DistrictContent({
         <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
           {district.description}
         </p>
-        <p className="mt-2 text-sm text-emerald-600 font-medium">
+        <p className="mt-2 text-sm text-[var(--data-success-600)] font-medium">
           Parte de {zone.region} — delivery y POS disponibles.
         </p>
       </header>
@@ -228,7 +228,7 @@ async function DistrictContent({
       <div className="text-center mb-10">
         <Link
           href="/registro"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 text-white font-semibold shadow-md hover:bg-emerald-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-8 py-3 text-white font-semibold shadow-md hover:bg-[var(--data-success-700)] transition-colors"
         >
           Prueba Buleje gratis en {district.name}
           <svg
@@ -282,7 +282,7 @@ async function DistrictContent({
               <Link
                 key={d.slug}
                 href={`/zona/${zone.slug}/distrito/${d.slug}`}
-                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+                className="text-sm text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {d.name}
               </Link>
@@ -301,7 +301,7 @@ async function DistrictContent({
             <Link
               key={z.slug}
               href={`/zona/${z.slug}`}
-              className="text-xs text-slate-400 hover:text-emerald-600 transition-colors"
+              className="text-xs text-slate-400 hover:text-[var(--data-success-600)] transition-colors"
             >
               {z.name}
             </Link>

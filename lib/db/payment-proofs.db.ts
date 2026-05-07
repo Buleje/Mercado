@@ -118,7 +118,9 @@ interface CreateInput {
 export const PaymentProofsDB = {
   async create(input: CreateInput): Promise<PaymentProof> {
     await bootstrap();
-    const id = `pmp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    // SECURITY 2026-05-06 (audit WhatsApp #12): IDs con CSPRNG.
+    const { randomUUID } = await import("crypto");
+    const id = `pmp_${randomUUID()}`;
     // eslint-disable-next-line no-restricted-properties -- pre-tenant
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentProof" (

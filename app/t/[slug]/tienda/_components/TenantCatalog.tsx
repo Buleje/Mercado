@@ -292,7 +292,7 @@ export default function TenantCatalog({ slug, storeName, primaryColor, currency 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar productos…"
-            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 text-sm outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors shadow-sm"
+            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 text-sm outline-none focus:border-emerald-400 dark:focus:border-[var(--data-success-500)] transition-colors shadow-sm"
             style={{ minHeight: "48px" }}
           />
         </div>

@@ -28,7 +28,7 @@ function Stars({ value, size = "md" }: { value: number; size?: "sm" | "md" | "lg
           className={cn(
             cls,
             i <= Math.round(value)
-              ? "text-amber-500 fill-amber-500"
+              ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]"
               : "text-gray-300 dark:text-gray-600",
           )}
         />
@@ -52,7 +52,7 @@ function Bar({
       <span className="w-4 text-right font-medium text-gray-600 dark:text-gray-400">
         {stars}
       </span>
-      <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
+      <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
       <div
         className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden"
         role="progressbar"

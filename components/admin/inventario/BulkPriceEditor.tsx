@@ -71,9 +71,9 @@ export default function BulkPriceEditor() {
 
   const marginColor = (margin: number | null) => {
     if (margin === null) return 'text-[var(--text-tertiary)]';
-    if (margin < 10) return 'text-red-600';
-    if (margin < 20) return 'text-amber-600';
-    return 'text-[var(--data-success)]';
+    if (margin < 10) return 'text-[var(--data-error-600)]';
+    if (margin < 20) return 'text-[var(--data-warning-600)]';
+    return 'text-[var(--data-success-500)]';
   };
 
   // Update single product price
@@ -200,7 +200,7 @@ export default function BulkPriceEditor() {
     <div className="space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] px-4 py-3 rounded-lg text-sm">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-4 py-3 rounded-lg text-sm">
           {toast}
         </div>
       )}
@@ -255,7 +255,7 @@ export default function BulkPriceEditor() {
                   <tr
                     key={p.id}
                     className={`border-b border-[var(--rule-base)] transition-colors ${
-                      p.changed ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10" : ''
+                      p.changed ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : ''
                     }`}
                   >
                     <td className="py-2 px-2">
@@ -284,7 +284,7 @@ export default function BulkPriceEditor() {
                         step={0.10}
                         min={0}
                         className={`w-24 px-2 py-1 border rounded text-right text-sm bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground ${
-                          p.changed ? "border-[var(--data-warning)]" : 'border-[var(--rule-base)] dark:border-card-border'
+                          p.changed ? "border-[var(--data-warning-500)]" : 'border-[var(--rule-base)] dark:border-card-border'
                         }`}
                       />
                     </td>
@@ -359,7 +359,7 @@ export default function BulkPriceEditor() {
                 <button
                   onClick={igualarMargen}
                   disabled={!marginInput}
-                  className="flex-1 px-3 py-1.5 bg-[var(--data-warning)] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#e8964f] transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-[var(--data-warning-500)] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#e8964f] transition-colors"
                 >
                   Igualar margen
                 </button>
@@ -368,7 +368,7 @@ export default function BulkPriceEditor() {
               {/* Deshacer */}
               <button
                 onClick={deshacerCambios}
-                className="px-3 py-1.5 border border-[var(--data-error)] text-[var(--data-error)] rounded-lg text-sm font-medium hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/10 transition-colors"
+                className="px-3 py-1.5 border border-[var(--data-error-500)] text-[var(--data-error-500)] rounded-lg text-sm font-medium hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 transition-colors"
               >
                 Deshacer cambios
               </button>

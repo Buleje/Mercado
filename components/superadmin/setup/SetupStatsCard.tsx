@@ -46,15 +46,15 @@ export default function SetupStatsCard({ stats, allDone }: SetupStatsCardProps) 
             <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Total</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.pending}</div>
+            <div className="text-xl font-extrabold text-[var(--data-warning-500)]">{stats.pending}</div>
             <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Pendientes</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-[var(--data-success)]">{stats.done}</div>
+            <div className="text-xl font-extrabold text-[var(--data-success-500)]">{stats.done}</div>
             <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Hechos</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.blocked}</div>
+            <div className="text-xl font-extrabold text-[var(--data-warning-500)]">{stats.blocked}</div>
             <div className="text-[length:var(--ts-xs)] text-gray-400 uppercase font-semibold tracking-wide">Bloqueados</div>
           </div>
         </div>

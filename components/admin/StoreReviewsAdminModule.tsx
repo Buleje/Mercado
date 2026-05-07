@@ -57,7 +57,7 @@ const STATUS_LABEL: Record<Status, string> = {
 const STATUS_COLORS: Record<AdminReview["status"], string> = {
   pending:  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-  rejected: "bg-rose-100 text-[var(--data-error)] dark:bg-rose-900/30 dark:text-[var(--data-error)]",
+  rejected: "bg-rose-100 text-[var(--data-error-500)] dark:bg-rose-900/30 dark:text-[var(--data-error-500)]",
   hidden:   "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
@@ -144,7 +144,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
         placeholder="Gracias por tu reseña…"
         className="w-full rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
       />
-      {err && <p className="text-xs text-[var(--data-error)]">{err}</p>}
+      {err && <p className="text-xs text-[var(--data-error-500)]">{err}</p>}
       <div className="flex items-center justify-end gap-2">
         <button
           type="button"
@@ -260,8 +260,8 @@ export default function StoreReviewsAdminModule() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 p-4 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" strokeWidth={2} />
+        <div className="rounded-xl bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" strokeWidth={2} />
           <p className="text-sm text-[var(--text-primary)]">{error}</p>
         </div>
       )}
@@ -313,7 +313,7 @@ export default function StoreReviewsAdminModule() {
                   type="button"
                   onClick={() => act(r.id, "approve")}
                   disabled={acting === r.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-600)] text-white text-xs font-bold hover:bg-[var(--data-success-700)] disabled:opacity-40"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.25} />
                   Aprobar

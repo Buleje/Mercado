@@ -80,12 +80,12 @@ export function VendorWeeklyChart({ data }: Props) {
             className="text-[var(--text-secondary)] dark:text-muted"
           />
           <YAxis hide />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,180,166,0.06)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "color-mix(in oklab, var(--accent) 6%, transparent)" }} />
           <Bar dataKey="total" radius={[6, 6, 0, 0]}>
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.isToday ? "#00B4A6" : entry.isMax ? "#f97316" : "#d1fae5"}
+                fill={entry.isToday ? "var(--accent)" : entry.isMax ? "#f97316" : "#d1fae5"}
               />
             ))}
           </Bar>
@@ -97,7 +97,7 @@ export function VendorWeeklyChart({ data }: Props) {
           <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> Hoy
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--data-warning)] inline-block" /> Mejor día
+          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--data-warning-500)] inline-block" /> Mejor día
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] inline-block" /> Otros días

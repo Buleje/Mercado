@@ -41,8 +41,8 @@ export default function WishlistButton({ productId, className, size = "md" }: Wi
         "flex items-center justify-center rounded-full transition-all duration-200 active:scale-90",
         size === "md" ? "h-11 w-11" : "h-9 w-9",
         inList
-          ? "bg-red-500 text-white shadow-md scale-110"
-          : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-card shadow-sm",
+          ? "bg-[var(--data-error-500)] text-white shadow-md scale-110"
+          : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-card shadow-sm",
         className
       )}
     >

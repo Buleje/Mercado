@@ -457,12 +457,12 @@ export default function ExcelProductImporter() {
       {step === "preview" && (
         <div className="space-y-6">
           <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1 text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="flex items-center gap-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               <CheckCircle className="h-4 w-4" />
               {validCount} productos validos
             </span>
             {errorCount > 0 && (
-              <span className="flex items-center gap-1 text-[var(--data-error)]">
+              <span className="flex items-center gap-1 text-[var(--data-error-500)]">
                 <AlertTriangle className="h-4 w-4" />
                 {errorCount} con errores (no se importaran)
               </span>
@@ -487,16 +487,16 @@ export default function ExcelProductImporter() {
                   <tr
                     key={p._rowIndex}
                     className={cn(
-                      p._errors.length > 0 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10" : "hover:bg-[var(--surface-sunken)]/50"
+                      p._errors.length > 0 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "hover:bg-[var(--surface-sunken)]/50"
                     )}
                   >
                     <td className="px-3 py-2 text-[var(--text-secondary)]">{p._rowIndex}</td>
                     <td className="px-3 py-2 font-medium text-[var(--text-primary)]">
-                      {p.nombre || <span className="text-[var(--data-error)] italic">vacio</span>}
+                      {p.nombre || <span className="text-[var(--data-error-500)] italic">vacio</span>}
                     </td>
                     <td className="px-3 py-2 text-[var(--text-secondary)]">
                       {p.precio < 0 ? (
-                        <span className="text-[var(--data-error)]">{p.precio}</span>
+                        <span className="text-[var(--data-error-500)]">{p.precio}</span>
                       ) : (
                         `S/ ${p.precio.toFixed(2)}`
                       )}
@@ -511,9 +511,9 @@ export default function ExcelProductImporter() {
                     <td className="px-3 py-2 text-[var(--text-secondary)]">{p.codigoBarras || "—"}</td>
                     <td className="px-3 py-2">
                       {p._errors.length === 0 ? (
-                        <span className="text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-medium">OK</span>
+                        <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-medium">OK</span>
                       ) : (
-                        <span className="text-[var(--data-error)] text-xs" title={p._errors.join(", ")}>
+                        <span className="text-[var(--data-error-500)] text-xs" title={p._errors.join(", ")}>
                           {p._errors.join(", ")}
                         </span>
                       )}
@@ -572,7 +572,7 @@ export default function ExcelProductImporter() {
       {step === "done" && result && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+            <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
             <div>
               <p className="font-semibold text-[var(--text-primary)]">Importacion completada</p>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -582,10 +582,10 @@ export default function ExcelProductImporter() {
           </div>
 
           {result.errors.length > 0 && (
-            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 space-y-1 max-h-40 overflow-y-auto">
-              <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)]">Filas no importadas:</p>
+            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-4 space-y-1 max-h-40 overflow-y-auto">
+              <p className="text-sm font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Filas no importadas:</p>
               {result.errors.map((e, i) => (
-                <p key={i} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+                <p key={i} className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   {e.row > 0 ? `Fila ${e.row} — ` : ""}{e.message}
                 </p>
               ))}

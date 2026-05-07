@@ -21,7 +21,18 @@ const PromotionSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAdmin(req, ["admin"]);
-    const tenantId = auth instanceof NextResponse ? "main" : auth.tenantId;
+    // SECURITY 2026-05-06 (audit promotions #7): si no hay sesión admin,
+    // resolver tenantId del header (proxy ya lo seteó por subdominio) en
+    // vez del fallback "main". Esto evita que requests sin sesión válida
+    // reciban promos del tenant "main" por accidente.
+    const headerTenant = req.headers.get("x-tenant-id");
+    const tenantId = auth instanceof NextResponse
+      ? (headerTenant && headerTenant !== "main" ? headerTenant : null)
+      : auth.tenantId;
+    if (!tenantId) {
+      // Storefront público sin tenant resuelto → no exponer promos.
+      return NextResponse.json([], { status: 200 });
+    }
     const all = await withDbRetry(() => PromotionsDB.getAll(tenantId));
 
     // Admin sees full data including targetPhones

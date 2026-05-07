@@ -117,7 +117,7 @@ export default function Testimonials() {
                   className={cn(
                     "h-4 w-4",
                     i < t.rating
-                      ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+                      ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                       : "text-[var(--rule-base)]",
                   )}
                   strokeWidth={1.75}

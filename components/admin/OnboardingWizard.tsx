@@ -473,7 +473,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
         {/* ── Steps / Error ───────────────────────────────────────────────── */}
         <div className="px-4 py-3 space-y-1.5 max-h-[50vh] overflow-y-auto">
           {hasError ? (
-            <div className="p-4 rounded-xl border border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 text-sm text-[var(--text-primary)]">
+            <div className="p-4 rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-sm text-[var(--text-primary)]">
               <p className="font-semibold mb-1">No pudimos cargar tu progreso.</p>
               <p className="text-xs text-[var(--text-secondary)]">
                 Aún puedes seguir los pasos manualmente o cerrar esta guía.

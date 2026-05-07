@@ -57,7 +57,7 @@ export function ProductRecommendations({
   return (
     <section className={cn("py-6", className)}>
       <div className="flex items-center gap-2 mb-4 px-1">
-        <Sparkles className="h-5 w-5 text-amber-500" />
+        <Sparkles className="h-5 w-5 text-[var(--data-warning-500)]" />
         <h3 className="text-lg font-bold text-gray-800 dark:text-foreground">
           Productos para ti
         </h3>

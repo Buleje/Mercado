@@ -58,7 +58,7 @@ export interface ComprasData {
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PROV_COLORS = ["#00B4A6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#10b981", "#f97316", "#6366f1"];
+const PROV_COLORS = ["var(--accent)", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#10b981", "#f97316", "#6366f1"];
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
 
     // Account status (payables)
     const statusGroups = [
-      { key: "pagado", label: "Pagado", color: "#00B4A6" },
+      { key: "pagado", label: "Pagado", color: "var(--accent)" },
       { key: "parcial", label: "Parcial", color: "#f59e0b" },
       { key: "pendiente", label: "Pendiente", color: "#3b82f6" },
       { key: "vencido", label: "Vencido", color: "#ef4444" },
@@ -178,7 +178,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
@@ -212,9 +212,9 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
 
       {/* ── Alert bar ── */}
       {data.cuentasVencidas > 0 && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl px-5 py-3">
-          <Clock className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
+        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl px-5 py-3">
+          <Clock className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
             {data.cuentasVencidas} cuenta{data.cuentasVencidas > 1 ? "s" : ""} vencida{data.cuentasVencidas > 1 ? "s" : ""} por un total de {fmt(data.deudaPendiente)}
           </p>
         </div>

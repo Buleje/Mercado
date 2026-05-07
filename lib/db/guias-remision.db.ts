@@ -389,8 +389,12 @@ export const GuiasRemisionDB = {
           },
         }),
       };
+      // SECURITY 2026-05-05 (audit SUNAT #8): TOCTOU guard — el where interno
+      // repite status:BORRADOR para que un update concurrente de estado (p.ej.
+      // EMITIDA entre el findFirst y aqui) aborte la transaccion en lugar de
+      // mutar items ya emitidos. Prisma lanza P2025 si no coincide.
       return tx.guiaRemision.update({
-        where: { id },
+        where: { id, status: "BORRADOR" },
         data: updateData,
         include: { items: true },
       });
@@ -404,8 +408,11 @@ export const GuiasRemisionDB = {
     motivo: string,
     _username: string
   ): Promise<DbGuiaRemision | null> {
+    // SECURITY 2026-05-05 (audit SUNAT #3): doble-anulación. Antes
+    // findFirst + update separado permitía duplicar el prefijo
+    // [ANULADA: ...] en notas. Ahora updateMany con guard atómico.
     const existing = await prisma.guiaRemision.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, status: { not: "ANULADA" } as never },
     });
     if (!existing) return null;
 
@@ -414,12 +421,16 @@ export const GuiasRemisionDB = {
       ? `${notasPrefix}${existing.notas}`
       : notasPrefix.trim();
 
-    const row = await prisma.guiaRemision.update({
-      where: { id },
+    const updated = await prisma.guiaRemision.updateMany({
+      where: { id, tenantId, status: { not: "ANULADA" } as never },
       data: { status: "ANULADA", notas: newNotas },
+    });
+    if (updated.count === 0) return null;
+    const row = await prisma.guiaRemision.findFirst({
+      where: { id, tenantId },
       include: { items: true },
     });
-    return mapGuia(row);
+    return row ? mapGuia(row) : null;
   },
 
   async duplicate(

@@ -79,7 +79,7 @@ function PriceHistoryPanel({
                   <span className="text-gray-500 dark:text-gray-400 line-through">
                     S/ {fmt(v.oldPrice)}
                   </span>
-                  <span className="font-semibold text-[#00B4A6]">S/ {fmt(v.newPrice)}</span>
+                  <span className="font-semibold text-[var(--accent)]">S/ {fmt(v.newPrice)}</span>
                 </div>
                 <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                   {new Date(v.effectiveDate).toLocaleDateString("es-PE", {
@@ -174,7 +174,7 @@ function OfferModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {success ? (
-          <p className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 text-center">
+          <p className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-sm text-[var(--data-success-700)] dark:text-emerald-400 text-center">
             Oferta creada correctamente
           </p>
         ) : (
@@ -190,7 +190,7 @@ function OfferModal({ onClose }: { onClose: () => void }) {
               <div key={f.name}>
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
                   {f.label}
-                  {f.required && <span className="text-red-500 ml-0.5">*</span>}
+                  {f.required && <span className="text-[var(--data-error-500)] ml-0.5">*</span>}
                 </label>
                 {f.type === "textarea" ? (
                   <textarea
@@ -199,7 +199,7 @@ function OfferModal({ onClose }: { onClose: () => void }) {
                     onChange={handleChange}
                     placeholder={f.placeholder}
                     rows={2}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#00B4A6] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20 resize-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
                   />
                 ) : (
                   <input
@@ -209,14 +209,14 @@ function OfferModal({ onClose }: { onClose: () => void }) {
                     onChange={handleChange}
                     placeholder={f.placeholder}
                     required={f.required}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#00B4A6] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
                   />
                 )}
               </div>
             ))}
 
             {error && (
-              <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+              <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-[var(--data-error-600)] dark:text-red-400">
                 {error}
               </p>
             )}
@@ -225,7 +225,7 @@ function OfferModal({ onClose }: { onClose: () => void }) {
               type="submit"
               disabled={saving}
               className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-              style={{ background: "#00B4A6" }}
+              style={{ background: "var(--accent)" }}
             >
               {saving ? "Publicando..." : "Publicar oferta"}
             </button>
@@ -343,7 +343,7 @@ export default function SupplierCatalogoPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#00B4A6] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
       </div>
     );
   }
@@ -355,7 +355,7 @@ export default function SupplierCatalogoPage() {
         <button
           onClick={load}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: "#00B4A6" }}
+          style={{ background: "var(--accent)" }}
         >
           Reintentar
         </button>
@@ -392,7 +392,7 @@ export default function SupplierCatalogoPage() {
       </div>
 
       {saveError && (
-        <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm text-red-600 dark:text-red-400">
+        <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm text-[var(--data-error-600)] dark:text-red-400">
           {saveError}
         </p>
       )}
@@ -468,13 +468,13 @@ export default function SupplierCatalogoPage() {
                                 if (e.key === "Escape") cancelEdit();
                               }}
                               autoFocus
-                              className="w-24 rounded-lg border border-[#00B4A6] bg-white dark:bg-gray-800 px-2 py-1 text-right text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20"
+                              className="w-24 rounded-lg border border-[var(--accent)] bg-white dark:bg-gray-800 px-2 py-1 text-right text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
                             />
                             <button
                               onClick={() => savePrice(p)}
                               disabled={isSaving}
                               className="rounded-md px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                              style={{ background: "#00B4A6" }}
+                              style={{ background: "var(--accent)" }}
                             >
                               {isSaving ? "..." : "OK"}
                             </button>
@@ -497,7 +497,7 @@ export default function SupplierCatalogoPage() {
                           <span
                             className={
                               p.stock <= 0
-                                ? "text-red-500 dark:text-red-400 font-semibold"
+                                ? "text-[var(--data-error-500)] dark:text-red-400 font-semibold"
                                 : "text-gray-700 dark:text-gray-300"
                             }
                           >
@@ -511,7 +511,7 @@ export default function SupplierCatalogoPage() {
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => setHistoryProduct(p)}
-                          className="text-xs text-[#00B4A6] hover:underline font-medium"
+                          className="text-xs text-[var(--accent)] hover:underline font-medium"
                         >
                           Ver ({p.priceHistory.length})
                         </button>
@@ -521,7 +521,7 @@ export default function SupplierCatalogoPage() {
                         {!isEditing && (
                           <button
                             onClick={() => startEdit(p)}
-                            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:border-[#00B4A6] hover:text-[#00B4A6] transition-colors"
+                            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                           >
                             Editar precio
                           </button>

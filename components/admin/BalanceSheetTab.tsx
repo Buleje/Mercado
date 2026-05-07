@@ -99,7 +99,7 @@ export default function BalanceSheetTab() {
               <span className="flex-1 text-[var(--text-primary)] dark:text-foreground">{l.name}</span>
               <span className="w-28 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(l.currentPeriod)}</span>
               <span className="w-28 text-right text-[var(--text-tertiary)]">{fmt(l.previousPeriod)}</span>
-              <span className={cn("w-20 text-right text-xs font-bold flex items-center justify-end gap-0.5", v > 0 ? "text-[var(--data-success)]" : v < 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+              <span className={cn("w-20 text-right text-xs font-bold flex items-center justify-end gap-0.5", v > 0 ? "text-[var(--data-success-500)]" : v < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
                 {v > 0 ? <TrendingUp className="h-3 w-3" /> : v < 0 ? <TrendingDown className="h-3 w-3" /> : null}
                 {pct(v)}
               </span>
@@ -110,7 +110,7 @@ export default function BalanceSheetTab() {
           <span className="flex-1 text-[var(--text-secondary)] dark:text-muted">Subtotal {TYPE_LABELS[type]}</span>
           <span className="w-28 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(subTotal)}</span>
           <span className="w-28 text-right text-[var(--text-tertiary)]">{fmt(subPrev)}</span>
-          <span className={cn("w-20 text-right text-xs", variation(subTotal, subPrev) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{pct(variation(subTotal, subPrev))}</span>
+          <span className={cn("w-20 text-right text-xs", variation(subTotal, subPrev) >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{pct(variation(subTotal, subPrev))}</span>
         </div>
       </div>
     );
@@ -139,11 +139,11 @@ export default function BalanceSheetTab() {
       {/* Ratios KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Liquidez corriente", value: totals.liquidezCorriente.toFixed(2), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Prueba ácida", value: totals.pruebaAcida.toFixed(2), color: "text-[var(--data-info)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
-          { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: totals.endeudamiento > 60 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Capital de trabajo", value: fmt(totals.capitalTrabajo), color: totals.capitalTrabajo >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "ROE", value: pct(totals.roe), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Liquidez corriente", value: totals.liquidezCorriente.toFixed(2), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Prueba ácida", value: totals.pruebaAcida.toFixed(2), color: "text-[var(--data-info-500)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+          { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: totals.endeudamiento > 60 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Capital de trabajo", value: fmt(totals.capitalTrabajo), color: totals.capitalTrabajo >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: "bg-[var(--surface-sunken)]" },
+          { label: "ROE", value: pct(totals.roe), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -157,7 +157,7 @@ export default function BalanceSheetTab() {
         {/* ACTIVOS */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--rule-base)] dark:border-card-border">
-            <CardTitle className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">ACTIVOS</CardTitle>
+            <CardTitle className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">ACTIVOS</CardTitle>
             <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-[var(--text-secondary)]">Período actual</span>
               <span className="text-[var(--text-tertiary)]">Período anterior</span>
@@ -167,17 +167,17 @@ export default function BalanceSheetTab() {
           {renderSection("activo-corriente", grouped["activo-corriente"])}
           {renderSection("activo-no-corriente", grouped["activo-no-corriente"])}
           <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-sm font-extrabold">
-            <span className="flex-1 text-[var(--data-success)] dark:text-[var(--data-success)]">TOTAL ACTIVOS</span>
-            <span className="w-28 text-right text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(totals.totalActivos.current)}</span>
-            <span className="w-28 text-right text-[var(--data-success)]/60">{fmt(totals.totalActivos.previous)}</span>
-            <span className="w-20 text-right text-xs text-[var(--data-success)]">{pct(variation(totals.totalActivos.current, totals.totalActivos.previous))}</span>
+            <span className="flex-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">TOTAL ACTIVOS</span>
+            <span className="w-28 text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.totalActivos.current)}</span>
+            <span className="w-28 text-right text-[var(--data-success-500)]/60">{fmt(totals.totalActivos.previous)}</span>
+            <span className="w-20 text-right text-xs text-[var(--data-success-500)]">{pct(variation(totals.totalActivos.current, totals.totalActivos.previous))}</span>
           </div>
         </div>
 
         {/* PASIVOS + PATRIMONIO */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="px-2 sm:px-4 py-2 sm:py-3 bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-b border-[var(--rule-base)] dark:border-card-border">
-            <CardTitle className="font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">PASIVOS + PATRIMONIO</CardTitle>
+            <CardTitle className="font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">PASIVOS + PATRIMONIO</CardTitle>
             <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-[var(--text-secondary)]">Período actual</span>
               <span className="text-[var(--text-tertiary)]">Período anterior</span>
@@ -188,17 +188,17 @@ export default function BalanceSheetTab() {
           {renderSection("pasivo-no-corriente", grouped["pasivo-no-corriente"])}
           {renderSection("patrimonio", grouped["patrimonio"])}
           <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-sm font-extrabold">
-            <span className="flex-1 text-[var(--data-warning)] dark:text-[var(--data-warning)]">TOTAL PASIVO + PATRIMONIO</span>
-            <span className="w-28 text-right text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmt(totals.totalPasPat.current)}</span>
-            <span className="w-28 text-right text-[var(--data-warning)]/60">{fmt(totals.totalPasPat.previous)}</span>
-            <span className="w-20 text-right text-xs text-[var(--data-warning)]">{pct(variation(totals.totalPasPat.current, totals.totalPasPat.previous))}</span>
+            <span className="flex-1 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">TOTAL PASIVO + PATRIMONIO</span>
+            <span className="w-28 text-right text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(totals.totalPasPat.current)}</span>
+            <span className="w-28 text-right text-[var(--data-warning-500)]/60">{fmt(totals.totalPasPat.previous)}</span>
+            <span className="w-20 text-right text-xs text-[var(--data-warning-500)]">{pct(variation(totals.totalPasPat.current, totals.totalPasPat.previous))}</span>
           </div>
         </div>
       </div>
 
       {/* Balance check */}
       {Math.abs(totals.totalActivos.current - totals.totalPasPat.current) > 0.01 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-bold">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold">
           Descuadre detectado: Activos ({fmt(totals.totalActivos.current)}) ≠ Pasivo + Patrimonio ({fmt(totals.totalPasPat.current)}). Diferencia: {fmt(Math.abs(totals.totalActivos.current - totals.totalPasPat.current))}
         </div>
       )}
@@ -216,7 +216,7 @@ export default function BalanceSheetTab() {
               <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-32 truncate">{TYPE_LABELS[type]}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-[var(--accent-soft)]" : type === "patrimonio" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")} style={{ width: `${Math.min(100, pctFill)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-[var(--accent-soft)]" : type === "patrimonio" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${Math.min(100, pctFill)}%` }} />
                 </div>
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-24 text-right">{fmt(total)}</span>
               </div>

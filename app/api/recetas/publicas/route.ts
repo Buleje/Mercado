@@ -4,6 +4,15 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   try {
+    // SECURITY 2026-05-06 (pentest H10): scope por tenantId. Antes este
+    // endpoint público devolvía TODAS las recetas activas de TODOS los
+    // tenants con costos+ingredientes+proveedores → fuga competitiva.
+    const tenantIdHeader = req.headers.get("x-tenant-id");
+    if (!tenantIdHeader || tenantIdHeader === "main") {
+      return NextResponse.json({ recetas: [] });
+    }
+    const tenantId = tenantIdHeader;
+
     const sp = req.nextUrl.searchParams;
     const search = sp.get("search") ?? undefined;
 
@@ -11,6 +20,7 @@ export async function GET(req: NextRequest) {
     try {
       const recetarioNotes = await prisma.note.findMany({
         where: {
+          tenantId,
           title: "__RECETARIO__",
           ...(search ? { content: { contains: search, mode: "insensitive" as const } } : {}),
         },
@@ -39,6 +49,7 @@ export async function GET(req: NextRequest) {
     // 2. Try Receta model (production recetas)
     const recetas = await prisma.receta.findMany({
       where: {
+        tenantId,
         activa: true,
         ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),
       },

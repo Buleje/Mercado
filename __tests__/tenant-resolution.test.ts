@@ -127,4 +127,31 @@ describe("resolveTenantMultiSource", () => {
     const tenant = await resolveTenantMultiSource(req, "demo-subdomain");
     expect(tenant).toBe("demo-subdomain");
   });
+
+  // FIX 2026-05-06: Source 0 (path /t/[slug]/) tiene prioridad sobre JWT.
+  // Previene el bug donde un admin con JWT.tenantId stale veía datos del tenant
+  // anterior al navegar a /t/otro-tenant/admin.
+  it("Source 0: URL path /t/[slug]/ wins over JWT and cookie (anti-cross-tenant bug)", async () => {
+    const req = makeReq("/t/mi-pollo/admin/products", {
+      cookies: {
+        "buleje-admin-sess": makeToken({ tenantId: "main" }),
+        "active-tenant": "main",
+      },
+    });
+
+    const tenant = await resolveTenantMultiSource(req, "main");
+    // Path explícito gana — admin no puede leer datos de "main" mientras está en /t/mi-pollo
+    expect(tenant).toBe("mi-pollo");
+  });
+
+  it("Source 0: path /t/[slug]/ also wins over a healthy JWT pointing elsewhere", async () => {
+    const req = makeReq("/t/tenant-A/admin", {
+      cookies: {
+        "buleje-admin-sess": makeToken({ tenantId: "tenant-B-cuid" }),
+      },
+    });
+
+    const tenant = await resolveTenantMultiSource(req, "main");
+    expect(tenant).toBe("tenant-A");
+  });
 });

@@ -46,8 +46,8 @@ export default function ForecastCard({ className }: Props) {
     : 1;
 
   const confidenceStyle: Record<string, string> = {
-    alta: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/40 dark:text-[var(--data-warning)]",
+    alta: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/40 dark:text-[var(--data-warning-500)]",
     baja: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   };
 
@@ -56,8 +56,8 @@ export default function ForecastCard({ className }: Props) {
     result?.trend === "bajando" ? TrendingDown : Minus;
 
   const trendColor =
-    result?.trend === "subiendo" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-    result?.trend === "bajando" ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
+    result?.trend === "subiendo" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+    result?.trend === "bajando" ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
     "text-[var(--text-tertiary)] dark:text-muted";
 
   const trendLabel: Record<string, string> = {
@@ -143,18 +143,18 @@ export default function ForecastCard({ className }: Props) {
           {/* Best / Worst day */}
           <div className="flex gap-3">
             <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2.5 text-center">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold mb-0.5">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold mb-0.5">
                 Mejor dia
               </p>
-              <p className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <p className="text-sm font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 {result.bestDay}
               </p>
             </div>
             <div className="flex-1 bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-2.5 text-center">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold mb-0.5">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold mb-0.5">
                 Peor dia
               </p>
-              <p className="text-sm font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <p className="text-sm font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {result.worstDay}
               </p>
             </div>

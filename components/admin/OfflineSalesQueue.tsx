@@ -56,10 +56,10 @@ const STATUS_CONFIG: Record<
   SyncStatus,
   { label: string; color: string; icon: React.ElementType }
 > = {
-  pending: { label: "Pendiente", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", icon: Clock },
-  syncing: { label: "Sincronizando...", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", icon: Loader2 },
-  synced: { label: "Sincronizado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", icon: CheckCircle },
-  error: { label: "Error", color: "text-[var(--data-error)] dark:text-[var(--data-error)]", icon: AlertCircle },
+  pending: { label: "Pendiente", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", icon: Clock },
+  syncing: { label: "Sincronizando...", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", icon: Loader2 },
+  synced: { label: "Sincronizado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", icon: CheckCircle },
+  error: { label: "Error", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", icon: AlertCircle },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -199,27 +199,27 @@ export default function OfflineSalesQueue() {
         className={cn(
           "flex items-center justify-between rounded-xl border p-4 transition",
           isOnline
-            ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]"
-            : "border-[var(--data-error)] bg-[var(--data-error-50)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20"
+            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
+            : "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20"
         )}
       >
         <div className="flex items-center gap-3">
           {isOnline ? (
-            <Wifi className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <Wifi className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           ) : (
-            <WifiOff className="h-5 w-5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+            <WifiOff className="h-5 w-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           )}
           <div>
             <p
               className={cn(
                 "text-sm font-semibold",
-                isOnline ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                isOnline ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
               )}
             >
               {isOnline ? "Conectado" : "Sin conexión"}
             </p>
             {!isOnline && (
-              <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 Las ventas se guardan localmente hasta recuperar conexión.
               </p>
             )}
@@ -227,7 +227,7 @@ export default function OfflineSalesQueue() {
         </div>
 
         {pendingCount > 0 && (
-          <span className="rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]">
+          <span className="rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]">
             {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
           </span>
         )}
@@ -303,10 +303,10 @@ export default function OfflineSalesQueue() {
                     <p className="text-xs text-[var(--text-tertiary)]">
                       {dateStr} {timeStr}
                       {sale.error && (
-                        <span className="ml-2 text-[var(--data-error)]">· {sale.error}</span>
+                        <span className="ml-2 text-[var(--data-error-500)]">· {sale.error}</span>
                       )}
                       {sale.syncedAt && (
-                        <span className="ml-2 text-[var(--data-success)] dark:text-[var(--data-success)]">
+                        <span className="ml-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                           · Sincronizado a las{" "}
                           {new Date(sale.syncedAt).toLocaleTimeString("es-PE", {
                             hour: "2-digit",
@@ -320,7 +320,7 @@ export default function OfflineSalesQueue() {
                   {(sale.status === "pending" || sale.status === "error" || sale.status === "synced") && (
                     <button
                       onClick={() => removeItem(sale.queueId)}
-                      className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:text-[var(--text-secondary)]"
+                      className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:text-[var(--text-secondary)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

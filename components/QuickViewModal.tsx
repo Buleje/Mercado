@@ -165,7 +165,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
               onClick={(e) => { e.stopPropagation(); toggleFav(String(product.id)); }}
               className={cn(
                 "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-md",
-                fav ? "bg-red-500 text-white" : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500"
+                fav ? "bg-[var(--data-error-500)] text-white" : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
               )}
               aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
             >
@@ -201,7 +201,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   {category?.emoji} {category?.label ?? product.category}
                   {reviews.length > 0 && (
                     <span className="ml-3 inline-flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                      <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
                       <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
                       <span className="text-muted">({reviews.length})</span>
                     </span>
@@ -218,7 +218,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
             <div className="flex items-center justify-between mt-4 flex-wrap gap-3">
               <div>
                 {product.stock != null && (
-                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", product.stock <= 0 ? "bg-red-50 text-red-500 dark:bg-red-500/10" : product.stock <= (product.stockMin ?? 5) ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10")}>
+                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", product.stock <= 0 ? "bg-red-50 text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10" : product.stock <= (product.stockMin ?? 5) ? "bg-amber-50 text-[var(--data-warning-600)] dark:bg-[var(--data-warning-500)]/10" : "bg-emerald-50 text-[var(--data-success-600)] dark:bg-[var(--data-success-500)]/10")}>
                     {product.stock <= 0 ? "Agotado" : `${product.stock} en stock`}
                   </span>
                 )}
@@ -315,14 +315,14 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         <svg viewBox={`0 0 ${W || 1} 55`} className="w-full h-full" preserveAspectRatio="none">
                           <defs>
                             <linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
-                              <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
+                              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
+                              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.02" />
                             </linearGradient>
                           </defs>
                           <path d={`${points.split(" ").map((p, i) => i === 0 ? `M${p}` : `L${p}`).join(" ")} L${W},55 L0,55 Z`} fill="url(#phGrad)" />
-                          <polyline points={points} fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                          <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                           {prices.map((p, i) => (
-                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "#00B4A6" : "#2dd4bf"} stroke="white" strokeWidth="1.5" />
+                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "var(--accent)" : "#2dd4bf"} stroke="white" strokeWidth="1.5" />
                           ))}
                         </svg>
                       </div>
@@ -351,7 +351,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                       <div className="flex items-center gap-1">
                         {[1,2,3,4,5].map(s => (
                           <button key={s} type="button" onMouseEnter={() => setFormHover(s)} onMouseLeave={() => setFormHover(0)} onClick={() => setFormRating(s)} className="p-0.5" aria-label={`${s} estrellas`}>
-                            <Star className={cn("h-6 w-6 transition-colors", (formHover || formRating) >= s ? "text-amber-500 fill-amber-500" : "text-gray-300")} />
+                            <Star className={cn("h-6 w-6 transition-colors", (formHover || formRating) >= s ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-gray-300")} />
                           </button>
                         ))}
                         {formRating > 0 && <span className="ml-2 text-xs text-muted">{["","Muy malo","Malo","Regular","Bueno","Excelente"][formRating]}</span>}
@@ -360,7 +360,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                       <textarea value={formText} onChange={e => setFormText(e.target.value)} placeholder={`¿Qué te pareció ${product.name}?`} maxLength={400} rows={2}
                         className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                      {reviewError && <p className="text-xs text-red-500">{reviewError}</p>}
+                      {reviewError && <p className="text-xs text-[var(--data-error-500)]">{reviewError}</p>}
                       <button type="submit" disabled={submitting}
                         className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 transition-colors">
                         {submitting ? <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" /> : <Star className="h-3.5 w-3.5" />}
@@ -369,7 +369,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                     </form>
                   </details>
                 ) : (
-                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-2 border-b border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-2 text-[var(--data-success-600)] text-sm font-semibold py-2 border-b border-gray-100 dark:border-card-border">
                     ✓ ¡Gracias! Tu reseña está en revisión
                   </div>
                 )}
@@ -387,7 +387,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         <span className="font-bold text-sm text-foreground">{r.name}</span>
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: 5 }).map((_, s) => (
-                            <Star key={s} className={cn("h-3.5 w-3.5", s < r.rating ? "text-amber-500 fill-amber-500" : "text-gray-300")} />
+                            <Star key={s} className={cn("h-3.5 w-3.5", s < r.rating ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-gray-300")} />
                           ))}
                         </div>
                       </div>

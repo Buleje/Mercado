@@ -10,7 +10,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   let name = "Mi Tienda - Delivery";
   let shortName = "Tienda";
   let description = "Compra online con delivery a domicilio.";
-  let themeColor = "#00B4A6";
+  let themeColor = "var(--accent)";
 
   try {
     const [{ headers }, { SettingsDB }] = await Promise.all([

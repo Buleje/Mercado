@@ -40,7 +40,7 @@ export async function POST(
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { orderId },
     select: {
-      id: true, status: true, partnerId: true, tipAmount: true,
+      id: true, status: true, partnerId: true, tipAmount: true, tenantId: true,
       partner: { select: { name: true, phone: true } },
     },
   });
@@ -79,8 +79,9 @@ export async function POST(
       ``,
       `¡Gran trabajo, ${assignment.partner.name}!`,
     ].join("\n");
+    // SECURITY 2026-05-05 (audit POS H005): tenantId real (antes literal "delivery").
     sendWhatsAppQueued(assignment.partner.phone, wa, {
-      tenantId: "delivery",
+      tenantId: assignment.tenantId,
       context: `tip-${assignment.id}`,
     }).catch((err) => logger.warn("[delivery/tip] wa failed", { error: String(err) }));
   }

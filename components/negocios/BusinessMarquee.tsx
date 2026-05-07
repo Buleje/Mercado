@@ -26,7 +26,7 @@ export default function BusinessMarquee() {
     <div className="py-8 bg-gray-50 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <p className="text-center text-xs font-bold uppercase tracking-wide text-gray-400 mb-5 inline-flex items-center justify-center gap-1.5 w-full">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+          <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
           Más de 500 bodegas confían en Buleje
         </p>
 

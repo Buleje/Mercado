@@ -18,7 +18,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-06 (audit CMS #4): exigir rol explícito. Antes
+  // requireAdmin sin allowlist permitía a cualquier rol (almacenero, cajero)
+  // listar/editar páginas CMS.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -55,7 +58,7 @@ export async function POST(
     }
 
     if (body.action === "duplicate") {
-      const block = await duplicateBlock(body.blockId);
+      const block = await duplicateBlock(body.blockId, id);
       return NextResponse.json(block);
     }
 

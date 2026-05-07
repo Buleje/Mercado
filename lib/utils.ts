@@ -150,3 +150,117 @@ export function numeroAPalabras(n: number): string {
   return resultado.trim();
 }
 
+
+// ─── Helpers anti-NaN / anti-crash (audit 2026-05-05) ──────────────────────────
+// Previenen bugs comunes que el audit profundo encontró: divisiones por cero,
+// JSON.parse de localStorage corrupto, fechas inválidas que se filtran como NaN.
+
+/**
+ * Garantiza que el valor sea un número finito. Si es NaN, Infinity, undefined,
+ * null o un string no parseable, retorna `fallback` (default 0).
+ *
+ * Uso típico:
+ *   const utilDelta = safeNumber((curr - prev) / Math.abs(prev), 0);
+ *   const stock = safeNumber(parseFloat(input.value));
+ */
+export function safeNumber(n: unknown, fallback = 0): number {
+  if (typeof n === "number") return Number.isFinite(n) ? n : fallback;
+  if (typeof n === "string") {
+    const parsed = parseFloat(n);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+}
+
+/**
+ * JSON.parse seguro — captura errores de parseo y retorna `fallback`.
+ * Útil para leer localStorage / sessionStorage sin riesgo de crash si el
+ * contenido fue corrompido por una versión anterior o una extensión.
+ *
+ * Uso típico:
+ *   const cart = safeJsonParse(localStorage.getItem("cart"), [] as CartItem[]);
+ */
+export function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Parsea una fecha ISO (o Date) de forma defensiva. Si es inválida, retorna
+ * `fallback` (default null). Útil para evitar que NaN se propague en filtros
+ * cuando el API devuelve `createdAt: undefined` o un string corrupto.
+ *
+ * Uso típico:
+ *   const t = safeDateMs(order.createdAt);
+ *   if (t === null) continue;
+ */
+export function safeDateMs(value: string | Date | null | undefined, fallback: number | null = null): number | null {
+  if (!value) return fallback;
+  const ms = typeof value === "string" ? new Date(value).getTime() : value.getTime();
+  return Number.isFinite(ms) ? ms : fallback;
+}
+
+// ─── Timezone helpers — Lima/Perú UTC-5 (audit 2026-05-05) ─────────────────────
+// Brandon (Pucallpa, Perú): el navegador de un cajero puede tener timezone mal
+// configurada. Forzamos `America/Lima` para que "Hoy" siempre signifique el mismo
+// rango de horas, sin importar la config local. Evita que filtros de "ventas hoy"
+// muestren datos del día equivocado cuando hay diferencia de zona horaria.
+
+export const STORE_TIMEZONE = "America/Lima";
+
+/**
+ * Formatea fecha en zona Lima — devuelve "DD/MM/YYYY" o el formato pedido.
+ *
+ * Uso:
+ *   formatLimaDate(order.createdAt)              → "05/05/2026"
+ *   formatLimaDate(order.createdAt, { hour: "2-digit", minute: "2-digit" })
+ */
+export function formatLimaDate(
+  value: string | Date | null | undefined,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (!Number.isFinite(date.getTime())) return "";
+  return new Intl.DateTimeFormat("es-PE", {
+    timeZone: STORE_TIMEZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...options,
+  }).format(date);
+}
+
+/**
+ * Retorna el inicio del día (00:00:00) en zona Lima como timestamp UTC ms.
+ *
+ * Uso:
+ *   const todayStart = startOfLimaDay();
+ *   const ordersToday = orders.filter(o => new Date(o.createdAt).getTime() >= todayStart);
+ */
+export function startOfLimaDay(reference?: Date | string): number {
+  const ref = reference ? (typeof reference === "string" ? new Date(reference) : reference) : new Date();
+  // Convertir a string en zona Lima, luego parsear como local
+  const limaDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: STORE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(ref);
+  // Lima es UTC-5 → 00:00 Lima = 05:00 UTC del mismo día
+  return new Date(`${limaDate}T05:00:00.000Z`).getTime();
+}
+
+/**
+ * Retorna el inicio del día Lima hace N días.
+ * Uso: `startOfLimaDayDaysAgo(7)` → inicio de hace 7 días en zona Lima.
+ */
+export function startOfLimaDayDaysAgo(days: number): number {
+  const now = new Date();
+  now.setUTCDate(now.getUTCDate() - days);
+  return startOfLimaDay(now);
+}

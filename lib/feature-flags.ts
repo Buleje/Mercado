@@ -42,7 +42,7 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "refresh-tokens": true,
   "rolling-releases": false,
   "redis-cache": false,
-  "oauth-google": false,
+  "oauth-google": true,
   "oauth-facebook": false,
   "cursor-pagination": false,
   "ai-assistant-v2": false,

@@ -121,7 +121,7 @@ function StoreCard({ store }: { store: StoreItem }) {
             className={cn(
               "text-base font-black tabular-nums leading-none",
               deliveryFee === 0
-                ? "text-[var(--data-success)]"
+                ? "text-[var(--data-success-500)]"
                 : "text-[var(--text-primary)]",
             )}
           >

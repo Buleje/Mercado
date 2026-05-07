@@ -68,8 +68,8 @@ export default function LiveActivityFeed() {
             className="relative inline-flex h-2 w-2"
             aria-hidden
           >
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-70 animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-70 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
           </span>
           <Kicker id="live-activity-title" className="text-[var(--text-tertiary)]">
             Actividad en vivo en Pucallpa

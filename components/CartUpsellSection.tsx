@@ -104,8 +104,8 @@ export default function CartUpsellSection({
       {thresholdProducts.length > 0 && (
         <div className="bg-emerald-50/80 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <Zap className="h-3.5 w-3.5 text-emerald-600" />
-            <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:text-emerald-400">
+            <Zap className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
+            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-emerald-400">
               Agrega uno y desbloquea delivery gratis
             </p>
           </div>
@@ -127,11 +127,11 @@ export default function CartUpsellSection({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-medium">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-600)] dark:text-emerald-400 font-medium">
                     S/{p.price.toFixed(2)} — ¡alcanzas delivery gratis!
                   </p>
                 </div>
-                <div className="h-7 w-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 group-hover:bg-emerald-600 transition-colors">
+                <div className="h-7 w-7 rounded-lg bg-[var(--data-success-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-success-600)] transition-colors">
                   <Plus className="h-3.5 w-3.5" />
                 </div>
               </button>
@@ -144,8 +144,8 @@ export default function CartUpsellSection({
       {combo && (
         <div className="bg-amber-50/80 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-3">
           <div className="flex items-center gap-1.5 mb-2">
-            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-            <p className="text-[length:var(--ts-2xs)] font-bold text-amber-700 dark:text-amber-400">{combo.label}</p>
+            <Sparkles className="h-3.5 w-3.5 text-[var(--data-warning-600)]" />
+            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-amber-400">{combo.label}</p>
           </div>
           <button
             onClick={() => onAddItem(combo.product)}
@@ -162,9 +162,9 @@ export default function CartUpsellSection({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{combo.product.name}</p>
-              <p className="text-[length:var(--ts-2xs)] text-amber-600 font-bold">S/{combo.product.price.toFixed(2)}/{combo.product.unit}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{combo.product.price.toFixed(2)}/{combo.product.unit}</p>
             </div>
-            <div className="h-7 w-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 group-hover:bg-amber-600 transition-colors">
+            <div className="h-7 w-7 rounded-lg bg-[var(--data-warning-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-warning-600)] transition-colors">
               <Plus className="h-3.5 w-3.5" />
             </div>
           </button>

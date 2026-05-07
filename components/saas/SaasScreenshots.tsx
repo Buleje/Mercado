@@ -106,7 +106,7 @@ function MockDashboard() {
             </p>
             <span
               className="text-[length:var(--ts-2xs)] font-semibold"
-              style={{ color: kpi.up ? "#00B4A6" : "#ef4444" }}
+              style={{ color: kpi.up ? "var(--accent)" : "#ef4444" }}
             >
               {kpi.up ? "▲ 12%" : "▼ 4%"}
             </span>
@@ -129,7 +129,7 @@ function MockDashboard() {
                   style={{
                     height: `${h}%`,
                     background: isToday
-                      ? "linear-gradient(180deg, #00B4A6 0%, #2dd4bf 100%)"
+                      ? "linear-gradient(180deg, var(--accent) 0%, #2dd4bf 100%)"
                       : "rgba(15,118,110,0.22)",
                     boxShadow: isToday
                       ? "0 -2px 8px rgba(15,118,110,0.4)"
@@ -139,7 +139,7 @@ function MockDashboard() {
                 <span
                   className="text-[length:var(--ts-2xs)] font-semibold"
                   style={{
-                    color: isToday ? "#00B4A6" : "rgba(156,163,175,0.7)",
+                    color: isToday ? "var(--accent)" : "rgba(156,163,175,0.7)",
                   }}
                 >
                   {BAR_DAYS[i]}
@@ -196,7 +196,7 @@ function MockPOS() {
         {POS_PRODUCTS.map((p) => (
           <div
             key={p.name}
-            className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-2 flex flex-col items-center gap-1 hover:border-[#00B4A6]/40 transition-colors duration-150"
+            className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-2 flex flex-col items-center gap-1 hover:border-[var(--accent)]/40 transition-colors duration-150"
           >
             {/* Placeholder imagen producto */}
             <div
@@ -206,14 +206,14 @@ function MockPOS() {
               }}
               aria-hidden="true"
             >
-              <ShoppingCart className="w-3.5 h-3.5" style={{ color: "#00B4A6" }} />
+              <ShoppingCart className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
             </div>
             <span className="text-[length:var(--ts-2xs)] font-medium text-gray-700 dark:text-[rgba(240,244,241,0.8)] text-center leading-tight">
               {p.name}
             </span>
             <span
               className="text-[length:var(--ts-2xs)] font-bold"
-              style={{ color: "#00B4A6" }}
+              style={{ color: "var(--accent)" }}
             >
               {p.price}
             </span>
@@ -248,7 +248,7 @@ function MockPOS() {
           <div
             className="rounded-lg text-center text-[length:var(--ts-2xs)] font-bold text-white py-2"
             style={{
-              background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
               boxShadow: "0 4px 12px -2px rgba(15,118,110,0.4)",
             }}
           >
@@ -295,7 +295,7 @@ function MockInventario() {
               </td>
               <td
                 className="py-2 px-3 font-bold"
-                style={{ color: r.ok ? "#00B4A6" : "#ef4444" }}
+                style={{ color: r.ok ? "var(--accent)" : "#ef4444" }}
               >
                 {r.stock}
               </td>
@@ -309,7 +309,7 @@ function MockInventario() {
                     background: r.ok
                       ? "rgba(15,118,110,0.12)"
                       : "rgba(239,68,68,0.12)",
-                    color: r.ok ? "#00B4A6" : "#ef4444",
+                    color: r.ok ? "var(--accent)" : "#ef4444",
                   }}
                 >
                   {r.ok ? "OK" : "Reponer"}
@@ -350,7 +350,7 @@ function MockWhatsApp() {
       <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-[rgba(15,118,110,0.15)] mb-1">
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)" }}
+          style={{ background: "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)" }}
           aria-hidden="true"
         >
           <MessageCircle className="w-3.5 h-3.5 text-white" />
@@ -375,7 +375,7 @@ function MockWhatsApp() {
               m.from === "bot"
                 ? {
                     background:
-                      "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
+                      "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
                     color: "#fff",
                     boxShadow: "0 2px 8px rgba(15,118,110,0.25)",
                   }
@@ -408,8 +408,8 @@ function MockAnalytics() {
   const insights = [
     { label: "Arroz 5kg se acaba en 3 días", color: "#ef4444" },
     { label: "José Quispe no compra hace 14 días", color: "#f97316" },
-    { label: "Aceite 1L: margen subió 8%", color: "#00B4A6" },
-    { label: "Sábados venden 2x más que lunes", color: "#00B4A6" },
+    { label: "Aceite 1L: margen subió 8%", color: "var(--accent)" },
+    { label: "Sábados venden 2x más que lunes", color: "var(--accent)" },
   ];
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start">
@@ -418,11 +418,11 @@ function MockAnalytics() {
         <div
           className="w-24 h-24 rounded-full flex flex-col items-center justify-center border-4"
           style={{
-            borderColor: "#00B4A6",
+            borderColor: "var(--accent)",
             boxShadow: "0 0 20px rgba(15,118,110,0.25)",
           }}
         >
-          <span className="text-2xl font-black" style={{ color: "#00B4A6" }}>
+          <span className="text-2xl font-black" style={{ color: "var(--accent)" }}>
             87
           </span>
           <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.4)]">
@@ -527,12 +527,12 @@ export default function SaasScreenshots() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => handleTabChange(tab.id)}
-                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] whitespace-nowrap"
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] whitespace-nowrap"
                 style={
                   isActive
                     ? {
                         background:
-                          "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
+                          "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
                         color: "#fff",
                         boxShadow: "0 4px 18px -4px rgba(15,118,110,0.55)",
                       }
@@ -571,12 +571,12 @@ export default function SaasScreenshots() {
           <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#152019] border-b border-gray-200 dark:border-[rgba(15,118,110,0.18)]">
             <div className="w-3 h-3 rounded-full bg-[#ef4444]" aria-hidden="true" />
             <div className="w-3 h-3 rounded-full bg-[#f97316]" aria-hidden="true" />
-            <div className="w-3 h-3 rounded-full bg-[#00B4A6]" aria-hidden="true" />
+            <div className="w-3 h-3 rounded-full bg-[var(--accent)]" aria-hidden="true" />
             {/* URL bar */}
             <div className="ml-3 flex-1 max-w-xs flex items-center gap-2 bg-white/50 dark:bg-[#0a0f0d]/40 rounded-md px-3 py-1">
               <span
                 className="text-[length:var(--ts-2xs)] font-semibold"
-                style={{ color: "#00B4A6" }}
+                style={{ color: "var(--accent)" }}
               >
                 https://
               </span>
@@ -629,7 +629,7 @@ export default function SaasScreenshots() {
               >
                 <span
                   className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: "#00B4A6" }}
+                  style={{ background: "var(--accent)" }}
                   aria-hidden="true"
                 />
                 {b}

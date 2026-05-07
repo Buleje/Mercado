@@ -161,7 +161,7 @@ export default function ProductVariantSelector({
               >
                 {sizeValue}
                 {isOutOfStock && (
-                  <span className="absolute -top-1.5 -right-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error)] text-white px-1 rounded-full leading-4">
+                  <span className="absolute -top-1.5 -right-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white px-1 rounded-full leading-4">
                     X
                   </span>
                 )}
@@ -191,7 +191,7 @@ export default function ProductVariantSelector({
               )}
               <span>{variant.name}</span>
               {isOutOfStock && (
-                <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
                   Agotado
                 </span>
               )}

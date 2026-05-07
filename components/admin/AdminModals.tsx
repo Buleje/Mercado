@@ -228,10 +228,10 @@ export function ClearDataModal({
               <div className={cn(
                 "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
                 clearConfirmStep >= n
-                  ? "bg-[var(--data-error)] text-white"
+                  ? "bg-[var(--data-error-500)] text-white"
                   : "bg-gray-200 dark:bg-surface text-[var(--text-tertiary)]"
               )}>{n}</div>
-              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error)]" : "bg-gray-200 dark:bg-surface")} />}
+              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error-500)]" : "bg-gray-200 dark:bg-surface")} />}
             </div>
           ))}
           <span className="ml-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -246,7 +246,7 @@ export function ClearDataModal({
           <>
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/40 flex items-center justify-center shrink-0">
-                <Trash2 className="h-6 w-6 text-[var(--data-error)]" />
+                <Trash2 className="h-6 w-6 text-[var(--data-error-500)]" />
               </div>
               <div>
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Borrar datos</CardTitle>
@@ -271,7 +271,7 @@ export function ClearDataModal({
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all",
                       selected
-                        ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20"
+                        ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
                         : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
                     )}
                   >
@@ -279,11 +279,11 @@ export function ClearDataModal({
                       type="checkbox"
                       checked={selected}
                       onChange={() => toggleCat(cat.key)}
-                      className="rounded border-[var(--rule-base)] text-[var(--data-error)] focus:ring-[var(--data-error)]"
+                      className="rounded border-[var(--rule-base)] text-[var(--data-error-500)] focus:ring-[var(--data-error-500)]"
                     />
-                    <CatIcon className={cn("h-5 w-5 shrink-0", selected ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")} />
+                    <CatIcon className={cn("h-5 w-5 shrink-0", selected ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-sm font-semibold", selected ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground")}>{cat.label}</p>
+                      <p className={cn("text-sm font-semibold", selected ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{cat.label}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted truncate">{cat.desc}</p>
                     </div>
                   </label>
@@ -298,7 +298,7 @@ export function ClearDataModal({
               <button
                 onClick={() => setClearConfirmStep(2)}
                 disabled={clearCategories.size === 0}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
               >
                 Siguiente →
               </button>
@@ -309,23 +309,23 @@ export function ClearDataModal({
         {/* STEP 2: Warning */}
         {clearConfirmStep === 2 && (
           <>
-            <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border-2 border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-5 space-y-3">
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-5 space-y-3">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-8 w-8 text-[var(--data-error)] shrink-0" />
-                <CardTitle className="text-lg font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Advertencia</CardTitle>
+                <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] shrink-0" />
+                <CardTitle className="text-lg font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Advertencia</CardTitle>
               </div>
-              <ul className="space-y-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <ul className="space-y-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 <li className="flex items-start gap-2"><X className="h-4 w-4 shrink-0 mt-0.5" /> Esta acción <strong>NO se puede deshacer</strong></li>
                 <li className="flex items-start gap-2"><X className="h-4 w-4 shrink-0 mt-0.5" /> Se borrarán <strong>{clearCategories.size} categoría{clearCategories.size !== 1 ? "s" : ""}</strong></li>
                 <li className="flex items-start gap-2"><X className="h-4 w-4 shrink-0 mt-0.5" /> Todos los registros serán eliminados permanentemente</li>
-                <li className="flex items-start gap-2"><Check className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-success)]" /> La configuración del negocio se mantendrá</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-success-500)]" /> La configuración del negocio se mantendrá</li>
               </ul>
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 ← Volver
               </button>
-              <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors">
+              <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
                 Entiendo, continuar →
               </button>
             </div>
@@ -337,7 +337,7 @@ export function ClearDataModal({
           <>
             <div className="space-y-3">
               <p className="text-sm text-[var(--text-primary)] dark:text-foreground">
-                Para confirmar, escribe <code className="bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] px-1.5 py-0.5 rounded font-mono text-xs">BORRAR_TODO</code> en el campo de abajo:
+                Para confirmar, escribe <code className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-1.5 py-0.5 rounded font-mono text-xs">BORRAR_TODO</code> en el campo de abajo:
               </p>
               <input
                 type="text"
@@ -345,7 +345,7 @@ export function ClearDataModal({
                 onChange={e => setClearConfirmText(e.target.value)}
                 placeholder="Escribe BORRAR_TODO"
                 autoFocus
-                className="w-full px-4 py-3 text-center text-lg font-mono rounded-lg border-2 border-[var(--data-error)] dark:border-[var(--data-error)] outline-none focus:border-[var(--data-error)] focus:ring-2 focus:ring-[var(--data-error)] dark:bg-surface text-[var(--data-error)] dark:text-[var(--data-error)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
+                className="w-full px-4 py-3 text-center text-lg font-mono rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] outline-none focus:border-[var(--data-error-500)] focus:ring-2 focus:ring-[var(--data-error-500)] dark:bg-surface text-[var(--data-error-500)] dark:text-[var(--data-error-500)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
               />
             </div>
             <div className="flex gap-3 pt-2">
@@ -355,7 +355,7 @@ export function ClearDataModal({
               <button
                 onClick={handleExecute}
                 disabled={clearConfirmText !== "BORRAR_TODO" || clearingData}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Borrar datos seleccionados

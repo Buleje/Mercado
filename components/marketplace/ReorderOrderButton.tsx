@@ -82,7 +82,7 @@ export default function ReorderOrderButton({ orderId, storeSlug, items, classNam
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors",
         done
-          ? "border-[var(--data-success)]/30 bg-[var(--data-success)]/10 text-[var(--data-success)]"
+          ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
           : "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)] hover:bg-[var(--accent)]/10",
         className,
       )}

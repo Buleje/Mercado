@@ -57,7 +57,7 @@ export default function LiveSalesWidget() {
   return (
     <div className={cn(
       "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4 transition-all",
-      flash && "ring-2 ring-[var(--data-success)]/40 ring-offset-2"
+      flash && "ring-2 ring-[var(--data-success-500)]/40 ring-offset-2"
     )}>
       <div className="flex items-center gap-4">
         {/* Circular progress */}
@@ -67,7 +67,7 @@ export default function LiveSalesWidget() {
               <circle cx="24" cy="24" r="20" fill="none" stroke="#E5E7EB" strokeWidth="3" className="dark:stroke-gray-700" />
               <circle
                 cx="24" cy="24" r="20" fill="none"
-                stroke={goalPct >= 100 ? "#00B4A6" : "var(--color-primary)"}
+                stroke={goalPct >= 100 ? "var(--accent)" : "var(--color-primary)"}
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -86,12 +86,12 @@ export default function LiveSalesWidget() {
           <div className="flex items-baseline gap-1.5">
             <span className={cn(
               "text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground transition-colors",
-              flash && "text-[var(--data-success)]"
+              flash && "text-[var(--data-success-500)]"
             )}>
               {fmt(data.revenue)}
             </span>
             {data.revenue > prevRevenue && prevRevenue > 0 && (
-              <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success)]" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             )}
           </div>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">Ventas hoy</p>
@@ -101,7 +101,7 @@ export default function LiveSalesWidget() {
         <div className="flex gap-4 shrink-0">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1">
-              <ShoppingCart className="h-3 w-3 text-[var(--data-success)]" />
+              <ShoppingCart className="h-3 w-3 text-[var(--data-success-500)]" />
               <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{data.orders}</span>
             </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos</p>

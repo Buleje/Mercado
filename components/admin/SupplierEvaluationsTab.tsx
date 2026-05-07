@@ -49,7 +49,7 @@ export default function SupplierEvaluationsTab() {
     <div className="flex flex-wrap gap-0.5">
       {[1, 2, 3, 4, 5].map(n => (
         <button key={n} type="button" onClick={() => onChange?.(n)} disabled={!onChange} className="disabled:cursor-default">
-          <Star className={cn("h-5 w-5 transition", n <= value ? "text-[var(--data-warning)] fill-[var(--data-warning)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]")} />
+          <Star className={cn("h-5 w-5 transition", n <= value ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]")} />
         </button>
       ))}
     </div>

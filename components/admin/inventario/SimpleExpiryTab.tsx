@@ -38,10 +38,10 @@ function getUrgency(days: number): Urgency {
 }
 
 const URGENCY_CONFIG: Record<Urgency, { label: string; color: string; bg: string; icon: typeof AlertTriangle }> = {
-  vencido: { label: "Vencido", color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
-  critico: { label: "Vence esta semana", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30", icon: AlertTriangle },
-  pronto:  { label: "Vence pronto", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
-  bien:    { label: "Vigente", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  vencido: { label: "Vencido", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
+  critico: { label: "Vence esta semana", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30", icon: AlertTriangle },
+  pronto:  { label: "Vence pronto", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
+  bien:    { label: "Vigente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
 };
 
 function fmtDate(iso: string): string {
@@ -166,8 +166,8 @@ export default function SimpleExpiryTab() {
                 className={cn(
                   "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all",
                   isReviewed ? "border-[var(--rule-base)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 opacity-60" :
-                  b.urgency === "vencido" ? "border-[var(--data-error)] dark:border-[var(--data-error)]/40 bg-[var(--data-error-50)]/80 dark:bg-red-950/20" :
-                  b.urgency === "critico" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning-50)]/50 dark:bg-orange-950/20" :
+                  b.urgency === "vencido" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 bg-[var(--data-error-50)]/80 dark:bg-red-950/20" :
+                  b.urgency === "critico" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-orange-950/20" :
                   "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
                 )}
               >
@@ -186,7 +186,7 @@ export default function SimpleExpiryTab() {
                        `Vence en ${b.days} días`}
                     </span>
                     {isReviewed && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
                         ✓ Revisado
                       </span>
                     )}
@@ -206,7 +206,7 @@ export default function SimpleExpiryTab() {
                   className={cn("shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors",
                     isReviewed
                       ? "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface"
-                      : "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                      : "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
                   )}
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
@@ -228,10 +228,10 @@ function StatCard({ label, count, color, icon: Icon, onClick, active }: {
   onClick: () => void; active: boolean;
 }) {
   const colorMap: Record<string, { bg: string; text: string; border: string }> = {
-    red:     { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", text: "text-[var(--data-error)] dark:text-[var(--data-error)]", border: "border-[var(--data-error)] dark:border-[var(--data-error)]" },
-    orange:  { bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
-    amber:   { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
-    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+    red:     { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" },
+    orange:  { bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
+    amber:   { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
+    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   };
   const c = colorMap[color] ?? colorMap.emerald;
   return (

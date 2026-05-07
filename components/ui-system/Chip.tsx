@@ -34,17 +34,17 @@ const chip = tv({
       ],
       success: [
         "bg-emerald-50 dark:bg-emerald-950/30",
-        "text-emerald-700 dark:text-emerald-400",
+        "text-[var(--data-success-700)] dark:text-emerald-400",
         "border-emerald-200 dark:border-emerald-900",
       ],
       warning: [
         "bg-amber-50 dark:bg-amber-950/30",
-        "text-amber-700 dark:text-amber-400",
+        "text-[var(--data-warning-700)] dark:text-amber-400",
         "border-amber-200 dark:border-amber-900",
       ],
       danger: [
         "bg-red-50 dark:bg-red-950/30",
-        "text-red-700 dark:text-red-400",
+        "text-[var(--data-error-700)] dark:text-red-400",
         "border-red-200 dark:border-red-900",
       ],
       ghost: [

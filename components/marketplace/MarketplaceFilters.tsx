@@ -325,7 +325,7 @@ function FiltersDrawer({
               type="button"
               onClick={onReset}
               aria-label="Limpiar todos los filtros"
-              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-gray-600 dark:text-gray-300 hover:border-red-300 hover:text-red-500 transition-colors"
+              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-gray-600 dark:text-gray-300 hover:border-red-300 hover:text-[var(--data-error-500)] transition-colors"
             >
               Limpiar
             </button>
@@ -539,7 +539,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             type="button"
             onClick={handleReset}
             aria-label="Limpiar todos los filtros"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" />
             Limpiar

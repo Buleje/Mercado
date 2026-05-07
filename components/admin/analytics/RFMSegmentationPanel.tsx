@@ -29,10 +29,10 @@ interface RFMSegmentationPanelProps {
 
 // ── Segment Config ─────────────────────────────────────────────────────────────
 const SEGMENT_STYLE: Record<RFMSegment, { bg: string; text: string; border: string; icon: typeof Crown; color: string }> = {
-  Champions:  { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", icon: Crown, color: "#00B4A6" },
-  Loyal:      { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   text: "text-[var(--data-success)] dark:text-[var(--data-success)]",   border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", icon: Heart, color: "#2563eb" },
-  "At Risk":  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]", icon: AlertTriangle, color: "#ea580c" },
-  Lost:       { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",     text: "text-[var(--data-error)] dark:text-[var(--data-error)]",     border: "border-[var(--data-error)] dark:border-[var(--data-error)]", icon: XCircle, color: "#dc2626" },
+  Champions:  { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Crown, color: "var(--accent)" },
+  Loyal:      { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",   border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Heart, color: "#2563eb" },
+  "At Risk":  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", icon: AlertTriangle, color: "#ea580c" },
+  Lost:       { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",     text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",     border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]", icon: XCircle, color: "#dc2626" },
   New:        { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", border: "border-[var(--rule-base)]0 dark:border-[var(--rule-base)]", icon: Sparkles, color: "#7c3aed" },
   Regular:    { bg: "bg-[var(--surface-sunken)]/50",   text: "text-[var(--text-secondary)]",   border: "border-gray-400 dark:border-gray-500", icon: User, color: "#6b7280" },
 };

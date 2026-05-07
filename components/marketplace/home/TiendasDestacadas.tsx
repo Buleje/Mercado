@@ -89,7 +89,7 @@ export default function TiendasDestacadas() {
             <Link
               key={store.id}
               href={`/marketplace/${store.slug}`}
-              className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_rgba(0,180,166,0.18)] transition-all duration-200 overflow-hidden"
+              className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_color-mix(in oklab, var(--accent) 18%, transparent)] transition-all duration-200 overflow-hidden"
             >
               {/* Logo / banner */}
               <div className="relative h-28 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">
@@ -109,7 +109,7 @@ export default function TiendasDestacadas() {
                 {store.rating != null && store.rating > 0 && (
                   <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 text-[length:var(--ts-2xs)] font-bold text-gray-800 backdrop-blur">
                     <Star
-                      className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]"
+                      className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                       strokeWidth={1.75}
                       aria-hidden
                     />

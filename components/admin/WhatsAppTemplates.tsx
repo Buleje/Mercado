@@ -77,7 +77,7 @@ function HighlightedText({ text }: { text: string }) {
     <span>
       {parts.map((part, i) =>
         part.startsWith("{") && part.endsWith("}") ? (
-          <span key={i} className="px-1 py-0.5 mx-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-semibold">
+          <span key={i} className="px-1 py-0.5 mx-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-semibold">
             {part}
           </span>
         ) : (
@@ -243,7 +243,7 @@ export default function WhatsAppTemplates() {
                   </button>
                   <button
                     onClick={() => handleDelete(template.id)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -271,7 +271,7 @@ export default function WhatsAppTemplates() {
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                 copiedId === template.id
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
+                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
                   : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] hover:bg-[#25D366]/10 hover:text-[#25D366]"
               )}
             >

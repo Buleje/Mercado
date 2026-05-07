@@ -275,7 +275,7 @@ export default function HealthCheckActionModal({
                 <button
                   type="button"
                   onClick={() => setImageUrl(null)}
-                  className="mt-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] inline-flex items-center gap-1 hover:underline"
+                  className="mt-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-500)] inline-flex items-center gap-1 hover:underline"
                 >
                   <Trash2 className="h-3 w-3" />
                   Quitar imagen
@@ -344,7 +344,7 @@ export default function HealthCheckActionModal({
 
           {/* Errores */}
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-[var(--data-error)]">
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -375,7 +375,7 @@ export default function HealthCheckActionModal({
             disabled={status === "uploading" || status === "saving"}
             className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${
               status === "saved"
-                ? "bg-emerald-500 text-white"
+                ? "bg-[var(--data-success-500)] text-white"
                 : "bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50"
             }`}
           >

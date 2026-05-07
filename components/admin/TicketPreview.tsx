@@ -346,7 +346,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   </div>
                 </div>
               ) : (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">
                   {paymentIcon(ticket.paymentMethod)} Pago:{" "}
                   {ticket.paymentMethod}
                 </span>

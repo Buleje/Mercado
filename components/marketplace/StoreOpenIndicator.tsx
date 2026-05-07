@@ -126,13 +126,13 @@ function computeStatus(weekly: WeeklySchedule, now: Date): Status {
 
 const STATE_STYLES: Record<Status["state"], { dot: string; text: string; ring: string }> = {
   "open": {
-    dot: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-400",
+    dot: "bg-[var(--data-success-500)]",
+    text: "text-[var(--data-success-700)] dark:text-emerald-400",
     ring: "ring-emerald-200 dark:ring-emerald-900",
   },
   "closing-soon": {
-    dot: "bg-amber-500 motion-safe:animate-pulse",
-    text: "text-amber-700 dark:text-amber-400",
+    dot: "bg-[var(--data-warning-500)] motion-safe:animate-pulse",
+    text: "text-[var(--data-warning-700)] dark:text-amber-400",
     ring: "ring-amber-200 dark:ring-amber-900",
   },
   "closed-opens-today": {
@@ -146,8 +146,8 @@ const STATE_STYLES: Record<Status["state"], { dot: string; text: string; ring: s
     ring: "ring-gray-200 dark:ring-gray-700",
   },
   "closed": {
-    dot: "bg-red-500",
-    text: "text-red-700 dark:text-red-400",
+    dot: "bg-[var(--data-error-500)]",
+    text: "text-[var(--data-error-700)] dark:text-red-400",
     ring: "ring-red-200 dark:ring-red-900",
   },
 };

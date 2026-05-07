@@ -413,7 +413,7 @@ function Stat({
 }) {
   const toneRing: Record<typeof tone, string> = {
     accent: "bg-[var(--accent-soft)]",
-    success: "bg-[var(--data-success)]/10",
+    success: "bg-[var(--data-success-500)]/10",
     amber: "bg-[var(--brand-secondary)]/10",
   } as const;
   return (

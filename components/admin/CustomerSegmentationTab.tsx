@@ -7,18 +7,18 @@ import { cn } from "@/lib/utils";
 import type { SegmentLabel, SegmentsResponse, SegmentedCustomer } from "@/app/api/analytics/segments/route";
 
 const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementType; color: string; bg: string; border: string; barColor: string }> = {
-  vip:       { label: "VIP",        icon: Crown,         color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/30",   border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",  barColor: "bg-[var(--data-warning)]" },
-  regular:   { label: "Regular",    icon: Star,          color: "text-[var(--data-info)] dark:text-[var(--data-info)]",        bg: "bg-[var(--data-info-50)] dark:bg-sky-950/30",          border: "border-[var(--data-info)] dark:border-[var(--data-info)]",        barColor: "bg-[var(--data-info)]" },
-  nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success)] dark:text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",barColor: "bg-[var(--accent-soft)]" },
-  en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",   barColor: "bg-[var(--data-warning)]" },
+  vip:       { label: "VIP",        icon: Crown,         color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/30",   border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",  barColor: "bg-[var(--data-warning-500)]" },
+  regular:   { label: "Regular",    icon: Star,          color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]",        bg: "bg-[var(--data-info-50)] dark:bg-sky-950/30",          border: "border-[var(--data-info-500)] dark:border-[var(--data-info-500)]",        barColor: "bg-[var(--data-info-500)]" },
+  nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",barColor: "bg-[var(--accent-soft)]" },
+  en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   barColor: "bg-[var(--data-warning-500)]" },
   dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-gray-50 dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-card-border",  barColor: "bg-gray-400" },
 };
 
 const TIER_COLORS: Record<string, string> = {
-  bronce:  "bg-[var(--data-warning)] text-white",
+  bronce:  "bg-[var(--data-warning-500)] text-white",
   plata:   "bg-gray-400 text-white",
-  oro:     "bg-[var(--data-warning)] text-[var(--data-warning)]",
-  diamante:"bg-[var(--data-info)] text-[var(--data-info)]",
+  oro:     "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]",
+  diamante:"bg-[var(--data-info-500)] text-[var(--data-info-500)]",
 };
 
 /** Calcula scores RFM simplificados basados en los datos disponibles */
@@ -57,7 +57,7 @@ export default function CustomerSegmentationTab() {
   );
   if (error || !data) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error al cargar segmentos</p>
       <button onClick={() => { setError(false); setLoading(true); fetch("/api/analytics/segments").then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setLoading(false); }).catch(() => { setError(true); setLoading(false); }); }} className="text-xs text-primary font-bold underline">Reintentar</button>
     </div>
@@ -223,7 +223,7 @@ export default function CustomerSegmentationTab() {
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
                       <td className="px-4 py-3 text-right text-xs">
                         {c.daysSinceLast === null ? <span className="text-[var(--text-tertiary)]">—</span> : (
-                          <span className={cn(c.daysSinceLast > 60 ? "text-[var(--data-error)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted")}>
+                          <span className={cn(c.daysSinceLast > 60 ? "text-[var(--data-error-500)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted")}>
                             hace {c.daysSinceLast}d
                           </span>
                         )}
@@ -260,9 +260,9 @@ export default function CustomerSegmentationTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Recencia", value: r, desc: c.daysSinceLast !== null ? `hace ${c.daysSinceLast}d` : "sin compras", color: r >= 70 ? "bg-[var(--accent-soft)]" : r >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]" },
-                    { label: "Frecuencia", value: f, desc: `${c.orderCount} pedidos`, color: f >= 70 ? "bg-[var(--accent-soft)]" : f >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]" },
-                    { label: "Monto", value: m, desc: `S/${c.totalSpent.toFixed(0)}`, color: m >= 70 ? "bg-[var(--accent-soft)]" : m >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]" },
+                    { label: "Recencia", value: r, desc: c.daysSinceLast !== null ? `hace ${c.daysSinceLast}d` : "sin compras", color: r >= 70 ? "bg-[var(--accent-soft)]" : r >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Frecuencia", value: f, desc: `${c.orderCount} pedidos`, color: f >= 70 ? "bg-[var(--accent-soft)]" : f >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Monto", value: m, desc: `S/${c.totalSpent.toFixed(0)}`, color: m >= 70 ? "bg-[var(--accent-soft)]" : m >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
                   ].map(metric => (
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">

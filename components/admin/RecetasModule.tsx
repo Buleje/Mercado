@@ -108,7 +108,7 @@ function RecetasDashboard() {
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
           { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
           { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
-          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success)]/30" },
+          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success-500)]/30" },
         ].map(k => (
           <div key={k.label} className={cn("bg-white rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
             <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
@@ -531,8 +531,8 @@ export default function RecetasModule() {
             <LoadingState />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-              <p className="text-sm text-[var(--data-error)]">{error}</p>
+              <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+              <p className="text-sm text-[var(--data-error-500)]">{error}</p>
               <button onClick={fetchRecetas} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : recetas.length === 0 ? (
@@ -649,7 +649,7 @@ export default function RecetasModule() {
                                 <span className="text-xs text-[var(--text-secondary)]">Margen:</span>
                                 <span className={cn(
                                   "text-xs font-bold",
-                                  margen >= 20 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                                  margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                                 )}>
                                   {margen}% {margen >= 20 ? "\u2713" : ""}
                                 </span>
@@ -668,9 +668,9 @@ export default function RecetasModule() {
                               <div className="mt-2 text-center">
                                 <span className={cn(
                                   "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
-                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                                    : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                                    : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                    : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                                    : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                                 )}>
                                   {faltan === 0 ? `\u2713 ${disponibles}/${total} disponibles` : `\u26A0 ${faltan} faltan`}
                                 </span>
@@ -754,16 +754,16 @@ export default function RecetasModule() {
                   </div>
                 )}
                 {costData && (
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 space-y-3">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs uppercase font-bold text-[var(--data-success)]">Análisis de costo</p>
+                      <p className="text-xs uppercase font-bold text-[var(--data-success-500)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           : costData.margenPorcentaje >= 10
-                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                       )}>
                         Margen: {costData.margenPorcentaje.toFixed(1)}%
                       </span>
@@ -783,27 +783,27 @@ export default function RecetasModule() {
                         <p className="text-xs uppercase text-[var(--text-secondary)]">Indirectos</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-[var(--data-success)]/30">
-                        <p className="text-xs uppercase text-[var(--data-success)]">Total unitario</p>
+                      <div className="bg-white rounded-lg p-2 border border-[var(--data-success-500)]/30">
+                        <p className="text-xs uppercase text-[var(--data-success-500)]">Total unitario</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
                     </div>
 
                     {/* Precio venta + margen bruto */}
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-[var(--data-success)]/30">
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-[var(--data-success-500)]/30">
                       <span className="text-[var(--text-secondary)]">
                         Precio venta: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(costData.precioVenta)}</span>
                       </span>
                       <span className="text-[var(--text-secondary)]">
                         Margen bruto: <span className={cn(
                           "font-bold",
-                          costData.margenBruto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
+                          costData.margenBruto >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
                         )}>{formatCurrency(costData.margenBruto)}</span>
                       </span>
                     </div>
 
                     {costData.ingredientes.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-[var(--data-success)]/30">
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--data-success-500)]/30">
                         <p className="text-xs uppercase font-bold text-[var(--text-secondary)]">Desglose de ingredientes</p>
                         {costData.ingredientes.map((ing, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
@@ -854,10 +854,10 @@ export default function RecetasModule() {
                                   <span className={cn(
                                     "text-xs font-bold px-2 py-0.5 rounded-lg",
                                     margen >= 30
-                                      ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                                      ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                                       : margen >= 10
-                                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                                        : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                                        : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                                   )}>
                                     Margen: {margen}%
                                   </span>
@@ -865,7 +865,7 @@ export default function RecetasModule() {
                               )}
                             </div>
                             {margen !== null && margen < 10 && (
-                              <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] mt-1">
+                              <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-error-500)] mt-1">
                                 Margen muy bajo — revisa tus precios
                               </p>
                             )}
@@ -887,7 +887,7 @@ export default function RecetasModule() {
                               return (
                                 <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                                   <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                                    <Package className="h-4 w-4 text-[var(--data-success)]" />
+                                    <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-[var(--text-primary)] truncate">
@@ -1055,7 +1055,7 @@ export default function RecetasModule() {
                         </div>
                         <button
                           onClick={() => removeIngrediente(i)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1076,7 +1076,7 @@ export default function RecetasModule() {
                 )}
 
                 {createError && (
-                  <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>
+                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
@@ -1186,10 +1186,10 @@ export default function RecetasModule() {
                             <span className={cn(
                               "font-bold",
                               margen >= 30
-                                ? "text-[var(--data-success)]"
+                                ? "text-[var(--data-success-500)]"
                                 : margen >= 10
-                                  ? "text-[var(--data-warning)]"
-                                  : "text-[var(--data-error)]"
+                                  ? "text-[var(--data-warning-500)]"
+                                  : "text-[var(--data-error-500)]"
                             )}>
                               margen de {margen}%
                             </span>
@@ -1221,19 +1221,19 @@ export default function RecetasModule() {
 
                     if (todosDisponibles) {
                       return (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 text-center">
-                          <p className="text-xs font-bold text-[var(--data-success)]">Todos los ingredientes disponibles</p>
+                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                          <p className="text-xs font-bold text-[var(--data-success-500)]">Todos los ingredientes disponibles</p>
                         </div>
                       );
                     }
 
                     return (
-                      <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-[var(--data-error)]">
+                      <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-[var(--data-error-500)]">
                           {faltantes.length} ingrediente{faltantes.length !== 1 ? "s" : ""} insuficiente{faltantes.length !== 1 ? "s" : ""} — no se puede producir
                         </p>
                         {faltantes.map((f, i) => (
-                          <p key={i} className="text-xs text-[var(--data-error)]">
+                          <p key={i} className="text-xs text-[var(--data-error-500)]">
                             Insuficiente: necesitas {f.necesario} {f.unidad} de {f.nombre}, tienes {f.disponible}
                           </p>
                         ))}
@@ -1254,7 +1254,7 @@ export default function RecetasModule() {
                 </div>
 
                 {producirError && (
-                  <p className="text-xs text-[var(--data-error)] font-semibold">{producirError}</p>
+                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{producirError}</p>
                 )}
 
                 <div className="flex gap-2">

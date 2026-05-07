@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import CommandPalette from "./CommandPalette";
+import { NotificationsBell } from "./_shared/NotificationsBell";
 import {
   LayoutDashboard,
   Building2,
@@ -90,6 +91,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     icon: <Building2 className="w-4 h-4 shrink-0" />,
     items: [
       { label: "Tiendas",       icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"             },
+      { label: "Pedidos",       icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"              },
       { label: "Aplicaciones",  icon: <FileCheck   className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
       { label: "Marketplace",   icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"         },
       { label: "Repartidores",  icon: <Wrench      className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"        },
@@ -100,6 +102,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Catálogo & Marca",
     icon: <Palette className="w-4 h-4 shrink-0" />,
     items: [
+      { label: "Centro de diseño",     icon: <Palette   className="w-5 h-5 shrink-0" />, href: "/superadmin/design-system"   },
       { label: "Banco de imágenes",    icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
       { label: "Catálogo variaciones", icon: <BookOpen  className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
       { label: "Marca",                icon: <Sparkles  className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
@@ -136,6 +139,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
   "/superadmin/tenants":         "Tiendas",
+  "/superadmin/orders":          "Pedidos · Plataforma · Cross-tenant",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",
   "/superadmin/pagos-pendientes": "Pagos pendientes · Yape, Plin, transferencias",
   "/superadmin/repartidores":    "Repartidores · Aprobación y gestión",
@@ -149,6 +153,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/marca":           "Marca de la plataforma",
   "/superadmin/plantilla":       "Plantilla del panel admin",
   "/superadmin/banners":         "Banners promocionales",
+  "/superadmin/design-system":   "Centro de diseño · Tokens heredables a todos los admin",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
   "/superadmin/activity":        "Actividad",
@@ -262,7 +267,7 @@ function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => v
   return (
     <div
       role="alert"
-      className="fixed top-0 inset-x-0 z-50 bg-[var(--data-warning)] text-[var(--text-inverse)] text-xs font-semibold flex items-center justify-center gap-3 py-2 px-4"
+      className="fixed top-0 inset-x-0 z-50 bg-[var(--data-warning-500)] text-[var(--text-inverse)] text-xs font-semibold flex items-center justify-center gap-3 py-2 px-4"
     >
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
       Estás viendo como:{" "}
@@ -312,8 +317,6 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   useEffect(() => {
     const root = document.documentElement;
     const hex = ACCENT_HEX[visual.accent] ?? ACCENT_HEX.teal;
-    // eslint-disable-next-line no-console
-    console.log("[SuperAdminShell] applying accent", visual.accent, "→", hex);
     root.style.setProperty("--accent", hex);
     root.style.setProperty("--accent-soft", `${hex}26`);
     root.style.setProperty("--accent-600", hex);
@@ -605,6 +608,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 <span className="truncate max-w-[120px]">{username}</span>
               </div>
 
+              {/* Notifications drawer */}
+              <NotificationsBell />
+
               {/* Theme toggle */}
               <button
                 type="button"
@@ -620,7 +626,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--data-error)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
                 title="Cerrar sesión"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -639,7 +645,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-w-sm w-full p-6 shadow-[var(--shadow-xl)] text-center">
             <div className="mx-auto w-14 h-14 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mb-4">
-              <Clock className="w-7 h-7 text-[var(--data-warning)]" />
+              <Clock className="w-7 h-7 text-[var(--data-warning-500)]" />
             </div>
             <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">Sesión expirada</h2>
             <p className="text-sm text-[var(--text-tertiary)] mb-5">

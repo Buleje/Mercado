@@ -189,8 +189,8 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
           {error && (
             <div className="text-center py-16">
-              <AlertCircle className="h-10 w-10 text-[var(--data-error)] mx-auto mb-2" />
-              <p className="text-sm text-[var(--data-error)]">{error}</p>
+              <AlertCircle className="h-10 w-10 text-[var(--data-error-500)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--data-error-500)]">{error}</p>
               <button onClick={load} className="mt-2 text-xs text-primary font-bold hover:underline">Reintentar</button>
             </div>
           )}
@@ -199,21 +199,21 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
             <>
               {/* Summary cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-3">
+                <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Banknote className="h-3.5 w-3.5 text-[var(--data-error)]" />
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)]/70 uppercase">Fiados</p>
+                    <Banknote className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)]/70 uppercase">Fiados</p>
                   </div>
-                  <p className="text-base font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(data.resumen.totalFiados)}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)]/70">{data.resumen.fiadosActivos} activos</p>
+                  <p className="text-base font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)]/70">{data.resumen.fiadosActivos} activos</p>
                 </div>
-                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3">
+                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <CreditCard className="h-3.5 w-3.5 text-[var(--data-warning)]" />
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]/70 uppercase">Préstamos</p>
+                    <CreditCard className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]/70 uppercase">Préstamos</p>
                   </div>
-                  <p className="text-base font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmt(data.resumen.totalPrestamos)}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)]/70">{data.resumen.cuotasPendientes} cuotas</p>
+                  <p className="text-base font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(data.resumen.totalPrestamos)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]/70">{data.resumen.cuotasPendientes} cuotas</p>
                 </div>
                 <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
@@ -223,12 +223,12 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                   <p className="text-base font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{data.resumen.puntosLealtad}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]/70 capitalize">{data.resumen.tierLealtad}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <ShoppingBag className="h-3.5 w-3.5 text-[var(--data-success)]" />
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]/70 uppercase">Últ. compra</p>
+                    <ShoppingBag className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Últ. compra</p>
                   </div>
-                  <p className="text-base font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                  <p className="text-base font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     {fmtRelative(data.resumen.ultimaCompra)}
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {data.fiados.length > 0 && (
                 <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-                    <Banknote className="h-4 w-4 text-[var(--data-error)]" /> Fiados pendientes
+                    <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
@@ -256,7 +256,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                           <tr key={f.id} className="border-t border-gray-50 dark:border-card-border">
                             <td className="py-2 text-[var(--text-primary)] dark:text-foreground">{f.descripcion || "Sin descripción"}</td>
                             <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
-                            <td className="py-2 text-right font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(f.saldo)}</td>
+                            <td className="py-2 text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{f.fechaVence ? fmtDate(f.fechaVence) : "—"}</td>
                           </tr>
@@ -266,7 +266,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
                           <td className="py-2 text-[var(--text-primary)] dark:text-foreground">Total</td>
                           <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
-                          <td className="py-2 text-right text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(data.resumen.totalFiados)}</td>
+                          <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
                           <td colSpan={2} />
                         </tr>
                       </tfoot>
@@ -279,13 +279,13 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {data.prestamos.length > 0 && (
                 <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-[var(--data-warning)]" /> Préstamos activos
+                    <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Préstamos activos
                   </h4>
                   {data.prestamos.map((p) => (
                     <div key={p.id} className="mb-3 last:mb-0">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
-                          Préstamo {fmt(p.monto)} — Saldo: <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmt(p.saldoPendiente)}</span>
+                          Préstamo {fmt(p.monto)} — Saldo: <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(p.saldoPendiente)}</span>
                         </span>
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(p.fechaCreacion)}</span>
                       </div>
@@ -295,7 +295,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                             <div key={c.id} className="flex justify-between text-xs">
                               <span className="text-[var(--text-secondary)] dark:text-muted">Cuota #{c.número}</span>
                               <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fechaVence)}</span>
-                              <span className={cn("font-bold", c.status === "atrasado" ? "text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <span className={cn("font-bold", c.status === "atrasado" ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 {fmt(c.monto)}
                               </span>
                             </div>
@@ -319,9 +319,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fecha)}</span>
                         <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{c.metodoPago ?? "efectivo"}</span>
                         <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                          c.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" :
-                          c.status === "cancelado" ? "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]" :
-                          "bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]"
+                          c.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" :
+                          c.status === "cancelado" ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
+                          "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]"
                         )}>
                           {STATUS_LABELS[c.status] ?? c.status}
                         </span>

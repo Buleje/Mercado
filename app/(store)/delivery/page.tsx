@@ -140,15 +140,15 @@ export default function DeliveryPage() {
               onChange={e => { setPhone(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleLogin()}
               placeholder="Ej: 961234567"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-semibold text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-semibold text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
               autoFocus
             />
           </div>
-          {error && <p className="text-xs text-red-500 font-semibold text-center">{error}</p>}
+          {error && <p className="text-xs text-[var(--data-error-500)] font-semibold text-center">{error}</p>}
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[#00B4A6] text-white text-base font-bold hover:bg-[#009690] transition-colors disabled:opacity-50 shadow-lg shadow-[#00B4A6]/20"
+            className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white text-base font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50 shadow-lg shadow-[var(--accent)]/20"
           >
             {loading ? "Verificando..." : "Entrar"}
           </button>
@@ -220,7 +220,7 @@ export default function DeliveryPage() {
                       {order.customerPhone && (
                         <a
                           href={`tel:${order.customerPhone}`}
-                          className="inline-flex items-center gap-1.5 text-sm text-[#00B4A6] font-semibold mt-0.5"
+                          className="inline-flex items-center gap-1.5 text-sm text-[var(--accent)] font-semibold mt-0.5"
                         >
                           📞 {order.customerPhone}
                         </a>
@@ -229,7 +229,7 @@ export default function DeliveryPage() {
                     <span className={`text-[length:var(--ts-2xs)] font-extrabold px-2.5 py-1 rounded-full uppercase ${
                       order.status === "en_camino" || order.status === "delivering"
                         ? "bg-cyan-100 text-cyan-700"
-                        : "bg-emerald-100 text-emerald-700"
+                        : "bg-emerald-100 text-[var(--data-success-700)]"
                     }`}>
                       {order.status === "en_camino" || order.status === "delivering"
                         ? "En camino"
@@ -256,7 +256,7 @@ export default function DeliveryPage() {
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       order.paymentMethod === "yape" || order.paymentMethod === "Yape"
                         ? "bg-purple-100 text-[var(--accent)]"
-                        : "bg-emerald-100 text-emerald-700"
+                        : "bg-emerald-100 text-[var(--data-success-700)]"
                     }`}>
                       {order.paymentMethod === "yape" || order.paymentMethod === "Yape" ? "Yape" : "Efectivo"}
                     </span>
@@ -283,8 +283,8 @@ export default function DeliveryPage() {
                     disabled={isUpdating || isSuccess}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
                       isSuccess
-                        ? "bg-emerald-500 text-white"
-                        : "bg-[#00B4A6] text-white hover:bg-[#009690] shadow-lg shadow-[#00B4A6]/20"
+                        ? "bg-[var(--data-success-500)] text-white"
+                        : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-lg shadow-[var(--accent)]/20"
                     } disabled:opacity-60`}
                   >
                     {isUpdating ? "Marcando..." : isSuccess ? "Entregado" : "Marcar como entregado"}

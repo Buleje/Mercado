@@ -238,7 +238,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       { etapa: "Recibidos", cantidad: allPeriodOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allPeriodOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
       { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#f59e0b" },
-      { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" },
+      { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "var(--accent)" },
     ];
 
     return {
@@ -256,7 +256,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
@@ -301,7 +301,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
           <span className="text-[var(--text-secondary)] dark:text-muted">Ayer:</span>
           <span className="font-semibold text-[var(--text-secondary)]">{fmt(data.ventasAyer)}</span>
           {data.ventasAyer > 0 && (
-            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]")}>
+            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]")}>
               {data.ventasHoy >= data.ventasAyer ? "↑" : "↓"} {Math.abs(((data.ventasHoy - data.ventasAyer) / data.ventasAyer) * 100).toFixed(0)}%
             </span>
           )}

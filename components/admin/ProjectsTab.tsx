@@ -38,17 +38,17 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const pct = (n: number) => n.toFixed(1) + "%";
 
 const TYPE_META: Record<ProjectType, { label: string; icon: typeof Wrench; color: string }> = {
-  remodelacion: { label: "Remodelación", icon: Wrench,          color: "text-[var(--data-warning)]" },
-  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-[var(--data-success)]" },
-  expansion:    { label: "Expansión",    icon: Expand,          color: "text-[var(--data-success)]" },
+  remodelacion: { label: "Remodelación", icon: Wrench,          color: "text-[var(--data-warning-500)]" },
+  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-[var(--data-success-500)]" },
+  expansion:    { label: "Expansión",    icon: Expand,          color: "text-[var(--data-success-500)]" },
   otro:         { label: "Otro",         icon: MoreHorizontal, color: "text-[var(--text-secondary)]" },
 };
 
 const STATUS_META: Record<ProjectStatus, { label: string; icon: typeof Pause; color: string; bg: string }> = {
-  planificacion: { label: "Planificación", icon: Calendar,    color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  "en-curso":    { label: "En Curso",      icon: TrendingUp,  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  completado:    { label: "Completado",    icon: CheckCircle2, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  cancelado:     { label: "Cancelado",     icon: Ban,          color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  planificacion: { label: "Planificación", icon: Calendar,    color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  "en-curso":    { label: "En Curso",      icon: TrendingUp,  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  completado:    { label: "Completado",    icon: CheckCircle2, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  cancelado:     { label: "Cancelado",     icon: Ban,          color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -102,9 +102,9 @@ export default function ProjectsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "En Curso", value: String(stats.activeCount), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "En Curso", value: String(stats.activeCount), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "ROI Prom. Real", value: pct(stats.avgRoi), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -154,7 +154,7 @@ export default function ProjectsTab() {
                   <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(spent)} / {fmt(p.budget)}</span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-[var(--data-error)]" : execPct > 80 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(execPct, 100)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-[var(--data-error-500)]" : execPct > 80 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(execPct, 100)}%` }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">{pct(execPct)} ejecutado</p>
               </div>

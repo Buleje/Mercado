@@ -79,7 +79,7 @@ const MOCK: MockData = {
 
 const TONE_CLASSES: Record<BonusItem["tone"], string> = {
   rose: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-  amber: "bg-amber-400/10 text-amber-500 border-amber-400/20",
+  amber: "bg-amber-400/10 text-[var(--data-warning-500)] border-amber-400/20",
   purple: "bg-purple-500/10 text-purple-500 border-purple-500/20",
 };
 
@@ -161,7 +161,7 @@ function StreakSection({
             <div
               className={`h-3 w-3 rounded-full transition-colors ${
                 online
-                  ? "bg-[var(--data-success)]"
+                  ? "bg-[var(--data-success-500)]"
                   : "bg-[var(--text-tertiary)]/30"
               }`}
               aria-label={`${dayLabels[idx]}: ${online ? "online" : "offline"}`}
@@ -401,8 +401,25 @@ export default function StreaksAndBonusCard({ isOnline }: Props) {
         cache: "no-store",
       });
       if (!res.ok) return;
-      const json = (await res.json()) as MockData;
-      setData(json);
+      // El API devuelve `icon` como string emoji por compat — lo mapeamos
+      // por `id` a un Lucide icon real para que JSX no intente renderizar
+      // <🌧️> como tag (causa el warning "tag <🌧️> is unrecognized").
+      const json = (await res.json()) as Omit<MockData, "bonuses"> & {
+        bonuses: Array<Omit<BonusItem, "icon"> & { icon?: unknown }>;
+      };
+      const ID_TO_ICON: Record<string, LucideIcon> = {
+        rain: CloudRain,
+        trip5: Calendar,
+        peak: Sunset,
+      };
+      const normalized: MockData = {
+        ...json,
+        bonuses: json.bonuses.map((b) => ({
+          ...b,
+          icon: ID_TO_ICON[b.id] ?? Sparkles,
+        })),
+      };
+      setData(normalized);
     } catch {
       /* silent — UX no se rompe */
     }

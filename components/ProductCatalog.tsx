@@ -105,23 +105,23 @@ function sortProducts(list: LiveProduct[], key: SortKey): LiveProduct[] {
 const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: string; linkBtn: string; sectionBorder: string }> = {
   "frutas-verduras": {
     emojiBg:       "bg-emerald-50 dark:bg-emerald-950/30",
-    dot:           "bg-emerald-500",
-    pillHover:     "hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30",
-    linkBtn:       "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white",
+    dot:           "bg-[var(--data-success-500)]",
+    pillHover:     "hover:border-emerald-400 hover:text-[var(--data-success-700)] hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30",
+    linkBtn:       "bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-700)] dark:text-emerald-400 hover:bg-[var(--data-success-500)] hover:text-white",
     sectionBorder: "border-l-4 border-l-emerald-400",
   },
   "abarrotes": {
     emojiBg:       "bg-amber-50 dark:bg-amber-950/30",
-    dot:           "bg-amber-500",
-    pillHover:     "hover:border-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-950/30",
-    linkBtn:       "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white",
+    dot:           "bg-[var(--data-warning-500)]",
+    pillHover:     "hover:border-amber-400 hover:text-[var(--data-warning-700)] hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-950/30",
+    linkBtn:       "bg-amber-50 dark:bg-amber-950/30 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-[var(--data-warning-500)] hover:text-white",
     sectionBorder: "border-l-4 border-l-amber-400",
   },
   "carnes": {
     emojiBg:       "bg-red-50 dark:bg-red-950/30",
-    dot:           "bg-red-500",
-    pillHover:     "hover:border-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/30",
-    linkBtn:       "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:bg-red-500 hover:text-white",
+    dot:           "bg-[var(--data-error-500)]",
+    pillHover:     "hover:border-red-400 hover:text-[var(--data-error-700)] hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/30",
+    linkBtn:       "bg-red-50 dark:bg-red-950/30 text-[var(--data-error-700)] dark:text-red-400 hover:bg-[var(--data-error-500)] hover:text-white",
     sectionBorder: "border-l-4 border-l-red-400",
   },
   "lacteos": {
@@ -183,7 +183,7 @@ function LazyCategorySection({
           observer.disconnect();
         }
       },
-      { rootMargin: "300px" }
+      { rootMargin: "1200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -192,7 +192,7 @@ function LazyCategorySection({
   if (visible) return <>{children}</>;
 
   return (
-    <div ref={ref} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
+    <div ref={ref} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5">
       {Array.from({ length: Math.min(productCount, 6) }).map((_, i) => (
         <SkeletonCard key={i} />
       ))}
@@ -227,7 +227,7 @@ function SkeletonSection() {
           <div className="h-3 bg-gray-200 dark:bg-surface rounded-full w-28" />
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5">
         {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -608,23 +608,127 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     searchPage * ITEMS_PER_PAGE
   );
 
+  // Categorías que tienen al menos un producto — para el sidebar lateral
+  const categoriesWithCount = realCategories
+    .map(cat => ({
+      ...cat,
+      count: filteredProducts.filter(p => p.category === cat.id).length,
+    }))
+    .filter(cat => cat.count > 0);
+  const totalProducts = filteredProducts.length;
+
   return (
     <section id="productos" className="py-10 sm:py-16 bg-surface">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
-            Catálogo de <span className="text-primary">{storeName}</span>
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
+        {/* Section Header — copy enfocada al cliente, no al dueño. */}
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
+            Productos para ti
           </h2>
-          <p className="mt-4 text-lg text-muted max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-muted max-w-2xl mx-auto">
             {storeSlogan}
           </p>
         </div>
 
-        {/* Search bar + Sort + Price Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-3xl mx-auto mb-4">
+        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 xl:gap-10">
+
+        {/* ── SIDEBAR de categorías (desktop only) ──────────── */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
+            <div className="bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">Categorías</h3>
+                <span className="text-xs font-mono text-muted bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-md">{categoriesWithCount.length}</span>
+              </div>
+
+              {/* "Ver todo" siempre primero */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setHighlighted(null);
+                  document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all mb-1.5",
+                  !highlighted
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "text-foreground hover:bg-primary/8 hover:text-primary"
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Todos los productos
+                </span>
+                <span className={cn(
+                  "text-xs font-mono px-1.5 py-0.5 rounded-md",
+                  !highlighted ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-surface text-muted"
+                )}>
+                  {totalProducts}
+                </span>
+              </button>
+
+              <div className="space-y-1">
+                {categoriesWithCount.map((cat) => {
+                  const active = highlighted === cat.id;
+                  const theme = getCatTheme(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setHighlighted(cat.id);
+                        document.getElementById(`cat-${cat.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                      )}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className={cn("h-2 w-2 rounded-full shrink-0", theme.dot)} aria-hidden="true" />
+                        <span className="truncate">{cat.label}</span>
+                      </span>
+                      <span className={cn(
+                        "text-xs font-mono px-1.5 py-0.5 rounded-md shrink-0",
+                        active
+                          ? "bg-primary/15 text-primary"
+                          : "bg-gray-100 dark:bg-surface text-muted"
+                      )}>
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer del sidebar — "limpiar filtros" cuando hay alguno activo */}
+              {(highlighted || filterOnSale || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHighlighted(null);
+                    setFilterOnSale(false);
+                    setPriceRange([0, maxPrice]);
+                  }}
+                  className="w-full mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs font-bold text-muted hover:text-foreground"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* ── COLUMNA PRINCIPAL: search + filtros + productos ───── */}
+        <div className="min-w-0">
+
+        {/* Search bar + Sort + Price Filter — buscador más ancho para protagonismo */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
           <div className="relative flex-1" ref={searchRef}>
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={search}
@@ -642,7 +746,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 else if (e.key === "Escape") { setSuggestions([]); setShowHistory(false); }
               }}
               placeholder="Buscar producto…"
-              className="w-full pl-10 pr-9 py-3 min-h-[48px] rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
+              className="w-full pl-12 pr-11 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base sm:text-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
               autoComplete="off"
             />
             {search && (
@@ -692,13 +796,13 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               );
             })()}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative shrink-0">
-              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ArrowUpDown className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none pl-9 pr-8 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm cursor-pointer"
+                className="appearance-none pl-11 pr-10 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>{o.label}</option>
@@ -708,55 +812,34 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             <button
               onClick={() => setShowPriceFilter(v => !v)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm",
+                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-sm",
                 showPriceFilter
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-primary"
               )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Precio</span>
+              <SlidersHorizontal className="h-5 w-5" />
+              <span>Precio</span>
             </button>
             <button
               onClick={() => setFilterOnSale(v => !v)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
+                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-sm whitespace-nowrap",
                 filterOnSale
-                  ? "border-red-400 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400"
+                  ? "border-red-400 bg-red-50 dark:bg-red-950/30 text-[var(--data-error-600)] dark:text-red-400"
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-red-400"
               )}
             >
-              {/* Filtros de catálogo: solo texto, sin emojis. */}
+              {/* Filtros del cliente: solo texto, sin emojis. Stock no es filtro
+                  útil aquí — los productos agotados van al final automáticamente. */}
               <span>Oferta</span>
             </button>
-            <button
-              onClick={() => { setFilterAvailable(v => !v); if (!filterAvailable) setFilterOutOfStock(false); }}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
-                filterAvailable
-                  ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-emerald-400"
-              )}
-            >
-              <span>Disponible</span>
-            </button>
-            <button
-              onClick={() => { setFilterOutOfStock(v => !v); if (!filterOutOfStock) setFilterAvailable(false); }}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
-                filterOutOfStock
-                  ? "border-gray-400 bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-gray-400"
-              )}
-            >
-              <span>Agotado</span>
-            </button>
             {/* U1: Grid/List toggle — enhanced with active indicator */}
-            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm relative">
+            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-2xl p-1 shadow-sm relative h-14">
               <button
                 onClick={() => { setViewMode("grid"); localStorage.setItem("buleje-view-mode", "grid"); }}
                 className={cn(
-                  "p-2.5 rounded-lg transition-all relative z-10",
+                  "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "grid"
                     ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
                     : "text-gray-400 hover:text-gray-600"
@@ -764,12 +847,12 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 aria-label="Vista cuadrícula"
                 title="Vista cuadrícula"
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="h-5 w-5" />
               </button>
               <button
                 onClick={() => { setViewMode("list"); localStorage.setItem("buleje-view-mode", "list"); }}
                 className={cn(
-                  "p-2.5 rounded-lg transition-all relative z-10",
+                  "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "list"
                     ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
                     : "text-gray-400 hover:text-gray-600"
@@ -777,12 +860,8 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 aria-label="Vista lista"
                 title="Vista lista"
               >
-                <List className="h-4 w-4" />
+                <List className="h-5 w-5" />
               </button>
-              {/* Active count indicator */}
-              <span className="ml-1 pr-2 text-[length:var(--ts-2xs)] font-bold text-muted hidden sm:inline">
-                {viewMode === "grid" ? "Grid" : "Lista"}
-              </span>
             </div>
           </div>
         </div>
@@ -865,35 +944,23 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         )}
 
         {/* Active filters bar */}
-        {(search || filterOnSale || filterAvailable || filterOutOfStock || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
+        {(search || filterOnSale || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
           <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-muted">Filtros activos:</span>
+            <span className="text-sm font-semibold text-muted">Filtros activos:</span>
             {search && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                🔍 &ldquo;{search}&rdquo;
-                <button onClick={() => setSearch("")} className="ml-0.5 hover:text-primary-dark"><X className="h-3 w-3" /></button>
+              <span className="flex items-center gap-1.5 text-sm font-semibold bg-primary/10 text-primary px-3 py-1.5 rounded-full">
+                &ldquo;{search}&rdquo;
+                <button onClick={() => setSearch("")} className="ml-0.5 hover:text-primary-dark"><X className="h-3.5 w-3.5" /></button>
               </span>
             )}
             {filterOnSale && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1.5 text-sm font-semibold bg-red-50 dark:bg-red-950/30 text-[var(--data-error-600)] dark:text-red-400 px-3 py-1.5 rounded-full">
                 Oferta
-                <button onClick={() => setFilterOnSale(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
-              </span>
-            )}
-            {filterAvailable && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full">
-                Disponible
-                <button onClick={() => setFilterAvailable(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
-              </span>
-            )}
-            {filterOutOfStock && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-full">
-                Agotado
-                <button onClick={() => setFilterOutOfStock(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
+                <button onClick={() => setFilterOnSale(false)} className="ml-0.5"><X className="h-3.5 w-3.5" /></button>
               </span>
             )}
             {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)] dark:text-emerald-400 px-2.5 py-1 rounded-full">
                 S/{priceRange[0]}–S/{priceRange[1]}
                 <button onClick={() => setPriceRange([0, maxPrice])} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>
@@ -917,7 +984,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         )}
 
         {apiError && (
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-[var(--data-warning-500)]/40 text-xs text-[var(--data-warning-700)] dark:text-amber-400">
             <span>⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
             <button
               onClick={refetchProducts}
@@ -1016,7 +1083,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 ) : filteredProducts.length > 50 && viewMode === "grid" ? (
                   /* Grid con más de 50 resultados: mantener paginación normal */
                   <>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5">
                       {paginatedSearchProducts.map((product) => (
                         <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
                       ))}
@@ -1059,7 +1126,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 ) : (
                   /* Render normal para <=50 resultados (grid o lista) */
                   <>
-                    <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
+                    <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5" : "space-y-2"}>
                       {paginatedSearchProducts.map((product) => (
                         viewMode === "list" ? (
                           <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
@@ -1110,7 +1177,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             // Tenant sin productos aún — empty state informativo
             <div className="text-center py-20 px-4">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                <span className="text-3xl" aria-hidden="true">🏪</span>
+                <Package className="h-8 w-8 text-primary" strokeWidth={1.75} aria-hidden="true" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Catálogo en preparación</h3>
               <p className="text-sm text-muted max-w-xs mx-auto">
@@ -1139,7 +1206,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                       </div>
                     </div>
                     <LazyCategorySection eager={isEager} productCount={catProducts.length}>
-                      <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
+                      <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5" : "space-y-2"}>
                         {catProducts.map((product) =>
                           viewMode === "list" ? (
                             <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
@@ -1156,6 +1223,8 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
           )}
         </div>
 
+        </div>{/* /COLUMNA PRINCIPAL */}
+        </div>{/* /grid sidebar+content */}
       </div>
 
       {/* Quick View Modal */}

@@ -123,8 +123,8 @@ export default function LastOrderBanner() {
                   <span className={cn(
                     "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                     daysSince >= avgFrequency
-                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                      : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      ? "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400"
+                      : "bg-emerald-100 dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-400"
                   )}>
                     {daysSince >= avgFrequency
                       ? `⏰ Sueles pedir cada ~${avgFrequency}d — ¡Toca reordenar!`

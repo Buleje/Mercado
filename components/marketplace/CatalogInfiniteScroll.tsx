@@ -70,7 +70,7 @@ export function InfiniteScrollSentinel({
     <div ref={sentinelRef} className="py-6 flex items-center justify-center">
       {isLoading && (
         <div className="flex items-center gap-2">
-          <Loader2 className="h-5 w-5 text-[#00B4A6] animate-spin" />
+          <Loader2 className="h-5 w-5 text-[var(--accent)] animate-spin" />
           <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
             Cargando mas productos...
           </span>

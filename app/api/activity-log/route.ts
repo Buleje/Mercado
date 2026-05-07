@@ -96,12 +96,15 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(entry, { status: 201 });
 }
 
-// DELETE – clear all entries for this tenant (admin only)
-export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-
-  await prisma.activityLog.deleteMany({ where: { tenantId: auth.tenantId } });
-  return NextResponse.json({ ok: true });
+// COMPLIANCE 2026-05-06: DELETE /api/activity-log REMOVIDO. Antes cualquier
+// admin del tenant podía borrar TODO el audit log → violación Art. 11 Ley 29733
+// (conservación 5 años) + ruptura del hash chain de evidencia. Si en el futuro
+// se necesita reset (demos / staging), agregar nuevo endpoint protegido por
+// rol "superadmin" con audit trail propio del DELETE.
+export async function DELETE() {
+  return NextResponse.json(
+    { error: "endpoint deshabilitado por compliance — Art. 11 Ley 29733" },
+    { status: 410 },
+  );
 }
 

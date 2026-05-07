@@ -380,7 +380,7 @@ async function ZoneProductContent({
 
           {/* Zone delivery note */}
           {zone.deliveryActive && (
-            <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+            <p className="flex items-center gap-2 text-sm text-[var(--data-success-700)] dark:text-emerald-400 font-medium">
               <svg
                 className="w-4 h-4"
                 fill="none"

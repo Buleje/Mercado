@@ -1118,7 +1118,12 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgb(255 255 255); /* blanco solido — sin transparencia */
+  /* [UX FIX 2026-05-05] Antes blanco solido — el modal se confundia con la
+   * pagina detras. Ahora semi-transparente + blur para que el usuario vea
+   * el contexto detras y aprecie que es un overlay. */
+  background: rgb(15 23 42 / 0.45); /* slate-900 45% en light */
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
   animation: modal-backdrop-in 180ms ease-out;
   /* Display flex para centrar automaticamente el modal-content hijo.
      Si el consumer ya agrega flex-X, estos se sobreescriben. */
@@ -1878,6 +1883,15 @@ button,
 
   /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */
   --brand-accent: #34d4be;
+
+  /* ── Dark mode contrast lift para brand colors muteados ─────────────
+     Algunos tenants eligen marcas desaturadas (ej. mi-pollo #5f7777). En
+     dark mode, --color-primary-dark del ThemeInjector queda demasiado
+     oscuro para texto sobre canvas dark. Usamos --color-primary-light
+     como reemplazo cuando el ratio falla — siempre legible.
+     `!important` necesario porque ThemeInjector inyecta `:root{}` con
+     mayor orden en cascada (mismas reglas no-important ganarían). */
+  --color-primary-dark: var(--color-primary-light, var(--color-primary, #34d4be)) !important;
 
   /* ── Data viz monochromatic + accent ── */
   --data-1: #f0f3f7;
@@ -2679,3 +2693,16 @@ body[data-marketplace-explorar] .tabular-nums {
 /* Tabular nums siempre en cifras grandes */
 .superadmin-shell .tabular-nums { font-feature-settings: "tnum"; }
 
+
+/* ────────────────────────────────────────────────────────────────────────
+   STOREFRONT TENANT — ocultar breadcrumbs globales en /t/[slug]/tienda
+   Brandon (2026-05-05): el hero arranca pegado al nav para mayor impacto.
+   Usamos :has() para detectar el banner store-header que SOLO existe en la
+   tienda tenant — funciona pre-paint sin flash y sin necesidad de JS.
+   ──────────────────────────────────────────────────────────────────────── */
+body:has(header.store-header) > nav[aria-label="Breadcrumb"] {
+  display: none !important;
+}
+body.tenant-storefront > nav[aria-label="Breadcrumb"] {
+  display: none !important;
+}

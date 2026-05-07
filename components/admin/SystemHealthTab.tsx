@@ -9,9 +9,9 @@ import type { HealthPayload, HealthService } from "@/app/api/admin/health/route"
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  operativo: { icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Operativo" },
-  degradado:  { icon: AlertTriangle, color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",   label: "Degradado" },
-  caido:      { icon: XCircle,       color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",       label: "Caído" },
+  operativo: { icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Operativo" },
+  degradado:  { icon: AlertTriangle, color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",   label: "Degradado" },
+  caido:      { icon: XCircle,       color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",       label: "Caído" },
 };
 
 const SERVICE_ICONS: Record<string, React.ElementType> = {
@@ -68,11 +68,11 @@ export default function SystemHealthTab() {
   if (loading) return <HealthSkeleton />;
 
   if (error) return (
-    <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 p-3 sm:p-6 text-center">
-      <XCircle className="h-8 w-8 text-[var(--data-error)] mx-auto mb-2" />
-      <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Error al cargar health check</p>
-      <p className="text-xs text-[var(--data-error)] mt-1">{error}</p>
-      <button onClick={() => load()} className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]">
+    <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 p-3 sm:p-6 text-center">
+      <XCircle className="h-8 w-8 text-[var(--data-error-500)] mx-auto mb-2" />
+      <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Error al cargar health check</p>
+      <p className="text-xs text-[var(--data-error-500)] mt-1">{error}</p>
+      <button onClick={() => load()} className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]">
         Reintentar
       </button>
     </div>
@@ -127,7 +127,7 @@ export default function SystemHealthTab() {
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
             {operativeCount}/{services.length} servicios operativos
             {incidents.filter(i => i.status === "open").length > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] font-bold">
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold">
                 {incidents.filter(i => i.status === "open").length} incidente(s) activo(s)
               </span>
             )}
@@ -161,7 +161,7 @@ export default function SystemHealthTab() {
                 <div>
                   <p className={cn(
                     "text-xs font-extrabold",
-                    s.responseTime < 200 ? "text-[var(--data-success)]" : s.responseTime < 500 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                    s.responseTime < 200 ? "text-[var(--data-success-500)]" : s.responseTime < 500 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
                   )}>{s.responseTime}ms</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Latencia</p>
                 </div>
@@ -185,8 +185,8 @@ export default function SystemHealthTab() {
             {metrics.map(m => {
               const pct = Math.min(100, (m.value / m.max) * 100);
               const barColor =
-                m.status === "critical" ? "bg-[var(--data-error)]" :
-                m.status === "warning"  ? "bg-[var(--data-warning)]" :
+                m.status === "critical" ? "bg-[var(--data-error-500)]" :
+                m.status === "warning"  ? "bg-[var(--data-warning-500)]" :
                 "bg-[var(--accent-soft)]";
               return (
                 <div key={m.label}>
@@ -207,10 +207,10 @@ export default function SystemHealthTab() {
       {/* Incidents */}
       <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Incidentes
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Incidentes
         </CardTitle>
         {incidents.length === 0 ? (
-          <div className="flex flex-wrap items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
             <CheckCircle className="h-4 w-4" />
             <span className="font-semibold">Sin incidentes activos</span>
           </div>
@@ -220,7 +220,7 @@ export default function SystemHealthTab() {
               <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-[var(--data-error)]" : inc.severity === "warning" ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]"
+                  inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{inc.title}</p>
@@ -229,8 +229,8 @@ export default function SystemHealthTab() {
                 <span className={cn(
                   "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   inc.status === "resolved"
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-                    : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}>
                   {inc.status === "resolved" ? "Resuelto" : "Activo"}
                 </span>

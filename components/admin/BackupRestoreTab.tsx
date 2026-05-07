@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import type { BackupEntry } from "@/app/api/backups/route";
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  completado:    { icon: CheckCircle,  color: "text-[var(--data-success)]", label: "Completado" },
-  "en-progreso": { icon: RefreshCw,    color: "text-[var(--data-success)] animate-spin", label: "En progreso" },
-  fallido:       { icon: AlertTriangle,color: "text-[var(--data-error)]",     label: "Fallido" },
+  completado:    { icon: CheckCircle,  color: "text-[var(--data-success-500)]", label: "Completado" },
+  "en-progreso": { icon: RefreshCw,    color: "text-[var(--data-success-500)] animate-spin", label: "En progreso" },
+  fallido:       { icon: AlertTriangle,color: "text-[var(--data-error-500)]",     label: "Fallido" },
 };
 
 const SCHEDULE = { Diario: "03:00 AM", Semanal: "Domingos 03:00 AM", Mensual: "1ro del mes 02:00 AM" };
@@ -93,7 +93,7 @@ export default function BackupRestoreTab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Shield className="h-6 w-6 text-primary" /> Backup & Restaurar
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Copias de seguridad y puntos de restauración</p>
         </div>
@@ -113,13 +113,13 @@ export default function BackupRestoreTab() {
 
       {/* Advertencia */}
       {!loading && showWarning && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <p className="font-bold text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               {lastBackupAge === null ? "Sin backups registrados" : `Último backup hace ${lastBackupAge} días`}
             </p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
               Se recomienda hacer backup diario. Crea uno manualmente ahora para proteger tus datos.
             </p>
           </div>
@@ -129,10 +129,10 @@ export default function BackupRestoreTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Backups totales",   value: backups.length,              color: "text-[var(--data-success)]",    icon: Database },
+          { label: "Backups totales",   value: backups.length,              color: "text-[var(--data-success-500)]",    icon: Database },
           { label: "Almacenamiento",    value: fmtBytes(totalSizeBytes),    color: "text-[var(--text-secondary)]",  icon: HardDrive },
-          { label: "Último exitoso",    value: lastSuccessful ? fmtDate(lastSuccessful.createdAt) : "—", color: "text-[var(--data-success)]", icon: CheckCircle },
-          { label: "Fallidos",          value: failedCount,                 color: failedCount > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]", icon: AlertTriangle },
+          { label: "Último exitoso",    value: lastSuccessful ? fmtDate(lastSuccessful.createdAt) : "—", color: "text-[var(--data-success-500)]", icon: CheckCircle },
+          { label: "Fallidos",          value: failedCount,                 color: failedCount > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", icon: AlertTriangle },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <div className="flex items-center gap-1.5 mb-1">
@@ -179,7 +179,7 @@ export default function BackupRestoreTab() {
               {backups.map(b => {
                 const S = STATUS_CONFIG[b.status];
                 return (
-                  <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-[var(--data-error)] dark:border-[var(--data-error)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
+                  <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                         <S.icon className={cn("h-5 w-5 shrink-0", S.color)} />
@@ -187,7 +187,7 @@ export default function BackupRestoreTab() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{b.name}</h4>
                             <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                              b.type === "auto" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
+                              b.type === "auto" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                               {b.type === "auto" ? "Automático" : "Manual"}
                             </span>
                             <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted">{S.label}</span>
@@ -204,18 +204,18 @@ export default function BackupRestoreTab() {
                         {b.status === "completado" && (
                           <>
                             <a href="/api/backup" download={`bodega-backup-${b.createdAt.slice(0, 10)}.json`}
-                              className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)]" title="Descargar">
+                              className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)]" title="Descargar">
                               <Download className="h-4 w-4" />
                             </a>
                             <AdminTooltip content="Restaurar desde este backup — próximamente">
-                              <button aria-label="Restaurar" className="p-1.5 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 text-[var(--data-warning)]">
+                              <button aria-label="Restaurar" className="p-1.5 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 text-[var(--data-warning-500)]">
                                 <Upload className="h-4 w-4" />
                               </button>
                             </AdminTooltip>
                           </>
                         )}
                         <button onClick={() => handleDelete(b.id)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]" title="Eliminar">
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" title="Eliminar">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -258,9 +258,9 @@ export default function BackupRestoreTab() {
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Backups más antiguos se eliminarán automáticamente</p>
           </div>
 
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
-            <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Almacenamiento del backup</p>
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
+          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+            <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Almacenamiento del backup</p>
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
           </div>
         </div>
       )}

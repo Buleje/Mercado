@@ -93,7 +93,7 @@ function StoreCardWrapper({ store, priority = false }: { store: Store; priority?
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold ${
         isOpen
           ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
-          : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400"
+          : "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/50 dark:text-red-400"
       }`}
     >
       {isOpen ? "Abierto" : "Cerrado"}
@@ -103,7 +103,7 @@ function StoreCardWrapper({ store, priority = false }: { store: Store; priority?
   const footer = (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold capitalize text-teal-700 dark:bg-teal-900/30 dark:text-teal-400">
+        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold capitalize text-[var(--accent-dark)] dark:bg-teal-900/30 dark:text-teal-400">
           {store.category}
         </span>
         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">
@@ -122,7 +122,7 @@ function StoreCardWrapper({ store, priority = false }: { store: Store; priority?
         aria-label={`Ver tienda ${store.name}`}
         className="mt-1 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
         style={{
-          background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
+          background: "linear-gradient(135deg, var(--accent) 0%, #0d6560 100%)",
           boxShadow: "0 4px 14px -2px rgba(15,118,110,0.35)",
           paddingTop: "0.625rem",
           paddingBottom: "0.625rem",
@@ -251,7 +251,7 @@ export default function MarketplaceGrid() {
                 aria-pressed={zone === z.value}
                 className={`min-h-[36px] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${
                   zone === z.value
-                    ? "bg-teal-700 text-white shadow-sm"
+                    ? "bg-[var(--accent-dark)] text-white shadow-sm"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
                 }`}
               >
@@ -274,7 +274,7 @@ export default function MarketplaceGrid() {
                 aria-pressed={category === c.value}
                 className={`min-h-[36px] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${
                   category === c.value
-                    ? "bg-teal-700 text-white shadow-sm"
+                    ? "bg-[var(--accent-dark)] text-white shadow-sm"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
                 }`}
               >
@@ -287,7 +287,7 @@ export default function MarketplaceGrid() {
 
       {/* ── CONTENIDO ──────────────────────────────────────────── */}
       {error && (
-        <div role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
           {error}{" "}
           <button onClick={fetchStores} aria-label="Reintentar cargar tiendas" className="underline hover:no-underline">
             Reintentar
@@ -323,7 +323,7 @@ export default function MarketplaceGrid() {
           <button
             onClick={() => { setSearch(""); setZone(""); setCategory(""); }}
             aria-label="Limpiar todos los filtros y ver todas las tiendas"
-            className="mt-4 min-h-[44px] rounded-xl bg-teal-700 px-6 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+            className="mt-4 min-h-[44px] rounded-xl bg-[var(--accent-dark)] px-6 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           >
             Limpiar filtros
           </button>

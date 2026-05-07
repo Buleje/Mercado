@@ -133,10 +133,10 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                       className={cn(
                         "inline-flex items-center gap-1 font-medium",
                         isLow
-                          ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                          ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                           : isMid
-                            ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                            : "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                            ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                            : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                       )}
                     >
                       {isLow ? (
@@ -151,16 +151,16 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                   </td>
                   <td className="py-2.5 text-xs">
                     {isLow ? (
-                      <span className="text-[var(--data-error)] dark:text-[var(--data-error)]">
+                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                         Subir precio — sugerido{" "}
                         {formatCurrency(suggestedPriceAt15(p.costPrice))}
                       </span>
                     ) : isMid ? (
-                      <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                      <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                         Revisar
                       </span>
                     ) : (
-                      <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">
+                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         Saludable
                       </span>
                     )}
@@ -175,7 +175,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
       {hasMore && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-3 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] hover:underline"
+          className="mt-3 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:underline"
         >
           {expanded
             ? "Ver menos"
@@ -256,7 +256,7 @@ function SimuladorTab({
               setSelectedId(e.target.value);
               setResult(null);
             }}
-            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           >
             {products.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -279,7 +279,7 @@ function SimuladorTab({
                 setResult(null);
               }}
               placeholder="5"
-              className="w-full border border-[var(--rule-base)] rounded-lg pl-3 pr-7 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
+              className="w-full border border-[var(--rule-base)] rounded-lg pl-3 pr-7 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
             />
             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
               %
@@ -332,8 +332,8 @@ function SimuladorTab({
                 className={cn(
                   "text-sm font-medium tabular-nums",
                   result.newMargin > result.oldMargin
-                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                    : "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                 )}
               >
                 {result.newMargin.toFixed(1)}%
@@ -352,8 +352,8 @@ function SimuladorTab({
               className={cn(
                 "text-base font-semibold tabular-nums",
                 result.monthlyImpact >= 0
-                  ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                  : "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                  ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                  : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
               )}
             >
               {result.monthlyImpact >= 0 ? "+" : ""}
@@ -405,7 +405,7 @@ function CalculadoraTab() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             placeholder="0.00"
-            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           />
         </div>
 
@@ -421,14 +421,14 @@ function CalculadoraTab() {
             value={desiredMargin}
             onChange={(e) => setDesiredMargin(e.target.value)}
             className={cn(
-              "w-full border rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40",
+              "w-full border rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40",
               showWarning
-                ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                 : "border-[var(--rule-base)]",
             )}
           />
           {showWarning && (
-            <p className="mt-1 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="mt-1 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               El margen debe estar entre 1% y 99%
             </p>
           )}
@@ -441,7 +441,7 @@ function CalculadoraTab() {
                 <span className="text-xs text-[var(--text-tertiary)]">
                   Precio sugerido
                 </span>
-                <span className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">
+                <span className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">
                   {formatCurrency(calc.price)}
                 </span>
               </div>

@@ -185,7 +185,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
               </div>
               <div className="h-1 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden mb-3">
                 <div
-                  className="h-full bg-linear-to-r from-primary to-emerald-500 transition-all duration-500"
+                  className="h-full bg-linear-to-r from-primary to-[var(--data-success-500)] transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -285,14 +285,14 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                                   e.stopPropagation();
                                   startTimer(i, step.timerMin!);
                                 }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[length:var(--ts-2xs)] font-bold hover:bg-amber-200 transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-300 text-[length:var(--ts-2xs)] font-bold hover:bg-amber-200 transition-colors"
                               >
                                 <Clock className="h-3 w-3" />
                                 Iniciar timer {step.timerMin} min
                               </button>
                             ) : (
                               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                                <span className="text-sm font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">
+                                <span className="text-sm font-extrabold text-[var(--data-warning-700)] dark:text-amber-300 tabular-nums">
                                   {formatTime(timerSeconds ?? step.timerMin * 60)}
                                 </span>
                                 <button
@@ -305,9 +305,9 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                                   className="p-1 rounded-md hover:bg-amber-200 dark:hover:bg-amber-800/40"
                                 >
                                   {timerRunning ? (
-                                    <Pause className="h-3 w-3 text-amber-700" />
+                                    <Pause className="h-3 w-3 text-[var(--data-warning-700)]" />
                                   ) : (
-                                    <Play className="h-3 w-3 text-amber-700" />
+                                    <Play className="h-3 w-3 text-[var(--data-warning-700)]" />
                                   )}
                                 </button>
                                 <button
@@ -319,7 +319,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                                   aria-label="Reiniciar"
                                   className="p-1 rounded-md hover:bg-amber-200 dark:hover:bg-amber-800/40"
                                 >
-                                  <RotateCcw className="h-3 w-3 text-amber-700" />
+                                  <RotateCcw className="h-3 w-3 text-[var(--data-warning-700)]" />
                                 </button>
                               </div>
                             )}

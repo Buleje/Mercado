@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 /**
@@ -20,6 +21,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SECURITY 2026-05-06 (audit delivery #6): rate limit para frenar
+  // toggle-spam (ej. partner comprometido o auto-script).
+  const rl = applyRateLimit(req, "MODERATE", "delivery-online");
+  if (rl) return rl;
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 

@@ -62,19 +62,19 @@ const RISK_CONFIG: Record<
 > = {
   alto: {
     label: "Alto",
-    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
+    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",
     bar: "bg-red-400",
   },
   medio: {
     label: "Medio",
-    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
+    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
     bar: "bg-amber-400",
   },
   bajo: {
     label: "Bajo",
-    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     bar: "bg-[var(--accent-soft)]",
   },
@@ -233,9 +233,9 @@ export default function ChurnPrediction() {
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
-          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : (
         <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">

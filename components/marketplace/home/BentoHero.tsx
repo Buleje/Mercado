@@ -103,7 +103,7 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
             )}
           </div>
           {p.badge && (
-            <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow">
+            <span className="inline-flex items-center rounded-full bg-[var(--data-error-500)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow">
               {p.badge}
             </span>
           )}
@@ -131,7 +131,7 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
               )}
             </div>
           )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold whitespace-nowrap self-start mt-1 shadow-sm">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] text-white px-2.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold whitespace-nowrap self-start mt-1 shadow-sm">
             {p.buyLabel || "Comprar"}
             <ChevronRight className="h-3 w-3" />
           </span>

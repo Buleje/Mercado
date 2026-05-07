@@ -364,8 +364,8 @@ export default function TurnosModule() {
   if (error && !turnoActivo) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
       </div>
     );
@@ -402,8 +402,8 @@ export default function TurnosModule() {
         </div>
         {/* Chip de estado inline — antes flotaba solo arriba */}
         {turnoActivo ? (
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] px-2.5 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success)] animate-pulse" aria-hidden />
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" aria-hidden />
             Turno abierto
           </span>
         ) : !loading && (
@@ -486,7 +486,7 @@ export default function TurnosModule() {
                     return (
                       <div key={c.id} className={cn(
                         "bg-white dark:bg-card border rounded-2xl p-5 transition-shadow hover:shadow-sm",
-                        isTop ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border"
+                        isTop ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border"
                       )}>
                         <div className="flex items-center gap-3 mb-4">
                           <div
@@ -499,7 +499,7 @@ export default function TurnosModule() {
                             <p className="text-lg font-bold text-[var(--text-primary)] truncate flex items-center gap-2">
                               <span className="truncate">{c.name}</span>
                               {isTop && (
-                                <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--data-warning)] bg-[var(--data-warning-50)] px-2 py-0.5 rounded shrink-0">
+                                <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 py-0.5 rounded shrink-0">
                                   <Trophy className="h-3 w-3" strokeWidth={2} aria-hidden />
                                   Top
                                 </span>
@@ -515,7 +515,7 @@ export default function TurnosModule() {
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Ventas total</p>
-                            <p className="text-lg font-extrabold text-[var(--data-success)] tabular-nums">{formatCurrency(c.ventasTotal)}</p>
+                            <p className="text-lg font-extrabold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</p>
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Ventas/hora</p>
@@ -523,7 +523,7 @@ export default function TurnosModule() {
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Dif. caja</p>
-                            <p className={cn("text-lg font-extrabold tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success)]" : c.difCaja > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                            <p className={cn("text-lg font-extrabold tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                               {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
                             </p>
                           </div>
@@ -531,7 +531,7 @@ export default function TurnosModule() {
                         {/* Mini performance bar */}
                         <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                           <div
-                            className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning)]" : "bg-primary")}
+                            className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning-500)]" : "bg-primary")}
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
@@ -546,7 +546,7 @@ export default function TurnosModule() {
             {cajeroStats.length > 0 && (
               <div>
                 <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
+                  <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
                 <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
@@ -568,11 +568,11 @@ export default function TurnosModule() {
                           return (
                             <tr key={c.id} className={cn(
                               "border-b border-gray-50 dark:border-white/5 transition-colors hover:bg-gray-50/50",
-                              isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10" : ""
+                              isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : ""
                             )}>
                               <td className="px-4 py-3.5 text-center">
                                 {isTop ? (
-                                  <Trophy className="h-5 w-5 text-[var(--data-warning)] inline-block" strokeWidth={1.75} aria-hidden />
+                                  <Trophy className="h-5 w-5 text-[var(--data-warning-500)] inline-block" strokeWidth={1.75} aria-hidden />
                                 ) : (
                                   <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
                                 )}
@@ -589,9 +589,9 @@ export default function TurnosModule() {
                                 </div>
                               </td>
                               <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
-                              <td className="px-4 py-3.5 text-right text-base font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
+                              <td className="px-4 py-3.5 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
                               <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
-                              <td className={cn("px-4 py-3.5 text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success)]" : c.difCaja > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                              <td className={cn("px-4 py-3.5 text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                                 {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
                               </td>
                             </tr>
@@ -619,7 +619,7 @@ export default function TurnosModule() {
                         <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => `S/${v}`} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={90} />
                         <Tooltip formatter={(value: unknown) => [`S/${Number(value).toLocaleString("es-PE")}`, "Ventas"]} />
-                        <Bar dataKey="ventas" fill="#00B4A6" radius={[0, 6, 6, 0]} />
+                        <Bar dataKey="ventas" fill="var(--accent)" radius={[0, 6, 6, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -680,21 +680,21 @@ export default function TurnosModule() {
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Timer className="h-4 w-4 text-[var(--data-success)]" />
+                <Timer className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Horas trabajadas</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{horasTrabajadas.toFixed(1)}h</p>
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-[var(--data-success)]" />
+                <DollarSign className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas/hora</p>
               </div>
-              <p className="text-2xl font-extrabold font-mono text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(ventasPorHora)}</p>
+              <p className="text-2xl font-extrabold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(ventasPorHora)}</p>
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Trophy className="h-4 w-4 text-[var(--data-warning)]" />
+                <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Mejor cajero</p>
               </div>
               <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{mejorCajero}</p>
@@ -706,25 +706,25 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-2xl overflow-hidden">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-5 sm:px-6 py-5">
+          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-[var(--data-success)] flex items-center justify-center animate-pulse shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center animate-pulse shrink-0">
                 <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">Turno activo</p>
+                <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Turno activo</p>
                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                  <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{elapsedTime(turnoActivo.abrioEn)}</span>
-                  <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">desde {formatTime(turnoActivo.abrioEn)}</span>
+                  <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{elapsedTime(turnoActivo.abrioEn)}</span>
+                  <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">desde {formatTime(turnoActivo.abrioEn)}</span>
                   <span className="text-[var(--text-tertiary)]">&middot;</span>
-                  <span className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">Ventas {formatCurrency(turnoActivo.ventasTotal)}</span>
+                  <span className="text-sm font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Ventas {formatCurrency(turnoActivo.ventasTotal)}</span>
                 </div>
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar turno</span>
@@ -766,7 +766,7 @@ export default function TurnosModule() {
                   <ShoppingCart className="h-4 w-4 text-[var(--text-tertiary)]" />
                   <p className="text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">Ventas</p>
                 </div>
-                <p className="text-base font-bold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</p>
+                <p className="text-base font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</p>
               </div>
             </div>
           </div>
@@ -858,7 +858,7 @@ export default function TurnosModule() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                     <DollarSign className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
-                    Ventas <span className="font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(ultimoTurno.ventasTotal)}</span>
+                    Ventas <span className="font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(ultimoTurno.ventasTotal)}</span>
                   </div>
                   {ultimoTurno.cierreEfectivo != null ? (
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -911,7 +911,7 @@ export default function TurnosModule() {
               ) : (
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Trophy className="h-5 w-5 text-[var(--data-warning)] shrink-0" strokeWidth={1.75} aria-hidden />
+                    <Trophy className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" strokeWidth={1.75} aria-hidden />
                     <p className="text-lg font-bold text-[var(--text-primary)] font-mono truncate tabular-nums">{formatCurrency(metaVentas)}</p>
                   </div>
                   <button
@@ -1028,7 +1028,7 @@ export default function TurnosModule() {
             {hasProductividadData ? (
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[var(--data-warning)]" />
+                <BarChart3 className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Productividad por cajero
               </CardTitle>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
@@ -1060,13 +1060,13 @@ export default function TurnosModule() {
                                 {c.name.charAt(0).toUpperCase()}
                               </div>
                               <span className="truncate max-w-[100px]">{c.name}</span>
-                              {c.name === bestCajero && <span className="text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
+                              {c.name === bestCajero && <span className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
                             </td>
                             <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
-                            <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</td>
+                            <td className="px-4 py-3 text-right font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(c.ventasTotal)}</td>
                             <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
                             <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                               {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
                             </td>
                           </tr>
@@ -1115,7 +1115,7 @@ export default function TurnosModule() {
                 const anio = now.getFullYear();
                 exportToExcel(rows, `turnos-${mes}-${anio}`, "Turnos");
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Excel
@@ -1142,12 +1142,12 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-gray-300" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")} />
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-gray-300" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
                       {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                        {cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"} <span className="font-normal text-[var(--text-tertiary)] tabular-nums">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(t.ventasTotal)}</span>
+                        {cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"} <span className="font-normal text-[var(--text-tertiary)] tabular-nums">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</span>
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {cuadro === null ? "" : cuadro ? "Cuadrado" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
@@ -1181,7 +1181,7 @@ export default function TurnosModule() {
                           {t.cerroEn ? formatDateTime(t.cerroEn) : "—"}
                         </td>
                         <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
-                        <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
+                        <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
                         <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cierreEfectivo != null ? formatCurrency(t.cierreEfectivo) : "—"}
                         </td>
@@ -1241,8 +1241,8 @@ export default function TurnosModule() {
               {/* Header — icono + titulo + X */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 flex items-center justify-center shrink-0">
-                    <Square className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
+                    <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
                     <CardTitle className="text-lg font-bold">Cerrar turno</CardTitle>
@@ -1264,7 +1264,7 @@ export default function TurnosModule() {
                   </div>
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Ventas del turno</span>
-                    <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
                   </div>
                   <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
                     <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total esperado</span>
@@ -1301,20 +1301,20 @@ export default function TurnosModule() {
                     <div className={cn(
                       "rounded-xl p-4 text-center",
                       cuadrado
-                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30"
+                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30"
                         : sobrante
-                        ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)]/30"
-                        : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 border border-[var(--data-error)]/30"
+                        ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30"
+                        : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30"
                     )}>
                       <p className={cn(
                         "text-xs font-semibold uppercase tracking-wide mb-1",
-                        cuadrado ? "text-[var(--data-success)]" : sobrante ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                        cuadrado ? "text-[var(--data-success-500)]" : sobrante ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
                       )}>
                         {cuadrado ? "Caja cuadrada" : sobrante ? "Sobrante" : "Faltante"}
                       </p>
                       <p className={cn(
                         "text-2xl font-extrabold tabular-nums",
-                        cuadrado ? "text-[var(--data-success)]" : sobrante ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                        cuadrado ? "text-[var(--data-success-500)]" : sobrante ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
                       )}>
                         {cuadrado ? formatCurrency(0) : (diff > 0 ? "+" : "") + formatCurrency(diff)}
                       </p>
@@ -1335,8 +1335,8 @@ export default function TurnosModule() {
                 </div>
 
                 {closeError && (
-                  <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 border border-[var(--data-error)]/30 px-4 py-3">
-                    <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{closeError}</p>
+                  <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
+                    <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{closeError}</p>
                   </div>
                 )}
               </div>
@@ -1352,7 +1352,7 @@ export default function TurnosModule() {
                 <button
                   onClick={handleCerrar}
                   disabled={closing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
                 >
                   {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
                   Confirmar cierre
@@ -1384,7 +1384,7 @@ export default function TurnosModule() {
             >
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
+                    <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
                   <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
@@ -1394,21 +1394,21 @@ export default function TurnosModule() {
 
                 {/* Card 1: Ventas del turno */}
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-3 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Total vendido</p>
-                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(resumen.totalVentas)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Total vendido</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(resumen.totalVentas)}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Cant. ventas</p>
-                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{resumen.cantidadVentas}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Cant. ventas</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{resumen.cantidadVentas}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Ticket prom.</p>
-                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(resumen.ticketPromedio)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Ticket prom.</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(resumen.ticketPromedio)}</p>
                     </div>
                   </div>
                 </div>
@@ -1416,14 +1416,14 @@ export default function TurnosModule() {
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
                   <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-3 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
                     <div className="space-y-1.5">
                       {resumen.metodosPago.map(m => (
                         <div key={m.metodo} className="flex justify-between text-sm">
-                          <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">{m.metodo}</span>
-                          <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(m.total)}</span>
+                          <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{m.metodo}</span>
+                          <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(m.total)}</span>
                         </div>
                       ))}
                     </div>
@@ -1446,7 +1446,7 @@ export default function TurnosModule() {
                     </div>
                     <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
                       <span className="text-[var(--text-tertiary)]">Diferencia</span>
-                      <span className={cn("font-bold tabular-nums", Math.abs(resumen.diferencia) < 0.01 ? "text-[var(--data-success)]" : resumen.diferencia > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                      <span className={cn("font-bold tabular-nums", Math.abs(resumen.diferencia) < 0.01 ? "text-[var(--data-success-500)]" : resumen.diferencia > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                         {Math.abs(resumen.diferencia) < 0.01 ? formatCurrency(0) : (resumen.diferencia > 0 ? "+" : "") + formatCurrency(resumen.diferencia)}
                       </span>
                     </div>
@@ -1463,10 +1463,10 @@ export default function TurnosModule() {
                     ? (descuentoTotal / resumen.totalVentas) * 100
                     : 0;
                   const colorClass = pctDescuento > 5
-                    ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     : pctDescuento >= 2
-                    ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]";
+                    ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 
                   return descuentoTotal > 0 ? (
                     <div className={cn("rounded-xl p-4", colorClass)}>
@@ -1518,11 +1518,11 @@ export default function TurnosModule() {
                       initial={{ scale: 0.8 }}
                       animate={{ scale: [0.8, 1.1, 1] }}
                       transition={{ duration: 0.5, times: [0, 0.6, 1] }}
-                      className="bg-[var(--surface-sunken)] border border-[var(--data-success)]/40 rounded-xl p-4 text-center"
+                      className="bg-[var(--surface-sunken)] border border-[var(--data-success-500)]/40 rounded-xl p-4 text-center"
                     >
-                      <p className="text-2xl font-extrabold text-[var(--data-warning)] mb-1">META SUPERADA!</p>
-                      <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
-                        Vendiste {formatCurrency(ventas)} — Meta: {formatCurrency(meta)} — Excedente: <span className="font-bold text-[var(--data-success)]">{formatCurrency(diferenciaMeta)}</span>
+                      <p className="text-2xl font-extrabold text-[var(--data-warning-500)] mb-1">META SUPERADA!</p>
+                      <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
+                        Vendiste {formatCurrency(ventas)} — Meta: {formatCurrency(meta)} — Excedente: <span className="font-bold text-[var(--data-success-500)]">{formatCurrency(diferenciaMeta)}</span>
                       </p>
                     </m.div>
                   ) : (
@@ -1571,23 +1571,23 @@ export default function TurnosModule() {
 
                   if (gaps.length === 0) {
                     return (
-                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         Ventas constantes durante todo el turno
                       </div>
                     );
                   }
 
                   return (
-                    <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4 space-y-2">
-                      <h4 className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-1.5">
+                    <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4 space-y-2">
+                      <h4 className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" /> Tiempo muerto detectado
                       </h4>
                       {gaps.map((g, i) => (
-                        <p key={i} className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                        <p key={i} className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                           Sin ventas entre {g.desde} — {g.hasta} ({g.duracion}h)
                         </p>
                       ))}
-                      <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] italic">
+                      <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] italic">
                         Considera ajustar horarios o crear promociones para horas bajas
                       </p>
                     </div>
@@ -1634,7 +1634,7 @@ export default function TurnosModule() {
                         {ventasAyer > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Ayer</span>
-                            <span className={cn("font-bold", pctVsAyer >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                            <span className={cn("font-bold", pctVsAyer >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                               {pctVsAyer >= 0 ? "+" : ""}{pctVsAyer.toFixed(0)}% {pctVsAyer >= 0 ? "\u2191" : "\u2193"}
                             </span>
                           </div>
@@ -1642,13 +1642,13 @@ export default function TurnosModule() {
                         {ventasPromedio7d > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Promedio semanal</span>
-                            <span className={cn("font-bold", pctVsPromedio >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                            <span className={cn("font-bold", pctVsPromedio >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                               {pctVsPromedio >= 0 ? "+" : ""}{pctVsPromedio.toFixed(0)}% {pctVsPromedio >= 0 ? "\u2191" : "\u2193"}
                             </span>
                           </div>
                         )}
                       </div>
-                      <p className="text-sm mt-3 pt-2 border-t border-[var(--data-info)]/50 dark:border-[var(--data-info)]/50 text-center font-bold">
+                      <p className="text-sm mt-3 pt-2 border-t border-[var(--data-info-500)]/50 dark:border-[var(--data-info-500)]/50 text-center font-bold">
                         {isGoodDay ? "\uD83D\uDD25 Excelente dia!" : "\uD83D\uDCC8 Manana sera mejor"}
                       </p>
                     </div>

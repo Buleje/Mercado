@@ -36,7 +36,7 @@ interface Props {
 }
 
 const TIER_CONFIG: Record<Tier, { label: string; color: string; icon: typeof Award }> = {
-  bronce: { label: "Bronce", color: "text-amber-700", icon: Award },
+  bronce: { label: "Bronce", color: "text-[var(--data-warning-700)]", icon: Award },
   plata: { label: "Plata", color: "text-zinc-400", icon: Award },
   oro: { label: "Oro", color: "text-amber-400", icon: Award },
   diamante: { label: "Diamante", color: "text-cyan-400", icon: Sparkles },

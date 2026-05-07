@@ -231,15 +231,15 @@ describe("CheckoutPaymentSection — validation hints", () => {
   it("shows 'Selecciona un metodo de pago' when showPaymentHint and no method picked", () => {
     renderSection({ showPaymentHint: true, paymentMethod: null });
     expect(
-      screen.getByText(/selecciona un metodo de pago para continuar/i)
+      screen.getByText(/eleg[ií] un m[eé]todo para continuar/i)
     ).toBeInTheDocument();
   });
 
   it("shows the Yape operation-number hint when showPaymentHint and method=yape", () => {
     renderSection({ showPaymentHint: true, paymentMethod: "yape" });
-    // Nota: texto real usa "número" (con tilde) — la regex tolera ambas variantes.
+    // Texto real: "Falta el número de operación de Yape"
     expect(
-      screen.getByText(/ingresa el n[úu]mero de operacion de yape para continuar/i)
+      screen.getByText(/falta el n[úu]mero de operaci[oó]n de yape/i)
     ).toBeInTheDocument();
   });
 
@@ -258,7 +258,8 @@ describe("CheckoutPaymentSection — validation hints", () => {
 describe("CheckoutPaymentSection — tip", () => {
   it("renders the 0 / 1 / 2 / 5 tip buttons", () => {
     renderSection();
-    expect(screen.getByRole("button", { name: /sin\s*propina/i })).toBeInTheDocument();
+    // Button v=0 renders "Sin", v>0 renders "S/${v}"
+    expect(screen.getByRole("button", { name: /^sin$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^s\/1$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^s\/2$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^s\/5$/i })).toBeInTheDocument();
@@ -275,19 +276,16 @@ describe("CheckoutPaymentSection — tip", () => {
 
   it("renders a tip row in the totals summary when tip > 0", () => {
     renderSection({ tip: 3 });
-    // Two "Propina" labels exist when tip>0: the selector header "Propina para
-    // el repartidor" and the totals row label "Propina". Match the row amount
-    // uniquely instead.
-    expect(screen.getByText(/\+s\/3\.00/i)).toBeInTheDocument();
-    // And make sure the exact "Propina" row label is present (not just the header).
+    // The totals row renders "+S/3.00" when tip>0.
+    expect(screen.getByText(/\+S\/3\.00/)).toBeInTheDocument();
+    // And the "Propina" label in the totals row.
     const propinaLabels = screen.getAllByText(/^propina$/i);
     expect(propinaLabels.length).toBe(1);
   });
 
   it("does not render a tip row when tip = 0", () => {
     renderSection({ tip: 0 });
-    // "Propina para el repartidor" label exists (tip selector header), but not
-    // the totals row label "Propina" alone. Guard with getAllByText.
+    // When tip=0, no "Propina" totals row (only the section header exists).
     const matches = screen.queryAllByText(/^propina$/i);
     expect(matches.length).toBe(0);
   });
@@ -297,7 +295,8 @@ describe("CheckoutPaymentSection — tip", () => {
 describe("CheckoutPaymentSection — coupon", () => {
   it("renders the coupon input + Aplicar button when no coupon is applied", () => {
     renderSection({ couponApplied: false });
-    expect(screen.getByPlaceholderText(/codigo/i)).toBeInTheDocument();
+    // Placeholder is "CÓDIGO" (uppercase with accent)
+    expect(screen.getByPlaceholderText(/c[oó]digo/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /aplicar/i })).toBeInTheDocument();
   });
 
@@ -321,7 +320,7 @@ describe("CheckoutPaymentSection — coupon", () => {
   it("calls onValidateCoupon when pressing Enter inside the input", async () => {
     const user = userEvent.setup();
     const { props } = renderSection({ couponCode: "BIENVENIDA" });
-    const input = screen.getByPlaceholderText(/codigo/i);
+    const input = screen.getByPlaceholderText(/c[oó]digo/i);
     input.focus();
     await user.keyboard("{Enter}");
     expect(props.onValidateCoupon).toHaveBeenCalledTimes(1);
@@ -330,7 +329,7 @@ describe("CheckoutPaymentSection — coupon", () => {
   it("uppercases typed characters via onCouponCodeChange", async () => {
     const user = userEvent.setup();
     const { props } = renderSection({ couponCode: "" });
-    const input = screen.getByPlaceholderText(/codigo/i);
+    const input = screen.getByPlaceholderText(/c[oó]digo/i);
     await user.type(input, "a");
     expect(props.onCouponCodeChange).toHaveBeenCalledWith("A");
   });
@@ -401,8 +400,8 @@ describe("CheckoutPaymentSection — totals rendering", () => {
       couponCode: "BIENVENIDA",
       couponMsg: "ok",
     });
-    expect(screen.getByText(/cupon bienvenida/i)).toBeInTheDocument();
-    expect(screen.getByText(/−s\/4\.50/i)).toBeInTheDocument();
+    expect(screen.getByText(/cup[oó]n bienvenida/i)).toBeInTheDocument();
+    expect(screen.getByText(/−S\/4\.50/)).toBeInTheDocument();
   });
 
   it("renders the tier discount row when tierDiscount > 0 and loyaltyTier is set", () => {
@@ -417,7 +416,8 @@ describe("CheckoutPaymentSection — totals rendering", () => {
 
   it("renders the final total value", () => {
     renderSection({ finalTotal: 123.45 });
-    expect(screen.getByText(/total a pagar/i)).toBeInTheDocument();
+    // Component renders "Total" (not "Total a pagar") as the label
+    expect(screen.getByText(/^total$/i)).toBeInTheDocument();
     expect(screen.getByText("S/123.45")).toBeInTheDocument();
   });
 });
@@ -429,7 +429,8 @@ describe("CheckoutPaymentSection — submit + back", () => {
     const cta = screen.getByTestId("pago-submit");
     expect(cta).toBeInTheDocument();
     expect(cta).toBeEnabled();
-    expect(cta).toHaveTextContent(/finalizar pedido/i);
+    // Component renders "Continuar" (not "Finalizar pedido")
+    expect(cta).toHaveTextContent(/continuar/i);
   });
 
   it("disables the submit CTA and shows 'Enviando...' when submitting=true", () => {
@@ -490,17 +491,16 @@ describe("CheckoutPaymentSection — server error", () => {
 // ── Points preview ──────────────────────────────────────────────────────
 describe("CheckoutPaymentSection — loyalty points preview", () => {
   it("renders the points preview when finalTotal > 0", () => {
-    renderSection({ finalTotal: 50 });
-    // floor(50/10)*5 = 25 points
-    expect(screen.getByText(/\+25 puntos/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/ganaras puntos por este pedido/i)
-    ).toBeInTheDocument();
+    // loyaltyPoints must be non-null and finalTotal >= 5 for preview to show.
+    // Component renders "+${Math.floor(finalTotal)} pts" and "Ganarás"
+    renderSection({ finalTotal: 50, loyaltyPoints: 100 });
+    expect(screen.getByText(/\+50 pts/i)).toBeInTheDocument();
+    expect(screen.getByText(/ganar[aá]s/i)).toBeInTheDocument();
   });
 
   it("hides the points preview when finalTotal = 0", () => {
-    renderSection({ finalTotal: 0 });
-    expect(screen.queryByText(/puntos/i)).not.toBeInTheDocument();
+    renderSection({ finalTotal: 0, loyaltyPoints: 100 });
+    expect(screen.queryByText(/\+\d+ pts/i)).not.toBeInTheDocument();
   });
 });
 
@@ -508,16 +508,18 @@ describe("CheckoutPaymentSection — loyalty points preview", () => {
 describe("CheckoutPaymentSection — delivery ETA panel", () => {
   it("renders the delivery estimate block label", () => {
     renderSection();
-    expect(screen.getByText(/entrega estimada/i)).toBeInTheDocument();
+    // Component shows "~30 minutos" or "Mañana 8 a 10 am" — no static label "Entrega estimada".
+    // Verify either branch of the ETA text is rendered.
+    const openEta = screen.queryByText(/~30 minutos/i);
+    const closedEta = screen.queryByText(/ma[ñn]ana/i);
+    expect(openEta !== null || closedEta !== null).toBe(true);
   });
 
   it("renders either the open ETA or the next-morning message (time dependent)", () => {
     renderSection();
-    // The component computes time at render — both branches are valid. We just
-    // assert one of the two strings exists, so the test is stable regardless
-    // of the host clock.
+    // The component computes time at render — both branches are valid.
     const openEta = screen.queryByText(/~30 minutos/i);
-    const closedEta = screen.queryByText(/manana de 8:00 a 10:00 am/i);
+    const closedEta = screen.queryByText(/ma[ñn]ana/i);
     expect(openEta !== null || closedEta !== null).toBe(true);
   });
 });

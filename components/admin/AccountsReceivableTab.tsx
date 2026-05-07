@@ -38,10 +38,10 @@ type PaymentRecord = {
 
 const STATUS_LABEL: Record<ARStatus, string> = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", vencido: "Vencido" };
 const STATUS_COLOR: Record<ARStatus, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  parcial:   "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  pagado:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  vencido:   "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  parcial:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  pagado:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  vencido:   "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 const STATUS_VARIANT: Record<ARStatus, BadgeVariant> = {
   pendiente: "warning",
@@ -75,9 +75,9 @@ function _getRiskLevel(balance: number): RiskLevel {
   return "bajo";
 }
 const _RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
-  bajo:  { label: "Bajo",  color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dot: "bg-[var(--accent-soft)]" },
-  medio: { label: "Medio", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    dot: "bg-[var(--data-warning)]" },
-  alto:  { label: "Alto",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        dot: "bg-[var(--data-error)]" },
+  bajo:  { label: "Bajo",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dot: "bg-[var(--accent-soft)]" },
+  medio: { label: "Medio", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    dot: "bg-[var(--data-warning-500)]" },
+  alto:  { label: "Alto",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        dot: "bg-[var(--data-error-500)]" },
 };
 
 // ── Seed mock data ─────────────────────────────────────────────────────────────
@@ -285,10 +285,10 @@ export default function AccountsReceivableTab() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-          { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -405,7 +405,7 @@ export default function AccountsReceivableTab() {
                   <Row label="Vencimiento" val={fmtDate(selected.dueDate)} />
                   <Row label="Total" val={fmt(selected.totalAmount)} bold />
                   <Row label="Pagado" val={fmt(selected.paidAmount)} />
-                  <Row label="Saldo" val={fmt(selected.totalAmount - selected.paidAmount)} bold color={selected.status === "vencido" ? "text-red-500" : "text-primary"} />
+                  <Row label="Saldo" val={fmt(selected.totalAmount - selected.paidAmount)} bold color={selected.status === "vencido" ? "text-[var(--data-error-500)]" : "text-primary"} />
                   {selected.notes && <Row label="Notas" val={selected.notes} />}
                 </div>
 
@@ -439,13 +439,13 @@ export default function AccountsReceivableTab() {
                     {payments.filter(p => p.arId === selected.id).map(p => (
                       <div key={p.id} className="flex items-center justify-between text-xs">
                         <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(p.date)} · {p.method}</span>
-                        <span className="font-bold text-[var(--data-success)]">{fmt(p.amount)}</span>
+                        <span className="font-bold text-[var(--data-success-500)]">{fmt(p.amount)}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] text-xs font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
+                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] text-xs font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
               </div>
             ) : (
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-8 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">

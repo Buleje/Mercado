@@ -181,7 +181,7 @@ export default function InstallPrompt() {
           <div className="p-5">
             <div className="flex items-start gap-3 pr-6">
               <div className="h-11 w-11 shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                <Check className="h-5 w-5 text-[var(--data-success-600)] dark:text-emerald-400" strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
@@ -206,7 +206,7 @@ export default function InstallPrompt() {
                   className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-700 px-2.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                   aria-label="Copiar cupon"
                 >
-                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? "Copiado" : "Copiar"}
                 </button>
               </div>

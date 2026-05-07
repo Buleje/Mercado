@@ -203,7 +203,7 @@ export default function HomepageEditorTab() {
     },
     {
       id: "countdown",
-      icon: <Clock className="h-6 w-6 text-[var(--data-error)]" />,
+      icon: <Clock className="h-6 w-6 text-[var(--data-error-500)]" />,
       bgColor: "bg-red-50 dark:bg-red-900/20",
       title: "Banner Countdown",
       description: "Banner de ofertas del día con cuenta regresiva",
@@ -216,7 +216,7 @@ export default function HomepageEditorTab() {
     },
     {
       id: "stats",
-      icon: <BarChart3 className="h-6 w-6 text-[var(--data-success)]" />,
+      icon: <BarChart3 className="h-6 w-6 text-[var(--data-success-500)]" />,
       bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       title: "Nuestros Números",
       description: "Estadísticas que se muestran debajo del hero",
@@ -229,7 +229,7 @@ export default function HomepageEditorTab() {
     },
     {
       id: "products",
-      icon: <ShoppingBag className="h-6 w-6 text-[var(--data-warning)]" />,
+      icon: <ShoppingBag className="h-6 w-6 text-[var(--data-warning-500)]" />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       title: "Productos Destacados",
       description: "Sección de productos destacados en la landing",
@@ -339,9 +339,9 @@ export default function HomepageEditorTab() {
       </AdminModuleHeader>
 
       {/* Info banner */}
-      <div className="flex flex-wrap items-start gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-        <Sparkles className="h-4 w-4 text-[var(--data-success)] mt-0.5 shrink-0" />
-        <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] leading-relaxed">
+      <div className="flex flex-wrap items-start gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+        <Sparkles className="h-4 w-4 text-[var(--data-success-500)] mt-0.5 shrink-0" />
+        <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
         </p>
       </div>
@@ -362,8 +362,8 @@ export default function HomepageEditorTab() {
         {/* FAQ Editor */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
-              <HelpCircle className="h-6 w-6 text-[var(--data-warning)]" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
+              <HelpCircle className="h-6 w-6 text-[var(--data-warning-500)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Preguntas Frecuentes (FAQ)</p>
@@ -379,7 +379,7 @@ export default function HomepageEditorTab() {
                 <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
                   <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                  <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
+                  <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
               <button onClick={() => handleListAdd("faqItems")} className="text-xs font-bold text-primary hover:text-primary-dark">+ Agregar pregunta</button>
@@ -391,7 +391,7 @@ export default function HomepageEditorTab() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-              <Heart className="h-6 w-6 text-[var(--data-success)]" />
+              <Heart className="h-6 w-6 text-[var(--data-success-500)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Beneficios</p>
@@ -407,7 +407,7 @@ export default function HomepageEditorTab() {
                 <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
                   <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                  <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
+                  <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
               <button onClick={() => handleListAdd("benefitItems")} className="text-xs font-bold text-primary hover:text-primary-dark">+ Agregar beneficio</button>
@@ -418,8 +418,8 @@ export default function HomepageEditorTab() {
         {/* Testimonials Editor */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-info-50)] dark:bg-[var(--data-info)]/20">
-              <MessageSquare className="h-6 w-6 text-[var(--data-info)]" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/20">
+              <MessageSquare className="h-6 w-6 text-[var(--data-info-500)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Testimonios</p>
@@ -443,7 +443,7 @@ export default function HomepageEditorTab() {
                     <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
                       {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
-                    <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
+                    <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                   </div>
                 </div>
               ))}

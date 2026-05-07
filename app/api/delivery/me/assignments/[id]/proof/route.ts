@@ -87,9 +87,14 @@ export async function POST(
     return NextResponse.json({ error: "No pudimos procesar la foto" }, { status: 500 });
   }
 
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).slice(2, 8);
-  const path = `delivery-proofs/${assignment.tenantId}/${assignmentId}-${timestamp}-${random}.webp`;
+  // SECURITY 2026-05-05 (pentest delivery H001+H014): UUID criptográfico + path
+  // privado. Antes path determinístico `${assignmentId}-${ts}-${6chars}` con
+  // entropy 36^6 (~2B) + bucket público vía getPublicUrl exponía PII de Ley
+  // 29733 (DNI, casa, rostro del cliente) por brute-force. Ahora `randomUUID`
+  // (122 bits) + se persiste solo el `path` y el GET resuelve URL firmada
+  // on-demand (60min) tras re-auth.
+  const random = (await import("crypto")).randomUUID();
+  const path = `delivery-proofs/${assignment.tenantId}/${assignmentId}-${random}.webp`;
 
   let publicUrl: string;
   try {
@@ -104,8 +109,15 @@ export async function POST(
       logger.error("[delivery/proof] supabase upload failed", { error: uploadError.message });
       return NextResponse.json({ error: "Error subiendo la foto" }, { status: 500 });
     }
-    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    publicUrl = pub.publicUrl;
+    // SECURITY: signed URL en vez de public — TTL 1h, rotada por GET autenticado.
+    const { data: signed, error: signErr } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, 60 * 60);
+    if (signErr || !signed) {
+      logger.error("[delivery/proof] signed URL failed", { error: signErr?.message });
+      return NextResponse.json({ error: "Error subiendo la foto" }, { status: 500 });
+    }
+    publicUrl = signed.signedUrl;
   } catch (err) {
     logger.error("[delivery/proof] upload threw", { error: String(err) });
     return NextResponse.json({ error: "Error subiendo la foto" }, { status: 500 });
@@ -124,6 +136,7 @@ export async function POST(
     }
   }
   nextNotesObj.proofPhotoUrl = publicUrl;
+  nextNotesObj.proofPhotoPath = path; // SECURITY: persistir path para re-firmar URL al expirar
   nextNotesObj.proofTakenAt = new Date().toISOString();
 
   // Ownership validado arriba. TODO: extraer a DeliveryAssignmentsDB.

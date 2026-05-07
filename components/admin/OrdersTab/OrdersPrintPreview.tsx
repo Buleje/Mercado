@@ -128,8 +128,8 @@ export function OrdersPrintPreview({
                       </div>
                     )}
                     {order.deuda && (
-                      <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded p-2 mt-2">
-                        <p className="text-xs font-bold text-[var(--data-error)]">DEUDA PENDIENTE DE COBRO</p>
+                      <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded p-2 mt-2">
+                        <p className="text-xs font-bold text-[var(--data-error-500)]">DEUDA PENDIENTE DE COBRO</p>
                       </div>
                     )}
                   </div>
@@ -144,15 +144,15 @@ export function OrdersPrintPreview({
 
                   {/* Notes */}
                   {order.notes && (
-                    <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-lg p-2 mb-3">
-                      <p className="text-xs font-bold text-[var(--data-warning)] mb-0.5">Notas del cliente:</p>
-                      <p className="text-xs text-[var(--data-warning)]">{order.notes}</p>
+                    <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-lg p-2 mb-3">
+                      <p className="text-xs font-bold text-[var(--data-warning-500)] mb-0.5">Notas del cliente:</p>
+                      <p className="text-xs text-[var(--data-warning-500)]">{order.notes}</p>
                     </div>
                   )}
                   {(order as DbOrder & { adminNotes?: string }).adminNotes && (
-                    <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-lg p-2 mb-3">
-                      <p className="text-xs font-bold text-[var(--data-warning)] mb-0.5">Notas internas:</p>
-                      <p className="text-xs text-[var(--data-warning)] whitespace-pre-wrap">
+                    <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-lg p-2 mb-3">
+                      <p className="text-xs font-bold text-[var(--data-warning-500)] mb-0.5">Notas internas:</p>
+                      <p className="text-xs text-[var(--data-warning-500)] whitespace-pre-wrap">
                         {(order as DbOrder & { adminNotes?: string }).adminNotes}
                       </p>
                     </div>

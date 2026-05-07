@@ -3,7 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { MapPin, Plus, Trash2, Pencil, ArrowLeft, Home, Briefcase } from "@buleje/design-system/icons";
+import {
+  MapPin,
+  Plus,
+  Trash2,
+  Pencil,
+  ArrowLeft,
+  Home,
+  Briefcase,
+  CheckCircle2,
+  Info,
+} from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -23,25 +33,8 @@ type AddressEntry = {
   type: "home" | "work" | "other";
 };
 
-// Demo data — MVP
-const DEMO_ADDRESSES: AddressEntry[] = [
-  {
-    id: "addr_001",
-    label: "Casa",
-    address: "Jr. Ucayali 342, Pucallpa",
-    reference: "Frente al mercado, reja azul",
-    isDefault: true,
-    type: "home",
-  },
-  {
-    id: "addr_002",
-    label: "Trabajo",
-    address: "Av. Centenario 1280, Pucallpa",
-    reference: "Edificio gris, piso 2",
-    isDefault: false,
-    type: "work",
-  },
-];
+// Sin demo data — direcciones solo vienen del customer real (locations
+// guardadas vía checkout). Si no hay, mostramos empty state.
 
 function AddressCard({
   addr,
@@ -52,66 +45,101 @@ function AddressCard({
   onDelete: (id: string) => void;
   onSetDefault: (id: string) => void;
 }) {
-  const TypeIcon = addr.type === "home" ? Home : addr.type === "work" ? Briefcase : MapPin;
+  const TypeIcon =
+    addr.type === "home"
+      ? Home
+      : addr.type === "work"
+        ? Briefcase
+        : MapPin;
 
   return (
     <div
-      className={cn(
-        "bg-white dark:bg-card rounded-xl border p-4 transition-all duration-200",
-        addr.isDefault
-          ? "border-primary/30 dark:border-primary/40"
-          : "border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80"
-      )}
+      className="rounded-2xl p-5 transition-all"
+      style={{
+        background: "var(--color-card)",
+        border: addr.isDefault
+          ? "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)"
+          : "1px solid var(--color-card-border)",
+        boxShadow: addr.isDefault
+          ? "0 8px 20px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)"
+          : "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+      }}
     >
       <div className="flex items-start gap-3">
         <div
-          className={cn(
-            "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+          className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+          style={
             addr.isDefault
-              ? "bg-primary/10"
-              : "bg-gray-50 dark:bg-surface"
-          )}
+              ? {
+                  background:
+                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  boxShadow:
+                    "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                }
+              : {
+                  background:
+                    "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                }
+          }
         >
           <TypeIcon
-            className={cn(
-              "h-4 w-4",
-              addr.isDefault ? "text-primary" : "text-muted"
-            )}
+            className="h-5 w-5"
+            strokeWidth={2.25}
+            style={{
+              color: addr.isDefault
+                ? "white"
+                : "var(--color-primary-dark, #009690)",
+            }}
           />
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-sm font-semibold text-foreground">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <span className="text-base font-extrabold text-foreground">
               {addr.label}
             </span>
             {addr.isDefault && (
-              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+              <span
+                className="inline-flex items-center gap-1 text-xs font-extrabold px-2 py-0.5 rounded-full text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                }}
+              >
+                <CheckCircle2 className="h-3 w-3" strokeWidth={2.5} />
                 Principal
               </span>
             )}
           </div>
-          <p className="text-sm text-foreground">{addr.address}</p>
-          <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{addr.reference}</p>
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            {addr.address}
+          </p>
+          {addr.reference && (
+            <p className="text-xs text-muted mt-1 leading-snug">
+              Referencia: {addr.reference}
+            </p>
+          )}
 
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex flex-wrap items-center gap-3 mt-4">
             {!addr.isDefault && (
               <button
                 onClick={() => onSetDefault(addr.id)}
-                className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:text-primary/80 transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-extrabold hover:underline underline-offset-2 transition-colors"
+                style={{ color: "var(--color-primary-dark, #009690)" }}
               >
+                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 Marcar como principal
               </button>
             )}
-            <button className="text-[length:var(--ts-2xs)] font-semibold text-muted hover:text-foreground transition-colors flex items-center gap-1">
-              <Pencil className="h-3 w-3" />
+            <button className="inline-flex items-center gap-1 text-xs font-extrabold text-muted hover:text-foreground transition-colors">
+              <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
               Editar
             </button>
             <button
               onClick={() => onDelete(addr.id)}
-              className="text-[length:var(--ts-2xs)] font-semibold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-xs font-extrabold text-[var(--data-error-600)] hover:text-[var(--data-error-700)] transition-colors"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
               Eliminar
             </button>
           </div>
@@ -127,13 +155,13 @@ export default function DireccionesPage() {
     customer?.locations?.length
       ? customer.locations.map((loc, i) => ({
           id: loc.id,
-          label: i === 0 ? "Principal" : `Direccion ${i + 1}`,
+          label: i === 0 ? "Principal" : `Dirección ${i + 1}`,
           address: loc.location,
           reference: loc.reference,
           isDefault: loc.id === customer.activeLocationId,
           type: "other" as const,
         }))
-      : DEMO_ADDRESSES
+      : [],
   );
 
   const handleDelete = (id: string) => {
@@ -142,68 +170,118 @@ export default function DireccionesPage() {
 
   const handleSetDefault = (id: string) => {
     setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === id }))
+      prev.map((a) => ({ ...a, isDefault: a.id === id })),
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div
+      className="min-h-screen dark:bg-background"
+      style={{
+        background:
+          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+      }}
+    >
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
-          { name: "Mi cuenta", url: "https://www.buleje.pe/cuenta" },
+          { name: "Mi panel", url: "https://www.buleje.pe/mi-panel" },
           { name: "Direcciones", url: "https://www.buleje.pe/cuenta/direcciones" },
         ]}
       />
       <AnnouncementBar />
       <Header />
 
-      {/* Hero */}
+      {/* ── Hero — brand gradient ─────────────────────────────── */}
       <div
-        className="pt-32 sm:pt-36 pb-8 border-b border-gray-200 dark:border-gray-800"
-        style={{ background: "#060a0d" }}
+        className="relative overflow-hidden pt-36 sm:pt-44 pb-10 sm:pb-14"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+        }}
       >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div
+          className="absolute -top-16 -right-16 h-64 w-64 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.10)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.07)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none opacity-15"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-5"
+            className="flex items-center gap-1.5 text-xs text-white/75 mb-6 font-semibold"
           >
-            <Link href="/" className="hover:text-white/60 transition-colors">
+            <Link href="/" className="hover:text-white transition-colors">
               Inicio
             </Link>
-            <span>/</span>
-            <Link href="/cuenta" className="hover:text-white/60 transition-colors">
-              Mi cuenta
+            <span className="text-white/45">/</span>
+            <Link
+              href="/mi-panel"
+              className="hover:text-white transition-colors"
+            >
+              Mi panel
             </Link>
-            <span>/</span>
-            <span className="text-white/55">Direcciones</span>
+            <span className="text-white/45">/</span>
+            <span className="text-white">Direcciones</span>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
-              href="/cuenta"
-              className="p-2 -ml-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-              aria-label="Volver"
+              href="/mi-panel"
+              className="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
+              aria-label="Volver al panel"
             >
-              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+              <ArrowLeft className="h-5 w-5" strokeWidth={2} />
             </Link>
-            <div>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40">
-                TU CUENTA
+            <div className="flex-1 min-w-0">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-white/85 mb-1">
+                <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Tu cuenta
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[var(--ls-tight)]">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
                 Direcciones de entrega
               </h1>
+              <p className="text-sm text-white/85 mt-1.5 leading-snug">
+                Hasta 5 direcciones guardadas para pedidos más rápidos
+              </p>
+              {addresses.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 mt-3 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1 border border-white/25 text-xs font-extrabold text-white">
+                  {addresses.length}{" "}
+                  {addresses.length === 1 ? "guardada" : "guardadas"}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4 pb-28">
-        {/* Add button */}
-        <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-muted hover:text-foreground hover:border-gray-300 dark:hover:border-card-border/80 transition-colors">
-          <Plus className="h-4 w-4" />
-          Agregar nueva direccion
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-4 pb-28">
+        {/* Add button — destacado */}
+        <button
+          className="w-full flex items-center justify-center gap-2 h-14 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.99]"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+            boxShadow:
+              "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+          }}
+        >
+          <Plus className="h-5 w-5" strokeWidth={2.5} />
+          Agregar nueva dirección
         </button>
 
         {/* Addresses list */}
@@ -219,27 +297,70 @@ export default function DireccionesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-8 flex flex-col items-center gap-4 text-center">
-            <MensajeronBuscando size={80} className="text-gray-300 dark:text-muted" />
+          <div
+            className="rounded-3xl p-10 flex flex-col items-center gap-4 text-center"
+            style={{
+              background: "var(--color-card)",
+              border:
+                "1px solid var(--color-card-border)",
+              boxShadow:
+                "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+            }}
+          >
+            <div
+              className="w-20 h-20 rounded-3xl flex items-center justify-center"
+              style={{
+                background:
+                  "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+              }}
+            >
+              <MensajeronBuscando size={64} className="text-current" style={{ color: "var(--color-primary-dark, #009690)" }} />
+            </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">
+              <p
+                className="text-lg font-extrabold"
+                style={{ color: "var(--color-primary-dark, #009690)" }}
+              >
                 Sin direcciones guardadas
               </p>
-              <p className="text-xs text-muted mt-1 max-w-xs mx-auto">
-                Agrega una direccion de entrega para facilitar tus pedidos futuros.
+              <p className="text-sm text-muted mt-1.5 max-w-xs mx-auto leading-snug">
+                Agrega una dirección de entrega para facilitar tus pedidos futuros.
               </p>
             </div>
           </div>
         )}
 
-        {/* Note */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
-          <div className="flex items-start gap-3">
-            <MapPin className="h-4 w-4 text-muted shrink-0 mt-0.5" />
-            <p className="text-xs text-muted leading-relaxed">
-              Las direcciones guardadas se usaran automaticamente al realizar un nuevo pedido. Podes tener hasta 5 direcciones guardadas.
-            </p>
+        {/* Info note — brand-tinted */}
+        <div
+          className="rounded-2xl p-4 flex items-start gap-3"
+          style={{
+            background:
+              "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+            border:
+              "1px solid var(--color-card-border)",
+          }}
+        >
+          <div
+            className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background:
+                "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+            }}
+          >
+            <Info
+              className="h-4 w-4"
+              strokeWidth={2.25}
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            />
           </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            Las direcciones guardadas se usarán automáticamente al realizar un
+            nuevo pedido. Puedes tener hasta{" "}
+            <strong style={{ color: "var(--color-primary-dark, #009690)" }}>
+              5 direcciones
+            </strong>{" "}
+            guardadas.
+          </p>
         </div>
       </main>
 

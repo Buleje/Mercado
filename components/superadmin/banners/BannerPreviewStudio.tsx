@@ -800,7 +800,7 @@ function EditMode({
                     {b.title || "(sin título)"}
                   </span>
                   {!b.active && (
-                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning)] shrink-0">
+                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)] shrink-0">
                       <EyeOff className="h-2.5 w-2.5" />
                       off
                     </span>
@@ -877,8 +877,8 @@ function EditMode({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition-colors",
                   current.active
-                    ? "bg-[var(--data-success)]/20 text-[var(--data-success)] hover:bg-[var(--data-success)]/30"
-                    : "bg-[var(--data-warning)]/20 text-[var(--data-warning)] hover:bg-[var(--data-warning)]/30",
+                    ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/30"
+                    : "bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/30",
                 )}
               >
                 {current.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -1332,7 +1332,7 @@ function ImageTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
         <button
           type="button"
           onClick={() => onPatch({ imageUrl: null })}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--st-fg)/0.6)] hover:text-[var(--data-error)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--st-fg)/0.6)] hover:text-[var(--data-error-500)] transition-colors"
         >
           <Trash2 className="h-3 w-3" />
           Quitar imagen
@@ -1598,7 +1598,7 @@ function PromoItemEditor({
         <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[rgb(var(--st-fg)/0.1)] disabled:opacity-30" : "hover:bg-black/10 disabled:opacity-30")} title="Bajar">
           <ArrowDown className="h-3 w-3" />
         </button>
-        <button type="button" onClick={onRemove} disabled={total === 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)] disabled:opacity-30" : "hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)] disabled:opacity-30")} title="Eliminar">
+        <button type="button" onClick={onRemove} disabled={total === 1} className={cn("h-6 w-6 inline-flex items-center justify-center rounded transition-colors", dark ? "hover:bg-[var(--data-error-500)]/20 hover:text-[var(--data-error-500)] disabled:opacity-30" : "hover:bg-[var(--data-error-500)]/20 hover:text-[var(--data-error-500)] disabled:opacity-30")} title="Eliminar">
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
@@ -1841,7 +1841,7 @@ function AICopySuggester({
           </p>
         )}
         {error && (
-          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-bold">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] font-bold">
             {error}
           </p>
         )}
@@ -2618,8 +2618,8 @@ function StateTab({
           className={cn(
             "w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold transition-colors",
             banner.active
-              ? "bg-[var(--data-success)]/20 text-[var(--data-success)] hover:bg-[var(--data-success)]/30"
-              : "bg-[var(--data-warning)]/20 text-[var(--data-warning)] hover:bg-[var(--data-warning)]/30",
+              ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/30"
+              : "bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/30",
           )}
         >
           {banner.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -3107,7 +3107,7 @@ function DraggableHandle({
 
   const palette =
     color === "emerald"
-      ? { bg: "bg-emerald-500", ring: "ring-emerald-300" }
+      ? { bg: "bg-[var(--data-success-500)]", ring: "ring-emerald-300" }
       : color === "rose"
         ? { bg: "bg-rose-500", ring: "ring-rose-300" }
         : { bg: "bg-sky-500", ring: "ring-sky-300" };

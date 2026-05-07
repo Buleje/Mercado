@@ -108,9 +108,9 @@ export default function PostDeliverySurvey({
 
   if (step === "done") {
     return (
-      <div className="rounded-xl border border-[#00B4A6] bg-card dark:bg-card p-6 text-center space-y-3">
+      <div className="rounded-xl border border-[var(--accent)] bg-card dark:bg-card p-6 text-center space-y-3">
         <div className="flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00B4A6]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)]">
             <Check className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function PostDeliverySurvey({
           disabled={step === "submitting"}
         />
         {rating > 0 && (
-          <p className="text-xs text-[#00B4A6] font-medium">
+          <p className="text-xs text-[var(--accent)] font-medium">
             {STAR_LABELS[rating - 1]}
           </p>
         )}
@@ -183,7 +183,7 @@ export default function PostDeliverySurvey({
           className={cn(
             "w-full rounded-md border border-border bg-background dark:bg-background",
             "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
-            "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/50",
+            "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50",
             "disabled:opacity-50"
           )}
         />
@@ -192,7 +192,7 @@ export default function PostDeliverySurvey({
       {/* Error */}
       {step === "error" && (
         <div className="rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 px-3 py-2">
-          <p className="text-xs text-red-700 dark:text-red-400">
+          <p className="text-xs text-[var(--data-error-700)] dark:text-red-400">
             {errorMsg} Intentalo de nuevo.
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function PostDeliverySurvey({
         disabled={!canSubmit}
         className={cn(
           "w-full flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors",
-          "bg-[#00B4A6] text-white hover:bg-[#009690]",
+          "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]",
           "disabled:opacity-50 disabled:cursor-not-allowed"
         )}
       >

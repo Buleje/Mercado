@@ -71,7 +71,7 @@ const TIERS: Tier[] = [
     name: "Bronce",
     min: 0,
     max: 2000,
-    gradient: "from-orange-400 to-amber-700",
+    gradient: "from-orange-400 to-[var(--data-warning-700)]",
     textClass: "text-amber-900",
   },
   {
@@ -117,8 +117,8 @@ const MOCK_BADGES: BadgeDef[] = [
     desc: "5★ por 30 días",
     state: "in-progress",
     progress: 70,
-    colorClass: "text-amber-500",
-    bgClass: "bg-amber-500/10",
+    colorClass: "text-[var(--data-warning-500)]",
+    bgClass: "bg-[var(--data-warning-500)]/10",
   },
   {
     id: "velocidad",
@@ -135,8 +135,8 @@ const MOCK_BADGES: BadgeDef[] = [
     Icon: Shield,
     desc: "0 cancelaciones",
     state: "unlocked",
-    colorClass: "text-emerald-500",
-    bgClass: "bg-emerald-500/10",
+    colorClass: "text-[var(--data-success-500)]",
+    bgClass: "bg-[var(--data-success-500)]/10",
   },
   {
     id: "crecimiento",
@@ -230,7 +230,7 @@ function BadgeCircle({ badge }: { badge: BadgeDef }) {
           <span className="absolute -top-0.5 -right-0.5">
             <span className="relative flex h-3 w-3">
               <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-amber-500" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--data-warning-500)]" />
             </span>
           </span>
         )}
@@ -424,7 +424,7 @@ export default function RiderScoreCard({
           {/* ── Stats footer (dentro del hero en desktop) ─────────────── */}
           <div className="mt-6 flex items-center gap-4 flex-wrap">
             <StatPill
-              icon={<Star className="h-4 w-4 text-amber-500" strokeWidth={2} />}
+              icon={<Star className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={2} />}
               value={rating.toFixed(1)}
               label="promedio"
             />
@@ -436,7 +436,7 @@ export default function RiderScoreCard({
             />
             <div className="h-6 w-px bg-[var(--rule-base)]" aria-hidden />
             <StatPill
-              icon={<Shield className="h-4 w-4 text-emerald-500" strokeWidth={2} />}
+              icon={<Shield className="h-4 w-4 text-[var(--data-success-500)]" strokeWidth={2} />}
               value={`${onTimePercent}%`}
               label="on-time"
             />
@@ -463,7 +463,7 @@ export default function RiderScoreCard({
 
           {/* Leyenda de estados */}
           <div className="mt-6 flex items-center gap-4 flex-wrap border-t border-[var(--rule-base)] pt-4">
-            <LegendItem dot="bg-emerald-500" label="Obtenido" />
+            <LegendItem dot="bg-[var(--data-success-500)]" label="Obtenido" />
             <LegendItem dot="bg-amber-400 animate-pulse" label="En progreso" />
             <LegendItem dot="bg-[var(--text-tertiary)] opacity-50" label="Bloqueado" />
           </div>

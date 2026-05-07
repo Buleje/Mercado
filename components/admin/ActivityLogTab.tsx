@@ -31,9 +31,9 @@ const ENTITY_ICONS: Record<string, React.ElementType> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  crear: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  editar: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  eliminar: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  crear: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  editar: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  eliminar: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   estado: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   otro: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
 };
@@ -126,7 +126,7 @@ export default function ActivityLogTab() {
           <button
             onClick={() => setAutoRefresh(p => !p)}
             className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
-              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
+              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
             )}
             title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
           >
@@ -135,7 +135,7 @@ export default function ActivityLogTab() {
           <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Actualizar
           </button>
-          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
+          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error-500)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Limpiar
           </button>
         </div>

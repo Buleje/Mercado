@@ -266,10 +266,10 @@ export function AdminMobileDrawer({
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-accent"
+                      : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-accent"
                   )}
                 >
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning)]" />
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" />
                   <span className="truncate">{label}</span>
                 </button>
               ))}
@@ -327,7 +327,7 @@ export function AdminMobileDrawer({
                   title="Contiene datos de ejemplo"
                   className={cn(
                     "h-2 w-2 rounded-full shrink-0",
-                    tab === id ? "bg-[var(--data-error)]" : "bg-[var(--data-error)]"
+                    tab === id ? "bg-[var(--data-error-500)]" : "bg-[var(--data-error-500)]"
                   )}
                 />
               )}
@@ -335,7 +335,7 @@ export function AdminMobileDrawer({
                 <span
                   className={cn(
                     "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                    tab === id ? "bg-white/20 text-white" : "bg-[var(--data-error)] text-white"
+                    tab === id ? "bg-white/20 text-white" : "bg-[var(--data-error-500)] text-white"
                   )}
                 >
                   {alerts[id]}
@@ -346,7 +346,7 @@ export function AdminMobileDrawer({
                 className={cn(
                   "h-4 w-4 shrink-0 transition-all cursor-pointer",
                   favoriteTabs.has(id)
-                    ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+                    ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                     : "opacity-0 group-hover:opacity-60 text-[var(--text-tertiary)]"
                 )}
               />
@@ -407,7 +407,7 @@ export function AdminMobileDrawer({
                   <s.icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{s.label}</span>
                   {!editingShortcuts && alerts[s.id] && (
-                    <span className="ml-auto text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center bg-[var(--data-error)] text-white">
+                    <span className="ml-auto text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center bg-[var(--data-error-500)] text-white">
                       {alerts[s.id]}
                     </span>
                   )}
@@ -415,7 +415,7 @@ export function AdminMobileDrawer({
                 {editingShortcuts && (
                   <button
                     onClick={() => onRemoveShortcut(s.id)}
-                    className="p-1 text-[var(--data-error)] hover:text-[var(--data-error)] transition-colors"
+                    className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
                     title="Quitar"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -467,7 +467,7 @@ export function AdminMobileDrawer({
           </Link>
           <button
             onClick={() => { onOpenCierreDiario(); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar día
           </button>

@@ -89,10 +89,10 @@ export default function PushNotificationBanner() {
           className={cn(
             "relative flex items-center gap-3 rounded-xl border px-4 py-3",
             state === "success"
-              ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
               : state === "error"
-              ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
-              : "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
+              : "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
           )}
         >
           {/* Icono */}
@@ -102,38 +102,38 @@ export default function PushNotificationBanner() {
               state === "success"
                 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
                 : state === "error"
-                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
+                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40"
                 : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
             )}
           >
             {state === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             ) : state === "error" ? (
-              <BellOff className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+              <BellOff className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
             ) : (
-              <Bell className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+              <Bell className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             )}
           </div>
 
           {/* Texto */}
           <div className="flex-1 min-w-0">
             {state === "success" && (
-              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Notificaciones activadas. Recibirás alertas de vencimiento.
               </p>
             )}
             {state === "error" && (
               <>
-                <p className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">
+                <p className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   No se pudieron activar las notificaciones
                 </p>
                 {errorMsg && (
-                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{errorMsg}</p>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">{errorMsg}</p>
                 )}
               </>
             )}
             {(state === "unsubscribed" || state === "loading") && (
-              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Activa notificaciones para recibir alertas de vencimiento
               </p>
             )}
@@ -148,7 +148,7 @@ export default function PushNotificationBanner() {
               className={cn(
                 "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors shrink-0",
                 state === "error"
-                  ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)]/60 border border-[var(--data-error)] dark:border-[var(--data-error)]/50"
+                  ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/60 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50"
                   : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >

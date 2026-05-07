@@ -275,7 +275,7 @@ export default function RegistroClient() {
           </Link>
           <div className="hidden items-center gap-4 md:flex">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
-              <ShieldCheck className="h-4 w-4 text-[var(--data-success)]" strokeWidth={2.25} />
+              <ShieldCheck className="h-4 w-4 text-[var(--data-success-500)]" strokeWidth={2.25} />
               Registro 100% gratis
             </span>
             <span className="h-4 w-px bg-[var(--rule-base)]" />
@@ -311,7 +311,7 @@ export default function RegistroClient() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 shrink-0 md:hidden">
-              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success)]/30 bg-[var(--data-success)]/5 px-3 py-1 text-xs font-bold text-[var(--data-success)]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3 py-1 text-xs font-bold text-[var(--data-success-500)]">
                 <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
                 Gratis
               </span>
@@ -390,7 +390,7 @@ export default function RegistroClient() {
             {submitError && (
               <div
                 role="alert"
-                className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error)]/30 bg-[var(--data-error)]/5 px-4 py-3.5 text-sm font-bold text-[var(--data-error)]"
+                className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 px-4 py-3.5 text-sm font-bold text-[var(--data-error-500)]"
               >
                 <span aria-hidden className="text-lg">!</span>
                 <span>{submitError}</span>
@@ -466,7 +466,7 @@ export default function RegistroClient() {
                     { icon: Check, label: "Cancelás cuando quieras" },
                   ].map((vp) => (
                     <li key={vp.label} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
+                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
                         <vp.icon className="h-3 w-3" strokeWidth={3} />
                       </span>
                       <span className="text-sm font-semibold text-[var(--text-primary)]">

@@ -4,6 +4,7 @@ import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { getOrSet } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const QuerySchema = z.object({
   q:     z.string().min(1).max(100),
@@ -11,6 +12,10 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // SECURITY 2026-05-06: rate limit autocomplete (vector de scraping rápido).
+  const rl = applyRateLimit(req, "GENEROUS", "search-suggestions");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   const requestId = req.headers.get("x-request-id") ?? traceId;
 

@@ -113,7 +113,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             <div className="border-t border-[var(--rule-soft)] dark:border-white/5 py-1.5 px-1.5">
               <button
                 onClick={() => { onLogout(); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span>Cerrar sesión</span>

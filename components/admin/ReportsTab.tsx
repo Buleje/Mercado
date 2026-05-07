@@ -613,7 +613,7 @@ export default function ReportsTab() {
             <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-[var(--accent-soft)]" : "p-2 rounded-xl bg-primary/10"}>
-                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-[var(--data-success)]" : "h-6 w-6 text-primary"} />
+                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-[var(--data-success-500)]" : "h-6 w-6 text-primary"} />
                 </div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{r.label}</CardTitle>
               </div>

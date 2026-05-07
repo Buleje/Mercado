@@ -57,9 +57,14 @@ export interface MarketplaceStore {
   freeDelivery?: boolean;
   deliveryMinutes?: number;
   activePromos?: number;
-  // ── TS-02 horarios derivados de Settings.autoCloseTime ──
-  openHours?: Array<{ open: number; openMin: number; close: number; closeMin: number }> | null;
+  // ── TS-02 horarios derivados de Settings.autoCloseTime (legacy) o
+  //         de hoursJson (preferido cuando el dueño configura su horario en
+  //         /admin?tab=marketplace#mi-tienda-personal). El backend prefiere
+  //         hoursJson si está disponible y derivará el flag isOpenNow real.
+  openHours?: Array<{ open: number; openMin: number; close: number; closeMin: number }> | null | Record<string, unknown>;
   isOpenNow?: boolean;
+  /** ISO timestamp de la próxima apertura — usado para el overlay "Cerrado". */
+  nextOpeningAt?: string | null;
 }
 
 /* ── Zone approximate coords for Pucallpa (geo fallback) ───────────────────── */

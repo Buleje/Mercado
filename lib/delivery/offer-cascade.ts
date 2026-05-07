@@ -206,6 +206,7 @@ export async function processCascadeTick(): Promise<{
   expired: number;
   cascadeStarted: number;
   cascadeFailed: number;
+  cascadeFallback?: number;
 }> {
   const now = new Date();
 
@@ -234,6 +235,8 @@ export async function processCascadeTick(): Promise<{
   let cascadeStarted = 0;
   let cascadeFailed = 0;
 
+  let cascadeFallback = 0;
+
   for (const o of orphanOrders) {
     if (!o.order) continue;
     const assigned = await prisma.deliveryAssignment.findUnique({
@@ -256,15 +259,50 @@ export async function processCascadeTick(): Promise<{
       orderLat,
       orderLng,
     );
-    if (result) cascadeStarted++;
-    else {
-      cascadeFailed++;
-      logger.warn("[offer-cascade] no candidates left", {
-        orderId: o.order.id,
-        tenant: tenant?.name,
+    if (result) {
+      cascadeStarted++;
+    } else {
+      // ── FALLBACK 2026-05-05 ──
+      // No hay otros candidatos disponibles (o todos están offline / ya
+      // tuvieron oferta). En vez de dejar el pedido huérfano, mantenemos
+      // viva la oferta MÁS RECIENTE para el último partner — extendemos
+      // su expiresAt a +24h. Cuando ese partner se conecte podrá aceptar.
+      //
+      // Filosofía: "no importa si pasan los 2 min, la oferta sigue ahí
+      // hasta que alguien acepte o admin reasigne".
+      const lastOffer = await prisma.deliveryOffer.findFirst({
+        where: {
+          orderId: o.orderId,
+          respondedAt: null,
+        },
+        orderBy: { offeredAt: "desc" },
+        select: { id: true, partnerId: true, status: true },
       });
+      if (lastOffer) {
+        const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await prisma.deliveryOffer.update({
+          where: { id: lastOffer.id },
+          data: {
+            status: "pending",
+            expiresAt: newExpiresAt,
+          },
+        });
+        cascadeFallback++;
+        logger.info("[offer-cascade] no candidates left — extending last offer +24h", {
+          orderId: o.orderId,
+          tenant: tenant?.name,
+          partnerId: lastOffer.partnerId,
+          offerId: lastOffer.id,
+        });
+      } else {
+        cascadeFailed++;
+        logger.warn("[offer-cascade] no candidates and no offer to extend", {
+          orderId: o.order.id,
+          tenant: tenant?.name,
+        });
+      }
     }
   }
 
-  return { expired: expired.count, cascadeStarted, cascadeFailed };
+  return { expired: expired.count, cascadeStarted, cascadeFailed, cascadeFallback };
 }

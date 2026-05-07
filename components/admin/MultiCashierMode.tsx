@@ -205,14 +205,14 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
       <div className="p-4 space-y-4">
         {/* ── Closing summary overlay ── */}
         {closingSummary && (
-          <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
-                <span className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Turno cerrado — {closingSummary.name}</span>
+                <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
+                <span className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Turno cerrado — {closingSummary.name}</span>
               </div>
               <button type="button" onClick={() => setClosingSummary(null)}>
-                <X className="h-4 w-4 text-[var(--data-success)]" />
+                <X className="h-4 w-4 text-[var(--data-success-500)]" />
               </button>
             </div>
             {(() => {
@@ -225,7 +225,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 </div>
               );
             })()}
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               Inicio: {fmtTime(closingSummary.startedAt)} — Cierre: {fmtTime(closingSummary.closedAt ?? new Date().toISOString())}
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
             <button
               type="button"
               onClick={() => closeShift(activeSession.id)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
             >
               <LogOut className="h-4 w-4" />
               Cerrar turno
@@ -389,7 +389,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                         {session.closedAt ? (
                           <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">Cerrado</span>
                         ) : (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">Activo</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activo</span>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">

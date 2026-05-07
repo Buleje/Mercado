@@ -33,6 +33,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY/CRITICAL 2026-05-06 (audit AI #2): requireAdmin obligatorio +
+  // tenantId del JWT. Antes endpoint anónimo permitía PII injection
+  // cross-tenant via header spoofeable.
+  const auth = await requireAdmin(req, ["admin", "cajero", "manager"]);
+  if (auth instanceof NextResponse) return auth;
   try {
     const raw = await req.json();
     const parsed = CustomerPostSchema.safeParse(raw);
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
       notifOrderUpdates: true,
       notifPromotions: true,
       notifRestock: true,
-    }, getTenantIdFromRequest(req));
+    }, auth.tenantId);
     return NextResponse.json(record);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

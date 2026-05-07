@@ -58,11 +58,11 @@ function fmtDate(iso: string) {
 }
 
 const STATUS_META: Record<BatchStatus, { label: string; color: string; bg: string; icon: typeof AlertTriangle }> = {
-  vigente:     { label: "Vigente",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  próximo:     { label: "Próximo",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: Clock },
-  "por-vencer":{ label: "Por vencer", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",    icon: Clock },
-  critico:     { label: "Crítico",    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30",  icon: AlertTriangle },
-  vencido:     { label: "Vencido",    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",        icon: AlertTriangle },
+  vigente:     { label: "Vigente",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  próximo:     { label: "Próximo",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: Clock },
+  "por-vencer":{ label: "Por vencer", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",    icon: Clock },
+  critico:     { label: "Crítico",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30",  icon: AlertTriangle },
+  vencido:     { label: "Vencido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",        icon: AlertTriangle },
 };
 
 const today = new Date().toISOString().slice(0, 10);
@@ -98,34 +98,34 @@ function ModuleTooltip() {
 function ExpiryCountdownBadge({ daysLeft }: { daysLeft: number }) {
   if (daysLeft <= 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)]">
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
         VENCIDO hace {Math.abs(daysLeft)}d
       </span>
     );
   }
   if (daysLeft <= 3) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)] animate-pulse">
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] animate-pulse">
         Vence en {daysLeft}d
       </span>
     );
   }
   if (daysLeft <= 7) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-orange-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-orange-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
         Vence en {daysLeft}d
       </span>
     );
   }
   if (daysLeft <= 30) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
         Vence en {daysLeft}d
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+    <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
       Vence en {daysLeft}d
     </span>
   );
@@ -311,10 +311,10 @@ export default function BatchesTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total lotes", count: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Vigentes", count: stats.vigente, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Por vencer", count: stats.por_vencer, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Críticos (≤7d)", count: stats.critico, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-          { label: "Vencidos", count: stats.vencido, color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Vigentes", count: stats.vigente, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Por vencer", count: stats.por_vencer, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Críticos (≤7d)", count: stats.critico, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+          { label: "Vencidos", count: stats.vencido, color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, count, color, bg }) => (
           <button key={label} onClick={() => setFilterStatus(filterStatus === label.toLowerCase().replace("críticos (≤7d)", "critico").replace("por vencer", "por-vencer") as BatchStatus | "todos" ? "todos" : "todos")} className={cn("rounded-xl p-4 text-left", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -325,11 +325,11 @@ export default function BatchesTab() {
 
       {/* Alerts banner */}
       {(stats.critico > 0 || stats.vencido > 0) && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] mt-0.5 shrink-0" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] mt-0.5 shrink-0" />
           <div>
-            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Acción requerida</p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
+            <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">Acción requerida</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">
               {stats.vencido > 0 && <span>{stats.vencido} lote(s) <strong>vencido(s)</strong> — retirar del inventario inmediatamente. </span>}
               {stats.critico > 0 && <span>{stats.critico} lote(s) vence(n) en ≤7 días — priorizar rotación FIFO.</span>}
             </p>
@@ -480,7 +480,7 @@ export default function BatchesTab() {
                         <button onClick={() => handleEdit(b)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors" title="Editar lote">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors" title="Eliminar lote">
+                        <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors" title="Eliminar lote">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>

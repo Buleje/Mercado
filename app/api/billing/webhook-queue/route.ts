@@ -31,9 +31,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** DELETE /api/billing/webhook-queue?id=<id> — dismiss a stuck event */
+/** DELETE /api/billing/webhook-queue?id=<id> — dismiss a stuck event.
+ * SECURITY 2026-05-06 (pentest billing #4): superadmin-only. Antes admin
+ * de tenant A podía borrar evento de pago de tenant B (cola compartida)
+ * y bloquear su activación de plan ya pagado.
+ */
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const { requirePlatformAPI } = await import("@/lib/superadmin-auth");
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const id = new URL(req.url).searchParams.get("id");
@@ -44,7 +49,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(
-      { error: "No se pudo eliminar", detail: e instanceof Error ? e.message : String(e) },
+      { error: "No se pudo eliminar" },
       { status: 503 }
     );
   }

@@ -40,11 +40,11 @@ type ShrinkageRecord = {
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
 
 const CAUSE_META: Record<ShrinkageCause, { label: string; color: string; bg: string }> = {
-  vencimiento: { label: "Vencimiento", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  rotura: { label: "Rotura", color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  vencimiento: { label: "Vencimiento", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  rotura: { label: "Rotura", color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
   robo: { label: "Robo/perdida", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-  deterioro: { label: "Deterioro", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  "error-inventario": { label: "Error inventario", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  deterioro: { label: "Deterioro", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  "error-inventario": { label: "Error inventario", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   "daño-transporte": { label: "Daño transporte", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]/30" },
 };
 
@@ -141,7 +141,7 @@ export default function ShrinkageTab() {
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
-            <Package className="h-6 w-6 text-[var(--data-error)]" /> Pérdidas <ModuleTooltip />
+            <Package className="h-6 w-6 text-[var(--data-error-500)]" /> Pérdidas <ModuleTooltip />
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Registra lo que se perdió y cuánto costó</p>
         </div>
@@ -175,8 +175,8 @@ export default function ShrinkageTab() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-          <MetricCard title="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} tone="text-red-600" bg="bg-red-50 dark:bg-red-950/20" />
-          <MetricCard title="Registros" value={String(stats.count)} icon={TrendingDown} tone="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/20" />
+          <MetricCard title="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} tone="text-[var(--data-error-600)]" bg="bg-red-50 dark:bg-red-950/20" />
+          <MetricCard title="Registros" value={String(stats.count)} icon={TrendingDown} tone="text-[var(--data-warning-600)]" bg="bg-amber-50 dark:bg-amber-950/20" />
           <div className="col-span-2 rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
             <p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Motivo principal</p>
             <p className="mt-2 text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.topCause ? CAUSE_META[stats.topCause[0] as ShrinkageCause]?.label : "Sin datos"}</p>
@@ -230,9 +230,9 @@ export default function ShrinkageTab() {
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{record.category}</p>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-right font-bold text-[var(--data-error)]">-{record.quantity}</td>
+                  <td className="px-5 py-3 text-right font-bold text-[var(--data-error-500)]">-{record.quantity}</td>
                   <td className="px-5 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(record.unitCost)}</td>
-                  <td className="px-5 py-3 text-right font-extrabold text-[var(--data-error)]">{fmt(record.totalLoss)}</td>
+                  <td className="px-5 py-3 text-right font-extrabold text-[var(--data-error-500)]">{fmt(record.totalLoss)}</td>
                   <td className="px-5 py-3">
                     <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
                   </td>
@@ -271,11 +271,11 @@ export default function ShrinkageTab() {
       )}
 
       {records.length > 0 && stats.totalLoss > 0 && (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning)] dark:bg-amber-950/20">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning)]" />
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning-500)] dark:bg-amber-950/20">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning-500)]" />
           <div>
-            <CardTitle className="text-sm font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Impacto acumulado</CardTitle>
-            <p className="mt-1 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">Las pérdidas registradas acumulan {fmt(stats.totalLoss)}. Usa esta sección para detectar causas repetidas y reducir lo que se pierde.</p>
+            <CardTitle className="text-sm font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Impacto acumulado</CardTitle>
+            <p className="mt-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Las pérdidas registradas acumulan {fmt(stats.totalLoss)}. Usa esta sección para detectar causas repetidas y reducir lo que se pierde.</p>
           </div>
         </div>
       )}

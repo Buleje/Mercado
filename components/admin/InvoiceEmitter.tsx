@@ -222,9 +222,9 @@ export default function InvoiceEmitter({
   if (emitido) {
     return (
       <div className="space-y-6">
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 sm:p-6 text-center space-y-3">
-          <CheckCircle2 className="h-12 w-12 text-[var(--data-success)] mx-auto" />
-          <SectionTitle className="text-xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 sm:p-6 text-center space-y-3">
+          <CheckCircle2 className="h-12 w-12 text-[var(--data-success-500)] mx-auto" />
+          <SectionTitle className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Comprobante emitido
           </SectionTitle>
           <p className="text-2xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">
@@ -251,7 +251,7 @@ export default function InvoiceEmitter({
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">IGV (18%)</p>
-              <p className="font-bold text-[var(--data-warning)]">{fmt(emitido.totales.igv)}</p>
+              <p className="font-bold text-[var(--data-warning-500)]">{fmt(emitido.totales.igv)}</p>
             </div>
             <div className="col-span-2">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Total</p>
@@ -356,7 +356,7 @@ export default function InvoiceEmitter({
             </button>
           </div>
           {buscarMsg && (
-            <p className={cn("mt-1.5 text-xs font-semibold", buscarMsg.ok ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+            <p className={cn("mt-1.5 text-xs font-semibold", buscarMsg.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
               {buscarMsg.text}
             </p>
           )}
@@ -447,7 +447,7 @@ export default function InvoiceEmitter({
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
                 />
               </div>
-              <div className="hidden sm:block sm:col-span-1 text-xs text-[var(--data-warning)] font-semibold py-2">
+              <div className="hidden sm:block sm:col-span-1 text-xs text-[var(--data-warning-500)] font-semibold py-2">
                 {fmt(itemIgv)}
               </div>
               <div className="hidden sm:block sm:col-span-1 text-sm font-bold text-[var(--text-primary)] dark:text-foreground py-2">
@@ -457,7 +457,7 @@ export default function InvoiceEmitter({
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
-                    className="text-[var(--data-error)] hover:text-[var(--data-error)] transition-colors"
+                    className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -469,7 +469,7 @@ export default function InvoiceEmitter({
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
-                    className="text-[var(--data-error)] hover:text-[var(--data-error)]"
+                    className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -486,7 +486,7 @@ export default function InvoiceEmitter({
               Gravado: <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(gravado)}</span>
             </p>
             <p className="text-[var(--text-secondary)] dark:text-muted">
-              IGV (18%): <span className="font-semibold text-[var(--data-warning)]">{fmt(igv)}</span>
+              IGV (18%): <span className="font-semibold text-[var(--data-warning-500)]">{fmt(igv)}</span>
             </p>
             <p className="text-[var(--text-primary)] dark:text-foreground font-extrabold text-base">
               Total: <span className="text-primary">{fmt(total)}</span>
@@ -498,7 +498,7 @@ export default function InvoiceEmitter({
 
       {/* Error */}
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold flex items-start gap-2">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold flex items-start gap-2">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {error}
         </div>
       )}
@@ -586,7 +586,7 @@ export default function InvoiceEmitter({
 
             <div className="border-t border-[var(--rule-base)] dark:border-card-border pt-2 space-y-1 text-sm text-right">
               <p className="text-[var(--text-secondary)]">Gravado: <span className="font-semibold">{fmt(gravado)}</span></p>
-              <p className="text-[var(--data-warning)]">IGV (18%): <span className="font-semibold">{fmt(igv)}</span></p>
+              <p className="text-[var(--data-warning-500)]">IGV (18%): <span className="font-semibold">{fmt(igv)}</span></p>
               <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-base">Total: {fmt(total)}</p>
             </div>
 

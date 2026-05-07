@@ -92,13 +92,13 @@ export function EnVivoHero({ liveCount, nextInHours }: EnVivoHeroProps) {
                   Estado — ahora
                 </p>
                 {isLive ? (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-red-500/10 px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[0.15em] text-red-500">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-error-500)]/10 px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[0.15em] text-[var(--data-error-500)]">
                     <span
                       aria-hidden
                       className="relative inline-flex h-2 w-2"
                     >
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 animate-ping opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-error-500)] animate-ping opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
                     </span>
                     En vivo
                   </span>

@@ -172,7 +172,7 @@ export default function NotificationBell() {
           <span
             className={cn(
               "absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
-              criticalCount > 0 ? "bg-red-600 animate-pulse" : "bg-red-500",
+              criticalCount > 0 ? "bg-[var(--data-error-600)] animate-pulse" : "bg-[var(--data-error-500)]",
               pulse && "animate-pulse"
             )}
           >

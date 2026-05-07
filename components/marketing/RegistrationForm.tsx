@@ -109,7 +109,7 @@ function getPasswordStrength(password: string): PasswordStrength {
     0: "", 1: "Muy débil", 2: "Débil", 3: "Buena", 4: "Fuerte",
   };
   const colors: Record<0 | 1 | 2 | 3 | 4, string> = {
-    0: "", 1: "bg-red-500", 2: "bg-amber-500", 3: "bg-yellow-400", 4: "bg-emerald-500",
+    0: "", 1: "bg-[var(--data-error-500)]", 2: "bg-[var(--data-warning-500)]", 3: "bg-yellow-400", 4: "bg-[var(--data-success-500)]",
   };
   return { score: clamped, label: labels[clamped], color: colors[clamped] };
 }
@@ -124,9 +124,9 @@ const PLAN_BORDER: Record<PlanId, string> = {
 
 const PLAN_ACTIVE: Record<PlanId, string> = {
   free:       "border-gray-500 bg-gray-50 dark:bg-gray-900/40 ring-2 ring-gray-400",
-  pro:        "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 ring-2 ring-emerald-500",
+  pro:        "border-[var(--data-success-500)] bg-emerald-50 dark:bg-emerald-950/30 ring-2 ring-[var(--data-success-500)]",
   business:   "border-violet-500 bg-violet-50 dark:bg-violet-950/30 ring-2 ring-violet-500",
-  enterprise: "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-500",
+  enterprise: "border-[var(--data-warning-500)] bg-amber-50 dark:bg-amber-950/30 ring-2 ring-[var(--data-warning-500)]",
 };
 
 // ─── Framer Motion variants ───────────────────────────────────
@@ -145,8 +145,8 @@ function StepDot({ n, current }: { n: number; current: Step }) {
   return (
     <div
       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-200 ${
-        done   ? "bg-emerald-500 border-emerald-500 text-white" :
-        active ? "bg-[#00B4A6] border-[#00B4A6] text-white" :
+        done   ? "bg-[var(--data-success-500)] border-[var(--data-success-500)] text-white" :
+        active ? "bg-[var(--accent)] border-[var(--accent)] text-white" :
                  "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-400"
       }`}
     >
@@ -171,13 +171,13 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
     <>
       <input
         {...rest}
-        className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 ${
+        className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${
           error
             ? "border-red-400 bg-red-50 dark:bg-red-950/20"
             : "border-gray-200 dark:border-gray-700"
         } ${className}`}
       />
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-[var(--data-error-500)] mt-1">{error}</p>}
     </>
   );
 }
@@ -438,7 +438,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
 
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 rounded-2xl bg-[#00B4A6] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-2xl bg-[var(--accent)] flex items-center justify-center">
           <Store className="w-5 h-5 text-white" />
         </div>
         <span className="text-xl font-extrabold tracking-tight text-foreground">Buleje</span>
@@ -451,7 +451,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
             <div key={n} className="flex items-center gap-2">
               <div className="flex flex-col items-center gap-1">
                 <StepDot n={n} current={step} />
-                <span className={`text-xs font-medium hidden sm:block transition-colors ${n === step ? "text-[#00B4A6]" : "text-gray-400"}`}>
+                <span className={`text-xs font-medium hidden sm:block transition-colors ${n === step ? "text-[var(--accent)]" : "text-gray-400"}`}>
                   {STEP_LABELS[n - 1]}
                 </span>
               </div>
@@ -501,18 +501,18 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                       }}
                       className={`w-full text-left rounded-2xl border-2 p-5 transition-all flex items-center gap-4 min-h-[72px] ${
                         active
-                          ? "border-[#00B4A6] bg-[#00B4A6]/5 ring-2 ring-[#00B4A6]/30"
-                          : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/40"
+                          ? "border-[var(--accent)] bg-[var(--accent)]/5 ring-2 ring-[var(--accent)]/30"
+                          : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/40"
                       }`}
                     >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent)] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                         {opt.icon}
                       </div>
                       <div>
                         <p className="font-bold text-base text-foreground">{opt.label}</p>
                         <p className="text-muted-foreground text-sm mt-0.5">{opt.description}</p>
                       </div>
-                      {active && <CheckCircle2 className="w-5 h-5 text-[#00B4A6] ml-auto shrink-0" />}
+                      {active && <CheckCircle2 className="w-5 h-5 text-[var(--accent)] ml-auto shrink-0" />}
                     </button>
                   );
                 })}
@@ -553,7 +553,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 {/* Slug */}
                 <Field label="Subdominio" hint={`Tu tienda estará en: ${form.slug || "mi-tienda"}.${ROOT_DOMAIN}`}>
                   <div className="space-y-1">
-                    <div className="flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#00B4A6]/40 transition-all border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[var(--accent)]/40 transition-all border-gray-200 dark:border-gray-700">
                       <span className="px-3 py-2.5 text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 select-none whitespace-nowrap">
                         buleje.pe/
                       </span>
@@ -569,14 +569,14 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                         className="flex-1 px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-foreground focus:outline-none"
                       />
                     </div>
-                    {errors.slug && <p className="text-xs text-red-500">{errors.slug}</p>}
+                    {errors.slug && <p className="text-xs text-[var(--data-error-500)]">{errors.slug}</p>}
                     {/* Estado del slug */}
                     {slugStatus !== "idle" && !errors.slug && (
                       <div className="flex items-center gap-1.5 text-xs">
                         {slugStatus === "checking"  && <><Loader2 className="w-3 h-3 animate-spin text-gray-400" /><span className="text-gray-400">Verificando…</span></>}
-                        {slugStatus === "available" && <><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span className="text-emerald-600 font-medium">Disponible</span></>}
-                        {slugStatus === "taken"     && <><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-red-500 font-medium">Ya está en uso</span></>}
-                        {slugStatus === "invalid"   && <><AlertTriangle className="w-3 h-3 text-amber-500" /><span className="text-amber-600">Formato inválido</span></>}
+                        {slugStatus === "available" && <><CheckCircle2 className="w-3 h-3 text-[var(--data-success-500)]" /><span className="text-[var(--data-success-600)] font-medium">Disponible</span></>}
+                        {slugStatus === "taken"     && <><AlertTriangle className="w-3 h-3 text-[var(--data-error-500)]" /><span className="text-[var(--data-error-500)] font-medium">Ya está en uso</span></>}
+                        {slugStatus === "invalid"   && <><AlertTriangle className="w-3 h-3 text-[var(--data-warning-500)]" /><span className="text-[var(--data-warning-600)]">Formato inválido</span></>}
                       </div>
                     )}
                   </div>
@@ -620,18 +620,18 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                             onClick={() => set("template", active ? "" : tmpl.id as TemplateId)}
                             className={`text-left rounded-xl border-2 p-3 transition-all flex items-center gap-2.5 min-h-[56px] ${
                               active
-                                ? "border-[#00B4A6] bg-[#00B4A6]/5 ring-2 ring-[#00B4A6]/20"
-                                : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/40"
+                                ? "border-[var(--accent)] bg-[var(--accent)]/5 ring-2 ring-[var(--accent)]/20"
+                                : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/40"
                             }`}
                           >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent)] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                               {TEMPLATE_ICONS[tmpl.icon]}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-bold leading-tight truncate text-foreground">{tmpl.name}</p>
                               <p className="text-muted-foreground" style={{ fontSize: "0.65rem" }}>{tmpl.categories.length} categorías</p>
                             </div>
-                            {active && <CheckCircle2 className="w-4 h-4 text-[#00B4A6] ml-auto shrink-0" />}
+                            {active && <CheckCircle2 className="w-4 h-4 text-[var(--accent)] ml-auto shrink-0" />}
                           </button>
                         );
                       })}
@@ -649,7 +649,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -735,10 +735,10 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                         </div>
                         {passwordStrength.label && (
                           <p className={`text-xs font-medium ${
-                            passwordStrength.score <= 1 ? "text-red-500" :
-                            passwordStrength.score === 2 ? "text-amber-500" :
+                            passwordStrength.score <= 1 ? "text-[var(--data-error-500)]" :
+                            passwordStrength.score === 2 ? "text-[var(--data-warning-500)]" :
                             passwordStrength.score === 3 ? "text-yellow-500" :
-                            "text-emerald-500"
+                            "text-[var(--data-success-500)]"
                           }`}>
                             {passwordStrength.label}
                           </p>
@@ -785,7 +785,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -819,19 +819,19 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                       key={def.id}
                       onClick={() => set("plan", def.id)}
                       className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
-                        active ? PLAN_ACTIVE[def.id] : PLAN_BORDER[def.id] + " hover:border-[#00B4A6]/40"
+                        active ? PLAN_ACTIVE[def.id] : PLAN_BORDER[def.id] + " hover:border-[var(--accent)]/40"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {(def.id === "business" || def.id === "enterprise") && (
-                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-amber-500" : "text-violet-500"}`} />
+                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-violet-500"}`} />
                           )}
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-foreground">{def.name}</p>
                               {def.popular && (
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#00B4A6] text-white">Popular</span>
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent)] text-white">Popular</span>
                               )}
                             </div>
                             <p className="text-muted-foreground text-xs mt-0.5">
@@ -839,14 +839,14 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                             </p>
                           </div>
                         </div>
-                        {active && <CheckCircle2 className="w-5 h-5 text-[#00B4A6] shrink-0 mt-0.5" />}
+                        {active && <CheckCircle2 className="w-5 h-5 text-[var(--accent)] shrink-0 mt-0.5" />}
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><ShoppingBag className="w-3 h-3" /> {formatLimit(l.maxProducts)} productos</span>
                         <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {formatLimit(l.maxUsers)} usuarios</span>
                         <span className="flex items-center gap-1"><ShoppingCart className="w-3 h-3" /> {formatLimit(l.maxOrdersPerMonth)} pedidos/mes</span>
-                        {l.customDomain       && <span className="flex items-center gap-1 text-emerald-600"><Globe className="w-3 h-3" /> Dominio propio</span>}
-                        {l.advancedAnalytics  && <span className="flex items-center gap-1 text-emerald-600"><BarChart2 className="w-3 h-3" /> Analytics</span>}
+                        {l.customDomain       && <span className="flex items-center gap-1 text-[var(--data-success-600)]"><Globe className="w-3 h-3" /> Dominio propio</span>}
+                        {l.advancedAnalytics  && <span className="flex items-center gap-1 text-[var(--data-success-600)]"><BarChart2 className="w-3 h-3" /> Analytics</span>}
                       </div>
                     </button>
                   );
@@ -862,7 +862,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -902,7 +902,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               </div>
 
               {serverError && (
-                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-red-700 dark:text-red-300">
+                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-[var(--data-error-700)] dark:text-red-300">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   {serverError}
                 </div>
@@ -918,7 +918,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#00a196] disabled:opacity-60 flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] disabled:opacity-60 flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   {submitting ? "Creando tienda…" : "Crear mi tienda"}
@@ -943,7 +943,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 text-center space-y-6 py-12"
             >
               <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-9 h-9 text-emerald-500" />
+                <CheckCircle2 className="w-9 h-9 text-[var(--data-success-500)]" />
               </div>
 
               <div>
@@ -955,21 +955,21 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
 
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 space-y-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Tu tienda</p>
-                <p className="font-mono font-bold text-[#00B4A6] text-base">{result.tenantSlug}.{ROOT_DOMAIN}</p>
+                <p className="font-mono font-bold text-[var(--accent)] text-base">{result.tenantSlug}.{ROOT_DOMAIN}</p>
               </div>
 
               <div className="space-y-3">
                 {checkoutUrl && (
                   <a
                     href={checkoutUrl}
-                    className="w-full py-3 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 min-h-[48px]"
+                    className="w-full py-3 rounded-2xl bg-[var(--data-success-600)] text-white font-bold text-sm hover:bg-[var(--data-success-700)] flex items-center justify-center gap-2 min-h-[48px]"
                   >
                     Activar suscripción {PLANS[form.plan]?.name} <Zap className="w-4 h-4" />
                   </a>
                 )}
                 <a
                   href="/onboarding"
-                  className="w-full py-3 rounded-2xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="w-full py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Configurar mi tienda <ExternalLink className="w-4 h-4" />
                 </a>
@@ -1007,7 +1007,7 @@ function SummaryRow({ icon, label, value, mono = false }: {
     <div className="flex items-center gap-3 px-4 py-3">
       <span className="text-muted-foreground shrink-0">{icon}</span>
       <span className="text-muted-foreground w-20 shrink-0 text-xs">{label}</span>
-      <span className={`font-medium text-foreground truncate ${mono ? "font-mono text-[#00B4A6]" : ""}`}>{value}</span>
+      <span className={`font-medium text-foreground truncate ${mono ? "font-mono text-[var(--accent)]" : ""}`}>{value}</span>
     </div>
   );
 }

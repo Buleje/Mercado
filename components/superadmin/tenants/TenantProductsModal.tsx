@@ -105,8 +105,8 @@ export function TenantProductsModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)]">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-[var(--data-success-100)] dark:bg-[var(--data-success)]/40 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                <div className="h-10 w-10 rounded-xl bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-[var(--text-primary)]">
@@ -129,7 +129,7 @@ export function TenantProductsModal({
             {!loading && !error && products.length > 0 && (
               <div className="grid grid-cols-4 gap-2 px-6 py-3 bg-[var(--surface-sunken)]/30">
                 <div className="text-center">
-                  <div className="text-sm font-bold text-[var(--data-success)] tabular-nums">{activeCount}</div>
+                  <div className="text-sm font-bold text-[var(--data-success-500)] tabular-nums">{activeCount}</div>
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Activos</div>
                 </div>
                 <div className="text-center">
@@ -137,11 +137,11 @@ export function TenantProductsModal({
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Inactivos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-[var(--data-warning)] tabular-nums">{lowStockCount}</div>
+                  <div className="text-sm font-bold text-[var(--data-warning-500)] tabular-nums">{lowStockCount}</div>
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Stock bajo</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-[var(--data-error)] tabular-nums">{outOfStockCount}</div>
+                  <div className="text-sm font-bold text-[var(--data-error-500)] tabular-nums">{outOfStockCount}</div>
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Sin stock</div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export function TenantProductsModal({
                   placeholder="Buscar por nombre, código o categoría..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-primary)] placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-[var(--data-success)]/30"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-primary)] placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/30"
                 />
               </div>
             </div>
@@ -168,7 +168,7 @@ export function TenantProductsModal({
               )}
 
               {error && (
-                <div className="flex flex-col items-center justify-center py-12 text-[var(--data-error)]">
+                <div className="flex flex-col items-center justify-center py-12 text-[var(--data-error-500)]">
                   <AlertTriangle className="h-8 w-8 mb-2" />
                   <p className="text-sm">{error}</p>
                 </div>
@@ -213,7 +213,7 @@ export function TenantProductsModal({
                             {p.name}
                           </span>
                           {p.active ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--data-success)] shrink-0" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--data-success-500)] shrink-0" />
                           ) : (
                             <XCircle className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                           )}
@@ -233,10 +233,10 @@ export function TenantProductsModal({
                         <div
                           className={`text-[length:var(--ts-xs)] font-semibold tabular-nums ${
                             p.stock <= 0
-                              ? "text-[var(--data-error)]"
+                              ? "text-[var(--data-error-500)]"
                               : p.stock <= 5
-                              ? "text-[var(--data-warning)]"
-                              : "text-[var(--data-success)]"
+                              ? "text-[var(--data-warning-500)]"
+                              : "text-[var(--data-success-500)]"
                           }`}
                         >
                           {p.stock <= 0 ? "Sin stock" : `${p.stock} unid.`}

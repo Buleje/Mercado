@@ -44,15 +44,15 @@ interface ConfirmModalProps extends ConfirmParams {
 const INTENT_STYLES: Record<ConfirmIntent, { icon: typeof AlertTriangle; iconColor: string; iconBg: string; btn: string }> = {
   danger: {
     icon: XCircle,
-    iconColor: "text-[var(--data-error)]",
+    iconColor: "text-[var(--data-error-500)]",
     iconBg: "bg-[var(--data-error-50)]",
-    btn: "bg-[var(--data-error)] hover:opacity-90",
+    btn: "bg-[var(--data-error-500)] hover:opacity-90",
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: "text-[var(--data-warning)]",
+    iconColor: "text-[var(--data-warning-500)]",
     iconBg: "bg-[var(--data-warning-50)]",
-    btn: "bg-[var(--data-warning)] hover:opacity-90",
+    btn: "bg-[var(--data-warning-500)] hover:opacity-90",
   },
   info: {
     icon: Info,

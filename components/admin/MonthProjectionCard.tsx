@@ -121,8 +121,8 @@ export default function MonthProjectionCard() {
     <Minus className="h-4 w-4" />;
 
   const trendColor =
-    delta > 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-    delta < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
+    delta > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+    delta < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
     "text-[var(--text-tertiary)]";
 
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -152,7 +152,7 @@ export default function MonthProjectionCard() {
         {loading ? (
           <LoadingState />
         ) : error ? (
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : (
           <div className="space-y-5">
             {/* Mes actual */}
@@ -204,7 +204,7 @@ export default function MonthProjectionCard() {
                         className={cn(
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
-                            ? "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]"
+                            ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]"
                             : "bg-primary dark:bg-[var(--accent-soft)]"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
@@ -212,7 +212,7 @@ export default function MonthProjectionCard() {
                       />
                       <span className={cn(
                         "text-[length:var(--ts-2xs)]",
-                        isToday ? "text-[var(--data-warning)] font-semibold" : "text-[var(--text-tertiary)]"
+                        isToday ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-tertiary)]"
                       )}>
                         {d.label}
                       </span>

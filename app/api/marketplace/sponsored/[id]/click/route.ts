@@ -16,7 +16,11 @@ export async function POST(
   const requestId = req.headers.get("x-request-id") ?? traceId;
 
   try {
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY F1: no aceptar "main" como fallback controlado por el cliente.
+    const tenantId = req.headers.get("x-tenant-id");
+    if (!tenantId || tenantId === "main") {
+      return NextResponse.json({ error: "tenant header requerido" }, { status: 400 });
+    }
     const { id } = await params;
 
     logger.debug("sponsored click", { requestId, tenantId, boostId: id });

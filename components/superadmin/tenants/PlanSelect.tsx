@@ -49,9 +49,9 @@ const TIER_COLOR: Record<PlanTier, { bg: string; text: string; ring: string; ico
     icon: Rocket,
   },
   max: {
-    bg: "bg-amber-50 dark:bg-amber-500/10",
-    text: "text-amber-600 dark:text-amber-400",
-    ring: "ring-amber-500/30",
+    bg: "bg-amber-50 dark:bg-[var(--data-warning-500)]/10",
+    text: "text-[var(--data-warning-600)] dark:text-amber-400",
+    ring: "ring-[var(--data-warning-500)]/30",
     icon: Crown,
   },
 };
@@ -170,7 +170,7 @@ export function PlanSelect({ slug, current, onChanged }: PlanSelectProps) {
                     </p>
                     {isCurrent && (
                       <Check
-                        className="h-3.5 w-3.5 text-[var(--data-success)] shrink-0"
+                        className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0"
                         strokeWidth={3}
                       />
                     )}

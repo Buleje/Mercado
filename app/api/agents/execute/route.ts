@@ -47,7 +47,10 @@ const executeSchema = z.object({
   action: z.string().min(1, "action es requerido"),
   payload: z.record(z.string(), z.unknown()).optional().default({}),
   priority: z.enum(VALID_PRIORITIES).optional().default("normal"),
-  tenantId: z.string().min(1).optional(),
+  // SECURITY 2026-05-06: tenantId del body REMOVIDO — se ignora si llega.
+  // El tenantId de ejecución se toma SIEMPRE del JWT (admin.tenantId).
+  // Antes esto permitía que un admin de tenant A inyectara tenantId=B en el
+  // body y ejecutara tasks contra el tenant B.
 });
 
 // ── POST — Execute task synchronously ───────────────────────────────────────
@@ -74,16 +77,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const headerTenantId = req.headers.get("x-tenant-id") || "main";
-    const {
-      domain,
-      action,
-      payload,
-      priority,
-      tenantId: bodyTenantId,
-    } = parsed.data;
-
-    const tenantId = bodyTenantId || headerTenantId;
+    // tenantId del JWT — fuente única de verdad. Header y body se ignoran.
+    const tenantId = admin.tenantId;
+    const { domain, action, payload, priority } = parsed.data;
 
     logger.info("[agents] POST /api/agents/execute — sync execution", {
       traceId,

@@ -1,5 +1,7 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
+> **Última verificación:** 2026-05-04 · Fuente: `package.json`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
 ---
@@ -18,7 +20,7 @@
 | Compliance | Ley 29733 PE — audit log, GDPR-equivalent export, derecho de acceso |
 | Planes SaaS | `free | pro | business`, programa Socio Buleje, Bodega al Mes |
 
-**Ámbito funcional:** 133 tabs en panel admin, 7 fases ERP entregadas (Finanzas/Inventario/RRHH/Compras/Tesorería/Marketing/CRM/BI/Logística/NPS) + Marketplace multi-vendor + POS móvil + Kiosk + Delivery app.
+**Ámbito funcional:** 133 tabs en panel admin, 14 fases ERP completadas (detalle histórico en `docs/HISTORY.md`) + Marketplace multi-vendor + POS móvil + Kiosk + Delivery app.
 
 ---
 
@@ -177,7 +179,7 @@ Antes de tocar cualquiera: invocar skill `audit-first` y/o `migration-planner` s
 |---|---|
 | **Dev** | `npm run dev` (turbopack, default) · `npm run dev:fast` (alias) · `npm run dev:clean` (kill+lock) · `npm run dev:nuke` (kill+wipe `.next`) · `npm run dev:health` |
 | **Check** | `npm run lint` · `npx tsc --noEmit` · `npm run test` · `npm run build` · `npm run test:e2e` · `npm run test:load` |
-| **DB** | `npm run db:seed` · `npm run db:migrate` (DIRECT_URL) · `npm run db:sanity` |
+| **DB** | `npm run db:seed` · `npm run db:migrate` (migrate dev; revisar `MEMORIA-PROYECTO.md` para flujo Supabase/pgBouncer) · `npm run db:sanity` |
 | **Mobile** | `npm run cap:sync` · `npm run app:build:android` |
 | **OpenAPI** | `npm run openapi:generate` |
 | **Storybook** | `npm run storybook` · `npm run chromatic` |
@@ -187,8 +189,8 @@ Antes de tocar cualquiera: invocar skill `audit-first` y/o `migration-planner` s
 
 ## 8. Env vars
 
-Mínimas: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL`.
-Prod: + `STRIPE_*`, `CRON_SECRET`, `SENTRY_*`, `UPSTASH_REDIS_*`, `RESEND_API_KEY`, `TWILIO_*`, `MP_*`, `VAPID_*`, `NEXT_PUBLIC_SUPABASE_*`.
+Mínimas: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL`.
+Prod: + `STRIPE_*`, `CRON_SECRET`, `SENTRY_*`, `UPSTASH_REDIS_*`, `RESEND_API_KEY`, `TWILIO_*`, `MP_*`, `VAPID_*`, `NEXT_PUBLIC_SUPABASE_*`. `DIRECT_URL` puede ser necesaria para migraciones controladas según entorno.
 Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 ---
@@ -217,7 +219,8 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | Archivo | Para qué |
 |---|---|
 | `AGENTS.md` | Arquitectura Hub & Spoke v2 (14 agentes) y protocolos de handoff |
-| `MEMORIA-PROYECTO.md` | Listado completo de 133 tabs admin + fases ERP |
+| `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
+| `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |

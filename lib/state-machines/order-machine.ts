@@ -33,6 +33,7 @@ import { createMachine } from "xstate";
 
 export type OrderEvent =
   | { type: "CONFIRM"; by: string }
+  | { type: "START_PREP"; by: string }
   | { type: "DISPATCH"; by: string; courier?: string }
   | { type: "DELIVER"; by: string; proofUrl?: string }
   | { type: "CANCEL"; by: string; reason: string };
@@ -86,6 +87,33 @@ export const orderMachine = createMachine({
     },
     confirmado: {
       on: {
+        START_PREP: {
+          target: "preparando",
+          actions: () => {
+            // Transición declarativa: confirmado → preparando.
+          },
+        },
+        DISPATCH: {
+          // Permitido saltar preparando si el dueño asigna delivery directamente
+          target: "en_camino",
+          actions: ({ context, event }) => {
+            context.dispatchedBy = event.by;
+            context.dispatchedAt = new Date().toISOString();
+            context.courier = event.courier;
+          },
+        },
+        CANCEL: {
+          target: "cancelado",
+          actions: ({ context, event }) => {
+            context.cancelledBy = event.by;
+            context.cancelledAt = new Date().toISOString();
+            context.cancelReason = event.reason;
+          },
+        },
+      },
+    },
+    preparando: {
+      on: {
         DISPATCH: {
           target: "en_camino",
           actions: ({ context, event }) => {
@@ -137,6 +165,7 @@ export const orderMachine = createMachine({
 export type OrderState =
   | "pendiente"
   | "confirmado"
+  | "preparando"
   | "en_camino"
   | "entregado"
   | "cancelado";
@@ -151,7 +180,12 @@ export function isValidTransition(
 ): boolean {
   const transitions: Record<OrderState, Partial<Record<OrderEvent["type"], OrderState>>> = {
     pendiente: { CONFIRM: "confirmado", CANCEL: "cancelado" },
-    confirmado: { DISPATCH: "en_camino", CANCEL: "cancelado" },
+    confirmado: {
+      START_PREP: "preparando",
+      DISPATCH: "en_camino", // shortcut: dueño puede asignar delivery directo
+      CANCEL: "cancelado",
+    },
+    preparando: { DISPATCH: "en_camino", CANCEL: "cancelado" },
     en_camino: { DELIVER: "entregado", CANCEL: "cancelado" },
     entregado: {},
     cancelado: {},

@@ -34,9 +34,9 @@ const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const SEVERITY_ICON_COLOR: Record<string, string> = {
-  HIGH: "text-red-500",
-  MEDIUM: "text-amber-500",
-  LOW: "text-emerald-500",
+  HIGH: "text-[var(--data-error-500)]",
+  MEDIUM: "text-[var(--data-warning-500)]",
+  LOW: "text-[var(--data-success-500)]",
 };
 
 function timeAgo(dateStr: string): string {
@@ -132,13 +132,13 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                   e.stopPropagation();
                   setShowCobroExpress(!showCobroExpress);
                 }}
-                className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] hover:text-[var(--data-success-700)] hover:underline"
               >
                 Cobrar
               </button>
             )}
             {cobroDone && (
-              <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600">Pago registrado</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)]">Pago registrado</span>
             )}
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                 setCobroLoading(false);
               }}
               disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
             >
               {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
             </button>

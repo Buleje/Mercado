@@ -53,7 +53,7 @@ export default function KitManagerTab() {
             <Plus className="h-4 w-4" /> Nuevo Kit
           </button>
           {kits.length > 0 && (
-            <button onClick={() => setKits([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setKits([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -72,18 +72,18 @@ export default function KitManagerTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Margen Promedio</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{avgMargin.toFixed(1)}%</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{avgMargin.toFixed(1)}%</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Total Pedidos Kits</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{kits.reduce((s, k) => s + k.timesOrdered, 0)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{kits.reduce((s, k) => s + k.timesOrdered, 0)}</p>
         </div>
       </div>
 
       {/* Filter */}
       <div className="flex flex-wrap items-center gap-2">
         {(["todos", "activos", "inactivos"] as const).map(f => (
-          <button key={f} onClick={() => setShowActive(f)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", showActive === f ? "bg-teal-500 text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={f} onClick={() => setShowActive(f)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", showActive === f ? "bg-[var(--accent)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
@@ -103,10 +103,10 @@ export default function KitManagerTab() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => setDetail(kit)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
-                  <button onClick={() => toggleActive(kit.id)} className={cn("p-1.5 rounded-lg text-xs font-bold", kit.active ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")}>
+                  <button onClick={() => toggleActive(kit.id)} className={cn("p-1.5 rounded-lg text-xs font-bold", kit.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")}>
                     {kit.active ? "ON" : "OFF"}
                   </button>
-                  <button onClick={() => deleteKit(kit.id)} className="p-1.5 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => deleteKit(kit.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
               {/* Items */}
@@ -122,7 +122,7 @@ export default function KitManagerTab() {
               <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                 <div><p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Costo</p><p className="text-sm font-bold text-[var(--text-secondary)]">{fmt(cost)}</p></div>
                 <div><p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Precio Venta</p><p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(kit.salePrice)}</p></div>
-                <div><p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Margen</p><p className={cn("text-sm font-extrabold", margin >= 20 ? "text-[var(--data-success)]" : margin >= 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{margin.toFixed(1)}%</p></div>
+                <div><p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Margen</p><p className={cn("text-sm font-extrabold", margin >= 20 ? "text-[var(--data-success-500)]" : margin >= 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{margin.toFixed(1)}%</p></div>
               </div>
               <div className="mt-2 text-xs text-[var(--text-tertiary)] dark:text-muted text-right">Ahorro cliente: {fmt(cost - kit.salePrice > 0 ? 0 : cost * 1.3 - kit.salePrice)} • {kit.timesOrdered} pedidos</div>
             </div>
@@ -151,7 +151,7 @@ export default function KitManagerTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center"><span className="text-xs text-[var(--text-tertiary)]">Costo</span><p className="font-bold">{fmt(getCost(detail))}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center"><span className="text-xs text-[var(--text-tertiary)]">Precio</span><p className="font-extrabold">{fmt(detail.salePrice)}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center"><span className="text-xs text-[var(--text-tertiary)]">Margen</span><p className="font-extrabold text-[var(--data-success)]">{getMargin(detail).toFixed(1)}%</p></div>
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center"><span className="text-xs text-[var(--text-tertiary)]">Margen</span><p className="font-extrabold text-[var(--data-success-500)]">{getMargin(detail).toFixed(1)}%</p></div>
               </div>
             </div>
           </div>

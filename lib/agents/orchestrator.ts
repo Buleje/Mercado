@@ -16,6 +16,8 @@
 import { withCircuitBreaker } from "@/lib/circuit-breaker";
 import { newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { checkPermission, type Role } from "@/lib/auth/role-permissions";
+import { AGENT_ACTION_PERMISSIONS } from "./permissions";
 import { agentRegistry } from "./registry";
 import { agentBus } from "./bus";
 import { createAgentContext, scopedLogger } from "./context";
@@ -207,7 +209,12 @@ class Orchestrator {
    * Used by LLM function calling to get agent results inline.
    * Bypasses the async queue for immediate execution.
    */
-  async executeSync(input: SubmitTaskInput): Promise<{
+  async executeSync(input: SubmitTaskInput & {
+    /** Role del actor que solicita la ejecución. Obligatorio salvo subtasks internas. */
+    actorRole?: Role;
+    /** Solo para subtasks ya validadas en el padre. */
+    bypassPermissionCheck?: boolean;
+  }): Promise<{
     success: boolean;
     data?: unknown;
     error?: string;
@@ -222,6 +229,45 @@ class Orchestrator {
         success: false,
         error: `Agent "${input.domain}" does not support "${input.action}". Available: ${agent.actions.join(", ")}`,
       };
+    }
+
+    // SECURITY 2026-05-06 (audit AI #1 — CRITICAL): RBAC gate.
+    // Antes el orchestrator ejecutaba CUALQUIER action sin validar el rol del
+    // actor → un cajero podía pedir `pricing.margin-check` o
+    // `customers.segmentation` que en UI no podría ver. Ahora cada
+    // (domain, action) tiene un permiso requerido en `permissions.ts` y se
+    // valida contra el rol del caller. Subtasks internas pasan
+    // `bypassPermissionCheck: true` (el padre ya gateeó).
+    if (!input.bypassPermissionCheck) {
+      if (!input.actorRole) {
+        logger.error("Orchestrator: executeSync called without actorRole", {
+          domain: input.domain,
+          action: input.action,
+          tenantId: input.tenantId,
+        });
+        return { success: false, error: "FORBIDDEN: actorRole required" };
+      }
+      const perm = AGENT_ACTION_PERMISSIONS[input.domain]?.[input.action];
+      if (!perm) {
+        return {
+          success: false,
+          error: `No permission mapping for ${input.domain}.${input.action}`,
+        };
+      }
+      if (!checkPermission(input.actorRole, perm.resource, perm.action)) {
+        logger.warn("Orchestrator: RBAC denied", {
+          actorRole: input.actorRole,
+          domain: input.domain,
+          action: input.action,
+          resource: perm.resource,
+          requiredAction: perm.action,
+          tenantId: input.tenantId,
+        });
+        return {
+          success: false,
+          error: `FORBIDDEN: role "${input.actorRole}" lacks ${perm.action}:${perm.resource}`,
+        };
+      }
     }
 
     const taskId = this.generateId();

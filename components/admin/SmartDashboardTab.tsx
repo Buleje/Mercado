@@ -28,7 +28,7 @@ import {
   Gauge,
 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
+import { cn, safeNumber } from "@/lib/utils";
 
 import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -359,31 +359,31 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       const items: Array<{ price?: number; costPrice?: number; quantity: number }> = sale.items ?? [];
       for (const item of items) { cogs += (item.costPrice ?? (item.price ?? 0) * 0.7) * item.quantity; }
     }
-    return revenue === 0 ? 0 : ((revenue - cogs) / revenue) * 100;
+    return revenue === 0 ? 0 : safeNumber(((revenue - cogs) / revenue) * 100);
   }, [filteredSales]);
 
   const marginToday = useMemo(() => {
     let revenue = 0, cogs = 0;
     for (const sale of salesToday) {
-      revenue += sale.total ?? 0;
+      revenue += safeNumber(sale.total);
       const items: Array<{ price?: number; costPrice?: number; quantity: number }> = sale.items ?? [];
-      for (const item of items) { cogs += (item.costPrice ?? (item.price ?? 0) * 0.7) * item.quantity; }
+      for (const item of items) { cogs += (safeNumber(item.costPrice, safeNumber(item.price) * 0.7)) * safeNumber(item.quantity); }
     }
-    return revenue === 0 ? 0 : ((revenue - cogs) / revenue) * 100;
+    return revenue === 0 ? 0 : safeNumber(((revenue - cogs) / revenue) * 100);
   }, [salesToday]);
 
   const { revenueThisMonth, revenuePrevMonth, monthDelta } = useMemo(() => {
-    const thisM = sales.filter(s => isThisMonth(s.createdAt)).reduce((acc, s) => acc + (s.total ?? 0), 0);
-    const prevM = sales.filter(s => isLastMonth(s.createdAt)).reduce((acc, s) => acc + (s.total ?? 0), 0);
-    return { revenueThisMonth: thisM, revenuePrevMonth: prevM, monthDelta: prevM === 0 ? 0 : ((thisM - prevM) / prevM) * 100 };
+    const thisM = sales.filter(s => isThisMonth(s.createdAt)).reduce((acc, s) => acc + safeNumber(s.total), 0);
+    const prevM = sales.filter(s => isLastMonth(s.createdAt)).reduce((acc, s) => acc + safeNumber(s.total), 0);
+    return { revenueThisMonth: thisM, revenuePrevMonth: prevM, monthDelta: prevM === 0 ? 0 : safeNumber(((thisM - prevM) / prevM) * 100) };
   }, [sales]);
 
   const { revenueYesterday, salesYesterdayCount, hoyVsAyerPct } = useMemo(() => {
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toDateString();
     const salesYesterday = sales.filter(s => { try { return new Date(s.createdAt).toDateString() === yStr; } catch { return false; } });
-    const revYesterday = salesYesterday.reduce((acc, s) => acc + (s.total ?? 0), 0);
-    const pct = revYesterday === 0 ? (revenueToday > 0 ? 100 : 0) : ((revenueToday - revYesterday) / revYesterday) * 100;
+    const revYesterday = salesYesterday.reduce((acc, s) => acc + safeNumber(s.total), 0);
+    const pct = revYesterday === 0 ? (revenueToday > 0 ? 100 : 0) : safeNumber(((revenueToday - revYesterday) / revYesterday) * 100);
     return { revenueYesterday: revYesterday, salesYesterdayCount: salesYesterday.length, hoyVsAyerPct: pct };
   }, [sales, revenueToday]);
 
@@ -491,8 +491,9 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
     const now = new Date(); const diasTranscurridos = now.getDate();
     const diasTotales = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     if (diasTranscurridos === 0 || revenueThisMonth === 0) return null;
-    const proyeccion = (revenueThisMonth / diasTranscurridos) * diasTotales;
-    return { ventasMes: revenueThisMonth, proyeccion, porcentaje: Math.round((revenueThisMonth / proyeccion) * 100), diasTranscurridos, diasTotales };
+    const proyeccion = safeNumber((revenueThisMonth / diasTranscurridos) * diasTotales);
+    if (proyeccion === 0) return null;
+    return { ventasMes: revenueThisMonth, proyeccion, porcentaje: Math.round(safeNumber((revenueThisMonth / proyeccion) * 100)), diasTranscurridos, diasTotales };
   }, [revenueThisMonth]);
 
   const upcomingPayables = useMemo(() => {
@@ -541,9 +542,9 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
   const semanaAnterior = useMemo(() => {
     const hoy = new Date(); const hace7 = new Date(hoy); hace7.setDate(hace7.getDate() - 7);
     const diaLabel = hace7.toLocaleDateString("es-PE", { weekday: "long" });
-    const ventasSemPasada = sales.filter(s => { try { return new Date(s.createdAt).toDateString() === hace7.toDateString(); } catch { return false; } }).reduce((acc, s) => acc + (s.total ?? 0), 0);
+    const ventasSemPasada = sales.filter(s => { try { return new Date(s.createdAt).toDateString() === hace7.toDateString(); } catch { return false; } }).reduce((acc, s) => acc + safeNumber(s.total), 0);
     if (ventasSemPasada === 0) return null;
-    return { diaLabel, monto: ventasSemPasada, pct: ((revenueToday - ventasSemPasada) / ventasSemPasada) * 100 };
+    return { diaLabel, monto: ventasSemPasada, pct: safeNumber(((revenueToday - ventasSemPasada) / ventasSemPasada) * 100) };
   }, [sales, revenueToday]);
 
   const hitoProximo = useMemo(() => {
@@ -612,11 +613,11 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
     const dayTotals: Record<number, number[]> = {};
     for (const s of sales) { try { const dow = new Date(s.createdAt).getDay(); if (!dayTotals[dow]) dayTotals[dow] = []; dayTotals[dow].push(s.total ?? 0); } catch { /* ignore */ } }
     if (Object.keys(dayTotals).length < 3) return null;
-    const dayAvgs = Object.entries(dayTotals).map(([dow, vals]) => ({ dow: Number(dow), name: dayNames[Number(dow)], avg: vals.reduce((a, b) => a + b, 0) / vals.length }));
+    const dayAvgs = Object.entries(dayTotals).map(([dow, vals]) => ({ dow: Number(dow), name: dayNames[Number(dow)], avg: vals.length > 0 ? safeNumber(vals.reduce((a, b) => a + safeNumber(b), 0) / vals.length) : 0 }));
     dayAvgs.sort((a, b) => b.avg - a.avg);
     const best = dayAvgs[0]; const worst = dayAvgs[dayAvgs.length - 1];
-    const othersAvg = dayAvgs.slice(1).reduce((s, d) => s + d.avg, 0) / Math.max(1, dayAvgs.length - 1);
-    return { best, worst, pctVsOthers: othersAvg > 0 ? Math.round(((best.avg - othersAvg) / othersAvg) * 100) : 0 };
+    const othersAvg = safeNumber(dayAvgs.slice(1).reduce((s, d) => s + d.avg, 0) / Math.max(1, dayAvgs.length - 1));
+    return { best, worst, pctVsOthers: othersAvg > 0 ? Math.round(safeNumber(((best.avg - othersAvg) / othersAvg) * 100)) : 0 };
   }, [sales]);
 
   const growingCategory = useMemo(() => {
@@ -764,7 +765,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       <AdminModuleHeader
         icon={Gauge}
         bgTint="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-        iconColorClass="text-[var(--data-success)] dark:text-[var(--data-success)]"
+        iconColorClass="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
         title="Panel"
         description={`${getGreeting().text}, ${adminName} — ${formatDateLong()}`}
       >
@@ -829,7 +830,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             className={cn(
               "pb-3 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-1.5",
               dashTab === tab.id
-                ? "text-[var(--data-success)]"
+                ? "text-[var(--data-success-500)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-zinc-400 dark:hover:text-zinc-300"
             )}
           >
@@ -844,7 +845,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
 
       {/* Error banner */}
       {fetchError && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm px-4 py-3">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm px-4 py-3">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {fetchError}
         </div>
@@ -860,8 +861,8 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
           <DraggableWidgetGrid storageKey="dashboard-kpis-order" columns={3} className="grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <div key="kpi-ventas"><KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" /></div>
             <div key="kpi-clientes"><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-[var(--accent-soft)]" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></div>
-            <div key="kpi-margen"><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[var(--data-warning)]" isEmpty={marginFiltered === 0} /></div>
-            <div key="kpi-ayer"><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></div>
+            <div key="kpi-margen"><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : marginFiltered >= 15 ? "text-[var(--data-warning-500)] dark:text-amber-400" : marginFiltered > 0 ? "text-[var(--data-error-500)] dark:text-red-400" : undefined} colorClass="bg-[var(--data-warning-500)]" isEmpty={marginFiltered === 0} /></div>
+            <div key="kpi-ayer"><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></div>
             <div key="kpi-ticket"><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-[var(--text-primary)]" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></div>
           </DraggableWidgetGrid>
         )
@@ -878,7 +879,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             <div className="text-right">
               <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
               {monthDelta !== 0 && (
-                <span className={cn("text-xs font-bold", monthDelta >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                <span className={cn("text-xs font-bold", monthDelta >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                   {monthDelta >= 0 ? "+" : ""}{monthDelta.toFixed(1)}% vs mes anterior
                 </span>
               )}
@@ -901,14 +902,14 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             <a href="/admin?module=fiados" className="text-sm font-semibold text-[var(--text-primary)] hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
             <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span></span></div>
-            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
+            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error-500)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
           </div>
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
             <a href="/admin?module=compras" className="text-sm font-semibold text-[var(--text-primary)] hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
             <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span></span></div>
-            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
+            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error-500)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
           </div>
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
@@ -918,7 +919,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
           </div>
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
             <span className="text-sm font-semibold text-[var(--text-primary)]">Devoluciones</span>
-            <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
+            <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-2">Incluye impuestos</p>
           </div>
         </div>
@@ -1083,23 +1084,23 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
           {bestDay && (
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-[var(--data-warning)]" />
+                <TrendingUp className="w-4 h-4 text-[var(--data-warning-500)]" />
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Mejor dia de la semana</span>
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}</p>
               {bestDay.worst && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>}
             </div>
           )}
           {growingCategory?.top && (
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-[var(--data-success)]" />
+                <TrendingUp className="w-4 h-4 text-[var(--data-success-500)]" />
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Categoria en crecimiento</span>
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
-              {growingCategory.bottom && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>}
+              {growingCategory.bottom && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>}
             </div>
           )}
           {topClientMonth && (
@@ -1113,7 +1114,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
                 <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{topClientMonth.name}</p>
               </div>
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-1">{topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}</p>
-              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">Cliente mas fiel de {topClientMonth.monthName}</span>
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">Cliente mas fiel de {topClientMonth.monthName}</span>
             </div>
           )}
         </div>

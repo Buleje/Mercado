@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, startTransition, useCallback } from "react
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { X, Plus, Minus, Trash2, ShoppingCart, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock, Star } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -294,7 +294,7 @@ export default function CartSidebar() {
             transition={{ duration: 0.2 }}
             onClick={close}
             aria-hidden="true"
-            className="fixed inset-0 z-6000 bg-black/50 sm:backdrop-blur-sm"
+            className="fixed inset-0 z-6000 bg-slate-950/55 backdrop-blur-md"
           />
 
           {/* Panel */}
@@ -308,41 +308,66 @@ export default function CartSidebar() {
             aria-modal="true"
             aria-label="Carrito de compras"
             data-testid="cart-sidebar"
-            className="fixed top-0 right-0 bottom-0 z-6001 w-full max-w-md bg-white dark:bg-background shadow-2xl flex flex-col isolate"
+            className="fixed top-0 right-0 bottom-0 z-6001 w-full max-w-md bg-white dark:bg-background shadow-[0_25px_60px_-12px_rgba(0,0,0,0.45)] flex flex-col isolate"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b bg-primary/5">
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-5 w-5 text-primary" />
-                <div>
-                  <h2 className="text-lg font-bold text-foreground">
-                    Tu Carrito{" "}
-                    <span className="text-primary">({count})</span>
-                  </h2>
-                  <span className={`text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${mode === "checkout" ? "text-primary" : "text-emerald-600"}`}>
-                    {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
-                  </span>
+            {/* Header — gradient primary con texto blanco */}
+            <div
+              className="relative px-5 sm:px-6 py-5 sm:py-6 overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              }}
+            >
+              {/* Patrón decorativo sutil */}
+              <div
+                className="absolute inset-0 opacity-15 pointer-events-none"
+                style={{
+                  backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)",
+                  backgroundSize: "16px 16px",
+                }}
+                aria-hidden="true"
+              />
+
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0 shadow-lg">
+                    <ShoppingCart className="h-5 w-5 text-white" strokeWidth={2.25} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
+                        Tu carrito
+                      </h2>
+                      {count > 0 && (
+                        <span className="text-sm font-bold text-white/90 tabular-nums">
+                          ({count})
+                        </span>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 mt-1 text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/85">
+                      <span className={`h-1.5 w-1.5 rounded-full ${mode === "checkout" ? "bg-white" : "bg-emerald-300"}`} />
+                      {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                {items.length > 0 && (
-                  <button
-                    onClick={() => { if (window.confirm("¿Seguro que quieres vaciar el carrito?")) clear(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors text-xs font-bold"
-                    aria-label="Vaciar carrito"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Vaciar todo
-                  </button>
-                )}
                 <button
                   onClick={close}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur text-white transition-colors"
                   aria-label="Cerrar carrito"
                 >
-                  <X className="h-5 w-5 text-muted" />
+                  <X className="h-4.5 w-4.5" strokeWidth={2.5} />
                 </button>
               </div>
+
+              {items.length > 0 && (
+                <button
+                  onClick={() => { if (window.confirm("¿Seguro que quieres vaciar el carrito?")) clear(); }}
+                  className="relative mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/85 hover:text-white text-xs font-bold transition-colors"
+                  aria-label="Vaciar carrito"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Vaciar todo
+                </button>
+              )}
             </div>
 
             {/* Items */}
@@ -356,22 +381,21 @@ export default function CartSidebar() {
                     <p className="text-base font-bold text-foreground">Tu carrito está vacío</p>
                     <p className="text-sm text-muted mt-1">Agrega productos para hacer tu pedido</p>
                   </div>
-                  <div className="w-full space-y-2">
-                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">Categorías populares</p>
+                  <div className="w-full space-y-3">
+                    <p className="text-sm font-semibold text-muted uppercase tracking-wide">Categorías populares</p>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {[
-                        { emoji: "🥬", label: "Verduras", id: "frutas-verduras" },
-                        { emoji: "🏪", label: "Abarrotes", id: "abarrotes" },
-                        { emoji: "🥩", label: "Carnes", id: "carnes" },
-                        { emoji: "🧀", label: "Lácteos", id: "lacteos" },
-                        { emoji: "🥤", label: "Bebidas", id: "bebidas" },
-                        { emoji: "🧹", label: "Limpieza", id: "limpieza" },
+                        { label: "Verduras", id: "frutas-verduras" },
+                        { label: "Abarrotes", id: "abarrotes" },
+                        { label: "Carnes", id: "carnes" },
+                        { label: "Lácteos", id: "lacteos" },
+                        { label: "Bebidas", id: "bebidas" },
+                        { label: "Limpieza", id: "limpieza" },
                       ].map(cat => (
                         <button
                           key={cat.id}
                           onClick={() => {
                             close();
-                            // Navigate + dispatch category filter
                             const el = document.getElementById(`cat-${cat.id}`);
                             if (el) {
                               el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -379,9 +403,8 @@ export default function CartSidebar() {
                               window.location.href = `/tienda#cat-${cat.id}`;
                             }
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors"
+                          className="px-4 py-2 rounded-full bg-primary/8 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
                         >
-                          <span>{cat.emoji}</span>
                           {cat.label}
                         </button>
                       ))}
@@ -420,7 +443,7 @@ export default function CartSidebar() {
                     {/* Out of stock overlay */}
                     {(item as { stock?: number }).stock === 0 && (
                       <div className="absolute inset-0 z-10 bg-white/60 dark:bg-black/40 rounded-xl flex items-center justify-center">
-                        <span className="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-3 py-1 rounded-full">Agotado</span>
+                        <span className="text-xs font-bold text-[var(--data-error-600)] bg-red-50 dark:bg-red-900/30 px-3 py-1 rounded-full">Agotado</span>
                       </div>
                     )}
                     {/* Image */}
@@ -438,20 +461,20 @@ export default function CartSidebar() {
                         const itemStock = liveStock ?? (item as { stock?: number }).stock;
                         if (itemStock == null) return null;
                         if (itemStock === 0) return (
-                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full mt-0.5">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-600)] bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--data-error-500)] shrink-0" />
                             Agotado — elimina del carrito
                           </span>
                         );
                         if (itemStock <= 3) return (
-                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full mt-0.5">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--data-warning-500)] animate-pulse shrink-0" />
                             ¡Solo quedan {itemStock}!
                           </span>
                         );
                         if (itemStock <= 5) return (
-                          <p className="text-[length:var(--ts-2xs)] text-amber-500 font-semibold mt-0.5 flex items-center gap-1">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] font-semibold mt-0.5 flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--data-warning-500)] animate-pulse shrink-0" />
                             ¡Solo {itemStock} en stock!
                           </p>
                         );
@@ -460,7 +483,7 @@ export default function CartSidebar() {
                       {(item as { stock?: number }).stock != null &&
                         (item as { stock?: number }).stock! > 0 &&
                         item.quantity >= (item as { stock?: number }).stock! && (
-                          <p className="text-[length:var(--ts-2xs)] text-red-500 font-semibold mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] font-semibold mt-0.5">
                             Máximo disponible alcanzado
                           </p>
                         )}
@@ -506,7 +529,7 @@ export default function CartSidebar() {
                           </span>
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-h-9 min-w-9 flex items-center justify-center"
+                            className="p-2 text-red-400 hover:text-[var(--data-error-600)] hover:bg-red-50 rounded-lg transition-colors min-h-9 min-w-9 flex items-center justify-center"
                             aria-label={`Eliminar ${item.name}`}
                           >
                             <Trash2 className="h-5 w-5" />
@@ -535,7 +558,7 @@ export default function CartSidebar() {
 
             {/* AB2: Cart reservation timer */}
                 {reserveTime && (
-                  <div className="flex items-center justify-center gap-1.5 text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-1.5 border border-amber-100 dark:border-amber-700/20">
+                  <div className="flex items-center justify-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-1.5 border border-amber-100 dark:border-[var(--data-warning-500)]/20">
                     <Clock className="h-3 w-3" />
                     Tu carrito se reserva por <span className="font-bold tabular-nums">{reserveTime}</span>
                   </div>
@@ -552,12 +575,12 @@ export default function CartSidebar() {
             {/* Promotion banner */}
                 {promo && (
                   <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
-                    <Tag className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <Tag className="h-4 w-4 text-[var(--data-success-600)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-emerald-700 truncate">{promo.name}</p>
-                      <p className="text-xs text-emerald-600">-{promo.discountPercent}% aplicado</p>
+                      <p className="text-xs font-bold text-[var(--data-success-700)] truncate">{promo.name}</p>
+                      <p className="text-xs text-[var(--data-success-600)]">-{promo.discountPercent}% aplicado</p>
                     </div>
-                    <p className="font-bold text-emerald-700 text-sm shrink-0">-S/{discount.toFixed(2)}</p>
+                    <p className="font-bold text-[var(--data-success-700)] text-sm shrink-0">-S/{discount.toFixed(2)}</p>
                   </div>
                 )}
 
@@ -566,7 +589,7 @@ export default function CartSidebar() {
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700/30 rounded-xl px-3 py-2.5">
                     <Gift className="h-4 w-4 text-[var(--accent)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-violet-700 dark:text-[var(--accent)]">¡Es tu primera compra! 🎉</p>
+                      <p className="text-xs font-bold text-violet-700 dark:text-[var(--accent)]">¡Es tu primera compra!</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--accent)] dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
                     </div>
                   </div>
@@ -581,19 +604,19 @@ export default function CartSidebar() {
                   const needed = upcoming.minPurchase - total;
                   const pct = Math.min((total / upcoming.minPurchase) * 100, 100);
                   return (
-                    <div className="rounded-xl border border-dashed border-amber-400/40 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
+                    <div className="rounded-xl border border-dashed border-amber-400/40 bg-amber-50 dark:bg-[var(--data-warning-500)]/5 px-4 py-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
-                          <Tag className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                            Agrega <span className="text-amber-500 font-extrabold">S/{needed.toFixed(2)}</span> más para -{upcoming.discountPercent}%
+                          <Tag className="h-3.5 w-3.5 text-[var(--data-warning-600)] shrink-0" />
+                          <span className="text-xs font-bold text-[var(--data-warning-700)] dark:text-amber-400">
+                            Agrega <span className="text-[var(--data-warning-500)] font-extrabold">S/{needed.toFixed(2)}</span> más para -{upcoming.discountPercent}%
                           </span>
                         </div>
-                        <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-amber-600/70">
+                        <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--data-warning-500)]/70">
                           {pct.toFixed(0)}%
                         </span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-amber-200/60 dark:bg-amber-500/20 overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-amber-200/60 dark:bg-[var(--data-warning-500)]/20 overflow-hidden">
                         <div className="h-full rounded-full bg-amber-400 transition-all duration-500" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -613,7 +636,7 @@ export default function CartSidebar() {
                           <span className="text-xs font-bold text-primary">
                             {remaining > 0
                               ? `Agrega S/${remaining.toFixed(2)} más para delivery gratis`
-                              : "🎉 ¡Delivery gratis desbloqueado!"}
+                              : "¡Delivery gratis desbloqueado!"}
                           </span>
                         </div>
                         <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums" style={{ color: remaining > 0 ? "var(--color-muted)" : "var(--color-primary)" }}>
@@ -633,7 +656,7 @@ export default function CartSidebar() {
                 {/* F3 — Loyalty points preview */}
                 {customer && finalTotal > 0 && (
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 rounded-xl px-3 py-2.5 border border-violet-100 dark:border-violet-800/30">
-                    <span className="text-base leading-none">⭐</span>
+                    <Star className="h-4 w-4 text-[var(--accent)] shrink-0 fill-[var(--accent)]" />
                     <span className="text-xs text-violet-700 dark:text-[var(--accent)]">
                       Ganarás ~<span className="font-bold">{Math.floor(finalTotal / 10) * 5} pts</span> con este pedido
                     </span>
@@ -677,7 +700,7 @@ export default function CartSidebar() {
                   </div>
                 </div>
                 {loadCartMsg && (
-                  <p className={`text-[length:var(--ts-2xs)] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-emerald-600" : "text-red-500"}`}>{loadCartMsg}</p>
+                  <p className={`text-[length:var(--ts-2xs)] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-[var(--data-success-600)]" : "text-[var(--data-error-500)]"}`}>{loadCartMsg}</p>
                 )}
 
                 {/* Mejora 14: Delivery time estimate */}
@@ -716,13 +739,13 @@ export default function CartSidebar() {
                     "text-xs text-center py-1",
                     finalTotal < 40 ? "text-gray-400" :
                     finalTotal < 80 ? "text-green-600 dark:text-green-400" :
-                    "text-amber-600 dark:text-amber-400 font-medium"
+                    "text-[var(--data-warning-600)] dark:text-amber-400 font-medium"
                   ].join(" ")}>
-                    {finalTotal < 15 ? "🛒 Buen inicio" :
-                     finalTotal < 40 ? "👍 Vas bien" :
-                     finalTotal < 80 ? "💪 ¡Gran compra!" :
-                     finalTotal < 150 ? "🎉 ¡Compra VIP!" :
-                     "🏆 ¡Eres nuestro mejor cliente hoy!"}
+                    {finalTotal < 15 ? "Buen inicio" :
+                     finalTotal < 40 ? "Vas bien" :
+                     finalTotal < 80 ? "Gran compra" :
+                     finalTotal < 150 ? "Compra VIP" :
+                     "Sos nuestro mejor cliente hoy"}
                   </p>
                 )}
 
@@ -731,7 +754,7 @@ export default function CartSidebar() {
                   {!couponOpen ? (
                     <button
                       onClick={() => setCouponOpen(true)}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      className="text-xs text-[var(--data-success-600)] hover:text-[var(--data-success-700)] font-medium"
                     >
                       ¿Tienes un cupon?
                     </button>
@@ -749,19 +772,19 @@ export default function CartSidebar() {
                       <button
                         onClick={validateCoupon}
                         disabled={validatingCoupon || !couponCode.trim()}
-                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                        className="rounded-lg bg-[var(--data-success-600)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--data-success-700)] disabled:opacity-50"
                       >
                         {validatingCoupon ? "..." : "Aplicar"}
                       </button>
                     </div>
                   )}
                   {couponMsg && (
-                    <p className={`text-xs mt-1 ${couponDiscount > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`text-xs mt-1 ${couponDiscount > 0 ? "text-[var(--data-success-600)]" : "text-[var(--data-error-500)]"}`}>
                       {couponMsg}
                     </p>
                   )}
                   {couponDiscount > 0 && (
-                    <p className="text-xs text-emerald-600 font-medium mt-1">
+                    <p className="text-xs text-[var(--data-success-600)] font-medium mt-1">
                       Descuento aplicado: -S/{couponDiscount.toFixed(2)}
                     </p>
                   )}
@@ -862,7 +885,7 @@ export default function CartSidebar() {
                     >
                       {sendResult === "shared" && <CheckCircle2 className="h-5 w-5 text-[#20BD5A] shrink-0 mt-0.5" />}
                       {sendResult === "clipboard" && <Clipboard className="h-5 w-5 text-primary shrink-0 mt-0.5" />}
-                      {sendResult === "fallback" && <Download className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />}
+                      {sendResult === "fallback" && <Download className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />}
                       <div>
                         {sendResult === "shared" && (
                           <>
@@ -878,7 +901,7 @@ export default function CartSidebar() {
                         )}
                         {sendResult === "fallback" && (
                           <>
-                            <p className="text-sm font-bold text-amber-600">Imagen descargada</p>
+                            <p className="text-sm font-bold text-[var(--data-warning-600)]">Imagen descargada</p>
                             <p className="text-xs text-foreground/70 mt-0.5">Adjunta el archivo PNG en el chat de WhatsApp antes de enviar el mensaje.</p>
                           </>
                         )}
@@ -924,7 +947,7 @@ export default function CartSidebar() {
               >
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)]" />
                   </div>
                   <div>
                     <p className="text-base font-bold text-gray-900 dark:text-foreground">Lista guardada</p>

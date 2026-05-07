@@ -56,7 +56,7 @@ export default function HistorialPage() {
           <button
             type="button"
             onClick={clear}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-[var(--data-error-500)] transition-colors"
             aria-label="Limpiar historial"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" />

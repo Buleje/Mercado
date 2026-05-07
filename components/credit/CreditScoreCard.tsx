@@ -56,9 +56,9 @@ function getTier(score: number): Tier {
     return {
       name: "Gold",
       emoji: "🥇",
-      barClass: "bg-linear-to-r from-yellow-400 to-amber-500",
-      badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
-      textClass: "text-amber-700",
+      barClass: "bg-linear-to-r from-yellow-400 to-[var(--data-warning-500)]",
+      badgeClass: "bg-amber-50 text-[var(--data-warning-700)] border-amber-200",
+      textClass: "text-[var(--data-warning-700)]",
     };
   }
   if (score >= 500) {
@@ -82,9 +82,9 @@ function getTier(score: number): Tier {
   return {
     name: "Sin crédito",
     emoji: "🔒",
-    barClass: "bg-linear-to-r from-red-400 to-red-600",
-    badgeClass: "bg-red-50 text-red-700 border-red-200",
-    textClass: "text-red-700",
+    barClass: "bg-linear-to-r from-red-400 to-[var(--data-error-600)]",
+    badgeClass: "bg-red-50 text-[var(--data-error-700)] border-red-200",
+    textClass: "text-[var(--data-error-700)]",
   };
 }
 
@@ -168,11 +168,11 @@ export function CreditScoreCard({
       {/* Disponible vs usado */}
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-900/20">
-          <div className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center gap-1 text-xs font-medium text-[var(--data-success-700)] dark:text-emerald-400">
             <Wallet className="h-3.5 w-3.5" aria-hidden />
             Disponible
           </div>
-          <div className="mt-1 text-xl font-bold text-emerald-700 dark:text-emerald-400">
+          <div className="mt-1 text-xl font-bold text-[var(--data-success-700)] dark:text-emerald-400">
             {formatPEN(available)}
           </div>
         </div>
@@ -235,7 +235,7 @@ function MiniScoreChart({
         const pct = Math.max(8, (h.score / maxScore) * 100);
         const isLast = i === history.length - 1;
         const barColor = isLast
-          ? "bg-emerald-500"
+          ? "bg-[var(--data-success-500)]"
           : h.score >= 700
             ? "bg-emerald-300"
             : h.score >= 400

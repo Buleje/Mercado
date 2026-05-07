@@ -38,23 +38,23 @@ interface BusinessOverviewHeroProps {
 
 function getToneClasses(tone: HeroTone): string {
   if (tone === "positive") {
-    return "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
+    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
   }
   if (tone === "warning") {
     return "border-amber-200 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/10";
   }
-  return "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
+  return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
 }
 
 function getEmphasisClasses(emphasis: HeroEmphasis): string {
   if (emphasis === "positive") {
-    return "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]";
+    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
   }
   if (emphasis === "warning") {
-    return "border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300";
+    return "border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 text-[var(--data-warning-700)] dark:text-amber-300";
   }
   if (emphasis === "danger") {
-    return "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300";
+    return "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 text-[var(--data-error-700)] dark:text-red-300";
   }
   return "border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60 text-[var(--text-primary)] dark:text-zinc-100";
 }
@@ -123,13 +123,13 @@ export function BusinessOverviewHero({
             <CardTitle className="text-lg font-extrabold mt-1">{actionsTitle}</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-1">{actionsDescription}</p>
           </div>
-          <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0" />
+          <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
         </div>
 
         {actions.length === 0 ? (
-          <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
-            <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{emptyActionTitle}</p>
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{emptyActionDescription}</p>
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+            <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{emptyActionTitle}</p>
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{emptyActionDescription}</p>
           </div>
         ) : (
           <div className="space-y-3">

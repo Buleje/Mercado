@@ -116,16 +116,16 @@ function _statusDot(status: Payable["status"]) {
   return status === "paid"
     ? "bg-[var(--accent-soft)]"
     : status === "overdue"
-    ? "bg-red-500"
+    ? "bg-[var(--data-error-500)]"
     : "bg-amber-400";
 }
 
 function statusBadge(status: Payable["status"]) {
   return status === "paid"
-    ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
     : status === "overdue"
-    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+    ? "bg-red-100 text-[var(--data-error-600)] dark:bg-red-900/30 dark:text-red-400"
+    : "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400";
 }
 
 function statusLabel(status: Payable["status"]) {
@@ -238,7 +238,7 @@ export default function PaymentCalendar() {
         <div>
           <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Calendario de pagos</CardTitle>
           {isDemo && (
-            <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">Modo demo — datos simulados</span>
+            <span className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Modo demo — datos simulados</span>
           )}
         </div>
         <button
@@ -253,13 +253,13 @@ export default function PaymentCalendar() {
 
       {/* Alert: upcoming payments */}
       {upcomingAlerts.length > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
-          <AlertTriangle size={16} className="text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
+          <AlertTriangle size={16} className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <p className="text-sm font-medium text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               {upcomingAlerts.length} pago{upcomingAlerts.length !== 1 ? "s" : ""} en los proximos 3 dias
             </p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
               {upcomingAlerts.map((p) => p.supplierName).join(", ")}
             </p>
           </div>
@@ -269,9 +269,9 @@ export default function PaymentCalendar() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Esta semana", amount: thisWeekTotal, color: "text-primary dark:text-[var(--data-success)]" },
-          { label: "Próxima semana", amount: nextWeekTotal, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-          { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
+          { label: "Esta semana", amount: thisWeekTotal, color: "text-primary dark:text-[var(--data-success-500)]" },
+          { label: "Próxima semana", amount: nextWeekTotal, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+          { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]" },
         ].map(({ label, amount, color }) => (
           <div
             key={label}
@@ -358,14 +358,14 @@ export default function PaymentCalendar() {
                   {day.payables.length > 0 && (
                     <div className="mt-1">
                       <div className="flex items-center gap-0.5 mb-0.5">
-                        {hasOverdue && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)]" />}
-                        {hasPending && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-warning)]" />}
+                        {hasOverdue && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error-500)]" />}
+                        {hasPending && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-warning-500)]" />}
                         {hasPaid && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)]" />}
                       </div>
                       <span
                         className={cn(
                           "text-[length:var(--ts-2xs)] font-semibold tabular-nums",
-                          hasOverdue ? "text-[var(--data-error)]" : hasPending ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          hasOverdue ? "text-[var(--data-error-500)]" : hasPending ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                         )}
                       >
                         {fmtSoles(totalDay)}
@@ -420,8 +420,8 @@ export default function PaymentCalendar() {
       <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
         {[
           { color: "bg-[var(--accent-soft)]", label: "Pagado" },
-          { color: "bg-[var(--data-error)]",     label: "Vencido" },
-          { color: "bg-[var(--data-warning)]",   label: "Próximo" },
+          { color: "bg-[var(--data-error-500)]",     label: "Vencido" },
+          { color: "bg-[var(--data-warning-500)]",   label: "Próximo" },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className={cn("w-2 h-2 rounded-full", color)} />

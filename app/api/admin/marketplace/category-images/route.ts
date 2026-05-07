@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { invalidateByPrefix } from "@/lib/cache";
 import {
@@ -8,6 +7,7 @@ import {
   setStoreCategoryImages,
 } from "@/lib/store-category-order";
 import { resolveCategoryImages } from "@/lib/superadmin-category-images";
+import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
 
 /**
@@ -31,37 +31,11 @@ const PutSchema = z.object({
   ),
 });
 
-async function getCurrentStoreSlug(req: NextRequest): Promise<string | null> {
-  const auth = await requireAdmin(req, ["admin", "manager"]);
-  if (auth instanceof NextResponse) return null;
-  const tenantId = auth.tenantId;
-  const tenant = await prisma.tenant
-    .findFirst({
-      where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-      select: { id: true, slug: true },
-    })
-    .catch((err) => {
-      logger.error("[admin/marketplace/category-images] tenant lookup failed", { error: String(err) });
-      return null;
-    });
-  if (!tenant) return null;
-  const store = await prisma.store
-    .findFirst({
-      where: { tenantId: { in: [tenant.id, tenant.slug] } },
-      select: { slug: true },
-    })
-    .catch((err) => {
-      logger.error("[admin/marketplace/category-images] store lookup failed", { error: String(err) });
-      return null;
-    });
-  return store?.slug ?? null;
-}
-
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
   try {
-    const slug = await getCurrentStoreSlug(req);
+    const slug = await resolveStoreSlugForTenant(auth.tenantId);
     if (!slug) {
       return NextResponse.json({ ownImages: {}, resolvedImages: {}, storeSlug: null });
     }
@@ -89,7 +63,7 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const slug = await getCurrentStoreSlug(req);
+    const slug = await resolveStoreSlugForTenant(auth.tenantId);
     if (!slug) {
       return NextResponse.json({ error: "no_store_for_tenant" }, { status: 404 });
     }

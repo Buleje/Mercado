@@ -135,10 +135,10 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
 
       {success ? (
         <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-4 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
+          <CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)] shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
           <div>
             <p className="font-bold text-emerald-900 dark:text-emerald-200">¡Gracias por tu reseña!</p>
-            <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-0.5">
+            <p className="text-sm text-[var(--data-success-700)] dark:text-emerald-300 mt-0.5">
               La bodega la verá pronto y aparecerá en su perfil.
             </p>
           </div>
@@ -165,7 +165,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
                     onClick={() => setRating(n)}
                     className={cn(
                       "p-1 transition-transform hover:scale-110 active:scale-95",
-                      filled ? "text-amber-500" : "text-gray-300 dark:text-gray-700",
+                      filled ? "text-[var(--data-warning-500)]" : "text-gray-300 dark:text-gray-700",
                     )}
                   >
                     <Star className={cn("h-7 w-7", filled && "fill-current")} strokeWidth={1.5} />
@@ -231,7 +231,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
           </div>
 
           {error && (
-            <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 p-3 flex items-start gap-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 p-3 flex items-start gap-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
               <span>{error}</span>
             </div>

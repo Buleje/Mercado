@@ -40,7 +40,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
           const Icon = h.ok ? Check : X;
           const colorCls = h.ok
             ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-            : "bg-[var(--data-error-50)] text-[var(--data-error)]";
+            : "bg-[var(--data-error-50)] text-[var(--data-error-500)]";
           return (
             <li key={i} className="flex items-center gap-2.5 text-sm">
               <span
@@ -62,7 +62,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
       <div className="flex items-center gap-2 pt-2 border-t border-[var(--rule-soft)] text-xs text-[var(--text-tertiary)]">
         <ImageIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden />
         <span>
-          Imagenes que no cumplen aparecen marcadas con <strong className="text-[var(--data-warning)]">badge naranja</strong> en el listado.
+          Imagenes que no cumplen aparecen marcadas con <strong className="text-[var(--data-warning-500)]">badge naranja</strong> en el listado.
         </span>
       </div>
     </div>

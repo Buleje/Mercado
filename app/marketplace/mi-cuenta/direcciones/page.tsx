@@ -17,7 +17,7 @@ function getLocationKind(label: string): {
 } {
   const t = label.toLowerCase();
   if (/\bcasa\b|\bhome\b|\bdepa\b|\bdepartamento\b/.test(t)) {
-    return { Icon: Home, tag: "Casa", color: "text-[var(--data-success)]" };
+    return { Icon: Home, tag: "Casa", color: "text-[var(--data-success-500)]" };
   }
   if (/\boficina\b|\btrabajo\b|\boffice\b|\bwork\b/.test(t)) {
     return { Icon: Briefcase, tag: "Trabajo", color: "text-blue-600" };
@@ -167,13 +167,13 @@ export default function DireccionesPage() {
                 className={cn(
                   "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-gray-800 dark:text-gray-100",
                   errors.location
-                    ? "border-red-300 dark:border-red-700"
+                    ? "border-red-300 dark:border-[var(--data-error-700)]"
                     : "border-gray-200 dark:border-gray-700",
                 )}
                 aria-describedby={errors.location ? "location-error" : undefined}
               />
               {errors.location && (
-                <p id="location-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                <p id="location-error" className="mt-1 text-xs text-[var(--data-error-600)] dark:text-red-400">
                   {errors.location}
                 </p>
               )}
@@ -196,13 +196,13 @@ export default function DireccionesPage() {
                 className={cn(
                   "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-gray-800 dark:text-gray-100",
                   errors.reference
-                    ? "border-red-300 dark:border-red-700"
+                    ? "border-red-300 dark:border-[var(--data-error-700)]"
                     : "border-gray-200 dark:border-gray-700",
                 )}
                 aria-describedby={errors.reference ? "reference-error" : undefined}
               />
               {errors.reference && (
-                <p id="reference-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                <p id="reference-error" className="mt-1 text-xs text-[var(--data-error-600)] dark:text-red-400">
                   {errors.reference}
                 </p>
               )}
@@ -300,7 +300,7 @@ export default function DireccionesPage() {
                     )}
                     <button
                       onClick={() => handleDelete(loc.id)}
-                      className="text-xs text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+                      className="text-xs text-gray-400 hover:text-[var(--data-error-600)] dark:text-gray-500 dark:hover:text-red-400"
                       aria-label={`Eliminar ${loc.location}`}
                     >
                       Eliminar

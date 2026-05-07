@@ -159,9 +159,9 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error)] dark:text-[var(--data-error)]" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-start gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       )}
 

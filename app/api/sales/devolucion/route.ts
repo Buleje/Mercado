@@ -42,6 +42,17 @@ export async function POST(req: NextRequest) {
 
     const { saleId, items, refundType } = parsed.data;
 
+    // SECURITY 2026-05-05 (audit POS #4): refund efectivo requiere admin.
+    // Antes cajero solo podía hacer refund efectivo sin aprobación —
+    // vector de fraude (vender a familiar, devolver cash, queda con dinero).
+    // Ahora cajero solo puede hacer refund "crédito"; admin puede ambos.
+    if (refundType === "efectivo" && auth.role !== "admin" && auth.role !== "owner") {
+      return NextResponse.json(
+        { error: "Refund en efectivo requiere autorización del admin" },
+        { status: 403 },
+      );
+    }
+
     // Verify sale exists
     const sale = await prisma.sale.findFirst({
       where: { id: saleId, tenantId },
@@ -55,25 +66,52 @@ export async function POST(req: NextRequest) {
     let totalRefund = 0;
     const returnItems: { productId: number; name: string; quantity: number; price: number }[] = [];
 
+    // SECURITY 2026-05-06 (pentest H4): tope acumulado de qty devuelta por
+    // saleItem. Antes una devolución de 50 unidades sobre venta de 1 daba
+    // refund infinito (creditBalance × 50) + stock inflado al producto.
+    // Buscar devoluciones previas de esta misma venta (Return scoped por tenant).
+    const previousReturns = await prisma.return.findMany({
+      where: { saleId, tenantId },
+      select: { items: { select: { productId: true, quantity: true } } },
+    });
+    const previousReturnsFlat = previousReturns.flatMap((r) => r.items);
+    const returnedSoFar = new Map<number, number>();
+    for (const r of previousReturnsFlat) {
+      if (r.productId == null) continue;
+      returnedSoFar.set(r.productId, (returnedSoFar.get(r.productId) ?? 0) + r.quantity);
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         // Find original sale item to get price
         const saleItem = sale.items.find(si => si.productId === item.productId);
         if (!saleItem) continue;
 
+        // SECURITY (pentest H4): qty devuelta no puede exceder qty vendida menos lo ya devuelto.
+        const alreadyReturned = returnedSoFar.get(item.productId) ?? 0;
+        const remaining = saleItem.quantity - alreadyReturned;
+        if (item.qty > remaining) {
+          throw new Error(
+            `Qty solicitada (${item.qty}) excede disponible (${remaining}) para producto ${saleItem.name}`,
+          );
+        }
+
         // TD-018: saleItem.price es Decimal
         const saleItemPriceNum = toNumOrZero(saleItem.price);
         const itemTotal = saleItemPriceNum * item.qty;
         totalRefund += itemTotal;
 
-        // Restore stock
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
+        // SECURITY (pentest H3): findFirst con tenantId. Antes findUnique
+        // sin scope permitía restaurar stock al producto del tenant víctima.
+        const product = await tx.product.findFirst({
+          where: { id: item.productId, tenantId },
+        });
         if (product && product.stock != null) {
           const previousStock = product.stock;
           const newStock = previousStock + item.qty;
 
-          await tx.product.update({
-            where: { id: item.productId },
+          await tx.product.updateMany({
+            where: { id: item.productId, tenantId },
             data: { stock: newStock },
           });
 

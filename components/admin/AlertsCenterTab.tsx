@@ -117,25 +117,25 @@ const URGENCY_CONFIG: Record<
   critical: {
     border: "border-l-red-500",
     bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",
-    icon: "text-red-600 dark:text-red-400",
-    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40",
-    badgeText: "text-red-700 dark:text-red-300",
+    icon: "text-[var(--data-error-600)] dark:text-red-400",
+    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40",
+    badgeText: "text-[var(--data-error-700)] dark:text-red-300",
     order: 0,
   },
   warning: {
     border: "border-l-orange-500",
     bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",
-    icon: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",
-    badgeText: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    icon: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40",
+    badgeText: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     order: 1,
   },
   info: {
     border: "border-l-emerald-500",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    icon: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    icon: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    badgeText: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    badgeText: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     order: 2,
   },
 };
@@ -389,14 +389,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
 
   if (error) {
     return (
-      <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/30 p-6 text-center">
-        <AlertTriangle className="w-8 h-8 text-[var(--data-error)] mx-auto mb-2" />
-        <p className="text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">
+      <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 p-6 text-center">
+        <AlertTriangle className="w-8 h-8 text-[var(--data-error-500)] mx-auto mb-2" />
+        <p className="text-sm font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">
           {error}
         </p>
         <button
           onClick={fetchAlerts}
-          className="px-4 py-2 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-bold transition-colors"
+          className="px-4 py-2 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-bold transition-colors"
         >
           Reintentar
         </button>
@@ -431,7 +431,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         </p>
         <button
           onClick={fetchAlerts}
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar ahora
@@ -470,19 +470,19 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
       {/* KPI badges */}
       <div className="flex flex-wrap gap-3 mb-1">
         {criticalCount > 0 && (
-          <span className="px-3 py-1.5 bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[var(--data-error)] animate-pulse" />
+          <span className="px-3 py-1.5 bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--data-error-500)] animate-pulse" />
             {criticalCount} Critica{criticalCount > 1 ? "s" : ""}
           </span>
         )}
         {warningCount > 0 && (
-          <span className="px-3 py-1.5 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[var(--data-warning)]" />
+          <span className="px-3 py-1.5 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--data-warning-500)]" />
             {warningCount} Advertencia{warningCount > 1 ? "s" : ""}
           </span>
         )}
         {infoCount > 0 && (
-          <span className="px-3 py-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+          <span className="px-3 py-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
             {infoCount} Info
           </span>
@@ -584,7 +584,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                       </button>
                       <button
                         onClick={() => handleDismiss(alert.id)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
                         title="Marcar como resuelta"
                       >
                         <Check className="w-3 h-3" />

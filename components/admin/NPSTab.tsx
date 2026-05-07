@@ -39,7 +39,7 @@ function NPSGauge({ nps }: { nps: number }) {
   const needleX = cx + r * Math.cos(angle);
   const needleY = cy + r * Math.sin(angle);
 
-  const color = nps >= 50 ? "#00B4A6" : nps >= 0 ? "#f59e0b" : "#ef4444";
+  const color = nps >= 50 ? "var(--accent)" : nps >= 0 ? "#f59e0b" : "#ef4444";
   const label = nps >= 50 ? "Excelente" : nps >= 20 ? "Bueno" : nps >= 0 ? "Aceptable" : "Necesita mejora";
 
   return (
@@ -157,18 +157,18 @@ export default function NPSTab() {
                   <div className="bg-[var(--accent-soft)] transition-all flex items-center justify-center" style={{ width: `${(promoters / filtered.length) * 100}%` }}>
                     {(promoters / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((promoters / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
-                  <div className="bg-[var(--data-warning)] transition-all flex items-center justify-center" style={{ width: `${(passives / filtered.length) * 100}%` }}>
+                  <div className="bg-[var(--data-warning-500)] transition-all flex items-center justify-center" style={{ width: `${(passives / filtered.length) * 100}%` }}>
                     {(passives / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((passives / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
-                  <div className="bg-[var(--data-error)] transition-all flex items-center justify-center" style={{ width: `${(detractors / filtered.length) * 100}%` }}>
+                  <div className="bg-[var(--data-error-500)] transition-all flex items-center justify-center" style={{ width: `${(detractors / filtered.length) * 100}%` }}>
                     {(detractors / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((detractors / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "Promotores", value: promoters, pct: filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : "0", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp, desc: "(9-10)" },
-                    { label: "Pasivos",    value: passives,  pct: filtered.length > 0 ? ((passives / filtered.length) * 100).toFixed(0) : "0",  color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  icon: Minus,    desc: "(7-8)" },
-                    { label: "Detract.",   value: detractors,pct: filtered.length > 0 ? ((detractors / filtered.length) * 100).toFixed(0) : "0",color: "text-[var(--data-error)]",   bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",     icon: ThumbsDown,desc: "(0-6)" },
+                    { label: "Promotores", value: promoters, pct: filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : "0", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp, desc: "(9-10)" },
+                    { label: "Pasivos",    value: passives,  pct: filtered.length > 0 ? ((passives / filtered.length) * 100).toFixed(0) : "0",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  icon: Minus,    desc: "(7-8)" },
+                    { label: "Detract.",   value: detractors,pct: filtered.length > 0 ? ((detractors / filtered.length) * 100).toFixed(0) : "0",color: "text-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",     icon: ThumbsDown,desc: "(0-6)" },
                   ].map(k => (
                     <div key={k.label} className={cn("rounded-xl p-2 text-center", k.bg)}>
                       <k.icon className={cn("h-4 w-4 mx-auto mb-1", k.color)} />
@@ -186,7 +186,7 @@ export default function NPSTab() {
           {/* Score promedio */}
           <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Promedio</p>
-            <p className="text-3xl font-extrabold text-[var(--data-success)]">{avgScore}</p>
+            <p className="text-3xl font-extrabold text-[var(--data-success-500)]">{avgScore}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">/10</p>
           </div>
         </div>
@@ -228,8 +228,8 @@ export default function NPSTab() {
           ) : filtered.map(s => {
             const type = classify(s.score);
             return (
-              <div key={s.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" : type === "passive" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30" : "border-[var(--data-error)] dark:border-[var(--data-error)]/30")}>
-                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : type === "passive" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+              <div key={s.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : type === "passive" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30")}>
+                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : type === "passive" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                   {s.score}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -276,8 +276,8 @@ export default function NPSTab() {
                   const isPositive = t.nps >= 0;
                   return (
                     <div key={t.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${t.month}: NPS ${t.nps}`}>
-                      <span className={cn("text-[length:var(--ts-2xs)] font-extrabold", isPositive ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
-                      <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")} style={{ height: `${heightPct}%` }} />
+                      <span className={cn("text-[length:var(--ts-2xs)] font-extrabold", isPositive ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
+                      <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")} style={{ height: `${heightPct}%` }} />
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate w-full text-center">{t.month}</span>
                     </div>
                   );
@@ -293,10 +293,10 @@ export default function NPSTab() {
                       <span className="w-14 text-xs font-bold text-[var(--text-secondary)] dark:text-muted shrink-0">{t.month}</span>
                       <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
                         <div className="bg-[var(--accent-soft)] transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
-                        <div className="bg-[var(--data-warning)] transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
-                        <div className="bg-[var(--data-error)] transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />
+                        <div className="bg-[var(--data-warning-500)] transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
+                        <div className="bg-[var(--data-error-500)] transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />
                       </div>
-                      <span className={cn("w-10 text-xs font-extrabold text-right shrink-0", t.nps >= 50 ? "text-[var(--data-success)]" : t.nps >= 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                      <span className={cn("w-10 text-xs font-extrabold text-right shrink-0", t.nps >= 50 ? "text-[var(--data-success-500)]" : t.nps >= 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                         {t.nps > 0 ? "+" : ""}{t.nps}
                       </span>
                     </div>

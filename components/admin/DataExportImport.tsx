@@ -140,7 +140,7 @@ export default function DataExportImport() {
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-            <Download className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <Download className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
             <CardTitle className="font-semibold text-[var(--text-primary)]">Exportar todos los datos</CardTitle>
@@ -167,7 +167,7 @@ export default function DataExportImport() {
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-            <Upload className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <Upload className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <div>
             <CardTitle className="font-semibold text-[var(--text-primary)]">Importar datos</CardTitle>
@@ -187,8 +187,8 @@ export default function DataExportImport() {
             className={cn(
               "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver
-                ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+                ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-[var(--data-success-500)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             )}
           >
             <FileJson className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
@@ -211,10 +211,10 @@ export default function DataExportImport() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <FileJson className="w-4 h-4 text-[var(--data-success)]" />
+                <FileJson className="w-4 h-4 text-[var(--data-success-500)]" />
                 <span className="font-medium">{previewFile}</span>
               </div>
-              <button onClick={handleClearPreview} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
+              <button onClick={handleClearPreview} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                 Cancelar
               </button>
             </div>
@@ -236,7 +236,7 @@ export default function DataExportImport() {
                 </div>
               )}
               {(preview.products?.length ?? 0) === 0 && (preview.customers?.length ?? 0) === 0 && (
-                <div className="flex items-center gap-2 text-sm text-[var(--data-warning)]">
+                <div className="flex items-center gap-2 text-sm text-[var(--data-warning-500)]">
                   <AlertTriangle className="w-4 h-4" />
                   No se encontraron productos ni clientes en el archivo.
                 </div>
@@ -259,8 +259,8 @@ export default function DataExportImport() {
 
         {/* Resultado */}
         {result && (
-          <div className="rounded-lg border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-2">
-            <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+          <div className="rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-2">
+            <div className="flex items-center gap-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               <CheckCircle className="w-4 h-4" />
               Importación completada
             </div>
@@ -269,7 +269,7 @@ export default function DataExportImport() {
             </p>
             {result.errors.length > 0 && (
               <div className="mt-2 space-y-1">
-                <p className="text-xs font-medium text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                <p className="text-xs font-medium text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                   {result.errors.length} error(es):
                 </p>
                 {result.errors.slice(0, 5).map((e, i) => (
@@ -279,7 +279,7 @@ export default function DataExportImport() {
             )}
             <button
               onClick={handleClearPreview}
-              className="mt-2 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] hover:underline"
+              className="mt-2 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:underline"
             >
               Importar otro archivo
             </button>
@@ -289,7 +289,7 @@ export default function DataExportImport() {
 
       {/* Error global */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <XCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>

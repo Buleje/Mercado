@@ -297,10 +297,10 @@ export default function ComisionesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-          { label: "Ganancia neta", value: fmt(totals.profit), icon: BarChart3, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+          { label: "Ganancia neta", value: fmt(totals.profit), icon: BarChart3, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
           { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
-          { label: "Por pagar", value: fmt(totals.pending), icon: Wallet, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+          { label: "Por pagar", value: fmt(totals.pending), icon: Wallet, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -314,24 +314,24 @@ export default function ComisionesTab() {
 
       {/* Rate config panel */}
       {showConfig && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-3 sm:p-5 space-y-5">
-          <CardTitle className="font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] flex flex-wrap items-center gap-2">
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3 sm:p-5 space-y-5">
+          <CardTitle className="font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex flex-wrap items-center gap-2">
             <Settings className="h-4 w-4" /> Reglas de comisión por tramos
           </CardTitle>
 
           {/* Existing DB tiers */}
           {dbRules.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Reglas guardadas</p>
+              <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Reglas guardadas</p>
               {dbRules.map(r => (
-                <div key={r.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card rounded-xl p-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/20">
+                <div key={r.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{r.cashierId} <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">{r.label && `— ${r.label}`}</span></p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                       Desde S/ {r.minSales.toLocaleString("es-PE")}{r.maxSales ? ` hasta S/ ${r.maxSales.toLocaleString("es-PE")}` : " en adelante"} → <strong>{r.rate}%</strong>
                     </p>
                   </div>
-                  <button onClick={() => handleDeleteTier(r.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors">
+                  <button onClick={() => handleDeleteTier(r.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -340,8 +340,8 @@ export default function ComisionesTab() {
           )}
 
           {/* Add new tier form */}
-          <div className="border-t border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 pt-4">
-            <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-3">Nueva regla</p>
+          <div className="border-t border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 pt-4">
+            <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3">Nueva regla</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-1">Cajero ID</label>
@@ -375,13 +375,13 @@ export default function ComisionesTab() {
           </div>
 
           {/* Legacy flat rate quick-edit */}
-          <div className="border-t border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 pt-4">
-            <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-3">Tasa plana rápida (no persiste)</p>
+          <div className="border-t border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 pt-4">
+            <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3">Tasa plana rápida (no persiste)</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {rules.map(r => {
                 const cashier = stats.find(s => s.cashierId === r.cashierId);
                 return (
-                  <div key={r.cashierId} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card rounded-xl p-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/20">
+                  <div key={r.cashierId} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{cashier?.cashierName ?? r.cashierId}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[cashier?.role ?? ""] ?? cashier?.role}</p>
@@ -396,7 +396,7 @@ export default function ComisionesTab() {
             </div>
           </div>
 
-          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">Las tasas de tramo se calculan sobre los ingresos brutos del período seleccionado.</p>
+          <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Las tasas de tramo se calculan sobre los ingresos brutos del período seleccionado.</p>
         </div>
       )}
 
@@ -427,14 +427,14 @@ export default function ComisionesTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{s.cashierName}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{s.sales}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmtCompact(s.revenue)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmtCompact(s.profit)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.revenue)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.profit)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">
                         {s.rate}%{s.tierLabel && <span className="ml-1 text-xs text-primary font-normal">({s.tierLabel})</span>}
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
+                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                           {s.paid ? "Pagado" : "Pendiente"}
                         </button>
                       </td>
@@ -444,11 +444,11 @@ export default function ComisionesTab() {
                 <tfoot className="bg-gray-50 dark:bg-surface border-t border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-primary)] dark:text-foreground text-xs uppercase">TOTAL</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(totals.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(totals.profit)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.profit)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3" />
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(totals.commission)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-bold text-xs">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-xs">
                       {fmt(totals.pending)} por pagar
                     </td>
                   </tr>
@@ -465,13 +465,13 @@ export default function ComisionesTab() {
                       <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{s.cashierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</p>
                     </div>
-                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
+                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                       {s.paid ? "Pagado" : "Pendiente"}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
-                    <div><p className="text-[var(--text-secondary)] dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmtCompact(s.revenue)}</p></div>
-                    <div><p className="text-[var(--text-secondary)] dark:text-muted font-bold">Ganancia</p><p className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmtCompact(s.profit)}</p></div>
+                    <div><p className="text-[var(--text-secondary)] dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.revenue)}</p></div>
+                    <div><p className="text-[var(--text-secondary)] dark:text-muted font-bold">Ganancia</p><p className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.profit)}</p></div>
                     <div><p className="text-[var(--text-secondary)] dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</p></div>
                   </div>
                 </div>
@@ -482,8 +482,8 @@ export default function ComisionesTab() {
       </div>
 
       {/* Info note */}
-      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4">
-        <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
+        <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           <strong>ℹ️ Nota:</strong> Las comisiones se calculan sobre los ingresos brutos de cada cajero en el POS. Los datos se cargan desde <code className="font-mono">/api/commissions</code>. Para que aparezcan ventas reales, cada venta del POS debe registrar el <code className="font-mono">cashierId</code> del cajero activo.
         </p>
       </div>

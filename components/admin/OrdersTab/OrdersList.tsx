@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from "react";
-import { Check, X, MapPin, Trash2, Bike, ShoppingBasket, Clock, Package, AlertTriangle } from "@buleje/design-system/icons";
+import { Check, X, MapPin, Trash2, Bike, ShoppingBasket, Clock, Package, AlertTriangle, Store, Boxes } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
@@ -44,11 +44,12 @@ interface OrdersListProps {
 
 // ── Status pills tokenizadas ──────────────────────────────────────────────
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  pendiente: "bg-[var(--data-warning)]/10 text-[var(--data-warning)] border-[var(--data-warning)]/25",
+  pendiente: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/25",
   confirmado: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30",
+  preparando: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] border-[var(--data-warning-500)]/35",
   en_camino: "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]",
-  entregado: "bg-[var(--data-success)]/10 text-[var(--data-success)] border-[var(--data-success)]/30",
-  cancelado: "bg-[var(--data-error)]/10 text-[var(--data-error)] border-[var(--data-error)]/30",
+  entregado: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
+  cancelado: "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
 };
 
 export function OrdersList({
@@ -164,6 +165,28 @@ export function OrdersList({
                 <div className="flex-1 min-w-0">
                   {/* Top row: nombre + teléfono + status */}
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Chip origen */}
+                    {(o as DbOrder & { source?: string }).source === "marketplace" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
+                        style={{
+                          background: "color-mix(in oklab, var(--color-secondary, #f4a261) 12%, transparent)",
+                          color: "var(--color-secondary, #f4a261)",
+                          borderColor: "color-mix(in oklab, var(--color-secondary, #f4a261) 30%, transparent)",
+                        }}
+                      >
+                        <Boxes className="h-3 w-3" strokeWidth={2} aria-hidden /> MKT
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
+                        style={{
+                          background: "color-mix(in oklab, var(--color-primary, #2d6a4f) 12%, transparent)",
+                          color: "var(--color-primary-dark, #1b4332)",
+                          borderColor: "color-mix(in oklab, var(--color-primary, #2d6a4f) 30%, transparent)",
+                        }}
+                      >
+                        <Store className="h-3 w-3" strokeWidth={2} aria-hidden /> TIENDA
+                      </span>
+                    )}
                     <span className="font-bold text-[var(--text-primary)] text-base">
                       {o.customer.name}
                     </span>
@@ -181,12 +204,12 @@ export function OrdersList({
                       {STATUS_LABELS[o.status]}
                     </span>
                     {isUrgent2h && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-error)] text-white animate-pulse">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-error-500)] text-white animate-pulse">
                         <AlertTriangle className="h-3 w-3" strokeWidth={2.5} aria-hidden /> +2h
                       </span>
                     )}
                     {isUrgent1h && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-warning)] text-white">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-warning-500)] text-white">
                         <Clock className="h-3 w-3" strokeWidth={2.5} aria-hidden /> +1h
                       </span>
                     )}
@@ -203,7 +226,7 @@ export function OrdersList({
                       </span>
                     )}
                     {o.paymentMethod === "efectivo" && o.deuda && (
-                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error)]/10 text-[var(--data-error)] border border-[var(--data-error)]/30">
+                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border border-[var(--data-error-500)]/30">
                         Deuda pendiente
                       </span>
                     )}
@@ -260,7 +283,7 @@ export function OrdersList({
                       <button
                         type="button"
                         onClick={() => onVerifyYape(o.id)}
-                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
+                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 transition-colors border border-[var(--data-success-500)]/30"
                         title="Confirmar Yape como valido"
                       >
                         <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Confirmar
@@ -268,7 +291,7 @@ export function OrdersList({
                       <button
                         type="button"
                         onClick={() => onRejectYape(o.id)}
-                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error)]/5 hover:bg-[var(--data-error)]/10 transition-colors border border-[var(--data-error)]/30"
+                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors border border-[var(--data-error-500)]/30"
                         title="Rechazar Yape (pago falso)"
                       >
                         <X className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Falso
@@ -279,7 +302,7 @@ export function OrdersList({
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(o.id)}
-                      className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
+                      className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 transition-colors border border-[var(--data-success-500)]/30"
                       title="Marcar deuda como cobrada"
                     >
                       <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Cobrado
@@ -312,7 +335,7 @@ export function OrdersList({
                   <button
                     type="button"
                     onClick={() => onDeleteOrder(o.id)}
-                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/10 transition-colors"
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
                     title="Eliminar"
                     aria-label="Eliminar pedido"
                   >

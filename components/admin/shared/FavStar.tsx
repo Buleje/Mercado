@@ -21,7 +21,7 @@ export default function FavStar({
       title={favs.isFav(id) ? "Quitar de favoritos" : "Agregar a favoritos"}
     >
       {favs.isFav(id) ? (
-        <Star className="h-4 w-4 text-[var(--data-warning)] fill-[var(--data-warning)]" />
+        <Star className="h-4 w-4 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
       ) : (
         <Star className="h-4 w-4 text-[var(--text-tertiary)]" />
       )}

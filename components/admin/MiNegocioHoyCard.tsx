@@ -111,7 +111,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {data.alertas.totalAlertas > 0 && (
           <>
             <span className="text-[var(--text-tertiary)]">·</span>
-            <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
+            <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
               {data.alertas.totalAlertas} alertas
             </span>
           </>
@@ -162,15 +162,15 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-              <DollarSign className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+              <DollarSign className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             </div>
             {data.ventas.cambioVsAyer !== 0 && (
               <div
                 className={cn(
                   "flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full",
                   data.ventas.cambioVsAyer > 0
-                    ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
-                    : "text-[var(--data-error)] bg-[var(--data-error-50)] dark:text-[var(--data-error)] dark:bg-[var(--data-error)]/30"
+                    ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
+                    : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30"
                 )}
               >
                 {data.ventas.cambioVsAyer > 0 ? (
@@ -208,10 +208,10 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-              <ShoppingCart className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+              <ShoppingCart className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             </div>
             {data.pedidos.pendientes > 0 && (
-              <span className="flex items-center gap-0.5 text-xs font-semibold text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 px-1.5 py-0.5 rounded-full">
+              <span className="flex items-center gap-0.5 text-xs font-semibold text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 px-1.5 py-0.5 rounded-full">
                 <Clock className="h-3 w-3" />
                 {data.pedidos.pendientes}
               </span>
@@ -224,7 +224,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
             Pedidos hoy
           </p>
           {data.pedidos.pendientes > 0 && (
-            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1 font-medium">
               {data.pedidos.pendientes} esperan tu atención
             </p>
           )}
@@ -240,14 +240,14 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
               className={cn(
                 "w-9 h-9 rounded-xl flex items-center justify-center",
                 data.alertas.totalAlertas > 0
-                  ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20"
+                  ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20"
                   : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
               )}
             >
               {data.alertas.totalAlertas > 0 ? (
-                <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               ) : (
-                <Package className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                <Package className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               )}
             </div>
           </div>
@@ -260,13 +260,13 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           {data.alertas.totalAlertas > 0 && (
             <div className="mt-1.5 space-y-0.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
               {data.alertas.sinStock > 0 && (
-                <p className="text-[var(--data-error)]">{data.alertas.sinStock} agotados</p>
+                <p className="text-[var(--data-error-500)]">{data.alertas.sinStock} agotados</p>
               )}
               {data.alertas.stockBajo > 0 && (
-                <p className="text-[var(--data-warning)]">{data.alertas.stockBajo} stock bajo</p>
+                <p className="text-[var(--data-warning-500)]">{data.alertas.stockBajo} stock bajo</p>
               )}
               {data.alertas.porVencer > 0 && (
-                <p className="text-[var(--data-warning)]">{data.alertas.porVencer} por vencer</p>
+                <p className="text-[var(--data-warning-500)]">{data.alertas.porVencer} por vencer</p>
               )}
             </div>
           )}

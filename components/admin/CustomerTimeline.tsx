@@ -80,19 +80,19 @@ const EVENT_CONFIG: Record<
   },
   review: {
     icon: Star,
-    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    dot: "bg-[var(--data-warning)]",
+    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    dot: "bg-[var(--data-warning-500)]",
   },
   complaint: {
     icon: MessageSquare,
-    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
-    dot: "bg-[var(--data-error)]",
+    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
+    dot: "bg-[var(--data-error-500)]",
   },
   credit: {
     icon: CreditCard,
-    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     dot: "bg-[var(--accent-soft)]",
   },
@@ -249,9 +249,9 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
-          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : events.length === 0 ? (
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">

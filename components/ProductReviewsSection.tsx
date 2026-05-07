@@ -26,7 +26,7 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={cn(cls, i < rating ? "text-amber-500 fill-amber-500" : "text-gray-300 dark:text-gray-600")}
+          className={cn(cls, i < rating ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-gray-300 dark:text-gray-600")}
         />
       ))}
     </div>
@@ -38,7 +38,7 @@ function RatingBar({ stars, count, total }: { stars: number; count: number; tota
   return (
     <div className="flex items-center gap-2 text-sm">
       <span className="w-6 text-right font-medium text-muted">{stars}</span>
-      <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0" />
+      <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
       <div className="flex-1 h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
         <div
           className="h-full bg-amber-400 rounded-full transition-all"
@@ -152,7 +152,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
             {showForm ? "Cancelar" : "Dejar reseña"}
           </button>
         ) : (
-          <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
+          <div className="flex items-center gap-2 text-[var(--data-success-600)] text-sm font-semibold">
             <CheckCircle className="h-4 w-4" />
             ¡Gracias! Tu reseña está en revisión
           </div>
@@ -178,7 +178,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
                     className="p-0.5"
                     aria-label={`${s} estrella${s !== 1 ? "s" : ""}`}
                   >
-                    <Star className={cn("h-7 w-7 transition-colors", (formHover || formRating) >= s ? "text-amber-500 fill-amber-500" : "text-gray-300")} />
+                    <Star className={cn("h-7 w-7 transition-colors", (formHover || formRating) >= s ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-gray-300")} />
                   </button>
                 ))}
                 {formRating > 0 && (
@@ -211,7 +211,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
               />
               <p className="text-xs text-muted mt-1 text-right">{formText.length}/500</p>
             </div>
-            {formError && <p className="text-sm text-red-500">{formError}</p>}
+            {formError && <p className="text-sm text-[var(--data-error-500)]">{formError}</p>}
             <button
               type="submit"
               disabled={submitting}

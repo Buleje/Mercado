@@ -256,7 +256,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       role="article"
       aria-label={product.name}
       className={cn(
-        "group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
+        "product-card group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
         isOutOfStock && "opacity-60 pointer-events-none"
       )}
       onMouseEnter={handlePrefetch}
@@ -345,8 +345,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           "absolute z-10 flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200 pointer-events-auto",
           isOutOfStock || isLowStock || product.stock === 1 ? "top-8 right-1.5" : "top-1.5 right-1.5",
           fav
-            ? "bg-red-500 text-white shadow-md scale-110"
-            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-card shadow-sm"
+            ? "bg-[var(--data-error-500)] text-white shadow-md scale-110"
+            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-card shadow-sm"
         )}
       >
         <Heart className={cn("h-5 w-5", fav && "fill-current")} />
@@ -386,7 +386,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             loading="lazy"
             unoptimized={product.image.startsWith("data:")}
             className={cn(
-              "object-cover group-hover:scale-110 transition-all duration-500",
+              "object-cover transition-opacity duration-300 group-hover:scale-105",
+              "[transition-property:opacity,transform] [transition-duration:300ms,500ms]",
               imgLoaded ? "opacity-100" : "opacity-0"
             )}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
@@ -419,11 +420,11 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         )}
       </div>
 
-      <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
+      <div className="p-3 sm:p-4 flex flex-col gap-2 flex-1 min-h-[10.5rem] sm:min-h-[12rem]">
         {/* Z1: Recently viewed badge */}
         {recentlyViewed && !isOutOfStock && (
-          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 -mt-0.5 mb--0.5">
-            <Eye className="h-3 w-3" strokeWidth={1.75} /> Lo viste hoy
+          <span className="text-xs font-semibold text-[var(--text-tertiary)] flex items-center gap-1 -mt-0.5 mb--0.5">
+            <Eye className="h-3.5 w-3.5" strokeWidth={1.75} /> Lo viste hoy
           </span>
         )}
         {/* Click en el título abre el modal de quick-view (no PDP). En la
@@ -438,16 +439,16 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             if (quickAdd) quickAdd.openQuickAdd(product);
           }}
         >
-          <h3 className="font-semibold text-foreground text-xs sm:text-sm leading-tight line-clamp-2 hover:text-primary transition-colors">
+          <h3 className="font-bold text-foreground text-sm sm:text-base leading-snug line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h3>
-          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-semibold text-primary/0 group-hover:text-primary/60 transition-colors leading-none inline-flex items-center gap-0.5">
+          <span className="mt-1 text-xs font-semibold text-primary/0 group-hover:text-primary/70 transition-colors leading-none inline-flex items-center gap-0.5">
             Ver detalles →
           </span>
         </button>
 
         {product.description && (
-          <p className="text-[length:var(--ts-2xs)] text-muted leading-snug line-clamp-2 -mt-0.5">
+          <p className="text-xs sm:text-sm text-muted leading-snug line-clamp-2 -mt-0.5">
             {product.description}
           </p>
         )}

@@ -130,8 +130,8 @@ const PLAN_LABELS: Record<SocioMember["plan"], string> = {
 };
 
 const STATUS_STYLES: Record<SocioMember["status"], string> = {
-  activo: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  pausado: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  activo: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  pausado: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
   cancelado: "bg-gray-100 text-[var(--text-secondary)]",
 };
 
@@ -279,7 +279,7 @@ function MembersTab({
                   <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -469,7 +469,7 @@ export default function SocioMembersAdminModule() {
           label="Miembros activos"
           value={serverStats?.activeMembers ?? activos.length}
           icon={Users}
-          color="#00B4A6"
+          color="var(--accent)"
           subtitle="Membresía vigente"
         />
         <KPICard

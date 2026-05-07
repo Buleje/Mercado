@@ -309,8 +309,8 @@ export default function BulkPriceUpdater() {
               ) : (
                 <div className="flex items-center justify-between rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[var(--data-success)]" />
-                    <span className="text-sm font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+                    <span className="text-sm font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       {csvFileName} cargado ({csvPriceMap.size} precios)
                     </span>
                   </div>
@@ -341,7 +341,7 @@ export default function BulkPriceUpdater() {
       {step === "preview" && (
         <div className="space-y-6">
           <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
             Se actualizaran <strong className="text-[var(--text-primary)]">{changes.length}</strong> productos. Revisa antes de confirmar.
           </div>
 
@@ -362,8 +362,8 @@ export default function BulkPriceUpdater() {
                     <td className="px-4 py-2 font-medium text-[var(--text-primary)]">{c.product.name}</td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">{c.product.category}</td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">{formatCurrency(c.product.price)}</td>
-                    <td className="px-4 py-2 font-medium text-primary dark:text-[var(--data-success)]">{formatCurrency(c.newPrice)}</td>
-                    <td className={cn("px-4 py-2 font-medium", c.diff >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                    <td className="px-4 py-2 font-medium text-primary dark:text-[var(--data-success-500)]">{formatCurrency(c.newPrice)}</td>
+                    <td className={cn("px-4 py-2 font-medium", c.diff >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                       {c.diff >= 0 ? "+" : ""}{formatCurrency(c.diff)}
                     </td>
                   </tr>
@@ -405,7 +405,7 @@ export default function BulkPriceUpdater() {
       {step === "done" && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-3">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+            <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
             <div>
               <p className="font-semibold text-[var(--text-primary)]">Actualizacion completada</p>
               <p className="text-sm text-[var(--text-secondary)]">{updatedCount} precios actualizados correctamente</p>

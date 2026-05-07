@@ -16,7 +16,7 @@ const BRAND_META: Record<string, { color: string; bg: string }> = {
   "Coca-Cola":    { color: "#dc2626", bg: "#fee2e2" },
   "Sublime":      { color: "#7c2d12", bg: "#fed7aa" },
   "Ariel":        { color: "#0369a1", bg: "#e0f2fe" },
-  "Sapolio":      { color: "#00B4A6", bg: "#ccfbf1" },
+  "Sapolio":      { color: "var(--accent)", bg: "#ccfbf1" },
   "Ajinomoto":    { color: "#dc2626", bg: "#fee2e2" },
   "Nicolini":     { color: "#1d4ed8", bg: "#dbeafe" },
   "Molitalia":    { color: "#b91c1c", bg: "#fee2e2" },

@@ -24,8 +24,8 @@ type MessageTemplate = {
 
 /* ── config ─────────────────────────────────────────────────── */
 const CHANNEL_CONFIG: Record<TemplateChannel, { label: string; color: string; bg: string }> = {
-  whatsapp: { label: "WhatsApp", color: "text-[var(--data-success)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  email:    { label: "Email",    color: "text-[var(--data-success)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  whatsapp: { label: "WhatsApp", color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  email:    { label: "Email",    color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   sms:      { label: "SMS",      color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
 };
 
@@ -159,7 +159,7 @@ export default function MessageTemplatesTab() {
         })}
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Usos totales</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] mt-1">{templates.reduce((s, t) => s + t.usageCount, 0)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] mt-1">{templates.reduce((s, t) => s + t.usageCount, 0)}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">copias realizadas</p>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function MessageTemplatesTab() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); handleStar(t.id); }} className="shrink-0">
-                      {t.starred ? <Star className="h-4 w-4 text-[var(--data-warning)] fill-[var(--data-warning)]" /> : <StarOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
+                      {t.starred ? <Star className="h-4 w-4 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" /> : <StarOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
                     </button>
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{t.name}</CardTitle>
                   </div>
@@ -226,9 +226,9 @@ export default function MessageTemplatesTab() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={e => { e.stopPropagation(); handleCopy(t); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors">
-                      {copiedId === t.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success)]" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedId === t.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
-                    <button onClick={e => { e.stopPropagation(); handleDelete(t.id); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+                    <button onClick={e => { e.stopPropagation(); handleDelete(t.id); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>

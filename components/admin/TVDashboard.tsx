@@ -151,7 +151,7 @@ export default function TVDashboard() {
       ? "bg-primary"
       : progress >= 50
         ? "bg-secondary"
-        : "bg-[var(--data-error)]";
+        : "bg-[var(--data-error-500)]";
 
   return (
     <div

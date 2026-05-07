@@ -70,7 +70,17 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06: derivar tenantId del producto (no del header)
+    // para evitar que un cliente con header falsificado lea reseñas de otro
+    // tenant. Esto es consistente con el POST de este mismo endpoint.
+    const productOwner = await prisma.product.findFirst({
+      where: { id: productId, deletedAt: null },
+      select: { tenantId: true },
+    });
+    if (!productOwner) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+    }
+    const tenantId = productOwner.tenantId;
     const { searchParams } = new URL(req.url);
     const parsed = QuerySchema.safeParse(Object.fromEntries(searchParams));
     if (!parsed.success) {
@@ -132,7 +142,17 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06: derivar tenantId del producto, NO del header.
+    // Un cliente no debe poder dejar review escrita contra un tenant
+    // arbitrario forzando el header. El producto define a qué tenant pertenece.
+    const productOwner = await prisma.product.findFirst({
+      where: { id: productId, deletedAt: null },
+      select: { tenantId: true },
+    });
+    if (!productOwner) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+    }
+    const tenantId = productOwner.tenantId;
 
     // SECURITY (HOTFIX-A3, 2026-04-29): exige customer-session firmada.
     // Antes: cualquiera dejaba review con phone de otro cliente (vector

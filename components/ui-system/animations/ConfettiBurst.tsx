@@ -36,7 +36,7 @@ interface Props {
   onComplete?: () => void;
 }
 
-const EDITORIAL_COLORS = ["#0a0a0a", "#525252", "#00B4A6", "#fafafa"];
+const EDITORIAL_COLORS = ["#0a0a0a", "#525252", "var(--accent)", "#fafafa"];
 
 export function ConfettiBurst({
   originX = 0.5,

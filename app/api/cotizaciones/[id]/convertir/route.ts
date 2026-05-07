@@ -24,10 +24,27 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         { status: 400 }
       );
     }
+    // SECURITY 2026-05-06 (audit warehouse H7): rechazar cotizaciones vencidas.
+    if (cotizacion.validoHasta && new Date(cotizacion.validoHasta) < new Date()) {
+      return NextResponse.json(
+        { error: "Cotización vencida — no se puede convertir" },
+        { status: 400 },
+      );
+    }
 
-    // Create order from cotización in a transaction
+    // SECURITY 2026-05-06 (audit warehouse H6): conversión atómica con guard
+    // de status. Antes 2 POST paralelos pasaban el check ACEPTADA y creaban
+    // 2 órdenes desde la misma cotización. Ahora updateMany con
+    // `status:"ACEPTADA"` solo gana 1 transición; el otro recibe count=0.
     // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped por auth.tenantId guard arriba.
     const result = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.cotizacion.updateMany({
+        where: { id, tenantId: auth.tenantId, status: "ACEPTADA" },
+        data: { status: "CONVERTIDA" },
+      });
+      if (claimed.count === 0) {
+        throw new Error("COTIZACION_ALREADY_CONVERTED");
+      }
       const orderId = `ord-cot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const order = await tx.order.create({
         data: {
@@ -51,12 +68,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
           },
         },
         include: { items: true },
-      });
-
-      // Update cotización status to CONVERTIDA
-      await tx.cotizacion.update({
-        where: { id },
-        data: { status: "CONVERTIDA" },
       });
 
       return order;

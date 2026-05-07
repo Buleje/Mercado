@@ -65,8 +65,9 @@ export async function GET(req: NextRequest) {
           let precioSugerido: number | null = null;
 
           if (lote.productId) {
-            const producto = await prisma.product.findUnique({
-              where: { id: lote.productId },
+            // SECURITY 2026-05-05 (audit cross-tenant): defensive tenantId scope.
+            const producto = await prisma.product.findFirst({
+              where: { id: lote.productId, tenantId: tenant.id },
               select: { price: true },
             });
             if (producto) {

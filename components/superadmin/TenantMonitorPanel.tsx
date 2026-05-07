@@ -47,15 +47,15 @@ type HealthResponse = {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const OVERALL_STATUS = {
-  healthy:  { icon: CheckCircle,    color: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)]", border: "border-[var(--data-success)]", label: "Sistema Saludable" },
-  warning:  { icon: AlertTriangle,  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)]",   border: "border-[var(--data-warning)]",   label: "Advertencias Detectadas" },
-  critical: { icon: XCircle,        color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)]",     border: "border-[var(--data-error)]",     label: "Problemas Críticos" },
+  healthy:  { icon: CheckCircle,    color: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]", border: "border-[var(--data-success-500)]", label: "Sistema Saludable" },
+  warning:  { icon: AlertTriangle,  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)]",   border: "border-[var(--data-warning-500)]",   label: "Advertencias Detectadas" },
+  critical: { icon: XCircle,        color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]",     border: "border-[var(--data-error-500)]",     label: "Problemas Críticos" },
 };
 
 const TENANT_STATUS = {
-  healthy:  { dot: "bg-[var(--data-success)]", text: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)]" },
-  warning:  { dot: "bg-[var(--data-warning)]",   text: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)]" },
-  critical: { dot: "bg-[var(--data-error)]",     text: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)]" },
+  healthy:  { dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]" },
+  warning:  { dot: "bg-[var(--data-warning-500)]",   text: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)]" },
+  critical: { dot: "bg-[var(--data-error-500)]",     text: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]" },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -118,13 +118,13 @@ export default function TenantMonitorPanel() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)] p-6 text-center">
-        <XCircle className="h-10 w-10 text-[var(--data-error)] mx-auto mb-3" />
-        <p className="font-bold text-[var(--data-error)]">Error al cargar monitoreo</p>
-        <p className="text-sm text-[var(--data-error)] mt-1">{error}</p>
+      <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-6 text-center">
+        <XCircle className="h-10 w-10 text-[var(--data-error-500)] mx-auto mb-3" />
+        <p className="font-bold text-[var(--data-error-500)]">Error al cargar monitoreo</p>
+        <p className="text-sm text-[var(--data-error-500)] mt-1">{error}</p>
         <button
           onClick={() => void load()}
-          className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           Reintentar
         </button>
@@ -174,15 +174,15 @@ export default function TenantMonitorPanel() {
               key={i}
               className={`rounded-xl border p-3 ${
                 test.passed
-                  ? "bg-[var(--data-success-50)] border-[var(--data-success)]"
-                  : "bg-[var(--data-error-50)] border-[var(--data-error)]"
+                  ? "bg-[var(--data-success-50)] border-[var(--data-success-500)]"
+                  : "bg-[var(--data-error-50)] border-[var(--data-error-500)]"
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
                 {test.passed ? (
-                  <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+                  <XCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
                 )}
                 <span className="text-sm font-semibold text-gray-900">{test.name}</span>
               </div>
@@ -243,10 +243,10 @@ export default function TenantMonitorPanel() {
 // ── Sub-Components ────────────────────────────────────────────────────────────
 
 const STAT_COLORS: Record<string, string> = {
-  teal: "text-teal-600 bg-teal-50",
-  blue: "text-[var(--data-success)] bg-[var(--data-success-50)]",
+  teal: "text-[var(--accent-dark)] bg-teal-50",
+  blue: "text-[var(--data-success-500)] bg-[var(--data-success-50)]",
   purple: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
-  orange: "text-[var(--data-warning)] bg-[var(--data-warning-50)]",
+  orange: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)]",
 };
 
 function StatCard({
@@ -318,9 +318,9 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
         {tenant.checks.map((check, i) => (
           <div key={i} className="flex items-center gap-1.5">
             {check.passed ? (
-              <CheckCircle className="h-3 w-3 text-[var(--data-success)] shrink-0" />
+              <CheckCircle className="h-3 w-3 text-[var(--data-success-500)] shrink-0" />
             ) : (
-              <XCircle className="h-3 w-3 text-[var(--data-error)] shrink-0" />
+              <XCircle className="h-3 w-3 text-[var(--data-error-500)] shrink-0" />
             )}
             <span className="text-xs text-gray-600 truncate">{check.detail}</span>
           </div>

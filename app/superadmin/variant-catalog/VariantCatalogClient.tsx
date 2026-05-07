@@ -195,7 +195,7 @@ export default function VariantCatalogClient() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+        <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -325,7 +325,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onChange(""); setUploadInfo(null); }}
-              className="text-xs font-semibold text-[var(--data-error)] hover:underline"
+              className="text-xs font-semibold text-[var(--data-error-500)] hover:underline"
             >
               Quitar
             </button>
@@ -355,13 +355,13 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
         )}
       </div>
       {uploadInfo && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] flex items-center gap-1.5">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] flex items-center gap-1.5">
           <Check className="h-3 w-3" />
           Optimizada: {(uploadInfo.size / 1024).toFixed(0)} KB · {uploadInfo.savedPct}% más liviana que el original.
         </p>
       )}
       {uploadError && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1.5">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] flex items-center gap-1.5">
           <AlertTriangle className="h-3 w-3" />
           {uploadError}
         </p>
@@ -592,7 +592,7 @@ function NewTemplateModal({
               </div>
 
               {err && (
-                <p className="text-xs text-[var(--data-error)] flex items-center gap-1.5">
+                <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1.5">
                   <AlertTriangle className="h-3 w-3" /> {err}
                 </p>
               )}
@@ -689,7 +689,7 @@ function TemplateCard({
           </button>
           <button
             onClick={deleteTemplate}
-            className="p-1.5 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error)]/5 transition-colors"
+            className="p-1.5 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5 transition-colors"
             title="Eliminar plantilla"
           >
             <Trash2 className="h-4 w-4" />
@@ -765,7 +765,7 @@ function OptionCard({ option, onEdit, onChanged }: { option: Option; onEdit: () 
             </p>
           )}
           {option.isDefault && (
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success)]">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)]">
               Por defecto
             </span>
           )}
@@ -774,7 +774,7 @@ function OptionCard({ option, onEdit, onChanged }: { option: Option; onEdit: () 
           <button onClick={onEdit} className="text-xs text-primary font-semibold hover:underline">
             Editar
           </button>
-          <button onClick={remove} className="text-xs text-[var(--data-error)] font-semibold hover:underline">
+          <button onClick={remove} className="text-xs text-[var(--data-error-500)] font-semibold hover:underline">
             Borrar
           </button>
         </div>
@@ -910,7 +910,7 @@ function OptionModal({
             </label>
 
             {err && (
-              <p className="text-xs text-[var(--data-error)] flex items-center gap-1.5">
+              <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1.5">
                 <AlertTriangle className="h-3 w-3" /> {err}
               </p>
             )}

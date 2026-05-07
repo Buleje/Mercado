@@ -96,7 +96,7 @@ const TabDashboard = memo(function TabDashboard() {
   const ventas = VENTAS_CYCLES[vcy];
   const kpiItems = [
     { label: "Ventas hoy", valor: kpi.ventas, color: "#2dd4bf", bg: "rgba(15,118,110,0.12)", border: "rgba(15,118,110,0.3)" },
-    { label: "Pedidos", valor: kpi.pedidos, color: "#5eead4", bg: "rgba(15,118,110,0.08)", border: "rgba(15,118,110,0.2)" },
+    { label: "Pedidos", valor: kpi.pedidos, color: "color-mix(in oklab, var(--accent) 60%, white)", bg: "rgba(15,118,110,0.08)", border: "rgba(15,118,110,0.2)" },
     { label: "Stock bajo", valor: kpi.stock, color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.2)" },
     { label: "Margen", valor: kpi.margen, color: "#fb923c", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
   ];
@@ -120,7 +120,7 @@ const TabDashboard = memo(function TabDashboard() {
           {CHART_BARS.map((bar) => (
             <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full relative rounded-t" style={{ height: `${bar.h}%` }}>
-                <div className="w-full h-full rounded-t" style={{ background: bar.today ? "linear-gradient(to top, #00B4A6, #2dd4bf)" : "rgba(15,118,110,0.35)" }} />
+                <div className="w-full h-full rounded-t" style={{ background: bar.today ? "linear-gradient(to top, var(--accent), #2dd4bf)" : "rgba(15,118,110,0.35)" }} />
                 {bar.today && <div className="absolute inset-0 rounded-t animate-pulse" style={{ background: "linear-gradient(to top, rgba(15,118,110,0.3), rgba(45,212,191,0.3))" }} />}
               </div>
               <span className="text-gray-600 dark:text-gray-500" style={{ fontSize: "0.6rem" }}>{bar.label}</span>
@@ -161,7 +161,7 @@ const TabPOS = memo(function TabPOS() {
         <p className="text-xs text-gray-500 mb-2">Productos</p>
         <div className="grid grid-cols-2 gap-1.5">
           {PRODUCTOS.map((p) => (
-            <button key={p.nombre} type="button" onClick={() => agregar(p)} className="text-left rounded-xl p-2 border transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]" style={{ background: "rgba(15,118,110,0.08)", borderColor: "rgba(15,118,110,0.2)", minHeight: "44px" }}>
+            <button key={p.nombre} type="button" onClick={() => agregar(p)} className="text-left rounded-xl p-2 border transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" style={{ background: "rgba(15,118,110,0.08)", borderColor: "rgba(15,118,110,0.2)", minHeight: "44px" }}>
               <p className="text-xs font-semibold text-gray-200 leading-tight">{p.nombre}</p>
               <p className="text-xs font-mono" style={{ color: "#2dd4bf" }}>S/ {p.precio.toFixed(2)}</p>
             </button>
@@ -186,7 +186,7 @@ const TabPOS = memo(function TabPOS() {
             <AnimatePresence mode="wait">
               {cobrado
                 ? <motion.div key="ok" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-xs font-bold text-center py-1.5 rounded-xl" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.3)" }}>Venta lista</motion.div>
-                : <motion.button key="cobrar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} type="button" onClick={cobrar} className="w-full text-xs font-bold py-1.5 rounded-xl text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]" style={{ background: "linear-gradient(135deg, #00B4A6, #009690)", minHeight: "32px" }}>Cobrar S/ {total.toFixed(2)}</motion.button>
+                : <motion.button key="cobrar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} type="button" onClick={cobrar} className="w-full text-xs font-bold py-1.5 rounded-xl text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dark))", minHeight: "32px" }}>Cobrar S/ {total.toFixed(2)}</motion.button>
               }
             </AnimatePresence>
           </div>
@@ -207,7 +207,7 @@ const TabWhatsApp = memo(function TabWhatsApp({ active }: { active: boolean }) {
   return (
     <div className="p-3" style={{ minHeight: "220px" }}>
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-3" style={{ background: "rgba(15,118,110,0.15)", border: "1px solid rgba(15,118,110,0.25)" }}>
-        <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: "#00B4A6" }} aria-hidden="true">WA</div>
+        <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: "var(--accent)" }} aria-hidden="true">WA</div>
         <div><p className="text-xs font-semibold text-gray-200">Bot Bodega</p><p className="text-gray-400" style={{ fontSize: "0.65rem" }}>En linea</p></div>
         <div className="ml-auto h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
       </div>
@@ -237,7 +237,7 @@ const StatCounter = memo(function StatCounter({ target, suffix, label, delay }: 
   const { count, ref } = useViewportCounter(target, 1600);
   return (
     <motion.div ref={ref} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay, duration: 0.5, ease: SPRING }} className="text-center">
-      <p className="text-4xl sm:text-5xl font-black tracking-tight font-mono" style={{ color: "#00B4A6", letterSpacing: "-0.03em" }}>{count}{suffix}</p>
+      <p className="text-4xl sm:text-5xl font-black tracking-tight font-mono" style={{ color: "var(--accent)", letterSpacing: "-0.03em" }}>{count}{suffix}</p>
       <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1 font-medium">{label}</p>
     </motion.div>
   );
@@ -324,7 +324,7 @@ export default function SaasHero() {
           {/* Columna izquierda */}
           <motion.div variants={stagger} initial="initial" animate="animate" className="flex flex-col items-start">
             <motion.div variants={reduced ? {} : fadeUp} className="mb-5 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white shadow-lg"
-              style={{ background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)", boxShadow: "0 4px 20px -4px rgba(15,118,110,0.5)" }}>
+              style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 4px 20px -4px rgba(15,118,110,0.5)" }}>
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white/70" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
@@ -334,24 +334,24 @@ export default function SaasHero() {
             </motion.div>
 
             <motion.h1 variants={reduced ? {} : fadeUp} className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight mb-6" style={{ letterSpacing: "-0.03em" }}>
-              Tu bodega merece un sistema{" "}<span style={{ color: "#00B4A6" }}>inteligente</span>
+              Tu bodega merece un sistema{" "}<span style={{ color: "var(--accent)" }}>inteligente</span>
             </motion.h1>
 
             <motion.p variants={reduced ? {} : fadeUp} className="text-base sm:text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-8 max-w-xl" aria-label={SUBTITLE}>
               {subtitle}
-              {!typingDone && !reduced && <span className="inline-block w-0.5 h-4 ml-0.5 align-middle animate-pulse" style={{ backgroundColor: "#00B4A6" }} aria-hidden="true" />}
+              {!typingDone && !reduced && <span className="inline-block w-0.5 h-4 ml-0.5 align-middle animate-pulse" style={{ backgroundColor: "var(--accent)" }} aria-hidden="true" />}
             </motion.p>
 
             <motion.div variants={reduced ? {} : fadeUp} className="flex flex-col sm:flex-row gap-3 mb-3 w-full sm:w-auto">
-              <Link href="/registro" className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-lg font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[44px]"
-                style={{ background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)", boxShadow: "0 8px 32px -4px rgba(15,118,110,0.5), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+              <Link href="/registro" className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-lg font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] min-h-[44px]"
+                style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 8px 32px -4px rgba(15,118,110,0.5), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
                 Empezar gratis →
               </Link>
               <button
                 type="button"
                 onClick={handleDemo}
                 disabled={demoLoading}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6] hover:text-[#00B4A6] dark:hover:border-[#00B4A6] dark:hover:text-[#00B4A6] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[var(--accent)] hover:text-[var(--accent)] dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] min-h-[44px]"
               >
                 {demoLoading ? (
                   <>
@@ -371,7 +371,7 @@ export default function SaasHero() {
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-sm text-red-500 dark:text-red-400 mb-3"
+                className="text-sm text-[var(--data-error-500)] dark:text-red-400 mb-3"
                 role="alert"
               >
                 {demoError}
@@ -395,7 +395,7 @@ export default function SaasHero() {
 
               {/* Barra de titulo */}
               <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: "#1f2937", borderColor: "rgba(255,255,255,0.08)" }} aria-hidden="true">
-                <span className="h-3 w-3 rounded-full bg-red-500" />
+                <span className="h-3 w-3 rounded-full bg-[var(--data-error-500)]" />
                 <span className="h-3 w-3 rounded-full bg-yellow-400" />
                 <span className="h-3 w-3 rounded-full bg-green-500" />
                 <span className="ml-2 text-xs text-gray-400 font-medium truncate">Buleje — Sistema ERP</span>
@@ -405,9 +405,9 @@ export default function SaasHero() {
               <div className="flex items-center gap-1 px-3 py-2 border-b" style={{ background: "#1a2535", borderColor: "rgba(255,255,255,0.06)" }} role="tablist" aria-label="Modulos del sistema">
                 {TABS.map((t) => (
                   <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-                    className="relative text-xs px-3 py-1.5 rounded-full font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[32px]"
+                    className="relative text-xs px-3 py-1.5 rounded-full font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] min-h-[32px]"
                     style={{ color: tab === t ? "#fff" : "rgba(156,163,175,0.8)", background: tab === t ? "transparent" : "transparent" }}>
-                    {tab === t && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(135deg, #00B4A6, #009690)" }} transition={{ type: "spring", bounce: 0.2, duration: 0.4 }} aria-hidden="true" />}
+                    {tab === t && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dark))" }} transition={{ type: "spring", bounce: 0.2, duration: 0.4 }} aria-hidden="true" />}
                     <span className="relative z-10">{t}</span>
                   </button>
                 ))}
@@ -443,7 +443,7 @@ export default function SaasHero() {
             <StatCounter target={107} suffix="+" label="modulos" delay={0.1} />
             <StatCounter target={20} suffix="+" label="integraciones" delay={0.2} />
             <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.5, ease: SPRING }} className="text-center">
-              <p className="text-4xl sm:text-5xl font-black tracking-tight font-mono" style={{ color: "#00B4A6", letterSpacing: "-0.03em" }}>100%</p>
+              <p className="text-4xl sm:text-5xl font-black tracking-tight font-mono" style={{ color: "var(--accent)", letterSpacing: "-0.03em" }}>100%</p>
               <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1 font-medium">peruano</p>
             </motion.div>
           </div>

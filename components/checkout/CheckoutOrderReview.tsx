@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { MapPin, Home, ShoppingCart, ShieldCheck, Lock, CheckCircle2 } from "@buleje/design-system/icons";
+import { MapPin, Home, ShoppingCart, ShieldCheck, Lock, CheckCircle2, MessageCircle, FileText } from "@buleje/design-system/icons";
 
 interface CartItem {
   id: number;
@@ -86,7 +86,7 @@ export function CheckoutOrderReview({
             type="button"
             onClick={onEditAddress}
             whileHover={{ scale: 1.02 }}
-            className="flex items-center gap-3 text-sm text-amber-700 dark:text-amber-400 font-bold w-full"
+            className="flex items-center gap-3 text-sm text-[var(--data-warning-700)] dark:text-amber-400 font-bold w-full"
           >
             <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center shrink-0">
               <MapPin className="h-5 w-5" />
@@ -142,8 +142,10 @@ export function CheckoutOrderReview({
                       }}
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-300 text-sm">
-                      📦
+                    <div className="h-full w-full flex items-center justify-center text-[var(--rule-base)]">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m7.5 7.5-.84-1.681a1.5 1.5 0 0 1 1.342-2.169h8.996a1.5 1.5 0 0 1 1.342 2.169L17.5 7.5m-10 0h10m-10 0H4.5a1.5 1.5 0 0 0-1.5 1.5v9a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V9a1.5 1.5 0 0 0-1.5-1.5h-3" />
+                      </svg>
                     </div>
                   )}
                 </div>
@@ -160,8 +162,9 @@ export function CheckoutOrderReview({
                       S/{item.price.toFixed(2)} c/u
                     </span>
                     {item.note && (
-                      <span className="text-[length:var(--ts-2xs)] text-amber-500 truncate">
-                        📝 {item.note}
+                      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] truncate">
+                        <FileText className="h-3 w-3 shrink-0" strokeWidth={2} />
+                        {item.note}
                       </span>
                     )}
                   </div>
@@ -184,7 +187,7 @@ export function CheckoutOrderReview({
               </span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-xs text-emerald-600 font-bold">
+              <div className="flex justify-between text-xs text-[var(--data-success-600)] font-bold">
                 <span>Descuento</span>
                 <span>-S/{discount.toFixed(2)}</span>
               </div>
@@ -193,48 +196,51 @@ export function CheckoutOrderReview({
         </div>
       </details>
 
-      {/* WhatsApp summary */}
+      {/* WhatsApp summary — el texto del mensaje conserva los emojis porque
+          el cliente final los ve en su chat de WhatsApp (UX nativa de la app),
+          pero el botón de la web es 100% propio sin emojis. */}
       <a
         href={`https://wa.me/?text=${encodeURIComponent(
-          `📋 Mi pedido en Buleje:\n${items
+          `Mi pedido:\n${items
             .map(
               (i) =>
                 `• ${i.name} x${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`
             )
-            .join("\n")}\n\n💰 Total: S/${finalTotal.toFixed(2)}${
+            .join("\n")}\n\nTotal: S/${finalTotal.toFixed(2)}${
             discount > 0 ? ` (desc: -S/${discount.toFixed(2)})` : ""
           }`
         )}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-dashed border-emerald-300 text-emerald-600 text-xs font-bold hover:bg-emerald-50 transition-colors"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-emerald-400/50 text-[var(--data-success-600)] text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:border-emerald-500 transition-colors"
       >
-        📲 Enviar resumen por WhatsApp
+        <MessageCircle className="h-4 w-4" strokeWidth={2} />
+        Enviar resumen por WhatsApp
       </a>
 
       {/* Trust signals — pago seguro */}
       <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 px-4 py-3">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+          <ShieldCheck className="h-4 w-4 text-[var(--data-success-600)] dark:text-emerald-400" />
+          <p className="text-xs font-extrabold text-[var(--data-success-700)] dark:text-emerald-300 uppercase tracking-wider">
             Compra 100% protegida
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center gap-1 text-center">
-            <Lock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Lock className="h-3.5 w-3.5 text-[var(--data-success-600)] dark:text-emerald-400" />
             <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
               SSL encriptado
             </span>
           </div>
           <div className="flex flex-col items-center gap-1 text-center">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-600)] dark:text-emerald-400" />
             <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
               Pago verificado
             </span>
           </div>
           <div className="flex flex-col items-center gap-1 text-center">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-600)] dark:text-emerald-400" />
             <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
               Datos seguros
             </span>

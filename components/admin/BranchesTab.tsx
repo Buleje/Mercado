@@ -47,9 +47,9 @@ const BRANCHES: Branch[] = [];
 const TRANSFERS: Transfer[] = [];
 
 const TRANSFER_STATUS: Record<Transfer["status"], { label: string; color: string; bg: string }> = {
-  pendiente:     { label: "Pendiente",    color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  "en-transito": { label: "En Tránsito", color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  completada:    { label: "Completada",   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  pendiente:     { label: "Pendiente",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  "en-transito": { label: "En Tránsito", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  completada:    { label: "Completada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -94,10 +94,10 @@ export default function BranchesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Sucursales activas", value: String(stats.active), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Sucursales activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Stock consolidado", value: stats.totalStock.toLocaleString("es-PE") + " uds", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "Transferencias activas", value: String(stats.pendingTransfers), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Transferencias activas", value: String(stats.pendingTransfers), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -130,7 +130,7 @@ export default function BranchesTab() {
                     <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{b.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{b.code}</p>
                   </div>
-                  <span className={cn("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", b.status === "activa" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)]")}>
+                  <span className={cn("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", b.status === "activa" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]")}>
                     {b.status === "activa" ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                     {b.status === "activa" ? "Activa" : "Inactiva"}
                   </span>
@@ -141,7 +141,7 @@ export default function BranchesTab() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)] dark:text-muted">Venta mensual</span>
-                  <span className="font-bold text-[var(--data-success)]">{fmt(b.monthlyRevenue)}</span>
+                  <span className="font-bold text-[var(--data-success-500)]">{fmt(b.monthlyRevenue)}</span>
                 </div>
                 {b.status === "activa" && (
                   <div className="flex items-center justify-between text-xs">
@@ -200,7 +200,7 @@ export default function BranchesTab() {
                 <div key={b.id} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{b.name}</span>
-                    <span className="font-bold text-[var(--data-success)]">{fmt(b.monthlyRevenue)}</span>
+                    <span className="font-bold text-[var(--data-success-500)]">{fmt(b.monthlyRevenue)}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${pct}%` }} />

@@ -159,13 +159,13 @@ export default function Contact() {
                     {"badge" in item && item.badge && (
                       <span className={`inline-flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full ${
                         item.badge.status === "open"
-                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-400"
                           : item.badge.status === "closing"
-                          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 animate-pulse"
-                          : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                          ? "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400 animate-pulse"
+                          : "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-400"
                       }`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${
-                          item.badge.status === "open" ? "bg-emerald-500" : item.badge.status === "closing" ? "bg-amber-500" : "bg-red-500"
+                          item.badge.status === "open" ? "bg-[var(--data-success-500)]" : item.badge.status === "closing" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
                         }`} />
                         {item.badge.label}
                       </span>
@@ -181,7 +181,7 @@ export default function Contact() {
             className={`rounded-2xl p-8 sm:p-10 text-white shadow-xl ${
               inView ? "animate-[fadeUp_0.5s_ease-out_0.3s_both]" : "opacity-0"
             }`}
-            style={{ background: "linear-gradient(135deg, #312e81, #009690)" }}
+            style={{ background: "linear-gradient(135deg, #312e81, var(--accent-dark))" }}
           >
             <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
               ¿Listo para pedir?

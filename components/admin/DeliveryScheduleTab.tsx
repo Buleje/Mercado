@@ -99,7 +99,7 @@ export default function DeliveryScheduleTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <SectionTitle className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-          <Clock className="w-5 h-5 text-[var(--data-success)]" />
+          <Clock className="w-5 h-5 text-[var(--data-success-500)]" />
           Horarios y Zonas de Delivery
         </SectionTitle>
         <button
@@ -117,7 +117,7 @@ export default function DeliveryScheduleTab() {
       </div>
 
       {saveError && (
-        <div className="flex items-center gap-2 bg-[var(--data-error)]/10 border border-[var(--data-error)]/20 rounded-xl p-3 text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/20 rounded-xl p-3 text-sm text-[var(--data-error-500)]">
           <span>{saveError}</span>
           <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
         </div>
@@ -126,7 +126,7 @@ export default function DeliveryScheduleTab() {
       {/* Schedule */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <CardTitle className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-          <Clock className="w-4 h-4 text-[var(--data-warning)]" />
+          <Clock className="w-4 h-4 text-[var(--data-warning-500)]" />
           Horarios por día
         </CardTitle>
         <div className="space-y-2">
@@ -172,12 +172,12 @@ export default function DeliveryScheduleTab() {
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <CardTitle className="text-sm font-semibold text-white flex flex-wrap items-center gap-2">
-            <MapPin className="w-4 h-4 text-[var(--data-success)]" />
+            <MapPin className="w-4 h-4 text-[var(--data-success-500)]" />
             Zonas de cobertura
           </CardTitle>
           <button
             onClick={addZone}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--accent-soft)] text-[var(--data-success)] rounded-lg hover:bg-[var(--accent-soft)] transition"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded-lg hover:bg-[var(--accent-soft)] transition"
           >
             <Plus className="w-3 h-3" /> Agregar zona
           </button>
@@ -227,7 +227,7 @@ export default function DeliveryScheduleTab() {
               </div>
               <button
                 onClick={() => removeZone(i)}
-                className="p-1.5 text-[var(--data-error)] hover:bg-[var(--data-error)]/10 rounded transition"
+                className="p-1.5 text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 rounded transition"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

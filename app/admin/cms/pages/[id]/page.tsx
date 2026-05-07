@@ -329,7 +329,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               type="text"
               value={page.title}
               onChange={(e) => setPage({ ...page, title: e.target.value })}
-              className="text-xl font-bold border-b-2 border-transparent hover:border-gray-300 focus:border-[var(--data-success)]/30 outline-none"
+              className="text-xl font-bold border-b-2 border-transparent hover:border-gray-300 focus:border-[var(--data-success-500)]/30 outline-none"
             />
             <p className="text-sm text-[var(--text-secondary)]">/{page.slug}</p>
           </div>
@@ -365,9 +365,9 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   key={block.type}
                   onClick={() => addBlock(block.type)}
-                  className="w-full p-3 bg-white border rounded-lg hover:bg-[var(--accent-soft)] hover:border-[var(--data-success)]/30 text-left flex items-center gap-2"
+                  className="w-full p-3 bg-white border rounded-lg hover:bg-[var(--accent-soft)] hover:border-[var(--data-success-500)]/30 text-left flex items-center gap-2"
                 >
-                  <block.icon className="h-5 w-5 text-[var(--data-success)]" />
+                  <block.icon className="h-5 w-5 text-[var(--data-success-500)]" />
                   <span className="font-medium">{block.name}</span>
                 </button>
               ))}
@@ -384,7 +384,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                     key={block.id}
                     className={`p-2 bg-white border rounded cursor-pointer ${
                       selectedBlock === block.id
-                        ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]"
+                        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
                         : ""
                     }`}
                     onClick={() => setSelectedBlock(block.id)}
@@ -404,7 +404,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                         >
                           <Eye
                             className={`w-4 h-4 ${
-                              block.visible ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
+                              block.visible ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"
                             }`}
                           />
                         </button>
@@ -415,7 +415,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                           }}
                           className="p-1 hover:bg-[var(--data-error-100)] rounded"
                         >
-                          <Trash2 className="w-4 h-4 text-[var(--data-error)]" />
+                          <Trash2 className="w-4 h-4 text-[var(--data-error-500)]" />
                         </button>
                       </div>
                     </div>
@@ -446,7 +446,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                       key={block.id}
                       className={`relative ${
                         selectedBlock === block.id
-                          ? "ring-4 ring-[var(--data-success)]/40"
+                          ? "ring-4 ring-[var(--data-success-500)]/40"
                           : ""
                       }`}
                       onClick={() => setSelectedBlock(block.id)}
@@ -502,7 +502,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                           <button
                             onClick={() => setDraftProps((p) => ({ ...p, [field.key]: !val }))}
                             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                              val ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
+                              val ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
                             }`}
                           >
                             <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-[var(--accent-soft)]" : "bg-gray-300"}`}>
@@ -523,7 +523,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                               value={val ?? ""}
                               onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                               placeholder="#312e81"
-                              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30 font-mono"
+                              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 font-mono"
                             />
                           </div>
                         ) : field.type === "textarea" ? (
@@ -532,7 +532,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
                             rows={3}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30 resize-y"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 resize-y"
                           />
                         ) : (
                           <input
@@ -540,7 +540,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             value={val ?? ""}
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30"
                           />
                         )}
 

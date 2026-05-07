@@ -36,9 +36,30 @@ export interface OfferProduct {
   category?: string;
 }
 
+/** Branding del tenant para los emails — si no se pasa usa fallback genérico. */
+export interface EmailBranding {
+  /** Nombre del negocio que aparece en el header del email. */
+  storeName?: string;
+  /** Ciudad y país que aparecen debajo del nombre. */
+  location?: string;
+}
+
+const DEFAULT_BRANDING: Required<EmailBranding> = {
+  storeName: "Tu Tienda",
+  location: "Perú",
+};
+
+function brand(b?: EmailBranding): Required<EmailBranding> {
+  return {
+    storeName: b?.storeName?.trim() || DEFAULT_BRANDING.storeName,
+    location: b?.location?.trim() || DEFAULT_BRANDING.location,
+  };
+}
+
 // ─── HTML Generator: Confirmación de pedido ───────────────────────────────────
 
-export function generateOrderConfirmationHTML(order: OrderEmailData): string {
+export function generateOrderConfirmationHTML(order: OrderEmailData, branding?: EmailBranding): string {
+  const b = brand(branding);
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
   const fmtDate = (iso?: string) => {
     if (!iso) return new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
@@ -79,11 +100,11 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
     <div style="background:#00B4A6;padding:28px 28px 20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="background:rgba(255,255,255,0.15);width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center;line-height:48px;">
-          B
+          ${b.storeName.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
-          <p style="margin:2px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
+          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${b.storeName}</h1>
+          <p style="margin:2px 0 0;color:#a8d5ba;font-size:13px;">${b.location}</p>
         </div>
       </div>
     </div>
@@ -146,7 +167,7 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">${b.storeName} &bull; ${b.location}</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">Este es un mensaje automatico, no responder a este correo.</p>
     </div>
   </div>
@@ -156,7 +177,8 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
 
 // ─── HTML Generator: Confirmación de entrega ──────────────────────────────────
 
-export function generateDeliveryConfirmationHTML(order: OrderEmailData): string {
+export function generateDeliveryConfirmationHTML(order: OrderEmailData, branding?: EmailBranding): string {
+  const b = brand(branding);
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
 
   const itemsSummary = order.items
@@ -173,8 +195,8 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
 
     <!-- Header -->
     <div style="background:#00B4A6;padding:28px 28px 20px;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
-      <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${b.storeName}</h1>
+      <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">${b.location}</p>
     </div>
 
     <!-- Banner entrega -->
@@ -234,7 +256,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">${b.storeName} &bull; ${b.location}</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">Este es un mensaje automatico, no responder a este correo.</p>
     </div>
   </div>
@@ -244,7 +266,8 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
 
 // ─── HTML Generator: Ofertas semanales ───────────────────────────────────────
 
-export function generateWeeklyOffersHTML(products: OfferProduct[], customerName: string): string {
+export function generateWeeklyOffersHTML(products: OfferProduct[], customerName: string, branding?: EmailBranding): string {
+  const b = brand(branding);
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
   const top5 = products.slice(0, 5);
 
@@ -294,8 +317,8 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
 
     <!-- Header -->
     <div style="background:#00B4A6;padding:28px 28px 20px;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
-      <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${b.storeName}</h1>
+      <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">${b.location}</p>
     </div>
 
     <!-- Banner -->
@@ -329,7 +352,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">${b.storeName} &bull; ${b.location}</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">
         Si no deseas recibir mas correos, puedes ignorar este mensaje.
       </p>

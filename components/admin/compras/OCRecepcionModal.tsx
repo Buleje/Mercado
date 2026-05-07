@@ -188,7 +188,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                           </td>
                           <td className="py-2 px-1 text-center">
                             {diff !== 0 && (
-                              <span className={cn("text-xs font-bold", diff < 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+                              <span className={cn("text-xs font-bold", diff < 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
                                 {diff < 0 ? `Faltaron ${Math.abs(diff)}` : `+${diff}`}
                               </span>
                             )}
@@ -214,7 +214,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {step === 2 && (
             <>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />
+                <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
@@ -261,7 +261,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 <span
                                   className={cn(
                                     "text-xs font-semibold flex items-center justify-end gap-0.5",
-                                    isSignificant ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-secondary)]",
+                                    isSignificant ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]",
                                   )}
                                 >
                                   {isSignificant && <AlertTriangle className="h-3 w-3" />}
@@ -288,21 +288,21 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {step === 3 && (
             <>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-                <Check className="h-4 w-4 text-[var(--data-success)]" />
+                <Check className="h-4 w-4 text-[var(--data-success-500)]" />
                 Confirmar recepcion
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Recibidos</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsRecibidos.length}</p>
                 </div>
-                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-                  <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Con diferencia</p>
+                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
+                  <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Total factura</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
                 </div>
               </div>
@@ -330,7 +330,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               />
 
               {error && (
-                <div className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-lg px-3 py-2">
+                <div className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg px-3 py-2">
                   {error}
                 </div>
               )}

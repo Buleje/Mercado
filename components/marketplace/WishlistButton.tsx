@@ -40,8 +40,8 @@ export default function WishlistButton({ product, className, size = "md" }: Prop
         "inline-flex items-center justify-center rounded-full border transition-all active:scale-90",
         SIZES[size],
         active
-          ? "bg-rose-50 border-rose-200 text-[var(--data-error)] hover:bg-rose-100"
-          : "bg-white/90 backdrop-blur border-gray-200 text-gray-400 hover:text-[var(--data-error)] hover:border-rose-200",
+          ? "bg-rose-50 border-rose-200 text-[var(--data-error-500)] hover:bg-rose-100"
+          : "bg-white/90 backdrop-blur border-gray-200 text-gray-400 hover:text-[var(--data-error-500)] hover:border-rose-200",
         className,
       )}
     >

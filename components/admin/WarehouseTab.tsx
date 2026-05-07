@@ -401,9 +401,9 @@ export default function WarehouseTab() {
       {/* KPIs row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
-          <Warehouse className="h-5 w-5 mb-2 text-[var(--data-success)]" />
+          <Warehouse className="h-5 w-5 mb-2 text-[var(--data-success-500)]" />
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Almacenes activos</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)]">{warehouses.filter(w => w.active).length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{warehouses.filter(w => w.active).length}</p>
         </div>
         <div className="rounded-xl bg-[var(--surface-sunken)] p-4">
           <Package className="h-5 w-5 mb-2 text-[var(--text-secondary)]" />
@@ -411,14 +411,14 @@ export default function WarehouseTab() {
           <p className="text-lg font-extrabold text-[var(--text-secondary)]">{fmt(totalValue)}</p>
         </div>
         <div className="rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 p-4">
-          <AlertTriangle className="h-5 w-5 mb-2 text-[var(--data-warning)]" />
+          <AlertTriangle className="h-5 w-5 mb-2 text-[var(--data-warning-500)]" />
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Productos bajo mínimo</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)]">{totalLow}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)]">{totalLow}</p>
         </div>
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
-          <ArrowRightLeft className="h-5 w-5 mb-2 text-[var(--data-success)]" />
+          <ArrowRightLeft className="h-5 w-5 mb-2 text-[var(--data-success-500)]" />
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Transferencias mes</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)]">{transfers.length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{transfers.length}</p>
         </div>
       </div>
 
@@ -486,10 +486,10 @@ export default function WarehouseTab() {
                       onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
                       min="1"
                       max={maxQty}
-                      className={`w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground ${overLimit ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"}`}
+                      className={`w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground ${overLimit ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"}`}
                     />
                     {overLimit && (
-                      <p className="text-xs text-[var(--data-error)] mt-1">La cantidad supera el stock disponible ({maxQty} {sel!.unit})</p>
+                      <p className="text-xs text-[var(--data-error-500)] mt-1">La cantidad supera el stock disponible ({maxQty} {sel!.unit})</p>
                     )}
                   </>
                 );
@@ -612,12 +612,12 @@ export default function WarehouseTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             {pagedWarehouses.map(w => (
-              <div key={w.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 space-y-4", w.lowStock > 0 ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={w.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 space-y-4", w.lowStock > 0 ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-[var(--text-tertiary)] font-mono">{w.code}</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">{TYPE_LABELS[w.type]}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">{TYPE_LABELS[w.type]}</span>
                     </div>
                     <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{w.name}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{w.location}</p>
@@ -626,7 +626,7 @@ export default function WarehouseTab() {
                     <span className={cn("h-2.5 w-2.5 rounded-full", w.active ? "bg-[var(--accent-soft)]" : "bg-gray-300")} />
                     {confirmDeleteId === w.id ? (
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleDeleteWarehouse(w.id)} disabled={deletingId === w.id} className="text-xs px-2 py-1 rounded-lg bg-[var(--data-error)] text-white font-bold hover:bg-[var(--data-error)] disabled:opacity-50">
+                        <button onClick={() => handleDeleteWarehouse(w.id)} disabled={deletingId === w.id} className="text-xs px-2 py-1 rounded-lg bg-[var(--data-error-500)] text-white font-bold hover:bg-[var(--data-error-500)] disabled:opacity-50">
                           {deletingId === w.id ? "..." : "Confirmar"}
                         </button>
                         <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-[var(--text-secondary)]">
@@ -634,7 +634,7 @@ export default function WarehouseTab() {
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(w.id)} title="Eliminar almacén" className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
+                      <button onClick={() => setConfirmDeleteId(w.id)} title="Eliminar almacén" className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -651,7 +651,7 @@ export default function WarehouseTab() {
                   </div>
                   <div className={cn("rounded-xl p-3", w.lowStock > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : "bg-gray-50 dark:bg-surface/50")}>
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Bajo mínimo</p>
-                    <p className={cn("font-extrabold", w.lowStock > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")}>{w.lowStock}</p>
+                    <p className={cn("font-extrabold", w.lowStock > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")}>{w.lowStock}</p>
                   </div>
                 </div>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Responsable: {w.manager} · Capacidad: {w.capacity.toLocaleString()} u.</p>
@@ -719,8 +719,8 @@ export default function WarehouseTab() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-tertiary)]">{s.minStock}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {isLow
-                            ? <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> Bajo mínimo</span>
-                            : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"><CheckCircle className="h-3 w-3" /> OK</span>
+                            ? <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"><AlertTriangle className="h-3 w-3" /> Bajo mínimo</span>
+                            : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"><CheckCircle className="h-3 w-3" /> OK</span>
                           }
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(s.quantity * s.costAvg)}</td>
@@ -750,10 +750,10 @@ export default function WarehouseTab() {
         <div className="space-y-3">
           {transfers.map(t => {
             const statusMeta = t.status === "completado"
-              ? { color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Completado" }
+              ? { color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Completado" }
               : t.status === "pendiente"
-              ? { color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", label: "Pendiente" }
-              : { color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", label: "Cancelado" };
+              ? { color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", label: "Pendiente" }
+              : { color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", label: "Cancelado" };
             return (
               <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -774,14 +774,14 @@ export default function WarehouseTab() {
                       <button
                         onClick={() => handleUpdateTransferStatus(t.id, "completado")}
                         disabled={updatingTransferId === t.id}
-                        className="text-xs px-2 py-0.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold hover:bg-[var(--accent-soft)] disabled:opacity-50"
+                        className="text-xs px-2 py-0.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold hover:bg-[var(--accent-soft)] disabled:opacity-50"
                       >
                         {updatingTransferId === t.id ? "…" : "Completar"}
                       </button>
                       <button
                         onClick={() => handleUpdateTransferStatus(t.id, "cancelado")}
                         disabled={updatingTransferId === t.id}
-                        className="text-xs px-2 py-0.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold hover:bg-[var(--data-error)] disabled:opacity-50"
+                        className="text-xs px-2 py-0.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold hover:bg-[var(--data-error-500)] disabled:opacity-50"
                       >
                         Cancelar
                       </button>

@@ -18,11 +18,11 @@ export function validatePhone(value: string): PhoneValidationResult {
     return {
       valid: false,
       hint: `${9 - digits.length} dígitos más`,
-      color: "text-amber-500",
+      color: "text-[var(--data-warning-500)]",
     };
   if (digits.length === 9 && /^9/.test(digits))
-    return { valid: true, hint: "Número válido", color: "text-emerald-600" };
+    return { valid: true, hint: "Número válido", color: "text-[var(--data-success-600)]" };
   if (digits.length === 9)
-    return { valid: false, hint: "Debe empezar con 9", color: "text-red-500" };
-  return { valid: false, hint: "Máximo 9 dígitos", color: "text-red-500" };
+    return { valid: false, hint: "Debe empezar con 9", color: "text-[var(--data-error-500)]" };
+  return { valid: false, hint: "Máximo 9 dígitos", color: "text-[var(--data-error-500)]" };
 }

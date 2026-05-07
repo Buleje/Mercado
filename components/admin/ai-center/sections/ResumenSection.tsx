@@ -70,28 +70,28 @@ function healthScoreColor(score: number): {
 } {
   if (score >= 80)
     return {
-      text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+      text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Saludable",
     };
   if (score >= 60)
     return {
-      text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+      text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Bueno",
     };
   if (score >= 40)
     return {
-      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
       badge:
-        "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+        "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
       label: "Regular",
     };
   return {
-    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    badge: "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    badge: "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     label: "Critico",
   };
 }
@@ -220,8 +220,8 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
         "inline-flex items-center gap-0.5 font-medium",
         size === "xs" ? "text-[length:var(--ts-2xs)]" : "text-xs",
         positive
-          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-          : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+          ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+          : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
       )}
     >
       {positive ? (
@@ -575,7 +575,7 @@ export default function ResumenSection({ data }: Props) {
               Alertas activas
             </CardTitle>
             {alerts.length > 0 && (
-              <span className="ml-auto text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
+              <span className="ml-auto text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
                 {alerts.length}
               </span>
             )}
@@ -592,8 +592,8 @@ export default function ResumenSection({ data }: Props) {
                     className={cn(
                       "w-2 h-2 rounded-full shrink-0",
                       alert.level === "urgente"
-                        ? "bg-[var(--data-error)]"
-                        : "bg-[var(--data-warning)]"
+                        ? "bg-[var(--data-error-500)]"
+                        : "bg-[var(--data-warning-500)]"
                     )}
                   />
                   <span className="text-xs text-[var(--text-secondary)]">
@@ -603,8 +603,8 @@ export default function ResumenSection({ data }: Props) {
                     className={cn(
                       "ml-auto text-[length:var(--ts-2xs)] font-medium shrink-0",
                       alert.level === "urgente"
-                        ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-                        : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                        ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                        : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                     )}
                   >
                     {alert.level}
@@ -653,7 +653,7 @@ export default function ResumenSection({ data }: Props) {
                   {chartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.isToday ? "#00B4A6" : "#6ee7b7"}
+                      fill={entry.isToday ? "var(--accent)" : "#6ee7b7"}
                     />
                   ))}
                 </Bar>

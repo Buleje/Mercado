@@ -127,15 +127,15 @@ export default function DeliveryEstimation({
           <div className={cn(
             "flex items-center gap-1 px-2 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0",
             eta.confidence === "high"
-              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
+              ? "bg-emerald-50 text-[var(--data-success-600)] dark:bg-emerald-950/30 dark:text-emerald-400"
               : eta.confidence === "medium"
-              ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
+              ? "bg-amber-50 text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-amber-400"
               : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"
           )}>
             <span className={cn(
               "h-1.5 w-1.5 rounded-full",
-              eta.confidence === "high" ? "bg-emerald-500" :
-              eta.confidence === "medium" ? "bg-amber-500" : "bg-gray-400"
+              eta.confidence === "high" ? "bg-[var(--data-success-500)]" :
+              eta.confidence === "medium" ? "bg-[var(--data-warning-500)]" : "bg-gray-400"
             )} />
             {eta.confidence === "high" ? "Preciso" : eta.confidence === "medium" ? "Estimado" : "Aproximado"}
           </div>
@@ -199,7 +199,7 @@ export default function DeliveryEstimation({
           </span>
         )}
         {orderCount != null && orderCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-600)] dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full">
             <Package className="h-3 w-3" />
             {orderCount} pedido{orderCount > 1 ? "s" : ""} antes
           </span>

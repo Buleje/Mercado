@@ -48,7 +48,7 @@ export interface IconBadgeProps
 
 /**
  * IconBadge — Contenedor para iconos en grids, cards, KPIs.
- * Reemplaza `bg-amber-100 text-amber-600` patterns.
+ * Reemplaza `bg-amber-100 text-[var(--data-warning-600)]` patterns.
  */
 export const IconBadge = forwardRef<HTMLDivElement, IconBadgeProps>(
   ({ className, variant, size, ...props }, ref) => (

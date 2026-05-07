@@ -124,12 +124,12 @@ export function DespachoSection({
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs font-bold tabular-nums">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)]" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
             {grouped.free.length} libre{grouped.free.length === 1 ? "" : "s"}
           </span>
           {grouped.busy.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-warning)]/10 text-[var(--data-warning)] border border-[var(--data-warning)]/30">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30">
               {grouped.busy.length} ocupado{grouped.busy.length === 1 ? "" : "s"}
             </span>
           )}
@@ -153,7 +153,7 @@ export function DespachoSection({
           <button
             type="button"
             onClick={handleClearDriver}
-            className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:border-[var(--data-error)] hover:text-[var(--data-error)] transition-colors"
+            className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
           >
             <X className="h-3.5 w-3.5" /> Cambiar
           </button>
@@ -169,7 +169,7 @@ export function DespachoSection({
       )}
 
       {!loading && error && (
-        <div className="mx-5 my-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
+        <div className="mx-5 my-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={refresh} className="text-xs underline">Reintentar</button>
@@ -177,7 +177,7 @@ export function DespachoSection({
       )}
 
       {!loading && assignError && (
-        <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 text-sm font-semibold text-[var(--data-error)]">
+        <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="flex-1">{assignError}</span>
           <button onClick={() => setAssignError(null)} className="text-xs underline">Cerrar</button>
@@ -229,14 +229,14 @@ export function DespachoSection({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-[var(--text-primary)] text-sm truncate">{p.name}</span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--data-success)]/15 text-[var(--data-success)] text-xs font-bold border border-[var(--data-success)]/30">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)]" />
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] text-xs font-bold border border-[var(--data-success-500)]/30">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                       Libre
                     </span>
                   </div>
                   <p className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] tabular-nums">
                     <span className="inline-flex items-center gap-0.5">
-                      <Star className="h-3 w-3 text-[var(--data-warning)]" strokeWidth={2.5} aria-hidden />
+                      <Star className="h-3 w-3 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
                       {p.rating.toFixed(1)}
                     </span>
                     <span aria-hidden>·</span>
@@ -246,7 +246,7 @@ export function DespachoSection({
                     {p.lat != null && p.lng != null && (
                       <>
                         <span aria-hidden>·</span>
-                        <span className="inline-flex items-center gap-0.5 text-[var(--data-success)] font-bold">
+                        <span className="inline-flex items-center gap-0.5 text-[var(--data-success-500)] font-bold">
                           <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
                           GPS
                         </span>
@@ -292,7 +292,7 @@ export function DespachoSection({
                     Atendiendo #{p.currentOrderId?.slice(-6)}
                   </p>
                 </div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--data-warning)]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--data-warning-500)]">
                   Ocupado
                 </span>
               </li>

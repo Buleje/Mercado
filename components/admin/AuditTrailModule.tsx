@@ -19,6 +19,7 @@ export default function AuditTrailModule() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [entityFilter, setEntityFilter] = useState("");
@@ -26,6 +27,7 @@ export default function AuditTrailModule() {
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         limit: String(LIMIT),
@@ -39,8 +41,13 @@ export default function AuditTrailModule() {
         const data = await res.json();
         setLogs(data.logs || []);
         setTotal(data.total || 0);
+      } else {
+        setError(`No se pudo cargar el registro de auditoría (HTTP ${res.status})`);
       }
-    } catch {}
+    } catch (e) {
+      setError("No se pudo cargar el registro de auditoría — revisá tu conexión.");
+      console.error("[AuditTrail] fetch error", e);
+    }
     setLoading(false);
   }, [page, entityFilter, search]);
 
@@ -49,9 +56,9 @@ export default function AuditTrailModule() {
   const totalPages = Math.ceil(total / LIMIT);
 
   const actionColor = (action: string) => {
-    if (action === "CREATE") return "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]";
-    if (action === "UPDATE") return "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]";
-    if (action === "DELETE") return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+    if (action === "CREATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
+    if (action === "UPDATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
+    if (action === "DELETE") return "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400";
     return "bg-gray-100 text-[var(--text-primary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]";
   };
 
@@ -98,6 +105,23 @@ export default function AuditTrailModule() {
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
+
+      {/* Banner de error */}
+      {error && (
+        <div className="rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 px-4 py-3 flex items-start gap-2.5">
+          <Shield className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--data-error-700)]">{error}</p>
+            <button
+              type="button"
+              onClick={() => fetchLogs()}
+              className="text-xs font-bold text-[var(--data-error-700)] underline mt-1 hover:no-underline"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabla */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">

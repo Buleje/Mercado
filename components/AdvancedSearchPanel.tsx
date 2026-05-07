@@ -141,7 +141,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
           aria-autocomplete="list"
           aria-controls="search-results-panel"
           aria-expanded={isOpen}
-          className="w-full pl-10 pr-20 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full pl-10 pr-20 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)] focus:border-transparent"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {showFilters && (
@@ -152,13 +152,13 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
               aria-controls="filters-panel"
               className={`p-2 rounded-lg transition-colors ${
                 showFiltersPanel
-                  ? 'bg-emerald-100 text-emerald-600'
+                  ? 'bg-emerald-100 text-[var(--data-success-600)]'
                   : 'hover:bg-gray-100 text-gray-400'
               }`}
             >
               <Filter className="w-4 h-4" />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 text-white text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--data-success-600)] text-white text-xs rounded-full flex items-center justify-center">
                   {activeFilterCount}
                 </span>
               )}
@@ -184,7 +184,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
             {activeFilterCount > 0 && (
               <button
                 onClick={() => setActiveFilters({})}
-                className="text-sm text-emerald-600 hover:text-emerald-700"
+                className="text-sm text-[var(--data-success-600)] hover:text-[var(--data-success-700)]"
               >
                 Limpiar todo
               </button>
@@ -214,7 +214,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                           min: e.target.value ? Number(e.target.value) : undefined,
                         })
                       }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]"
                     />
                     <input
                       type="number"
@@ -230,7 +230,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                           max: e.target.value ? Number(e.target.value) : undefined,
                         })
                       }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]"
                     />
                   </div>
                 )}
@@ -239,7 +239,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                   <select
                     value={(activeFilters[filter.field] as string) ?? ''}
                     onChange={(e) => handleFilterChange(filter.field, e.target.value || undefined)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]"
                   >
                     <option value="">Todos</option>
                     {filter.options?.map((option) => (
@@ -256,7 +256,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                       type="checkbox"
                       checked={(activeFilters[filter.field] as boolean) ?? false}
                       onChange={(e) => handleFilterChange(filter.field, e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      className="w-4 h-4 text-[var(--data-success-600)] border-gray-300 rounded focus:ring-[var(--data-success-500)]"
                     />
                     <span className="text-sm text-gray-700">Activar</span>
                   </label>
@@ -328,7 +328,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                             <div className="flex items-center gap-2 mt-1">
                               <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                                 <div
-                                  className="bg-emerald-600 h-1.5 rounded-full transition-all"
+                                  className="bg-[var(--data-success-600)] h-1.5 rounded-full transition-all"
                                   style={{ width: `${result.score * 100}%` }}
                                 />
                               </div>
@@ -391,7 +391,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
             return (
               <div
                 key={field}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-[var(--data-success-700)] rounded-full text-sm"
               >
                 <span className="font-medium">{filterConfig.label}:</span>
                 <span>{displayValue}</span>

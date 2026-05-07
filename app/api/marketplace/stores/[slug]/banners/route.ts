@@ -5,11 +5,13 @@ import { StoreBannersDB } from "@/lib/db/store-banners.db";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { isAllowedImageUrl } from "@/lib/url-allowlist";
 
 const PostSchema = z.object({
   title: z.string().min(1).max(200),
   subtitle: z.string().max(300).optional(),
-  imageUrl: z.string().url(),
+  // F6: validar imageUrl contra allowlist para prevenir SSRF
+  imageUrl: z.string().url().refine(isAllowedImageUrl, "URL de imagen no permitida"),
   linkUrl: z.string().url().optional(),
   position: z.number().int().min(0).optional(),
   section: z.enum(["hero", "featured", "promo"]).optional(),

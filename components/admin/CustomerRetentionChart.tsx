@@ -106,10 +106,10 @@ function buildCohorts(customers: Customer[]): CohortRow[] {
 
 function retentionColor(pct: number): string {
   if (pct >= 70) return "bg-primary text-white";
-  if (pct >= 50) return "bg-[#33C4B8] text-white";
+  if (pct >= 50) return "bg-[color-mix(in oklab, var(--accent) 70%, white)] text-white";
   if (pct >= 35) return "bg-[#74c69d] text-[var(--text-primary)]";
   if (pct >= 20) return "bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100";
-  return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  return "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400";
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ export default function CustomerRetentionChart() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-6 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
         {error}
         <button onClick={load} className="ml-3 underline">Reintentar</button>
       </div>
@@ -202,8 +202,8 @@ export default function CustomerRetentionChart() {
         <div className={cn(
           "rounded-xl px-5 py-3 text-sm font-medium",
           avgRetention >= 50
-            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
-            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
         )}>
           Tu retencion promedio al primer mes es <strong>{avgRetention}%</strong>
           {avgRetention >= 50
@@ -263,10 +263,10 @@ export default function CustomerRetentionChart() {
       <div className="flex flex-wrap gap-3 text-xs">
         {[
           { label: "70%+", cls: "bg-primary text-white" },
-          { label: "50-69%", cls: "bg-[#33C4B8] text-white" },
+          { label: "50-69%", cls: "bg-[color-mix(in oklab, var(--accent) 70%, white)] text-white" },
           { label: "35-49%", cls: "bg-[#74c69d] text-[var(--text-primary)]" },
-          { label: "20-34%", cls: "bg-[var(--data-warning)] text-[var(--data-warning)]" },
-          { label: "<20%", cls: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+          { label: "20-34%", cls: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]" },
+          { label: "<20%", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
         ].map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className={cn("inline-block h-4 w-8 rounded", l.cls)} />

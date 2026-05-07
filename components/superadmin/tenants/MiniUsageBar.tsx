@@ -12,16 +12,16 @@ export function MiniUsageBar({ used, max, label }: MiniUsageBarProps) {
   const color = unlimited
     ? "bg-gray-400 dark:bg-gray-600"
     : pct >= 100
-    ? "bg-[var(--data-error)]"
+    ? "bg-[var(--data-error-500)]"
     : pct >= 80
-    ? "bg-[var(--data-warning)]"
-    : "bg-teal-500";
+    ? "bg-[var(--data-warning-500)]"
+    : "bg-[var(--accent)]";
 
   return (
     <div className="space-y-0.5">
       <div className="flex justify-between text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
         <span>{label}</span>
-        <span className={pct >= 100 ? "text-[var(--data-error)]" : pct >= 80 ? "text-[var(--data-warning)]" : ""}>
+        <span className={pct >= 100 ? "text-[var(--data-error-500)]" : pct >= 80 ? "text-[var(--data-warning-500)]" : ""}>
           {unlimited ? "∞" : `${used}/${max}`}
         </span>
       </div>

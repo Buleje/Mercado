@@ -21,11 +21,11 @@ interface HoldedKPIProps {
 
 const DOT_COLORS: Record<string, string> = {
   emerald: "bg-[var(--accent-soft)]",
-  red: "bg-[var(--data-error)]",
-  amber: "bg-[var(--data-warning)]",
+  red: "bg-[var(--data-error-500)]",
+  amber: "bg-[var(--data-warning-500)]",
   blue: "bg-[var(--text-secondary)]",
   purple: "bg-[var(--text-primary)]",
-  orange: "bg-[var(--data-warning)]",
+  orange: "bg-[var(--data-warning-500)]",
   gray: "bg-gray-500",
 };
 
@@ -100,7 +100,7 @@ function HoldedKPI({
           <span
             className={cn(
               "text-xs font-medium",
-              trend.value >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+              trend.value >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
             )}
           >
             {trend.value >= 0 ? "\u25B2" : "\u25BC"}{" "}

@@ -54,7 +54,7 @@ export default function StepDedicatoria({
             <span
               className={[
                 "text-xs font-normal",
-                remaining < 20 ? "text-amber-600" : "text-gray-500 dark:text-gray-400",
+                remaining < 20 ? "text-[var(--data-warning-600)]" : "text-gray-500 dark:text-gray-400",
               ].join(" ")}
             >
               {remaining} caracteres

@@ -159,7 +159,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         <div className="relative bg-black aspect-video">
           {starting && <LoadingState variant="overlay" message="" />}
           {!supported && (
-            <div className="absolute inset-0 flex items-center justify-center text-[var(--data-warning)] text-sm text-center p-6">
+            <div className="absolute inset-0 flex items-center justify-center text-[var(--data-warning-500)] text-sm text-center p-6">
               <div>
                 <p className="font-bold mb-2">Navegador no compatible</p>
                 <p>Tu navegador no soporta el escáner de códigos de barras. Usa Chrome o Edge para esta función.</p>
@@ -167,7 +167,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             </div>
           )}
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center text-[var(--data-error)] text-sm text-center p-4">
+            <div className="absolute inset-0 flex items-center justify-center text-[var(--data-error-500)] text-sm text-center p-4">
               {error}
             </div>
           )}
@@ -181,7 +181,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           {!error && supported && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
               <div className="w-64 h-32 border-2 border-white/60 rounded-lg relative overflow-hidden">
-                <div className="absolute left-0 right-0 h-0.5 bg-[var(--data-error)] shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[scanline_2s_ease-in-out_infinite]" />
+                <div className="absolute left-0 right-0 h-0.5 bg-[var(--data-error-500)] shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[scanline_2s_ease-in-out_infinite]" />
               </div>
             </div>
           )}

@@ -26,10 +26,10 @@ type Transfer = {
 };
 
 const STATUS_CONFIG: Record<TransferStatus, { label: string; color: string }> = {
-  pendiente: { label: "Pendiente", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
-  "en-transito": { label: "En Transito", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  recibido: { label: "Recibido", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  cancelado: { label: "Cancelado", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
+  pendiente: { label: "Pendiente", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
+  "en-transito": { label: "En Transito", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  recibido: { label: "Recibido", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  cancelado: { label: "Cancelado", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };
 
 function ModuleTooltip() {
@@ -144,7 +144,7 @@ export default function WarehouseTransferTab() {
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
-            <Truck className="h-6 w-6 text-[var(--data-success)]" /> Transferencias entre Almacenes <ModuleTooltip />
+            <Truck className="h-6 w-6 text-[var(--data-success-500)]" /> Transferencias entre Almacenes <ModuleTooltip />
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Gestiona movimientos de stock entre ubicaciones con persistencia real</p>
         </div>
@@ -228,7 +228,7 @@ export default function WarehouseTransferTab() {
                           {STATUS_CONFIG[status].label}
                         </button>
                       ))}
-                      <button onClick={() => deleteTransfer(transfer.id)} className="rounded-lg border border-[var(--data-error)] p-2 text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error)]/40 dark:hover:bg-red-950/20">
+                      <button onClick={() => deleteTransfer(transfer.id)} className="rounded-lg border border-[var(--data-error-500)] p-2 text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error-500)]/40 dark:hover:bg-red-950/20">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

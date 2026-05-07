@@ -42,22 +42,22 @@ const LEVEL_CONFIG: Record<AlertLevel, {
   ok: {
     bar: "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
-    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     label: "Presupuesto bajo control",
   },
   warning: {
-    bar: "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
-    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    bar: "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
+    text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     label: "Atencion: presupuesto al 70%",
   },
   danger: {
-    bar: "bg-red-500 dark:bg-red-400",
-    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
-    border: "border-[var(--data-error)] dark:border-[var(--data-error)]",
-    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    bar: "bg-[var(--data-error-500)] dark:bg-red-400",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
+    border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
+    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     label: "Alerta: presupuesto superado el 90%",
   },
 };
@@ -108,13 +108,13 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {level === "ok" ? (
-            <CheckCircle className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           ) : (
             <AlertTriangle className={cn(
               "h-4 w-4",
               level === "danger"
-                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-                : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
             )} />
           )}
           <span className={cn("text-xs font-semibold", cfg.text)}>
@@ -137,7 +137,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
           <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
         </div>
       ) : error ? (
-        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
       ) : (
         <div className="space-y-3">
           {/* Montos */}
@@ -175,7 +175,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
             )}>
               <p className={cn("text-xs font-medium", cfg.text)}>{cfg.label}</p>
               {level === "danger" && (
-                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
+                <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">
                   Exceso: {fmt(Math.max(spent - monthlyBudget, 0))}
                 </p>
               )}

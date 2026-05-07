@@ -278,7 +278,7 @@ export default async function TiendaPage() {
                 <Link
                   key={zone.slug}
                   href={`/zona/${zone.slug}`}
-                  className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+                  className="text-sm text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
                 >
                   {zone.name}
                 </Link>

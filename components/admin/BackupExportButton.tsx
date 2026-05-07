@@ -75,9 +75,9 @@ export default function BackupExportButton() {
     <div className="space-y-3">
       {/* Alerta si hace 7+ días sin backup */}
       {showAlert && status === "idle" && (
-        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
-          <AlertTriangle className="w-4 h-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0 mt-0.5" />
-          <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
+          <AlertTriangle className="w-4 h-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0 mt-0.5" />
+          <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
             Hace{" "}
             <span className="font-bold">{diasSinBackup} {diasSinBackup === 1 ? "día" : "días"}</span>{" "}
             que no haces backup. Se recomienda hacerlo al menos cada semana.
@@ -94,7 +94,7 @@ export default function BackupExportButton() {
           status === "done"
             ? "bg-[var(--accent-soft)] text-white"
             : status === "error"
-              ? "bg-[var(--data-error)] text-white"
+              ? "bg-[var(--data-error-500)] text-white"
               : status === "downloading"
                 ? "bg-gray-400 text-white cursor-not-allowed"
                 : "bg-primary hover:bg-primary-dark text-white dark:bg-primary dark:hover:bg-[#1f4d38]"
@@ -116,7 +116,7 @@ export default function BackupExportButton() {
 
       {/* Error detalle */}
       {status === "error" && errorMsg && (
-        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{errorMsg}</p>
+        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{errorMsg}</p>
       )}
 
       {/* Fecha último backup */}

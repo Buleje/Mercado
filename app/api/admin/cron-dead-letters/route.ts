@@ -7,17 +7,22 @@ import { logger } from "@/lib/logger";
  * GET /api/admin/cron-dead-letters
  *
  * Lists cron dead-letter entries — jobs that failed after all retry attempts.
- * Admin-only. Shows latest 50 entries.
+ *
+ * SUPERADMIN-ONLY (BUG-FIX audit 2026-05-05): el modelo CronDeadLetter no tiene
+ * `tenantId` por design — son logs globales del sistema. Permitir acceso a
+ * admins regulares era un leak cross-tenant: cualquier dueño veía fallos cron
+ * de TODOS los tenants. Hasta que se agregue tenantId al schema, restringimos
+ * a superadmin.
  *
  * Query params:
  *   ?jobName=batch-expiry-alerts  — filter by job
  *   ?limit=20                     — limit results (max 100)
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, ["superadmin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId ?? "global";
   const { searchParams } = new URL(req.url);
   const jobName = searchParams.get("jobName");
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
@@ -61,7 +66,8 @@ export async function GET(req: NextRequest) {
  * Body: { ids: string[] } or { jobName: string }
  */
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  // BUG-FIX (audit 2026-05-05): SUPERADMIN-ONLY — ver comentario en GET
+  const auth = await requireAdmin(req, ["superadmin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -87,6 +93,19 @@ export async function DELETE(req: NextRequest) {
     }
 
     logger.info("[admin/cron-dead-letters] Cleared", { deleted });
+
+    // COMPLIANCE 2026-05-06 (Ley 29733): audit trail de borrado de DLQ.
+    try {
+      const { logActivity } = await import("@/lib/activity-logger");
+      logActivity(
+        "dlq_clear",
+        "admin",
+        `${deleted} dead letters borradas por ${auth.username}`,
+        auth.username,
+        auth.username,
+      ).catch(() => {});
+    } catch { /* logger not available */ }
+
     return NextResponse.json({ deleted });
   } catch (err) {
     logger.error("[admin/cron-dead-letters] Delete error", { error: err instanceof Error ? err.message : String(err) });

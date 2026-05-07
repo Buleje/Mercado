@@ -151,7 +151,7 @@ export default function CombosEditorTab() {
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{combo.name}</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{combo.categories.length} categorías · {combo.discount}% dto · {combo.size} productos</p>
               </div>
-              <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]")}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)]")}>
                 {combo.enabled ? "Activo" : "Inactivo"}
               </span>
               {expanded === combo.id ? <ChevronUp className="h-4 w-4 text-muted" /> : <ChevronDown className="h-4 w-4 text-muted" />}
@@ -213,7 +213,7 @@ export default function CombosEditorTab() {
                     </button>
                     Activo
                   </label>
-                  <button onClick={() => removeCombo(combo.id)} className="inline-flex items-center gap-1.5 text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-medium">
+                  <button onClick={() => removeCombo(combo.id)} className="inline-flex items-center gap-1.5 text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)] font-medium">
                     <Trash2 className="h-3.5 w-3.5" /> Eliminar
                   </button>
                 </div>

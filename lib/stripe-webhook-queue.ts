@@ -68,11 +68,17 @@ export async function markWebhookProcessed(stripeId: string): Promise<void> {
 
 /** Fetch up to `limit` events that are due for retry and not yet processed. */
 export async function getPendingWebhookEvents(limit = 10) {
+  // SECURITY 2026-05-05 (audit Stripe #10): TTL >7d filter. Antes los
+  // eventos en cola se replayban indefinidamente — un evento de hace meses
+  // podía reaparecer y generar inconsistencias (ej. activar plan de un
+  // tenant ya cancelado). 7 días alinea con la ventana de retry de Stripe.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   return prisma.stripeWebhookQueue.findMany({
     where: {
       processedAt: null,
       nextRetryAt: { lte: new Date() },
       attempts: { lt: 6 }, // give up after 6 failed attempts (~6 hours total)
+      createdAt: { gte: sevenDaysAgo },
     },
     orderBy: { nextRetryAt: "asc" },
     take: limit,
@@ -80,7 +86,7 @@ export async function getPendingWebhookEvents(limit = 10) {
 }
 
 /** Update a queued event after a failed replay attempt. */
-export async function recordReplayFailure(id: string, attempts: number, error: string): Promise<void> {
+export async function recordReplayFailure(id: string, attempts: number, error: string, eventType?: string): Promise<void> {
   await prisma.stripeWebhookQueue.update({
     where: { id },
     data: {
@@ -89,4 +95,18 @@ export async function recordReplayFailure(id: string, attempts: number, error: s
       nextRetryAt: nextRetry(attempts + 1),
     },
   });
+
+  // SECURITY 2026-05-05 (audit webhooks #9): tras 6 intentos fallidos el
+  // evento queda en dead-letter sin alertar a nadie. Ahora escalamos a Sentry
+  // con tag webhook-dead-letter para que oncall pueda intervenir manualmente.
+  if (attempts + 1 >= 6) {
+    reportCriticalError(
+      new Error(`Stripe webhook dead-letter: ${eventType ?? "unknown"} (id=${id}) tras ${attempts + 1} intentos. Ultimo error: ${error}`),
+      {
+        module: "billing",
+        tags: { operation: "webhook-dead-letter" },
+        extra: { webhookQueueId: id, attempts: attempts + 1, lastError: error, eventType: eventType ?? "unknown" },
+      },
+    );
+  }
 }

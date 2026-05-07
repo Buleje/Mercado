@@ -175,7 +175,7 @@ export default function AdminTabBar({
                   {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
                   <span className="truncate">{tab.label}</span>
                   {tab.badge != null && (
-                    <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-[var(--data-error)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
+                    <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
                       {tab.badge}
                     </span>
                   )}
@@ -256,7 +256,7 @@ export default function AdminTabBar({
               {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (
-                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--data-error)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
                   {tab.badge}
                 </span>
               )}

@@ -117,7 +117,7 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
       className={cn(
         "flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap min-h-[40px]",
         active
-          ? "bg-teal-600 text-white"
+          ? "bg-[var(--accent-dark)] text-white"
           : "bg-gray-800 text-[var(--text-tertiary)] hover:bg-gray-700 hover:text-gray-200"
       )}
     >
@@ -302,7 +302,7 @@ export default function KioskPOS() {
 
         {/* Marca */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-[var(--accent-dark)] flex items-center justify-center">
             <span className="text-xs font-extrabold text-white">B</span>
           </div>
           <span className="text-base font-extrabold tracking-wide text-white">Buleje POS</span>
@@ -342,7 +342,7 @@ export default function KioskPOS() {
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleSearchKey}
                 placeholder="Buscar producto o escanear código..."
-                className="w-full pl-13 pr-12 py-4 text-xl rounded-xl bg-gray-900 border-2 border-gray-700 text-white placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-teal-500 transition-colors"
+                className="w-full pl-13 pr-12 py-4 text-xl rounded-xl bg-gray-900 border-2 border-gray-700 text-white placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               />
               {search && (
                 <button
@@ -394,7 +394,7 @@ export default function KioskPOS() {
                       className={cn(
                         "group flex flex-col items-center rounded-xl border-2 p-3 bg-gray-900 text-left transition-all active:scale-95 focus:outline-none min-h-[120px]",
                         inCart
-                          ? "border-teal-500"
+                          ? "border-[var(--accent)]"
                           : "border-gray-800 hover:border-gray-600"
                       )}
                     >
@@ -416,7 +416,7 @@ export default function KioskPOS() {
 
                         {/* Qty badge */}
                         {inCart && (
-                          <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-teal-500 text-white text-xs flex items-center justify-center font-bold shadow">
+                          <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-xs flex items-center justify-center font-bold shadow">
                             {inCart.quantity}
                           </div>
                         )}
@@ -443,7 +443,7 @@ export default function KioskPOS() {
               <ShoppingCart className="h-5 w-5 text-[var(--accent)]" />
               <span className="font-bold text-white text-base">Carrito</span>
               {cartCount > 0 && (
-                <span className="bg-teal-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-[var(--accent-dark)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {cartCount}
                 </span>
               )}
@@ -452,7 +452,7 @@ export default function KioskPOS() {
               <button
                 type="button"
                 onClick={clearCart}
-                className="text-xs text-[var(--text-secondary)] hover:text-[var(--data-error)] transition-colors flex items-center gap-1"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--data-error-500)] transition-colors flex items-center gap-1"
               >
                 <X className="h-3.5 w-3.5" />
                 Vaciar
@@ -504,7 +504,7 @@ export default function KioskPOS() {
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.product.id)}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--data-error)] transition-colors"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--data-error-500)] transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -554,7 +554,7 @@ export default function KioskPOS() {
 
             {/* Error inline */}
             {step === "error" && (
-              <p className="text-sm text-[var(--data-error)] text-center font-medium">{errorMsg}</p>
+              <p className="text-sm text-[var(--data-error-500)] text-center font-medium">{errorMsg}</p>
             )}
 
             {/* COBRAR button — 80px height */}
@@ -567,7 +567,7 @@ export default function KioskPOS() {
                 "w-full rounded-xl font-extrabold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
                 "disabled:opacity-40 disabled:cursor-not-allowed",
                 cart.length > 0
-                  ? "bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white"
+                  ? "bg-[var(--accent-dark)] hover:bg-[var(--accent)] active:bg-[var(--accent-dark)] text-white"
                   : "bg-gray-800 text-[var(--text-secondary)] cursor-not-allowed"
               )}
             >
@@ -588,7 +588,7 @@ export default function KioskPOS() {
       {step === "success" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-50">
           <div className="flex flex-col items-center gap-5 text-center">
-            <div className="w-28 h-28 rounded-full bg-teal-900/50 flex items-center justify-center ring-4 ring-teal-500/30">
+            <div className="w-28 h-28 rounded-full bg-teal-900/50 flex items-center justify-center ring-4 ring-[var(--accent)]/30">
               <CheckCircle2 className="h-14 w-14 text-teal-400" />
             </div>
             <SectionTitle className="text-4xl font-extrabold text-white">Venta registrada</SectionTitle>

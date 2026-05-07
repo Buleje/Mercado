@@ -12,10 +12,10 @@ interface FunnelData {
 }
 
 const STAGES = [
-  { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-[var(--data-success)]" },
-  { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-[var(--data-info)]" },
-  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--data-warning)]" },
-  { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-[var(--data-success)]" },
+  { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-[var(--data-success-500)]" },
+  { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-[var(--data-info-500)]" },
+  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--data-warning-500)]" },
+  { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-[var(--data-success-500)]" },
 ];
 
 export default function TenantFunnel() {
@@ -64,7 +64,7 @@ export default function TenantFunnel() {
   return (
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
       <div className="flex items-center gap-2 mb-5">
-        <TrendingUp className="h-4.5 w-4.5 text-[var(--data-success)]" />
+        <TrendingUp className="h-4.5 w-4.5 text-[var(--data-success-500)]" />
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Embudo de conversión</h3>
       </div>
 

@@ -96,13 +96,13 @@ export default function CierrePaso2Resumen({
 
         {/* Card 2: COBROS Y FIADOS */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-warning-600)] dark:text-amber-400">
             Cobros y fiados
           </p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-muted">Fiados cobrados hoy</span>
-              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="text-lg font-bold text-[var(--data-success-600)] dark:text-emerald-400">
                 S/ {preview.fiados.cobradosHoy.toFixed(2)}
               </span>
             </div>
@@ -114,10 +114,10 @@ export default function CierrePaso2Resumen({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-muted">Fiados vencidos</span>
-              <span className={`text-lg font-bold ${preview.fiados.vencidos > 0 ? "text-red-500" : "text-gray-600 dark:text-foreground"}`}>
+              <span className={`text-lg font-bold ${preview.fiados.vencidos > 0 ? "text-[var(--data-error-500)]" : "text-gray-600 dark:text-foreground"}`}>
                 {preview.fiados.vencidos}
                 {preview.fiados.vencidos > 0 && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400">
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 dark:bg-red-950/30 text-[var(--data-error-600)] dark:text-red-400">
                     Pendiente
                   </span>
                 )}
@@ -128,7 +128,7 @@ export default function CierrePaso2Resumen({
 
         {/* Card 3: CAJA FINAL */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-success-600)] dark:text-emerald-400">
             Caja final
           </p>
           <div className="space-y-2">
@@ -148,7 +148,7 @@ export default function CierrePaso2Resumen({
               <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-card-border">
                 <span className="text-sm font-semibold text-gray-600 dark:text-muted">Diferencia</span>
                 <span className={`text-xl font-extrabold ${
-                  diferencia > 0 ? "text-emerald-600" : diferencia < 0 ? "text-red-500" : "text-gray-600 dark:text-foreground"
+                  diferencia > 0 ? "text-[var(--data-success-600)]" : diferencia < 0 ? "text-[var(--data-error-500)]" : "text-gray-600 dark:text-foreground"
                 }`}>
                   {diferencia >= 0 ? "+" : ""}S/ {diferencia.toFixed(2)}
                 </span>
@@ -160,14 +160,14 @@ export default function CierrePaso2Resumen({
         {/* Card 4: ALERTAS STOCK */}
         {preview.stockAlertas.length > 0 && (
           <div className="bg-white dark:bg-card rounded-2xl border border-red-200 dark:border-red-900/30 p-5 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-error-600)] dark:text-red-400">
               Alertas de stock ({preview.stockAlertas.length})
             </p>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {preview.stockAlertas.map((p, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-gray-700 dark:text-foreground truncate flex-1 mr-2">{p.nombre}</span>
-                  <span className="shrink-0 font-bold text-red-500">
+                  <span className="shrink-0 font-bold text-[var(--data-error-500)]">
                     {p.stock}/{p.stockMin}
                   </span>
                 </div>

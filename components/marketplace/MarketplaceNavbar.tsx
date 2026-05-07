@@ -418,12 +418,12 @@ export default function MarketplaceNavbar() {
                         aria-label={t("nav.liveNow")}
                         className="relative ml-0.5 inline-flex h-1.5 w-1.5"
                       >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
                       </span>
                     )}
                     {link.showNewBadge && (
-                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-500)]">
                         {t("nav.new")}
                       </span>
                     )}
@@ -549,7 +549,7 @@ export default function MarketplaceNavbar() {
                             className={cn(
                               "h-4 w-4",
                               wishlistCount > 0
-                                ? "fill-current text-[var(--data-error)]"
+                                ? "fill-current text-[var(--data-error-500)]"
                                 : "text-gray-500",
                             )}
                             aria-hidden="true"
@@ -557,7 +557,7 @@ export default function MarketplaceNavbar() {
                           />
                           <span className="flex-1">{t("nav.favorites")}</span>
                           {wishlistCount > 0 && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
                               {wishlistCount > 99 ? "99+" : wishlistCount}
                             </span>
                           )}
@@ -594,7 +594,7 @@ export default function MarketplaceNavbar() {
                             window.location.reload();
                           }}
                           role="menuitem"
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors text-left"
                         >
                           <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.75} />
                           <span>{t("nav.logout")}</span>
@@ -735,12 +735,12 @@ export default function MarketplaceNavbar() {
                           aria-label={t("nav.liveNow")}
                           className="relative inline-flex h-2 w-2"
                         >
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error)]" />
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
                         </span>
                       )}
                       {link.showNewBadge && (
-                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-500)]">
                           {t("nav.new")}
                         </span>
                       )}
@@ -800,7 +800,7 @@ export default function MarketplaceNavbar() {
                       className={cn(
                         "h-4 w-4",
                         wishlistCount > 0
-                          ? "fill-current text-[var(--data-error)]"
+                          ? "fill-current text-[var(--data-error-500)]"
                           : "text-gray-500",
                       )}
                       aria-hidden="true"
@@ -808,7 +808,7 @@ export default function MarketplaceNavbar() {
                     />
                     <span className="flex-1">{t("nav.favorites")}</span>
                     {wishlistCount > 0 && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
                         {wishlistCount > 99 ? "99+" : wishlistCount}
                       </span>
                     )}
@@ -855,7 +855,7 @@ export default function MarketplaceNavbar() {
                     setMobileMenuOpen(false);
                     window.location.reload();
                   }}
-                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--data-error)] hover:bg-[var(--data-error-50)] text-left"
+                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] text-left"
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.75} />
                   <span>{t("nav.logout")}</span>

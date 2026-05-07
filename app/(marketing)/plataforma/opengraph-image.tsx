@@ -34,7 +34,7 @@ export default function OGImage() {
               width: "64px",
               height: "64px",
               borderRadius: "16px",
-              background: "#00B4A6",
+              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -49,7 +49,7 @@ export default function OGImage() {
             style={{
               fontSize: "48px",
               fontWeight: 800,
-              color: "#00B4A6",
+              color: "var(--accent)",
               letterSpacing: "-1px",
             }}
           >
@@ -95,7 +95,7 @@ export default function OGImage() {
         >
           <div
             style={{
-              background: "#00B4A6",
+              background: "var(--accent)",
               color: "white",
               padding: "14px 32px",
               borderRadius: "12px",

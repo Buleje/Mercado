@@ -32,6 +32,13 @@ import { logger } from "@/lib/logger";
 const DOMAIN_PREFIX = "driver";
 const MIN_SECRET_LENGTH = 16;
 
+// SECURITY 2026-05-06 (audit delivery #1): TTL por defecto de 8h para nuevos
+// tokens. Antes los tokens eran HMAC estáticos sin expiración → si se filtraba
+// uno (logs/QR/WhatsApp/screenshot) el atacante tenía acceso permanente.
+// Aceptamos también tokens legacy (sin timestamp) durante un período de
+// migración para no romper drivers ya emitidos.
+const DEFAULT_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
+
 function getSecret(): string | null {
   const secret = process.env.AUTH_SECRET;
   if (typeof secret !== "string" || secret.length < MIN_SECRET_LENGTH) {
@@ -40,6 +47,7 @@ function getSecret(): string | null {
   return secret;
 }
 
+/** Digest legacy — solo tenantId + partnerId (sin TTL). */
 function computeDigest(
   secret: string,
   tenantId: string,
@@ -50,21 +58,44 @@ function computeDigest(
     .digest("hex");
 }
 
+/** Digest nuevo — incluye expiresAtMs en el HMAC para TTL. */
+function computeTtlDigest(
+  secret: string,
+  tenantId: string,
+  partnerId: string,
+  expiresAtMs: number,
+): string {
+  return createHmac("sha256", secret)
+    .update(`${DOMAIN_PREFIX}:${tenantId}:${partnerId}:${expiresAtMs}`)
+    .digest("hex");
+}
+
 /**
- * Produce a signed token for the given tenant + partnerId.
- * Throws if AUTH_SECRET is not configured.
+ * Produce a signed token for the given tenant + partnerId con TTL embedido.
+ * Formato: `<expiresAtMs>.<digest>` (e.g. "1234567890.abc123...").
+ *
+ * Throws si AUTH_SECRET no está configurado.
  */
-export function signDriverToken(tenantId: string, partnerId: string): string {
+export function signDriverToken(
+  tenantId: string,
+  partnerId: string,
+  ttlMs: number = DEFAULT_TTL_MS,
+): string {
   const secret = getSecret();
   if (!secret) {
     throw new Error("AUTH_SECRET is required to sign driver tokens");
   }
-  return computeDigest(secret, tenantId, partnerId);
+  const expiresAtMs = Date.now() + ttlMs;
+  const digest = computeTtlDigest(secret, tenantId, partnerId, expiresAtMs);
+  return `${expiresAtMs}.${digest}`;
 }
 
 /**
- * Constant-time verification of a presented token.
- * Returns false on any failure mode — never throws.
+ * Constant-time verification de un token. Acepta ambos formatos:
+ *   - nuevo: `<expiresAtMs>.<digest>` con verificación de TTL
+ *   - legacy: `<digest>` sin TTL (transición — deprecar en próximas releases)
+ *
+ * Devuelve false on any failure mode — never throws.
  */
 export function verifyDriverToken(
   tenantId: string,
@@ -76,11 +107,34 @@ export function verifyDriverToken(
   if (!secret) return false;
 
   try {
+    // Detectar formato nuevo: "expiresAtMs.digest"
+    const dotIdx = token.indexOf(".");
+    if (dotIdx > 0) {
+      const expPart = token.slice(0, dotIdx);
+      const digestPart = token.slice(dotIdx + 1);
+      const expiresAtMs = Number(expPart);
+      if (Number.isFinite(expiresAtMs) && /^[a-f0-9]+$/.test(digestPart)) {
+        if (expiresAtMs <= Date.now()) {
+          logger.warn("[DRIVER_AUTH] Token expirado", { partnerId, expiresAtMs });
+          return false;
+        }
+        const expected = computeTtlDigest(secret, tenantId, partnerId, expiresAtMs);
+        const a = Buffer.from(expected, "utf8");
+        const b = Buffer.from(digestPart, "utf8");
+        if (a.length !== b.length) return false;
+        return timingSafeEqual(a, b);
+      }
+    }
+    // Formato legacy (sin TTL) — aceptar pero loggear como deprecated.
     const expected = computeDigest(secret, tenantId, partnerId);
     const a = Buffer.from(expected, "utf8");
     const b = Buffer.from(token, "utf8");
     if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
+    const ok = timingSafeEqual(a, b);
+    if (ok) {
+      logger.info("[DRIVER_AUTH] legacy token (sin TTL) — rotar", { partnerId });
+    }
+    return ok;
   } catch {
     return false;
   }

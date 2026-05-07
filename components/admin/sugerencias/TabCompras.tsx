@@ -52,25 +52,25 @@ const URGENCY = {
   critical: {
     label: "Crítico",
     bg: "bg-[var(--data-error-50)]",
-    text: "text-[var(--data-error)]",
-    bar: "bg-[var(--data-error)]",
-    border: "border-[var(--data-error)]",
+    text: "text-[var(--data-error-500)]",
+    bar: "bg-[var(--data-error-500)]",
+    border: "border-[var(--data-error-500)]",
     barTrack: "bg-[var(--data-error-100,#fee2e2)]",
   },
   high: {
     label: "Urgente",
     bg: "bg-[var(--data-warning-50,#fffbeb)]",
-    text: "text-[var(--data-warning)]",
-    bar: "bg-[var(--data-warning)]",
-    border: "border-[var(--data-warning)]",
+    text: "text-[var(--data-warning-500)]",
+    bar: "bg-[var(--data-warning-500)]",
+    border: "border-[var(--data-warning-500)]",
     barTrack: "bg-[var(--data-warning-100,#fef3c7)]",
   },
   medium: {
     label: "Esta semana",
     bg: "bg-[var(--accent-soft)]",
-    text: "text-[var(--data-success)]",
-    bar: "bg-[var(--data-success)]",
-    border: "border-[var(--data-success)]",
+    text: "text-[var(--data-success-500)]",
+    bar: "bg-[var(--data-success-500)]",
+    border: "border-[var(--data-success-500)]",
     barTrack: "bg-[var(--accent-soft)]",
   },
 } as const;
@@ -215,7 +215,7 @@ export default function TabCompras() {
             </p>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Lo que se va a acabar pronto, ordenado por urgencia
-              {usingMock && <span className="ml-2 text-[var(--data-warning)]">(datos demo)</span>}
+              {usingMock && <span className="ml-2 text-[var(--data-warning-500)]">(datos demo)</span>}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export default function TabCompras() {
         </div>
       ) : advised.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center">
-          <Package className="mx-auto mb-3 h-12 w-12 text-[var(--data-success)]" />
+          <Package className="mx-auto mb-3 h-12 w-12 text-[var(--data-success-500)]" />
           <p className="text-base font-extrabold text-[var(--text-primary)]">Stock al día</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             No hay productos que necesiten compra urgente.
@@ -381,7 +381,7 @@ export default function TabCompras() {
           {/* Footer accion */}
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-warning)]" />
+              <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)]" />
               <p className="text-sm font-bold text-[var(--text-primary)]">
                 {advised.length} productos · <span className="tabular-nums">{fmt(totalEstimated)}</span>
               </p>

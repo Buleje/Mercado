@@ -72,7 +72,7 @@ export function SupportActions({
           <button
             type="button"
             onClick={onCancelOrder}
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 dark:hover:border-red-800/60 text-sm font-bold text-red-600 dark:text-red-400 transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 dark:hover:border-red-800/60 text-sm font-bold text-[var(--data-error-600)] dark:text-red-400 transition-colors"
           >
             <XCircle className="h-4 w-4" strokeWidth={1.75} />
             Cancelar pedido
@@ -105,7 +105,7 @@ export function SupportActions({
                 className={cn(
                   "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-[length:var(--ts-2xs)] font-semibold transition-colors",
                   isSent
-                    ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300"
+                    ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-[var(--accent-dark)] dark:text-teal-300"
                     : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-foreground",
                 )}
               >

@@ -492,10 +492,10 @@ export default function CustomerModal() {
                           animate={{ opacity: 1, y: 0 }}
                           className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
                         >
-                          <span className="text-amber-500 text-lg">📝</span>
+                          <span className="text-[var(--data-warning-500)] text-lg">📝</span>
                           <div>
-                            <p className="text-sm font-semibold text-amber-700">¡Bienvenido/a! Eres nuevo en Buleje</p>
-                            <p className="text-xs text-amber-600 mt-0.5">Completemos tus datos para tu primer pedido</p>
+                            <p className="text-sm font-semibold text-[var(--data-warning-700)]">¡Bienvenido/a! Eres nuevo en Buleje</p>
+                            <p className="text-xs text-[var(--data-warning-600)] mt-0.5">Completemos tus datos para tu primer pedido</p>
                           </div>
                         </m.div>
                       )}
@@ -603,7 +603,7 @@ export default function CustomerModal() {
                                     <button
                                       type="button"
                                       onClick={(e) => { e.stopPropagation(); handleDeleteLoc(loc.id); }}
-                                      className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                                      className="p-1.5 rounded-lg text-muted hover:text-[var(--data-error-500)] hover:bg-red-50 transition-colors"
                                       aria-label="Eliminar"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />

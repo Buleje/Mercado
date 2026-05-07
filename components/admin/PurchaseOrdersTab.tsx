@@ -27,10 +27,10 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
   auto_generated: "Auto-generado",
 };
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-  recibido: "bg-[var(--accent-soft)] text-[var(--data-success)]",
-  parcial: "bg-[var(--accent-soft)] text-[var(--data-success)]",
-  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error)]",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+  recibido: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  parcial: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
   auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
@@ -54,12 +54,12 @@ function OCProgressBar({ status }: { status: string }) {
             <div key={step} className="flex items-center" style={{ flex: idx < 3 ? 1 : 0 }}>
               <div className={cn(
                 "w-3.5 h-3.5 rounded-full shrink-0 transition-colors",
-                isCancelled ? "bg-[var(--data-error)]" : completed ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                isCancelled ? "bg-[var(--data-error-500)]" : completed ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
               )} />
               {idx < 3 && (
                 <div className={cn(
                   "h-1 flex-1 transition-colors",
-                  isCancelled ? "bg-[var(--data-error)]" : (!isCancelled && step < currentStep) ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+                  isCancelled ? "bg-[var(--data-error-500)]" : (!isCancelled && step < currentStep) ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                 )} />
               )}
             </div>
@@ -68,7 +68,7 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
       <div className="flex justify-between px-0">
         {labels.map((label, idx) => (
-          <span key={idx} className={cn("text-xs font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-primary dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
+          <span key={idx} className={cn("text-xs font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-primary dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
             {label}
           </span>
         ))}
@@ -452,7 +452,7 @@ export default function PurchaseOrdersTab() {
               }));
               exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
             }}
-            className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors"
             title="Exportar compras a Excel"
           >
             <Download className="h-4 w-4" /> Excel
@@ -479,18 +479,18 @@ export default function PurchaseOrdersTab() {
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-warning)]">{kpis.counts.pendiente}</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-warning-500)]">{kpis.counts.pendiente}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpis.counts.parcial} parcial{kpis.counts.parcial === 1 ? "" : "es"}</p>
             </div>
-            <Package className="h-5 w-5 text-[var(--data-warning)] shrink-0" />
+            <Package className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Recibidas</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success)]">{kpis.counts.recibido}</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{kpis.counts.recibido}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">cerradas con éxito</p>
             </div>
-            <PackageCheck className="h-5 w-5 text-[var(--data-success)] shrink-0" />
+            <PackageCheck className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
@@ -548,7 +548,7 @@ export default function PurchaseOrdersTab() {
               <div key={r.ocId} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] p-3">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">OC a {r.supplierName}</p>
-                  <button onClick={() => removeRecurring(r.ocId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors" title="Eliminar recurrencia">
+                  <button onClick={() => removeRecurring(r.ocId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors" title="Eliminar recurrencia">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -658,20 +658,20 @@ export default function PurchaseOrdersTab() {
                   
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                      <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Órdenes</p>
+                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                      <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.count}</p>
                     </div>
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                      <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Total gastado</p>
+                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                      <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.totalAmount.toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.avgAmount.toFixed(2)}</p>
                     </div>
-                    <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-                      <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase mb-1">Última compra</p>
+                    <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
+                      <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase mb-1">Última compra</p>
                       <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
                     </div>
                   </div>
@@ -857,7 +857,7 @@ export default function PurchaseOrdersTab() {
                             />
                           </div>
                           <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-20 text-right pt-2">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
-                          <button type="button" onClick={() => removeItem(idx)} className="p-1 text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] pt-1.5"><X className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => removeItem(idx)} className="p-1 text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] pt-1.5"><X className="h-4 w-4" /></button>
                         </div>
                       </div>
                     );
@@ -924,7 +924,7 @@ export default function PurchaseOrdersTab() {
                   {(o.status === "pendiente" || o.status === "parcial") && (
                     <button
                       onClick={() => setRecepcionOC(o)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
                       title="Registrar recepcion"
                     >
                       <PackageCheck className="h-3.5 w-3.5" /> Recibir
@@ -937,7 +937,7 @@ export default function PurchaseOrdersTab() {
                   {/* Mejora 19: Duplicar OC */}
                   <button
                     onClick={() => duplicateOrder(o)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
                     title="Duplicar orden"
                   >
                     <Copy className="h-3.5 w-3.5" /> Duplicar
@@ -955,7 +955,7 @@ export default function PurchaseOrdersTab() {
                   <button onClick={() => setExpanded(expanded === o.id ? null : o.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                     {expanded === o.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
-                  <button onClick={() => deleteOrder(o.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                  <button onClick={() => deleteOrder(o.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -1000,8 +1000,8 @@ export default function PurchaseOrdersTab() {
                           {prevPrice != null && (
                             <p className="text-xs text-[var(--text-tertiary)] pl-5 mt-0.5">
                               Última vez: S/{prevPrice.toFixed(2)} ({prevDateRelative})
-                              {diff != null && diff > 0 && <span className="text-[var(--data-error)] ml-1">↑ S/{diff.toFixed(2)} mas caro</span>}
-                              {diff != null && diff < 0 && <span className="text-[var(--data-success)] ml-1">↓ S/{Math.abs(diff).toFixed(2)} mas barato</span>}
+                              {diff != null && diff > 0 && <span className="text-[var(--data-error-500)] ml-1">↑ S/{diff.toFixed(2)} mas caro</span>}
+                              {diff != null && diff < 0 && <span className="text-[var(--data-success-500)] ml-1">↓ S/{Math.abs(diff).toFixed(2)} mas barato</span>}
                               {diff != null && diff === 0 && <span className="text-[var(--text-tertiary)] ml-1">= Mismo precio</span>}
                             </p>
                           )}
@@ -1026,9 +1026,9 @@ export default function PurchaseOrdersTab() {
                     return (
                       <div className={cn("mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg",
                         diff < 0
-                          ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : diff > 0
-                          ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                          ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           : "bg-gray-50 dark:bg-surface text-[var(--text-secondary)]"
                       )}>
                         {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs última compra` :
@@ -1258,10 +1258,10 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 19: Toast de duplicacion */}
       {duplicateToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
-              <Copy className="h-4 w-4 text-[var(--data-success)]" />
+              <Copy className="h-4 w-4 text-[var(--data-success-500)]" />
             </div>
             <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{duplicateToast}</p>
           </div>

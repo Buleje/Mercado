@@ -27,7 +27,7 @@ export default function AutoRefreshControl({
         </span>
       )}
       {paused && (
-        <span className="text-[var(--data-warning)] font-medium">Pausado</span>
+        <span className="text-[var(--data-warning-500)] font-medium">Pausado</span>
       )}
       <button
         onClick={onTogglePause}

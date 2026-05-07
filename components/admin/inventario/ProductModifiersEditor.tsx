@@ -227,7 +227,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success)] text-white px-4 py-3 text-sm font-bold hover:opacity-90 transition-all">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-4 py-3 text-sm font-bold hover:opacity-90 transition-all">
                   <BookOpen className="h-4 w-4" /> Importar del catálogo
                 </button>
               </div>
@@ -242,7 +242,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             )}
 
             {error && (
-              <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)] flex items-start gap-2">
+              <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)] flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span className="flex-1">{error}</span>
                 <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
@@ -300,7 +300,7 @@ function GroupCard({
             className="flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
           />
           <button onClick={onRemove} title="Eliminar grupo"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
+            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -370,7 +370,7 @@ function GroupCard({
             <Plus className="h-3.5 w-3.5" /> Agregar opción
           </button>
           <button onClick={() => setShowCatalogPicker(true)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-primary to-[var(--data-success)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
             <BookOpen className="h-3.5 w-3.5" /> Añadir del catálogo
           </button>
         </div>
@@ -505,7 +505,7 @@ function OptionRow({
           className={cn(
             "p-1.5 rounded-lg transition-colors",
             option.isDefault
-              ? "bg-[var(--data-warning-50)] text-[var(--data-warning)]"
+              ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           )}
         >
@@ -517,13 +517,13 @@ function OptionRow({
           type="button"
           onClick={onRemove}
           aria-label="Eliminar opción"
-          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {err && (
-        <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1">
+        <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-error-500)] flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" /> {err}
         </p>
       )}

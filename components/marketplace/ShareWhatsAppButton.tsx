@@ -67,7 +67,7 @@ export default function ShareWhatsAppButton({
         type="button"
         onClick={handleShare}
         className={cn(
-          "inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors",
+          "inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] text-xs font-bold hover:bg-emerald-100 transition-colors",
           className,
         )}
       >
@@ -83,7 +83,7 @@ export default function ShareWhatsAppButton({
       aria-label="Compartir por WhatsApp"
       onClick={handleShare}
       className={cn(
-        "inline-flex items-center justify-center rounded-full border bg-white/90 backdrop-blur border-gray-200 text-gray-400 hover:text-emerald-600 hover:border-emerald-200 transition-all active:scale-90",
+        "inline-flex items-center justify-center rounded-full border bg-white/90 backdrop-blur border-gray-200 text-gray-400 hover:text-[var(--data-success-600)] hover:border-emerald-200 transition-all active:scale-90",
         SIZES[size],
         className,
       )}

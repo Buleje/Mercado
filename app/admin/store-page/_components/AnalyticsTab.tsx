@@ -108,7 +108,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
       <section className={`${ADMIN_TOKENS.cardPadded}`}>
         <div className="flex items-center gap-2">
           <TrendingUp
-            className="w-4 h-4 text-[var(--data-success)]"
+            className="w-4 h-4 text-[var(--data-success-500)]"
             strokeWidth={2}
             aria-hidden
           />
@@ -164,7 +164,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
                   <span className="truncate max-w-[70%] text-[var(--text-primary)]">
                     {r.referrer}
                   </span>
-                  <span className="font-mono font-bold text-[var(--data-success)]">
+                  <span className="font-mono font-bold text-[var(--data-success-500)]">
                     {r.count}
                   </span>
                 </li>
@@ -185,7 +185,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
                   className="flex items-center justify-between text-sm"
                 >
                   <span className="text-[var(--text-primary)]">{r.source}</span>
-                  <span className="font-mono font-bold text-[var(--data-success)]">
+                  <span className="font-mono font-bold text-[var(--data-success-500)]">
                     {r.count}
                   </span>
                 </li>

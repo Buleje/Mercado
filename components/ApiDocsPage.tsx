@@ -182,10 +182,10 @@ const CATEGORIES: Category[] = [
 // ── Colores por método HTTP ───────────────────────────────────────────────────
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
-  GET:    "bg-emerald-100  text-emerald-700  dark:bg-emerald-900/40  dark:text-emerald-300",
+  GET:    "bg-emerald-100  text-[var(--data-success-700)]  dark:bg-emerald-900/40  dark:text-emerald-300",
   POST:   "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   PATCH:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-  DELETE: "bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300",
+  DELETE: "bg-red-100   text-[var(--data-error-700)]   dark:bg-red-900/40   dark:text-red-300",
 };
 
 // ── Componente de bloque de codigo ────────────────────────────────────────────
@@ -284,12 +284,12 @@ function EndpointPanel({ endpoint }: { endpoint: ApiEndpoint }) {
                         <td className="py-1.5 pr-3 font-mono text-green-700 dark:text-green-400">
                           {p.name}
                         </td>
-                        <td className="py-1.5 pr-3 text-emerald-600 dark:text-emerald-400 font-mono">
+                        <td className="py-1.5 pr-3 text-[var(--data-success-600)] dark:text-emerald-400 font-mono">
                           {p.type}
                         </td>
                         <td className="py-1.5 pr-3">
                           {p.required ? (
-                            <span className="text-red-500 font-medium">Si</span>
+                            <span className="text-[var(--data-error-500)] font-medium">Si</span>
                           ) : (
                             <span className="text-gray-400">No</span>
                           )}
@@ -356,9 +356,9 @@ function EndpointPanel({ endpoint }: { endpoint: ApiEndpoint }) {
                   {result.ok ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
+                    <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   )}
-                  <span className={`text-sm font-medium ${result.ok ? "text-green-600" : "text-red-600"}`}>
+                  <span className={`text-sm font-medium ${result.ok ? "text-green-600" : "text-[var(--data-error-600)]"}`}>
                     HTTP {result.status}
                   </span>
                 </div>

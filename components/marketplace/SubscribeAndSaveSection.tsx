@@ -138,7 +138,7 @@ function SubscribableCard({ product }: { product: SubscribableProductMock }) {
             className={cn(
               "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-200 ring-1",
               justAdded
-                ? "bg-emerald-500 text-white scale-90 ring-emerald-600/30"
+                ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
                 : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
             )}
           >

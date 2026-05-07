@@ -49,7 +49,7 @@ export function LiveDetailPage({ live }: LiveDetailPageProps) {
 
           <div className="ml-auto inline-flex items-center gap-2">
             {status.active ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error)]/10 px-2.5 py-1 text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-500)]/10 px-2.5 py-1 text-[length:var(--ts-xs)] font-semibold text-[var(--data-error-500)]">
                 <CircleDot className="h-3 w-3 animate-pulse" aria-hidden />
                 <Users className="h-3 w-3" aria-hidden />
                 {status.text}

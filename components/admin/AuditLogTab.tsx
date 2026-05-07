@@ -39,20 +39,20 @@ function fmtDate(iso: string) {
 }
 
 const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color: string }> = {
-  crear:    { label: "Crear",    icon: Plus,     color: "text-[var(--data-success)]" },
-  editar:   { label: "Editar",   icon: Pencil,   color: "text-[var(--data-success)]" },
-  eliminar: { label: "Eliminar", icon: Trash2,   color: "text-[var(--data-error)]" },
+  crear:    { label: "Crear",    icon: Plus,     color: "text-[var(--data-success-500)]" },
+  editar:   { label: "Editar",   icon: Pencil,   color: "text-[var(--data-success-500)]" },
+  eliminar: { label: "Eliminar", icon: Trash2,   color: "text-[var(--data-error-500)]" },
   login:    { label: "Login",    icon: UserCog,  color: "text-[var(--text-secondary)]" },
-  config:   { label: "Config",   icon: Settings, color: "text-[var(--data-warning)]" },
-  exportar: { label: "Exportar", icon: Download,  color: "text-[var(--data-info)]" },
-  precio:   { label: "Precio",   icon: Pencil,   color: "text-[var(--data-warning)]" },
+  config:   { label: "Config",   icon: Settings, color: "text-[var(--data-warning-500)]" },
+  exportar: { label: "Exportar", icon: Download,  color: "text-[var(--data-info-500)]" },
+  precio:   { label: "Precio",   icon: Pencil,   color: "text-[var(--data-warning-500)]" },
   permiso:  { label: "Permiso",  icon: Shield,   color: "text-[var(--text-secondary)]" },
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  advertencia: { label: "Advertencia", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  critica:     { label: "Crítica",     color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  info:        { label: "Info",        color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  advertencia: { label: "Advertencia", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  critica:     { label: "Crítica",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 const MODULES = ["Inventario", "Ventas", "Clientes", "Proveedores", "Finanzas", "RRHH", "Configuración", "Usuarios", "Precios", "Pedidos"];
@@ -273,10 +273,10 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Hoy", value: String(stats.hoy), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "Advertencias", value: String(stats.advertencias), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Críticas", value: String(stats.criticas), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Advertencias", value: String(stats.advertencias), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Críticas", value: String(stats.criticas), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -287,11 +287,11 @@ export default function AuditLogTab() {
 
       {/* Alert */}
       {stats.criticas > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Eventos críticos detectados</p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{stats.criticas} evento(s) de severidad crítica — eliminaciones, cambios de permisos o precios masivos.</p>
+            <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">Eventos críticos detectados</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">{stats.criticas} evento(s) de severidad crítica — eliminaciones, cambios de permisos o precios masivos.</p>
           </div>
         </div>
       )}

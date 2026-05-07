@@ -75,7 +75,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
 
       // Marker partner — icono custom (color verde Buleje)
       const partnerIcon = L.divIcon({
-        html: `<div style="background:#00B4A6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+        html: `<div style="background:var(--accent);width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
         className: "",
         iconSize: [20, 20],
         iconAnchor: [10, 10],
@@ -146,7 +146,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
         marker.bindPopup(`
           <b>${offer.order.customerName}</b><br/>
           ${offer.order.customerLocation ?? "—"}<br/>
-          <span style="color:#00B4A6;font-weight:bold">${offer.distanceKm.toFixed(1)} km · S/ ${offer.feeOffered.toFixed(0)}</span>
+          <span style="color:var(--accent);font-weight:bold">${offer.distanceKm.toFixed(1)} km · S/ ${offer.feeOffered.toFixed(0)}</span>
         `);
         marker.on("click", () => {
           marker.openPopup();

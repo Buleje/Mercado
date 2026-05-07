@@ -13,6 +13,12 @@ function initWebPush() {
   webpush.setVapidDetails(email, publicKey, privateKey);
 }
 
+/**
+ * SECURITY/CRITICAL 2026-05-06 (pentest H004): el `phone` debe venir del JWT
+ * de customer-session, NO del body. Antes un atacante registraba SU endpoint
+ * push para recibir notifs de cualquier víctima conociendo el phone.
+ */
+
 // POST /api/notifications/subscribe — save or update subscription
 export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "push-sub");
@@ -20,13 +26,24 @@ export async function POST(req: NextRequest) {
 
   initWebPush();
   try {
-    const { subscription, phone } = await req.json() as {
+    const { subscription } = await req.json() as {
       subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
-      phone?: string;
     };
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
+
+    // Extraer phone SOLO del customer-session JWT, no del body.
+    const { CUSTOMER_SESSION, getCustomerPayload } = await import("@/lib/auth/customer-session");
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    if (!sessionToken) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    const payload = await getCustomerPayload(sessionToken);
+    if (!payload?.customerId) {
+      return NextResponse.json({ error: "session_invalid" }, { status: 401 });
+    }
+    const phone = payload.customerId;
     const tenantId = getTenantIdFromRequest(req);
     await PushSubscriptionsStore.save(tenantId, { endpoint: subscription.endpoint, keys: subscription.keys, phone });
     return NextResponse.json({ ok: true });
@@ -38,6 +55,10 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/notifications/subscribe – remove subscription
 export async function DELETE(req: NextRequest) {
+  // SECURITY 2026-05-06: rate limit + verify session for delete. Sin esto
+  // un atacante podía remover suscripciones ajenas.
+  const rl = applyRateLimit(req, "MODERATE", "push-sub-del");
+  if (rl) return rl;
   try {
     const { endpoint } = await req.json() as { endpoint: string };
     if (endpoint) await PushSubscriptionsStore.remove(endpoint);

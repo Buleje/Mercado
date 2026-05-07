@@ -32,10 +32,10 @@ function fmtPct(n: number) {
 }
 
 const QUADRANT_META = {
-  star:     { label: "Alto volumen + Alto margen",  color: "#00B4A6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",  text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
-  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-  dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",      text: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+  star:     { label: "Alto volumen + Alto margen",  color: "var(--accent)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",  text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+  dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",      text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
 };
 
 // ── Scatter Point ──────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "worst"
-                ? "bg-[var(--data-error)] text-white border-[var(--data-error)]"
+                ? "bg-[var(--data-error-500)] text-white border-[var(--data-error-500)]"
                 : "text-[var(--text-secondary)] border-[var(--rule-base)]"
             )}
           >
@@ -246,8 +246,8 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                     p.margin >= 30
                       ? "text-primary dark:text-primary"
                       : p.margin >= 15
-                      ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                      : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   )}
                 >
                   {fmtPct(p.margin)}

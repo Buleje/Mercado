@@ -127,7 +127,7 @@ export default function FiadoModals({
               <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Saldo pendiente: <span className="font-bold text-[var(--data-error)]">{formatCurrency(selected.saldo)}</span>
+                  Saldo pendiente: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</span>
                 </p>
 
                 <div className="space-y-3">
@@ -157,7 +157,7 @@ export default function FiadoModals({
                 </div>
 
                 {pagoError && (
-                  <p className="text-xs text-[var(--data-error)] font-semibold">{pagoError}</p>
+                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>
                 )}
 
                 <div className="flex gap-2">
@@ -286,7 +286,7 @@ export default function FiadoModals({
                 )}
 
                 {cobroError && (
-                  <p className="text-xs text-[var(--data-error)] font-semibold">{cobroError}</p>
+                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{cobroError}</p>
                 )}
 
                 <div className="flex gap-2">
@@ -336,7 +336,7 @@ export default function FiadoModals({
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
                   <div className="h-12 w-12 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-2 print:hidden">
-                    <CheckCircle2 className="h-6 w-6 text-[var(--data-success)]" />
+                    <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
                   <CardTitle className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
                   <p className="text-xs text-[var(--text-tertiary)] print:text-sm print:font-bold">Buleje</p>
@@ -367,7 +367,7 @@ export default function FiadoModals({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Monto pagado:</span>
-                    <span className="font-extrabold text-[var(--data-success)] text-base">{formatCurrency(reciboData.montoPagado)}</span>
+                    <span className="font-extrabold text-[var(--data-success-500)] text-base">{formatCurrency(reciboData.montoPagado)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Saldo anterior:</span>
@@ -375,7 +375,7 @@ export default function FiadoModals({
                   </div>
                   <div className="flex justify-between bg-gray-50 rounded-lg px-2 py-1.5 print:bg-gray-100">
                     <span className="font-bold text-[var(--text-primary)] print:text-black">Saldo actual:</span>
-                    <span className="font-extrabold text-[var(--data-error)] text-base">{formatCurrency(reciboData.saldoActual)}</span>
+                    <span className="font-extrabold text-[var(--data-error-500)] text-base">{formatCurrency(reciboData.saldoActual)}</span>
                   </div>
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
                   <div className="pt-2 print:pt-4">
@@ -552,7 +552,7 @@ export default function FiadoModals({
                         if (!ctx) return;
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                       }}
-                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] mt-1 transition-colors"
+                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] mt-1 transition-colors"
                     >
                       Limpiar firma
                     </button>
@@ -730,9 +730,9 @@ export default function FiadoModals({
                     return (
                       <>
                         {!hasAddresses && (
-                          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3">
-                            <p className="text-xs text-[var(--data-warning)] font-bold">Registra direcciones de tus clientes para usar esta funcion al máximo</p>
-                            <p className="text-xs text-[var(--data-warning)] mt-0.5">Agrega direcciones en la descripcion del fiado (ej: &quot;Jr. Ucayali 123, Centro&quot;)</p>
+                          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3">
+                            <p className="text-xs text-[var(--data-warning-500)] font-bold">Registra direcciones de tus clientes para usar esta funcion al máximo</p>
+                            <p className="text-xs text-[var(--data-warning-500)] mt-0.5">Agrega direcciones en la descripcion del fiado (ej: &quot;Jr. Ucayali 123, Centro&quot;)</p>
                           </div>
                         )}
                         {Array.from(zones.entries()).map(([zone, items]) => {
@@ -767,7 +767,7 @@ export default function FiadoModals({
                                           <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.descripcion! + " Pucallpa")}`}
                                             target="_blank" rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                                            className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                                             title="Google Maps"
                                           >
                                             <Navigation className="h-3 w-3" />

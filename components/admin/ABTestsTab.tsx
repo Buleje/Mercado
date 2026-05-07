@@ -96,7 +96,7 @@ export default function ABTestsTab() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{t.name}</CardTitle>
-                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
+                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>
@@ -111,13 +111,13 @@ export default function ABTestsTab() {
               </div>
               <div className="flex flex-wrap gap-1">
                 <button onClick={() => loadResults(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title="Ver resultados">
-                  <BarChart3 className="w-4 h-4 text-[var(--data-success)]" />
+                  <BarChart3 className="w-4 h-4 text-[var(--data-success-500)]" />
                 </button>
                 <button onClick={() => toggle(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title={t.active ? "Desactivar" : "Activar"}>
-                  {t.active ? <ToggleRight className="w-4 h-4 text-[var(--data-success)]" /> : <ToggleLeft className="w-4 h-4 text-[var(--text-tertiary)]" />}
+                  {t.active ? <ToggleRight className="w-4 h-4 text-[var(--data-success-500)]" /> : <ToggleLeft className="w-4 h-4 text-[var(--text-tertiary)]" />}
                 </button>
-                <button onClick={() => del(t.id)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition" title="Eliminar">
-                  <Trash2 className="w-4 h-4 text-[var(--data-error)]" />
+                <button onClick={() => del(t.id)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition" title="Eliminar">
+                  <Trash2 className="w-4 h-4 text-[var(--data-error-500)]" />
                 </button>
               </div>
             </div>
@@ -137,11 +137,11 @@ export default function ABTestsTab() {
                           <p className="font-semibold text-sm">{variant?.label || r.variantId}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-center">
                             <div>
-                              <p className="text-lg font-bold text-[var(--data-success)]">{r.impressions}</p>
+                              <p className="text-lg font-bold text-[var(--data-success-500)]">{r.impressions}</p>
                               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Impresiones</p>
                             </div>
                             <div>
-                              <p className="text-lg font-bold text-[var(--data-success)]">{r.conversions}</p>
+                              <p className="text-lg font-bold text-[var(--data-success-500)]">{r.conversions}</p>
                               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Conversiones</p>
                             </div>
                             <div>
@@ -180,7 +180,7 @@ export default function ABTestsTab() {
                     <input value={v.label} onChange={e => { const nv = [...variants]; nv[i] = { ...v, label: e.target.value }; setVariants(nv); }} placeholder="Etiqueta" className="flex-1 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
                     <input type="number" value={v.weight} onChange={e => { const nv = [...variants]; nv[i] = { ...v, weight: +e.target.value }; setVariants(nv); }} className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
                     {variants.length > 2 && (
-                      <button onClick={() => setVariants(variants.filter((_, j) => j !== i))} className="text-[var(--data-error)] hover:text-[var(--data-error)]"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setVariants(variants.filter((_, j) => j !== i))} className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </div>
                 ))}

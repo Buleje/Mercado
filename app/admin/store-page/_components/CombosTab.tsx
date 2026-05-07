@@ -133,7 +133,7 @@ export default function CombosTab() {
                   <span
                     className={`text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                       combo.active
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                        ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-950/30 dark:text-emerald-300"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >
@@ -155,7 +155,7 @@ export default function CombosTab() {
               <button
                 type="button"
                 aria-label={`Eliminar ${combo.name}`}
-                className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors p-1"
+                className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors p-1"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
@@ -233,7 +233,7 @@ export default function CombosTab() {
                           items: form.items.filter((_, j) => j !== i),
                         })
                       }
-                      className="text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                      className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                     </button>

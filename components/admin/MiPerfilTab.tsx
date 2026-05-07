@@ -149,7 +149,7 @@ export default function MiPerfilTab() {
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
                 profile.role === "admin" ? "bg-primary/10 text-primary" :
-                profile.role === "cajero" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" :
+                profile.role === "cajero" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" :
                 "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
               )}>
                 <Shield className="h-3 w-3" />
@@ -241,7 +241,7 @@ export default function MiPerfilTab() {
                 </button>
               )}
               {saved && (
-                <span className="flex items-center gap-1 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+                <span className="flex items-center gap-1 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
                   <CheckCircle className="h-4 w-4" /> Guardado
                 </span>
               )}
@@ -295,7 +295,7 @@ export default function MiPerfilTab() {
               />
             </div>
             {passwordError && (
-              <p className="text-xs text-[var(--data-error)] font-medium">{passwordError}</p>
+              <p className="text-xs text-[var(--data-error-500)] font-medium">{passwordError}</p>
             )}
             <div className="flex items-center gap-3 pt-1">
               <button

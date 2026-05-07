@@ -26,9 +26,13 @@ export async function GET(req: NextRequest) {
   else if (period === "month") { since.setDate(now.getDate() - 30); bucketDays = 30; }
   else { since.setFullYear(now.getFullYear() - 5); bucketDays = 90; }
 
+  // SECURITY 2026-05-05 (pentest delivery H012): scope tenantId. Antes
+  // un assignment con tenantId divergente (ver H010 ya parchado) inflaba
+  // earnings cruzadas del partner.
   const assignments = await prisma.deliveryAssignment.findMany({
     where: {
       partnerId: session.partnerId,
+      tenantId: session.tenantId,
       status: "delivered",
       deliveredAt: { gte: since },
     },

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * automaticamente via framer-motion.
  *
  * @example
- * <CheckmarkDraw size={60} className="text-[var(--data-success)]" />
+ * <CheckmarkDraw size={60} className="text-[var(--data-success-500)]" />
  */
 
 interface Props {

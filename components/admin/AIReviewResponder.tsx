@@ -60,7 +60,7 @@ function StarDisplay({ rating }: { rating: number }) {
           className={cn(
             "h-4 w-4",
             i < rating
-              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+              ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
               : "fill-muted text-muted-foreground"
           )}
         />
@@ -103,8 +103,8 @@ export default function AIReviewResponder({
 
   const sentimentLabel =
     rating >= 4
-      ? { text: "Resena positiva", className: "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" }
-      : { text: "Resena critica", className: "text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]" };
+      ? { text: "Resena positiva", className: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" }
+      : { text: "Resena critica", className: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" };
 
   return (
     <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
@@ -154,8 +154,8 @@ export default function AIReviewResponder({
 
       {/* Sent confirmation */}
       {sent && (
-        <div className="rounded-md bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-3 py-2">
-          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+        <div className="rounded-md bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-3 py-2">
+          <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
             Respuesta enviada correctamente.
           </p>
         </div>

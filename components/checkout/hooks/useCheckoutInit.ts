@@ -61,9 +61,17 @@ export function useCheckoutInit({
       initialReference = activeLoc.reference;
     }
 
+    // UX 2026-05-05: si el cliente ya está autenticado (tiene phone+name
+    // persistidos del context), saltamos la pantalla "¿Cómo quieres
+    // continuar?" y vamos directo a "Datos" con la card verificada del
+    // cliente. Desde ahí puede confirmar con sus datos guardados o usar
+    // el botón "Volver" para regresar al selector de cuenta y entrar con
+    // otro teléfono / Google.
+    const isAuthed = Boolean(customer?.phone && customer?.name);
+
     reset({
       ...INITIAL_CHECKOUT_STATE,
-      step: "cuenta",
+      step: isAuthed ? "datos" : "cuenta",
       customer: {
         dni: customer?.dni ?? "",
         name: customer?.name ?? "",

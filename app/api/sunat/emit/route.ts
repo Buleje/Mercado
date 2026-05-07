@@ -114,12 +114,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determinar correlativo y serie
+    // SECURITY 2026-05-05 (audit SUNAT #1): correlativo atómico.
+    // Antes leíamos `lastBoletaNum + 1` de un snapshot; dos requests
+    // concurrentes generaban el MISMO número y SUNAT rechazaba el segundo
+    // con error de duplicado, dejando ambos invoices en DB con
+    // serie+número idéntico. Ahora `{ increment: 1 }` es atómico en Postgres.
+    // Trade-off aceptado: si SUNAT rechaza, el número queda quemado (gap),
+    // pero SUNAT permite gaps por rechazos.
     const isBoleta = type === "boleta";
     const series = isBoleta ? sunatConfig.boletaSeries : sunatConfig.facturaSeries;
-    const nextNumber = isBoleta
-      ? sunatConfig.lastBoletaNum + 1
-      : sunatConfig.lastFacturaNum + 1;
+    const incremented = await prisma.tenantSunatConfig.update({
+      where: { tenantId },
+      data: isBoleta
+        ? { lastBoletaNum: { increment: 1 } }
+        : { lastFacturaNum: { increment: 1 } },
+      select: { lastBoletaNum: true, lastFacturaNum: true },
+    });
+    const nextNumber = isBoleta ? incremented.lastBoletaNum : incremented.lastFacturaNum;
 
     // Construir datos para el builder
     // TD-018: order.total y item.price son Decimal → convertir a number
@@ -209,32 +220,22 @@ export async function POST(req: NextRequest) {
     // Actualizar registro con respuesta de Nubefact
     const sunatStatus = nubefactResponse.sunat_accepted ? "accepted" : "rejected";
 
-    await prisma.$transaction([
-      prisma.sunatInvoice.update({
-        where: { id: invoice.id },
-        data: {
-          sunatStatus,
-          nubefactId: nubefactResponse.nubefact_id ?? null,
-          pdfUrl: nubefactResponse.enlace_del_pdf ?? null,
-          cdrResponse: nubefactResponse.cdr_base_64_encoded ?? null,
-          errorMessage: sunatStatus === "rejected"
-            ? (nubefactResponse.sunat_description ?? "Rechazado por SUNAT")
-            : null,
-          acceptedAt: sunatStatus === "accepted" ? new Date() : null,
-        },
-      }),
-      // Incrementar correlativo solo si fue aceptado
-      ...(sunatStatus === "accepted"
-        ? [
-            prisma.tenantSunatConfig.update({
-              where: { tenantId },
-              data: isBoleta
-                ? { lastBoletaNum: nextNumber }
-                : { lastFacturaNum: nextNumber },
-            }),
-          ]
-        : []),
-    ]);
+    // NOTA: el correlativo ya fue incrementado atómicamente arriba (audit
+    // SUNAT #1). Si SUNAT rechaza, el número queda quemado; SUNAT permite
+    // gaps por rechazos.
+    await prisma.sunatInvoice.update({
+      where: { id: invoice.id },
+      data: {
+        sunatStatus,
+        nubefactId: nubefactResponse.nubefact_id ?? null,
+        pdfUrl: nubefactResponse.enlace_del_pdf ?? null,
+        cdrResponse: nubefactResponse.cdr_base_64_encoded ?? null,
+        errorMessage: sunatStatus === "rejected"
+          ? (nubefactResponse.sunat_description ?? "Rechazado por SUNAT")
+          : null,
+        acceptedAt: sunatStatus === "accepted" ? new Date() : null,
+      },
+    });
 
     // Audit trail fire-and-forget
     logActivity(

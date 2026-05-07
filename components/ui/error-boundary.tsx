@@ -54,15 +54,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[280px] p-8 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
-            <AlertTriangle className="h-7 w-7 text-red-500 dark:text-red-400" />
+        <div className="flex flex-col items-center justify-center min-h-[280px] p-8 rounded-2xl border border-red-200 dark:border-[var(--data-error-500)]/30 bg-red-50 dark:bg-[var(--data-error-500)]/10 text-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-[var(--data-error-500)]/20 flex items-center justify-center">
+            <AlertTriangle className="h-7 w-7 text-[var(--data-error-500)] dark:text-red-400" />
           </div>
           <div>
-            <h3 className="font-extrabold text-red-700 dark:text-red-400 text-lg mb-1">
+            <h3 className="font-extrabold text-[var(--data-error-700)] dark:text-red-400 text-lg mb-1">
               Error en {this.props.moduleName ?? "este módulo"}
             </h3>
-            <p className="text-sm text-red-600/80 dark:text-red-400/70 max-w-md">
+            <p className="text-sm text-[var(--data-error-500)]/80 dark:text-red-400/70 max-w-md">
               Ocurrió un error inesperado. El resto del panel sigue funcionando con normalidad.
             </p>
             {this.state.error && (
@@ -73,7 +73,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </div>
           <button
             onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-600)] text-white text-sm font-bold transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             Reintentar

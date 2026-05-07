@@ -34,7 +34,7 @@ export default function LivesStrip({ className }: Props) {
     >
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error)] dark:text-[var(--data-error)] mb-1">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-1">
             <CircleDot className="h-3.5 w-3.5 animate-pulse" aria-hidden />
             En vivo ahora
           </p>

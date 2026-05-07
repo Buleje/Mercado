@@ -108,7 +108,7 @@ export default function OrderConfirmModal() {
           >
             <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #009690, #00B4A6, #009690)" }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, var(--accent-dark), var(--accent), var(--accent-dark))" }}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <Clock className="h-5 w-5 text-white" />
@@ -191,7 +191,7 @@ export default function OrderConfirmModal() {
                   onClick={handleReject}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-red-500 px-5 py-3.5 text-base font-bold text-white shadow-md shadow-red-500/20 hover:bg-red-600 transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[var(--data-error-500)] px-5 py-3.5 text-base font-bold text-white shadow-md shadow-red-500/20 hover:bg-[var(--data-error-600)] transition-all"
                 >
                   <XCircle className="h-5 w-5" />
                   Rechazar pedido

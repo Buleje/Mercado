@@ -13,7 +13,7 @@ export type WishlistProduct = {
   inStock: boolean;
   storeName: string;
   storeSlug: string;
-  imageUrl: null;
+  imageUrl: string | null;
   addedAt: number;
 };
 

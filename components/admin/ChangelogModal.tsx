@@ -105,7 +105,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
                     {release.fecha}
                   </span>
                   {release.version === CURRENT_VERSION && (
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full uppercase">
                       Actual
                     </span>
                   )}

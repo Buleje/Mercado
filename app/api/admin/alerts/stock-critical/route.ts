@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
     const raw = await req.json().catch(() => ({}));
     const parsed = bodySchema.safeParse(raw);
     const opts = parsed.success ? parsed.data : {};
-    const tenantId = req.headers.get("x-tenant-id") || "main";
+    // BUG-FIX (audit 2026-05-05): tenantId desde JWT no header
+    const tenantId = admin.tenantId;
 
     const allProducts = await ProductsDB.getAll(tenantId);
     const critical = allProducts.filter((p) => {

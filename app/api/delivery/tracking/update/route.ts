@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireDriver } from "@/lib/auth/driver-session";
+import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
-// Rate-limit map: orderId → last update timestamp (in-memory, per instance)
-const lastUpdateMap = new Map<string, number>();
-const RATE_LIMIT_MS = 10_000; // 10 segundos
+// SECURITY 2026-05-06 (audit delivery #15): rate limit centralizado en vez
+// de Map per-process. Antes en Vercel multi-region el atacante saltaba el
+// RL cambiando de instancia. El helper `rateLimit` usa Upstash si está
+// configurado, fallback a Map shareado para dev.
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,16 +41,14 @@ export async function POST(req: NextRequest) {
     if (guard instanceof NextResponse) return guard;
     const { tenantId } = guard;
 
-    // Rate limit: máximo 1 update cada 10 segundos por orderId
-    const now = Date.now();
-    const last = lastUpdateMap.get(orderId as string) ?? 0;
-    if (now - last < RATE_LIMIT_MS) {
+    // Rate limit: máximo 6 updates por minuto por orderId (~1 cada 10s).
+    const rl = rateLimit(`tracking:update:${orderId}`, 6, 60);
+    if (!rl.allowed) {
       return NextResponse.json(
         { error: "Demasiadas actualizaciones. Espera 10 segundos." },
-        { status: 429 }
+        { status: 429 },
       );
     }
-    lastUpdateMap.set(orderId as string, now);
 
     // Verificar que la asignación existe y pertenece al tenant + partner autenticado
     const assignment = await prisma.deliveryAssignment.findUnique({

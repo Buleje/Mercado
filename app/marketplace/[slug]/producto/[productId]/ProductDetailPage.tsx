@@ -360,8 +360,8 @@ export default function ProductDetailPage() {
                 </>
               ) : (
                 <>
-                  <span className="h-2 w-2 rounded-full bg-red-500" />
-                  <span className="text-sm font-medium text-red-500">Agotado</span>
+                  <span className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
+                  <span className="text-sm font-medium text-[var(--data-error-500)]">Agotado</span>
                 </>
               )}
               <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 flex items-center gap-1">

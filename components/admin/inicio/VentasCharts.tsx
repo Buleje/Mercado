@@ -89,8 +89,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                 className={cn(
                   "text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap",
                   data.wowGrowth >= 0
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
-                    : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30",
+                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
+                    : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30",
                 )}
               >
                 {data.wowGrowth >= 0 ? "↑" : "↓"} {Math.abs(data.wowGrowth).toFixed(1)}% sem/sem

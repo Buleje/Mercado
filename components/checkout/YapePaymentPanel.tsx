@@ -43,7 +43,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
         <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-          countdown > 120 ? "bg-purple-200 text-[var(--accent)]" : "bg-red-100 text-red-600 animate-pulse")}>
+          countdown > 120 ? "bg-purple-200 text-[var(--accent)]" : "bg-red-100 text-[var(--data-error-600)] animate-pulse")}>
           <Clock className="h-3 w-3" />
           {minutes}:{seconds.toString().padStart(2, "0")}
         </div>
@@ -51,8 +51,8 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
 
       {countdown === 0 && !opEntered && (
         <div className="flex flex-col items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <p className="text-xs font-bold text-red-600">Tiempo expirado</p>
-          <p className="text-xs text-red-500 text-center">El tiempo para completar el pago se agotó. Puedes reiniciar el temporizador.</p>
+          <p className="text-xs font-bold text-[var(--data-error-600)]">Tiempo expirado</p>
+          <p className="text-xs text-[var(--data-error-500)] text-center">El tiempo para completar el pago se agotó. Puedes reiniciar el temporizador.</p>
           <button
             type="button"
             onClick={() => setCountdown(600)}
@@ -89,8 +89,8 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
       )}
       {opEntered && (
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-          <p className="text-xs font-semibold text-emerald-700">Número ingresado! Ya puedes confirmar el pedido</p>
+          <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+          <p className="text-xs font-semibold text-[var(--data-success-700)]">Número ingresado! Ya puedes confirmar el pedido</p>
         </div>
       )}
 
@@ -147,12 +147,12 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
             className={cn(
               "w-full pl-10 pr-10 py-3 rounded-xl border-2 text-gray-900 placeholder:text-purple-300 focus:ring-2 outline-none transition-all text-sm font-mono bg-white",
               opEntered
-                ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
+                ? "border-emerald-400 focus:border-[var(--data-success-500)] focus:ring-emerald-200"
                 : "border-purple-200 focus:border-purple-500 focus:ring-purple-200"
             )}
           />
           {opEntered && (
-            <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+            <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
           )}
         </div>
         <p className="text-[length:var(--ts-2xs)] text-purple-500 mt-1">

@@ -205,7 +205,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             )}
 
             {error && (
-              <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+              <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
                 {error}
               </div>
             )}
@@ -243,7 +243,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                           inGroup
                             ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 opacity-60 cursor-not-allowed"
                             : recent
-                              ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/5"
+                              ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
                               : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary hover:bg-primary/5",
                         )}
                       >
@@ -274,9 +274,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                         <span className={cn(
                           "shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full transition-all",
                           inGroup
-                            ? "bg-[var(--data-success)] text-white"
+                            ? "bg-[var(--data-success-500)] text-white"
                             : recent
-                              ? "bg-[var(--data-success)] text-white"
+                              ? "bg-[var(--data-success-500)] text-white"
                               : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white",
                         )}>
                           {inGroup || recent ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

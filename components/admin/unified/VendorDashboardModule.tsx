@@ -182,7 +182,7 @@ export default function VendorDashboardModule() {
         description={TAB_DESCRIPTIONS[tab]}
         icon={LayoutDashboard}
         bgTint="bg-[var(--accent-soft)]"
-        iconColorClass="text-[var(--data-success)]"
+        iconColorClass="text-[var(--data-success-500)]"
       >
         {tab !== "marketplace" && (
           <DashboardDateRange value={dateRange} onChange={setDateRange} />
@@ -219,7 +219,7 @@ export default function VendorDashboardModule() {
           <div className="space-y-6">
             {error && !data && (
               <div className="flex flex-col items-center justify-center gap-4 py-16">
-                <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+                <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}

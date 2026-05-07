@@ -77,7 +77,7 @@ function buildColumns(
     label: "Rating",
     sortable: true,
     render: (row) => (
-      <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
+      <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
         <Star className="w-3.5 h-3.5 fill-current" />
         {row.rating.toFixed(1)}
         <span className="text-gray-400 font-normal text-xs">({row.reviewCount})</span>
@@ -125,8 +125,8 @@ function buildColumns(
           className={[
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
             row.isPublished
-              ? "border-rose-200 bg-rose-50 text-[var(--data-error)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error)]"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+              ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
+              : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
           ].join(" ")}
           title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
         >
@@ -280,7 +280,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
       </div>
 
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm">
           {error}
         </div>
       )}

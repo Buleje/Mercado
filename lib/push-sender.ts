@@ -16,10 +16,15 @@ export type PushPayload = {
   icon?: string;
 };
 
-/** Send push to all subscriptions belonging to a phone number. */
-export async function sendPushToPhone(phone: string, payload: PushPayload): Promise<void> {
+/**
+ * Send push to all subscriptions belonging to a phone number.
+ *
+ * SECURITY 2026-05-06 (audit notifs #2): si se pasa `tenantId`, filtra por
+ * tenant para evitar push cross-tenant. Nuevos callers DEBEN pasarlo.
+ */
+export async function sendPushToPhone(phone: string, payload: PushPayload, tenantId?: string): Promise<void> {
   initVapid();
-  const subs = await PushSubscriptionsStore.getByPhone(phone);
+  const subs = await PushSubscriptionsStore.getByPhone(phone, tenantId);
   await Promise.allSettled(
     subs.map((s) =>
       webpush.sendNotification(
@@ -35,10 +40,23 @@ export async function sendPushToPhone(phone: string, payload: PushPayload): Prom
   );
 }
 
-/** Send push to every stored subscription (e.g. broadcast promo). */
-export async function broadcastPush(payload: PushPayload): Promise<void> {
+/**
+ * Send push to every stored subscription.
+ *
+ * SECURITY 2026-05-06 (audit WhatsApp #14): si `tenantId` se proporciona,
+ * filtra por tenant para evitar enviar notifs cross-tenant. El parámetro es
+ * opcional por backward compat — los nuevos callers DEBEN pasarlo. Sin
+ * tenantId el comportamiento legacy es global (deprecated, loggear warning).
+ */
+export async function broadcastPush(payload: PushPayload, tenantId?: string): Promise<void> {
   initVapid();
-  const subs = await PushSubscriptionsStore.getAll();
+  const subs = tenantId
+    ? await PushSubscriptionsStore.getAllByTenant(tenantId)
+    : await PushSubscriptionsStore.getAll();
+  if (!tenantId) {
+    // eslint-disable-next-line no-console -- deprecation warning durante migración
+    console.warn("[push-sender] broadcastPush() sin tenantId — deprecated, pasar tenantId explícito");
+  }
   await Promise.allSettled(
     subs.map((s) =>
       webpush.sendNotification(

@@ -289,8 +289,8 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
         {/* Locked state */}
         {isLocked ? (
           <div className="flex flex-col items-center gap-3 py-4">
-            <AlertTriangle size={32} className="text-[var(--data-error)]" />
-            <p className="text-[var(--data-error)] dark:text-[var(--data-error)] font-medium text-center">Cuenta bloqueada temporalmente</p>
+            <AlertTriangle size={32} className="text-[var(--data-error-500)]" />
+            <p className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium text-center">Cuenta bloqueada temporalmente</p>
             <div className="text-3xl font-mono font-bold text-[var(--text-primary)]">
               {fmtSeconds(remainingMs)}
             </div>
@@ -334,7 +334,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key={i}
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      i < attemptsLeft ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-gray-700"
+                      i < attemptsLeft ? "bg-[var(--data-warning-500)]" : "bg-gray-200 dark:bg-gray-700"
                     )}
                   />
                 ))}
@@ -343,7 +343,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
 
             {/* Error message */}
             {errorMsg && (
-              <p className="text-center text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mt-2 mb-0">{errorMsg}</p>
+              <p className="text-center text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-2 mb-0">{errorMsg}</p>
             )}
 
             {/* Numeric keypad */}

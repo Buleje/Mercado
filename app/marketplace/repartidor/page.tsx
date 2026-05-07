@@ -269,7 +269,7 @@ export default function RepartidorPage() {
     return (
       <main className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center px-4 py-10">
         <div className="rounded-3xl border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--accent-soft)] to-[var(--surface-raised)] p-8 sm:p-12 max-w-md w-full text-center">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--data-success)] text-white mb-5">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white mb-5">
             <CheckBadge className="h-12 w-12" />
           </div>
           <h1 className="text-3xl font-extrabold text-[var(--text-primary)] mb-2">
@@ -810,7 +810,7 @@ export default function RepartidorPage() {
               <button
                 type="submit"
                 disabled={loading || !allValid}
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--data-success)] text-base font-extrabold text-white shadow-lg shadow-[var(--data-success)]/25 transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--data-success-500)] text-base font-extrabold text-white shadow-lg shadow-[var(--data-success)]/25 transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -887,7 +887,7 @@ function Stepper({
                 active
                   ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                   : done
-                  ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/5"
+                  ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
               } ${!reachable ? "opacity-50 cursor-not-allowed" : "hover:border-[var(--text-tertiary)]"}`}
             >
@@ -895,7 +895,7 @@ function Stepper({
                 <span
                   className={`h-8 w-8 lg:h-10 lg:w-10 rounded-xl flex items-center justify-center shrink-0 ${
                     done
-                      ? "bg-[var(--data-success)] text-white"
+                      ? "bg-[var(--data-success-500)] text-white"
                       : active
                       ? "bg-[var(--accent)] text-white"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"

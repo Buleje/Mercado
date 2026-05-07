@@ -331,10 +331,10 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
 
   if (error) {
     return (
-      <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/30 p-6 text-center">
-        <AlertTriangle className="w-8 h-8 text-[var(--data-error)] mx-auto mb-2" />
-        <p className="text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">{error}</p>
-        <button onClick={() => void fetchData()} className="px-4 py-2 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-bold transition-colors">
+      <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 p-6 text-center">
+        <AlertTriangle className="w-8 h-8 text-[var(--data-error-500)] mx-auto mb-2" />
+        <p className="text-sm font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">{error}</p>
+        <button onClick={() => void fetchData()} className="px-4 py-2 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-bold transition-colors">
           Reintentar
         </button>
       </div>
@@ -400,7 +400,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
   }
 
   const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-emerald-500" };
-  const actionDotColor = { red: "bg-[var(--data-error)]", orange: "bg-[var(--data-warning)]", blue: "bg-[var(--accent-soft)]" };
+  const actionDotColor = { red: "bg-[var(--data-error-500)]", orange: "bg-[var(--data-warning-500)]", blue: "bg-[var(--accent-soft)]" };
 
   return (
     <div className="space-y-5">
@@ -408,7 +408,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20">
-            <GreetingIcon className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
+            <GreetingIcon className="w-5 h-5 text-primary dark:text-[var(--data-success-500)]" />
           </div>
           <div>
             <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{greetingText}</SectionTitle>
@@ -449,8 +449,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Daily Goal Progress ─────────────────────────────────────────── */}
       {(() => {
         const goalPct = dailyGoal > 0 ? Math.min(Math.round((kpis.todayRevForGoal / dailyGoal) * 100), 100) : 0;
-        const goalColor = goalPct >= 100 ? "bg-[var(--accent-soft)]" : goalPct >= 50 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
-        const goalTextColor = goalPct >= 100 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : goalPct >= 50 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]";
+        const goalColor = goalPct >= 100 ? "bg-[var(--accent-soft)]" : goalPct >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
+        const goalTextColor = goalPct >= 100 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : goalPct >= 50 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]";
         return (
           <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <div className="flex items-center justify-between mb-2">
@@ -587,12 +587,12 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                         <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
                           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{formatCurrency(p.revenue)}</span>
-                          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">+{formatCurrency(p.profit)} ganancia</span>
+                          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{formatCurrency(p.profit)} ganancia</span>
                         </div>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[var(--data-warning)] rounded-full transition-all duration-[var(--dur-slow)]"
+                          className="h-full bg-[var(--data-warning-500)] rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${barPct}%` }}
                         />
                       </div>
@@ -639,9 +639,9 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
           {urgentActions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mb-2">
-                <TrendingUp className="w-5 h-5 text-[var(--data-success)]" />
+                <TrendingUp className="w-5 h-5 text-[var(--data-success-500)]" />
               </div>
-              <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Todo en orden</p>
+              <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Todo en orden</p>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Sin alertas pendientes</p>
             </div>
           ) : (
@@ -776,7 +776,7 @@ function KPICard({
       : "border-[var(--rule-base)] dark:border-card-border";
 
   const alertValue = alert === "red"
-    ? "text-red-600 dark:text-red-400"
+    ? "text-[var(--data-error-600)] dark:text-red-400"
     : alert === "yellow"
       ? "text-yellow-600 dark:text-yellow-400"
       : "text-[var(--text-primary)] dark:text-foreground";
@@ -787,13 +787,13 @@ function KPICard({
       return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted"><TrendingUp className="w-3 h-3" />Nuevo</div>;
     }
     if (t.direction === "gone") {
-      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]"><TrendingDown className="w-3 h-3" />Sin ventas hoy</div>;
+      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"><TrendingDown className="w-3 h-3" />Sin ventas hoy</div>;
     }
     if (t.direction === "up") {
-      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]"><TrendingUp className="w-3 h-3" />+{t.pct}%</div>;
+      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><TrendingUp className="w-3 h-3" />+{t.pct}%</div>;
     }
     if (t.direction === "down") {
-      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]"><TrendingDown className="w-3 h-3" />-{t.pct}%</div>;
+      return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"><TrendingDown className="w-3 h-3" />-{t.pct}%</div>;
     }
     if (sub) return <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">{sub}</p>;
     return <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted"><Minus className="w-3 h-3" />Sin cambio</div>;
@@ -803,7 +803,7 @@ function KPICard({
     <div className={cn("bg-white dark:bg-card rounded-xl border p-4 transition-colors", alertBorder)} title={tooltip}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</span>
-        <Icon className="w-4 h-4 text-primary dark:text-[var(--data-success)] shrink-0" />
+        <Icon className="w-4 h-4 text-primary dark:text-[var(--data-success-500)] shrink-0" />
       </div>
       <p className={cn("text-xl font-extrabold", alertValue)}>{value}</p>
       {renderTrend()}

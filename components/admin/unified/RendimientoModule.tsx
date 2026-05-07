@@ -130,9 +130,9 @@ function ConnectionQualityCard() {
   }
 
   const GRADE_STYLES = {
-    buena: { color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
-    regular: { color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]", dot: "bg-[var(--data-warning)]" },
-    lenta: { color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)]", dot: "bg-[var(--data-error)]" },
+    buena: { color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+    regular: { color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", dot: "bg-[var(--data-warning-500)]" },
+    lenta: { color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)]", dot: "bg-[var(--data-error-500)]" },
   };
   const style = GRADE_STYLES[quality.grade];
 
@@ -245,18 +245,18 @@ function PerformanceHistoryTab() {
   const getGrade = (metric: string, value: number): { color: string; label: string } => {
     if (metric === "lcp") {
       if (value <= 2500) return { color: "bg-[var(--accent-soft)]", label: "Bueno" };
-      if (value <= 4000) return { color: "bg-[var(--data-warning)]", label: "Medio" };
-      return { color: "bg-[var(--data-error)]", label: "Lento" };
+      if (value <= 4000) return { color: "bg-[var(--data-warning-500)]", label: "Medio" };
+      return { color: "bg-[var(--data-error-500)]", label: "Lento" };
     }
     if (metric === "ttfb") {
       if (value <= 200) return { color: "bg-[var(--accent-soft)]", label: "Rápido" };
-      if (value <= 500) return { color: "bg-[var(--data-warning)]", label: "Normal" };
-      return { color: "bg-[var(--data-error)]", label: "Lento" };
+      if (value <= 500) return { color: "bg-[var(--data-warning-500)]", label: "Normal" };
+      return { color: "bg-[var(--data-error-500)]", label: "Lento" };
     }
     if (metric === "cls") {
       if (value <= 0.1) return { color: "bg-[var(--accent-soft)]", label: "Estable" };
-      if (value <= 0.25) return { color: "bg-[var(--data-warning)]", label: "Algo inestable" };
-      return { color: "bg-[var(--data-error)]", label: "Inestable" };
+      if (value <= 0.25) return { color: "bg-[var(--data-warning-500)]", label: "Algo inestable" };
+      return { color: "bg-[var(--data-error-500)]", label: "Inestable" };
     }
     return { color: "bg-gray-400", label: "-" };
   };
@@ -283,7 +283,7 @@ function PerformanceHistoryTab() {
             {history.length > 0 && (
               <button
                 onClick={clearHistory}
-                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                 title="Borrar historial"
               >
                 <Trash2 className="h-4 w-4" />
@@ -483,7 +483,7 @@ function StorageTab() {
           <div
             className={cn(
               "absolute inset-y-0 left-0 rounded-full transition-all duration-[var(--dur-slow)]",
-              usagePct < 50 ? "bg-[var(--accent-soft)]" : usagePct < 80 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+              usagePct < 50 ? "bg-[var(--accent-soft)]" : usagePct < 80 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(usagePct, 100)}%` }}
           />
@@ -505,7 +505,7 @@ function StorageTab() {
           label="Datos guardados"
           value={formatBytes(storage.localStorage)}
           description="Configuración, preferencias y datos temporales"
-          color="text-[var(--data-success)]"
+          color="text-[var(--data-success-500)]"
         />
         <StorageCard
           icon={MemoryStick}
@@ -519,7 +519,7 @@ function StorageTab() {
           label="Caché del sitio"
           value={`${storage.caches} archivos`}
           description="Archivos guardados para cargar más rápido"
-          color="text-[var(--data-success)]"
+          color="text-[var(--data-success-500)]"
         />
       </div>
     </div>

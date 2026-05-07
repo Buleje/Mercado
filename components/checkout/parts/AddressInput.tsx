@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Navigation, Loader2, Home } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { AddressState, UiState } from "../types";
+import { LocationConfirmModal } from "./LocationConfirmModal";
 
 const LeafletMap = dynamic(() => import("../../LeafletMap"), { ssr: false });
 
@@ -46,6 +48,26 @@ export function AddressInput({
   onRequestGeo,
   onSelectSuggestion,
 }: AddressInputProps) {
+  // Modal de confirmación de ubicación — se abre tras el GPS retorne coords.
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  // Detecta cuando el GPS terminó (loadingGeo pasa de true → false con coords nuevas)
+  // Si hay mapLat/mapLon válidos, abre el modal automáticamente.
+  useEffect(() => {
+    if (!ui.loadingGeo && address.mapLat && address.mapLon && address.mapLat !== 0) {
+      // Abrir solo si fue iniciado por el botón GPS (no en saved addresses)
+      if (locationModalOpen === false && address.useNewAddress) {
+        setLocationModalOpen(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ui.loadingGeo, address.mapLat, address.mapLon]);
+
+  const handleRequestGeoFromButton = () => {
+    setLocationModalOpen(true); // Abre el modal en estado loading
+    onRequestGeo();
+  };
+
   return (
     <div className="lg:grid lg:grid-cols-2 lg:gap-4 space-y-4 lg:space-y-0">
       {/* Columna izquierda: Dirección */}
@@ -124,7 +146,7 @@ export function AddressInput({
 
           <button
             type="button"
-            onClick={onRequestGeo}
+            onClick={handleRequestGeoFromButton}
             disabled={ui.loadingGeo}
             data-testid="request-geo"
             className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
@@ -154,7 +176,7 @@ export function AddressInput({
             </span>
           </button>
           {ui.geoError && (
-            <p className="mt-1.5 text-xs text-red-500 flex items-start gap-1.5">
+            <p className="mt-1.5 text-xs text-[var(--data-error-500)] flex items-start gap-1.5">
               <span className="shrink-0 mt-0.5">!</span>
               {ui.geoError}
             </p>
@@ -220,6 +242,17 @@ export function AddressInput({
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación de ubicación GPS — se abre al usar GPS */}
+      <LocationConfirmModal
+        open={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        initialLat={address.mapLat || -8.3791}
+        initialLon={address.mapLon || -74.5539}
+        initialAddress={address.location}
+        loading={ui.loadingGeo}
+        onConfirm={onMapPick}
+      />
     </div>
   );
 }

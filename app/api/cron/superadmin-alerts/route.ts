@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         subject: `🆕 Nueva tienda: ${t.name} (${t.plan})`,
         title: "🆕 Nueva Tienda Registrada",
         items: [
-          { label: "Tienda", value: t.name, color: "#33C4B8" },
+          { label: "Tienda", value: t.name, color: "color-mix(in oklab, var(--accent) 70%, white)" },
           { label: "Slug", value: t.slug },
           { label: "Plan", value: t.plan.toUpperCase(), color: "#34d399" },
           { label: "Email", value: t.ownerEmail ?? "—" },

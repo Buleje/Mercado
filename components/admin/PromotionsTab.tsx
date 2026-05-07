@@ -12,6 +12,7 @@ import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
+import { useSettings } from "@/contexts/settings-context";
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -69,7 +70,16 @@ const emptyCampaign: Omit<ScheduledCampaign, "id" | "createdAt" | "status"> = {
   startDate: "", endDate: "", messageTemplate: "", discountCode: "", autoSend: false,
 };
 
+/** Reemplaza `{TIENDA}` con el nombre del negocio dinámicamente. */
+function applyStoreName(template: string, storeName: string): string {
+  return template.replace(/\{TIENDA\}/g, `*${storeName}*`);
+}
+
 export default function PromotionsTab() {
+  const { businessName, storeTheme } = useSettings();
+  const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
+    || businessName?.trim()
+    || "Tu Tienda";
   const [promos, setPromos] = useState<DbPromotion[]>([]);
   const [customers, setCustomers] = useState<DbCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,21 +139,21 @@ export default function PromotionsTab() {
 
   const campaignTemplates: { name: string; icon: string; description: string; form: PromoForm }[] = [
     { name: "🎄 Navidad & Año Nuevo", icon: "🎄", description: "Descuento navideño para fiestas de fin de año",
-      form: { name: "Fiestas de Fin de Año", description: "¡Celebra con precios especiales! Descuento en toda tu compra navideña.", discountPercent: 15, minPurchase: "50", imageUrl: "", message: "🎄 *Buleje* te desea ¡Felices Fiestas! 🎉\nLleva un *15% de descuento* en compras mayores a S/50.\n¡Haz tu pedido ahora!", targetType: "all", expiresAt: "" }},
+      form: { name: "Fiestas de Fin de Año", description: "¡Celebra con precios especiales! Descuento en toda tu compra navideña.", discountPercent: 15, minPurchase: "50", imageUrl: "", message: "🎄 {TIENDA} te desea ¡Felices Fiestas! 🎉\nLleva un *15% de descuento* en compras mayores a S/50.\n¡Haz tu pedido ahora!", targetType: "all", expiresAt: "" }},
     { name: "🇵🇪 Fiestas Patrias", icon: "🇵🇪", description: "Celebración patria con ofertas en canasta de productos peruanos",
-      form: { name: "Fiestas Patrias", description: "¡Viva el Perú! Descuentos especiales en tu canasta patriota.", discountPercent: 12, minPurchase: "40", imageUrl: "", message: "🇵🇪 ¡Felices Fiestas Patrias! 🎉\n*Buleje* tiene *12% de descuento* en compras mayores a S/40.\n¡Arma tu canasta patriota!", targetType: "all", expiresAt: "" }},
+      form: { name: "Fiestas Patrias", description: "¡Viva el Perú! Descuentos especiales en tu canasta patriota.", discountPercent: 12, minPurchase: "40", imageUrl: "", message: "🇵🇪 ¡Felices Fiestas Patrias! 🎉\n{TIENDA} tiene *12% de descuento* en compras mayores a S/40.\n¡Arma tu canasta patriota!", targetType: "all", expiresAt: "" }},
     { name: "💖 Día de la Madre", icon: "💖", description: "Sorprende a mamá con la mejor canasta de productos",
-      form: { name: "Día de la Madre", description: "Un detalle especial para mamá con descuento exclusivo.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "💖 ¡Feliz Día de la Madre! 🌸\n*10% de descuento* en compras mayores a S/30.\n¡Sorpréndela con la mejor canasta de *Buleje*!", targetType: "all", expiresAt: "" }},
+      form: { name: "Día de la Madre", description: "Un detalle especial para mamá con descuento exclusivo.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "💖 ¡Feliz Día de la Madre! 🌸\n*10% de descuento* en compras mayores a S/30.\n¡Sorpréndela con la mejor canasta de {TIENDA}!", targetType: "all", expiresAt: "" }},
     { name: "🎒 Vuelta a Clases", icon: "🎒", description: "Ofertas en lonchera saludable y snacks para el colegio",
-      form: { name: "Vuelta a Clases", description: "Lonchera saludable con descuento. ¡La mejor nutrición para tus hijos!", discountPercent: 8, minPurchase: "25", imageUrl: "", message: "🎒 *Vuelta a Clases* con Buleje 📚\n*8% de descuento* en tu compra de lonchera mayor a S/25.\n¡Nutrición y ahorro!", targetType: "all", expiresAt: "" }},
+      form: { name: "Vuelta a Clases", description: "Lonchera saludable con descuento. ¡La mejor nutrición para tus hijos!", discountPercent: 8, minPurchase: "25", imageUrl: "", message: "🎒 *Vuelta a Clases* con {TIENDA} 📚\n*8% de descuento* en tu compra de lonchera mayor a S/25.\n¡Nutrición y ahorro!", targetType: "all", expiresAt: "" }},
     { name: "🖤 Black Friday / Cyber", icon: "🖤", description: "Super descuento por tiempo limitado",
-      form: { name: "Black Friday", description: "¡El descuento más grande del año! Solo por tiempo limitado.", discountPercent: 20, minPurchase: "60", imageUrl: "", message: "🖤 *BLACK FRIDAY* en Buleje 🔥\n¡*20% de descuento* en compras mayores a S/60!\n⏰ Solo por tiempo limitado. ¡No te lo pierdas!", targetType: "all", expiresAt: "" }},
+      form: { name: "Black Friday", description: "¡El descuento más grande del año! Solo por tiempo limitado.", discountPercent: 20, minPurchase: "60", imageUrl: "", message: "🖤 *BLACK FRIDAY* en {TIENDA} 🔥\n¡*20% de descuento* en compras mayores a S/60!\n⏰ Solo por tiempo limitado. ¡No te lo pierdas!", targetType: "all", expiresAt: "" }},
     { name: "🌞 Verano", icon: "🌞", description: "Refrescos, frutas y ofertas de temporada calurosa",
-      form: { name: "Ofertas de Verano", description: "¡Combate el calor! Descuentos en refrescos, frutas y más.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "🌞 *¡Ofertas de Verano!* 🍉\n*10% de descuento* en compras mayores a S/30.\n¡Refréscate con *Buleje*!", targetType: "all", expiresAt: "" }},
+      form: { name: "Ofertas de Verano", description: "¡Combate el calor! Descuentos en refrescos, frutas y más.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "🌞 *¡Ofertas de Verano!* 🍉\n*10% de descuento* en compras mayores a S/30.\n¡Refréscate con {TIENDA}!", targetType: "all", expiresAt: "" }},
     { name: "❤️ San Valentín", icon: "❤️", description: "Ofertas para parejas y celebraciones románticas",
-      form: { name: "San Valentín", description: "¡Celebra el amor! Descuento especial para este día.", discountPercent: 10, minPurchase: "35", imageUrl: "", message: "❤️ *¡Feliz San Valentín!* 🌹\n*10% de descuento* en compras mayores a S/35.\n¡Sorprende a esa persona especial con *Buleje*!", targetType: "all", expiresAt: "" }},
+      form: { name: "San Valentín", description: "¡Celebra el amor! Descuento especial para este día.", discountPercent: 10, minPurchase: "35", imageUrl: "", message: "❤️ *¡Feliz San Valentín!* 🌹\n*10% de descuento* en compras mayores a S/35.\n¡Sorprende a esa persona especial con {TIENDA}!", targetType: "all", expiresAt: "" }},
     { name: "🎃 Halloween", icon: "🎃", description: "Dulces, snacks y decoración con descuento",
-      form: { name: "Halloween", description: "¡Truco o trato! Descuento en dulces y snacks para la noche de brujas.", discountPercent: 8, minPurchase: "20", imageUrl: "", message: "🎃 *¡Halloween en Buleje!* 👻\n*8% de descuento* en compras mayores a S/20.\n¡Prepárate para la noche más divertida!", targetType: "all", expiresAt: "" }},
+      form: { name: "Halloween", description: "¡Truco o trato! Descuento en dulces y snacks para la noche de brujas.", discountPercent: 8, minPurchase: "20", imageUrl: "", message: "🎃 *¡Halloween en {TIENDA}!* 👻\n*8% de descuento* en compras mayores a S/20.\n¡Prepárate para la noche más divertida!", targetType: "all", expiresAt: "" }},
   ];
 
   const applyTemplate = (tpl: typeof campaignTemplates[0]) => {
@@ -380,7 +390,8 @@ export default function PromotionsTab() {
 
   const sendToAll = async () => {
     if (!sendPromo) return;
-    const msg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`;
+    const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+    const msg = applyStoreName(rawMsg, storeName);
     const phones = Array.from(sendPhones);
     if (phones.length === 0) return;
 
@@ -431,13 +442,13 @@ export default function PromotionsTab() {
       {promos.length > 0 && (
         <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
           <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[var(--data-success)]" />
+            <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
             Rendimiento de Promociones
           </CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
-              <p className="text-lg font-extrabold text-[var(--data-success)]">{active.length}</p>
+              <p className="text-lg font-extrabold text-[var(--data-success-500)]">{active.length}</p>
             </div>
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
@@ -458,8 +469,8 @@ export default function PromotionsTab() {
             {promoMetrics.slice(0, 6).map(p => (
               <span key={p.id} className={cn(
                 "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-                p.estimatedUses > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
-                p.estimatedUses < 3 ? "bg-gray-100 text-[var(--text-secondary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                p.estimatedUses > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                p.estimatedUses < 3 ? "bg-gray-100 text-[var(--text-secondary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
               )}>
                 {p.estimatedUses > 10 ? "🔥" : p.estimatedUses < 3 ? "💤" : "📊"} {p.name}: ~{p.estimatedUses} usos
               </span>
@@ -499,9 +510,9 @@ export default function PromotionsTab() {
             {campaigns.map(c => {
               const statusConfig = {
                 scheduled: { label: "Programada", color: "bg-gray-100 text-[var(--text-primary)]", icon: Clock },
-                active: { label: "Activa", color: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: Play },
-                completed: { label: "Finalizada", color: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: Check },
-                paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", icon: Pause },
+                active: { label: "Activa", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Play },
+                completed: { label: "Finalizada", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Check },
+                paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: Pause },
               };
               const config = statusConfig[c.status];
               const StatusIcon = config.icon;
@@ -523,8 +534,8 @@ export default function PromotionsTab() {
                       <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
                         <span>Inicio: {new Date(c.startDate).toLocaleString("es-PE")}</span>
                         {c.endDate && <span>Fin: {new Date(c.endDate).toLocaleString("es-PE")}</span>}
-                        {c.discountCode && <span className="font-mono font-bold text-[var(--data-success)]">Código: {c.discountCode}</span>}
-                        {c.autoSend && <span className="text-[var(--data-success)]">📤 Auto-envío</span>}
+                        {c.discountCode && <span className="font-mono font-bold text-[var(--data-success-500)]">Código: {c.discountCode}</span>}
+                        {c.autoSend && <span className="text-[var(--data-success-500)]">📤 Auto-envío</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -532,7 +543,7 @@ export default function PromotionsTab() {
                         <>
                           <button
                             onClick={() => sendCampaignNow(c)}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                             title="Enviar ahora"
                           >
                             <Send className="h-4 w-4" />
@@ -540,7 +551,7 @@ export default function PromotionsTab() {
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
                             className={cn("p-1.5 rounded-lg transition-colors",
-                              c.status === "paused" ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "text-[var(--data-warning)] hover:bg-[var(--data-warning-50)]"
+                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
                             )}
                             title={c.status === "paused" ? "Reanudar" : "Pausar"}
                           >
@@ -550,14 +561,14 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteCampaign(c.id)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -587,7 +598,7 @@ export default function PromotionsTab() {
           </button>
           <button
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-[var(--data-warning)] hover:bg-[var(--data-warning)] transition-colors "
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] transition-colors "
           >
             <Calendar className="h-4 w-4" /> Plantillas
           </button>
@@ -613,7 +624,7 @@ export default function PromotionsTab() {
               <div className="flex">
                 {/* Accent strip */}
                 <div className={cn("w-1.5 shrink-0",
-                  p.active ? (p.discountPercent > 0 ? "bg-[var(--data-error)]" : "bg-[var(--accent-soft)]") : "bg-gray-200"
+                  p.active ? (p.discountPercent > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--accent-soft)]") : "bg-gray-200"
                 )} />
                 <div className="flex-1">
                   <div
@@ -631,18 +642,18 @@ export default function PromotionsTab() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                            p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                           )}>
                             {p.active ? "Activa" : "Inactiva"}
                           </span>
                           {p.discountPercent > 0 && (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
                               {p.discountPercent}% OFF
                             </span>
                           )}
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
-                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                            p.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                           )}>
                             {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
                           </span>
@@ -657,28 +668,28 @@ export default function PromotionsTab() {
                       <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                           title="Editar"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
+                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
                           <Check className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -833,15 +844,15 @@ export default function PromotionsTab() {
               )}
               <div className="flex flex-wrap gap-2">
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                  detailPromo.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
                     <Percent className="h-3 w-3" /> {detailPromo.discountPercent}% OFF
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                  detailPromo.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
@@ -859,7 +870,7 @@ export default function PromotionsTab() {
               {detailPromo.message && (
                 <div>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
-                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success)]/30">{detailPromo.message}</div>
+                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
@@ -917,8 +928,8 @@ export default function PromotionsTab() {
             {/* Message preview */}
             <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Vista previa del mensaje</p>
-              <div className="bg-[var(--accent-soft)] rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success)]/30 max-h-24 overflow-y-auto">
-                {sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`}
+              <div className="bg-[var(--accent-soft)] rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
+                {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
               </div>
             </div>
             {/* Customer selection */}
@@ -953,10 +964,10 @@ export default function PromotionsTab() {
                     </div>
                     <button
                       onClick={() => {
-                        const msg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`;
-                        sendWhatsApp(c.phone, msg);
+                        const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+                        sendWhatsApp(c.phone, applyStoreName(rawMsg, storeName));
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1"
                     >
                       <Send className="h-3 w-3" /> Enviar
                     </button>
@@ -1012,7 +1023,7 @@ export default function PromotionsTab() {
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">¿Eliminar promoción?</CardTitle>
@@ -1021,7 +1032,7 @@ export default function PromotionsTab() {
             </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors">Sí, eliminar</button>
+              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -1045,13 +1056,13 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning)]/10 hover:border-[var(--data-warning)] dark:hover:border-[var(--data-warning)] transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
                 >
                   <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{tpl.name}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
-                    <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
+                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
                   </div>
                 </button>
               ))}

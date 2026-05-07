@@ -213,13 +213,13 @@ export default function WeeklyCashFlowTable() {
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           <p className="text-xs text-[var(--text-tertiary)]">Total compras</p>
-          <p className="text-xl font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+          <p className="text-xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             {fmt(totals.purchases)}
           </p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           <p className="text-xs text-[var(--text-tertiary)]">Total gastos</p>
-          <p className="text-xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+          <p className="text-xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
             {fmt(totals.expenses)}
           </p>
         </div>
@@ -227,8 +227,8 @@ export default function WeeklyCashFlowTable() {
           className={cn(
             "rounded-xl border p-3",
             totals.net >= 0
-              ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-              : "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10"
+              ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10"
           )}
         >
           <div className="flex items-center justify-between">
@@ -238,9 +238,9 @@ export default function WeeklyCashFlowTable() {
                 className={cn(
                   "text-xs font-medium flex items-center gap-0.5",
                   netTrend > 0
-                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                     : netTrend < 0
-                    ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     : "text-[var(--text-secondary)]"
                 )}
               >
@@ -259,8 +259,8 @@ export default function WeeklyCashFlowTable() {
             className={cn(
               "text-xl font-bold",
               totals.net >= 0
-                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
             {fmt(totals.net)}
@@ -270,7 +270,7 @@ export default function WeeklyCashFlowTable() {
 
       {/* Error / Loading */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error} — mostrando datos estimados
         </div>
@@ -346,9 +346,9 @@ export default function WeeklyCashFlowTable() {
                         className={cn(
                           "px-3 py-2.5 text-right text-xs tabular-nums",
                           val > 0
-                            ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                            ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                             : val < 0
-                            ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                            ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                             : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                         )}
                       >
@@ -361,9 +361,9 @@ export default function WeeklyCashFlowTable() {
                       className={cn(
                         "px-4 py-2.5 text-right text-xs tabular-nums font-semibold",
                         rowTotal > 0
-                          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : rowTotal < 0
-                          ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                          ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                           : "text-[var(--text-tertiary)]"
                       )}
                     >
@@ -387,8 +387,8 @@ export default function WeeklyCashFlowTable() {
             className={cn(
               "font-semibold",
               netTrend > 0
-                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
             {Math.abs(netTrend).toFixed(1)}%

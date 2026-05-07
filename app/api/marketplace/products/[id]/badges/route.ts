@@ -98,7 +98,19 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06 (audit anterior HIGH #4): derivar tenantId del
+    // producto mismo. Antes el header podía cruzar y un atacante con header
+    // `x-tenant-id: tenant-A` podía leer badges agregados del producto si el
+    // mismo productId existe en distintos tenants. La cache también quedaba
+    // cross-contaminada por la key.
+    const productOwner = await prisma.product.findFirst({
+      where: { id: productId, deletedAt: null },
+      select: { tenantId: true },
+    });
+    if (!productOwner) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+    }
+    const tenantId = productOwner.tenantId;
     const { searchParams } = new URL(req.url);
     const lat = searchParams.get("lat") ? Number(searchParams.get("lat")) : undefined;
     const lng = searchParams.get("lng") ? Number(searchParams.get("lng")) : undefined;

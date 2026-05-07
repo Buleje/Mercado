@@ -38,12 +38,12 @@ type Props = {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "out" }> = {
-  compra:           { label: "Compra",       color: "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
-  devolucion:       { label: "Devolución",   color: "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",           dir: "in" },
-  ajuste_positivo:  { label: "Ajuste (+)",   color: "text-[var(--data-info)] dark:text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-sky-950/30",               dir: "in" },
-  venta:            { label: "Venta POS",    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30",       dir: "out" },
-  venta_online:     { label: "Venta Online", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",   dir: "out" },
-  ajuste_negativo:  { label: "Ajuste (-)",   color: "text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30",               dir: "out" },
+  compra:           { label: "Compra",       color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  devolucion:       { label: "Devolución",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",           dir: "in" },
+  ajuste_positivo:  { label: "Ajuste (+)",   color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-sky-950/30",               dir: "in" },
+  venta:            { label: "Venta POS",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30",       dir: "out" },
+  venta_online:     { label: "Venta Online", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",   dir: "out" },
+  ajuste_negativo:  { label: "Ajuste (-)",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30",               dir: "out" },
   merma:            { label: "Pérdida",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)]",           dir: "out" },
 };
 
@@ -160,7 +160,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
 
           {error && (
             <div className="text-center py-16">
-              <p className="text-sm text-[var(--data-error)]">{error}</p>
+              <p className="text-sm text-[var(--data-error-500)]">{error}</p>
               <button onClick={load} className="mt-2 text-xs text-primary font-bold hover:underline">Reintentar</button>
             </div>
           )}
@@ -169,17 +169,17 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
             <>
               {/* Summary cards */}
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 text-center">
-                  <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.resumen.totalEntradas}</p>
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]/70 uppercase">Total entradas</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                  <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.resumen.totalEntradas}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Total entradas</p>
                 </div>
-                <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-3 text-center">
-                  <p className="text-lg font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">{data.resumen.totalSalidas}</p>
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)]/70 uppercase">Total salidas</p>
+                <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-3 text-center">
+                  <p className="text-lg font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{data.resumen.totalSalidas}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)]/70 uppercase">Total salidas</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 text-center">
-                  <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.resumen.saldoFinal}</p>
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]/70 uppercase">Saldo final</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                  <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.resumen.saldoFinal}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Saldo final</p>
                 </div>
               </div>
 
@@ -215,10 +215,10 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                               </span>
                             </td>
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted truncate max-w-[120px]">{m.referencia || "—"}</td>
-                            <td className={cn("py-2 text-right font-bold", m.entrada > 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                            <td className={cn("py-2 text-right font-bold", m.entrada > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.entrada > 0 ? `+${m.entrada}` : "—"}
                             </td>
-                            <td className={cn("py-2 text-right font-bold", m.salida > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                            <td className={cn("py-2 text-right font-bold", m.salida > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.salida > 0 ? `-${m.salida}` : "—"}
                             </td>
                             <td className="py-2 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{m.saldo}</td>
@@ -229,8 +229,8 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                     <tfoot>
                       <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
                         <td colSpan={3} className="py-2 text-[var(--text-primary)] dark:text-foreground">Totales</td>
-                        <td className="py-2 text-right text-[var(--data-success)] dark:text-[var(--data-success)]">+{data.resumen.totalEntradas}</td>
-                        <td className="py-2 text-right text-[var(--data-error)] dark:text-[var(--data-error)]">-{data.resumen.totalSalidas}</td>
+                        <td className="py-2 text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{data.resumen.totalEntradas}</td>
+                        <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">-{data.resumen.totalSalidas}</td>
                         <td className="py-2 text-right text-primary font-extrabold">{data.resumen.saldoFinal}</td>
                       </tr>
                     </tfoot>

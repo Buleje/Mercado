@@ -62,7 +62,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.nombre}
             onChange={e => handleChange('nombre', e.target.value)}
             placeholder="Ej: María López"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
 
@@ -75,7 +75,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.celular}
             onChange={e => handleChange('celular', e.target.value)}
             placeholder="Ej: 961234567"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.limiteFiado}
             onChange={e => handleChange('limiteFiado', parseInt(e.target.value) || 0)}
             placeholder="100"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
           />
           <p className="text-xs text-gray-400 mt-1">Monto máximo que puede deber este cliente</p>
         </div>
@@ -99,14 +99,14 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
       <button
         onClick={handleNext}
         disabled={!hasValidClient}
-        className="w-full py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-md shadow-[#00B4A6]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Siguiente &rarr;
       </button>
 
       <button
         onClick={handleSkip}
-        className="w-full text-sm text-gray-400 hover:text-[#00B4A6] transition-colors py-2"
+        className="w-full text-sm text-gray-400 hover:text-[var(--accent)] transition-colors py-2"
       >
         Saltar este paso &rarr;
       </button>

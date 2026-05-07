@@ -156,7 +156,7 @@ export function TenantGrowthChart({ range }: Props) {
       )}
 
       {error && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-[var(--data-error)]">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}

@@ -99,7 +99,7 @@ export default function EarningsTodayHero({
   return (
     <section
       aria-label="Ganancias de hoy"
-      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--accent)] via-[var(--accent)] to-emerald-700 text-white shadow-2xl shadow-[var(--accent)]/30 p-5 sm:p-7 lg:p-9"
+      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--accent)] via-[var(--accent)] to-[var(--data-success-700)] text-white shadow-2xl shadow-[var(--accent)]/30 p-5 sm:p-7 lg:p-9"
     >
       {/* Decorative orbs — más capas para profundidad */}
       <div

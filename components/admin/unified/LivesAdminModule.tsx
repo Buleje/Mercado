@@ -172,7 +172,7 @@ export default function LivesAdminModule() {
       {/* Hero CTA */}
       <div className="bg-white border-2 border-primary/20 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-red-500 to-[#00B4A6] text-white flex items-center justify-center shrink-0">
+          <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-[var(--data-error-500)] to-[var(--accent)] text-white flex items-center justify-center shrink-0">
             <Radio className="h-7 w-7" />
           </div>
           <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ export default function LivesAdminModule() {
             </button>
             <button
               onClick={() => setShowStart(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors shadow-sm"
             >
               <Play className="h-4 w-4" />
               Empezar ahora
@@ -206,7 +206,7 @@ export default function LivesAdminModule() {
           label="Transmisiones este mes"
           value={transmisionesEsteMes}
           icon={Radio}
-          color="#00B4A6"
+          color="var(--accent)"
           subtitle="En el periodo actual"
         />
         <KPICard
@@ -285,7 +285,7 @@ export default function LivesAdminModule() {
                     </button>
                     <button
                       onClick={() => handleCancelScheduled(s.id)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                       title="Cancelar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -311,7 +311,7 @@ export default function LivesAdminModule() {
           </div>
         ) : (
           <>
-            <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl text-xs text-[var(--data-info)]">
+            <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-xs text-[var(--data-info-500)]">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <p>
                 Las métricas se actualizan en tiempo real durante cada transmisión y se consolidan

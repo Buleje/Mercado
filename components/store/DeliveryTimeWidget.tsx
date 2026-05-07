@@ -89,8 +89,8 @@ export default function DeliveryTimeWidget() {
   };
 
   const iconColors = {
-    open: "text-emerald-600 dark:text-emerald-400",
-    closing: "text-amber-600 dark:text-amber-400",
+    open: "text-[var(--data-success-600)] dark:text-emerald-400",
+    closing: "text-[var(--data-warning-600)] dark:text-amber-400",
     closed: "text-[var(--text-tertiary)]",
   };
 

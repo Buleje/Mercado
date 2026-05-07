@@ -9,7 +9,12 @@ import { logger } from "@/lib/logger";
  * Called from POSCajaModule.tsx when the user confirms shift close.
  */
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  // SECURITY 2026-05-06 (pentest H5): solo admin/owner pueden cerrar turno.
+  // Antes el cajero auto-cerraba con `closingAmount` calculado desde
+  // movements (sin arqueo físico) → encubría robos del cajero al saltarse
+  // el conteo manual. Ahora cajero abre/movimientos pero el cierre con
+  // arqueo físico requiere admin.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {

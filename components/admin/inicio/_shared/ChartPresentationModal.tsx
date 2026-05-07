@@ -211,7 +211,7 @@ export function ChartPresentationModal({
           <div className="min-w-0">
             <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-gray-500">
               Presentación · {activeIdx + 1} de {items.length}
-              {autoplay && <span className="ml-2 text-[var(--data-success)]">· Modo TV</span>}
+              {autoplay && <span className="ml-2 text-[var(--data-success-500)]">· Modo TV</span>}
             </p>
             <h2 className="text-lg font-extrabold tracking-tight text-gray-900 leading-tight truncate">
               {activeItem.title}
@@ -248,7 +248,7 @@ export function ChartPresentationModal({
             className={cn(
               "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
               autoplay
-                ? "bg-[var(--data-success)] text-white border-[var(--data-success)]"
+                ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
                 : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400",
             )}
           >
@@ -278,7 +278,7 @@ export function ChartPresentationModal({
           data-export-hide="true"
         >
           <div
-            className="h-full bg-[var(--data-success)] transition-[width] duration-75 ease-linear"
+            className="h-full bg-[var(--data-success-500)] transition-[width] duration-75 ease-linear"
             style={{ width: `${autoplayProgress}%` }}
             role="progressbar"
             aria-valuenow={Math.round(autoplayProgress)}

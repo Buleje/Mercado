@@ -164,8 +164,8 @@ export default function PayablesTab() {
             >
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm truncate">{s.name}</p>
               <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error)] font-bold">Debe: S/{s.pending.toFixed(2)}</span>
-                <span className="text-xs text-[var(--data-success)]">Pagado: S/{s.totalPaid.toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{s.pending.toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{s.totalPaid.toFixed(2)}</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
             </button>
@@ -199,8 +199,8 @@ export default function PayablesTab() {
                     {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
                       <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-foreground">S/{p.amount.toFixed(2)}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success)]">S/{p.paidAmount.toFixed(2)}</span></span>
-                      <span>Restante: <span className="font-bold text-[var(--data-error)]">S/{remaining.toFixed(2)}</span></span>
+                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{p.paidAmount.toFixed(2)}</span></span>
+                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
                       <span>Vence: {formatDate(p.dueDate)}</span>
                     </div>
                     {/* Progress bar */}
@@ -216,7 +216,7 @@ export default function PayablesTab() {
                     {p.status !== "pagado" && (
                       <button
                         onClick={() => { setShowPayment(showPayment === p.id ? null : p.id); setPayForm({ amount: String(remaining.toFixed(2)), method: "efectivo", reference: "" }); }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] text-xs font-bold transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-xs font-bold transition-colors"
                       >
                         <DollarSign className="h-3.5 w-3.5" /> Pagar
                       </button>
@@ -224,7 +224,7 @@ export default function PayablesTab() {
                     <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                       {expanded === p.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
-                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

@@ -157,12 +157,12 @@ function InlineKPIStrip() {
   }
 
   const items = [
-    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-[var(--data-success)]" },
-    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-[var(--data-success)]" },
-    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]" },
+    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-[var(--data-success-500)]" },
+    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-[var(--data-success-500)]" },
+    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]" },
     { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
-    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)]" },
-    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-[var(--data-info)]" },
+    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]" },
+    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
   ];
 
   return (
@@ -191,23 +191,23 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
 
       if (section === "ventas") {
           setItems([
-            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success)]" },
-            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success)]" },
+            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
+            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
             { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-[var(--text-secondary)]" },
-            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-[var(--data-warning)]" },
+            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-[var(--data-warning-500)]" },
           ]);
         } else if (section === "productos") {
           setItems([
-            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-[var(--data-success)]" },
-            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-[var(--data-success)]" },
-            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-[var(--data-error)]" },
-            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-[var(--data-info)]" },
+            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-[var(--data-success-500)]" },
+            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-[var(--data-success-500)]" },
+            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-[var(--data-error-500)]" },
+            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
           ]);
         } else if (section === "clientes") {
           setItems([
-            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-[var(--data-success)]" },
-            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-[var(--data-success)]" },
-            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-error)]" },
+            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-[var(--data-success-500)]" },
+            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-[var(--data-success-500)]" },
+            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-error-500)]" },
             { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-[var(--text-secondary)]" },
           ]);
         }
@@ -358,9 +358,9 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
                 <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
                 <td className="px-3 py-3 text-center">
                   {c.tendencia > 5 ? (
-                    <span className="text-[var(--data-success)] text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
                   ) : c.tendencia < -5 ? (
-                    <span className="text-[var(--data-error)] text-xs font-bold">&#8595; {c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-error-500)] text-xs font-bold">&#8595; {c.tendencia.toFixed(0)}%</span>
                   ) : (
                     <span className="text-[var(--text-tertiary)] text-xs font-bold">&#8594; Estable</span>
                   )}
@@ -463,7 +463,7 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
             <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
             <span className="text-sm font-bold text-primary">S/{star.revenue.toFixed(0)}</span>
             {star.trend !== 0 && (
-              <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
+              <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                 {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{star.trend.toFixed(0)}% vs sem. pasada
               </span>
             )}
@@ -502,7 +502,7 @@ function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
     return (
       <div className="text-center py-8">
         <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-[var(--data-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>

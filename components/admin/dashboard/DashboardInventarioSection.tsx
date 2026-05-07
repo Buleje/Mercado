@@ -29,7 +29,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success)]", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-[var(--accent-soft)] text-[var(--data-success)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
+  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -40,8 +40,8 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <div className="w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30 flex items-center justify-center">
-                <Package className="h-3.5 w-3.5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+              <div className="w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center">
+                <Package className="h-3.5 w-3.5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Inventario</CardTitle>
             </div>
@@ -53,15 +53,15 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
           <ExpiredBatchesWidget />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={DollarSign} accent="text-amber-500" />
-            <Kpi label="Stock Crítico" value={String(st.stockCritico.length)} icon={AlertTriangle} accent={st.stockCritico.length>0?"text-red-500":"text-[var(--data-success)]"} />
-            <Kpi label="Agotados" value={String(st.agotados.length)} icon={PackageX} accent={st.agotados.length>0?"text-red-500":"text-[var(--data-success)]"} />
+            <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={DollarSign} accent="text-[var(--data-warning-500)]" />
+            <Kpi label="Stock Crítico" value={String(st.stockCritico.length)} icon={AlertTriangle} accent={st.stockCritico.length>0?"text-[var(--data-error-500)]":"text-[var(--data-success-500)]"} />
+            <Kpi label="Agotados" value={String(st.agotados.length)} icon={PackageX} accent={st.agotados.length>0?"text-[var(--data-error-500)]":"text-[var(--data-success-500)]"} />
             <Kpi label="Sin Movimiento" value={String(st.sinMov.length)} icon={Timer} accent="text-[var(--text-tertiary)]" />
           </div>
 
           <Card title="Productos con stock crítico" icon={AlertTriangle}>
             {st.stockCritico.length===0&&st.agotados.length===0?(
-              <div className="py-6 text-center text-xs text-[var(--data-success)] font-medium">Inventario saludable</div>
+              <div className="py-6 text-center text-xs text-[var(--data-success-500)] font-medium">Inventario saludable</div>
             ):(
               <div className="space-y-1">
                 {st.agotados.map((p: any) => (
@@ -82,22 +82,22 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                       {/* E2 — Margin badge */}
                       {p.costPrice != null && p.price > 0 && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
+                        <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
                           {Math.round((p.price - p.costPrice) / p.price * 100)}% mg
                         </span>
                       )}
                       {/* J2 — Suggested price (30% margin target) */}
                       {p.costPrice != null && p.costPrice > 0 && (
-                        <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--data-success)]" title="Precio sugerido (30% margen)">
+                        <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--data-success-500)]" title="Precio sugerido (30% margen)">
                           →S/{(p.costPrice / 0.7).toFixed(2)}
                         </span>
                       )}
-                      <span className="text-xs font-semibold text-[var(--data-warning)]">{p.stock}/{p.stockMin} uds</span>
+                      <span className="text-xs font-semibold text-[var(--data-warning-500)]">{p.stock}/{p.stockMin} uds</span>
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(`Hola, necesito reponer: ${p.name}. Stock actual: ${p.stock} uds (mínimo: ${p.stockMin}). Por favor confirmar disponibilidad y precio.`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:hover:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded transition-colors"
+                        className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:hover:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded transition-colors"
                         title="Pedir al proveedor por WhatsApp"
                       >
                         Pedir
@@ -111,7 +111,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
           <Card title="Productos sin movimiento" icon={Timer}>
             {st.sinMov.length===0?(
-              <div className="py-6 text-center text-xs text-[var(--data-success)] font-medium">Todos con rotación</div>
+              <div className="py-6 text-center text-xs text-[var(--data-success-500)] font-medium">Todos con rotación</div>
             ):(
               <div className="space-y-0.5">
                 {st.sinMov.slice(0,20).map((p: any) => (
@@ -183,8 +183,8 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                 );
                               })}
                               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-2.5 text-xs mt-3">
-                                <div className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Sugerencia</div>
-                                <p className="text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                                <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Sugerencia</div>
+                                <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                                   Crea un combo especial con estos productos o sugiérelos activamente cuando vendes {product.name}.
                                 </p>
                               </div>
@@ -218,15 +218,15 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
           {/* Stock Projection - Intelligent forecasting */}
           <Card title="Proyección de Stock (Próximos 30 días)" icon={TrendingDown}>
             {st.criticalStock.length === 0 && st.needsReorderSoon.length === 0 ? (
-              <div className="py-6 text-center text-xs text-[var(--data-success)] font-medium">Stock proyectado saludable</div>
+              <div className="py-6 text-center text-xs text-[var(--data-success-500)] font-medium">Stock proyectado saludable</div>
             ) : (
               <div className="space-y-6">
                 {/* Critical products (< 7 days) */}
                 {st.criticalStock.length > 0 && (
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <AlertTriangle className="w-4 h-4 text-[var(--data-error)]" />
-                      <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">Crítico (&lt;7 días)</span>
+                      <AlertTriangle className="w-4 h-4 text-[var(--data-error-500)]" />
+                      <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Crítico (&lt;7 días)</span>
                     </div>
                     <div className="space-y-1.5">
                       {st.criticalStock.map((p: any) => (
@@ -244,14 +244,14 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                           </div>
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
-                              <div className="text-xs font-semibold text-[var(--data-error)]">{p.stock} uds</div>
+                              <div className="text-xs font-semibold text-[var(--data-error-500)]">{p.stock} uds</div>
                               <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedir: {p.suggestedOrderQty}</div>
                             </div>
                             <a
                               href={`https://wa.me/?text=${encodeURIComponent(`URGENTE: ${p.name}\n\nStock actual: ${p.stock} uds\nSe agota en: ${Math.floor(p.daysRemaining)} días\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad inmediata.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] px-2 py-1 rounded transition-colors"
+                              className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] px-2 py-1 rounded transition-colors"
                               title="Pedir URGENTE por WhatsApp"
                             >
                               Ordenar (urgente)
@@ -267,8 +267,8 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                 {st.needsReorderSoon.length > 0 && (
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <Clock className="w-4 h-4 text-[var(--data-warning)]" />
-                      <span className="text-xs font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Reordenar pronto (7-14 días)</span>
+                      <Clock className="w-4 h-4 text-[var(--data-warning-500)]" />
+                      <span className="text-xs font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Reordenar pronto (7-14 días)</span>
                     </div>
                     <div className="space-y-1.5">
                       {st.needsReorderSoon.slice(0, 10).map((p: any) => (
@@ -286,14 +286,14 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                           </div>
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
-                              <div className="text-xs font-semibold text-[var(--data-warning)]">{p.stock} uds</div>
+                              <div className="text-xs font-semibold text-[var(--data-warning-500)]">{p.stock} uds</div>
                               <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedir: {p.suggestedOrderQty}</div>
                             </div>
                             <a
                               href={`https://wa.me/?text=${encodeURIComponent(`Reorden: ${p.name}\n\nStock actual: ${p.stock} uds\nDías restantes: ${Math.floor(p.daysRemaining)}\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] bg-[var(--data-warning-100)] hover:bg-[var(--data-warning)] dark:bg-[var(--data-warning)]/50 dark:hover:bg-[var(--data-warning)]/50 px-2 py-1 rounded transition-colors"
+                              className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] hover:bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/50 dark:hover:bg-[var(--data-warning-500)]/50 px-2 py-1 rounded transition-colors"
                               title="Pedir por WhatsApp"
                             >
                               Pedir
@@ -312,8 +312,8 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
                 {/* Info box */}
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Proyección inteligente</div>
-                  <p className="text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                  <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Proyección inteligente</div>
+                  <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     Basado en ventas de los últimos 30 días. Las cantidades sugeridas cubren 30 días de demanda proyectada.
                   </p>
                 </div>
@@ -343,7 +343,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                         msg += `----------------\nTotal: ${allReorder.length} productos, ${totalItems} unidades\n\nPor favor confirmar disponibilidad y costo.`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                       }}
-                      className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-lg bg-[var(--data-success)] hover:opacity-90 text-white font-bold text-sm transition-all  hover:shadow-sm"
+                      className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-lg bg-[var(--data-success-500)] hover:opacity-90 text-white font-bold text-sm transition-all  hover:shadow-sm"
                     >
                       <Truck className="h-4 w-4" />
                       Generar Orden Masiva ({st.criticalStock.length + st.needsReorderSoon.length} productos)

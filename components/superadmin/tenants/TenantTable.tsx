@@ -95,7 +95,7 @@ export function TenantTable({
                     <button
                       type="button"
                       onClick={() => onDetail(tenant)}
-                      className="text-left hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                      className="text-left hover:text-[var(--accent-dark)] dark:hover:text-teal-400 transition-colors"
                     >
                       <div className="font-semibold text-[var(--text-primary)]">{tenant.name}</div>
                       <div className="text-xs font-mono text-gray-400 mt-0.5">{tenant.slug}</div>
@@ -121,10 +121,10 @@ export function TenantTable({
                   <td className="px-4 py-3">
                     <StatusBadge active={tenant.active} />
                     {tenant.cancelAtPeriodEnd && (
-                      <div className="text-[length:var(--ts-xs)] text-[var(--data-warning)] mt-1">Cancela pronto</div>
+                      <div className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-1">Cancela pronto</div>
                     )}
                     {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                      <div className="text-[length:var(--ts-xs)] text-[var(--data-success)] mt-1">
+                      <div className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] mt-1">
                         Trial hasta {fmtDate(tenant.trialEndsAt)}
                       </div>
                     )}
@@ -168,8 +168,8 @@ export function TenantTable({
                         title={tenant.active ? "Suspender tienda" : "Activar tienda"}
                         className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
                           tenant.active
-                            ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
-                            : "text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-green-950/30"
+                            ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
+                            : "text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-green-950/30"
                         }`}
                       >
                         {actionLoading === `${tenant.slug}-active` ? (
@@ -186,7 +186,7 @@ export function TenantTable({
                         type="button"
                         onClick={() => onImpersonate(tenant.slug)}
                         title="Acceder como admin"
-                        className="p-1.5 rounded-lg text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </button>
@@ -196,7 +196,7 @@ export function TenantTable({
                         type="button"
                         onClick={() => onInvite(tenant.slug, tenant.name)}
                         title="Invitar usuario"
-                        className="p-1.5 rounded-lg text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-emerald-950/30 transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-emerald-950/30 transition-colors"
                       >
                         <Users className="w-4 h-4" />
                       </button>
@@ -207,7 +207,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-purge`}
                         onClick={() => onPurge(tenant.slug, tenant.name)}
                         title="Limpiar datos de esta tienda"
-                        className="p-1.5 rounded-lg text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-purge` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -222,7 +222,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-delete` || tenant.slug === "main"}
                         onClick={() => onDelete(tenant.slug, tenant.name)}
                         title={tenant.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-delete` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

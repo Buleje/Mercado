@@ -52,9 +52,9 @@ const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: stri
     badge: "bg-secondary/10 text-secondary",
   },
   danger: {
-    bar: "bg-[var(--data-error)]",
-    text: "text-[var(--data-error)]",
-    badge: "bg-[var(--data-error-50)] text-[var(--data-error)]",
+    bar: "bg-[var(--data-error-500)]",
+    text: "text-[var(--data-error-500)]",
+    badge: "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
   },
 };
 
@@ -131,7 +131,7 @@ export default function LiveMarginDisplay({ items }: Props) {
           ? "border-primary/30"
           : level === "warning"
             ? "border-secondary/30"
-            : "border-[var(--data-error)]"
+            : "border-[var(--data-error-500)]"
       )}
     >
       {/* Summary bar */}
@@ -157,7 +157,7 @@ export default function LiveMarginDisplay({ items }: Props) {
                   ? "text-primary"
                   : level === "warning"
                     ? "text-secondary"
-                    : "text-[var(--data-error)]"
+                    : "text-[var(--data-error-500)]"
               )}
             />
           </div>

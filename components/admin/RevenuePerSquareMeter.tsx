@@ -312,7 +312,7 @@ export default function RevenuePerSquareMeter() {
                       className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition-colors"
                       aria-label="Eliminar"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-[var(--data-error)]" />
+                      <Trash2 className="w-3.5 h-3.5 text-[var(--data-error-500)]" />
                     </button>
                   </div>
                 </div>

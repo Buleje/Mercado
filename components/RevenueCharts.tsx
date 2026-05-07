@@ -82,14 +82,14 @@ export default function RevenueCharts() {
       {/* Revenue trend chart */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-emerald-500" /> Tendencia de Ingresos (6 meses)
+          <DollarSign className="w-5 h-5 text-[var(--data-success-500)]" /> Tendencia de Ingresos (6 meses)
         </h3>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={data.monthlyRevenue} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -99,7 +99,7 @@ export default function RevenueCharts() {
               contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, color: "#111" }}
               formatter={((value: number) => [fmtSoles(value), "Ingresos"]) as never}
             />
-            <Area type="monotone" dataKey="revenue" stroke="#00B4A6" strokeWidth={2} fill="url(#revGrad)" />
+            <Area type="monotone" dataKey="revenue" stroke="var(--accent)" strokeWidth={2} fill="url(#revGrad)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -118,7 +118,7 @@ export default function RevenueCharts() {
               contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, color: "#111" }}
               formatter={((value: number) => [value, "Registros"]) as never}
             />
-            <Bar dataKey="count" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" fill="var(--accent)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

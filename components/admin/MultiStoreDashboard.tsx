@@ -67,9 +67,9 @@ function StarRating({ value }: { value: number }) {
           className={cn(
             "h-3 w-3",
             i < full
-              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+              ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
               : half && i === full
-              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+              ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
               : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-[var(--text-primary)]"
           )}
         />
@@ -332,7 +332,7 @@ export default function MultiStoreDashboard() {
       <th
         className={cn(
           "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-[var(--text-secondary)] hover:text-primary dark:text-[var(--text-tertiary)]",
-          active && "text-primary dark:text-[var(--data-success)]",
+          active && "text-primary dark:text-[var(--data-success-500)]",
           cx
         )}
         onClick={() => handleSort(sortK)}
@@ -395,7 +395,7 @@ export default function MultiStoreDashboard() {
 
       {/* Error state */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error)] dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10 dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -405,9 +405,9 @@ export default function MultiStoreDashboard() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-primary" },
-          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-          { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
-          { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-[var(--data-warning)]" },
+          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+          { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+          { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
@@ -543,7 +543,7 @@ export default function MultiStoreDashboard() {
                         {/* Stock bajo */}
                         <td className="px-3 py-3 text-right">
                           {store.lowStockCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]">
                               <AlertTriangle className="h-3 w-3" />
                               {store.lowStockCount}
                             </span>
@@ -558,7 +558,7 @@ export default function MultiStoreDashboard() {
                             className={cn(
                               "inline-block rounded-full px-2 py-0.5 text-xs font-bold",
                               store.isPublished
-                                ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                                 : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                             )}
                           >

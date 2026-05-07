@@ -71,7 +71,7 @@ function InlineToast({
         visible ? "max-h-16 opacity-100 mt-3" : "max-h-0 opacity-0 mt-0",
       ].join(" ")}
     >
-      <p className="rounded-2xl bg-[var(--data-success)]/10 border-2 border-[var(--data-success)]/30 px-4 py-2.5 text-sm font-bold text-[var(--data-success)] text-center">
+      <p className="rounded-2xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)]/30 px-4 py-2.5 text-sm font-bold text-[var(--data-success-500)] text-center">
         {message}
       </p>
     </div>

@@ -57,6 +57,21 @@ REGLAS:
 - NUNCA pidas datos sensibles (CVV, passwords, DNI completo).`;
 
 export async function POST(req: NextRequest) {
+  // SECURITY/CRITICAL 2026-05-06 (audit AI #3): rate limit + cost guard.
+  // Antes anónimo + sin cap → atacante con script quemaba ~$70/día Anthropic.
+  const { applyRateLimit } = await import("@/lib/rate-limit");
+  const rl = applyRateLimit(req, "STRICT", "buleje-assistant");
+  if (rl) return rl;
+  const { aiCostGuard } = await import("@/lib/ai/cost-control");
+  const ESTIMATED_COST_USD = 0.0008;
+  if (!aiCostGuard.canSpend("__public_assistant__", ESTIMATED_COST_USD, "free")) {
+    return NextResponse.json(
+      { error: "AI quota exceeded. Try again later." },
+      { status: 429 },
+    );
+  }
+  aiCostGuard.recordSpend("__public_assistant__", ESTIMATED_COST_USD);
+
   let body: unknown;
   try {
     body = await req.json();

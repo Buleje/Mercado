@@ -148,11 +148,11 @@ function ProductSEOCard({
         />
       </div>
       <div className="p-3 flex-1 flex flex-col">
-        <h3 className="text-sm font-medium text-slate-800 line-clamp-2 group-hover:text-emerald-700 transition-colors">
+        <h3 className="text-sm font-medium text-slate-800 line-clamp-2 group-hover:text-[var(--data-success-700)] transition-colors">
           {product.name}
         </h3>
         <div className="mt-auto pt-2 flex items-baseline gap-1">
-          <span className="text-lg font-bold text-emerald-700">
+          <span className="text-lg font-bold text-[var(--data-success-700)]">
             S/{product.price.toFixed(2)}
           </span>
           <span className="text-xs text-slate-400">/{product.unit}</span>
@@ -237,7 +237,7 @@ async function DistrictCategoryContent({
 
       {/* Hero */}
       <header className="mb-8">
-        <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-emerald-700 mb-2">
+        <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-[var(--data-success-700)] mb-2">
           Buleje ERP · Hiperlocal
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
@@ -270,7 +270,7 @@ async function DistrictCategoryContent({
           </p>
           <Link
             href="/registro"
-            className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
             Registrate gratis
           </Link>
@@ -288,7 +288,7 @@ async function DistrictCategoryContent({
         </p>
         <Link
           href="/registro"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-emerald-700 transition-colors"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-[var(--data-success-700)] transition-colors"
         >
           Probar gratis en {district.name}
         </Link>
@@ -327,7 +327,7 @@ async function DistrictCategoryContent({
               <Link
                 key={d.slug}
                 href={`/zona/${zone.slug}/distrito/${d.slug}/${cat.id}`}
-                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+                className="text-sm text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {cat.label} en {d.name}
               </Link>
@@ -340,14 +340,14 @@ async function DistrictCategoryContent({
       <section className="mt-8 flex flex-wrap gap-3 text-sm">
         <Link
           href={`/zona/${zone.slug}/distrito/${district.slug}`}
-          className="text-slate-500 hover:text-emerald-600 transition-colors"
+          className="text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
         >
           ← Volver a {district.name}
         </Link>
         <span className="text-slate-300">·</span>
         <Link
           href={`/zona/${zone.slug}`}
-          className="text-slate-500 hover:text-emerald-600 transition-colors"
+          className="text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
         >
           Ver {zone.name} completo
         </Link>

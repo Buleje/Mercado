@@ -9,6 +9,7 @@ import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -69,6 +70,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // SECURITY 2026-05-05 (audit POS #12): rate-limit STRICT en POST /api/sales.
+  // Antes brute-force de creación inflaba reportes y quemaba IDs.
+  const rl = await applyRateLimit(req, "STRICT", "sales-post");
+  if (rl) return rl;
+
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
@@ -79,25 +85,61 @@ export async function POST(req: NextRequest) {
   const parsed = SaleSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   const data = parsed.data;
-  const total = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
-  // Look up costPrice for each product to capture COGS at sale time
-  // TD-018: product.costPrice / price son Decimal
+  // SECURITY/CRITICAL 2026-05-06 (pentest H1): los precios deben venir de la
+  // DB, NO del cliente. Antes el `total` se calculaba con `i.price` enviado
+  // por el cajero — un cajero malicioso podía vender producto de S/100 por
+  // S/0.01 simplemente cambiando el body. Ahora hidratamos `price` desde
+  // `Product.price` scoped por tenant.
   const pIds = data.items.map(i => i.productId);
-  const costMap = new Map<number, number>();
+  const priceCostMap = new Map<number, { price: number; costPrice: number }>();
   if (pIds.length > 0) {
-    const prods = await prisma.product.findMany({ where: { id: { in: pIds } }, select: { id: true, costPrice: true, price: true } });
+    const prods = await prisma.product.findMany({
+      where: { id: { in: pIds }, tenantId: auth.tenantId, deletedAt: null },
+      select: { id: true, costPrice: true, price: true },
+    });
     for (const p of prods) {
-      const costNum = toNumOrZero(p.costPrice);
       const priceNum = toNumOrZero(p.price);
-      costMap.set(p.id, costNum || priceNum * 0.7);
+      const costNum = toNumOrZero(p.costPrice);
+      priceCostMap.set(p.id, {
+        price: priceNum,
+        costPrice: costNum || priceNum * 0.7,
+      });
     }
   }
-  const itemsWithCost = data.items.map(i => ({ ...i, costPrice: costMap.get(i.productId) }));
+  // Reescribir items con precio de DB (rechaza items con productId desconocido).
+  const itemsWithCost = data.items
+    .filter(i => priceCostMap.has(i.productId))
+    .map(i => {
+      const dbPrice = priceCostMap.get(i.productId)!;
+      return {
+        ...i,
+        price: dbPrice.price, // ⚠ override: NO confiar en cliente
+        costPrice: dbPrice.costPrice,
+      };
+    });
+  if (itemsWithCost.length === 0) {
+    return NextResponse.json({ error: "Ningún producto válido" }, { status: 400 });
+  }
+  const total = itemsWithCost.reduce((s, i) => s + i.price * i.quantity, 0);
   const totalCogs = itemsWithCost.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
 
-  // Apply global discount to total
-  const discountAmount = data.descuentoMonto ?? 0;
+  // SECURITY 2026-05-05 (audit POS #3): tope de descuento server-side.
+  // Antes el cajero podía aplicar `descuentoMonto = total` y vender a S/0
+  // (gratis). Ahora el cajero solo puede descontar hasta 15% del subtotal;
+  // descuentos mayores requieren rol admin/owner.
+  const requestedDiscount = data.descuentoMonto ?? 0;
+  const isPrivilegedRole = auth.role === "admin" || auth.role === "owner";
+  const maxCashierDiscount = total * 0.15;
+  const discountAmount = isPrivilegedRole
+    ? Math.min(requestedDiscount, total) // admin: hasta 100%
+    : Math.min(requestedDiscount, maxCashierDiscount); // cajero: hasta 15%
+  if (requestedDiscount > maxCashierDiscount && !isPrivilegedRole) {
+    return NextResponse.json(
+      { error: "Descuento excede 15% — requiere autorización del admin" },
+      { status: 403 },
+    );
+  }
   const finalTotal = Math.max(0, total - discountAmount);
 
   // Validate customerPhone: only set it if the customer actually exists in DB
@@ -265,7 +307,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Registrar movimientos de inventario + descontar lotes FEFO (fire-and-forget)
+  // Registrar movimientos de inventario + descontar lotes FEFO.
+  // OBSERVABILITY 2026-05-06 (audit stock #3): si el kardex falla, reportar
+  // a Sentry para que no se pierda silenciosamente el desync entre stock y
+  // movimientos. Sigue siendo fire-and-forget para no bloquear la venta,
+  // pero los fallos quedan visibles para reconciliación manual.
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -274,7 +320,12 @@ export async function POST(req: NextRequest) {
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
-    }).catch((err) => logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) }));
+    }).catch((err) => {
+      logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) });
+      import("@sentry/nextjs")
+        .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "sale-kardex-loss" } }))
+        .catch(() => {});
+    });
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
     hasBatchesWithStock(auth.tenantId, item.productId)
@@ -283,7 +334,12 @@ export async function POST(req: NextRequest) {
           return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
         }
       })
-      .catch((err) => logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) }));
+      .catch((err) => {
+        logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) });
+        import("@sentry/nextjs")
+          .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "fefo-deduct-loss" } }))
+          .catch(() => {});
+      });
   }
 
   // Register cash movement if a register is open (fire-and-forget)

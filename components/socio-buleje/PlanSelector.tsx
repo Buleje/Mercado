@@ -91,7 +91,7 @@ function PlanOption({
         <Caption className="text-[var(--text-tertiary)]">{period}</Caption>
       </div>
       {badge && (
-        <span className="mt-1 inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+        <span className="mt-1 inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
           {badge}
         </span>
       )}

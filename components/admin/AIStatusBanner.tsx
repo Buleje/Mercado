@@ -77,30 +77,30 @@ export default function AIStatusBanner() {
   return (
     <div
       role="alert"
-      className="flex items-center gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm dark:bg-amber-500/15"
+      className="flex items-center gap-3 border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-4 py-2.5 text-sm dark:bg-[var(--data-warning-500)]/15"
     >
-      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+      <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-600)] dark:text-amber-400" />
       <div className="min-w-0 flex-1">
-        <span className="font-semibold text-amber-700 dark:text-amber-300">
+        <span className="font-semibold text-[var(--data-warning-700)] dark:text-amber-300">
           Asistente IA inactivo
         </span>
-        <span className="ml-2 text-amber-700/80 dark:text-amber-300/80">
+        <span className="ml-2 text-[var(--data-warning-500)]/80 dark:text-amber-300/80">
           {providerCheck?.detail ?? "Ningún proveedor de IA está configurado correctamente."}
           {providerErrors && providerErrors.length > 0 && (
-            <> Configurá una API key real en <code className="rounded bg-amber-500/20 px-1 font-mono text-xs">.env.local</code></>
+            <> Configurá una API key real en <code className="rounded bg-[var(--data-warning-500)]/20 px-1 font-mono text-xs">.env.local</code></>
           )}
         </span>
       </div>
       <Link
         href="/admin?tab=settings"
-        className="shrink-0 rounded-md border border-amber-500/40 px-2.5 py-1 text-xs font-medium text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-300"
+        className="shrink-0 rounded-md border border-[var(--data-warning-500)]/40 px-2.5 py-1 text-xs font-medium text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-500)]/20 dark:text-amber-300"
       >
         Ver detalles
       </Link>
       <button
         onClick={dismiss}
         aria-label="Descartar 6 horas"
-        className="shrink-0 rounded-md p-1 text-amber-700/70 transition hover:bg-amber-500/20 hover:text-amber-700 dark:text-amber-300/70 dark:hover:text-amber-300"
+        className="shrink-0 rounded-md p-1 text-[var(--data-warning-500)]/70 transition hover:bg-[var(--data-warning-500)]/20 hover:text-[var(--data-warning-700)] dark:text-amber-300/70 dark:hover:text-amber-300"
       >
         <X className="h-4 w-4" />
       </button>

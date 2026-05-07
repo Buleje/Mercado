@@ -30,12 +30,12 @@ async function getTenantsData() {
   cacheLife({ revalidate: 60, stale: 30, expire: 300 });
   // v2: cuando agregamos pendingOrders necesitamos invalidar el cache.
   // El cambio del tag fuerza un cache-miss garantizado.
-  cacheTag("superadmin:tenants:v3");
+  cacheTag("superadmin:tenants:v4");
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses, pendingOrders] = await Promise.all([
+  const [tenants, userCounts, stores, monthlyOrders, monthlyExpenses, pendingOrders, settingsLogos] = await Promise.all([
       prisma.tenant.findMany({
         orderBy: { createdAt: "desc" },
         select: {
@@ -49,6 +49,7 @@ async function getTenantsData() {
           ownerEmail: true,
           ownerPhone: true,
           customDomain: true,
+          logoUrl: true,
           stripeCustomerId: true,
           stripeSubscriptionId: true,
           stripePriceId: true,
@@ -95,6 +96,12 @@ async function getTenantsData() {
         where: { date: { gte: monthStart } },
         _sum: { amount: true },
       }).catch(() => [] as Array<{ tenantId: string; _sum: { amount: number | null } }>),
+      // Logos configurados por el admin de cada tenant en Settings.
+      // Tienen prioridad sobre Tenant.logoUrl porque reflejan lo último que el dueño puso.
+      prisma.settings.findMany({
+        select: { tenantId: true, logoUrl: true },
+        where: { logoUrl: { not: null } },
+      }).catch(() => [] as Array<{ tenantId: string; logoUrl: string | null }>),
     ]);
 
     // AdminUser.tenantId = slug, Order.tenantId = slug OR cuid (varies by tenant)
@@ -118,8 +125,12 @@ async function getTenantsData() {
     const pendingMap = Object.fromEntries(
       (pendingOrders as unknown as Array<{ tenantId: string; _count: { _all: number } }>).map((r) => [r.tenantId, r._count?._all ?? 0])
     );
-    // eslint-disable-next-line no-console
-    console.log("[superadmin/tenants] pendingMap=", pendingMap, "raw rows=", JSON.stringify(pendingOrders));
+    // Settings.logoUrl indexado por tenantId (que en Settings es el slug)
+    const settingsLogoMap = Object.fromEntries(
+      (settingsLogos as Array<{ tenantId: string; logoUrl: string | null }>)
+        .filter((r) => r.logoUrl)
+        .map((r) => [r.tenantId, r.logoUrl as string])
+    );
 
     // Fetch usage for all tenants in parallel (capped at 50 concurrent)
     const usageList = await Promise.all(
@@ -144,8 +155,12 @@ async function getTenantsData() {
       const adminCount = countMap[t.slug] ?? countMap[t.id] ?? 0;
       // Pending orders — same trick (slug OR cuid)
       const pendingCount = (pendingMap[t.slug] ?? 0) + (pendingMap[t.id] ?? 0);
+      // Logo: Settings primero (lo que el admin sube), Tenant.logoUrl como fallback
+      const settingsLogo = settingsLogoMap[t.slug] ?? settingsLogoMap[t.id] ?? null;
+      const effectiveLogo = settingsLogo ?? t.logoUrl ?? null;
       return {
         ...t,
+        logoUrl: effectiveLogo,
         _count: { AdminUser: adminCount },
         usage,
         limits: {

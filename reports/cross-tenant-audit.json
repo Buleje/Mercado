@@ -1,0 +1,320 @@
+[
+  {
+    "file": "app/api/ab-tests/route.ts",
+    "line": 59,
+    "query": "prisma.aBTest.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/ab-tests/route.ts",
+    "line": 82,
+    "query": "prisma.aBTest.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/recetario/[id]/route.ts",
+    "line": 37,
+    "query": "prisma.note.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/recetario/[id]/route.ts",
+    "line": 55,
+    "query": "prisma.note.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/recetario/[id]/route.ts",
+    "line": 110,
+    "query": "prisma.note.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/warehouse-transfers/route.ts",
+    "line": 97,
+    "query": "prisma.warehouse.findUnique — { where: { id: fromWarehouseId } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/warehouse-transfers/route.ts",
+    "line": 98,
+    "query": "prisma.warehouse.findUnique — { where: { id: toWarehouseId } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/admin/warehouse-transfers/route.ts",
+    "line": 186,
+    "query": "prisma.transfer.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/cierre-diario/preview/route.ts",
+    "line": 149,
+    "query": "prisma.product.findUnique — { where: { id: topProductId }, select: { name: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/cron/expiry-discounts/route.ts",
+    "line": 68,
+    "query": "prisma.product.findUnique — { where: { id: lote.productId }, select: { price: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/me/assignments/[id]/route.ts",
+    "line": 22,
+    "query": "prisma.deliveryAssignment.findUnique — { where: { id }, include: { order: { select: { id: true, customerName: true, customerPhone: true, customerLocation: true, customerReference: true, tot...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/me/me/route.ts",
+    "line": 14,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: session.partnerId }, select: { id: true, name: true, phone: true, email: true, zone: true, vehicleType: true, isActive: true, isOnline:...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/me/password/route.ts",
+    "line": 34,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: session.partnerId }, select: { id: true, passwordHash: true, phone: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/me/ping/route.ts",
+    "line": 57,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: session.partnerId }, select: { lat: true, lng: true, lastPingAt: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/me/sos/route.ts",
+    "line": 72,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: session.partnerId }, select: { lat: true, lng: true, lastPingAt: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/offers/[id]/reject/route.ts",
+    "line": 25,
+    "query": "prisma.deliveryOffer.findUnique — { where: { id: offerId }, select: { id: true, partnerId: true, status: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/offers/[id]/reject/route.ts",
+    "line": 49,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: session.partnerId }, select: { totalOffers: true, totalAccepted: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/rate/route.ts",
+    "line": 44,
+    "query": "prisma.deliveryAssignment.findUnique — { where: { id: parsed.data.assignmentId }, select: { id: true, partnerId: true, notes: true, status: true, partner: { select: { id: true, rating: true...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/delivery/toggle-online/route.ts",
+    "line": 36,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: partnerId }, select: { id: true, name: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/inventory/conteo/[id]/items/route.ts",
+    "line": 95,
+    "query": "prisma.conteoFisicoItem.findFirst — { where: { id: itemId, conteoId: id }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/invoices/sunat/route.ts",
+    "line": 61,
+    "query": "prisma.settings.findUnique — { where: { id: 1 }, select: { businessName: true, // sunatRuc y sunatDenominacion son campos string en Settings sunatRuc: true, sunatDenominacion: tru...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/marketplace/products/[id]/route.ts",
+    "line": 35,
+    "query": "prisma.product.findFirst — { where: { id: productId, active: true, deletedAt: null, storeProducts: { some: { isActive: true, store: { isPublished: true } }, }, }, select: { id: ...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/marketplace/stores/my/products/[id]/route.ts",
+    "line": 62,
+    "query": "prisma.storeProduct.findFirst — { where: { id, storeId: store.id }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/me/addresses/route.ts",
+    "line": 200,
+    "query": "prisma.savedLocation.findFirst — { where: { id: parsed.data.id, customerPhone }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/recetas/[id]/producir/route.ts",
+    "line": 100,
+    "query": "prisma.product.findUnique — { where: { id: receta.productoId } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/store-permissions/route.ts",
+    "line": 111,
+    "query": "prisma.storePermission.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/superadmin/churn/playbooks/route.ts",
+    "line": 129,
+    "query": "prisma.churnPlaybook.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/superadmin/churn/playbooks/route.ts",
+    "line": 173,
+    "query": "prisma.churnPlaybook.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/superadmin/recetario/[id]/route.ts",
+    "line": 40,
+    "query": "prisma.receta.findUnique — { where: { id }, include: { tenant: { select: { id: true, name: true, slug: true } }, ingredientes: { include: { producto: { select: { id: true, name:...",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/superadmin/recetario/[id]/route.ts",
+    "line": 120,
+    "query": "prisma.receta.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/superadmin/recetario/[id]/route.ts",
+    "line": 174,
+    "query": "prisma.receta.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/supplier-returns/[id]/route.ts",
+    "line": 21,
+    "query": "prisma.supplier.findUnique — { where: { id: proveedorId }, select: { phone: true } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/suppliers/[id]/route.ts",
+    "line": 51,
+    "query": "prisma.supplier.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/turnos/[id]/cerrar/route.ts",
+    "line": 35,
+    "query": "prisma.turno.findUnique — { where: { id } }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/wholesale/orders/[id]/route.ts",
+    "line": 41,
+    "query": "prisma.wholesaleOrder.findUnique — { where: { id }, include: { items: true }, }",
+    "severity": "high"
+  },
+  {
+    "file": "app/api/wholesale/orders/[id]/route.ts",
+    "line": 90,
+    "query": "prisma.wholesaleOrder.findUnique — { where: { id }, }",
+    "severity": "high"
+  },
+  {
+    "file": "lib/db/cierre-diario.db.ts",
+    "line": 141,
+    "query": "prisma.product.findUnique — { where: { id: topProductId }, select: { name: true } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/delivery-score.db.ts",
+    "line": 26,
+    "query": "prisma.deliveryPartner.findUnique — { where: { id: partnerId }, select: { id: true, score: true }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/marketplace.db.ts",
+    "line": 524,
+    "query": "prisma.product.findUnique — { where: { id: params.productId }, select: { id: true, name: true, image: true, category: true, unit: true }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/product-images.db.ts",
+    "line": 79,
+    "query": "prisma.productImage.findUnique — { where: { id } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/product-variants.db.ts",
+    "line": 126,
+    "query": "prisma.productVariant.findUnique — { where: { id } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/recetas.db.ts",
+    "line": 154,
+    "query": "prisma.receta.findUnique — { where: { id: recetaId }, include: { ingredientes: { include: { producto: true } } }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/sales-anomalies.db.ts",
+    "line": 222,
+    "query": "prisma.salesAnomaly.findUnique — { where: { id: anomalyId } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/sales.db.ts",
+    "line": 200,
+    "query": "prisma.cashRegister.findUnique — { where: { id }, include: { movements: { orderBy: { createdAt: \"desc\" } } } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/settings.db.ts",
+    "line": 171,
+    "query": "prisma.settings.findUnique — { where: { id: 1 } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/store-banners.db.ts",
+    "line": 126,
+    "query": "prisma.storeBanner.findUnique — { where: { id } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/subscriptions.db.ts",
+    "line": 255,
+    "query": "prisma.subscription.findUnique — { where: { id } }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/supplier-signup.db.ts",
+    "line": 171,
+    "query": "prisma.supplier.findUnique — { where: { id }, include: { portal: true }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/supplier-signup.db.ts",
+    "line": 225,
+    "query": "prisma.supplier.findUnique — { where: { id }, include: { portal: true }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/supplier-signup.db.ts",
+    "line": 276,
+    "query": "prisma.supplier.findUnique — { where: { id }, include: { portal: true }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/variant-catalog.db.ts",
+    "line": 112,
+    "query": "prisma.variantCatalogTemplate.findUnique — { where: { id }, include: { options: { orderBy: { position: \"asc\" } } }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/vendor-applications.db.ts",
+    "line": 231,
+    "query": "prisma.vendorApplication.findUnique — { where: { id }, include: { reviews: { orderBy: { createdAt: \"asc\" } }, }, }",
+    "severity": "medium"
+  },
+  {
+    "file": "lib/db/vendor-applications.db.ts",
+    "line": 441,
+    "query": "prisma.vendorApplication.findUnique — { where: { id }, select: { status: true }, }",
+    "severity": "medium"
+  }
+]

@@ -243,7 +243,7 @@ export function NavegacionTab() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-2xl animate-[fadeUp_0.3s_ease-out]"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-[var(--data-success-600)] px-5 py-3.5 text-sm font-bold text-white shadow-2xl animate-[fadeUp_0.3s_ease-out]"
         >
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           <div>

@@ -27,12 +27,12 @@ type Return = {
 };
 
 const STATUS_CONFIG: Record<ReturnStatus, { label: string; color: string; step: number }> = {
-  solicitada:  { label: "Solicitada",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",    step: 0 },
-  aprobada:    { label: "Aprobada",    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",          step: 1 },
+  solicitada:  { label: "Solicitada",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",    step: 0 },
+  aprobada:    { label: "Aprobada",    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",          step: 1 },
   recogida:    { label: "En recojo",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",  step: 2 },
-  inspeccion:  { label: "Inspección",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",  step: 3 },
-  completada:  { label: "Completada",  color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", step: 4 },
-  rechazada:   { label: "Rechazada",   color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",              step: -1 },
+  inspeccion:  { label: "Inspección",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",  step: 3 },
+  completada:  { label: "Completada",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", step: 4 },
+  rechazada:   { label: "Rechazada",   color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",              step: -1 },
 };
 
 const TIMELINE_STEPS: { key: ReturnStatus; label: string; icon: typeof Clock }[] = [
@@ -131,9 +131,9 @@ export default function ReturnLogisticsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Devoluciones activas", value: kpis.active,             color: "text-[var(--data-warning)]",   icon: RotateCcw },
-          { label: "Total registradas",    value: returns.length,           color: "text-[var(--data-success)]",    icon: BarChart3 },
-          { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-[var(--data-error)]",     icon: XCircle },
+          { label: "Devoluciones activas", value: kpis.active,             color: "text-[var(--data-warning-500)]",   icon: RotateCcw },
+          { label: "Total registradas",    value: returns.length,           color: "text-[var(--data-success-500)]",    icon: BarChart3 },
+          { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-[var(--data-error-500)]",     icon: XCircle },
           { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-[var(--text-secondary)]",  icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
@@ -204,7 +204,7 @@ export default function ReturnLogisticsTab() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-[var(--data-error)]">{fmt(r.refundAmount)}</p>
+                      <p className="text-sm font-extrabold text-[var(--data-error-500)]">{fmt(r.refundAmount)}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(r.requestDate)}</p>
                     </div>
                     {expandedId === r.id ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
@@ -247,7 +247,7 @@ export default function ReturnLogisticsTab() {
                     )}
 
                     {r.status === "rechazada" && (
-                      <div className="flex items-center gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error)] dark:text-[var(--data-error)] px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-3 py-2 rounded-xl">
                         <XCircle className="h-3.5 w-3.5 shrink-0" /> Devolución rechazada
                       </div>
                     )}
@@ -263,14 +263,14 @@ export default function ReturnLogisticsTab() {
 
                     {/* Notes */}
                     {r.notes && (
-                      <div className="flex items-start gap-2 text-xs bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-3 py-2 rounded-xl">
+                      <div className="flex items-start gap-2 text-xs bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         {r.notes}
                       </div>
                     )}
 
                     {r.resolvedDate && (
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-semibold flex items-center gap-1">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-semibold flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Resuelto el {fmtDate(r.resolvedDate)}
                       </p>
                     )}

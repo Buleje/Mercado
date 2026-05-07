@@ -144,7 +144,7 @@ export default function OfferPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4">
         <div className="text-center">
-          <div className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
+          <div className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
             <CheckBadge className="h-14 w-14" />
           </div>
           <h1 className="mt-5 text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)]">
@@ -338,7 +338,7 @@ function ActionButtons({
         type="button"
         onClick={onAccept}
         disabled={submitting || expired}
-        className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-2xl bg-[var(--data-success)] text-base lg:text-lg font-extrabold text-white shadow-lg shadow-[var(--data-success)]/30 disabled:opacity-50"
+        className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-2xl bg-[var(--data-success-500)] text-base lg:text-lg font-extrabold text-white shadow-lg shadow-[var(--data-success)]/30 disabled:opacity-50"
       >
         {submitting ? (
           <Loader2 className="h-5 w-5 animate-spin" />

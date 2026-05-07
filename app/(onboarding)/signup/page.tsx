@@ -83,8 +83,8 @@ function inputCls(hasError?: boolean) {
     "w-full px-3 py-3 text-sm rounded-xl border transition outline-none",
     "dark:bg-gray-800 dark:text-gray-100",
     hasError
-      ? "border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500"
-      : "border-gray-200 focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:focus:border-[#00B4A6]",
+      ? "border-red-400 focus:border-[var(--data-error-500)] focus:ring-1 focus:ring-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
+      : "border-gray-200 focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] dark:border-gray-600 dark:focus:border-[var(--accent)]",
   ].join(" ");
 }
 
@@ -306,7 +306,7 @@ export default function SignupPage() {
       : slugStatus === "available"
         ? { colorCls: "text-green-600 dark:text-green-400", label: "Disponible" }
         : slugStatus === "taken"
-          ? { colorCls: "text-red-500 dark:text-red-400", label: "No disponible" }
+          ? { colorCls: "text-[var(--data-error-500)] dark:text-red-400", label: "No disponible" }
           : null;
 
   const steps: Step[] = ["account", "store", "confirm"];
@@ -322,7 +322,7 @@ export default function SignupPage() {
         {/* Header + Stepper */}
         <div
           className="px-6 py-8 text-center"
-          style={{ background: "linear-gradient(135deg, #00B4A6 0%, #007a73 100%)" }}
+          style={{ background: "linear-gradient(135deg, var(--accent) 0%, #007a73 100%)" }}
         >
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -343,9 +343,9 @@ export default function SignupPage() {
                   className={[
                     "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all",
                     i < stepIdx
-                      ? "bg-white text-[#00B4A6]"
+                      ? "bg-white text-[var(--accent)]"
                       : i === stepIdx
-                        ? "bg-white text-[#00B4A6] ring-2 ring-white/40"
+                        ? "bg-white text-[var(--accent)] ring-2 ring-white/40"
                         : "bg-white/20 text-white/60",
                   ].join(" ")}
                 >
@@ -500,7 +500,7 @@ export default function SignupPage() {
                         <button
                           type="button"
                           onClick={() => setForm((p) => ({ ...p, slug: slugSuggestion }))}
-                          className="ml-1 underline text-[#00B4A6] hover:text-[#008f88]"
+                          className="ml-1 underline text-[var(--accent)] hover:text-[#008f88]"
                         >
                           Usar &quot;{slugSuggestion}&quot;
                         </button>
@@ -513,8 +513,8 @@ export default function SignupPage() {
                   className={[
                     "flex items-center rounded-xl border overflow-hidden transition",
                     fieldErrors.slug
-                      ? "border-red-400 focus-within:border-red-500"
-                      : "border-gray-200 focus-within:border-[#00B4A6] focus-within:ring-1 focus-within:ring-[#00B4A6]",
+                      ? "border-red-400 focus-within:border-[var(--data-error-500)]"
+                      : "border-gray-200 focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)]",
                     "dark:border-gray-600",
                   ].join(" ")}
                 >
@@ -550,8 +550,8 @@ export default function SignupPage() {
                       className={[
                         "relative rounded-xl border-2 p-3 text-left transition-all",
                         form.plan === opt.id
-                          ? "border-[#00B4A6] bg-[#e6f7f6] dark:bg-[#00B4A6]/10"
-                          : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/50",
+                          ? "border-[var(--accent)] bg-[#e6f7f6] dark:bg-[var(--accent)]/10"
+                          : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/50",
                       ].join(" ")}
                     >
                       {opt.highlight && (
@@ -560,11 +560,11 @@ export default function SignupPage() {
                         </span>
                       )}
                       <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">{opt.label}</p>
-                      <p className="text-[#00B4A6] text-xs font-medium mt-0.5">{opt.price}</p>
+                      <p className="text-[var(--accent)] text-xs font-medium mt-0.5">{opt.price}</p>
                       <ul className="mt-1.5 space-y-0.5">
                         {opt.features.map((f) => (
                           <li key={f} className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 flex items-start gap-1">
-                            <span className="text-[#00B4A6] shrink-0">·</span>
+                            <span className="text-[var(--accent)] shrink-0">·</span>
                             {f}
                           </li>
                         ))}
@@ -629,9 +629,9 @@ export default function SignupPage() {
                 type="button"
                 onClick={handleNext}
                 className="min-h-[44px] flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition"
-                style={{ backgroundColor: "#00B4A6" }}
+                style={{ backgroundColor: "var(--accent)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#008f88"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#00B4A6"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; }}
               >
                 Continuar
               </button>
@@ -641,7 +641,7 @@ export default function SignupPage() {
                 onClick={() => void handleSubmit()}
                 disabled={submitting}
                 className="min-h-[44px] flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#00B4A6" }}
+                style={{ backgroundColor: "var(--accent)" }}
               >
                 {submitting ? (
                   <>
@@ -660,7 +660,7 @@ export default function SignupPage() {
             <a
               href="/admin/login"
               className="font-medium hover:underline"
-              style={{ color: "#00B4A6" }}
+              style={{ color: "var(--accent)" }}
             >
               Inicia sesion
             </a>
@@ -691,7 +691,7 @@ function FormField({
       </label>
       {children}
       {hint && <div className="mt-1">{hint}</div>}
-      {error && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>}
+      {error && <p className="text-xs text-[var(--data-error-500)] dark:text-red-400 mt-1">{error}</p>}
     </div>
   );
 }

@@ -15,7 +15,10 @@ export async function POST(
 
   const { id } = await params;
   try {
-    const page = await publishPage(id);
+    const page = await publishPage(id, auth.tenantId);
+    if (!page) {
+      return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
+    }
     return NextResponse.json(page);
   } catch (error) {
     logger.error("[cms/pages/publish] error", { err: error instanceof Error ? error.message : String(error) });

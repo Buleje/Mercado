@@ -41,9 +41,9 @@ function mesLabel(mes: string): string {
 }
 
 function getBarColor(porcentaje: number): string {
-  if (porcentaje > 100) return "bg-red-500 animate-pulse";
-  if (porcentaje > 80) return "bg-red-500";
-  if (porcentaje > 60) return "bg-amber-500";
+  if (porcentaje > 100) return "bg-[var(--data-error-500)] animate-pulse";
+  if (porcentaje > 80) return "bg-[var(--data-error-500)]";
+  if (porcentaje > 60) return "bg-[var(--data-warning-500)]";
   return "bg-[var(--accent-soft)]";
 }
 
@@ -162,8 +162,8 @@ export default function PresupuestoMensualTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-2">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
       </div>
     );
@@ -224,12 +224,12 @@ export default function PresupuestoMensualTab() {
                 <span className={cn(
                   "text-xs font-bold px-2 py-0.5 rounded-lg",
                   cat.porcentaje > 100
-                    ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] animate-pulse"
+                    ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] animate-pulse"
                     : cat.porcentaje > 80
-                      ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : cat.porcentaje > 60
-                        ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 )}>
                   {cat.porcentaje}%
                 </span>
@@ -252,8 +252,8 @@ export default function PresupuestoMensualTab() {
               <p className={cn(
                 "text-xs font-bold",
                 restante >= 0
-                  ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                  : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                  ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                  : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
               )}>
                 {restante >= 0
                   ? `Quedan ${formatCurrency(restante)}`
@@ -262,7 +262,7 @@ export default function PresupuestoMensualTab() {
               </p>
 
               {cat.porcentaje > 100 && (
-                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] animate-pulse">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] animate-pulse">
                   Excedido
                 </p>
               )}
@@ -287,10 +287,10 @@ export default function PresupuestoMensualTab() {
             <p className={cn(
               "text-lg font-bold",
               porcentajeTotal > 100
-                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 : porcentajeTotal > 80
-                  ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                  : "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                  ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                  : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
             )}>
               {porcentajeTotal}%
             </p>
@@ -347,7 +347,7 @@ export default function PresupuestoMensualTab() {
                     </div>
                     <button
                       onClick={() => removeDraftCat(i)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
+                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -362,7 +362,7 @@ export default function PresupuestoMensualTab() {
                 <Plus className="h-3.5 w-3.5" /> Agregar categoria
               </button>
 
-              {saveError && <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{saveError}</p>}
+              {saveError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{saveError}</p>}
 
               <div className="flex gap-2 pt-1">
                 <button

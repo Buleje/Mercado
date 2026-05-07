@@ -84,9 +84,9 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
                   // seccion diferencia su KPI numerico con su color tema.
                   "text-sm font-extrabold tabular-nums truncate " +
                   (k.tone === "warning"
-                    ? "text-[var(--data-warning)]"
+                    ? "text-[var(--data-warning-500)]"
                     : k.tone === "success"
-                      ? "text-[var(--data-success)]"
+                      ? "text-[var(--data-success-500)]"
                       : k.tone === "primary"
                         ? "text-[color:var(--section-primary,var(--text-primary))]"
                         : "text-[var(--text-secondary)]")

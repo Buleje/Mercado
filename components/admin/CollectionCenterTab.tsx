@@ -51,10 +51,10 @@ function getBucket(days: number): AgeBucket {
 }
 
 const BUCKET_META: Record<AgeBucket, { label: string; color: string; bg: string; border: string }> = {
-  "0-30": { label: "0–30 días",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
-  "31-60":{ label: "31–60 días", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]"   },
-  "61-90":{ label: "61–90 días", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",  border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
-  "90+":  { label: ">90 días",   color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        border: "border-[var(--data-error)] dark:border-[var(--data-error)]"       },
+  "0-30": { label: "0–30 días",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  "31-60":{ label: "31–60 días", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"   },
+  "61-90":{ label: "61–90 días", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",  border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
+  "90+":  { label: ">90 días",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"       },
 };
 
 function ordersToDebts(orders: OrderRecord[]): DebtRecord[] {
@@ -171,7 +171,7 @@ export default function CollectionCenterTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
@@ -220,10 +220,10 @@ export default function CollectionCenterTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: DollarSign },
-          { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: Clock },
-          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.critical > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ShieldAlert },
+          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: DollarSign },
+          { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: Clock },
+          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.critical > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ShieldAlert },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -275,13 +275,13 @@ export default function CollectionCenterTab() {
 
       {/* Alerta críticos */}
       {stats.critical > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <TrendingDown className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <TrendingDown className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               {stats.critical} cliente(s) con mora mayor a 90 días
             </p>
-            <p className="text-xs text-[var(--data-error)]/80">Considera acciones legales o acuerdo de pago urgente</p>
+            <p className="text-xs text-[var(--data-error-500)]/80">Considera acciones legales o acuerdo de pago urgente</p>
           </div>
         </div>
       )}
@@ -343,17 +343,17 @@ export default function CollectionCenterTab() {
                     <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{d.customer}</td>
                     <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)] dark:text-muted">{d.orderRef}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(d.amount)}</td>
-                    <td className="px-4 py-3 text-right font-extrabold text-[var(--data-error)]">{fmt(saldo)}</td>
+                    <td className="px-4 py-3 text-right font-extrabold text-[var(--data-error-500)]">{fmt(saldo)}</td>
                     <td
                       className={cn(
                         "px-4 py-3 text-center font-bold",
                         d.daysOverdue <= 30
-                          ? "text-[var(--data-success)]"
+                          ? "text-[var(--data-success-500)]"
                           : d.daysOverdue <= 60
-                          ? "text-[var(--data-warning)]"
+                          ? "text-[var(--data-warning-500)]"
                           : d.daysOverdue <= 90
-                          ? "text-[var(--data-warning)]"
-                          : "text-[var(--data-error)]"
+                          ? "text-[var(--data-warning-500)]"
+                          : "text-[var(--data-error-500)]"
                       )}
                     >
                       {d.daysOverdue}
@@ -433,15 +433,15 @@ export default function CollectionCenterTab() {
               </div>
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Pagado</p>
-                <p className="font-bold text-[var(--data-success)]">{fmt(detail.paid)}</p>
+                <p className="font-bold text-[var(--data-success-500)]">{fmt(detail.paid)}</p>
               </div>
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Saldo pendiente</p>
-                <p className="font-extrabold text-[var(--data-error)]">{fmt(detail.amount - detail.paid)}</p>
+                <p className="font-extrabold text-[var(--data-error-500)]">{fmt(detail.amount - detail.paid)}</p>
               </div>
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Días desde pedido</p>
-                <p className={cn("font-extrabold", detail.daysOverdue > 30 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
+                <p className={cn("font-extrabold", detail.daysOverdue > 30 ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]")}>
                   {detail.daysOverdue} días
                 </p>
               </div>

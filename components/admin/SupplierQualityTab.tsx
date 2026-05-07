@@ -38,16 +38,16 @@ type SupplierQuality = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const scoreColor = (s: number) =>
-  s >= 80 ? "text-[var(--data-success)]" : s >= 60 ? "text-amber-600" : "text-red-600";
+  s >= 80 ? "text-[var(--data-success-500)]" : s >= 60 ? "text-[var(--data-warning-600)]" : "text-[var(--data-error-600)]";
 
 const scoreBg = (s: number) =>
   s >= 80 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : s >= 60 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-red-100 dark:bg-red-900/30";
 
 const severityColor: Record<string, string> = {
-  baja: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-  media: "text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
-  alta: "text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
-  "crítica": "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
+  baja: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+  media: "text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
+  alta: "text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
+  "crítica": "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -96,9 +96,9 @@ export default function SupplierQualityTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Score promedio", value: stats.avgScore + "%", color: scoreColor(stats.avgScore), bg: scoreBg(stats.avgScore), icon: Star },
-          { label: "Excelentes (≥85)", value: String(stats.excellent), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp },
-          { label: "En riesgo (<75)", value: String(stats.atRisk), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: ThumbsDown },
-          { label: "Incidentes abiertos", value: String(stats.openIncidents), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: AlertTriangle },
+          { label: "Excelentes (≥85)", value: String(stats.excellent), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp },
+          { label: "En riesgo (<75)", value: String(stats.atRisk), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: ThumbsDown },
+          { label: "Incidentes abiertos", value: String(stats.openIncidents), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -139,8 +139,8 @@ export default function SupplierQualityTab() {
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.priceScore))}>{s.priceScore}%</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.serviceScore))}>{s.serviceScore}%</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-sm font-extrabold px-2 py-0.5 rounded-full", scoreBg(s.overallScore), scoreColor(s.overallScore))}>{s.overallScore}%</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.trend === "up" ? <TrendingUp className="h-4 w-4 text-[var(--data-success)]" /> : s.trend === "down" ? <TrendingDown className="h-4 w-4 text-[var(--data-error)]" /> : <span className="text-[var(--text-tertiary)]">—</span>}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.incidents.filter(inc => !inc.resolved).length > 0 && <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] text-xs font-bold px-2 py-0.5 rounded-full">{s.incidents.filter(inc => !inc.resolved).length}</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.trend === "up" ? <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" /> : s.trend === "down" ? <TrendingDown className="h-4 w-4 text-[var(--data-error-500)]" /> : <span className="text-[var(--text-tertiary)]">—</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.incidents.filter(inc => !inc.resolved).length > 0 && <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">{s.incidents.filter(inc => !inc.resolved).length}</span>}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(s)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                 </tr>
               ))}
@@ -181,7 +181,7 @@ export default function SupplierQualityTab() {
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className={cn("px-1.5 py-0.5 rounded font-bold", severityColor[inc.severity])}>{inc.severity.toUpperCase()}</span>
                         <span className="text-[var(--text-tertiary)]">{inc.date}</span>
-                        <span className={cn("ml-auto text-xs font-bold", inc.resolved ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{inc.resolved ? "Resuelto" : "Abierto"}</span>
+                        <span className={cn("ml-auto text-xs font-bold", inc.resolved ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{inc.resolved ? "Resuelto" : "Abierto"}</span>
                       </div>
                       <p className="text-[var(--text-secondary)] dark:text-muted">{inc.description}</p>
                     </div>

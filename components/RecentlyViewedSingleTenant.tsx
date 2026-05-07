@@ -148,7 +148,7 @@ export default function RecentlyViewed() {
             </button>
             <button
               onClick={clearAll}
-              className="text-xs text-muted hover:text-red-500 transition-colors font-medium ml-1"
+              className="text-xs text-muted hover:text-[var(--data-error-500)] transition-colors font-medium ml-1"
             >
               Limpiar
             </button>

@@ -219,17 +219,17 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
         <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
           <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] border-l-2 border-l-[var(--data-warning)] p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-[color-mix(in_oklch,var(--data-warning)_14%,transparent)] flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-6 w-6 text-[var(--data-warning)]" />
+              <AlertTriangle className="h-6 w-6 text-[var(--data-warning-500)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Mora Acumulada</p>
-              <p className="text-3xl font-semibold tabular-nums text-[var(--data-warning)]">{formatCurrency(moraAcumulada)}</p>
+              <p className="text-3xl font-semibold tabular-nums text-[var(--data-warning-500)]">{formatCurrency(moraAcumulada)}</p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">En préstamos con cuotas vencidas</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-xs text-[var(--text-secondary)]">{cuotasVencidas} cuots. vencidas</p>
               <div className="mt-1 h-2 w-24 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--data-warning)] rounded-full" style={{ width: `${Math.min(100, (cuotasVencidas / Math.max(1, prestamos.reduce((s,p)=>s+p.cuotas.length,0))) * 100 * 10)}%` }} />
+                <div className="h-full bg-[var(--data-warning-500)] rounded-full" style={{ width: `${Math.min(100, (cuotasVencidas / Math.max(1, prestamos.reduce((s,p)=>s+p.cuotas.length,0))) * 100 * 10)}%` }} />
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
           <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-[var(--data-success)]" /> Dado vs Recibido
+              <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
             </CardTitle>
             <div className="space-y-6">
               <div>
@@ -341,10 +341,10 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
-                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                     <span className="text-xs font-bold text-[var(--text-secondary)]">Recibidos</span>
                   </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(totalRecibidos)}</span>
+                  <span className="text-xs font-bold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
@@ -353,7 +353,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
               </div>
               <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-white/10">
                 <p className="text-xs text-[var(--text-tertiary)]">Balance neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-warning)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]")}>
+                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>
                   {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>

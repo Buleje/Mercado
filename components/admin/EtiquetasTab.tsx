@@ -363,9 +363,9 @@ export default function EtiquetasTab() {
 
           {/* Print tip */}
           {selected.size > 0 && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 flex flex-wrap items-start gap-3">
-              <Printer className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0 mt-0.5" />
-              <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 flex flex-wrap items-start gap-3">
+              <Printer className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0 mt-0.5" />
+              <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Se generarán <strong>{selected.size * config.copies} etiquetas</strong> en formato A4 listas para imprimir. Usa papel adhesivo A4 para mejores resultados.
               </p>
             </div>

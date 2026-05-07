@@ -94,7 +94,7 @@ export default function BatchStatsWidget() {
           label: "Lotes activos",
           value: stats.activeBatches,
           icon: CheckCircle2,
-          colorClass: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+          colorClass: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
           bgClass: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
@@ -103,11 +103,11 @@ export default function BatchStatsWidget() {
           icon: AlertTriangle,
           colorClass:
             stats.expiringWithin7Days > 0
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-[var(--data-success)] dark:text-[var(--data-success)]",
+              ? "text-[var(--data-warning-600)] dark:text-amber-400"
+              : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
           bgClass:
             stats.expiringWithin7Days > 0
-              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30"
+              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30"
               : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
@@ -116,18 +116,18 @@ export default function BatchStatsWidget() {
           icon: TrendingDown,
           colorClass:
             stats.expiredWithStock > 0
-              ? "text-red-600 dark:text-red-400"
-              : "text-[var(--data-success)] dark:text-[var(--data-success)]",
+              ? "text-[var(--data-error-600)] dark:text-red-400"
+              : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
           bgClass:
             stats.expiredWithStock > 0
-              ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30"
+              ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30"
               : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
           label: "Total unidades",
           value: stats.totalUnits,
           icon: Package,
-          colorClass: "text-primary dark:text-[var(--data-success)]",
+          colorClass: "text-primary dark:text-[var(--data-success-500)]",
           bgClass: "bg-primary/10 dark:bg-[var(--accent-muted)]",
         },
       ]
@@ -138,7 +138,7 @@ export default function BatchStatsWidget() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-primary/10 dark:bg-[var(--accent-muted)] flex items-center justify-center">
-            <Package className="h-3.5 w-3.5 text-primary dark:text-[var(--data-success)]" />
+            <Package className="h-3.5 w-3.5 text-primary dark:text-[var(--data-success-500)]" />
           </div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Lotes de inventario</CardTitle>
         </div>
@@ -153,7 +153,7 @@ export default function BatchStatsWidget() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {error} —{" "}
           <button onClick={fetchStats} className="underline font-medium">
             Reintentar

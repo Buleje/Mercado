@@ -55,8 +55,8 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
     percentage >= 70
       ? "bg-[var(--accent-soft)]"
       : percentage >= 30
-      ? "bg-[var(--data-warning)]"
-      : "bg-[var(--data-error)]";
+      ? "bg-[var(--data-warning-500)]"
+      : "bg-[var(--data-error-500)]";
 
   const handleSave = () => {
     const val = Number(tempGoal);
@@ -99,10 +99,10 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
               autoFocus
             />
-            <button onClick={handleSave} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)]">
+            <button onClick={handleSave} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
               <Check className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--data-error)]">
+            <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)]">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -126,7 +126,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
           </span>
         </p>
         {exceeded && (
-          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-1 rounded-full">
             <Trophy className="w-3.5 h-3.5" />
             Meta alcanzada! +S/{extra.toFixed(2)}
           </span>

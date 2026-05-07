@@ -64,7 +64,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
               "h-5 w-5",
               method.type === "yape"
                 ? "text-purple-500"
-                : "text-teal-500"
+                : "text-[var(--accent)]"
             )}
           />
         </div>

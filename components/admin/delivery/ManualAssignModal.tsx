@@ -101,8 +101,8 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {success && (
-            <div className="rounded-xl bg-[var(--data-success)]/10 border-2 border-[var(--data-success)] p-5 text-center">
-              <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success)]" strokeWidth={2.25} />
+            <div className="rounded-xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-5 text-center">
+              <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success-500)]" strokeWidth={2.25} />
               <p className="mt-2 text-base font-extrabold text-[var(--text-primary)]">
                 Asignado a {success.partnerName}
               </p>
@@ -113,7 +113,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
           )}
 
           {error && !success && (
-            <div className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
+            <div className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
               <AlertTriangle className="inline h-4 w-4 mr-1.5 mb-0.5" />
               {error}
             </div>
@@ -153,7 +153,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
                     <p className="font-extrabold text-[var(--text-primary)] text-sm">{p.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-2">
                       <span className="inline-flex items-center gap-0.5">
-                        <Star className="h-3 w-3 text-amber-500" />{p.rating.toFixed(1)}
+                        <Star className="h-3 w-3 text-[var(--data-warning-500)]" />{p.rating.toFixed(1)}
                       </span>
                       <span>· {Math.round(p.acceptanceRate * 100)}%</span>
                       <span>· {p.vehicleType}</span>

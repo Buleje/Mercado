@@ -38,20 +38,20 @@ function fmt(dateStr: string | null) {
 function StatusBadge({ item }: { item: QueueItem }) {
   if (item.processedAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--data-success)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
         <CheckCircle2 size={12} /> Procesado
       </span>
     );
   }
   if (item.attempts >= 6) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-50)] px-2 py-0.5 text-xs font-semibold text-[var(--data-error)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-50)] px-2 py-0.5 text-xs font-semibold text-[var(--data-error-500)]">
         <AlertTriangle size={12} /> Abandonado
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-semibold text-[var(--data-warning)]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-semibold text-[var(--data-warning-500)]">
       <Clock size={12} /> Pendiente ({item.attempts}/6)
     </span>
   );
@@ -176,10 +176,10 @@ export default function WebhookQueuePage() {
               <p
                 className={`mt-1 text-2xl font-bold ${
                   tone === "warning"
-                    ? "text-[var(--data-warning)]"
+                    ? "text-[var(--data-warning-500)]"
                     : tone === "error"
-                    ? "text-[var(--data-error)]"
-                    : "text-[var(--data-success)]"
+                    ? "text-[var(--data-error-500)]"
+                    : "text-[var(--data-success-500)]"
                 }`}
               >
                 {value}
@@ -230,7 +230,7 @@ export default function WebhookQueuePage() {
                       </td>
                       <td className="px-4 py-3 text-[var(--text-tertiary)]">
                         {item.processedAt ? (
-                          <span className="text-[var(--data-success)]">{fmt(item.processedAt)}</span>
+                          <span className="text-[var(--data-success-500)]">{fmt(item.processedAt)}</span>
                         ) : (
                           fmt(item.nextRetryAt)
                         )}
@@ -238,7 +238,7 @@ export default function WebhookQueuePage() {
                       <td className="px-4 py-3 text-[var(--text-tertiary)]">
                         {fmt(item.createdAt)}
                       </td>
-                      <td className="max-w-xs truncate px-4 py-3 text-xs text-[var(--data-error)]">
+                      <td className="max-w-xs truncate px-4 py-3 text-xs text-[var(--data-error-500)]">
                         {item.lastError ?? "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -246,7 +246,7 @@ export default function WebhookQueuePage() {
                           <button
                             onClick={() => dismissItem(item.id)}
                             disabled={deletingId === item.id}
-                            className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] disabled:opacity-50 transition-colors"
+                            className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
                             aria-label="Descartar evento"
                             title="Descartar evento de la cola"
                           >

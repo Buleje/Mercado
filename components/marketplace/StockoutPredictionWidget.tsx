@@ -42,7 +42,7 @@ const SEVERITY_CONFIG: Record<"critical" | "high", {
   critical: {
     label: "Critico",
     bgClass: "bg-red-100 dark:bg-red-950/40",
-    textClass: "text-red-700 dark:text-red-400",
+    textClass: "text-[var(--data-error-700)] dark:text-red-400",
     borderClass: "border-red-200 dark:border-red-800",
   },
   high: {
@@ -156,7 +156,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
 
         {/* Error */}
         {!loading && error && (
-          <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 py-2">
+          <div className="flex items-center gap-2 text-sm text-[var(--data-error-600)] dark:text-red-400 py-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{error}</span>
             <button onClick={fetchPredictions} className="underline font-semibold ml-1">

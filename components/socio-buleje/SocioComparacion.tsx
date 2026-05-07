@@ -43,7 +43,7 @@ function Cell({ value, active }: { value: string | "no"; active?: boolean }) {
     <span className="inline-flex items-center gap-1.5 text-[var(--text-primary)]">
       {active && (
         <Check
-          className="h-3.5 w-3.5 text-[var(--data-success)] shrink-0"
+          className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0"
           aria-hidden
         />
       )}

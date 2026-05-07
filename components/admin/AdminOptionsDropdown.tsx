@@ -184,7 +184,7 @@ export default function AdminOptionsDropdown({
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-lg shrink-0 transition-colors",
                         it.tone === "warning"
-                          ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)]"
+                          ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)]"
                           : "bg-gray-50 dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
@@ -195,7 +195,7 @@ export default function AdminOptionsDropdown({
                         className={cn(
                           "block text-sm font-semibold",
                           it.tone === "warning"
-                            ? "text-[var(--data-warning)]"
+                            ? "text-[var(--data-warning-500)]"
                             : "text-[var(--text-primary)]",
                         )}
                       >

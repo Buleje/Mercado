@@ -580,7 +580,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                     placeholder="987 654 321"
                     autoComplete="tel-national"
                     inputMode="numeric"
-                    className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-[var(--data-success-500)] focus:ring-2 focus:ring-[var(--data-success-500)]/20"
                   />
                 </div>
               </div>
@@ -618,7 +618,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                       "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
                       dniVerified
                         ? "border-green-400/50 dark:border-green-500/30 bg-green-50 dark:bg-green-900/20"
-                        : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
+                        : "border-gray-200 dark:border-gray-700 focus:border-[var(--data-success-500)] focus:ring-2 focus:ring-[var(--data-success-500)]/20",
                     ].join(" ")}
                   />
                   {!dniVerified && (
@@ -654,7 +654,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
             <div className="space-y-5">
               {/* Ilustración OTP */}
               <div className="flex flex-col items-center gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-[var(--data-success-600)] dark:text-emerald-400">
                   <Shield className="h-8 w-8" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
@@ -684,7 +684,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none transition-all focus:border-[var(--data-success-500)] focus:ring-2 focus:ring-[var(--data-success-500)]/20"
                 />
               </div>
 
@@ -711,7 +711,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                 ref={lastFocusableRef}
                 onClick={handleResendOtp}
                 disabled={loading}
-                className="w-full text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors disabled:opacity-50 min-h-11"
+                className="w-full text-sm font-medium text-[var(--data-success-600)] dark:text-emerald-400 hover:text-[var(--data-success-700)] dark:hover:text-emerald-300 transition-colors disabled:opacity-50 min-h-11"
               >
                 ← Volver y solicitar nuevo código
               </button>
@@ -723,14 +723,14 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
             Al continuar aceptas los{" "}
             <a
               href="/terminos"
-              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-emerald-500 transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-[var(--data-success-500)] transition-colors"
             >
               Términos
             </a>{" "}
             y la{" "}
             <a
               href="/privacidad"
-              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-emerald-500 transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-[var(--data-success-500)] transition-colors"
             >
               Política de Privacidad
             </a>

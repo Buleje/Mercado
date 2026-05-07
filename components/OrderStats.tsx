@@ -34,7 +34,7 @@ export function OrderStats({
       label: "Total Pedidos",
       value: totalOrders.toString(),
       icon: ShoppingCart,
-      color: "text-emerald-600 dark:text-emerald-400",
+      color: "text-[var(--data-success-600)] dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
       change: previousPeriodComparison?.orders,
     },
@@ -42,7 +42,7 @@ export function OrderStats({
       label: "Ingresos",
       value: `S/${totalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      color: "text-emerald-600 dark:text-emerald-400",
+      color: "text-[var(--data-success-600)] dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
       change: previousPeriodComparison?.revenue,
     },
@@ -50,7 +50,7 @@ export function OrderStats({
       label: "Pendientes",
       value: pendingOrders.toString(),
       icon: Clock,
-      color: "text-amber-600 dark:text-amber-400",
+      color: "text-[var(--data-warning-600)] dark:text-amber-400",
       bgColor: "bg-amber-50 dark:bg-amber-950/20",
     },
     {
@@ -78,7 +78,7 @@ export function OrderStats({
         label: "Tasa Conversión",
         value: `${conversionRate.toFixed(1)}%`,
         icon: Users,
-        color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+        color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
         bgColor: "bg-rose-50 dark:bg-rose-950/20",
       });
     }
@@ -89,7 +89,7 @@ export function OrderStats({
         label: `Ganancia (${margin.toFixed(0)}%)`,
         value: `S/${profit.toFixed(2)}`,
         icon: TrendingUp,
-        color: profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+        color: profit >= 0 ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--data-error-600)] dark:text-red-400",
         bgColor: profit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-red-50 dark:bg-red-950/20",
       });
     }
@@ -124,8 +124,8 @@ export function OrderStats({
                 {stat.change !== undefined && (
                   <div className={cn(
                     "flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded",
-                    hasIncrease && "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20",
-                    hasDecrease && "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+                    hasIncrease && "text-[var(--data-success-600)] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20",
+                    hasDecrease && "text-[var(--data-error-600)] dark:text-red-400 bg-red-50 dark:bg-red-950/20"
                   )}>
                     {hasIncrease && <TrendingUp className="h-3 w-3" />}
                     {hasDecrease && <TrendingDown className="h-3 w-3" />}

@@ -437,9 +437,9 @@ export default function ForecastingDashboard() {
 
               {/* Nota estacional (quincena / feriado) */}
               {state.forecast.seasonalNote && (
-                <div className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/50 p-3">
-                  <AlertTriangle className="w-4 h-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5 shrink-0" />
-                  <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
+                <div className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 p-3">
+                  <AlertTriangle className="w-4 h-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5 shrink-0" />
+                  <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
                     {state.forecast.seasonalNote}
                   </p>
                 </div>
@@ -540,7 +540,7 @@ export default function ForecastingDashboard() {
                       </p>
                       <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all duration-[var(--dur-slow)]"
+                          className="h-full rounded-full bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${Math.max(pct, 6)}%` }}
                         />
                       </div>
@@ -595,8 +595,8 @@ export default function ForecastingDashboard() {
               <div className={cn(
                 "flex items-start gap-2 rounded-xl p-3 mb-3 text-xs font-medium",
                 autoReorderMsg.startsWith("Error")
-                  ? "bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)]/50 text-[var(--data-error)] dark:text-[var(--data-error)]"
-                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+                  ? "bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
               )}>
                 <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {autoReorderMsg}
@@ -647,7 +647,7 @@ export default function ForecastingDashboard() {
                             <span className={cn(
                               "font-bold",
                               critico
-                                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                                ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                                 : "text-[var(--text-primary)]",
                             )}>
                               {item.currentStock} {item.unit}
@@ -661,7 +661,7 @@ export default function ForecastingDashboard() {
 
                           {/* Cantidad sugerida */}
                           <td className="py-2.5 px-2 text-right">
-                            <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                            <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                               {item.suggestedQuantity} {item.unit}
                             </span>
                           </td>
@@ -675,12 +675,12 @@ export default function ForecastingDashboard() {
                           <td className="py-2.5 px-2">
                             <div className="flex items-center justify-end gap-1 flex-wrap">
                               {critico && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/50 dark:text-[var(--data-error)]">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/50 dark:text-[var(--data-error-500)]">
                                   Critico
                                 </span>
                               )}
                               {item.confidence < 0.5 && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/50 dark:text-[var(--data-warning)]">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/50 dark:text-[var(--data-warning-500)]">
                                   Baja conf.
                                 </span>
                               )}
@@ -787,9 +787,9 @@ function PanelCard({
 
       {/* Error */}
       {!loading && error && (
-        <div className="flex items-start gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)]/40 p-3">
-          <AlertTriangle className="w-4 h-4 text-[var(--data-error)] shrink-0 mt-0.5" />
-          <p className="text-xs text-[var(--data-error)]">{error}</p>
+        <div className="flex items-start gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)]/40 p-3">
+          <AlertTriangle className="w-4 h-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+          <p className="text-xs text-[var(--data-error-500)]">{error}</p>
         </div>
       )}
 
@@ -815,12 +815,12 @@ function TrendBadge({ trend }: { trend: "SUBIENDO" | "ESTABLE" | "BAJANDO" }) {
     SUBIENDO: {
       icon: <TrendingUp className="w-3.5 h-3.5" />,
       label: "Subiendo",
-      cls: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+      cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     },
     BAJANDO: {
       icon: <TrendingDown className="w-3.5 h-3.5" />,
       label: "Bajando",
-      cls: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]",
+      cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",
     },
     ESTABLE: {
       icon: <Minus className="w-3.5 h-3.5" />,
@@ -857,7 +857,7 @@ function MetricChip({
       <p className={cn(
         "text-sm font-extrabold",
         danger
-          ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+          ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
           : "text-[var(--text-primary)] dark:text-foreground",
       )}>
         {value}
@@ -881,15 +881,15 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
   const reasonConfig: Record<PriceSuggestion["reason"], { label: string; cls: string }> = {
     hot_item: {
       label: "Demanda alta",
-      cls: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/50 dark:text-[var(--data-warning)]",
+      cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/50 dark:text-[var(--data-warning-500)]",
     },
     slow_mover: {
       label: "Stock excesivo",
-      cls: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+      cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     },
     fefo_urgent: {
       label: "Vence pronto",
-      cls: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/50 dark:text-[var(--data-error)]",
+      cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/50 dark:text-[var(--data-error-500)]",
     },
   };
 
@@ -900,10 +900,10 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
     <div className={cn(
       "rounded-xl border p-3.5 flex flex-col gap-3 transition-colors",
       isApplied
-        ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]"
+        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
         : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40",
       s.reason === "fefo_urgent" && !isApplied
-        ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50"
+        ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50"
         : "",
     )}>
       {/* Nombre + badge de razón */}
@@ -928,16 +928,16 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
         <span className={cn(
           "text-base font-extrabold",
           esBaja
-            ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
-            : "text-[var(--data-success)] dark:text-[var(--data-success)]",
+            ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+            : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
         )}>
           {formatCurrency(s.suggestedPrice)}
         </span>
         <span className={cn(
           "text-xs font-bold px-1.5 py-0.5 rounded-full",
           esBaja
-            ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]"
-            : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+            ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]"
+            : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
         )}>
           {esBaja ? "-" : "+"}{adjAbs}%
         </span>
@@ -961,7 +961,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold",
           "transition-colors min-h-[44px]", // touch target
           isApplied
-            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] cursor-default"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] cursor-default"
             : "bg-[#2d6a4f] hover:bg-primary-dark active:bg-[#1d4a36] text-white",
           "disabled:opacity-60 disabled:cursor-not-allowed",
         )}

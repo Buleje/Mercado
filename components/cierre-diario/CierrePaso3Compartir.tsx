@@ -127,13 +127,13 @@ export default function CierrePaso3Compartir({
           disabled={isSaving || saved}
           className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
             saved
-              ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30"
+              ? "border-emerald-300 dark:border-[var(--data-success-700)] bg-emerald-50 dark:bg-emerald-950/30"
               : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-primary"
           }`}
         >
           {saved ? (
             <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle className="h-5 w-5 text-[var(--data-success-600)] dark:text-emerald-400" />
             </div>
           ) : (
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -158,7 +158,7 @@ export default function CierrePaso3Compartir({
           className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-emerald-400 transition-all"
         >
           <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
-            <Printer className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <Printer className="h-5 w-5 text-[var(--data-success-600)] dark:text-emerald-400" />
           </div>
           <div className="text-left flex-1">
             <p className="font-bold text-gray-900 dark:text-foreground text-sm">Imprimir</p>
@@ -198,7 +198,7 @@ export default function CierrePaso3Compartir({
       </div>
 
       {error && (
-        <p className="text-sm text-red-500 font-semibold print:hidden">{error}</p>
+        <p className="text-sm text-[var(--data-error-500)] font-semibold print:hidden">{error}</p>
       )}
 
       {/* Final button */}

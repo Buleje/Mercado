@@ -410,16 +410,16 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                     )}
                     {rucLookup.status === "ok" && (
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success)]" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
                     )}
                   </div>
                   {rucLookup.status !== "idle" && rucLookup.msg && (
                     <p className={cn(
                       "text-xs mt-1 font-medium",
-                      rucLookup.status === "ok"       ? "text-[var(--data-success)]" :
-                      rucLookup.status === "notfound" ? "text-[var(--data-warning)]" :
+                      rucLookup.status === "ok"       ? "text-[var(--data-success-500)]" :
+                      rucLookup.status === "notfound" ? "text-[var(--data-warning-500)]" :
                       rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
-                      "text-[var(--data-error)]"
+                      "text-[var(--data-error-500)]"
                     )}>
                       {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
                     </p>
@@ -662,7 +662,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
           )}
 
           {/* Actions */}

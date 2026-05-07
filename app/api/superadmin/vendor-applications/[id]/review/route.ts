@@ -113,6 +113,27 @@ export async function POST(
         break;
     }
 
+    // COMPLIANCE 2026-05-06 (Ley 29733 Art. 18): trazar acciones de review.
+    // VendorApplication contiene PII del solicitante (RUC, DNI, email, phone).
+    // Las decisiones aprobar/rechazar/reabrir deben quedar auditadas.
+    try {
+      const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
+      logSuperadminAction(
+        `vendor_${action}`,
+        `Vendor application ${id} → ${action} por ${reviewer}`,
+        {
+          applicationId: id,
+          action,
+          note: note?.slice(0, 200) ?? null,
+          businessName: updated?.businessName ?? null,
+          ruc: updated?.ruc ?? null,
+          ip: req.headers.get("x-forwarded-for") ?? null,
+          timestamp: new Date().toISOString(),
+        },
+        reviewer,
+      ).catch(() => {});
+    } catch { /* audit logger not available */ }
+
     return NextResponse.json({
       ok: true,
       application: toSuperadminView(updated),

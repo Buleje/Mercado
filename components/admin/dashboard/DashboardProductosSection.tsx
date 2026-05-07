@@ -14,17 +14,17 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
   const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#f59e0b" };
-  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"var(--accent)"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
   return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
-    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />}
+    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />}
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
-      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
+      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
@@ -50,9 +50,9 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <Kpi label="Prods. Activos" value={String(st.activeProducts)} icon={Package} accent="text-[var(--data-success)]" />
-            <Kpi label="Uds. Vendidas" value={String(st.uds)} icon={ShoppingCart} accent="text-[var(--data-success)]" />
-            <Kpi label="Sin Movimiento" value={String(st.sinMov.length)} icon={Timer} accent={st.sinMov.length>5?"text-amber-500":"text-[var(--data-success)]"} />
+            <Kpi label="Prods. Activos" value={String(st.activeProducts)} icon={Package} accent="text-[var(--data-success-500)]" />
+            <Kpi label="Uds. Vendidas" value={String(st.uds)} icon={ShoppingCart} accent="text-[var(--data-success-500)]" />
+            <Kpi label="Sin Movimiento" value={String(st.sinMov.length)} icon={Timer} accent={st.sinMov.length>5?"text-[var(--data-warning-500)]":"text-[var(--data-success-500)]"} />
           </div>
 
           <Card title="Top 10 productos" icon={TrendingUp}
@@ -99,14 +99,14 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
               {/* ABC Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3">
-                  <div className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Clase A</div>
-                  <div className="text-lg font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{st.classA.length}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/70">~80% ventas</div>
+                  <div className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Clase A</div>
+                  <div className="text-lg font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{st.classA.length}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70">~80% ventas</div>
                 </div>
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3">
-                  <div className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Clase B</div>
-                  <div className="text-lg font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{st.classB.length}</div>
-                  <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/70">~15% ventas</div>
+                  <div className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Clase B</div>
+                  <div className="text-lg font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{st.classB.length}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70">~15% ventas</div>
                 </div>
                 <div className="bg-[var(--surface-sunken)] rounded-lg p-3">
                   <div className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Clase C</div>
@@ -148,7 +148,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                           <div className="font-semibold">{p.name}</div>
                           <div>Rev: {fmt(p.revenue)} ({p.revenuePct.toFixed(1)}%)</div>
                           <div>Acum: {p.cumulativePct.toFixed(1)}%</div>
-                          <div className={cn("font-bold", p.abcClass === "A" ? "text-[var(--data-success)]" : p.abcClass === "B" ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>Clase {p.abcClass}</div>
+                          <div className={cn("font-bold", p.abcClass === "A" ? "text-[var(--data-success-500)]" : p.abcClass === "B" ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>Clase {p.abcClass}</div>
                         </div>
                       </div>
                     ))}
@@ -168,7 +168,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                       <span className="text-[var(--text-secondary)]">C (marginales)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs ml-auto">
-                      <div className="w-3 h-0.5 bg-[var(--data-warning)]"></div>
+                      <div className="w-3 h-0.5 bg-[var(--data-warning-500)]"></div>
                       <span className="text-[var(--text-secondary)]">% Acumulado</span>
                     </div>
                   </div>
@@ -177,8 +177,8 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
 
               {/* Action insights */}
               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
-                <div className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Recomendaciones</div>
-                <ul className="space-y-0.5 text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Recomendaciones</div>
+                <ul className="space-y-0.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                   <li>• <strong>Clase A:</strong> Nunca dejar agotar. Prioridad en inventario y proveedores.</li>
                   <li>• <strong>Clase B:</strong> Mantener stock moderado. Revisar rotación mensual.</li>
                   <li>• <strong>Clase C:</strong> Stock mínimo. Considerar eliminar si no rotan.</li>

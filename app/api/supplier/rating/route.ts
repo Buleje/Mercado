@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     const [monthlyRatings, evaluationAverages, tenantAverage, ranking] = await Promise.all([
       SupplierRatingDB.getBySupplierId(supplierId),
-      SupplierEvaluationsDB.getAverages(supplierId),
+      SupplierEvaluationsDB.getAverages(supplierId, tenantId),
       SupplierRatingDB.getTenantAverage(tenantId, currentPeriod),
       SupplierRatingDB.getRanking(tenantId, supplierId, currentPeriod),
     ]);

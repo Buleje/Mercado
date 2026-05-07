@@ -71,22 +71,22 @@ const RISK_CONFIG: Record<
 > = {
   none: {
     label: "Sin riesgo",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
+    cls: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
     icon: CheckCircle2,
   },
   low: {
     label: "Riesgo bajo",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
+    cls: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
     icon: CheckCircle2,
   },
   medium: {
     label: "Riesgo medio",
-    cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800",
+    cls: "bg-amber-50 text-[var(--data-warning-700)] border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800",
     icon: Clock,
   },
   high: {
     label: "Riesgo alto",
-    cls: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+    cls: "bg-red-50 text-[var(--data-error-700)] border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
     icon: AlertCircle,
   },
 };
@@ -97,17 +97,17 @@ const FIADO_STATUS_CONFIG: Record<
 > = {
   ACTIVO: {
     label: "Activo",
-    cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
+    cls: "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/20 dark:text-emerald-300",
     dot: "bg-emerald-400",
   },
   PAGADO: {
     label: "Pagado",
-    cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
+    cls: "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/20 dark:text-emerald-300",
     dot: "bg-emerald-400",
   },
   VENCIDO: {
     label: "Vencido",
-    cls: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300",
+    cls: "bg-red-50 text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-300",
     dot: "bg-red-400",
   },
   CANCELADO: {
@@ -143,7 +143,7 @@ function ScoreBreakdown({
           const label = BREAKDOWN_LABELS[key] ?? key;
           const color =
             value >= 700
-              ? "bg-emerald-500"
+              ? "bg-[var(--data-success-500)]"
               : value >= 400
                 ? "bg-amber-400"
                 : "bg-red-400";
@@ -202,8 +202,8 @@ function ScoreHistory({
             delta === null || delta === 0
               ? "text-slate-400"
               : delta > 0
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-500 dark:text-red-400";
+                ? "text-[var(--data-success-600)] dark:text-emerald-400"
+                : "text-[var(--data-error-500)] dark:text-red-400";
 
           return (
             <div
@@ -318,7 +318,7 @@ function FiadosActivos({
                 </div>
                 <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all"
+                    className="h-full rounded-full bg-[var(--data-success-500)] transition-all"
                     style={{ width: `${pct}%` }}
                     role="presentation"
                   />
@@ -351,9 +351,9 @@ function TipsSection({ tips }: { tips: string[] }) {
         {tips.map((tip, i) => (
           <li
             key={i}
-            className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-400"
+            className="flex items-start gap-1.5 text-sm text-[var(--data-warning-700)] dark:text-amber-400"
           >
-            <span className="mt-0.5 shrink-0 text-amber-400 dark:text-amber-600">
+            <span className="mt-0.5 shrink-0 text-amber-400 dark:text-[var(--data-warning-600)]">
               •
             </span>
             {tip}
@@ -462,7 +462,7 @@ export default async function MiCreditoPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/20">
-          <AlertCircle className="h-8 w-8 text-amber-500" aria-hidden />
+          <AlertCircle className="h-8 w-8 text-[var(--data-warning-500)]" aria-hidden />
         </div>
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
           Sin datos aún

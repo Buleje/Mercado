@@ -113,7 +113,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           "hover:-translate-y-0.5 hover:shadow-md",
           active
-            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_rgba(0,180,166,0.35)]"
+            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
             : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]",
         )}
       >
@@ -154,7 +154,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         "hover:-translate-y-0.5 hover:shadow-md",
         active
-          ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_rgba(0,180,166,0.35)]"
+          ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
           : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]",
       )}
     >

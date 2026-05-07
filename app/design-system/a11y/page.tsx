@@ -216,7 +216,7 @@ export default function A11yPerfDemoPage() {
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 min-h-24">
               {idleReady ? (
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)] mb-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)] mb-2">
                     Idle mounted
                   </p>
                   <p className="text-sm">Este componente se montó tras el idle del navegador.</p>

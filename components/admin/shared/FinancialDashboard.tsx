@@ -450,7 +450,7 @@ export default function FinancialDashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="h-14 w-14 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 flex items-center justify-center mb-4">
-          <BarChart3 className="h-7 w-7 text-[var(--data-error)]" />
+          <BarChart3 className="h-7 w-7 text-[var(--data-error-500)]" />
         </div>
         <p className="text-base font-semibold text-[var(--text-primary)] mb-1">
           No se pudo cargar el resumen financiero
@@ -508,15 +508,15 @@ export default function FinancialDashboard() {
           value={formatCurrency(ventasBrutas)}
           icon={DollarSign}
           accent="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
-          borderColor="#00B4A6"
+          iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+          borderColor="var(--accent)"
         />
         <PLCard
           label="Costo de productos"
           value={formatCurrency(costoProductos)}
           icon={Package}
           accent="bg-red-50 dark:bg-red-950/30"
-          iconColor="text-red-500 dark:text-red-400"
+          iconColor="text-[var(--data-error-500)] dark:text-red-400"
           borderColor="#ef4444"
         />
         <PLCard
@@ -533,7 +533,7 @@ export default function FinancialDashboard() {
           value={`${margenPct.toFixed(1)}%`}
           icon={Percent}
           accent="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
+          iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           borderColor="#3b82f6"
         />
       </div>

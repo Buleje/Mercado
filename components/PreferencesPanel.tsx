@@ -79,7 +79,7 @@ export function PreferencesPanel() {
           </button>
           <button
             onClick={resetPreferences}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[var(--data-error-600)] dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
           >
             <RotateCcw className="h-4 w-4" />
             Resetear
@@ -106,7 +106,7 @@ export function PreferencesPanel() {
       {/* Import Error Message */}
       {importError && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-700 dark:text-red-300 font-semibold">
+          <p className="text-sm text-[var(--data-error-700)] dark:text-red-300 font-semibold">
             ✗ Archivo inválido. Verifica que sea un JSON de preferencias exportado.
           </p>
         </div>

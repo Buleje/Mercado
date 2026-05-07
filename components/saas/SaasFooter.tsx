@@ -38,9 +38,9 @@ export default function SaasFooter() {
                     href={link.href}
                     className={[
                       "text-sm text-gray-600 dark:text-gray-400",
-                      "hover:text-[#00B4A6] dark:hover:text-[#00B4A6]",
+                      "hover:text-[var(--accent)] dark:hover:text-[var(--accent)]",
                       "transition-colors duration-200",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded",
+                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded",
                     ].join(" ")}
                   >
                     {link.label}
@@ -62,9 +62,9 @@ export default function SaasFooter() {
                     href={link.href}
                     className={[
                       "text-sm text-gray-600 dark:text-gray-400",
-                      "hover:text-[#00B4A6] dark:hover:text-[#00B4A6]",
+                      "hover:text-[var(--accent)] dark:hover:text-[var(--accent)]",
                       "transition-colors duration-200",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded",
+                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded",
                     ].join(" ")}
                   >
                     {link.label}
@@ -88,9 +88,9 @@ export default function SaasFooter() {
                   className={[
                     "inline-flex items-center gap-2.5 text-sm",
                     "text-gray-600 dark:text-gray-400",
-                    "hover:text-[#00B4A6] dark:hover:text-[#00B4A6]",
+                    "hover:text-[var(--accent)] dark:hover:text-[var(--accent)]",
                     "transition-colors duration-200",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded",
                   ].join(" ")}
                   aria-label="Contactar por WhatsApp"
                 >
@@ -107,9 +107,9 @@ export default function SaasFooter() {
                   className={[
                     "inline-flex items-center gap-2.5 text-sm",
                     "text-gray-600 dark:text-gray-400",
-                    "hover:text-[#00B4A6] dark:hover:text-[#00B4A6]",
+                    "hover:text-[var(--accent)] dark:hover:text-[var(--accent)]",
                     "transition-colors duration-200",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded",
                   ].join(" ")}
                   aria-label={`Enviar correo a ${CONTACT_EMAIL}`}
                 >

@@ -23,7 +23,7 @@ const PLATFORM_TENANT_ID = "main";
  */
 export async function GET(req: NextRequest) {
   const tenantId =
-    req.cookies.get("oauth-tenant")?.value ??
+    req.cookies.get("__Host-oauth-tenant")?.value ??
     req.headers.get("x-tenant-id") ??
     PLATFORM_TENANT_ID;
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
-  const storedState = req.cookies.get("oauth-state")?.value;
+  const storedState = req.cookies.get("__Host-oauth-state")?.value;
   const errorParam = req.nextUrl.searchParams.get("error");
 
   // Facebook returned an error (user denied consent, etc.)
@@ -79,15 +79,15 @@ export async function GET(req: NextRequest) {
       tenantId,
     });
 
-    // ── Upsert customer ──
-    // Facebook OAuth users may not have a phone, so we use a synthetic phone
-    // derived from the Facebook ID as the PK (Customer.phone is the @id).
-    // If a customer with that email already exists, we link to them instead.
-    const existing = fbUser.email
-      ? await CustomersDB.getByEmail(fbUser.email, tenantId)
-      : null;
+    // SECURITY 2026-05-06 (audit ATO crítico): NO mergeamos por email en
+    // Facebook porque FB no garantiza email verificado. Antes: atacante creaba
+    // cuenta FB con email "victima@gmail.com" y secuestraba la cuenta de la
+    // víctima en nuestro sistema. Ahora siempre creamos cuenta nueva con phone
+    // sintético `facebook_<id>`. Para linkear cuentas se requerirá flow OTP
+    // explícito en el futuro.
     const syntheticPhone = `facebook_${fbUser.id}`;
-    const phone = existing?.phone ?? syntheticPhone;
+    const existing = await CustomersDB.getByPhone(syntheticPhone, tenantId).catch(() => null);
+    const phone = syntheticPhone;
     const isNew = !existing;
 
     const customer = await CustomersDB.upsert(
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
     // ── Resolver destino post-login ──
     // Prioridad: cookie `oauth-redirect` (ruta interna guardada en /api/auth/facebook)
     //           > /marketplace/explorar (default — landing -> explorar)
-    const redirectCookie = req.cookies.get("oauth-redirect")?.value ?? "";
+    const redirectCookie = req.cookies.get("__Host-oauth-redirect")?.value ?? "";
     const safeRedirect =
       redirectCookie.startsWith("/") && !redirectCookie.startsWith("//")
         ? redirectCookie
@@ -146,9 +146,9 @@ export async function GET(req: NextRequest) {
     });
 
     // Clear OAuth cookies
-    response.cookies.set("oauth-state", "", { maxAge: 0, path: "/" });
-    response.cookies.set("oauth-tenant", "", { maxAge: 0, path: "/" });
-    response.cookies.set("oauth-redirect", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-state", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-tenant", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-redirect", "", { maxAge: 0, path: "/" });
 
     logger.info("[oauth/facebook] Customer session created", {
       phone: customer.phone,

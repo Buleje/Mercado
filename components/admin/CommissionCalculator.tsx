@@ -235,7 +235,7 @@ export default function CommissionCalculator() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -267,11 +267,11 @@ export default function CommissionCalculator() {
               {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
             </p>
           </div>
-          <div className="rounded-2xl border border-[var(--data-warning)] bg-[var(--data-warning)]/5 p-5">
+          <div className="rounded-2xl border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/5 p-5">
             <p className="text-sm text-[var(--text-tertiary)] mb-2">
               Total a pagar en comisiones
             </p>
-            <p className="text-3xl font-extrabold text-[var(--data-warning)] tabular-nums">{fmt(totalCommissions)}</p>
+            <p className="text-3xl font-extrabold text-[var(--data-warning-500)] tabular-nums">{fmt(totalCommissions)}</p>
           </div>
         </div>
       )}
@@ -329,7 +329,7 @@ export default function CommissionCalculator() {
                   <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning)] tabular-nums">
+                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
                     {fmt(s.commission)}
                   </td>
                 </tr>
@@ -343,7 +343,7 @@ export default function CommissionCalculator() {
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
                 <td className="px-4 py-4" />
-                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning)] tabular-nums">
+                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
                   {fmt(totalCommissions)}
                 </td>
               </tr>

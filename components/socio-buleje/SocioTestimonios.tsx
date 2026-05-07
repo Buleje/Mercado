@@ -63,7 +63,7 @@ export function SocioTestimonios() {
                 <Caption className="font-semibold text-[var(--text-secondary)]">
                   Ahorro mensual
                 </Caption>
-                <span className="text-[length:var(--ts-lg)] font-extrabold tabular-nums text-[var(--data-success)]">
+                <span className="text-[length:var(--ts-lg)] font-extrabold tabular-nums text-[var(--data-success-500)]">
                   S/ {t.savings}
                 </span>
               </div>

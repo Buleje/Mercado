@@ -49,7 +49,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
   }, []);
 
   const healthColor = healthScore !== null
-    ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+    ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
     : "bg-[var(--accent-soft)]";
 
   return (
@@ -77,7 +77,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
 
         {/* Alert badge */}
         {alertCount > 0 && !open && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 bg-[var(--data-error)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1 ">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 bg-[var(--data-error-500)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1 ">
             {alertCount}
           </span>
         )}

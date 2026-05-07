@@ -61,7 +61,7 @@ export default function SupplierPage() {
   if (authenticated === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent-dark)] border-t-transparent" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ function SupplierLoginScreen({
         <div className="mb-8 text-center">
           <span
             className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white text-xl font-black mb-3"
-            style={{ background: "#00B4A6" }}
+            style={{ background: "var(--accent)" }}
           >
             B
           </span>
@@ -132,13 +132,13 @@ function SupplierLoginScreen({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Pega tu clave de acceso aquí"
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[var(--accent-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-dark)]/20"
               disabled={loading}
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+            <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-[var(--data-error-600)] dark:text-red-400">
               {error}
             </p>
           )}
@@ -147,7 +147,7 @@ function SupplierLoginScreen({
             type="submit"
             disabled={loading || !apiKey.trim()}
             className="w-full min-h-[44px] rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-            style={{ background: "#00B4A6" }}
+            style={{ background: "var(--accent)" }}
           >
             {loading ? "Verificando..." : "Ingresar"}
           </button>

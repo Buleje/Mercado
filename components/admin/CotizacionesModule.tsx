@@ -47,10 +47,10 @@ type Cotizacion = {
 
 const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: string }> = {
   BORRADOR:   { label: "Borrador",   color: "text-[var(--text-primary)]",      bg: "bg-gray-100" },
-  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success)]",      bg: "bg-[var(--accent-soft)]" },
-  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
-  RECHAZADA:  { label: "Rechazada",  color: "text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)]" },
-  VENCIDA:    { label: "Vencida",    color: "text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)]" },
+  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)]" },
+  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+  RECHAZADA:  { label: "Rechazada",  color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
+  VENCIDA:    { label: "Vencida",    color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   CONVERTIDA: { label: "Convertida", color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
@@ -161,9 +161,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   // Funnel
   const stages = [
     { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-300", text: "text-[var(--text-primary)]" },
-    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)]" },
-    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)]" },
-    { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning)]", text: "text-[var(--data-warning)]" },
+    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+    { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
   ];
   const maxFunnel = Math.max(...stages.map(s => s.count), 1);
 
@@ -213,7 +213,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
             <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{k.label}</p>
             <p className={cn(
               "text-2xl font-mono font-bold mt-1 tabular-nums",
-              k.valueTone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]",
+              k.valueTone === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
             )}>{k.value}</p>
           </div>
         ))}
@@ -278,7 +278,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
                 <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
                 <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Cotizado"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                <Bar dataKey="monto" fill="#00B4A6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="monto" fill="var(--accent)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : emptyCot("Sin datos de clientes")}
@@ -590,7 +590,7 @@ export default function CotizacionesModule() {
         {!loading && cotizaciones.length > 0 && (() => {
           const pendientes = cotizaciones.filter(c => c.status === "BORRADOR" || c.status === "ENVIADA").length;
           return pendientes > 0 ? (
-            <span className="text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)] px-2.5 py-1 rounded-full">{pendientes} pendientes</span>
+            <span className="text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">{pendientes} pendientes</span>
           ) : null;
         })()}
       </AdminModuleHeader>
@@ -656,7 +656,7 @@ export default function CotizacionesModule() {
                   <p className={cn(
                     "text-lg font-extrabold tabular-nums",
                     tasaConversion > 0 && tasaConversion < 15
-                      ? "text-[var(--data-warning)]"
+                      ? "text-[var(--data-warning-500)]"
                       : "text-[var(--text-primary)]",
                   )}>
                     {tasaConversion.toFixed(1)}%
@@ -680,9 +680,9 @@ export default function CotizacionesModule() {
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
               { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-200", text: "text-[var(--text-primary)]" },
-              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)]" },
-              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)]" },
-              { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning)]", text: "text-[var(--data-warning)]" },
+              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+              { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
@@ -800,7 +800,7 @@ export default function CotizacionesModule() {
                         <button
                           onClick={marcarVencidas}
                           disabled={markingVencidas}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-error)] bg-[var(--surface-sunken)] hover:opacity-80 transition-opacity disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:opacity-80 transition-opacity disabled:opacity-50"
                         >
                           Marcar como vencidas
                         </button>
@@ -818,8 +818,8 @@ export default function CotizacionesModule() {
               <LoadingState />
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
-                <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-                <p className="text-sm text-[var(--data-error)]">{error}</p>
+                <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+                <p className="text-sm text-[var(--data-error-500)]">{error}</p>
                 <button onClick={fetchCotizaciones} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
               </div>
             ) : cotizaciones.length === 0 ? (
@@ -864,7 +864,7 @@ export default function CotizacionesModule() {
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
                               <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
-                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
+                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
                         </div>
@@ -1086,7 +1086,7 @@ export default function CotizacionesModule() {
                           <td className="py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
                             {items.length > 1 && (
-                              <button onClick={() => removeItem(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error)] hover:text-[var(--data-error)] transition-colors">
+                              <button onClick={() => removeItem(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1156,7 +1156,7 @@ export default function CotizacionesModule() {
                 />
               </div>
 
-              {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
+              {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
               <div className="flex gap-2 justify-between pt-1">
                 <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -1266,7 +1266,7 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-tertiary)]")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-tertiary)]")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
                             {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-gray-200")} />}
@@ -1287,8 +1287,8 @@ export default function CotizacionesModule() {
                     const vencida = new Date(selected.validoHasta) < new Date();
                     if (vencida) {
                       return (
-                        <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-3 space-y-2">
-                          <p className="text-xs font-bold text-[var(--data-error)]">Cotización vencida — ¿Renovar?</p>
+                        <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl p-3 space-y-2">
+                          <p className="text-xs font-bold text-[var(--data-error-500)]">Cotización vencida — ¿Renovar?</p>
                           <button
                             onClick={() => {
                               setItems(selected.items.map(it => ({ descripcion: it.descripcion, cantidad: String(it.cantidad), precioUnit: String(it.precioUnit), descuento: String(it.descuento) })));
@@ -1300,7 +1300,7 @@ export default function CotizacionesModule() {
                               setActiveTab("nueva");
                               setStep(3);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
                           >
                             <RefreshCw className="h-3.5 w-3.5" /> Renovar cotización
                           </button>
@@ -1311,8 +1311,8 @@ export default function CotizacionesModule() {
                       const _phone = selected.customerId || "";
                       const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
                       return (
-                        <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3 space-y-2">
-                          <p className="text-xs font-bold text-[var(--data-warning)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
+                        <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 space-y-2">
+                          <p className="text-xs font-bold text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
                           <a
                             href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
                             target="_blank"
@@ -1345,7 +1345,7 @@ export default function CotizacionesModule() {
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
                         <XCircle className="h-4 w-4" /> Rechazada
                       </button>
                     </>
@@ -1564,7 +1564,7 @@ export default function CotizacionesModule() {
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(tpl.id)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

@@ -53,9 +53,9 @@ interface AdminHealthData {
 
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    ok: "bg-[var(--data-success)]",
-    degraded: "bg-[var(--data-warning)]",
-    error: "bg-[var(--data-error)]",
+    ok: "bg-[var(--data-success-500)]",
+    degraded: "bg-[var(--data-warning-500)]",
+    error: "bg-[var(--data-error-500)]",
     checking: "bg-gray-300 animate-pulse",
   };
   return <span className={`w-2.5 h-2.5 rounded-full ${colors[status] ?? colors.checking}`} />;
@@ -63,9 +63,9 @@ function StatusDot({ status }: { status: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    ok: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
-    degraded: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-    error: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+    ok: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
+    degraded: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+    error: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
     checking: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
   };
   const labels: Record<string, string> = {
@@ -243,9 +243,9 @@ export default function SystemHealthPage() {
   }, [autoRefresh, runChecks]);
 
   const overallIcons = {
-    ok: <CheckCircle2 className="w-8 h-8 text-[var(--data-success)]" />,
-    degraded: <AlertTriangle className="w-8 h-8 text-[var(--data-warning)]" />,
-    error: <XCircle className="w-8 h-8 text-[var(--data-error)]" />,
+    ok: <CheckCircle2 className="w-8 h-8 text-[var(--data-success-500)]" />,
+    degraded: <AlertTriangle className="w-8 h-8 text-[var(--data-warning-500)]" />,
+    error: <XCircle className="w-8 h-8 text-[var(--data-error-500)]" />,
     checking: <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />,
   };
   const overallLabels = {
@@ -257,9 +257,9 @@ export default function SystemHealthPage() {
   // Ola 2: tokenized surface — color-mix con var(--data-*) 8% para un soft
   // background consistente en ambos temas, en lugar de bg-green-950/20 hardcoded.
   const overallColors = {
-    ok: "border-[var(--data-success)] bg-[color-mix(in_oklch,var(--data-success)_8%,transparent)]",
-    degraded: "border-[var(--data-warning)] bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
-    error: "border-[var(--data-error)] bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
+    ok: "border-[var(--data-success-500)] bg-[color-mix(in_oklch,var(--data-success)_8%,transparent)]",
+    degraded: "border-[var(--data-warning-500)] bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
+    error: "border-[var(--data-error-500)] bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
     checking: "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
   };
 
@@ -333,16 +333,16 @@ export default function SystemHealthPage() {
         <>
           {/* Active Incidents */}
           {incidents.length > 0 && (
-            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-2">
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 Incidentes activos
               </h3>
               {incidents.map(inc => (
-                <div key={inc.id} className="flex items-center gap-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+                <div key={inc.id} className="flex items-center gap-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   <XCircle className="w-4 h-4 shrink-0" />
                   <span>{inc.message}</span>
-                  <span className="text-sm font-semibold text-[var(--data-error)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
+                  <span className="text-sm font-semibold text-[var(--data-error-500)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
                 </div>
               ))}
             </div>
@@ -354,7 +354,7 @@ export default function SystemHealthPage() {
               {adminMetrics.map(m => (
                 <div key={m.label} className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-4">
                   <p className="text-sm font-semibold text-[var(--text-tertiary)]">{m.label}</p>
-                  <p className={`text-3xl font-extrabold mt-1.5 tabular-nums ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
+                  <p className={`text-3xl font-extrabold mt-1.5 tabular-nums ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}>
                     {m.value}{m.unit ? <span className="text-base font-semibold ml-1">{m.unit}</span> : null}
                   </p>
                 </div>
@@ -379,7 +379,7 @@ export default function SystemHealthPage() {
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`text-base font-mono font-bold tabular-nums ${check.latency > 1000 ? "text-[var(--data-error)]" : check.latency > 500 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]"}`}>
+                  <span className={`text-base font-mono font-bold tabular-nums ${check.latency > 1000 ? "text-[var(--data-error-500)]" : check.latency > 500 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}>
                     {check.latency > 0 ? `${check.latency}ms` : "—"}
                   </span>
                 </div>

@@ -44,13 +44,13 @@ type PayableRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<CheckStatus, { label: string; color: string; bg: string }> = {
-  "en-cartera":    { label: "En cartera",    color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
-  "por-depositar": { label: "Por depositar", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"  },
+  "en-cartera":    { label: "En cartera",    color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
+  "por-depositar": { label: "Por depositar", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"  },
   depositado:      { label: "Depositado",    color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]"},
-  cobrado:         { label: "Cobrado",       color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-  pagado:          { label: "Pagado",        color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-  rebotado:        { label: "Rebotado",      color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30"      },
-  pendiente:       { label: "Pendiente",     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"},
+  cobrado:         { label: "Cobrado",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  pagado:          { label: "Pagado",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  rebotado:        { label: "Rebotado",      color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30"      },
+  pendiente:       { label: "Pendiente",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"},
 };
 
 // Convierte cuentas por pagar en registros de cheques "emitidos"
@@ -141,7 +141,7 @@ export default function CheckManagementTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
@@ -194,28 +194,28 @@ export default function CheckManagementTab() {
           {
             label: "Total pendiente",
             value: fmt(stats.totalPending),
-            color: "text-[var(--data-warning)]",
+            color: "text-[var(--data-warning-500)]",
             bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",
             icon: Clock,
           },
           {
             label: "Total pagado",
             value: fmt(stats.totalPaid),
-            color: "text-[var(--data-success)]",
+            color: "text-[var(--data-success-500)]",
             bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: CheckCircle,
           },
           {
             label: "Por depositar",
             value: String(stats.toDeposit),
-            color: "text-[var(--data-success)]",
+            color: "text-[var(--data-success-500)]",
             bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: Calendar,
           },
           {
             label: "Rebotados / Tasa",
             value: `${stats.bounced} (${stats.bouncedRate.toFixed(1)}%)`,
-            color: stats.bounced > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]",
+            color: stats.bounced > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
             bg: stats.bounced > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: Ban,
           },
@@ -232,13 +232,13 @@ export default function CheckManagementTab() {
 
       {/* Alertas */}
       {stats.bounced > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               Alerta: {stats.bounced} cheque(s) rebotado(s)
             </p>
-            <p className="text-xs text-[var(--data-error)]/80">
+            <p className="text-xs text-[var(--data-error-500)]/80">
               Revisar y contactar a los proveedores correspondientes
             </p>
           </div>
@@ -345,8 +345,8 @@ export default function CheckManagementTab() {
                         className={cn(
                           "text-xs font-bold px-2 py-0.5 rounded-full",
                           c.type === "recibido"
-                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
-                            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
+                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
+                            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
                         )}
                       >
                         {c.type === "recibido" ? "Recibido" : "Emitido"}
@@ -357,7 +357,7 @@ export default function CheckManagementTab() {
                     <td
                       className={cn(
                         "px-4 py-3 text-[var(--text-secondary)] flex items-center gap-1",
-                        isOverdue && "text-[var(--data-warning)] font-bold"
+                        isOverdue && "text-[var(--data-warning-500)] font-bold"
                       )}
                     >
                       <Calendar className="h-3 w-3" />

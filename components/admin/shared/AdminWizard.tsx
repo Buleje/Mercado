@@ -92,7 +92,7 @@ export function AdminWizard({
                   className={cn(
                     "h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0",
                     done
-                      ? "bg-[var(--data-success)] text-white"
+                      ? "bg-[var(--data-success-500)] text-white"
                       : active
                         ? "bg-[var(--accent)] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
@@ -120,7 +120,7 @@ export function AdminWizard({
                 <div
                   className={cn(
                     "h-0.5 flex-1 rounded-full transition-colors",
-                    done ? "bg-[var(--data-success)]" : "bg-[var(--rule-soft)]",
+                    done ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-soft)]",
                   )}
                 />
               )}

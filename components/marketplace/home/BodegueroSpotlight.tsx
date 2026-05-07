@@ -145,7 +145,7 @@ export default function BodegueroSpotlight() {
             </p>
             <span className="relative mt-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">
               <Star
-                className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]"
+                className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                 strokeWidth={1.75}
                 aria-hidden
               />

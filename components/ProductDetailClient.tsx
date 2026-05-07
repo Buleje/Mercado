@@ -345,9 +345,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     <span
                       className={cn(
                         "inline-block px-3 py-1 rounded-full text-xs font-bold uppercase text-white",
-                        product.badge === "Oferta" && "bg-red-500",
+                        product.badge === "Oferta" && "bg-[var(--data-error-500)]",
                         product.badge === "Popular" && "bg-secondary",
-                        product.badge === "Fresco" && "bg-emerald-500",
+                        product.badge === "Fresco" && "bg-[var(--data-success-500)]",
                         product.badge === "Premium" && "bg-violet-600",
                       )}
                     >
@@ -381,7 +381,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     href="#resenas"
                     className="flex items-center gap-1 text-sm hover:text-primary transition-colors"
                   >
-                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                    <Star className="h-4 w-4 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
                     <span className="font-semibold text-foreground">
                       {avgRating.toFixed(1)}
                     </span>
@@ -404,12 +404,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   className={cn(
                     "inline-block mt-3 text-xs font-semibold px-3 py-1 rounded-full",
                     stock <= 0
-                      ? "bg-red-50 text-red-500 dark:bg-red-500/10"
+                      ? "bg-red-50 text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10"
                       : stock <= 5
-                        ? "bg-red-50 text-red-600 dark:bg-red-500/15 animate-pulse font-bold"
+                        ? "bg-red-50 text-[var(--data-error-600)] dark:bg-[var(--data-error-500)]/15 animate-pulse font-bold"
                         : stock <= stockMin
-                          ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
-                          : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
+                          ? "bg-amber-50 text-[var(--data-warning-600)] dark:bg-[var(--data-warning-500)]/10"
+                          : "bg-emerald-50 text-[var(--data-success-600)] dark:bg-[var(--data-success-500)]/10",
                   )}
                 >
                   {stock <= 0
@@ -428,17 +428,17 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
             {/* Restock notification — shown when product is out of stock */}
             {isOutOfStock && (
-              <div className="bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4">
+              <div className="bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-[var(--data-warning-500)]/40 rounded-2xl p-4">
                 {restockSubmitted ? (
-                  <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
+                  <div className="flex items-center gap-3 text-[var(--data-success-700)] dark:text-emerald-400">
                     <CheckCircle2 className="h-5 w-5 shrink-0" />
                     <p className="text-sm font-semibold">Te avisaremos por WhatsApp cuando vuelva a estar disponible.</p>
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 mb-3">
-                      <BellRing className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                      <BellRing className="h-4 w-4 text-[var(--data-warning-600)] dark:text-amber-400" />
+                      <p className="text-sm font-bold text-[var(--data-warning-700)] dark:text-amber-300">
                         Quiero que me avisen cuando vuelva
                       </p>
                     </div>
@@ -448,7 +448,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         value={restockPhone}
                         onChange={e => setRestockPhone(e.target.value)}
                         placeholder="Tu WhatsApp (ej: 961234567)"
-                        className="flex-1 px-3 py-2.5 rounded-xl text-sm border border-amber-300 dark:border-amber-600 bg-white dark:bg-surface text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-2.5 rounded-xl text-sm border border-amber-300 dark:border-[var(--data-warning-600)] bg-white dark:bg-surface text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <button
                         onClick={handleRestockNotify}
@@ -470,10 +470,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 .filter((p) => p.category === product.category && p.id !== product.id && (p.stock == null || p.stock > 0))
                 .slice(0, 3);
               return (
-                <div className="bg-emerald-50 dark:bg-emerald-900/15 border border-emerald-200 dark:border-emerald-700/40 rounded-2xl p-4">
+                <div className="bg-emerald-50 dark:bg-emerald-900/15 border border-emerald-200 dark:border-[var(--data-success-500)]/40 rounded-2xl p-4">
                   {alternatives.length > 0 ? (
                     <>
-                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mb-3">Prueba estas alternativas:</p>
+                      <p className="text-sm font-bold text-[var(--data-success-700)] dark:text-emerald-300 mb-3">Prueba estas alternativas:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {alternatives.map((alt) => (
                           <Link
@@ -491,7 +491,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">Vuelve pronto, estamos reabasteciendo.</p>
+                    <p className="text-sm text-[var(--data-success-600)] dark:text-emerald-400 font-semibold">Vuelve pronto, estamos reabasteciendo.</p>
                   )}
                 </div>
               );
@@ -499,8 +499,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
             {/* Volume discount tiers */}
             {volumeTiers.length > 0 && (
-              <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/15 dark:to-orange-900/15 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4">
-                <p className="text-sm font-bold text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-2">
+              <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/15 dark:to-orange-900/15 border border-amber-200 dark:border-[var(--data-warning-500)]/40 rounded-2xl p-4">
+                <p className="text-sm font-bold text-[var(--data-warning-700)] dark:text-amber-300 mb-2.5 flex items-center gap-2">
                   <Package className="h-4 w-4" />
                   Comprá más, pagá menos
                 </p>
@@ -592,8 +592,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       onClick={() => handleBulkAdd(n)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                         isActive
-                          ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                          : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600"
+                          ? "bg-emerald-50 border-emerald-300 text-[var(--data-success-700)]"
+                          : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-[var(--data-success-600)]"
                       }`}
                     >
                       {n}x — S/{(product.price * n).toFixed(2)}
@@ -610,8 +610,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 className={cn(
                   "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
                   fav
-                    ? "bg-red-50 border-red-200 text-red-500 dark:bg-red-500/10 dark:border-red-500/30"
-                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-red-500 hover:border-red-200",
+                    ? "bg-red-50 border-red-200 text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10 dark:border-[var(--data-error-500)]/30"
+                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-[var(--data-error-500)] hover:border-red-200",
                 )}
                 aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
               >
@@ -648,10 +648,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             {/* Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { icon: Truck, text: "Delivery gratis a domicilio", color: "text-emerald-500" },
-                { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-emerald-500" },
+                { icon: Truck, text: "Delivery gratis a domicilio", color: "text-[var(--data-success-500)]" },
+                { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-[var(--data-success-500)]" },
                 { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-violet-500" },
-                { icon: Package, text: "Productos frescos garantizados", color: "text-amber-500" },
+                { icon: Package, text: "Productos frescos garantizados", color: "text-[var(--data-warning-500)]" },
               ].map((b, i) => (
                 <div
                   key={i}
@@ -695,8 +695,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     >
                       <defs>
                         <linearGradient id="pdGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path
@@ -709,7 +709,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <polyline
                         points={points}
                         fill="none"
-                        stroke="#00B4A6"
+                        stroke="var(--accent)"
                         strokeWidth="2"
                         strokeLinejoin="round"
                         strokeLinecap="round"
@@ -720,7 +720,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             cx={i * 40}
                             cy={50 - ((p - min) / range) * 42}
                             r="3"
-                            fill={i === prices.length - 1 ? "#00B4A6" : "#2dd4bf"}
+                            fill={i === prices.length - 1 ? "var(--accent)" : "#2dd4bf"}
                             stroke="white"
                             strokeWidth="1.5"
                           />
@@ -749,7 +749,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   </div>
                   {/* Price range summary */}
                   <div className="mt-2 flex items-center gap-3 text-[length:var(--ts-2xs)] text-gray-400">
-                    <span>Más bajo: <strong className="text-[#00B4A6]">S/{min.toFixed(2)}</strong></span>
+                    <span>Más bajo: <strong className="text-[var(--accent)]">S/{min.toFixed(2)}</strong></span>
                     <span className="text-gray-200 dark:text-gray-700">|</span>
                     <span>Más alto: <strong className="text-red-400">S/{max.toFixed(2)}</strong></span>
                     {prices.length >= 2 && (

@@ -28,6 +28,9 @@ import { sendInvoice, voidInvoice, getInvoiceStatus } from "@/lib/sunat/nubefact
 import { buildBoleta, buildFactura, buildBaja } from "@/lib/sunat/invoice-builder";
 import { calculateIGV } from "@/lib/sunat";
 import { logger } from "@/lib/logger";
+// PERF 2026-05-05: rate limiter distribuido (Upstash Redis) — reemplaza el
+// Map en-memoria que no compartía estado entre instancias de Vercel.
+import { createDistributedRateLimiter } from "@/lib/rate-limit";
 
 // ── Schemas de entrada (Zod safeParse — regla #2) ────────────────────────────
 
@@ -112,37 +115,37 @@ export interface SunatResponse {
 }
 
 // ── Rate limiter por tenant ───────────────────────────────────────────────────
-// Ventana deslizante en memoria (suficiente para Vercel serverless — cada
-// instancia tiene su propio conteo; el límite real es por instancia).
-// Para rate limiting distribuido usar Redis/Upstash (ADR pendiente).
+// PERF 2026-05-05: migrado de Map en-memoria a Upstash Redis distribuido.
+// El Map anterior contaba por instancia de Vercel — con auto-scaling activo,
+// un tenant podía emitir hasta 10×N comprobantes/min (N = instancias activas).
+// Ahora el conteo es global y consistente entre todas las instancias.
+// Fallback automático a Map en-memoria cuando Upstash no está configurado
+// (ej. dev local sin UPSTASH_REDIS_REST_URL) — ver lib/rate-limit.ts.
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minuto
 const RATE_LIMIT_MAX = 10;           // máx. 10 emisiones por tenant por minuto
 
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+// Singleton — se reutiliza entre invocaciones del mismo módulo en la misma
+// instancia de Vercel (warm function). Costo de construcción: ~0ms.
+const _sunatRateLimiter = createDistributedRateLimiter({
+  key: "sunat-emision",
+  maxRequests: RATE_LIMIT_MAX,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+});
 
-function checkRateLimit(tenantId: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(tenantId);
+async function checkRateLimit(tenantId: string): Promise<{ allowed: boolean; remaining: number }> {
+  const allowed = await _sunatRateLimiter.check(tenantId);
+  const remaining = allowed ? await _sunatRateLimiter.remaining(tenantId) : 0;
 
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    // Nueva ventana
-    rateLimitMap.set(tenantId, { count: 1, windowStart: now });
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    const resetInMs = RATE_LIMIT_WINDOW_MS - (now - entry.windowStart);
+  if (!allowed) {
     logger.warn("[SunatFacade] Rate limit alcanzado", {
       tenantId,
-      count: entry.count,
-      resetInMs,
+      distributed: _sunatRateLimiter.distributed,
+      windowMs: RATE_LIMIT_WINDOW_MS,
     });
-    return { allowed: false, remaining: 0 };
   }
 
-  entry.count++;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
+  return { allowed, remaining };
 }
 
 // ── Helper: calcular totales desde items ─────────────────────────────────────
@@ -195,7 +198,8 @@ export async function emitirBoleta(
   const data = parsed.data;
 
   // 2. Rate limiting
-  const rl = checkRateLimit(tenantId);
+  // PERF 2026-05-05: await — checkRateLimit ahora es async (Upstash distribuido)
+  const rl = await checkRateLimit(tenantId);
   if (!rl.allowed) {
     return {
       success: false,
@@ -361,7 +365,8 @@ export async function emitirFactura(
   const data = parsed.data;
 
   // 2. Rate limiting
-  const rl = checkRateLimit(tenantId);
+  // PERF 2026-05-05: await — checkRateLimit ahora es async (Upstash distribuido)
+  const rl = await checkRateLimit(tenantId);
   if (!rl.allowed) {
     return {
       success: false,
@@ -610,7 +615,8 @@ export async function anularBoleta(
   }
 
   // 2. Rate limiting
-  const rl = checkRateLimit(tenantId);
+  // PERF 2026-05-05: await — checkRateLimit ahora es async (Upstash distribuido)
+  const rl = await checkRateLimit(tenantId);
   if (!rl.allowed) {
     return {
       success: false,

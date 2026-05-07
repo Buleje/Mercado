@@ -110,7 +110,7 @@ function inputCls(hasError?: boolean) {
     "w-full px-3 py-3 text-sm rounded-xl border transition outline-none",
     "bg-white dark:bg-gray-800 dark:text-gray-100",
     hasError
-      ? "border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      ? "border-red-400 focus:border-[var(--data-error-500)] focus:ring-1 focus:ring-[var(--data-error-500)]"
       : "border-gray-200 dark:border-gray-700 focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]",
   ].join(" ");
 }
@@ -855,7 +855,7 @@ function Step1StoreConfig({
           </select>
         </div>
         {(errors.openTime || errors.closeTime) && (
-          <p className="text-xs text-red-500 mt-1">{errors.openTime || errors.closeTime}</p>
+          <p className="text-xs text-[var(--data-error-500)] mt-1">{errors.openTime || errors.closeTime}</p>
         )}
       </div>
     </div>
@@ -1120,7 +1120,7 @@ function FormFieldSimple({
       {hint && !error && (
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{hint}</p>
       )}
-      {error && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>}
+      {error && <p className="text-xs text-[var(--data-error-500)] dark:text-red-400 mt-1">{error}</p>}
     </div>
   );
 }

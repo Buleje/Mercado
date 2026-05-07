@@ -46,8 +46,18 @@ export async function GET(
     );
   }
 
-  // Resolver tenantId del header inyectado por el middleware (proxy.ts)
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  // SECURITY 2026-05-06 (audit AI): derivar tenantId del producto pedido,
+  // no del header. El productId es global, así que la fuente de verdad es
+  // su tenantId real. Antes el header podía cruzar y contaminar el cache.
+  const { prisma } = await import("@/lib/prisma");
+  const productOwner = await prisma.product.findFirst({
+    where: { id: pid, deletedAt: null },
+    select: { tenantId: true },
+  });
+  if (!productOwner) {
+    return NextResponse.json({ products: [] });
+  }
+  const tenantId = productOwner.tenantId;
 
   logger.debug("[recommendations/productId] request", {
     tenantId,

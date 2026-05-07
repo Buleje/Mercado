@@ -458,7 +458,7 @@ export default function SuperadminBannersPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--data-error)]">
+      <div className="min-h-screen flex items-center justify-center text-[var(--data-error-500)]">
         No se pudieron cargar los banners.
       </div>
     );
@@ -553,7 +553,7 @@ export default function SuperadminBannersPage() {
                                 </p>
                                 {isDirty && (
                                   <span
-                                    className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-warning)] shrink-0"
+                                    className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)] shrink-0"
                                     title="Cambios sin guardar"
                                     aria-label="Cambios sin guardar"
                                   />
@@ -569,8 +569,8 @@ export default function SuperadminBannersPage() {
                                 count === 0
                                   ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                                   : activeCount === count
-                                    ? "bg-[var(--data-success)]/15 text-[var(--data-success)]"
-                                    : "bg-[var(--data-warning)]/15 text-[var(--data-warning)]",
+                                    ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
+                                    : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
                               )}
                             >
                               {activeCount}/{count}
@@ -734,13 +734,13 @@ export default function SuperadminBannersPage() {
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-raised)] px-5 py-3.5 shadow-lg",
                   dirtySlots.has(activeSlot)
-                    ? "border-[var(--data-warning)]/40"
+                    ? "border-[var(--data-warning-500)]/40"
                     : "border-[var(--rule-base)]",
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {dirtySlots.has(activeSlot) ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning)]">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-500)]">
                       <AlertCircle className="h-4 w-4" aria-hidden />
                       Cambios sin guardar
                     </span>
@@ -749,8 +749,8 @@ export default function SuperadminBannersPage() {
                       className={cn(
                         "inline-flex items-center gap-1.5 text-sm font-bold",
                         savedMsg.kind === "ok"
-                          ? "text-[var(--data-success)]"
-                          : "text-[var(--data-error)]",
+                          ? "text-[var(--data-success-500)]"
+                          : "text-[var(--data-error-500)]",
                       )}
                     >
                       {savedMsg.kind === "ok" ? (
@@ -807,7 +807,7 @@ function StatPill({
       className={cn(
         "rounded-xl border px-3.5 py-2 min-w-[88px]",
         isSuccess
-          ? "border-[var(--data-success)]/30 bg-[var(--data-success)]/5"
+          ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
       )}
     >
@@ -817,7 +817,7 @@ function StatPill({
       <p
         className={cn(
           "font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none",
-          isSuccess ? "text-[var(--data-success)]" : "text-[var(--text-primary)]",
+          isSuccess ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]",
         )}
       >
         {value}
@@ -936,7 +936,7 @@ function BannerCard({
             {banner.title || "(sin título)"}
           </button>
           {inactive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning)]/15 text-[var(--data-warning)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
               <EyeOff className="h-3 w-3" aria-hidden />
               Oculto
             </span>
@@ -974,8 +974,8 @@ function BannerCard({
             className={cn(
               "inline-flex h-7 items-center gap-1 px-2 rounded-md text-xs font-bold transition-colors",
               banner.active
-                ? "text-[var(--data-success)] hover:bg-[var(--data-success)]/10"
-                : "text-[var(--data-warning)] hover:bg-[var(--data-warning)]/10",
+                ? "text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10"
+                : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/10",
             )}
           >
             {banner.active ? (
@@ -1003,7 +1003,7 @@ function BannerCard({
             onClick={onRemove}
             title="Eliminar"
             aria-label="Eliminar banner"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error)]/10 hover:text-[var(--data-error)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -1117,7 +1117,7 @@ function BannerCard({
                     "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                     banner.ctaHref.startsWith("/") || banner.ctaHref.startsWith("http")
                       ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
-                      : "border-[var(--data-error)] focus:border-[var(--data-error)] focus:ring-[var(--data-error)]/30",
+                      : "border-[var(--data-error-500)] focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/30",
                   )}
                 />
               </Field>
@@ -1168,7 +1168,7 @@ function BannerCard({
                   {banner.imageUrl && (
                     <button
                       onClick={() => onPatch({ imageUrl: null })}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                     >
                       <Trash2 className="h-3 w-3" aria-hidden />
                       Quitar imagen
@@ -1315,9 +1315,9 @@ function PromoEmbedFields({
   onChange: (patch: Partial<PromoEmbed>) => void;
 }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/5 p-4 space-y-3">
+    <div className="rounded-xl border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
           <ShoppingBag className="h-3.5 w-3.5" />
         </span>
         <div>
@@ -1389,7 +1389,7 @@ function PromoEmbedFields({
                   "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                   promo.buyHref.startsWith("/") || promo.buyHref.startsWith("http")
                     ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
-                    : "border-[var(--data-warning)] focus:border-[var(--data-warning)] focus:ring-[var(--data-warning)]/30",
+                    : "border-[var(--data-warning-500)] focus:border-[var(--data-warning-500)] focus:ring-[var(--data-warning-500)]/30",
                 )}
               />
             </Field>

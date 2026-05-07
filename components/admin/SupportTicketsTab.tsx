@@ -37,18 +37,18 @@ type Ticket = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const PRIORITY_META: Record<TicketPriority, { label: string; color: string; bg: string }> = {
-  critica: { label: "Crítica",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
-  alta:    { label: "Alta",     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  media:   { label: "Media",    color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  baja:    { label: "Baja",     color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  critica: { label: "Crítica",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+  alta:    { label: "Alta",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  media:   { label: "Media",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  baja:    { label: "Baja",     color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
 };
 
 const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
-  abierto:       { label: "Abierto",     color: "text-[var(--data-success)]" },
-  "en-progreso": { label: "En progreso", color: "text-[var(--data-warning)]" },
-  resuelto:      { label: "Resuelto",    color: "text-[var(--data-success)]" },
+  abierto:       { label: "Abierto",     color: "text-[var(--data-success-500)]" },
+  "en-progreso": { label: "En progreso", color: "text-[var(--data-warning-500)]" },
+  resuelto:      { label: "Resuelto",    color: "text-[var(--data-success-500)]" },
   cerrado:       { label: "Cerrado",     color: "text-[var(--text-secondary)]" },
-  escalado:      { label: "Escalado",    color: "text-[var(--data-error)]" },
+  escalado:      { label: "Escalado",    color: "text-[var(--data-error-500)]" },
 };
 
 const SOURCE_META: Record<TicketSource, string> = {
@@ -113,10 +113,10 @@ export default function SupportTicketsTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Tickets abiertos", value: String(stats.open), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "SLA incumplido", value: String(stats.breached), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-          { label: "Satisfacción prom.", value: `${stats.avgSatisfaction.toFixed(1)}/5`, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Tiempo resolución prom.", value: `${stats.avgResolutionTime.toFixed(1)}h`, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Tickets abiertos", value: String(stats.open), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "SLA incumplido", value: String(stats.breached), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Satisfacción prom.", value: `${stats.avgSatisfaction.toFixed(1)}/5`, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Tiempo resolución prom.", value: `${stats.avgResolutionTime.toFixed(1)}h`, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -126,11 +126,11 @@ export default function SupportTicketsTab() {
       </div>
 
       {stats.breached > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] mt-0.5 shrink-0" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Hay {stats.breached} ticket(s) con SLA incumplido</p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">Priorizar resolución inmediata para mantener la calidad de servicio.</p>
+            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Hay {stats.breached} ticket(s) con SLA incumplido</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">Priorizar resolución inmediata para mantener la calidad de servicio.</p>
           </div>
         </div>
       )}
@@ -180,8 +180,8 @@ export default function SupportTicketsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", PRIORITY_META[t.priority].bg, PRIORITY_META[t.priority].color)}>{PRIORITY_META[t.priority].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", STATUS_META[t.status].color)}>{STATUS_META[t.status].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs">
-                    <span className={cn("font-bold", t.slaBreached ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>{t.elapsedHours}h / {t.slaHours}h</span>
-                    {t.slaBreached && <span className="block text-[var(--data-error)] text-[length:var(--ts-2xs)]">Incumplido</span>}
+                    <span className={cn("font-bold", t.slaBreached ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>{t.elapsedHours}h / {t.slaHours}h</span>
+                    {t.slaBreached && <span className="block text-[var(--data-error-500)] text-[length:var(--ts-2xs)]">Incumplido</span>}
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(t)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>

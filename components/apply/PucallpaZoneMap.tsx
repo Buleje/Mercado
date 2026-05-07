@@ -117,7 +117,7 @@ export default function PucallpaZoneMap({ value, onChange, className }: Props) {
                     isActive
                       ? "var(--color-primary)"
                       : isHovered
-                      ? "rgba(0, 180, 166, 0.25)"
+                      ? "color-mix(in oklab, var(--accent) 25%, transparent)"
                       : "rgba(16, 185, 129, 0.12)"
                   }
                   stroke={isActive ? "var(--color-primary)" : "#10b981"}

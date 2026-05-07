@@ -97,8 +97,8 @@ export default function BusinessIntelligenceTab() {
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{kpi.label}</p>
             <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{kpi.value}</p>
             <div className="flex items-center gap-1 mt-1">
-              {kpi.trend === "up" ? <ArrowUpRight className="h-3 w-3 text-[var(--data-success)]" /> : <ArrowDownRight className="h-3 w-3 text-[var(--data-error)]" />}
-              <span className={cn("text-xs font-bold", kpi.trend === "up" ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{kpi.pct > 0 ? "+" : ""}{kpi.pct}%</span>
+              {kpi.trend === "up" ? <ArrowUpRight className="h-3 w-3 text-[var(--data-success-500)]" /> : <ArrowDownRight className="h-3 w-3 text-[var(--data-error-500)]" />}
+              <span className={cn("text-xs font-bold", kpi.trend === "up" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{kpi.pct > 0 ? "+" : ""}{kpi.pct}%</span>
               <span className="text-xs text-[var(--text-tertiary)] ml-1">vs. antes</span>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function BusinessIntelligenceTab() {
                   <td className="py-2.5 pr-4 text-[var(--text-secondary)] dark:text-muted">{fmt(t.currentSales)}</td>
                   <td className="py-2.5 pr-4 text-[var(--text-tertiary)]">{fmt(t.previousSales)}</td>
                   <td className="py-2.5 pr-4">
-                    <span className={cn("font-bold flex items-center gap-1", t.growthPct >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                    <span className={cn("font-bold flex items-center gap-1", t.growthPct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                       {t.growthPct >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                       {t.growthPct > 0 ? "+" : ""}{t.growthPct}%
                     </span>
@@ -157,11 +157,11 @@ export default function BusinessIntelligenceTab() {
 
       {/* Anomaly alerts */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Alertas de anomalías</CardTitle>
+        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías</CardTitle>
         <div className="space-y-2">
           {ANOMALIES.map(a => {
-            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" };
-            const sevColor = { alta: "text-[var(--data-error)]", media: "text-[var(--data-warning)]", baja: "text-[var(--data-success)]" };
+            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" };
+            const sevColor = { alta: "text-[var(--data-error-500)]", media: "text-[var(--data-warning-500)]", baja: "text-[var(--data-success-500)]" };
             return (
               <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>
                 <div className="flex flex-wrap items-start justify-between gap-2">

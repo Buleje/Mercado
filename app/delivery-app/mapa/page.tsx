@@ -108,7 +108,7 @@ export default function MapaPage() {
         <span
           className={`inline-flex items-center gap-2 h-9 px-3 rounded-full text-sm font-extrabold ${
             partner.isOnline
-              ? "bg-[var(--data-success)]/10 text-[var(--data-success)]"
+              ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
               : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           }`}
         >

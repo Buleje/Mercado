@@ -170,7 +170,7 @@ export default function PagosPendientesClient() {
       </header>
 
       {error && (
-        <div className="mb-4 rounded-xl border-2 border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-700 dark:text-red-300">
+        <div className="mb-4 rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-red-300">
           {error}
         </div>
       )}
@@ -205,8 +205,8 @@ export default function PagosPendientesClient() {
                 />
                 <span className={`absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
                   p.status === "pending" ? "bg-yellow-500 text-white" :
-                  p.status === "approved" ? "bg-[var(--data-success)] text-white" :
-                  "bg-red-500 text-white"
+                  p.status === "approved" ? "bg-[var(--data-success-500)] text-white" :
+                  "bg-[var(--data-error-500)] text-white"
                 }`}>
                   {p.status === "pending" ? "Pendiente" : p.status === "approved" ? "Aprobado" : "Rechazado"}
                 </span>
@@ -281,13 +281,13 @@ export default function PagosPendientesClient() {
                     <button
                       disabled={actioning === active.id}
                       onClick={() => approve(active.id)}
-                      className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-success)] text-white font-extrabold text-sm uppercase tracking-wider hover:bg-[var(--data-success)]/90 disabled:opacity-60"
+                      className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-success-500)] text-white font-extrabold text-sm uppercase tracking-wider hover:bg-[var(--data-success-500)]/90 disabled:opacity-60"
                     >
                       {actioning === active.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" strokeWidth={3} />}
                       Aprobar y crear tienda
                     </button>
                     <details className="rounded-xl border-2 border-[var(--rule-base)]">
-                      <summary className="cursor-pointer p-3 text-xs font-extrabold uppercase tracking-wider text-red-600">
+                      <summary className="cursor-pointer p-3 text-xs font-extrabold uppercase tracking-wider text-[var(--data-error-600)]">
                         Rechazar pago
                       </summary>
                       <div className="p-3 pt-0 space-y-2">
@@ -295,12 +295,12 @@ export default function PagosPendientesClient() {
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           placeholder="Motivo del rechazo (lo recibe por WhatsApp)..."
-                          className="w-full h-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm focus:border-red-500 outline-none"
+                          className="w-full h-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm focus:border-[var(--data-error-500)] outline-none"
                         />
                         <button
                           disabled={actioning === active.id || rejectReason.length < 5}
                           onClick={() => reject(active.id)}
-                          className="w-full h-10 rounded-lg bg-red-600 text-white text-xs font-extrabold uppercase tracking-wider hover:bg-red-700 disabled:opacity-60"
+                          className="w-full h-10 rounded-lg bg-[var(--data-error-600)] text-white text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--data-error-700)] disabled:opacity-60"
                         >
                           <X className="inline h-3.5 w-3.5 mr-1" strokeWidth={2.5} />
                           Rechazar y notificar
@@ -311,7 +311,7 @@ export default function PagosPendientesClient() {
                       href={`https://wa.me/51${active.ownerPhone.replace(/\D/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--data-success)] hover:text-[var(--data-success)]"
+                      className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--data-success-500)] hover:text-[var(--data-success-500)]"
                     >
                       <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} />
                       Hablar por WhatsApp

@@ -12,12 +12,13 @@ import {
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { AdminCard, AdminKPI, StatusBadge } from "@/components/admin/shared";
 import type { BadgeVariant } from "@/components/admin/shared";
+import { useSettings } from "@/contexts/settings-context";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   ComposedChart, Line, LineChart,
 } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn, startOfLimaDay, startOfLimaDayDaysAgo } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import TicketPreview from "./TicketPreview";
@@ -54,17 +55,17 @@ interface Order {
 // ── Status config (Spanish API + English fallback) ───────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeIcon: React.ComponentType<{ className?: string }>; color: string; icon: React.ReactNode; next?: string }> = {
-  pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: <XCircle className="h-3 w-3" /> },
-  pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/30 dark:text-[var(--data-info-500)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: <XCircle className="h-3 w-3" /> },
+  pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
   preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
-  delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: <XCircle className="h-3 w-3" /> },
+  delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/30 dark:text-[var(--data-info-500)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: <XCircle className="h-3 w-3" /> },
 };
 
 const TERMINAL = new Set(["delivered", "cancelled", "entregado", "cancelado"]);
@@ -128,6 +129,12 @@ function playNewOrderSound() {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SalesOrdersTab() {
+  const { businessName, storeTheme } = useSettings();
+  // Nombre del negocio para mensajes WhatsApp/email — fallback a "Tu Tienda"
+  // si todavía no terminó de cargar el contexto.
+  const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
+    || businessName?.trim()
+    || "Tu Tienda";
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -267,10 +274,22 @@ export default function SalesOrdersTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds — pausa si la pestaña está oculta
+  // (BUG-FIX audit 2026-05-05): ahorra cuota DB cuando admin abre otra tab
   useEffect(() => {
-    const id = setInterval(load, 30000);
-    return () => clearInterval(id);
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!id) id = setInterval(load, 30000); };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { void load(); start(); }
+      else stop();
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [load]);
 
   // Mejora 14: Timer re-render every 60 seconds for time badges
@@ -290,6 +309,14 @@ export default function SalesOrdersTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus }),
       });
+      if (!res.ok) {
+        // Recargar para revertir el optimistic update si lo hubo
+        const errBody = await res.json().catch(() => ({}));
+        setError(errBody?.error || `No se pudo cambiar el estado (HTTP ${res.status})`);
+        await load();
+        setUpdatingId(null);
+        return;
+      }
       if (res.ok) {
         await load();
         // Mejora 9: WhatsApp notification on status change
@@ -299,11 +326,11 @@ export default function SalesOrdersTab() {
           const nombre = order.customerName || "cliente";
           const id = order.id.slice(-6).toUpperCase();
           const WA_MESSAGES: Record<string, string> = {
-            confirmado: `✅ *Pedido #${id} confirmado*\nHola ${nombre}, estamos preparando tu pedido. Te avisamos cuando salga. 🛒\n\n_Buleje - Pucallpa_`,
-            preparando: `🍽 *Tu pedido #${id} se está preparando*\nHola ${nombre}, nuestro equipo está alistando tus productos. ¡Ya falta poco!\n\n_Buleje - Pucallpa_`,
-            en_camino: `🚗 *Tu pedido #${id} va en camino*\nHola ${nombre}, ¡ya salió de la bodega! Llega en aprox. 20-30 minutos.\n\n_Buleje - Pucallpa_`,
-            entregado: `✅ *Pedido #${id} entregado*\nHola ${nombre}, ¡gracias por tu compra en Buleje! 😊\n⭐ ¿Cómo estuvo tu experiencia?\n\n_Buleje - Pucallpa_`,
-            cancelado: `❌ *Pedido #${id} cancelado*\nHola ${nombre}, tu pedido fue cancelado. Si tienes dudas, contáctanos.\n\n_Buleje - Pucallpa_`,
+            confirmado: `*Pedido #${id} confirmado*\nHola ${nombre}, estamos preparando tu pedido. Te avisamos cuando salga.\n\n_${storeName}_`,
+            preparando: `*Tu pedido #${id} se está preparando*\nHola ${nombre}, nuestro equipo está alistando tus productos. ¡Ya falta poco!\n\n_${storeName}_`,
+            en_camino: `*Tu pedido #${id} va en camino*\nHola ${nombre}, ¡ya salió de la tienda! Llega en aprox. 20-30 minutos.\n\n_${storeName}_`,
+            entregado: `*Pedido #${id} entregado*\nHola ${nombre}, ¡gracias por tu compra en ${storeName}!\n¿Cómo estuvo tu experiencia?\n\n_${storeName}_`,
+            cancelado: `*Pedido #${id} cancelado*\nHola ${nombre}, tu pedido fue cancelado. Si tienes dudas, contáctanos.\n\n_${storeName}_`,
           };
           const msg = WA_MESSAGES[newStatus];
           if (msg) {
@@ -316,7 +343,11 @@ export default function SalesOrdersTab() {
           }
         }
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error("[SalesOrdersTab] changeStatus error", e);
+      setError("Error de conexión al cambiar el estado del pedido. Reintentá.");
+      await load();
+    }
     setUpdatingId(null);
   };
 
@@ -359,13 +390,19 @@ export default function SalesOrdersTab() {
   const filtered = useMemo(() => {
     let result = orders;
 
-    // Date filter
+    // Date filter — usa zona Lima (no la zona del navegador del cajero) para
+    // que "Hoy" siempre signifique el día calendario en Pucallpa, sin importar
+    // si el cajero tiene la timezone mal configurada (audit 2026-05-05).
     if (dateFilter !== "all") {
-      const start = new Date();
-      if (dateFilter === "today") start.setHours(0, 0, 0, 0);
-      else if (dateFilter === "week") start.setDate(start.getDate() - 7);
-      else if (dateFilter === "month") start.setMonth(start.getMonth() - 1);
-      result = result.filter(o => new Date(o.createdAt) >= start);
+      let startMs: number;
+      if (dateFilter === "today") startMs = startOfLimaDay();
+      else if (dateFilter === "week") startMs = startOfLimaDayDaysAgo(7);
+      else /* month */ startMs = startOfLimaDayDaysAgo(30);
+
+      result = result.filter(o => {
+        const t = o.createdAt ? new Date(o.createdAt).getTime() : 0;
+        return Number.isFinite(t) && t >= startMs;
+      });
     }
 
     // Status filter
@@ -487,7 +524,7 @@ export default function SalesOrdersTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={load} className="flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white px-4 py-2.5 text-sm font-medium transition-colors">
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -500,7 +537,7 @@ export default function SalesOrdersTab() {
       {/* ── Header estandar ──────────────────────────────────────── */}
       <div className="flex items-center gap-4">
         <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] shrink-0">
-          <Receipt className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+          <Receipt className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         </div>
         <div className="flex-1 min-w-0">
           <PageTitle className="text-xl font-bold text-[var(--text-primary)] truncate">Ventas y Caja</PageTitle>
@@ -514,7 +551,7 @@ export default function SalesOrdersTab() {
           </AdminTooltip>
           <AdminTooltip content="Descargar pedidos en formato Excel (.xlsx)">
             <button onClick={exportExcel} aria-label="Exportar Excel" className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
-              <FileSpreadsheet className="h-4 w-4 text-[var(--data-success)]" />
+              <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-500)]" />
             </button>
           </AdminTooltip>
           <button
@@ -532,7 +569,7 @@ export default function SalesOrdersTab() {
             )}
             title={soundEnabled ? "Sonido: ON" : "Sonido: OFF"}
           >
-            {soundEnabled ? <Bell className="h-4 w-4 text-[var(--data-warning)]" /> : <BellOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
+            {soundEnabled ? <Bell className="h-4 w-4 text-[var(--data-warning-500)]" /> : <BellOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
           </button>
         </div>
       </div>
@@ -570,7 +607,7 @@ export default function SalesOrdersTab() {
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar cliente o ID..."
             aria-label="Buscar pedidos"
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--data-success)]/30 focus:ring-1 focus:ring-[var(--data-success)]/40 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--data-success-500)]/30 focus:ring-1 focus:ring-[var(--data-success-500)]/40 outline-none transition-all"
           />
         </div>
 
@@ -582,7 +619,7 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filter === opt.id
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
@@ -598,7 +635,7 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               dateFilter === opt.id
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
@@ -629,7 +666,7 @@ export default function SalesOrdersTab() {
             className={cn(
               "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all",
               groupByZone
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 text-[var(--data-success)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 text-[var(--data-success-500)]"
                 : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] bg-white dark:bg-zinc-900 hover:bg-gray-50"
             )}
           >
@@ -653,7 +690,7 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               urgencyFilter === opt.id
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
@@ -698,7 +735,7 @@ export default function SalesOrdersTab() {
           {newCount > 0 && (
             <button
               onClick={() => setNewCount(0)}
-              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center"
+              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center"
               title="Nuevos pedidos"
             >
               +{newCount}
@@ -713,10 +750,10 @@ export default function SalesOrdersTab() {
       {/* ── Mejora 13: Kanban view ─────────────────────────────────────── */}
       {viewMode === "kanban" && (() => {
         const KANBAN_COLS = [
-          { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/20", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
-          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/20", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
+          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", headerBg: "bg-[var(--surface-sunken)]" },
-          { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ];
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
@@ -741,7 +778,7 @@ export default function SalesOrdersTab() {
                             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
                             {/* Mejora 14: Time badge */}
                             {!TERMINAL.has(order.status) && (
-                              <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", minutos < 15 ? "text-[var(--data-success)]" : minutos < 30 ? "text-[var(--data-warning)]" : minutos > 60 ? "text-[var(--data-error)] animate-pulse" : "text-[var(--data-error)]")}>
+                              <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", minutos < 15 ? "text-[var(--data-success-500)]" : minutos < 30 ? "text-[var(--data-warning-500)]" : minutos > 60 ? "text-[var(--data-error-500)] animate-pulse" : "text-[var(--data-error-500)]")}>
                                 {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
                               </span>
                             )}
@@ -883,7 +920,7 @@ export default function SalesOrdersTab() {
                   {!isTerminal && (
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] font-bold",
-                      minutos < 15 ? "text-[var(--data-success)]" : minutos < 30 ? "text-[var(--data-warning)]" : minutos > 60 ? "text-[var(--data-error)] font-extrabold animate-pulse" : "text-[var(--data-error)] font-bold"
+                      minutos < 15 ? "text-[var(--data-success-500)]" : minutos < 30 ? "text-[var(--data-warning-500)]" : minutos > 60 ? "text-[var(--data-error-500)] font-extrabold animate-pulse" : "text-[var(--data-error-500)] font-bold"
                     )}>
                       {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
                     </span>
@@ -979,12 +1016,12 @@ export default function SalesOrdersTab() {
                       const checkedCount = checkedItems.filter(id => order.items!.some((_, idx) => id === `${order.id}-${idx}`)).length;
                       const allChecked = checkedCount >= totalItems;
                       return (
-                        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg p-2.5">
+                        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg p-2.5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase flex items-center gap-1">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase flex items-center gap-1">
                               <CheckSquare className="h-3 w-3" /> Checklist de preparacion
                             </span>
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{checkedCount} de {totalItems} listos</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{checkedCount} de {totalItems} listos</span>
                           </div>
                           {/* Progress bar */}
                           <div className="w-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-full h-1.5 mb-2">
@@ -1007,7 +1044,7 @@ export default function SalesOrdersTab() {
                                         return { ...prev, [order.id]: next };
                                       });
                                     }}
-                                    className="h-3.5 w-3.5 rounded border-[var(--data-success)]/30 text-[var(--data-success)] focus:ring-[var(--data-success)]/40"
+                                    className="h-3.5 w-3.5 rounded border-[var(--data-success-500)]/30 text-[var(--data-success-500)] focus:ring-[var(--data-success-500)]/40"
                                   />
                                   <span className={cn("text-[var(--text-primary)] dark:text-foreground", isChecked && "text-[var(--text-tertiary)] dark:text-muted")}>{item.name} x {item.qty}</span>
                                 </label>
@@ -1028,16 +1065,16 @@ export default function SalesOrdersTab() {
                     )}
 
                     {/* Mejora 18: Nota interna por pedido */}
-                    <div className="bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-lg p-2.5">
+                    <div className="bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-lg p-2.5">
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Lock className="h-3 w-3 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Nota interna — solo visible para el equipo</span>
+                        <Lock className="h-3 w-3 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Nota interna — solo visible para el equipo</span>
                       </div>
                       <textarea
                         defaultValue={order.notes?.startsWith("[ADMIN]") ? order.notes.replace("[ADMIN] ", "") : (order.notes ?? "")}
                         placeholder="Ej: Confirmar direccion, entregar despues de las 3pm..."
                         rows={2}
-                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/50 rounded-lg px-2 py-1.5 text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning)] resize-none"
+                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 rounded-lg px-2 py-1.5 text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning-500)] resize-none"
                         onChange={(e) => {
                           const value = e.target.value;
                           const orderId = order.id;
@@ -1070,7 +1107,7 @@ export default function SalesOrdersTab() {
                         <>
                           {deliveryAssignments[order.id] ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+                              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
                                 <Truck className="h-3 w-3 inline mr-1" />{deliveryAssignments[order.id]}
                               </span>
                               <a
@@ -1085,7 +1122,7 @@ export default function SalesOrdersTab() {
                           ) : (
                             <button
                               onClick={() => setAssigningDelivery(order.id)}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-bold hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-bold hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors"
                             >
                               <Truck className="h-3 w-3" /> Asignar repartidor
                             </button>
@@ -1110,7 +1147,7 @@ export default function SalesOrdersTab() {
                                   orderId: order.id,
                                   motivoTraslado: "VENTA",
                                   destinatarioNombre: order.customerName || "Cliente",
-                                  puntoPartida: "Buleje - Pucallpa",
+                                  puntoPartida: storeName,
                                   puntoLlegada: order.notes?.replace("[ADMIN] ", "") || "Dirección de delivery",
                                   fechaTraslado: new Date().toISOString(),
                                   items,
@@ -1124,7 +1161,7 @@ export default function SalesOrdersTab() {
                             } catch { /* ignore */ }
                             setCreatingGrr(null);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-info-50)] dark:bg-cyan-950/30 text-[var(--data-info)] dark:text-[var(--data-info)] text-xs font-bold hover:bg-[var(--data-info-100)] dark:hover:bg-[var(--data-info)]/30 disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-info-50)] dark:bg-cyan-950/30 text-[var(--data-info-500)] dark:text-[var(--data-info-500)] text-xs font-bold hover:bg-[var(--data-info-100)] dark:hover:bg-[var(--data-info-500)]/30 disabled:opacity-50 transition-colors"
                         >
                           <Truck className="h-3 w-3" />
                           {creatingGrr === order.id ? "Creando..." : "Crear Guía Remisión"}
@@ -1221,7 +1258,7 @@ export default function SalesOrdersTab() {
             {/* Add new */}
             {showAddDelivery ? (
               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
-                <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo repartidor</p>
+                <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo repartidor</p>
                 <div className="grid grid-cols-2 gap-2">
                   <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
                   <input type="tel" placeholder="Teléfono" value={newDelivery.teléfono} onChange={e => setNewDelivery({...newDelivery, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
@@ -1287,7 +1324,7 @@ export default function SalesOrdersTab() {
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mb-3">{whatsappToast.message}</p>
           <div className="flex gap-2">
             <a
-              href={`https://wa.me/${whatsappToast.phone.replace(/\D/g, "").startsWith("51") ? whatsappToast.phone.replace(/\D/g, "") : "51" + whatsappToast.phone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappToast.message + "\n\nBuleje - Pucallpa")}`}
+              href={`https://wa.me/${whatsappToast.phone.replace(/\D/g, "").startsWith("51") ? whatsappToast.phone.replace(/\D/g, "") : "51" + whatsappToast.phone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappToast.message)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:bg-[#1da851] transition-colors"
@@ -1306,10 +1343,10 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 7: GRR created toast */}
       {grrToast && (
-        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-[var(--data-info)] dark:border-[var(--data-info)] rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-[var(--data-info-500)] dark:border-[var(--data-info-500)] rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30 flex items-center justify-center shrink-0">
-              <Truck className="h-5 w-5 text-[var(--data-info)]" />
+            <div className="h-10 w-10 rounded-full bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/30 flex items-center justify-center shrink-0">
+              <Truck className="h-5 w-5 text-[var(--data-info-500)]" />
             </div>
             <div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{grrToast}</p>
@@ -1323,10 +1360,10 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 20: New order toast */}
       {newOrderToast && (
-        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
+        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
-              <Bell className="h-5 w-5 text-[var(--data-success)]" />
+              <Bell className="h-5 w-5 text-[var(--data-success-500)]" />
             </div>
             <div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Nuevo pedido!</p>
@@ -1360,8 +1397,8 @@ export default function SalesOrdersTab() {
             customerPhone: ticketOrder.customerPhone,
           }}
           business={{
-            name: "Buleje",
-            address: "Pucallpa, Ucayali",
+            name: storeName,
+            address: (storeTheme as { address?: string } | null)?.address || "Pucallpa, Ucayali",
           }}
           onClose={() => setTicketOrder(null)}
         />
@@ -1528,13 +1565,16 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
     return { promedio, count: tiempos.length };
   }, [orders]);
 
-  const nowMs = new Date().getTime();
+  // BUG-FIX (audit 2026-05-05): nowMs movido DENTRO del useMemo para que NO
+  // sea una nueva ref cada render — antes recalculaba todo el filtro sobre
+  // orders en cada render del componente padre causando jank.
   const alertas = useMemo(() => {
+    const nowMs = Date.now();
     const unaHora = 60 * 60 * 1000;
     const sinAtender = orders.filter(o => o.status === 'pendiente' && (nowMs - new Date(o.createdAt).getTime()) > unaHora).length;
     const sinDireccion = orders.filter(o => !['entregado', 'cancelado', 'delivered', 'cancelled'].includes(o.status) && !o.customerName).length;
     return { sinAtender, sinDireccion, tasaCumplimiento: kpis.tasaCumplimiento };
-  }, [orders, kpis.tasaCumplimiento, nowMs]);
+  }, [orders, kpis.tasaCumplimiento]);
 
   const totalPedidos = orders.length;
 
@@ -1567,14 +1607,14 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
-        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
+        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
+        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
         <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
-        <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
+        <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
         <DashKpi icon={<Truck className="h-4 w-4" />} iconBg="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400" label="En camino" value={kpis.enCamino} border="border-l-cyan-500" />
-        <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
-        <DashKpi icon={<XCircle className="h-4 w-4" />} iconBg="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" label="Cancelados" value={kpis.cancelados} border="border-l-red-500" />
-        <DashKpi icon={<Target className="h-4 w-4" />} iconBg={kpis.tasaCumplimiento >= 70 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"} label="Cumplimiento" value={`${kpis.tasaCumplimiento}%`} border={kpis.tasaCumplimiento >= 70 ? "border-l-green-500" : "border-l-red-500"} />
+        <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
+        <DashKpi icon={<XCircle className="h-4 w-4" />} iconBg="bg-red-100 dark:bg-red-900/40 text-[var(--data-error-600)] dark:text-red-400" label="Cancelados" value={kpis.cancelados} border="border-l-red-500" />
+        <DashKpi icon={<Target className="h-4 w-4" />} iconBg={kpis.tasaCumplimiento >= 70 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-red-100 dark:bg-red-900/40 text-[var(--data-error-600)] dark:text-red-400"} label="Cumplimiento" value={`${kpis.tasaCumplimiento}%`} border={kpis.tasaCumplimiento >= 70 ? "border-l-green-500" : "border-l-red-500"} />
       </div>
 
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
@@ -1749,7 +1789,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 <path
                   d="M 20 95 A 80 80 0 0 1 180 95"
                   fill="none"
-                  stroke={tiempoProcesamiento.promedio < 30 ? '#00B4A6' : tiempoProcesamiento.promedio < 60 ? '#f59e0b' : '#ef4444'}
+                  stroke={tiempoProcesamiento.promedio < 30 ? 'var(--accent)' : tiempoProcesamiento.promedio < 60 ? '#f59e0b' : '#ef4444'}
                   strokeWidth="14"
                   strokeLinecap="round"
                   strokeDasharray={`${Math.min(tiempoProcesamiento.promedio / 120, 1) * 251.2} 251.2`}
@@ -1763,9 +1803,9 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           </div>
           <p className={cn(
             "text-4xl font-mono font-bold mt-2",
-            tiempoProcesamiento.promedio < 30 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-            tiempoProcesamiento.promedio < 60 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-            "text-[var(--data-error)] dark:text-[var(--data-error)]"
+            tiempoProcesamiento.promedio < 30 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+            tiempoProcesamiento.promedio < 60 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+            "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
           )}>
             {tiempoProcesamiento.count > 0 ? `${tiempoProcesamiento.promedio} min` : '--'}
           </p>
@@ -1781,14 +1821,14 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinAtender > 0
-            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
             : "bg-[var(--surface-sunken)]/50 border-[var(--rule-base)]"
         )}>
-          <div className={cn("rounded-full p-2 shrink-0", alertas.sinAtender > 0 ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40" : "bg-[var(--surface-sunken)]")}>
-            <AlertTriangle className={cn("h-4 w-4", alertas.sinAtender > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-tertiary)]")} />
+          <div className={cn("rounded-full p-2 shrink-0", alertas.sinAtender > 0 ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40" : "bg-[var(--surface-sunken)]")}>
+            <AlertTriangle className={cn("h-4 w-4", alertas.sinAtender > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
           </div>
           <div>
-            <p className={cn("text-sm font-bold", alertas.sinAtender > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+            <p className={cn("text-sm font-bold", alertas.sinAtender > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
               {alertas.sinAtender > 0 ? `${alertas.sinAtender} pedido${alertas.sinAtender !== 1 ? 's' : ''} sin atender` : 'Sin alertas'}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Mas de 1 hora sin cambio de estado</p>
@@ -1799,14 +1839,14 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinDireccion > 0
-            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
             : "bg-[var(--surface-sunken)]/50 border-[var(--rule-base)]"
         )}>
-          <div className={cn("rounded-full p-2 shrink-0", alertas.sinDireccion > 0 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40" : "bg-[var(--surface-sunken)]")}>
-            <MapPin className={cn("h-4 w-4", alertas.sinDireccion > 0 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
+          <div className={cn("rounded-full p-2 shrink-0", alertas.sinDireccion > 0 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40" : "bg-[var(--surface-sunken)]")}>
+            <MapPin className={cn("h-4 w-4", alertas.sinDireccion > 0 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
           </div>
           <div>
-            <p className={cn("text-sm font-bold", alertas.sinDireccion > 0 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")}>
+            <p className={cn("text-sm font-bold", alertas.sinDireccion > 0 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")}>
               {alertas.sinDireccion > 0 ? `${alertas.sinDireccion} sin datos de cliente` : 'Todos con datos'}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Pedidos activos sin nombre de cliente</p>
@@ -1817,27 +1857,27 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.tasaCumplimiento >= 90
-            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
             : alertas.tasaCumplimiento >= 70
-              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
-              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
         )}>
           <div className={cn("rounded-full p-2 shrink-0",
             alertas.tasaCumplimiento >= 90 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
-            alertas.tasaCumplimiento >= 70 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40" :
-            "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
+            alertas.tasaCumplimiento >= 70 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40" :
+            "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40"
           )}>
             <Target className={cn("h-4 w-4",
-              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-              "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+              "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )} />
           </div>
           <div>
             <p className={cn("text-sm font-bold",
-              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-              "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+              "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}>
               Cumplimiento: {alertas.tasaCumplimiento}%
             </p>
@@ -1885,7 +1925,7 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
           <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">{label}</p>
           <div className="flex items-center gap-1.5">
             <p className="text-2xl font-mono font-bold mt-0.5 text-[var(--text-primary)] truncate">{value}</p>
-            <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
+            <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
           </div>
           {sparkColor && sparkVal != null && sparkVal > 0 && (
             <div className="h-8 w-20 mt-1">

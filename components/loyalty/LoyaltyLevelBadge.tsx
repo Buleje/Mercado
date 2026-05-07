@@ -8,6 +8,8 @@
  * Se puede usar en Server Components o Client Components.
  */
 
+import type { LucideIcon } from "lucide-react";
+import { Award, Medal, Trophy, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos públicos ────────────────────────────────────────────────────────────
@@ -28,7 +30,8 @@ export interface LoyaltyLevelBadgeProps {
 // ── Metadatos de cada nivel ───────────────────────────────────────────────────
 
 interface LevelMeta {
-  emoji: string;
+  /** Icono propio del DS — reemplaza el emoji genérico que se veía mal. */
+  Icon: LucideIcon;
   label: string;
   /** Clase de color de texto */
   textColor: string;
@@ -48,12 +51,12 @@ interface LevelMeta {
 
 export const LEVEL_META: Record<LoyaltyLevel, LevelMeta> = {
   bronce: {
-    emoji: "🥉",
+    Icon: Award,
     label: "Bronce",
-    textColor: "text-amber-700 dark:text-amber-300",
+    textColor: "text-[var(--data-warning-700)] dark:text-amber-300",
     bgColor: "bg-amber-50 dark:bg-amber-900/25",
-    borderColor: "border-amber-200 dark:border-amber-700",
-    ringColor: "ring-amber-300 dark:ring-amber-600",
+    borderColor: "border-amber-200 dark:border-[var(--data-warning-700)]",
+    ringColor: "ring-amber-300 dark:ring-[var(--data-warning-600)]",
     benefits: [
       "1 punto por cada S/ 1 gastado",
       "Acceso a ofertas exclusivas de miembros",
@@ -62,7 +65,7 @@ export const LEVEL_META: Record<LoyaltyLevel, LevelMeta> = {
     maxPoints: 99,
   },
   plata: {
-    emoji: "🥈",
+    Icon: Medal,
     label: "Plata",
     textColor: "text-slate-600 dark:text-slate-300",
     bgColor: "bg-slate-50 dark:bg-slate-800/50",
@@ -77,7 +80,7 @@ export const LEVEL_META: Record<LoyaltyLevel, LevelMeta> = {
     maxPoints: 499,
   },
   oro: {
-    emoji: "🥇",
+    Icon: Trophy,
     label: "Oro",
     textColor: "text-yellow-700 dark:text-yellow-300",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/25",
@@ -93,7 +96,7 @@ export const LEVEL_META: Record<LoyaltyLevel, LevelMeta> = {
     maxPoints: 1999,
   },
   diamante: {
-    emoji: "💎",
+    Icon: Sparkles,
     label: "Diamante",
     textColor: "text-sky-700 dark:text-sky-300",
     bgColor: "bg-sky-50 dark:bg-sky-900/25",
@@ -151,17 +154,17 @@ export function getPointsToNextLevel(points: number): number {
 const SIZE_CLASSES = {
   sm: {
     container: "px-2 py-0.5 gap-1 text-xs rounded-lg",
-    emoji: "text-sm",
+    icon: "h-3.5 w-3.5",
     label: "text-xs font-semibold",
   },
   md: {
     container: "px-3 py-1 gap-1.5 text-sm rounded-xl",
-    emoji: "text-base",
+    icon: "h-4 w-4",
     label: "text-sm font-bold",
   },
   lg: {
     container: "px-4 py-2 gap-2 text-base rounded-2xl",
-    emoji: "text-xl",
+    icon: "h-5 w-5",
     label: "text-base font-extrabold",
   },
 } as const;
@@ -176,6 +179,7 @@ export default function LoyaltyLevelBadge({
 }: LoyaltyLevelBadgeProps) {
   const meta = LEVEL_META[level];
   const sizes = SIZE_CLASSES[size];
+  const Icon = meta.Icon;
 
   return (
     <div className={cn("relative group inline-flex", className)}>
@@ -190,9 +194,7 @@ export default function LoyaltyLevelBadge({
         )}
         aria-label={`Nivel ${meta.label}`}
       >
-        <span className={sizes.emoji} role="img" aria-hidden="true">
-          {meta.emoji}
-        </span>
+        <Icon className={sizes.icon} strokeWidth={2.25} aria-hidden="true" />
         <span className={sizes.label}>{meta.label}</span>
       </span>
 
@@ -214,9 +216,7 @@ export default function LoyaltyLevelBadge({
         >
           {/* Cabecera del tooltip */}
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg" role="img" aria-hidden="true">
-              {meta.emoji}
-            </span>
+            <Icon className={cn("h-5 w-5", meta.textColor)} strokeWidth={2.25} aria-hidden="true" />
             <div>
               <p className={cn("text-xs font-bold", meta.textColor)}>
                 Nivel {meta.label}

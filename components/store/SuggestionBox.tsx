@@ -82,8 +82,8 @@ export default function SuggestionBox() {
     return (
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-8 text-center shadow-sm">
         <div className="flex justify-center mb-4">
-          <div className="p-4 rounded-full bg-[#00B4A6]/10">
-            <CheckCircle2 className="w-10 h-10 text-[#00B4A6]" />
+          <div className="p-4 rounded-full bg-[var(--accent)]/10">
+            <CheckCircle2 className="w-10 h-10 text-[var(--accent)]" />
           </div>
         </div>
         <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
@@ -95,7 +95,7 @@ export default function SuggestionBox() {
         </p>
         <button
           onClick={reset}
-          className="px-6 py-3 rounded-xl bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf] font-semibold text-sm hover:bg-[#00B4A6]/20 transition-colors"
+          className="px-6 py-3 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#2dd4bf] font-semibold text-sm hover:bg-[var(--accent)]/20 transition-colors"
         >
           Enviar otra sugerencia
         </button>
@@ -107,8 +107,8 @@ export default function SuggestionBox() {
     <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-[#00B4A6]/10">
-          <MessageSquare className="w-5 h-5 text-[#00B4A6]" />
+        <div className="p-2 rounded-xl bg-[var(--accent)]/10">
+          <MessageSquare className="w-5 h-5 text-[var(--accent)]" />
         </div>
         <div>
           <h2 className="font-bold text-[var(--text-primary)]">
@@ -167,8 +167,8 @@ export default function SuggestionBox() {
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   category === cat.value
-                    ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[#00B4A6] hover:text-[#00B4A6]"
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                 )}
               >
                 {cat.label}
@@ -188,7 +188,7 @@ export default function SuggestionBox() {
             placeholder="Que podemos mejorar? Que te gusto? Que necesitas?"
             rows={4}
             maxLength={500}
-            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#00B4A6] resize-none"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[var(--accent)] resize-none"
           />
           <p className="text-xs text-gray-400 text-right mt-1">
             {message.length}/500
@@ -196,13 +196,13 @@ export default function SuggestionBox() {
         </div>
 
         {error && (
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         )}
 
         <button
           onClick={submit}
           disabled={!message.trim() || rating === 0 || submitting}
-          className="w-full py-3.5 rounded-xl bg-[#00B4A6] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>

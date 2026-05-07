@@ -235,7 +235,7 @@ export function MarketplaceCardPrice({
         {fmt(amount)}
       </p>
       {savings > 0 && (
-        <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] tabular-nums">
+        <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] tabular-nums">
           Ahorrás {fmt(savings)}
         </p>
       )}
@@ -277,9 +277,9 @@ export function MarketplaceCardBadge({
 }) {
   const toneCls =
     tone === "warning"
-      ? "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)]/30"
+      ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30"
       : tone === "success"
-        ? "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30"
+        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30"
         : tone === "info"
           ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]"
           : tone === "neutral"

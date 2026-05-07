@@ -14,7 +14,7 @@ const DELAY_MS = 5000;
  *
  * Rediseñado 2026-05-02: jerarquía visual centrada en "10% OFF" como hero,
  * cupón clickable en toda su área, cierre por backdrop + tecla Escape,
- * tokens del DS (var(--accent)) en lugar de #00B4A6 hardcoded, animación
+ * tokens del DS (var(--accent)) en lugar de var(--accent) hardcoded, animación
  * scale-in con easing custom y micro-shimmer en el cupón.
  */
 export default function FirstVisitCouponModal() {
@@ -145,7 +145,7 @@ export default function FirstVisitCouponModal() {
                 className={[
                   "inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
                   copied
-                    ? "bg-[var(--data-success)]/15 text-[var(--data-success)]"
+                    ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
                     : "bg-[var(--accent)]/12 text-[var(--accent)] group-hover:bg-[var(--accent)]/18",
                 ].join(" ")}
               >

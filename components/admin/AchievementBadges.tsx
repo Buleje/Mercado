@@ -55,8 +55,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias sin diferencia",
     maxProgress: 7,
     iconSymbol: "C",
-    colorUnlocked: "text-[var(--data-success)] dark:text-[var(--data-success)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    colorUnlocked: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   {
     id: "madrugador",
@@ -66,8 +66,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias con primera venta temprana",
     maxProgress: 1,
     iconSymbol: "M",
-    colorUnlocked: "text-[var(--data-success)] dark:text-[var(--data-success)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    colorUnlocked: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   {
     id: "cliente-feliz",
@@ -88,8 +88,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias de meta cumplida esta semana",
     maxProgress: 5,
     iconSymbol: "G",
-    colorUnlocked: "text-primary dark:text-[var(--data-success)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    colorUnlocked: "text-primary dark:text-[var(--data-success-500)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
 ];
 
@@ -217,9 +217,9 @@ function BadgeCard({
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slow)]",
               unlocked
-                ? "bg-[var(--data-success)]"
+                ? "bg-[var(--data-success-500)]"
                 : pct > 50
-                ? "bg-[var(--data-warning)]"
+                ? "bg-[var(--data-warning-500)]"
                 : "bg-[var(--rule-base)]"
             )}
             style={{ width: `${pct}%` }}
@@ -318,7 +318,7 @@ export default function AchievementBadges({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Award className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
+          <Award className="w-5 h-5 text-primary dark:text-[var(--data-success-500)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Logros del empleado
@@ -348,13 +348,13 @@ export default function AchievementBadges({
       <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-3">
         <div className="flex justify-between text-xs mb-2">
           <span className="text-[var(--text-tertiary)]">Progreso total</span>
-          <span className="font-semibold text-primary dark:text-[var(--data-success)]">
+          <span className="font-semibold text-primary dark:text-[var(--data-success-500)]">
             {Math.round((unlockedCount / BADGE_DEFINITIONS.length) * 100)}%
           </span>
         </div>
         <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[var(--data-success)] rounded-full transition-all duration-[var(--dur-slower)]"
+            className="h-full bg-[var(--data-success-500)] rounded-full transition-all duration-[var(--dur-slower)]"
             style={{ width: `${(unlockedCount / BADGE_DEFINITIONS.length) * 100}%` }}
           />
         </div>

@@ -51,10 +51,10 @@ const realCategories = categories.filter(c => c.id !== "todos");
 // Mejora 6: Rotation badge config
 type RotationLevel = "rápido" | "normal" | "lento" | "muerto";
 function getRotationInfo(salesPerWeek: number, stock: number): { level: RotationLevel; label: string; className: string } | null {
-  if (salesPerWeek > 10) return { level: "rápido", label: "Rápido", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]" };
+  if (salesPerWeek > 10) return { level: "rápido", label: "Rápido", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/30 dark:text-[var(--data-warning-500)]" };
   if (salesPerWeek >= 3) return null; // Normal — no badge
-  if (salesPerWeek >= 1) return { level: "lento", label: "Lento", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/30 dark:text-[var(--data-warning)]" };
-  if (stock > 0) return { level: "muerto", label: "Sin rotar", className: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]" };
+  if (salesPerWeek >= 1) return { level: "lento", label: "Lento", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/30 dark:text-[var(--data-warning-500)]" };
+  if (stock > 0) return { level: "muerto", label: "Sin rotar", className: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" };
   return null;
 }
 
@@ -237,7 +237,7 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
               className={cn(
                 "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
                 item.variant === "danger"
-                  ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20"
+                  ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
                   : "text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-zinc-800",
               )}
             >
@@ -265,7 +265,11 @@ export default function InventoryTab() {
   const searchPlaceholders = ["Buscar por nombre...", "Buscar por código...", "Buscar por categoría..."];
   const [phIndex, setPhIndex] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setPhIndex(i => (i + 1) % searchPlaceholders.length), 3000);
+    // BUG-FIX (audit 2026-05-05): guard contra modulus-by-zero si el array
+    // se vacía dinámicamente — `% 0` retorna NaN y causa "phIndex must be a number".
+    const len = searchPlaceholders.length;
+    if (len === 0) return;
+    const t = setInterval(() => setPhIndex(i => (i + 1) % len), 3000);
     return () => clearInterval(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [catFilter, setCatFilter] = useState("todos");
@@ -648,27 +652,41 @@ export default function InventoryTab() {
 
   const addProduct = async (e: FormEvent) => {
     e.preventDefault();
+    // BUG-FIX (audit 2026-05-05): guard contra doble-submit + chequeo res.ok
+    if (saving) return;
     if (!addForm.name || !addForm.price) return;
     setSaving(true);
-    await fetch("/api/products", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        ...addForm,
-        price: Number(addForm.price),
-        costPrice: addForm.costPrice ? Number(addForm.costPrice) : undefined,
-        badge: addForm.badge || undefined,
-        barcode: addForm.barcode || undefined,
-        stock: addForm.stock !== "" ? Number(addForm.stock) : undefined,
-        stockMin: addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined,
-        stockMax: addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined,
-        expiryDate: addForm.expiryDate || undefined,
-      }),
-    });
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          ...addForm,
+          price: Number(addForm.price),
+          costPrice: addForm.costPrice ? Number(addForm.costPrice) : undefined,
+          badge: addForm.badge || undefined,
+          barcode: addForm.barcode || undefined,
+          stock: addForm.stock !== "" ? Number(addForm.stock) : undefined,
+          stockMin: addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined,
+          stockMax: addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined,
+          expiryDate: addForm.expiryDate || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err?.error || `No se pudo crear el producto (HTTP ${res.status})`);
+        setSaving(false);
+        return;
+      }
+      toast.success("Producto creado");
+      setShowAdd(false);
+      setAddForm(EMPTY_ADD);
+      load();
+    } catch (err) {
+      console.error("[InventoryTab] addProduct error", err);
+      toast.error("Error de conexión. Reintentá.");
+    }
     setSaving(false);
-    setShowAdd(false);
-    setAddForm(EMPTY_ADD);
-    load();
   };
 
   // ── Bulk operations  ─────────────────────────────────────────────────────
@@ -1143,7 +1161,7 @@ export default function InventoryTab() {
           onClick={() => setLowOnly(!lowOnly)}
           className={cn(
             "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            lowOnly ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:border-[var(--data-warning)] dark:bg-amber-950/20 dark:text-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            lowOnly ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
@@ -1170,7 +1188,7 @@ export default function InventoryTab() {
         {(lowOnly || showInactive || noImageOnly) && (
           <button
             onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
           >
             <X className="h-3.5 w-3.5" /> Limpiar
           </button>
@@ -1265,21 +1283,21 @@ export default function InventoryTab() {
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Activos</p>
-          <p className="text-2xl font-mono font-bold text-[var(--data-success)] mt-1">{activeProducts}</p>
+          <p className="text-2xl font-mono font-bold text-[var(--data-success-500)] mt-1">{activeProducts}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
           <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Bajo stock</p>
-          <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{lowStockCount}</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{lowStockCount}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
-          <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-zinc-700")} />
+          <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-[var(--data-warning-500)]" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Prox. a vencer</p>
-          <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{expiringSoonCount}</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{expiringSoonCount}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Proximos 30 dias</p>
-          <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-zinc-700")} />
+          <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-[var(--data-warning-500)]" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor total</p>
@@ -1291,11 +1309,11 @@ export default function InventoryTab() {
 
       {/* Mejora P-7: Duplicados detectados */}
       {duplicateWarning.length > 0 && (
-        <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-4 py-2.5 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0" />
-          <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-4 py-2.5 flex flex-wrap items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0" />
+          <span className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
             Posibles duplicados: <span className="font-bold">{duplicateWarning[0].a}</span> y <span className="font-bold">{duplicateWarning[0].b}</span>
-            {duplicateWarning.length > 1 && <span className="text-[var(--data-warning)]"> (y {duplicateWarning.length - 1} mas)</span>}
+            {duplicateWarning.length > 1 && <span className="text-[var(--data-warning-500)]"> (y {duplicateWarning.length - 1} mas)</span>}
           </span>
         </div>
       )}
@@ -1309,9 +1327,9 @@ export default function InventoryTab() {
               key={cm.cat}
               className={cn(
                 "text-xs font-mono font-bold px-2 py-0.5 rounded-full",
-                cm.margin > 25 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                : cm.margin >= 15 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
-                : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                cm.margin > 25 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                : cm.margin >= 15 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
+                : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
               )}
             >
               {cm.cat}: {cm.margin.toFixed(0)}%
@@ -1322,17 +1340,17 @@ export default function InventoryTab() {
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-[var(--surface-sunken)] border border-[var(--data-warning)]/40 rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--data-warning-500)]/40 rounded-xl overflow-hidden ">
           <div className="px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/50 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/50 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
                 </div>
                 <div>
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
                     Alertas de Orden de Compra
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--data-warning)] dark:bg-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-bold">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-bold">
                       {lowStockProducts.length}
                     </span>
                   </CardTitle>
@@ -1345,14 +1363,14 @@ export default function InventoryTab() {
                 <button
                   onClick={generateBulkOC}
                   disabled={generatingOC}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning)] hover:bg-[var(--data-warning)] text-white text-xs font-bold transition-colors disabled:opacity-60 "
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] text-white text-xs font-bold transition-colors disabled:opacity-60 "
                 >
                   {generatingOC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackagePlus className="h-3.5 w-3.5" />}
                   Generar OC para todos
                 </button>
                 <button
                   onClick={() => setExpandedOC(!expandedOC)}
-                  className="p-2 rounded-lg hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors"
                 >
                   <ChevronRight className={cn("h-4 w-4 text-[var(--text-secondary)] dark:text-muted transition-transform", expandedOC && "rotate-90")} />
                 </button>
@@ -1367,7 +1385,7 @@ export default function InventoryTab() {
                   const suggestedQty = maxStock - (p.stock ?? 0);
                   const unitCost = p.costPrice ?? p.price * 0.7;
                   return (
-                    <div key={p.id} className="bg-white dark:bg-card border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex flex-wrap items-center gap-3">
+                    <div key={p.id} className="bg-white dark:bg-card border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3 flex flex-wrap items-center gap-3">
                       {p.image ? (
                         <span className="relative inline-block shrink-0">
                           <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border" />
@@ -1381,7 +1399,7 @@ export default function InventoryTab() {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
                         <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                          Stock: {p.stock} / Mín: {minStock} • Sugerido: <span className="font-bold text-[var(--data-warning)]">{suggestedQty} {p.unit}</span>
+                          Stock: {p.stock} / Mín: {minStock} • Sugerido: <span className="font-bold text-[var(--data-warning-500)]">{suggestedQty} {p.unit}</span>
                         </p>
                       </div>
                       <div className="text-right shrink-0">
@@ -1391,7 +1409,7 @@ export default function InventoryTab() {
                       <button
                         onClick={() => generateOC(p)}
                         disabled={generatingOC}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--data-warning)] hover:bg-[var(--data-warning)] text-white text-xs font-bold transition-colors disabled:opacity-60 shrink-0"
+                        className="px-3 py-1.5 rounded-lg bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] text-white text-xs font-bold transition-colors disabled:opacity-60 shrink-0"
                       >
                         Generar OC
                       </button>
@@ -1415,14 +1433,14 @@ export default function InventoryTab() {
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                  showExtendedCols ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-card"
+                  showExtendedCols ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-card"
                 )}
               >
                 <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
               </button>
               <button
                 onClick={() => setShowExpandedTable(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
               >
                 <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
               </button>
@@ -1440,7 +1458,7 @@ export default function InventoryTab() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all",
                   noImageCount > 0
-                    ? "border-primary bg-linear-to-r from-primary to-[var(--data-success)] text-white hover:opacity-90 shadow-sm"
+                    ? "border-primary bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 shadow-sm"
                     : "border-primary/30 text-primary hover:bg-primary/5",
                 )}
               >
@@ -1491,7 +1509,7 @@ export default function InventoryTab() {
                     Unidad: p.unit, Codigo: p.barcode ?? "", Activo: p.active ? "Si" : "No",
                   })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
               >
                 <Download className="h-3.5 w-3.5" /> Excel
               </button>
@@ -1499,7 +1517,7 @@ export default function InventoryTab() {
               <button
                 onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
                 disabled={csvImporting}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors disabled:opacity-50"
               >
                 {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
               </button>
@@ -1516,7 +1534,7 @@ export default function InventoryTab() {
       {/* Content */}
       {/* CSV import result feedback */}
       {csvResult && (
-        <div className={`flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"}`}>
+        <div className={`flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"}`}>
           <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="font-bold">{csvResult.created} producto{csvResult.created !== 1 ? "s" : ""} importado{csvResult.created !== 1 ? "s" : ""} correctamente.</p>
@@ -1527,19 +1545,19 @@ export default function InventoryTab() {
       )}
       {/* Mejora QW-10j: Alerta precio inconsistente */}
       {!loading && inconsistentes.length > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-3 mb-2">
-          <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-1.5 mb-1.5">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-3 mb-2">
+          <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-1.5 mb-1.5">
             <AlertTriangle className="h-4 w-4" /> {inconsistentes.length} producto{inconsistentes.length !== 1 ? "s" : ""} se vende{inconsistentes.length !== 1 ? "n" : ""} por debajo del costo:
           </p>
           <ul className="space-y-0.5 mb-2">
             {inconsistentes.slice(0, 5).map(p => (
-              <li key={p.id} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <li key={p.id} className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {p.name}: costo S/{p.costPrice!.toFixed(2)} &gt; precio S/{p.price.toFixed(2)} (perdida S/{(p.costPrice! - p.price).toFixed(2)}/unid)
               </li>
             ))}
-            {inconsistentes.length > 5 && <li className="text-xs text-[var(--data-error)]">...y {inconsistentes.length - 5} mas</li>}
+            {inconsistentes.length > 5 && <li className="text-xs text-[var(--data-error-500)]">...y {inconsistentes.length - 5} mas</li>}
           </ul>
-          <button onClick={() => { setView("productos"); setSearch(""); }} className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] hover:underline">
+          <button onClick={() => { setView("productos"); setSearch(""); }} className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:underline">
             Corregir precios &rarr;
           </button>
         </div>
@@ -1567,7 +1585,7 @@ export default function InventoryTab() {
                   className={cn(
                     "bg-white dark:bg-card border rounded-xl p-4  transition-all relative",
                     !p.active && "opacity-60 bg-[var(--surface-canvas)]",
-                    lowStock ? "border-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border"
+                    lowStock ? "border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 >
                   {!p.active && (
@@ -1604,10 +1622,10 @@ export default function InventoryTab() {
                       <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Editar">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Eliminar">
+                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--data-success)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Ver Kardex">
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
                       <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Modificadores (cremas, adicionales, talla)">
@@ -1620,7 +1638,7 @@ export default function InventoryTab() {
                       onClick={() => toggleActive(p)}
                       className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors",
-                        p.active ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
+                        p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
                       )}
                     >
                       <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-[var(--accent-soft)]" : "bg-gray-400")} />
@@ -1629,7 +1647,7 @@ export default function InventoryTab() {
                     {p.stock !== undefined ? (
                       <div className={cn(
                         "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold",
-                        lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                        lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                       )}>
                         {lowStock && <AlertTriangle className="h-3 w-3" />}
                         Stock: {p.stock}
@@ -1717,8 +1735,8 @@ export default function InventoryTab() {
                               const stockMin = p.stockMin ?? 5;
                               const stock = p.stock ?? 0;
                               if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Sin stock" />;
-                              if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error)] inline-block shrink-0" title="Critico" />;
-                              if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning)] inline-block shrink-0" title="Bajo" />;
+                              if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
+                              if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] inline-block shrink-0" title="Bajo" />;
                               return <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-soft)] inline-block shrink-0" title="OK" />;
                             })()}
                             <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate-25">{p.name}</span>
@@ -1745,15 +1763,15 @@ export default function InventoryTab() {
                           {p.stock !== undefined ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
-                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error)]" :
-                                lowStock ? "bg-[var(--data-warning)]" :
+                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error-500)]" :
+                                lowStock ? "bg-[var(--data-warning-500)]" :
                                 (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-[var(--accent-soft)]" :
                                 "bg-[var(--accent-soft)]"
                               )} />
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]" :
-                                lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]" :
-                                "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
+                                lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
+                                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                               )}>
                                 {(p.stock ?? 0) === 0 && <AlertTriangle className="h-3 w-3" />}
                                 {lowStock && (p.stock ?? 0) > 0 && <AlertTriangle className="h-3 w-3" />}
@@ -1787,8 +1805,8 @@ export default function InventoryTab() {
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
                           {(() => {
                             const delta = computeStockChange(p.id, movements);
-                            if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
-                            if (delta < 0) return <span className="text-xs font-bold text-[var(--data-error)]"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
+                            if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success-500)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
+                            if (delta < 0) return <span className="text-xs font-bold text-[var(--data-error-500)]"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
                             return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&#8594; 0</span>;
                           })()}
                         </td>
@@ -1797,7 +1815,7 @@ export default function InventoryTab() {
                             onClick={() => toggleActive(p)}
                             className={cn(
                               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
-                              p.active ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
+                              p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
                             )}
                           >
                             <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-[var(--accent-soft)]" : "bg-gray-400")} />
@@ -1831,12 +1849,12 @@ export default function InventoryTab() {
                                 });
                                 setShowAdd(true);
                               }}
-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                               title="Duplicar"
                             >
                               <ClipboardList className="h-4 w-4" />
                             </button>
-                            <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                            <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {/* Adicionales / modificadores (cremas, sabores, extras) */}
@@ -1861,8 +1879,8 @@ export default function InventoryTab() {
                               className={cn(
                                 "p-1.5 rounded-lg transition-colors",
                                 autoReorderConfigs[p.id]
-                                  ? "text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
-                                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)]"
+                                  ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
+                                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"
                               )}
                               title={autoReorderConfigs[p.id] ? "Auto-reorden activo (click para desactivar)" : "Configurar auto-reorden"}
                             >
@@ -1890,10 +1908,10 @@ export default function InventoryTab() {
         /* ── Kanban Stock View ────────────────────────────────────── */
         (() => {
           const columns = [
-            { key: "agotado", label: "Agotado", color: "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20", badgeColor: "bg-red-500", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
-            { key: "bajo", label: "Pocas Existencias", color: "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/20", badgeColor: "bg-amber-500", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
-            { key: "normal", label: "Normal", color: "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
-            { key: "exceso", label: "Exceso", color: "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
+            { key: "agotado", label: "Agotado", color: "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20", badgeColor: "bg-[var(--data-error-500)]", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
+            { key: "bajo", label: "Pocas Existencias", color: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20", badgeColor: "bg-[var(--data-warning-500)]", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
+            { key: "normal", label: "Normal", color: "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
+            { key: "exceso", label: "Exceso", color: "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
@@ -2013,7 +2031,7 @@ export default function InventoryTab() {
                         {p.stock != null && (
                           <span className={cn(
                             "text-xs font-bold px-2 py-0.5 rounded-full",
-                            (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error)]" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                            (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           )}>
                             Stock: {p.stock}
                           </span>
@@ -2040,8 +2058,8 @@ export default function InventoryTab() {
             </div>
             <form onSubmit={addProduct} className="p-5 space-y-5">
               {/* National product DB search */}
-              <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-[var(--data-success)] flex items-center gap-1.5">
+              <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -2050,7 +2068,7 @@ export default function InventoryTab() {
                     onChange={(e) => setDbQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleDbSearch())}
                     placeholder="Ej: arroz costeño, aceite vegetal…"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--data-success)]/30 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground focus:border-[var(--data-success)]/30 outline-none text-sm"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground focus:border-[var(--data-success-500)]/30 outline-none text-sm"
                   />
                   <button
                     type="button"
@@ -2062,7 +2080,7 @@ export default function InventoryTab() {
                   </button>
                 </div>
                 {dbResults.length > 0 && (
-                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-[var(--data-success)]/30 bg-white dark:bg-card">
+                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-[var(--data-success-500)]/30 bg-white dark:bg-card">
                     {dbResults.map((r, i) => (
                       <button
                         key={i}
@@ -2201,7 +2219,7 @@ export default function InventoryTab() {
                     const validation = validateImageUrl(addForm.image);
                     if (!validation.valid && addForm.image) {
                       return (
-                        <p className="text-sm text-[var(--data-warning)] flex items-center gap-1.5">
+                        <p className="text-sm text-[var(--data-warning-500)] flex items-center gap-1.5">
                           <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden />
                           {validation.reason}
                         </p>
@@ -2261,13 +2279,13 @@ export default function InventoryTab() {
                         }}
                       />
                       {imgInfo && (
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] flex items-center gap-1.5 leading-snug">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] flex items-center gap-1.5 leading-snug">
                           <CheckCircle className="h-3 w-3 shrink-0" />
                           Imagen optimizada: {imgInfo.originalKB} KB → <strong>{imgInfo.finalKB} KB</strong> · {imgInfo.width}×{imgInfo.height}px · WebP {imgInfo.quality}%
                         </p>
                       )}
                       {imgError && (
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1.5 leading-snug">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] flex items-center gap-1.5 leading-snug">
                           <AlertTriangle className="h-3 w-3 shrink-0" />
                           {imgError}
                         </p>
@@ -2362,7 +2380,7 @@ export default function InventoryTab() {
                       type="button"
                       onClick={() => generateDescriptionAI(editForm, setEditForm)}
                       disabled={aiDescGenerating || !editForm.name}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-linear-to-r from-primary to-[var(--data-success)] text-white text-[length:var(--ts-2xs)] font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-linear-to-r from-primary to-[var(--data-success-500)] text-white text-[length:var(--ts-2xs)] font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       title={!editForm.name ? "Primero ingresa el nombre del producto" : "Generar descripción con IA"}
                     >
                       {aiDescGenerating ? (
@@ -2381,7 +2399,7 @@ export default function InventoryTab() {
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm resize-none"
                   />
                   {aiDescError && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] mt-1 flex items-center gap-1">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] mt-1 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       {aiDescError}
                     </p>
@@ -2462,7 +2480,7 @@ export default function InventoryTab() {
                           type="button"
                           onClick={() => { setEditForm(f => ({ ...f, image: "" })); setImgInfo(null); }}
                           title="Quitar imagen"
-                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-[var(--data-error)] transition-all"
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-[var(--data-error-500)] transition-all"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -2486,7 +2504,7 @@ export default function InventoryTab() {
                         <button
                           type="button"
                           onClick={() => setShowImageBank(true)}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-linear-to-r from-primary to-[var(--data-success)] text-white hover:opacity-90 transition-all text-sm font-bold"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
                           title="Elegir una imagen del banco global mantenido por el superadmin"
                         >
                           <BookOpen className="h-4 w-4" />
@@ -2536,13 +2554,13 @@ export default function InventoryTab() {
                         }}
                       />
                       {imgInfo && (
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] flex items-center gap-1.5 leading-snug">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] flex items-center gap-1.5 leading-snug">
                           <CheckCircle className="h-3 w-3 shrink-0" />
                           Imagen optimizada: {imgInfo.originalKB} KB → <strong>{imgInfo.finalKB} KB</strong> · {imgInfo.width}×{imgInfo.height}px · WebP {imgInfo.quality}%
                         </p>
                       )}
                       {imgError && (
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] flex items-center gap-1.5 leading-snug">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] flex items-center gap-1.5 leading-snug">
                           <AlertTriangle className="h-3 w-3 shrink-0" />
                           {imgError}
                         </p>
@@ -2630,14 +2648,14 @@ export default function InventoryTab() {
                 setBulkClearImagesConfirm(true);
               }
             }}
-            className="px-3 py-1.5 rounded-lg bg-[var(--data-warning)]/80 hover:bg-[var(--data-warning)] text-xs font-semibold transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 rounded-lg bg-[var(--data-warning-500)]/80 hover:bg-[var(--data-warning-500)] text-xs font-semibold transition-colors flex items-center gap-1"
             title="Quita la imagen de los productos seleccionados (no los elimina)"
           >
             <Camera className="h-3 w-3" /> Quitar imágenes
           </button>
           <button
             onClick={() => setBulkDeleteConfirm(true)}
-            className="px-3 py-1.5 rounded-lg bg-[var(--data-error)]/80 hover:bg-[var(--data-error)] text-xs font-semibold transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 rounded-lg bg-[var(--data-error-500)]/80 hover:bg-[var(--data-error-500)] text-xs font-semibold transition-colors flex items-center gap-1"
           >
             <Trash2 className="h-3 w-3" /> Eliminar
           </button>
@@ -2655,7 +2673,7 @@ export default function InventoryTab() {
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-[var(--data-warning-100)] dark:bg-orange-950/30">
-                  <Camera className="h-5 w-5 text-[var(--data-warning)]" />
+                  <Camera className="h-5 w-5 text-[var(--data-warning-500)]" />
                 </div>
                 <div>
                   <CardTitle className="text-lg font-bold text-foreground">Quitar imágenes</CardTitle>
@@ -2693,7 +2711,7 @@ export default function InventoryTab() {
                     executeBulkClearImages();
                   }}
                   disabled={bulkClearingImages}
-                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-warning)] hover:bg-[var(--data-warning)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkClearingImages ? "Quitando…" : `Sí, quitar ${selectedIds.size}`}
                 </button>
@@ -2710,7 +2728,7 @@ export default function InventoryTab() {
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-[var(--data-error-100)] dark:bg-red-950/30">
-                  <Trash2 className="h-5 w-5 text-[var(--data-error)]" />
+                  <Trash2 className="h-5 w-5 text-[var(--data-error-500)]" />
                 </div>
                 <div>
                   <CardTitle className="text-lg font-bold text-foreground">Eliminar productos</CardTitle>
@@ -2730,7 +2748,7 @@ export default function InventoryTab() {
                 <button
                   onClick={executeBulkDelete}
                   disabled={bulkDeleting}
-                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
                 </button>
@@ -2953,9 +2971,9 @@ export default function InventoryTab() {
 
       {/* Mejora 5 nueva: Resumen de auto-reorden */}
       {autoReorderCount > 0 && view === "productos" && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 flex items-center gap-2">
+          <RefreshCw className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+          <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">
             {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado
           </p>
         </div>
@@ -3028,7 +3046,7 @@ function CategorySuggestionInline({
   if (detection.id === currentCategory) {
     return (
       <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
         Categoría coincide con la detección automática.
       </p>
     );

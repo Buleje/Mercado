@@ -87,15 +87,15 @@ function getConditionLabel(c: WeatherCondition): string {
 }
 
 function WeatherIcon({ condition, className }: { condition: WeatherCondition; className?: string }) {
-  if (condition === "hot") return <Sun className={cn("text-[var(--data-warning)]", className)} />;
-  if (condition === "rainy") return <CloudRain className={cn("text-[var(--data-success)]", className)} />;
-  if (condition === "cold") return <Wind className={cn("text-[var(--data-info)]", className)} />;
-  return <Sun className={cn("text-[var(--data-warning)]", className)} />;
+  if (condition === "hot") return <Sun className={cn("text-[var(--data-warning-500)]", className)} />;
+  if (condition === "rainy") return <CloudRain className={cn("text-[var(--data-success-500)]", className)} />;
+  if (condition === "cold") return <Wind className={cn("text-[var(--data-info-500)]", className)} />;
+  return <Sun className={cn("text-[var(--data-warning-500)]", className)} />;
 }
 
 const PRIORITY_STYLES: Record<string, string> = {
-  high: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-  medium: "bg-[var(--data-warning)]/10 text-[var(--data-warning)]",
+  high: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+  medium: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
   low: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
 };
 
@@ -173,7 +173,7 @@ export default function WeatherDemandPredictor() {
                 <p className="text-sm text-[var(--text-tertiary)]">
                   {weather.description}
                   {usingMock && (
-                    <span className="ml-2 text-xs text-[var(--data-warning)]">(datos estimados)</span>
+                    <span className="ml-2 text-xs text-[var(--data-warning-500)]">(datos estimados)</span>
                   )}
                 </p>
               </>

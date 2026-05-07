@@ -70,7 +70,7 @@ function buildVariants(strokeSize: number): Record<ProductAttributeVariant, Vari
     "bodega-al-mes": {
       illustration: <CalendarioEntrega size={strokeSize} />,
       label: "Disponible en Bodega al Mes (suscripción)",
-      tone: "bg-[var(--data-success)]/10 text-[var(--data-success)] border-[var(--data-success)]/25",
+      tone: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border-[var(--data-success-500)]/25",
     },
     "en-vivo": {
       illustration: <VideoEnVivo size={strokeSize} />,

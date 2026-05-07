@@ -33,9 +33,9 @@ interface Props {
 // Paleta unificada — todo dentro del branding teal de Buleje.
 // 4 matices del mismo color (deep → primary → light) + un negro editorial.
 const TONE_COLOR: Record<NonNullable<Stat["tone"]>, string> = {
-  primary: "var(--brand-primary, #00B4A6)",
+  primary: "var(--brand-primary, var(--accent))",
   deep: "#00786f",
-  light: "#34d4be",
+  light: "color-mix(in oklab, var(--accent) 70%, white)",
   ink: "var(--text-primary)",
 };
 
@@ -47,7 +47,7 @@ export function StatsMarquee({ stats, kicker, headline, description }: Props) {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,180,166,0.07),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in oklab, var(--accent) 7%, transparent),transparent_60%)]"
       />
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {(kicker || headline || description) && (

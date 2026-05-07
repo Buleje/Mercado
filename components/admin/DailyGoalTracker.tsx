@@ -91,7 +91,7 @@ function getMotivationalMessage(pct: number, currentHour: number): string {
 }
 
 function Confetti() {
-  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
+  const colors = ["var(--accent)", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       {Array.from({ length: 24 }).map((_, i) => (
@@ -138,7 +138,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
                   className={cn(
                     "w-full rounded-t transition-all duration-[var(--dur-slow)]",
                     isCurrent
-                      ? "bg-[var(--data-warning)]"
+                      ? "bg-[var(--data-warning-500)]"
                       : b.revenue > 0
                       ? "bg-primary"
                       : "bg-[var(--surface-sunken)]"
@@ -146,7 +146,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
                   style={{ height: `${Math.max(heightPct, b.revenue > 0 ? 8 : 2)}%` }}
                 />
               </div>
-              <span className={cn("text-[length:var(--ts-2xs)] leading-none", isCurrent ? "text-[var(--data-warning)] font-bold" : "text-[var(--text-tertiary)]")}>
+              <span className={cn("text-[length:var(--ts-2xs)] leading-none", isCurrent ? "text-[var(--data-warning-500)] font-bold" : "text-[var(--text-tertiary)]")}>
                 {b.label}
               </span>
             </div>
@@ -168,9 +168,9 @@ interface KPIProps {
 
 function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: KPIProps) {
   const accentText = {
-    success: "text-[var(--data-success)]",
-    warning: "text-[var(--data-warning)]",
-    danger:  "text-[var(--data-error)]",
+    success: "text-[var(--data-success-500)]",
+    warning: "text-[var(--data-warning-500)]",
+    danger:  "text-[var(--data-error-500)]",
     neutral: "text-[var(--text-primary)]",
   }[accent];
 
@@ -185,7 +185,7 @@ function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: K
         {delta != null && (
           <span className={cn(
             "inline-flex items-center gap-0.5 font-bold",
-            delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+            delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
           )}>
             {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {Math.abs(Math.round(delta))}%
@@ -312,10 +312,10 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   const trimmedBuckets = trimBuckets(stats.buckets);
 
   const barColor =
-    pct >= 100 ? "bg-[var(--data-success)]" :
+    pct >= 100 ? "bg-[var(--data-success-500)]" :
     pct >= 80  ? "bg-primary" :
-    pct >= 50  ? "bg-[var(--data-warning)]" :
-    "bg-[var(--data-error)]";
+    pct >= 50  ? "bg-[var(--data-warning-500)]" :
+    "bg-[var(--data-error-500)]";
 
   const statusLabel =
     pct >= 100 ? "Meta alcanzada" :
@@ -324,10 +324,10 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     "Debajo del objetivo";
 
   const statusColor =
-    pct >= 100 ? "text-[var(--data-success)]" :
+    pct >= 100 ? "text-[var(--data-success-500)]" :
     pct >= 80  ? "text-primary" :
-    pct >= 50  ? "text-[var(--data-warning)]" :
-    "text-[var(--data-error)]";
+    pct >= 50  ? "text-[var(--data-warning-500)]" :
+    "text-[var(--data-error-500)]";
 
   const motivational = getMotivationalMessage(pct, stats.currentHour);
 
@@ -364,10 +364,10 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                 autoFocus
                 className="w-24 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)] outline-none focus:border-primary"
               />
-              <button onClick={saveGoal} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success)]">
+              <button onClick={saveGoal} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error)]">
+              <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -390,14 +390,14 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
       {/* Tarjeta principal */}
       <div className={cn(
         "relative rounded-xl border-2 p-6 overflow-hidden transition-all duration-[var(--dur-slow)]",
-        isGoalMet ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
+        isGoalMet ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
       )}>
         {celebrated && <Confetti />}
 
         {error ? (
           <div className="text-center py-4">
-            <p className="text-sm text-[var(--data-error)]">{error}</p>
-            <button onClick={() => void fetchSales()} className="text-xs underline text-[var(--data-error)] mt-1">Reintentar</button>
+            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
+            <button onClick={() => void fetchSales()} className="text-xs underline text-[var(--data-error-500)] mt-1">Reintentar</button>
           </div>
         ) : loading && stats.todayTotal === 0 ? (
           <div className="space-y-3 animate-pulse">
@@ -434,7 +434,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
 
             {isGoalMet ? (
               <div className="text-center py-2 rounded-xl bg-[var(--accent-soft)]">
-                <p className="text-[var(--data-success)] font-bold text-sm">Meta superada por {fmt(stats.todayTotal - dailyGoal)}</p>
+                <p className="text-[var(--data-success-500)] font-bold text-sm">Meta superada por {fmt(stats.todayTotal - dailyGoal)}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -457,12 +457,12 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
         <div className={cn(
           "rounded-xl border p-4 flex items-start gap-3",
           stats.forecast >= dailyGoal
-            ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]"
-            : "border-[var(--data-warning)]/30 bg-[var(--data-warning-50)]"
+            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+            : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
         )}>
           <Sparkles className={cn(
             "h-5 w-5 shrink-0 mt-0.5",
-            stats.forecast >= dailyGoal ? "text-[var(--data-success)]" : "text-[var(--data-warning)]"
+            stats.forecast >= dailyGoal ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"
           )} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">
@@ -513,7 +513,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-[var(--text-secondary)]">Actividad por hora</span>
-            <span className="ml-auto text-xs text-[var(--data-warning)]">hora actual</span>
+            <span className="ml-auto text-xs text-[var(--data-warning-500)]">hora actual</span>
           </div>
           <HourlyChart buckets={trimmedBuckets} />
         </div>

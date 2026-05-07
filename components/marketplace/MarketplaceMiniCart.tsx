@@ -241,7 +241,7 @@ export default function MarketplaceMiniCart() {
                     <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]">
                       <Truck className="h-3.5 w-3.5" strokeWidth={2.5} />
                       {hasFreeShipping ? (
-                        <span className="text-[var(--data-success)] font-extrabold uppercase tracking-wider">
+                        <span className="text-[var(--data-success-500)] font-extrabold uppercase tracking-wider">
                           ✓ Envío gratis
                         </span>
                       ) : (
@@ -259,7 +259,7 @@ export default function MarketplaceMiniCart() {
                     <m.div
                       className={cn(
                         "h-full rounded-full",
-                        hasFreeShipping ? "bg-[var(--data-success)]" : "bg-[var(--brand-primary)]",
+                        hasFreeShipping ? "bg-[var(--data-success-500)]" : "bg-[var(--brand-primary)]",
                       )}
                       initial={{ width: 0 }}
                       animate={{ width: `${freeShippingProgress}%` }}
@@ -324,7 +324,7 @@ export default function MarketplaceMiniCart() {
                               aria-label={item.quantity <= 1 ? "Quitar" : "Restar uno"}
                             >
                               {item.quantity <= 1 ? (
-                                <Trash2 className="h-3.5 w-3.5 text-[var(--data-error)]" strokeWidth={2.25} />
+                                <Trash2 className="h-3.5 w-3.5 text-[var(--data-error-500)]" strokeWidth={2.25} />
                               ) : (
                                 <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
                               )}

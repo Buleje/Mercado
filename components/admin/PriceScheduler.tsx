@@ -54,8 +54,8 @@ function getStatus(schedule: PriceSchedule): ScheduleStatus {
 }
 
 const STATUS_UI: Record<ScheduleStatus, { label: string; color: string; dot: string }> = {
-  programado: { label: "Programado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]",    dot: "bg-[var(--accent-soft)]" },
-  activo:     { label: "Activo",     color: "text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
+  programado: { label: "Programado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    dot: "bg-[var(--accent-soft)]" },
+  activo:     { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
   expirado:   { label: "Expirado",   color: "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",    dot: "bg-gray-400" },
 };
 
@@ -216,7 +216,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
       <div className="space-y-1">
         <label className="text-xs font-medium text-[var(--text-tertiary)]">Producto</label>
         <ProductSearchInput onSelect={p => { setForm(f => ({ ...f, product: p })); }} />
-        {errors.product && <p className="text-xs text-[var(--data-error)]">{errors.product}</p>}
+        {errors.product && <p className="text-xs text-[var(--data-error-500)]">{errors.product}</p>}
       </div>
 
       {/* Current vs new price */}
@@ -238,10 +238,10 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             placeholder="0.00"
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.newPrice ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+              errors.newPrice ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.newPrice && <p className="text-xs text-[var(--data-error)]">{errors.newPrice}</p>}
+          {errors.newPrice && <p className="text-xs text-[var(--data-error-500)]">{errors.newPrice}</p>}
         </div>
       </div>
 
@@ -250,8 +250,8 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
         <div className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium",
           Number(priceDiff) > 0
-            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
-            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
         )}>
           {Number(priceDiff) > 0 ? "Aumento" : "Descuento"} de {Math.abs(Number(priceDiff))}% ({Number(priceDiff) > 0 ? "+" : ""}{(Number(form.newPrice) - (form.product?.price ?? 0)).toFixed(2)})
         </div>
@@ -267,10 +267,10 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.startDate ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+              errors.startDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.startDate && <p className="text-xs text-[var(--data-error)]">{errors.startDate}</p>}
+          {errors.startDate && <p className="text-xs text-[var(--data-error-500)]">{errors.startDate}</p>}
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-[var(--text-tertiary)]">Fecha de fin (opcional)</label>
@@ -280,10 +280,10 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.endDate ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+              errors.endDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.endDate && <p className="text-xs text-[var(--data-error)]">{errors.endDate}</p>}
+          {errors.endDate && <p className="text-xs text-[var(--data-error-500)]">{errors.endDate}</p>}
         </div>
       </div>
 
@@ -430,8 +430,8 @@ export default function PriceScheduler() {
                     <span className={cn(
                       "text-xs font-medium px-1.5 py-0.5 rounded-md",
                       isUp
-                        ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
+                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                     )}>
                       {isUp ? "+" : ""}{diff}%
                     </span>
@@ -454,7 +454,7 @@ export default function PriceScheduler() {
                 <button
                   onClick={() => handleDelete(schedule.id)}
                   title="Eliminar"
-                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

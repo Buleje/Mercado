@@ -15,8 +15,8 @@ type Goal = {
 
 const SEED: Goal[] = [];
 
-const PRIORITY_COLORS = { alta: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", baja: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" };
-const STATUS_COLORS = { pendiente: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", completado: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" };
+const PRIORITY_COLORS = { alta: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", baja: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
+const STATUS_COLORS = { pendiente: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", completado: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
 
 function fmt(v: number, unit: string) { return unit === "S/" ? `S/ ${v.toLocaleString("es-PE")}` : `${v} ${unit}`; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -38,9 +38,9 @@ export default function GoalTrackerTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Metas totales", value: goals.length, color: "text-[var(--data-success)]", icon: Target },
-          { label: "En progreso", value: inProgress, color: "text-[var(--data-warning)]", icon: Flame },
-          { label: "Completadas", value: completed, color: "text-[var(--data-success)]", icon: Trophy },
+          { label: "Metas totales", value: goals.length, color: "text-[var(--data-success-500)]", icon: Target },
+          { label: "En progreso", value: inProgress, color: "text-[var(--data-warning-500)]", icon: Flame },
+          { label: "Completadas", value: completed, color: "text-[var(--data-success-500)]", icon: Trophy },
           { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-[var(--text-secondary)]", icon: Star },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3">
@@ -61,7 +61,7 @@ export default function GoalTrackerTab() {
             : Math.min((g.currentValue / g.targetValue) * 100, 100);
 
           return (
-            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -80,13 +80,13 @@ export default function GoalTrackerTab() {
               {/* Progress bar */}
               <div className="relative">
                 <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden mb-2">
-                  <div className={cn("h-full rounded-full transition-all", g.status === "completado" ? "bg-[var(--accent-soft)]" : progress >= 80 ? "bg-[var(--accent-soft)]" : progress >= 50 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${progress}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", g.status === "completado" ? "bg-[var(--accent-soft)]" : progress >= 80 ? "bg-[var(--accent-soft)]" : progress >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${progress}%` }} />
                 </div>
                 {/* Milestones */}
                 <div className="flex justify-between">
                   {g.milestones.map((m, i) => (
                     <div key={i} className="flex flex-col items-center">
-                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border")} />
+                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border")} />
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{m.label}</span>
                     </div>
                   ))}

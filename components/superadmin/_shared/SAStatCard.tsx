@@ -63,7 +63,7 @@ export function SAStatCard({
             <div
               className={[
                 "flex items-center gap-1 text-xs font-semibold mt-1.5 tabular-nums",
-                trendUp ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
+                trendUp ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
               ].join(" ")}
             >
               <span>{trendUp ? "↑" : "↓"}</span>

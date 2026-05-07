@@ -44,7 +44,7 @@ export default function PWAInstallBanner() {
         <div
           className="relative overflow-hidden rounded-3xl p-6 sm:p-10"
           style={{
-            background: "linear-gradient(135deg, #00B4A6 0%, #007A72 50%, #00B4A6 100%)",
+            background: "linear-gradient(135deg, var(--accent) 0%, #007A72 50%, var(--accent) 100%)",
           }}
         >
           {/* Decorative circles */}

@@ -42,12 +42,12 @@ export function LiveSignal({ className = "h-3 w-3", active = true }: IconProps &
     <span className={`relative inline-flex ${className}`} aria-hidden>
       <span
         className={`absolute inset-0 rounded-full ${
-          active ? "bg-[var(--data-success)]/40 animate-ping" : "bg-[var(--text-tertiary)]/0"
+          active ? "bg-[var(--data-success-500)]/40 animate-ping" : "bg-[var(--text-tertiary)]/0"
         }`}
       />
       <span
         className={`relative inline-block w-full h-full rounded-full ${
-          active ? "bg-[var(--data-success)]" : "bg-[var(--text-tertiary)]"
+          active ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"
         }`}
       />
     </span>

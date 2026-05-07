@@ -73,14 +73,14 @@ export default function ReferralProgramTab() {
             <Gift className="h-4 w-4" />
             Puntos otorgados
           </div>
-          <p className="mt-1 text-2xl font-bold text-[var(--data-warning)]">{totalPoints.toLocaleString()}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--data-warning-500)]">{totalPoints.toLocaleString()}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center gap-2 text-sm text-white/60">
             <TrendingUp className="h-4 w-4" />
             Conversión
           </div>
-          <p className="mt-1 text-2xl font-bold text-[var(--data-success)]">
+          <p className="mt-1 text-2xl font-bold text-[var(--data-success-500)]">
             {totalReferrals > 0 ? "Activo" : "Sin datos"}
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function ReferralProgramTab() {
                       {i + 1}
                     </td>
                     <td className="py-2 text-white">{r.name}</td>
-                    <td className="py-2 font-mono text-xs text-[var(--data-warning)]">{r.referralCode}</td>
+                    <td className="py-2 font-mono text-xs text-[var(--data-warning-500)]">{r.referralCode}</td>
                     <td className="py-2 text-right font-semibold text-white">{r.referralCount}</td>
                   </tr>
                 ))}
@@ -152,7 +152,7 @@ export default function ReferralProgramTab() {
                   <span className="mx-2 text-white/40">→</span>
                   <span className="text-sm text-white">{r.refereeName}</span>
                 </div>
-                <span className="text-xs text-[var(--data-warning)]">+{r.points} pts</span>
+                <span className="text-xs text-[var(--data-warning-500)]">+{r.points} pts</span>
               </div>
             ))}
           </div>
@@ -160,13 +160,13 @@ export default function ReferralProgramTab() {
       )}
 
       {/* How it works */}
-      <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-4">
-        <CardTitle className="mb-2 text-sm font-semibold text-[var(--data-success)]">Cómo funciona</CardTitle>
-        <ul className="space-y-1 text-sm text-white/60">
-          <li>📱 Cada cliente tiene un código único de referido</li>
-          <li>🤝 Cuando alguien usa ese código, ambos ganan <strong>50 puntos</strong></li>
-          <li>💰 50 puntos = S/1 de descuento en su próxima compra</li>
-          <li>🔄 No hay límite de personas que un cliente puede referir</li>
+      <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] p-4">
+        <CardTitle className="mb-2 text-sm font-semibold text-[var(--data-success-500)]">Cómo funciona</CardTitle>
+        <ul className="space-y-1.5 text-sm text-white/70 list-disc pl-5 marker:text-[var(--data-success-500)]">
+          <li>Cada cliente tiene un código único de referido</li>
+          <li>Cuando alguien usa ese código, ambos ganan <strong>50 puntos</strong></li>
+          <li>50 puntos = S/1 de descuento en su próxima compra</li>
+          <li>No hay límite de personas que un cliente puede referir</li>
         </ul>
       </div>
     </div>

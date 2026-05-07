@@ -43,20 +43,20 @@ const SUGGESTION_CONFIG: Record<
 > = {
   revisar: {
     label: "Revisar",
-    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
     icon: AlertTriangle,
   },
   ofertar: {
     label: "Considere ofertar",
-    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
     icon: Tag,
   },
   devolver: {
     label: "Considere devolver al proveedor",
-    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
     icon: Truck,
   },
 };
@@ -142,12 +142,12 @@ export default function StaleProductAlert() {
         className="flex w-full items-center justify-between px-5 py-4 text-left cursor-pointer"
       >
         <div className="flex items-center gap-3">
-          <TrendingDown className="h-5 w-5 text-[var(--data-warning)]" />
+          <TrendingDown className="h-5 w-5 text-[var(--data-warning-500)]" />
           <span className="text-sm font-semibold text-[var(--text-primary)]">
             Productos sin movimiento
           </span>
           {staleProducts.length > 0 && (
-            <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]">
+            <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]">
               {staleProducts.length}
             </span>
           )}
@@ -199,7 +199,7 @@ export default function StaleProductAlert() {
             </div>
           )}
           {!loading && error && (
-            <div className="p-4 text-center text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</div>
+            <div className="p-4 text-center text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</div>
           )}
           {!loading && !error && staleProducts.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -230,7 +230,7 @@ export default function StaleProductAlert() {
                   </button>
                 ))}
                 <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-                  Valor total: <strong className="text-[var(--data-error)]">{fmt(totalValueStale)}</strong>
+                  Valor total: <strong className="text-[var(--data-error-500)]">{fmt(totalValueStale)}</strong>
                 </span>
               </div>
 
@@ -264,10 +264,10 @@ export default function StaleProductAlert() {
                           className={cn(
                             "text-sm font-bold",
                             p.daysSinceLastSale >= 60
-                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : p.daysSinceLastSale >= 30
-                              ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                              : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           )}
                         >
                           {p.daysSinceLastSale >= 999 ? "Sin ventas" : `${p.daysSinceLastSale}d`}

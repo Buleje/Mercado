@@ -39,10 +39,10 @@ type CashAudit = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", icon: AlertTriangle },
-  conforme:  { label: "Conforme",  color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
-  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
-  faltante:  { label: "Faltante",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", icon: TrendingDown },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", icon: AlertTriangle },
+  conforme:  { label: "Conforme",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
+  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
+  faltante:  { label: "Faltante",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", icon: TrendingDown },
 };
 
 type CashRegisterRaw = {
@@ -100,7 +100,7 @@ function ModuleTooltip() {
           <p className="font-bold text-[var(--text-primary)] dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Compara el <strong>dinero que debería haber</strong> (fondo + ventas en efectivo) con el <strong>dinero que realmente cuentas</strong> al cerrar cada turno.</p>
           <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Ejemplo:</p>
-          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre caja con S/200. Vende S/350 en efectivo. Al cerrar se esperan S/550. Si cuenta S/540 → <span className="text-[var(--data-error)] font-semibold">faltante S/10</span>.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre caja con S/200. Vende S/350 en efectivo. Al cerrar se esperan S/550. Si cuenta S/540 → <span className="text-[var(--data-error-500)] font-semibold">faltante S/10</span>.</p>
           <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
             <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Tarjetas</span> — resumen global de todos los arqueos.</p>
             <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
@@ -277,15 +277,15 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
               !hasCount ? "bg-gray-50 dark:bg-surface" :
               difference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
               difference > 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
-              "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20"
+              "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
             )}>
               <p className="text-xs font-semibold uppercase text-[var(--text-tertiary)] dark:text-muted">Diferencia</p>
               <p className={cn(
                 "font-extrabold text-sm",
                 !hasCount ? "text-[var(--text-tertiary)]" :
-                difference === 0 ? "text-[var(--data-success)]" :
-                difference > 0 ? "text-[var(--data-success)]" :
-                "text-[var(--data-error)]"
+                difference === 0 ? "text-[var(--data-success-500)]" :
+                difference > 0 ? "text-[var(--data-success-500)]" :
+                "text-[var(--data-error-500)]"
               )}>
                 {hasCount
                   ? (difference === 0
@@ -299,7 +299,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           <button
             type="button"
             onClick={() => setCounts({})}
-            className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+            className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
           >
             Limpiar conteo
           </button>
@@ -390,8 +390,8 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         ].map(({ label, value, tone, icon: Icon }) => {
           const tones = {
             neutral: { bg: "bg-white dark:bg-card border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
-            success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success)]", iconColor: "text-[var(--data-success)]" },
-            error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error)]/20 dark:bg-red-950/30", color: "text-[var(--data-error)]", iconColor: "text-[var(--data-error)]" },
+            success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success-500)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
+            error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error-500)]/20 dark:bg-red-950/30", color: "text-[var(--data-error-500)]", iconColor: "text-[var(--data-error-500)]" },
           }[tone];
           return (
             <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", tones.bg)}>
@@ -438,7 +438,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                     <td className="font-bold text-[var(--text-primary)]">{a.cashier}</td>
                     <td className="text-[var(--text-secondary)]">{fmt(a.expectedAmount)}</td>
                     <td className="font-bold text-[var(--text-primary)]">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
-                    <td className={cn("font-extrabold", a.difference === 0 ? "text-[var(--text-tertiary)]" : a.difference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
+                    <td className={cn("font-extrabold", a.difference === 0 ? "text-[var(--text-tertiary)]" : a.difference > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
                     <td><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-4 w-4" />{STATUS_MAP[a.status].label}</span></td>
                     <td><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
                   </tr>

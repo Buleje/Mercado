@@ -102,12 +102,12 @@ export default function CuponCard({ cupon }: Props) {
               label="Vence"
               value={fmtDate(cupon.expiresAt)}
               icon={Clock}
-              accent={isUrgent ? "text-amber-700 dark:text-amber-300" : undefined}
+              accent={isUrgent ? "text-[var(--data-warning-700)] dark:text-amber-300" : undefined}
             />
           </dl>
 
           {isUrgent && (
-            <p className="-mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-amber-700 dark:text-amber-300">
+            <p className="-mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:text-amber-300">
               <Clock className="h-3 w-3" aria-hidden="true" />
               Solo quedan {days} {days === 1 ? "dia" : "dias"}
             </p>

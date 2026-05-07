@@ -58,6 +58,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
     }
 
+    // SECURITY 2026-05-06 (audit pagos M006): idempotency lock. Antes 2
+    // eventos `payment.updated` simultáneos disparaban 2 notificaciones
+    // WhatsApp + 2 push al cliente y al vendor. Ahora UNIQUE constraint
+    // en stripeWebhookQueue.stripeId nos sirve también para MP marketplace.
+    const idemKey = `mpmkt_${dataId}`;
+    try {
+      await prisma.stripeWebhookQueue.create({
+        data: {
+          stripeId: idemKey,
+          eventType: body.type ?? "payment",
+          payload: JSON.stringify(body).slice(0, 50_000),
+          processedAt: new Date(),
+        },
+      });
+    } catch (err) {
+      // P2002 = unique violation = ya procesado
+      const code = (err as { code?: string })?.code;
+      if (code === "P2002") {
+        logger.info("MP webhook: duplicate event ignored", { traceId, dataId });
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Si la tabla no existe (schema drift) seguimos sin lock — degradación
+      // graceful en dev. En prod la tabla existe.
+      logger.warn("MP webhook: idempotency lock failed (continuando)", { traceId, err: String(err) });
+    }
+
     // Fetch payment details from MP
     const payment = await getMercadoPagoPayment(dataId);
     const externalRef = payment.external_reference || "";

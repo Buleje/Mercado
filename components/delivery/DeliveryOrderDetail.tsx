@@ -203,7 +203,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
           />
 
           {signature && (
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <p className="text-xs text-[var(--data-success-600)] dark:text-emerald-400 font-semibold flex items-center gap-1">
               <CheckCircle className="h-3.5 w-3.5" />
               Firma guardada
             </p>
@@ -233,8 +233,8 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              <AlertCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+              <p className="text-sm text-[var(--data-error-700)] dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -262,7 +262,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
               disabled={submitting}
               className="
                 min-h-[52px] rounded-xl
-                bg-emerald-600 hover:bg-emerald-700
+                bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]
                 text-white font-bold text-sm
                 active:scale-95 transition-all
                 disabled:opacity-50 disabled:cursor-not-allowed
@@ -356,8 +356,8 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             Volver
           </button>
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-5 text-center">
-            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-            <p className="font-semibold text-red-700 dark:text-red-400 text-sm">
+            <AlertCircle className="h-8 w-8 text-[var(--data-error-500)] mx-auto mb-2" />
+            <p className="font-semibold text-[var(--data-error-700)] dark:text-red-400 text-sm">
               {error ?? "Pedido no encontrado"}
             </p>
             <button
@@ -400,7 +400,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             <p className="text-xs text-white/70 truncate">{order.customerName}</p>
           </div>
           {delivered && (
-            <span className="bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+            <span className="bg-[var(--data-success-500)] text-white text-xs font-bold px-3 py-1 rounded-full">
               Entregado
             </span>
           )}
@@ -427,7 +427,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
                 </p>
               )}
               {!hasCoords && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                <p className="text-xs text-[var(--data-warning-600)] dark:text-amber-400 mt-1">
                   Sin coordenadas exactas — mapa centrado en Pucallpa
                 </p>
               )}
@@ -483,7 +483,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
 
             {order.notes && (
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">
+                <p className="text-xs font-semibold text-[var(--data-warning-700)] dark:text-amber-400 mb-1">
                   Notas del pedido
                 </p>
                 <p className="text-sm text-amber-900 dark:text-amber-200">{order.notes}</p>
@@ -545,7 +545,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
                 onClick={() => setShowConfirmModal(true)}
                 className="
                   w-full min-h-[56px] rounded-2xl
-                  bg-emerald-600 hover:bg-emerald-700
+                  bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]
                   text-white font-extrabold text-base
                   flex items-center justify-center gap-2
                   shadow-lg shadow-emerald-500/30
@@ -567,8 +567,8 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
           >
             <div className="max-w-md mx-auto">
               <div className="w-full min-h-[56px] rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center gap-2">
-                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                <CheckCircle className="h-5 w-5 text-[var(--data-success-600)] dark:text-emerald-400" />
+                <span className="font-extrabold text-[var(--data-success-700)] dark:text-emerald-300">
                   Entrega confirmada
                 </span>
               </div>

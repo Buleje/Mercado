@@ -164,7 +164,7 @@ function CategoryTreemapView() {
         {/* Mejora 9: SUNAT export button */}
         <button
           onClick={handleExportSunat}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--data-success)]/30 text-[var(--data-success)] text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
         >
           Exportar para Contador
         </button>
@@ -359,8 +359,8 @@ function InventoryAnalyticsDashboard() {
       {/* ── Alertas Inventario ── */}
       {(kpis.sinStock > 0 || kpis.criticos > 0) && (
         <div className="flex flex-wrap gap-2">
-          {kpis.sinStock > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]"><AlertTriangle className="h-3 w-3" /> {kpis.sinStock} productos sin stock</span>}
-          {kpis.criticos > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> {kpis.criticos} productos en nivel critico</span>}
+          {kpis.sinStock > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]"><AlertTriangle className="h-3 w-3" /> {kpis.sinStock} productos sin stock</span>}
+          {kpis.criticos > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"><AlertTriangle className="h-3 w-3" /> {kpis.criticos} productos en nivel critico</span>}
         </div>
       )}
 
@@ -542,9 +542,9 @@ function InventoryAnalyticsDashboard() {
             </ScatterChart>
           </ResponsiveContainer>
           {/* Quadrant labels */}
-          <div className="absolute top-6 left-8 text-xs font-bold text-[var(--data-warning)]/60 pointer-events-none">Impulsar ventas</div>
-          <div className="absolute top-6 right-8 text-xs font-bold text-[var(--data-success)]/60 pointer-events-none">Mantener stock</div>
-          <div className="absolute bottom-10 left-8 text-xs font-bold text-[var(--data-error)]/60 pointer-events-none">Liquidar</div>
+          <div className="absolute top-6 left-8 text-xs font-bold text-[var(--data-warning-500)]/60 pointer-events-none">Impulsar ventas</div>
+          <div className="absolute top-6 right-8 text-xs font-bold text-[var(--data-success-500)]/60 pointer-events-none">Mantener stock</div>
+          <div className="absolute bottom-10 left-8 text-xs font-bold text-[var(--data-error-500)]/60 pointer-events-none">Liquidar</div>
           <div className="absolute bottom-10 right-8 text-xs font-bold text-[var(--text-tertiary)]/60 pointer-events-none">Reducir pedidos</div>
         </div>
       </div>
@@ -612,9 +612,9 @@ function InventoryAnalyticsDashboard() {
           {depletionData.map((item, i) => {
             const color = item.daysLeft <= 3 ? "red" : item.daysLeft <= 7 ? "amber" : "emerald";
             const colorClasses = {
-              red: { bg: "bg-[var(--data-error)]", text: "text-[var(--data-error)]", track: "bg-red-100" },
-              amber: { bg: "bg-[var(--data-warning)]", text: "text-[var(--data-warning)]", track: "bg-amber-100" },
-              emerald: { bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)]", track: "bg-[var(--accent-soft)]" },
+              red: { bg: "bg-[var(--data-error-500)]", text: "text-[var(--data-error-500)]", track: "bg-red-100" },
+              amber: { bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", track: "bg-amber-100" },
+              emerald: { bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]", track: "bg-[var(--accent-soft)]" },
             }[color];
             return (
               <div key={item.name || i} className="flex items-center gap-3">
@@ -757,7 +757,7 @@ export default function InventarioAlmacenesModule() {
         description="Stock, movimientos, vencimientos y análisis"
         icon={Package}
         bgTint="bg-amber-50 dark:bg-amber-900/20"
-        iconColorClass="text-amber-600 dark:text-amber-400"
+        iconColorClass="text-[var(--data-warning-600)] dark:text-amber-400"
       >
         {sub === "stock" && (
           <AutoRefreshControl
@@ -793,7 +793,7 @@ export default function InventarioAlmacenesModule() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowConteoModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
             >
               <ListChecks className="h-3.5 w-3.5" /> Conteo físico
             </button>

@@ -411,7 +411,7 @@ export default function NavbarSearchAutocomplete({
                                   : s.type === "category"
                                     ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                                     : s.type === "product"
-                                      ? "bg-amber-500/10 text-amber-600"
+                                      ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-600)]"
                                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                               )}
                             >

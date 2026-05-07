@@ -147,7 +147,7 @@ export default function VolumePricingEditor({
 
       {/* Aviso si no hay precio base */}
       {wholesalePrice == null && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           <Info className="h-4 w-4 shrink-0" />
           <span>
             Este producto no tiene precio mayorista base. El precio resultante no se puede calcular.
@@ -218,7 +218,7 @@ export default function VolumePricingEditor({
                   <td className="px-4 py-2">
                     <button
                       onClick={() => handleRemoveTier(i)}
-                      className="p-1 text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 rounded transition-colors"
+                      className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 rounded transition-colors"
                       title="Eliminar tramo"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -241,7 +241,7 @@ export default function VolumePricingEditor({
         if (!best || best.discount <= 0) return null;
         const resultingPrice = (wholesalePrice * (1 - best.discount / 100)).toFixed(2);
         return (
-          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary dark:text-[var(--data-success)]">
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary dark:text-[var(--data-success-500)]">
             Si compran {best.minQty}+, pagan{" "}
             <strong>S/ {resultingPrice}</strong>{" "}
             en vez de S/ {wholesalePrice.toFixed(2)}
@@ -251,7 +251,7 @@ export default function VolumePricingEditor({
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 px-3 py-2 rounded-lg">
+        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 px-3 py-2 rounded-lg">
           {error}
         </p>
       )}

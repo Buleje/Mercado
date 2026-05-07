@@ -48,17 +48,17 @@ type SupplierMessage = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  pendiente:    { label: "Pendiente",   color: "text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  procesando:   { label: "Procesando",  color: "text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  pendiente:    { label: "Pendiente",   color: "text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  procesando:   { label: "Procesando",  color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   "en-transito":{ label: "En tránsito", color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]" },
-  entregado:    { label: "Entregado",   color: "text-[var(--data-success)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  parcial:      { label: "Entrega parcial", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  entregado:    { label: "Entregado",   color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  parcial:      { label: "Entrega parcial", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 
 const INV_STATUS: Record<InvoiceStatus, { label: string; color: string }> = {
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)]" },
-  pagado:    { label: "Pagado",    color: "text-[var(--data-success)]" },
-  vencido:   { label: "Vencido",   color: "text-[var(--data-error)]" },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]" },
+  pagado:    { label: "Pagado",    color: "text-[var(--data-success-500)]" },
+  vencido:   { label: "Vencido",   color: "text-[var(--data-error-500)]" },
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -118,9 +118,9 @@ export default function SupplierPortalTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Facturas por pagar", value: fmt(stats.pendingInvoices), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Facturas vencidas", value: String(stats.overdueInvoices), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Facturas por pagar", value: fmt(stats.pendingInvoices), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Facturas vencidas", value: String(stats.overdueInvoices), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Mensajes sin leer", value: String(stats.unreadMessages), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>

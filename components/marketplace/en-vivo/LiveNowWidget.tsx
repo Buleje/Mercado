@@ -29,7 +29,7 @@ export function LiveNowWidget() {
           sizes="(min-width: 640px) 192px, 100vw"
           className="object-cover transition-transform group-hover:scale-[1.02]"
         />
-        <span className="absolute top-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white">
+        <span className="absolute top-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-500)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white">
           <CircleDot className="h-3 w-3 animate-pulse" aria-hidden />
           En vivo
         </span>

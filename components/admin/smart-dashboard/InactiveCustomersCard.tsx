@@ -87,7 +87,7 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
         <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Clientes que no vuelven</span>
       </div>
       {inactiveCustomers.length === 0 ? (
-        <div className="flex items-center gap-2 py-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">
+        <div className="flex items-center gap-2 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">
           <Check className="w-4 h-4" /> Tus clientes frecuentes siguen activos
         </div>
       ) : (
@@ -105,7 +105,7 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
                   href={`https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${c.name}! Te extrañamos en Buleje. Tenemos productos nuevos esperandote!`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                  className="shrink-0 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
                 >
                   Contactar
                 </a>

@@ -49,8 +49,8 @@ export default function ImageWarningBadge({
         "absolute top-0.5 right-0.5 inline-flex items-center justify-center rounded-full",
         "border border-white shadow-sm",
         isError
-          ? "bg-[var(--data-error)] text-white"
-          : "bg-[var(--data-warning)] text-white",
+          ? "bg-[var(--data-error-500)] text-white"
+          : "bg-[var(--data-warning-500)] text-white",
         sizeCls,
         className,
       )}

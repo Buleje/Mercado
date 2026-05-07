@@ -228,7 +228,7 @@ function SemaMesTab() {
   }, [sales, monthlyGoal]);
 
   const pct = Math.min(100, monthlyGoal > 0 ? (stats.monthTotal / monthlyGoal) * 100 : 0);
-  const barColor = pct >= 70 ? "bg-[var(--accent-soft)]" : pct >= 30 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
+  const barColor = pct >= 70 ? "bg-[var(--accent-soft)]" : pct >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
 
   const handleSave = () => {
     const val = Number(tempGoal);
@@ -289,10 +289,10 @@ function SemaMesTab() {
                 autoFocus
                 className="w-24 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white outline-none focus:border-primary"
               />
-              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success)]">
+              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setEditing(false)} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error)]">
+              <button onClick={() => setEditing(false)} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -310,7 +310,7 @@ function SemaMesTab() {
             </span>
           </span>
           {pct >= 100 && (
-            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
               <Trophy className="w-3.5 h-3.5" /> Meta alcanzada!
             </span>
           )}
@@ -321,12 +321,12 @@ function SemaMesTab() {
           <div className={cn(
             "rounded-lg p-3 flex items-start gap-2 border",
             stats.forecast >= monthlyGoal
-              ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]"
-              : "border-[var(--data-warning)]/30 bg-[var(--data-warning-50)]"
+              ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+              : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
           )}>
             <Sparkles className={cn(
               "h-4 w-4 shrink-0 mt-0.5",
-              stats.forecast >= monthlyGoal ? "text-[var(--data-success)]" : "text-[var(--data-warning)]"
+              stats.forecast >= monthlyGoal ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"
             )} />
             <div className="text-xs">
               <p className="font-bold text-[var(--text-primary)]">
@@ -362,8 +362,8 @@ function SemaMesTab() {
                   className={cn(
                     "aspect-square rounded flex items-center justify-center text-xs font-semibold border transition-colors",
                     isToday          ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-transparent",
-                    hit              ? "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30" :
-                    isPast && day > 0 ? "bg-[var(--data-error-50)] text-[var(--data-error)]" :
+                    hit              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
+                    isPast && day > 0 ? "bg-[var(--data-error-50)] text-[var(--data-error-500)]" :
                     "bg-gray-50 text-[var(--text-tertiary)]"
                   )}
                 >
@@ -374,7 +374,7 @@ function SemaMesTab() {
           </div>
           <div className="flex flex-wrap gap-3 mt-3 text-xs">
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-              <span className="inline-block w-3 h-3 rounded bg-[var(--accent-soft)] border border-[var(--data-success)]/30" /> Cumplió
+              <span className="inline-block w-3 h-3 rounded bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30" /> Cumplió
             </span>
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
               <span className="inline-block w-3 h-3 rounded bg-[var(--data-error-50)]" /> No cumplió
@@ -411,7 +411,7 @@ function KPISimple({ label, value, sub, delta, icon: Icon }: KPISimpleProps) {
         {delta != null && (
           <span className={cn(
             "inline-flex items-center gap-0.5 font-bold",
-            delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+            delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
           )}>
             {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {Math.abs(Math.round(delta))}%
@@ -541,7 +541,7 @@ function LogrosTab() {
       {/* Resumen + barra global */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
+          <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
           <p className="text-sm text-[var(--text-secondary)]">
             <span className="font-bold text-[var(--text-primary)]">{totalUnlocked}</span>
             {" "}de{" "}
@@ -671,7 +671,7 @@ function LogrosTab() {
                   className={cn(
                     "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                     isUnlocked
-                      ? "border-[var(--data-warning)]/40 bg-white elev-1"
+                      ? "border-[var(--data-warning-500)]/40 bg-white elev-1"
                       : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
                   )}
                 >
@@ -683,7 +683,7 @@ function LogrosTab() {
                   <div className={cn(
                     "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border relative",
                     isUnlocked
-                      ? "bg-[var(--data-warning-50)] border-[var(--data-warning)]/30 text-[var(--data-warning)]"
+                      ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]"
                       : "bg-gray-100 border-[var(--rule-base)] text-[var(--text-tertiary)]"
                   )}>
                     {isUnlocked ? <a.Icon className="h-5 w-5" strokeWidth={1.5} /> : <Lock className="h-4 w-4" />}
@@ -696,7 +696,7 @@ function LogrosTab() {
                   </div>
                   {/* Progreso o fecha */}
                   {isUnlocked ? (
-                    <span className="text-xs font-semibold text-[var(--data-warning)] bg-[var(--data-warning-50)] px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 py-0.5 rounded-full">
                       {unlocked[a.id]}
                     </span>
                   ) : progress ? (

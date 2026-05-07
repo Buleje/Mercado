@@ -322,7 +322,7 @@ export default function SearchAutocomplete({
             className={cn(
               "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
               isListening
-                ? "text-red-500 animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
+                ? "text-[var(--data-error-500)] animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
                 : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
             )}
           >

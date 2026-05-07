@@ -256,12 +256,12 @@ export default function FullExporter() {
                   <p className="font-medium text-[var(--text-primary)]">{mod.label}</p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{mod.description}</p>
                   {st.status === "done" && (
-                    <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
+                    <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">
                       {st.count} registros exportados
                     </p>
                   )}
                   {st.status === "error" && (
-                    <p className="text-xs text-[var(--data-error)] mt-1">Error al exportar</p>
+                    <p className="text-xs text-[var(--data-error-500)] mt-1">Error al exportar</p>
                   )}
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function FullExporter() {
                 {st.status === "loading" ? (
                   <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                 ) : st.status === "done" ? (
-                  <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
+                  <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
                 ) : (
                   <Download className="h-4 w-4 text-[var(--text-tertiary)]" />
                 )}

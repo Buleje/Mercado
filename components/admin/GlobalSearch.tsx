@@ -321,7 +321,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     <span>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded px-0.5">
+          <mark key={i} className="bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded px-0.5">
             {part}
           </mark>
         ) : (
@@ -426,10 +426,10 @@ interface Props {
 
 const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.ElementType; color: string }> = {
   modulos:   { label: "Módulos",         icon: LayoutDashboard, color: "text-primary" },
-  productos: { label: "Productos",       icon: Package,         color: "text-[var(--data-success)]" },
+  productos: { label: "Productos",       icon: Package,         color: "text-[var(--data-success-500)]" },
   clientes:  { label: "Clientes",        icon: Users,           color: "text-[var(--text-secondary)]" },
-  pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-[var(--data-warning)]" },
-  acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-[var(--data-success)]" },
+  pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-[var(--data-warning-500)]" },
+  acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-[var(--data-success-500)]" },
 };
 
 const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes", "pedidos", "acciones"];
@@ -437,12 +437,12 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 // ── Acceso rápido (estado vacío) ──────────────────────────────────────────────
 
 const QUICK_ACCESS = [
-  { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
-  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-gray-50 dark:bg-surface" },
-  { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
+  { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];
 
 // ── Componente principal ──────────────────────────────────────────────────────

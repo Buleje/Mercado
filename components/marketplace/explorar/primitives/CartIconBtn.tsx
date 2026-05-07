@@ -69,7 +69,7 @@ export default function CartIconBtn({
         disabled
           ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] ring-[var(--rule-soft)] cursor-not-allowed"
           : added
-            ? "bg-[var(--data-success)] text-white ring-[var(--data-success)]/40 scale-95"
+            ? "bg-[var(--data-success-500)] text-white ring-[var(--data-success-500)]/40 scale-95"
             : "bg-[var(--accent)] text-white ring-[var(--accent)]/30 shadow-md hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95",
         "motion-reduce:hover:scale-100 motion-reduce:transition-none",
         className,

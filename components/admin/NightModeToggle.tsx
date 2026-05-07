@@ -115,16 +115,16 @@ export default function NightModeToggle() {
         className={cn(
           "rounded-xl border p-5 flex items-center gap-4 transition-all",
           nightActive
-            ? "border-[var(--data-info)] dark:border-[var(--data-info)] bg-[var(--surface-sunken)]"
-            : "border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10"
+            ? "border-[var(--data-info-500)] dark:border-[var(--data-info-500)] bg-[var(--surface-sunken)]"
+            : "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10"
         )}
       >
         <div
           className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center shrink-0",
             nightActive
-              ? "bg-[var(--data-info)] dark:bg-[var(--surface-sunken)]"
-              : "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]"
+              ? "bg-[var(--data-info-500)] dark:bg-[var(--surface-sunken)]"
+              : "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]"
           )}
         >
           {nightActive ? (
@@ -221,7 +221,7 @@ export default function NightModeToggle() {
             <span>Noche: 7pm — 7am</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Sun className="w-4 h-4 text-[var(--data-warning)]" />
+            <Sun className="w-4 h-4 text-[var(--data-warning-500)]" />
             <span>Dia: 7am — 7pm</span>
           </div>
         </div>

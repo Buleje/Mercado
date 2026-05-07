@@ -68,14 +68,14 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Ventas hoy",
       value: `S/${data.ventasHoy.toFixed(0)}`,
       icon: DollarSign,
-      color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       tab: "analytics-pro",
     },
     {
       label: "Pedidos pendientes",
       value: String(data.pedidosPendientes),
       icon: ShoppingBag,
-      color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",
+      color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",
       tab: "pedidos",
       alert: data.pedidosPendientes > 0,
     },
@@ -83,7 +83,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Stock bajo",
       value: String(data.stockBajo),
       icon: AlertTriangle,
-      color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30",
+      color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30",
       tab: "inventario",
       alert: data.stockBajo > 0,
     },
@@ -91,7 +91,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Clientes nuevos",
       value: String(data.clientesNuevos),
       icon: Users,
-      color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       tab: "clientes",
     },
   ];
@@ -121,7 +121,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
               <p className="text-[length:var(--ts-xs)] text-muted truncate">{w.label}</p>
             </div>
             {w.alert && !loading && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--data-error)] animate-pulse" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--data-error-500)] animate-pulse" />
             )}
           </button>
         );

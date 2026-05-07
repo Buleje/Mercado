@@ -188,7 +188,7 @@ export default function TaxTab() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[var(--ls-wider)] font-semibold text-[var(--text-tertiary)] mb-2">IGV del período — {MONTHS[month]} {year}</p>
-                <p className={cn("text-4xl font-semibold tabular-nums", summary.igvBalance > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
+                <p className={cn("text-4xl font-semibold tabular-nums", summary.igvBalance > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
                   {fmt(summary.igvBalance)}
                 </p>
                 <div className="mt-2">
@@ -202,12 +202,12 @@ export default function TaxTab() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
                   <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Ventas</p>
-                  <p className="font-semibold text-[var(--data-success)] tabular-nums">{fmt(summary.salesIGV)}</p>
+                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.salesIGV)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.salesBase)}</p>
                 </div>
                 <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
                   <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Compras</p>
-                  <p className="font-semibold text-[var(--data-success)] tabular-nums">{fmt(summary.purchasesIGV)}</p>
+                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.purchasesIGV)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.purchasesBase)}</p>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function TaxTab() {
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
                     </td>
                     <td className="px-3 py-3 text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning)]">{fmt(line.igv)}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
                     <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(line.total)}</td>
                     <td className="px-3 py-3 text-center hidden sm:table-cell">
                       <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
@@ -261,7 +261,7 @@ export default function TaxTab() {
                       {line.status === "pendiente" && (
                         <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
                       )}
-                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success)] mx-auto" />}
+                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
                     </td>
                   </tr>
                 ))}
@@ -273,7 +273,7 @@ export default function TaxTab() {
           {/* Pending alert — AdminCard con intent warning */}
           {lines.filter(l => l.status === "pendiente").length > 0 && (
             <AdminCard padding="md" className="flex items-start gap-3 border-l-2 border-l-[var(--data-warning)]">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">Registros pendientes de declaración</p>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">

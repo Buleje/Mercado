@@ -165,14 +165,17 @@ export const NotasCreditoDB = {
     tenantId: string,
     status: string
   ): Promise<DbNotaCredito | null> {
-    const existing = await prisma.notaCredito.findFirst({
-      where: { id, tenantId },
-    });
-    if (!existing) return null;
-    const row = await prisma.notaCredito.update({
-      where: { id },
+    // SECURITY 2026-05-05 (audit SUNAT #2): doble-anulación. Antes
+    // findFirst + update separado permitía a dos requests concurrentes
+    // pasar el check y anular dos veces (doble baja en SUNAT y doble audit).
+    // Ahora updateMany con `status: { not: "ANULADA" }` es atómico:
+    // count=0 si ya estaba anulada.
+    const updated = await prisma.notaCredito.updateMany({
+      where: { id, tenantId, status: { not: "ANULADA" } as never },
       data: { status: status as never },
     });
-    return mapNotaCredito(row);
+    if (updated.count === 0) return null;
+    const row = await prisma.notaCredito.findFirst({ where: { id, tenantId } });
+    return row ? mapNotaCredito(row) : null;
   },
 };

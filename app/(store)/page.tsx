@@ -246,7 +246,7 @@ function PromoBanners() {
       primaryHref: "/abrir-tienda",
       keySecondary: null as string | null,
       secondaryHref: "",
-      tone: "from-[var(--accent)] to-emerald-700",
+      tone: "from-[var(--accent)] to-[var(--data-success-700)]",
     },
   ];
 

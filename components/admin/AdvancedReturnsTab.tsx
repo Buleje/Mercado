@@ -39,26 +39,26 @@ type ReturnRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const REASON_META: Record<ReturnReason, { label: string; color: string; bg: string; variant: BadgeVariant }> = {
-  defectuoso:        { label: "Defectuoso",         color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",     variant: "error" },
-  vencido:           { label: "Vencido",             color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", variant: "warning" },
-  equivocado:        { label: "Producto equivocado", color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   variant: "info" },
+  defectuoso:        { label: "Defectuoso",         color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",     variant: "error" },
+  vencido:           { label: "Vencido",             color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", variant: "warning" },
+  equivocado:        { label: "Producto equivocado", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   variant: "info" },
   insatisfecho:      { label: "Insatisfecho",        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]", variant: "pending" },
-  "dañado-transporte": { label: "Dañado en transporte", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", variant: "warning" },
+  "dañado-transporte": { label: "Dañado en transporte", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", variant: "warning" },
   duplicado:         { label: "Pedido duplicado",    color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30",   variant: "neutral" },
 };
 
 const DECISION_META: Record<ReturnDecision, { label: string; color: string }> = {
-  reembolso: { label: "Reembolso",   color: "text-[var(--data-success)]" },
-  reemplazo: { label: "Reemplazo",   color: "text-[var(--data-success)]" },
+  reembolso: { label: "Reembolso",   color: "text-[var(--data-success-500)]" },
+  reemplazo: { label: "Reemplazo",   color: "text-[var(--data-success-500)]" },
   credito:   { label: "Crédito",     color: "text-[var(--text-secondary)]" },
-  rechazado: { label: "Rechazado",   color: "text-[var(--data-error)]" },
-  pendiente: { label: "Pendiente",   color: "text-[var(--data-warning)]" },
+  rechazado: { label: "Rechazado",   color: "text-[var(--data-error-500)]" },
+  pendiente: { label: "Pendiente",   color: "text-[var(--data-warning-500)]" },
 };
 
 const INSPECTION_META: Record<InspectionResult, { label: string; color: string }> = {
-  aprobado:   { label: "Aprobado",  color: "text-[var(--data-success)]" },
-  parcial:    { label: "Parcial",   color: "text-[var(--data-warning)]" },
-  rechazado:  { label: "Rechazado", color: "text-[var(--data-error)]" },
+  aprobado:   { label: "Aprobado",  color: "text-[var(--data-success-500)]" },
+  parcial:    { label: "Parcial",   color: "text-[var(--data-warning-500)]" },
+  rechazado:  { label: "Rechazado", color: "text-[var(--data-error-500)]" },
   pendiente:  { label: "Pendiente", color: "text-[var(--text-secondary)]" },
 };
 
@@ -113,10 +113,10 @@ export default function AdvancedReturnsTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Valor en devoluciones", value: fmt(stats.totalValue), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-          { label: "Reembolsado", value: fmt(stats.refunded), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Restockeados", value: String(stats.restocked), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Pendientes", value: String(stats.pending), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Valor en devoluciones", value: fmt(stats.totalValue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Reembolsado", value: fmt(stats.refunded), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Restockeados", value: String(stats.restocked), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Pendientes", value: String(stats.pending), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -127,7 +127,7 @@ export default function AdvancedReturnsTab() {
 
       {/* Reason distribution */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Motivos de devolución</CardTitle>
+        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Motivos de devolución</CardTitle>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.keys(REASON_META) as ReturnReason[]).map(reason => {
             const count = records.filter(r => r.reason === reason).length;
@@ -168,7 +168,7 @@ export default function AdvancedReturnsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{r.date}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-[var(--text-primary)] dark:text-foreground">{r.orderRef}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.product}<br/><span className="text-xs text-[var(--text-tertiary)]">{r.clientName}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-error)]">{fmt(r.totalValue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-error-500)]">{fmt(r.totalValue)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><StatusBadge variant={REASON_META[r.reason].variant} label={REASON_META[r.reason].label} /></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", DECISION_META[r.decision].color)}>{DECISION_META[r.decision].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>

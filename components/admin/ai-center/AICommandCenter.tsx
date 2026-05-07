@@ -292,7 +292,7 @@ export default function AICommandCenter() {
                       "text-xs font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
                       isActive
                         ? "bg-white/25 text-white"
-                        : "bg-[var(--data-error)] text-white",
+                        : "bg-[var(--data-error-500)] text-white",
                     )}
                   >
                     {badge > 99 ? "99+" : badge}
@@ -345,7 +345,7 @@ export default function AICommandCenter() {
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
                 autoplay
-                  ? "bg-[var(--data-success)] text-white border-[var(--data-success)]"
+                  ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
                   : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
               )}
             >
@@ -370,7 +370,7 @@ export default function AICommandCenter() {
       {autoplay && maximized && (
         <div className="h-1 bg-gray-100 shrink-0 overflow-hidden" data-export-hide="true">
           <div
-            className="h-full bg-[var(--data-success)] transition-[width] duration-75 ease-linear"
+            className="h-full bg-[var(--data-success-500)] transition-[width] duration-75 ease-linear"
             style={{ width: `${autoplayProgress}%` }}
             role="progressbar"
             aria-valuenow={Math.round(autoplayProgress)}
@@ -382,14 +382,14 @@ export default function AICommandCenter() {
       <HITLApprovalsBanner />
 
       {isOffline && (
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-b border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm font-semibold">
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-b border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm font-semibold">
           <WifiOff className="w-4 h-4 shrink-0" />
           <span>Sin conexión. Los datos pueden estar desactualizados.</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-error-50)] dark:bg-red-950/30 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold">
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-error-50)] dark:bg-red-950/30 border-b border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-semibold">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>

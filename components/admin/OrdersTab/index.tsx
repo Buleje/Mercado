@@ -120,6 +120,13 @@ export default function OrdersTab() {
   if (filters.hasAdminNotes) {
     activeOrders = activeOrders.filter(o => (o as DbOrder & { adminNotes?: string }).adminNotes);
   }
+  if (filters.source) {
+    activeOrders = activeOrders.filter(o => {
+      // source ausente o "direct" ambos representan "Tienda Personal"
+      const src = (o as DbOrder & { source?: string }).source ?? "direct";
+      return src === filters.source;
+    });
+  }
   if (filterByDelivery && selectedDriverFilter) {
     activeOrders = activeOrders.filter(o => {
       const driver = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
@@ -132,7 +139,7 @@ export default function OrdersTab() {
 
   // Stats agregados
   const pendingOrders = activeOrders.filter(o => o.status === "pendiente").length;
-  const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado").length;
+  const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
     const today = new Date().toISOString().slice(0, 10);
@@ -222,7 +229,7 @@ export default function OrdersTab() {
               className={cn(
                 "text-xl font-extrabold tabular-nums",
                 intent === "warning"
-                  ? "text-[var(--data-warning)]"
+                  ? "text-[var(--data-warning-500)]"
                   : "text-[var(--text-primary)]",
               )}
             >
@@ -234,13 +241,13 @@ export default function OrdersTab() {
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Filtrar por delivery:</p>
+            <p className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Filtrar por delivery:</p>
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-1.5 rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-white dark:bg-card outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>
               {Array.from(new Set(
@@ -254,14 +261,14 @@ export default function OrdersTab() {
             {selectedDriverFilter && (
               <button
                 onClick={() => setSelectedDriverFilter("")}
-                className="text-xs font-semibold text-[var(--data-success)] hover:text-[var(--data-success)] underline"
+                className="text-xs font-semibold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] underline"
               >
                 Limpiar
               </button>
             )}
           </div>
           {selectedDriverFilter && (
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-2">
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-2">
               Mostrando {activeOrders.length} pedido{activeOrders.length !== 1 ? "s" : ""} de {selectedDriverFilter}
             </p>
           )}
@@ -270,12 +277,12 @@ export default function OrdersTab() {
 
       {/* Error banner */}
       {loadError && (
-        <div className="mb-3 flex items-center gap-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="mb-3 flex items-center gap-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="flex-1">{loadError}</span>
           <button
             onClick={() => { setLoadError(null); void load(); }}
-            className="text-xs font-bold text-[var(--data-error)] hover:text-[var(--data-error)] underline"
+            className="text-xs font-bold text-[var(--data-error-500)] hover:text-[var(--data-error-500)] underline"
           >
             Reintentar
           </button>
@@ -288,6 +295,7 @@ export default function OrdersTab() {
           { id: "all", label: "Todos", count: activeOrders.length },
           { id: "pendiente", label: "Pendientes", count: orders.filter(o => o.status === "pendiente").length },
           { id: "confirmado", label: "Confirmados", count: orders.filter(o => o.status === "confirmado").length },
+          { id: "preparando", label: "Preparando", count: orders.filter(o => o.status === "preparando").length },
           { id: "en_camino", label: "En camino", count: orders.filter(o => o.status === "en_camino").length },
         ] as const).map((chip) => {
           const active =
@@ -337,8 +345,8 @@ export default function OrdersTab() {
             className={cn(
               "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
               filters.hasDebt
-                ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)] border-[var(--data-warning)]/40"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--data-warning)] hover:text-[var(--data-warning)]",
+                ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/40"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-500)]",
             )}
           >
             <DollarSign className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />

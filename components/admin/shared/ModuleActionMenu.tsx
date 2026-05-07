@@ -111,7 +111,7 @@ export function ModuleActionMenu({
                     className={cn(
                       "h-4 w-4 shrink-0",
                       item.destructive
-                        ? "text-[var(--data-error)]"
+                        ? "text-[var(--data-error-500)]"
                         : "text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]",
                     )}
                     strokeWidth={1.75}
@@ -123,7 +123,7 @@ export function ModuleActionMenu({
                     className={cn(
                       "text-sm font-medium truncate",
                       item.destructive
-                        ? "text-[var(--data-error)]"
+                        ? "text-[var(--data-error-500)]"
                         : "text-[var(--text-primary)]",
                     )}
                   >

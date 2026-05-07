@@ -374,7 +374,7 @@ export default function HealthFillAllModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error)]">
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -599,7 +599,7 @@ export default function HealthFillAllModal({
                 <div
                   className={`rounded-lg border p-3 text-sm ${
                     saveResult.failed.length === 0
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                      ? "bg-emerald-50 border-emerald-200 text-[var(--data-success-700)]"
                       : "bg-amber-50 border-amber-200 text-amber-800"
                   }`}
                 >
@@ -710,10 +710,10 @@ function Section({
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider ${
                   isComplete
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-emerald-100 text-[var(--data-success-700)]"
                     : scorePct >= 50
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-rose-100 text-[var(--data-error)]"
+                      ? "bg-amber-100 text-[var(--data-warning-700)]"
+                      : "bg-rose-100 text-[var(--data-error-500)]"
                 }`}
               >
                 {score.ok}/{score.total}
@@ -758,7 +758,7 @@ function Field({
       </label>
       {children}
       {error && (
-        <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-error)]">{error}</p>
+        <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-500)]">{error}</p>
       )}
     </div>
   );

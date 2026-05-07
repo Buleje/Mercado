@@ -122,7 +122,7 @@ export function ThreadsList({
                         </span>
                         {unread > 0 && (
                           <span
-                            className="flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--data-error)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
+                            className="flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
                             aria-label={`${unread} mensajes sin leer`}
                           >
                             {unread > 99 ? "99+" : unread}

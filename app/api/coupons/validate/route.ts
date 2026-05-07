@@ -5,7 +5,10 @@ import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 10 attempts per IP per 5 minutes
+  // SECURITY 2026-05-06 (audit pagos M007): doble rate limit para frenar
+  // brute-force de códigos cortos (PROMO20, BIENV2026...).
+  //   - Por IP: 10 intentos / 5 min (limita atacante simple)
+  //   - Por código: 5 intentos / 1h (limita atacante distribuido)
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`coupon:${ip}`, 10, 300);
   if (!allowed) {
@@ -18,6 +21,14 @@ export async function POST(req: NextRequest) {
   try {
     const { code, cartTotal } = await req.json();
     if (!code) return NextResponse.json({ error: "Código requerido" }, { status: 400 });
+
+    // Rate limit por código (anti brute-force distribuido)
+    const codeKey = `coupon:code:${String(code).toLowerCase().slice(0, 50)}`;
+    const codeRl = rateLimit(codeKey, 5, 3600);
+    if (!codeRl.allowed) {
+      // Devolver 404 (no 429) para no leak existence ni dar señal de "casi acertaste".
+      return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
+    }
 
     const tenantId = getTenantIdFromRequest(req);
     const coupon = await CouponsDB.getByCode(tenantId, code);

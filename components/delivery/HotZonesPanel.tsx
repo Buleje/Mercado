@@ -59,17 +59,17 @@ const HEAT_META: Record<
   high: {
     label: "Alta",
     flames: 3,
-    textClass: "text-red-500",
-    bgAlpha: "bg-red-500/10",
-    borderHover: "hover:border-red-500",
+    textClass: "text-[var(--data-error-500)]",
+    bgAlpha: "bg-[var(--data-error-500)]/10",
+    borderHover: "hover:border-[var(--data-error-500)]",
     glowClass: "shadow-[0_0_0_1px_theme(colors.red.500/0.18),0_4px_24px_theme(colors.red.500/0.15)]",
   },
   medium: {
     label: "Media",
     flames: 2,
-    textClass: "text-amber-500",
-    bgAlpha: "bg-amber-500/10",
-    borderHover: "hover:border-amber-500",
+    textClass: "text-[var(--data-warning-500)]",
+    bgAlpha: "bg-[var(--data-warning-500)]/10",
+    borderHover: "hover:border-[var(--data-warning-500)]",
     glowClass: "",
   },
   low: {
@@ -93,9 +93,9 @@ function sortZones(zones: Zone[]): Zone[] {
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 h-7 text-xs font-extrabold uppercase tracking-wider text-red-500">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-500)]/15 px-3 h-7 text-xs font-extrabold uppercase tracking-wider text-[var(--data-error-500)]">
       <span
-        className="h-2 w-2 rounded-full bg-red-500 animate-pulse"
+        className="h-2 w-2 rounded-full bg-[var(--data-error-500)] animate-pulse"
         aria-hidden="true"
       />
       Live

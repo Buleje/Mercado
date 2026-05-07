@@ -255,7 +255,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
           )}
 
           {parseError && (
-            <div className="rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 px-4 py-3 text-sm text-[var(--data-error)] flex items-start gap-2">
+            <div className="rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 px-4 py-3 text-sm text-[var(--data-error-500)] flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2} />
               <span>{parseError}</span>
             </div>
@@ -275,7 +275,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
                 <button
                   type="button"
                   onClick={reset}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error)]"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
                   Quitar
@@ -283,7 +283,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               </div>
 
               {missingRequired.length > 0 && (
-                <div className="rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/30 px-4 py-3 text-sm text-[var(--data-error)] flex items-start gap-2">
+                <div className="rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 px-4 py-3 text-sm text-[var(--data-error-500)] flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2} />
                   <span>
                     Faltan columnas obligatorias: <strong>{missingRequired.join(", ")}</strong>
@@ -292,7 +292,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               )}
 
               {unknownHeaders.length > 0 && (
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 px-4 py-3 text-xs text-[var(--data-warning-700)] dark:text-amber-400 flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
                   <span>
                     Columnas ignoradas (no reconocidas): <strong>{unknownHeaders.join(", ")}</strong>
@@ -355,15 +355,15 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               className={[
                 "rounded-xl border p-5",
                 result.ok
-                  ? "bg-[var(--data-success)]/10 border-[var(--data-success)]/30"
-                  : "bg-[var(--data-error)]/10 border-[var(--data-error)]/30",
+                  ? "bg-[var(--data-success-500)]/10 border-[var(--data-success-500)]/30"
+                  : "bg-[var(--data-error-500)]/10 border-[var(--data-error-500)]/30",
               ].join(" ")}
             >
               <div className="flex items-start gap-3 mb-3">
                 {result.ok ? (
-                  <CheckCircle2 className="h-6 w-6 text-[var(--data-success)] shrink-0" strokeWidth={2} />
+                  <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)] shrink-0" strokeWidth={2} />
                 ) : (
-                  <AlertTriangle className="h-6 w-6 text-[var(--data-error)] shrink-0" strokeWidth={2} />
+                  <AlertTriangle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" strokeWidth={2} />
                 )}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-black text-[var(--text-primary)]">
@@ -378,7 +378,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
 
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
-                  <p className="text-xl font-black text-[var(--data-success)] tabular-nums">{result.created}</p>
+                  <p className="text-xl font-black text-[var(--data-success-500)] tabular-nums">{result.created}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Creados</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
@@ -386,14 +386,14 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Omitidos</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3">
-                  <p className="text-xl font-black text-[var(--data-error)] tabular-nums">{result.errors.length}</p>
+                  <p className="text-xl font-black text-[var(--data-error-500)] tabular-nums">{result.errors.length}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Errores</p>
                 </div>
               </div>
 
               {result.errors.length > 0 && (
                 <details className="mt-4">
-                  <summary className="text-sm font-bold text-[var(--data-error)] cursor-pointer">
+                  <summary className="text-sm font-bold text-[var(--data-error-500)] cursor-pointer">
                     Ver errores ({result.errors.length})
                   </summary>
                   <ul className="mt-2 max-h-40 overflow-y-auto space-y-1 text-xs">

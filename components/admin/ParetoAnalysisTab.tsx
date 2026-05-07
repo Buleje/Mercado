@@ -62,7 +62,7 @@ export default function ParetoAnalysisTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Generan</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{topRevPct}%</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{topRevPct}%</p>
           <p className="text-xs text-[var(--text-tertiary)]">del total</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
@@ -106,7 +106,7 @@ export default function ParetoAnalysisTab() {
               {/* Cumulative line marker */}
               <div className="w-20 flex items-center gap-1">
                 <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")} style={{ width: `${p.cumPct}%` }} />
+                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${p.cumPct}%` }} />
                 </div>
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{p.cumPct.toFixed(0)}%</span>
               </div>

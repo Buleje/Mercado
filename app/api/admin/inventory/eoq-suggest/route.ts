@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
     if (admin instanceof NextResponse) return admin;
 
     const url = new URL(req.url);
-    const tenantId = req.headers.get("x-tenant-id") || "main";
+    // BUG-FIX (audit 2026-05-05): tenantId desde JWT no header
+    const tenantId = admin.tenantId;
     const orderCost = Number(url.searchParams.get("orderCost") ?? 10);
     const holdingRate = Number(url.searchParams.get("holdingRate") ?? 0.2);
     const topN = Math.min(100, Number(url.searchParams.get("topN") ?? 30));

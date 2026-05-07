@@ -167,7 +167,7 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
 
               {/* Stock info */}
               {product.stock > 0 && product.stock <= 10 && (
-                <p className="text-xs font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg inline-block">
+                <p className="text-xs font-semibold text-[var(--data-warning-600)] bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg inline-block">
                   Solo quedan {product.stock} unidades
                 </p>
               )}
@@ -199,7 +199,7 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
                     className={cn(
                       "flex-1 h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all",
                       added
-                        ? "bg-emerald-500 text-white"
+                        ? "bg-[var(--data-success-500)] text-white"
                         : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25"
                     )}
                   >

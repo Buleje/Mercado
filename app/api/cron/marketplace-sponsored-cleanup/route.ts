@@ -1,28 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SponsoredBoostsDB } from "@/lib/db/sponsored-boosts.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { withCronAuth } from "@/lib/cron-auth";
 
 /**
  * GET /api/cron/marketplace-sponsored-cleanup
  * Cron diario (01:00) que expira los SponsoredBoosts vencidos en todos los tenants.
  *
- * Schedule en vercel.json: "0 1 * * *"
- * Autenticación: CRON_SECRET header (Vercel lo envía automáticamente en producción).
+ * SECURITY 2026-05-06: migrado a `withCronAuth` (timing-safe + fail-closed).
+ * Antes el compare era `!==` (no timing-safe) y se saltaba si CRON_SECRET no
+ * estaba configurado (fail-open).
  */
-export async function GET(req: NextRequest) {
+export const GET = withCronAuth("marketplace-sponsored-cleanup", async (req) => {
   const traceId = newTraceId();
   const requestId = req.headers.get("x-request-id") ?? traceId;
-
-  // Verificar secreto de cron
-  const cronSecret = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    cronSecret !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     logger.info("cron/marketplace-sponsored-cleanup: inicio", { requestId });
@@ -61,4 +54,4 @@ export async function GET(req: NextRequest) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
-}
+});

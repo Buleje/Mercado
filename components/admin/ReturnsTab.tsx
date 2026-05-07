@@ -89,7 +89,7 @@ export default function ReturnsTab() {
       </div>
 
       {creditSuccess && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-bold px-2 sm:px-4 py-2 sm:py-3 rounded-xl flex flex-wrap items-center gap-2">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-bold px-2 sm:px-4 py-2 sm:py-3 rounded-xl flex flex-wrap items-center gap-2">
           <Check className="h-4 w-4" /> Crédito aplicado al saldo del cliente correctamente.
         </div>
       )}
@@ -105,7 +105,7 @@ export default function ReturnsTab() {
                   <button key={s.id} onClick={() => selectSale(s)} className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition">
                     <div className="flex justify-between text-sm">
                       <span className="font-bold">Venta #{String(s.id).slice(-6)}</span>
-                      <span className="text-[var(--data-success)] font-bold">S/{s.total.toFixed(2)}</span>
+                      <span className="text-[var(--data-success-500)] font-bold">S/{s.total.toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">{new Date(s.createdAt).toLocaleString()} • {s.items?.length ?? 0} productos</p>
                   </button>
@@ -143,7 +143,7 @@ export default function ReturnsTab() {
                 {photoDataUrl && (
                   <div className="mt-2 relative inline-block">
                     <Image src={photoDataUrl} alt="Evidencia" width={96} height={96} className="object-cover rounded-xl border border-[var(--rule-base)] dark:border-card-border" unoptimized />
-                    <button type="button" onClick={() => setPhotoDataUrl(null)} className="absolute -top-1.5 -right-1.5 bg-[var(--data-error)] text-white rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                    <button type="button" onClick={() => setPhotoDataUrl(null)} className="absolute -top-1.5 -right-1.5 bg-[var(--data-error-500)] text-white rounded-full p-0.5"><X className="h-3 w-3" /></button>
                   </div>
                 )}
               </div>
@@ -180,7 +180,7 @@ export default function ReturnsTab() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Dev #{r.id.slice(-6)}</p>
                   {r.creditApplied && (
-                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <CreditCard className="h-3 w-3" /> Crédito aplicado
                     </span>
                   )}
@@ -193,7 +193,7 @@ export default function ReturnsTab() {
                 <Image src={r.photoUrl} alt="Evidencia" width={64} height={64} className="object-cover rounded-lg border border-[var(--rule-base)] dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
               )}
               <div className="text-right shrink-0">
-                <p className="font-extrabold text-[var(--data-error)]">-S/{r.total.toFixed(2)}</p>
+                <p className="font-extrabold text-[var(--data-error-500)]">-S/{r.total.toFixed(2)}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(r.createdAt).toLocaleString()}</p>
               </div>
             </div>

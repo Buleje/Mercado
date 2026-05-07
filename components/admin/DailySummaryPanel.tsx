@@ -98,8 +98,8 @@ export default function DailySummaryPanel() {
           {lwSales > 0 && (
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
               weekDelta >= 0
-                ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                : "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]"
+                ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                : "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]"
             }`}>
               {weekDelta >= 0 ? "↑" : "↓"} {Math.abs(weekDelta).toFixed(0)}% vs semana pasada
             </span>
@@ -119,14 +119,14 @@ export default function DailySummaryPanel() {
           icon={DollarSign}
           label="Ventas hoy"
           value={`S/${data.totalSales.toFixed(2)}`}
-          color="text-[var(--data-success)]"
+          color="text-[var(--data-success-500)]"
           bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
         />
         <KpiCard
           icon={ShoppingCart}
           label="Pedidos"
           value={String(data.totalOrders)}
-          color="text-[var(--data-success)]"
+          color="text-[var(--data-success-500)]"
           bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
         />
         <KpiCard
@@ -140,8 +140,8 @@ export default function DailySummaryPanel() {
           icon={Wallet}
           label="En caja"
           value={`S/${data.cashBalance.toFixed(2)}`}
-          color="text-amber-500"
-          bg="bg-amber-50 dark:bg-amber-500/10"
+          color="text-[var(--data-warning-500)]"
+          bg="bg-amber-50 dark:bg-[var(--data-warning-500)]/10"
         />
       </div>
 
@@ -159,7 +159,7 @@ export default function DailySummaryPanel() {
           label="Productos sin stock"
           value={data.lowStockAlerts}
           alert={data.lowStockAlerts > 0}
-          color="text-red-500"
+          color="text-[var(--data-error-500)]"
         />
         <AlertCard
           icon={Users}
@@ -180,7 +180,7 @@ export default function DailySummaryPanel() {
               <span className="text-xs font-bold text-[var(--text-secondary)]">Ventas por hora</span>
               {lwOrders > 0 && (
                 <span className={`text-[length:var(--ts-2xs)] ml-auto font-medium ${
-                  weekOrdersDelta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                  weekOrdersDelta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                 }`}>
                   {weekOrdersDelta >= 0 ? "↑" : "↓"}{Math.abs(weekOrdersDelta).toFixed(0)}% pedidos vs semana pasada
                 </span>
@@ -328,7 +328,7 @@ function AlertCard({
     <div
       className={`rounded-xl p-3 border ${
         alert
-          ? "border-[var(--data-error)] dark:border-[var(--data-error)]/40 bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/5"
+          ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/5"
           : "border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30"
       }`}
     >

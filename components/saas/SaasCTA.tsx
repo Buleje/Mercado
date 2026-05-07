@@ -66,7 +66,7 @@ export default function SaasCTA() {
       ref={sectionRef}
       className="py-20 md:py-28 relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #00B4A6 0%, #33C4B8 50%, #2dd4bf 100%)",
+        background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #2dd4bf 100%)",
       }}
     >
       {/* Variante dark mode: gradiente más oscuro */}
@@ -74,7 +74,7 @@ export default function SaasCTA() {
         aria-hidden="true"
         className="absolute inset-0 dark:block hidden"
         style={{
-          background: "linear-gradient(135deg, #0a4f48 0%, #009690 50%, #00B4A6 100%)",
+          background: "linear-gradient(135deg, #0a4f48 0%, var(--accent-dark) 50%, var(--accent) 100%)",
         }}
       />
 
@@ -172,7 +172,7 @@ export default function SaasCTA() {
             className="inline-flex items-center justify-center min-h-[56px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white relative overflow-hidden"
             style={{
               background: "#fff",
-              color: "#00B4A6",
+              color: "var(--accent)",
               borderRadius: "1rem",
               padding: "1rem 2.5rem",
               fontSize: "1.125rem",

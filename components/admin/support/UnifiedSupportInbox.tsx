@@ -22,12 +22,12 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   whatsapp: {
     label: "WhatsApp",
     icon: <MessageCircle className="w-3.5 h-3.5" />,
-    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
   review: {
     label: "Reseña",
     icon: <Star className="w-3.5 h-3.5" />,
-    color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   },
 };
 
@@ -111,7 +111,7 @@ export function UnifiedSupportInbox() {
   if (error) {
     return (
       <EmptyState
-        icon={<AlertCircle className="text-[var(--data-error)]" />}
+        icon={<AlertCircle className="text-[var(--data-error-500)]" />}
         title="Error al cargar la bandeja"
         description="No se pudo conectar con el servidor. Intenta nuevamente."
           actions={[{ label: "Reintentar", onClick: () => { void loadInbox(); }, variant: "primary" }]}
@@ -212,7 +212,7 @@ export function UnifiedSupportInbox() {
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
                       item.status === "resolved"
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                         : "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
                     ].join(" ")}
                   >

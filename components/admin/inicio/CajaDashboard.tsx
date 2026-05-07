@@ -164,11 +164,11 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
 
     // Waterfall
     const waterfall: CajaData["waterfall"] = [
-      { concepto: "Ventas (pedidos)", monto: pOrders.reduce((a, o) => a + o.total, 0), tipo: "ingreso", color: "#00B4A6" },
+      { concepto: "Ventas (pedidos)", monto: pOrders.reduce((a, o) => a + o.total, 0), tipo: "ingreso", color: "var(--accent)" },
       { concepto: "Ventas (POS)", monto: pSales.reduce((a, s) => a + s.total, 0), tipo: "ingreso", color: "#06b6d4" },
       { concepto: "Costo de productos", monto: -costo, tipo: "egreso", color: "#f59e0b" },
       { concepto: "Compras", monto: -egresos, tipo: "egreso", color: "#ef4444" },
-      { concepto: "Balance Neto", monto: utilidadNeta, tipo: "balance", color: utilidadNeta >= 0 ? "#00B4A6" : "#ef4444" },
+      { concepto: "Balance Neto", monto: utilidadNeta, tipo: "balance", color: utilidadNeta >= 0 ? "var(--accent)" : "#ef4444" },
     ];
 
     // 7-day forecast
@@ -206,7 +206,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
@@ -245,13 +245,13 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
         <Wallet className="h-4 w-4 text-[var(--text-tertiary)]" />
         <div className="flex-1 flex items-center gap-4 text-sm flex-wrap">
           <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos:</span>
-          <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(data.ingresos)}</span>
+          <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(data.ingresos)}</span>
           <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">−</span>
           <span className="text-[var(--text-secondary)] dark:text-muted">Egresos:</span>
-          <span className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{fmt(data.egresos)}</span>
+          <span className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.egresos)}</span>
           <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">=</span>
           <span className="text-[var(--text-secondary)] dark:text-muted">Balance:</span>
-          <span className={cn("font-bold", data.balance >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>{fmt(data.balance)}</span>
+          <span className={cn("font-bold", data.balance >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{fmt(data.balance)}</span>
         </div>
       </div>
 

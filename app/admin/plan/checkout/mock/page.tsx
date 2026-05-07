@@ -60,12 +60,12 @@ export default function MockCheckoutPage() {
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="rounded-3xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 p-4 mb-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+        <div className="rounded-3xl border-2 border-amber-300 dark:border-[var(--data-warning-700)] bg-amber-50 dark:bg-amber-950/20 p-4 mb-6">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-warning-700)] dark:text-amber-300 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5" />
             Modo desarrollo — sin pasarela real
           </p>
-          <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+          <p className="mt-1 text-xs text-[var(--data-warning-700)] dark:text-amber-300">
             Stripe no está configurado. Esta página simula el checkout para testing local.
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function MockCheckoutPage() {
               </div>
 
               {error && (
-                <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
+                <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
                   {error}
                 </div>
               )}
@@ -108,7 +108,7 @@ export default function MockCheckoutPage() {
 
           {done && (
             <div className="text-center py-4">
-              <CheckCircle2 className="h-16 w-16 mx-auto text-[var(--data-success)]" strokeWidth={2.25} />
+              <CheckCircle2 className="h-16 w-16 mx-auto text-[var(--data-success-500)]" strokeWidth={2.25} />
               <h2 className="mt-4 text-xl font-extrabold text-[var(--text-primary)]">¡Plan activado!</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 Llevándote al admin…

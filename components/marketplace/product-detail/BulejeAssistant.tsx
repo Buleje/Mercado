@@ -226,7 +226,7 @@ export function BulejeAssistant({ product, defaultOpen = false }: BulejeAssistan
         <BotMessageSquare className="h-5 w-5" aria-hidden />
         <span className="hidden sm:inline text-sm font-semibold">Asistente</span>
         <span
-          className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse"
+          className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse"
           aria-hidden
         />
       </button>

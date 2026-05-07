@@ -95,7 +95,7 @@ export function AdminSubSidebar({
               {alertCount > 0 && (
                 <span className={cn(
                   "text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                  isActive ? "bg-primary/20 text-primary" : "bg-[var(--data-error)] text-white"
+                  isActive ? "bg-primary/20 text-primary" : "bg-[var(--data-error-500)] text-white"
                 )}>
                   {alertCount}
                 </span>

@@ -132,9 +132,9 @@ function HealthSemaphore() {
     );
   }
 
-  const color = score.total > 70 ? "#00B4A6" : score.total >= 40 ? "#f59e0b" : "#ef4444";
+  const color = score.total > 70 ? "var(--accent)" : score.total >= 40 ? "#f59e0b" : "#ef4444";
   const label = score.total > 70 ? "Saludable" : score.total >= 40 ? "Precaucion" : "Critico";
-  const bgRing = score.total > 70 ? "ring-[var(--data-success)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
+  const bgRing = score.total > 70 ? "ring-[var(--data-success-500)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
 
   const factors = [
     { label: "Margen", pts: score.margenPts, max: 33, detail: `${score.margen.toFixed(1)}%` },
@@ -161,7 +161,7 @@ function HealthSemaphore() {
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
-                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "#00B4A6" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
+                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "var(--accent)" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
                 />
               </div>
               <span className="text-xs font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
@@ -318,7 +318,7 @@ function PuntoEquilibrio() {
               className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${Math.min(pct, 100)}%`,
-                backgroundColor: cubierto ? "#00B4A6" : "#ef4444",
+                backgroundColor: cubierto ? "var(--accent)" : "#ef4444",
               }}
             />
             {/* Linea de punto de equilibrio */}
@@ -334,13 +334,13 @@ function PuntoEquilibrio() {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-extrabold" style={{ color: cubierto ? "#00B4A6" : "#ef4444" }}>
+          <p className="text-lg font-extrabold" style={{ color: cubierto ? "var(--accent)" : "#ef4444" }}>
             S/{data.ventasHoy}
           </p>
           <p className="text-xs text-[var(--text-secondary)]">vendido hoy</p>
         </div>
       </div>
-      <p className={`text-xs font-bold mt-2 ${cubierto ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
+      <p className={`text-xs font-bold mt-2 ${cubierto ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
         {cubierto
           ? `Hoy ya cubriste los gastos (+S/${diferencia} de ganancia)`
           : `Faltan S/${diferencia} para cubrir gastos del día`}
@@ -483,7 +483,7 @@ function GastosDonut() {
                 <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
                 {isUnusual && (
                   <span
-                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-bold"
+                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-bold"
                     title={`Este gasto es ${pctOver}% mayor al promedio de S/${Math.round(avg)} en ${g.name}`}
                   >
                     Gasto inusual
@@ -559,11 +559,11 @@ function ProyeccionCierreMes() {
         </div>
         <div className="text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Gastos proy.</p>
-          <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
+          <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error-500)]")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Utilidad est.</p>
-          <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-[var(--text-tertiary)]" : utilidadProyectada >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+          <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-[var(--text-tertiary)]" : utilidadProyectada >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
             {utilidadProyectada >= 0 ? "+" : ""}{formatCurrency(Math.abs(utilidadProyectada), { decimals: 0 })}
           </p>
         </div>
@@ -625,7 +625,7 @@ function ResumenFiscal() {
   return (
     <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
-        <Calculator className="h-4 w-4 text-[var(--data-warning)]" />
+        <Calculator className="h-4 w-4 text-[var(--data-warning-500)]" />
         <p className="text-xs font-bold text-[var(--text-secondary)]">
           Resumen Fiscal — {mesActual.charAt(0).toUpperCase() + mesActual.slice(1)}
         </p>
@@ -649,7 +649,7 @@ function ResumenFiscal() {
         </div>
         <div className="border-t border-[var(--rule-base)] pt-2 mt-2 flex justify-between text-sm">
           <span className="font-bold text-[var(--text-primary)]">IGV a pagar</span>
-          <span className={`font-extrabold ${igvNeto > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>
+          <span className={`font-extrabold ${igvNeto > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"}`}>
             {igvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(igvNeto)), { decimals: 0 })}
             {igvNeto <= 0 && <span className="text-xs font-normal ml-1">(crédito fiscal)</span>}
           </span>
@@ -728,18 +728,18 @@ function generarReporteBancario() {
 
 const DASHBOARD_EXPENSE_COLORS = ["var(--color-primary)", "#457b9d", "#f97316", "#9b5de5", "#06b6d4", "#6b7280"];
 const PAYMENT_METHOD_COLORS: Record<string, string> = {
-  efectivo: "#00B4A6", EFECTIVO: "#00B4A6", Efectivo: "#00B4A6",
+  efectivo: "var(--accent)", EFECTIVO: "var(--accent)", Efectivo: "var(--accent)",
   yape: "#7c3aed", YAPE: "#7c3aed", Yape: "#7c3aed",
   plin: "#06b6d4", PLIN: "#06b6d4", Plin: "#06b6d4",
   tarjeta: "#3b82f6", TARJETA: "#3b82f6", Tarjeta: "#3b82f6",
   fiado: "#f59e0b", FIADO: "#f59e0b", Fiado: "#f59e0b",
   transferencia: "#8b5cf6", TRANSFERENCIA: "#8b5cf6", Transferencia: "#8b5cf6",
 };
-const PM_FALLBACK_COLORS = ["#00B4A6", "#7c3aed", "#06b6d4", "#3b82f6", "#f59e0b", "#8b5cf6", "#e63946"];
+const PM_FALLBACK_COLORS = ["var(--accent)", "#7c3aed", "#06b6d4", "#3b82f6", "#f59e0b", "#8b5cf6", "#e63946"];
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
 const KPI_DEFS: KpiDef[] = [
-  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "#00B4A6", bg: "bg-[var(--accent-soft)]" },
+  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)", bg: "bg-[var(--accent-soft)]" },
   { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-[var(--data-error-50)]" },
   { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-[var(--accent-soft)]" },
   { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
@@ -995,9 +995,9 @@ function FinanzasDashboard() {
   // Mejora 6: Alertas inteligentes — ALL hooks MUST be before any early return
   const alertas = useMemo(() => {
     const a: Array<{ msg: string; color: string }> = [];
-    if ((kpis.fiados ?? 0) > 0) a.push({ msg: `${formatCurrency(kpis.fiados ?? 0, { decimals: 0 })} en fiados pendientes`, color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" });
-    if ((kpis.utilidad ?? 0) < 0) a.push({ msg: "Balance negativo este mes", color: "bg-[var(--data-error-100)] text-[var(--data-error)]" });
-    if (topPayables.some(p => p.vencido)) a.push({ msg: `${topPayables.filter(p => p.vencido).length} pagos vencidos a proveedores`, color: "bg-[var(--data-error-100)] text-[var(--data-error)]" });
+    if ((kpis.fiados ?? 0) > 0) a.push({ msg: `${formatCurrency(kpis.fiados ?? 0, { decimals: 0 })} en fiados pendientes`, color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" });
+    if ((kpis.utilidad ?? 0) < 0) a.push({ msg: "Balance negativo este mes", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" });
+    if (topPayables.some(p => p.vencido)) a.push({ msg: `${topPayables.filter(p => p.vencido).length} pagos vencidos a proveedores`, color: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" });
     return a;
   }, [kpis, topPayables]);
 
@@ -1116,14 +1116,14 @@ function FinanzasDashboard() {
           if (def.key === "margen") {
             display = `${val}%`;
             subtexto = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
-            valColor = val > 25 ? "text-[var(--data-success)]" : val >= 15 ? "text-amber-600" : "text-red-600";
+            valColor = val > 25 ? "text-[var(--data-success-500)]" : val >= 15 ? "text-[var(--data-warning-600)]" : "text-[var(--data-error-600)]";
           } else if (def.key === "utilidad") {
             display = `${val >= 0 ? "+" : "-"}${formatCurrency(Math.abs(val), { decimals: 0 })}`;
-            valColor = val >= 0 ? "text-[var(--data-success)]" : "text-red-600";
+            valColor = val >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-600)]";
           } else if (def.key === "igv") {
             display = formatCurrency(Math.abs(val), { decimals: 0 });
             subtexto = val > 0 ? "A pagar" : "Credito fiscal";
-            valColor = val > 0 ? "text-red-600" : "text-[var(--data-success)]";
+            valColor = val > 0 ? "text-[var(--data-error-600)]" : "text-[var(--data-success-500)]";
           } else if (def.key === "puntoEq") {
             display = formatCurrency(val, { decimals: 0 });
             subtexto = "por dia";
@@ -1147,7 +1147,7 @@ function FinanzasDashboard() {
                   <p className="text-xs font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
-                    <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
+                    <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                       {change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%
                     </span>
                   </div>
@@ -1225,7 +1225,7 @@ function FinanzasDashboard() {
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
-            <div className="h-2 w-2 rounded-full bg-[var(--data-error)]" />
+            <div className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoria</p>
             <div className="flex-1" />
             {gastosPieFilter && (
@@ -1336,8 +1336,8 @@ function FinanzasDashboard() {
             <AreaChart data={cashFlow} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="gradCashIngresos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradCashGastos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
@@ -1353,7 +1353,7 @@ function FinanzasDashboard() {
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
               <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" label={{ value: "S/0", position: "left", fill: "#9ca3af", fontSize: 10 }} />
-              <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="url(#gradCashIngresos)" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="ingresos" stroke="var(--accent)" fill="url(#gradCashIngresos)" strokeWidth={1.5} />
               <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="url(#gradCashGastos)" strokeWidth={1.5} />
               <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="url(#gradCashBalance)" strokeWidth={2.5} dot={false} />
               <Legend
@@ -1382,11 +1382,11 @@ function FinanzasDashboard() {
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Gastos proyectados</p>
-              <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
+              <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error-500)]")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Utilidad estimada</p>
-              <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-[var(--text-tertiary)]" : projUtilidad >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+              <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-[var(--text-tertiary)]" : projUtilidad >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                 {projUtilidad >= 0 ? "+" : ""}{formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}
               </p>
             </div>
@@ -1402,13 +1402,13 @@ function FinanzasDashboard() {
                 className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                 style={{
                   width: `${projProgreso}%`,
-                  backgroundColor: projPctTarget > 70 ? "#00B4A6" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
+                  backgroundColor: projPctTarget > 70 ? "var(--accent)" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
                 }}
               />
             </div>
             <p className="text-xs text-[var(--text-secondary)] text-center">
               Ventas actuales: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(projection.ventasMes), { decimals: 0 })}</span> de {formatCurrency(projVentas, { decimals: 0 })} proyectados
-              <span className={`ml-2 font-bold ${projPctTarget > 70 ? "text-[var(--data-success)]" : projPctTarget >= 40 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
+              <span className={`ml-2 font-bold ${projPctTarget > 70 ? "text-[var(--data-success-500)]" : projPctTarget >= 40 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}>
                 ({projPctTarget}%)
               </span>
             </p>
@@ -1454,7 +1454,7 @@ function FinanzasDashboard() {
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)]">
                   <td className="pt-3 pb-1 font-bold text-[var(--text-primary)]">IGV a pagar</td>
-                  <td className={`pt-3 pb-1 text-right font-extrabold font-mono text-lg ${fiscIgvNeto > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>
+                  <td className={`pt-3 pb-1 text-right font-extrabold font-mono text-lg ${fiscIgvNeto > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"}`}>
                     {fiscIgvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(fiscIgvNeto)), { decimals: 0 })}
                     {fiscIgvNeto <= 0 && <span className="text-xs font-normal ml-1.5">(credito fiscal)</span>}
                   </td>
@@ -1474,12 +1474,12 @@ function FinanzasDashboard() {
       {healthScore && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
             <p className="text-sm font-bold text-[var(--text-primary)]">
               Indicadores de Salud Financiera
               <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "#00B4A620" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
               }}>
                 {healthScore.total}/100 — {healthScore.total > 70 ? "Saludable" : healthScore.total >= 40 ? "Precaucion" : "Critico"}
               </span>
@@ -1491,21 +1491,21 @@ function FinanzasDashboard() {
               max={100}
               label="Margen de utilidad"
               unit="%"
-              color={healthScore.margen > 25 ? "#00B4A6" : healthScore.margen >= 15 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.margen > 25 ? "var(--accent)" : healthScore.margen >= 15 ? "#f59e0b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.liquidez}
               max={4}
               label="Liquidez"
               unit="x"
-              color={healthScore.liquidez > 2 ? "#00B4A6" : healthScore.liquidez >= 1 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.liquidez > 2 ? "var(--accent)" : healthScore.liquidez >= 1 ? "#f59e0b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.deudaRatio}
               max={100}
               label="Endeudamiento"
               unit="%"
-              color={healthScore.deudaRatio < 10 ? "#00B4A6" : healthScore.deudaRatio <= 30 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.deudaRatio < 10 ? "var(--accent)" : healthScore.deudaRatio <= 30 ? "#f59e0b" : "#ef4444"}
             />
           </div>
         </div>
@@ -1546,7 +1546,7 @@ function FinanzasDashboard() {
           )}
           {topPayables.some(p => p.vencido) && (
             <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
-              <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
+              <div className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" /> Vencido
               <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al dia
             </div>
           )}
@@ -1555,7 +1555,7 @@ function FinanzasDashboard() {
         {/* Me deben (fiados) */}
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-4 w-4 text-[var(--data-warning)]" />
+            <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
           </div>
           {topFiados.length > 0 ? (
@@ -1583,8 +1583,8 @@ function FinanzasDashboard() {
           )}
           {topFiados.some(f => f.vencido) && (
             <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
-              <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
-              <div className="w-2 h-2 rounded-full bg-[var(--data-warning)] ml-2" /> Al dia
+              <div className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" /> Vencido
+              <div className="w-2 h-2 rounded-full bg-[var(--data-warning-500)] ml-2" /> Al dia
             </div>
           )}
         </div>
@@ -1596,11 +1596,11 @@ function FinanzasDashboard() {
         <StaggerItem index={8}>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
               <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
               <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "#00B4A620" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
               }}>
                 {healthScore.total}/100
               </span>
@@ -1614,13 +1614,13 @@ function FinanzasDashboard() {
                       data={[{ name: "score", value: healthScore.total }, { name: "empty", value: 100 - healthScore.total }]}
                       cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={50} outerRadius={70} dataKey="value" stroke="none"
                     >
-                      <Cell fill={healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
+                      <Cell fill={healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
                       <Cell fill="#e5e7eb" className="" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }}>
+                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }}>
                     {healthScore.total}
                   </span>
                 </div>
@@ -1639,7 +1639,7 @@ function FinanzasDashboard() {
                       <span className="text-xs font-bold text-[var(--text-secondary)]">{f.detail}</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#00B4A6" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "var(--accent)" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
                   </div>
@@ -1681,11 +1681,11 @@ function FinanzasDashboard() {
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
                     <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ventas</p>
-                    <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
+                    <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
                     <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Gastos</p>
-                    <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
+                    <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
                 </div>
                 <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -1729,7 +1729,7 @@ function FinanzasDashboard() {
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="#00B4A620" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ingresos" stroke="var(--accent)" fill="color-mix(in oklab, var(--accent) 12%, transparent)" strokeWidth={2} />
                   <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="#ef444420" strokeWidth={2} />
                   <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="var(--color-primary)30" strokeWidth={3} />
                 </AreaChart>

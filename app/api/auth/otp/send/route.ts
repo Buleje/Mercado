@@ -57,7 +57,11 @@ export async function POST(req: Request) {
 
   const { phone } = parsed.data;
 
-  // 2. Rate limit por telefono (no por IP — el telefono es el identificador natural)
+  // 2. Rate limit DOBLE (audit auth #12): por phone + por IP.
+  //    - phone: límite natural por usuario.
+  //    - IP: anti-enumeration + anti-spam Twilio. Atacante puede pedir OTPs
+  //      para 1000 phones distintos sin esto, agotando créditos SMS y
+  //      spameando víctimas.
   const ip = getClientIp(req);
   const rl = rateLimit(
     `otp:send:${phone}`,
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
     OTP_SEND_WINDOW_SEC,
   );
   if (!rl.allowed) {
-    logger.warn("[OTP/send] Rate limit excedido", { phone, ip });
+    logger.warn("[OTP/send] Rate limit por phone excedido", { phone, ip });
     return NextResponse.json(
       {
         error: "Demasiados intentos. Espera 5 minutos antes de solicitar otro codigo.",
@@ -74,6 +78,19 @@ export async function POST(req: Request) {
         status: 429,
         headers: {
           "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString(),
+        },
+      },
+    );
+  }
+  const ipRl = rateLimit(`otp:send:ip:${ip}`, 5, 3600);
+  if (!ipRl.allowed) {
+    logger.warn("[OTP/send] Rate limit por IP excedido (anti-enumeration)", { ip });
+    return NextResponse.json(
+      { error: "Demasiados intentos desde esta red. Espera 1 hora." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((ipRl.resetAt - Date.now()) / 1000).toString(),
         },
       },
     );

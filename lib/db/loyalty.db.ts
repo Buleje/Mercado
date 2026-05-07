@@ -151,24 +151,45 @@ async function writeTransaction(
 
   const normalizedMetadata = normalizeMetadata(metadata);
 
-  // ── Atomic write: ledger row + materialized balance, both or neither. ──
-  const [created] = await prisma.$transaction([
-    prisma.loyaltyTransaction.create({
+  // SECURITY 2026-05-06 (pentest H003 — CRITICAL): redeem race condition.
+  // Antes el check de saldo (línea 148) corría FUERA del lock — dos requests
+  // paralelos con balance=100 y debit=-100 ambos pasaban el check, ambos
+  // ejecutaban increment y dejaban balance=-100. Ahora el `updateMany` con
+  // guard `loyaltyPoints + signedAmount >= 0` falla atómicamente la 2da.
+  const updateResult = await prisma.$transaction(async (tx) => {
+    const ledger = await tx.loyaltyTransaction.create({
       data: {
         customerId,
         tenantId,
         amount: signedAmount,
         reason,
-        // Prisma Json input is structurally JSON-safe; the cast is sound
-        // because the metadata came through Zod (or null) at the route layer.
         metadata: (normalizedMetadata ?? undefined) as Prisma.InputJsonValue | undefined,
       },
-    }),
-    prisma.customer.update({
-      where: { phone: customerId },
-      data: { loyaltyPoints: { increment: signedAmount } },
-    }),
-  ]);
+    });
+    if (signedAmount < 0) {
+      // Debit con guard atómico: solo descuenta si hay saldo suficiente.
+      // eslint-disable-next-line no-restricted-properties -- guard atómico TOCTOU
+      const updated = await tx.$executeRawUnsafe(
+        `UPDATE "Customer"
+            SET "loyaltyPoints" = "loyaltyPoints" + $1
+          WHERE phone = $2 AND "tenantId" = $3
+            AND "loyaltyPoints" + $1 >= 0`,
+        signedAmount,
+        customerId,
+        tenantId,
+      );
+      if (updated === 0) {
+        throw new LoyaltyInsufficientBalanceError(customer.loyaltyPoints, -signedAmount);
+      }
+    } else {
+      await tx.customer.update({
+        where: { phone: customerId },
+        data: { loyaltyPoints: { increment: signedAmount } },
+      });
+    }
+    return [ledger];
+  });
+  const [created] = updateResult;
 
   // CLAUDE.md #5 — evict every cached page for this customer.
   invalidateByPrefix(cachePrefix(tenantId, customerId));

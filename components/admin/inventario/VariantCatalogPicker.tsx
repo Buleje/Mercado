@@ -249,7 +249,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
             )}
 
             {error && (
-              <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+              <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
                 {error}
               </div>
             )}
@@ -354,7 +354,7 @@ function TemplateRow({
             className={cn(
               "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors",
               isImported
-                ? "bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30"
+                ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
                 : "bg-primary text-white hover:bg-primary/90",
               "disabled:opacity-50"
             )}

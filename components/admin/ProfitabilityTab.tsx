@@ -98,9 +98,9 @@ export default function ProfitabilityTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "% Margen", value: pct(totals.marginPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
@@ -122,10 +122,10 @@ export default function ProfitabilityTab() {
               <div key={cat} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-20 truncate">{cat}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
-                  <div className="h-full rounded-full bg-[var(--data-success)] transition-all" style={{ width: `${pctFill}%` }} />
+                  <div className="h-full rounded-full bg-[var(--data-success-500)] transition-all" style={{ width: `${pctFill}%` }} />
                 </div>
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-24 text-right">{fmt(data.margin)}</span>
-                <span className="text-xs font-semibold text-[var(--data-success)] w-12 text-right">{pct(mPct)}</span>
+                <span className="text-xs font-semibold text-[var(--data-success-500)] w-12 text-right">{pct(mPct)}</span>
               </div>
             );
           })}
@@ -177,15 +177,15 @@ export default function ProfitabilityTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(l.revenue)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(l.cogs)}</td>
-                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{fmt(l.grossMargin)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success)]" : l.marginPct >= 25 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                       {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {pct(l.marginPct)}
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}
@@ -196,8 +196,8 @@ export default function ProfitabilityTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(totals.revenue)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(totals.cogs)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success)]">{fmt(totals.grossMargin)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success)]">{pct(totals.marginPct)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{fmt(totals.grossMargin)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{pct(totals.marginPct)}</td>
                 <td />
               </tr>
             </tfoot>

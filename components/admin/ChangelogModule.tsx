@@ -30,9 +30,9 @@ type Release = {
 
 const TYPE_META: Record<ChangeType, { label: string; color: string; bg: string }> = {
   feat:     { label: "Feature",    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
-  fix:      { label: "Fix",        color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
-  perf:     { label: "Perf",       color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  security: { label: "Seguridad",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  fix:      { label: "Fix",        color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+  perf:     { label: "Perf",       color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  security: { label: "Seguridad",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   refactor: { label: "Refactor",   color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
@@ -104,8 +104,8 @@ export default function ChangelogModule() {
   const stats = [
     { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-[var(--text-secondary)]" },
     { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-[var(--text-secondary)]" },
-    { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-[var(--data-warning)]" },
-    { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-[var(--data-success)]" },
+    { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-[var(--data-warning-500)]" },
+    { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-[var(--data-success-500)]" },
   ];
 
   return (
@@ -114,7 +114,7 @@ export default function ChangelogModule() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <PageTitle className="text-xl font-extrabold text-foreground flex flex-wrap items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-[var(--data-warning)]" />
+            <FlaskConical className="h-5 w-5 text-[var(--data-warning-500)]" />
             Changelog del Proyecto
           </PageTitle>
           <p className="text-sm text-muted mt-0.5">Historial de releases y cambios de versión.</p>
@@ -153,7 +153,7 @@ export default function ChangelogModule() {
             key={release.version}
             className={`rounded-xl border ${
               release.status === "current"
-                ? "border-[var(--data-info)] dark:border-[var(--data-info)] bg-[var(--data-info-50)]/60 dark:bg-indigo-950/20"
+                ? "border-[var(--data-info-500)] dark:border-[var(--data-info-500)] bg-[var(--data-info-50)]/60 dark:bg-indigo-950/20"
                 : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
             } overflow-hidden`}
           >
@@ -177,7 +177,7 @@ export default function ChangelogModule() {
                       {release.version}
                     </span>
                     {release.status === "current" && (
-                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[var(--data-info)] text-white text-[length:var(--ts-2xs)] font-bold">
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[var(--data-info-500)] text-white text-[length:var(--ts-2xs)] font-bold">
                         <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
                         Actual
                       </span>

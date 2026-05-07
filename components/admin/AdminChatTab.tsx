@@ -118,9 +118,9 @@ export default function AdminChatTab() {
           <button onClick={() => setTab("internal")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", tab === "internal" ? "bg-white dark:bg-card shadow text-primary" : "text-[var(--text-secondary)] dark:text-muted")}>
             Interno
           </button>
-          <button onClick={() => { setTab("customers"); setActivePhone(null); }} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition relative", tab === "customers" ? "bg-white dark:bg-card shadow text-[var(--data-success)]" : "text-[var(--text-secondary)] dark:text-muted")}>
+          <button onClick={() => { setTab("customers"); setActivePhone(null); }} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition relative", tab === "customers" ? "bg-white dark:bg-card shadow text-[var(--data-success-500)]" : "text-[var(--text-secondary)] dark:text-muted")}>
             <Users className="w-3.5 h-3.5 inline mr-1" />Clientes
-            {totalUnread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center px-1">{totalUnread}</span>}
+            {totalUnread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center px-1">{totalUnread}</span>}
           </button>
         </div>
         <button
@@ -180,7 +180,7 @@ export default function AdminChatTab() {
             <button key={c.phone} onClick={() => setActivePhone(c.phone)}
               className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition text-left border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
             >
-              <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center text-[var(--data-success)] dark:text-[var(--data-success)] font-bold text-sm">
+              <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">
                 {c.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -190,7 +190,7 @@ export default function AdminChatTab() {
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted truncate">{c.lastMessage}</p>
               </div>
-              {c.unread > 0 && <span className="min-w-5 h-5 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center px-1">{c.unread}</span>}
+              {c.unread > 0 && <span className="min-w-5 h-5 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center px-1">{c.unread}</span>}
             </button>
           ))}
         </div>

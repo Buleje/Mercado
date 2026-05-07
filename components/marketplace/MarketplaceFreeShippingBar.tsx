@@ -87,7 +87,7 @@ export function FreeShippingIndicator({ className }: { className?: string }) {
           className={cn(
             "block h-full transition-all duration-500 rounded-full",
             unlocked
-              ? "bg-linear-to-r from-emerald-400 to-emerald-600"
+              ? "bg-linear-to-r from-emerald-400 to-[var(--data-success-600)]"
               : "bg-linear-to-r from-[var(--accent)]/60 to-[var(--accent)]",
           )}
           style={{ width: `${progress}%` }}

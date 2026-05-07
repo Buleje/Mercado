@@ -159,9 +159,9 @@ export default function WarehouseLocationTab() {
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Ubicaciones Ocupadas</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{occupied}/{totalSlots}</p></div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{empty}</p></div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{avgOccupancy.toFixed(0)}%</p></div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{critical}</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{empty}</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{avgOccupancy.toFixed(0)}%</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{critical}</p></div>
       </div>
 
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
@@ -195,7 +195,7 @@ export default function WarehouseLocationTab() {
                 <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{zone}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {zoneLocs.map((loc) => (
-                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-[var(--data-error)]" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
+                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-[var(--data-error-500)]" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
                   ))}
                 </div>
               </button>
@@ -245,13 +245,13 @@ export default function WarehouseLocationTab() {
                       <span className="text-[var(--text-tertiary)]">/</span>
                       <input value={loc.capacity} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, capacity: Number(event.target.value || 0) } : item))} type="number" min={0} className="w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm dark:border-card-border dark:bg-surface" />
                     </div>
-                    {loc.capacity > 0 && loc.qty > loc.capacity && <p className="mt-1 text-xs text-[var(--data-error)]">Sobre capacidad</p>}
+                    {loc.capacity > 0 && loc.qty > loc.capacity && <p className="mt-1 text-xs text-[var(--data-error-500)]">Sobre capacidad</p>}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-[var(--data-success)]/30 p-2 text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:hover:bg-[var(--accent-muted)]"><Check className="h-4 w-4" /></button>
-                      <button onClick={() => deleteLocation(loc.id)} className="rounded-lg border border-[var(--data-error)] p-2 text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error)]/40 dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
-                      {loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 && <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />}
+                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-[var(--data-success-500)]/30 p-2 text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:hover:bg-[var(--accent-muted)]"><Check className="h-4 w-4" /></button>
+                      <button onClick={() => deleteLocation(loc.id)} className="rounded-lg border border-[var(--data-error-500)] p-2 text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error-500)]/40 dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
+                      {loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 && <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />}
                     </div>
                   </td>
                 </tr>

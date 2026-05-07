@@ -68,6 +68,10 @@ export function invalidateCustomDomainCache(hostname: string) {
  * directly).
  */
 const slugToIdCache = new Map<string, { id: string; expiresAt: number }>();
+// Dedupe in-flight DB queries — múltiples requests concurrentes con el mismo
+// slug ANTES del primer write a cache disparaban N+1. Ahora la primera lookup
+// crea una promise compartida que las siguientes esperan.
+const slugInflight = new Map<string, Promise<string>>();
 
 export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
   if (!slugOrId) return slugOrId;
@@ -75,12 +79,23 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
   if (slugOrId.length >= 24 && slugOrId.startsWith("c")) return slugOrId;
   const cached = slugToIdCache.get(slugOrId);
   if (cached && cached.expiresAt > Date.now()) return cached.id;
-  const tenant = await prisma.tenant
+  const inflight = slugInflight.get(slugOrId);
+  if (inflight) return inflight;
+
+  const promise = prisma.tenant
     .findUnique({ where: { slug: slugOrId }, select: { id: true } })
-    .catch(() => null);
-  const id = tenant?.id ?? slugOrId;
-  slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });
-  return id;
+    .catch(() => null)
+    .then((tenant) => {
+      const id = tenant?.id ?? slugOrId;
+      slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });
+      return id;
+    })
+    .finally(() => {
+      slugInflight.delete(slugOrId);
+    });
+
+  slugInflight.set(slugOrId, promise);
+  return promise;
 }
 
 /**
@@ -109,7 +124,21 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
 export async function resolveTenantIdForRoute(req: NextRequest): Promise<string> {
   // Source 1 (HIGHEST): Admin JWT firmado.
   const session = await tryAdmin(req);
-  if (session?.tenantId) return session.tenantId;
+  if (session?.tenantId) {
+    // [SECURITY] SuperAdmin puede impersonar otro tenant via header — necesario
+    // para que el panel de plataforma pueda gestionar tenants individuales sin
+    // re-emitir JWT. Para cualquier otro rol, el JWT manda (anti-injection).
+    //
+    // Nota: esto DEBE alinearse con la logica del PUT en
+    // `app/api/settings/route.ts` para que GET y PUT escriban/lean el mismo
+    // tenant — sino el StoreCustomizer salva pero el reload muestra los
+    // valores viejos (asimetria detectada 2026-05-05).
+    if (session.role === "superadmin") {
+      const header = req.headers.get("x-tenant-id");
+      if (header && header !== session.tenantId) return header;
+    }
+    return session.tenantId;
+  }
 
   // Source 2: header inyectado por proxy.ts (de active-tenant cookie / referer).
   const header = req.headers.get("x-tenant-id");

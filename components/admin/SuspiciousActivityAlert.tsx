@@ -175,8 +175,8 @@ export default function SuspiciousActivityAlert() {
         className={cn(
           "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-[var(--dur-fast)]",
           highCount > 0
-            ? "bg-[var(--data-error-50)] dark:bg-red-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:hover:bg-red-950/60"
-            : "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-amber-950/50"
+            ? "bg-[var(--data-error-50)] dark:bg-red-950/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:hover:bg-red-950/60"
+            : "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-amber-950/50"
         )}
         aria-label={`${totalCount} alerta${totalCount !== 1 ? "s" : ""} de actividad sospechosa`}
       >
@@ -184,7 +184,7 @@ export default function SuspiciousActivityAlert() {
         <span>{totalCount} alerta{totalCount !== 1 ? "s" : ""}</span>
         {/* Red dot for high severity */}
         {highCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
             {highCount}
           </span>
         )}
@@ -203,7 +203,7 @@ export default function SuspiciousActivityAlert() {
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={15} className="text-[var(--data-error)]" />
+              <AlertTriangle size={15} className="text-[var(--data-error-500)]" />
               <span className="font-semibold text-sm text-[var(--text-primary)]">Actividad sospechosa</span>
             </div>
             <div className="flex items-center gap-1">
@@ -234,7 +234,7 @@ export default function SuspiciousActivityAlert() {
                     <span
                       className={cn(
                         "mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold",
-                        alert.severity === "high" ? "bg-[var(--data-error)]" : "bg-[var(--data-warning)]"
+                        alert.severity === "high" ? "bg-[var(--data-error-500)]" : "bg-[var(--data-warning-500)]"
                       )}
                     >
                       {alert.count}

@@ -44,18 +44,18 @@ const ACTION_ICON: Record<ActionType, React.ElementType> = {
 const ACTION_STYLE: Record<ActionType, { dot: string; icon: string; bg: string }> = {
   create: {
     dot: "bg-[var(--accent-soft)]",
-    icon: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    icon: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   update: {
     dot: "bg-[var(--accent-soft)]",
-    icon: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    icon: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   delete: {
-    dot: "bg-[var(--data-error)]",
-    icon: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+    dot: "bg-[var(--data-error-500)]",
+    icon: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
   },
   export: {
     dot: "bg-[var(--text-primary)]",
@@ -63,9 +63,9 @@ const ACTION_STYLE: Record<ActionType, { dot: string; icon: string; bg: string }
     bg: "bg-[var(--surface-sunken)]",
   },
   import: {
-    dot: "bg-[var(--data-warning)]",
-    icon: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    dot: "bg-[var(--data-warning-500)]",
+    icon: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
   },
   other: {
     dot: "bg-gray-400",
@@ -186,7 +186,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
               <Loader2 className="w-5 h-5 animate-spin text-[var(--text-tertiary)]" />
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</div>
+            <div className="text-center py-8 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</div>
           ) : entries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]">
               <History className="w-8 h-8 mb-2 opacity-40" />

@@ -177,8 +177,8 @@ export default function SuppliersTab() {
     const dates = supplierPayables.map(p => new Date(p.createdAt).getTime());
     const lastDate = Math.max(...dates);
     const daysSince = Math.floor((today.getTime() - lastDate) / (1000 * 60 * 60 * 24));
-    if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]" };
-    if (daysSince > 30) return { daysSince, label: `Última compra hace ${daysSince}d`, color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]" };
+    if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" };
+    if (daysSince > 30) return { daysSince, label: `Última compra hace ${daysSince}d`, color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" };
     return null; // Normal, no badge
   };
 
@@ -229,17 +229,17 @@ export default function SuppliersTab() {
 
       {/* Payment Alerts Banner */}
       {(overduePayables.length > 0 || approachingPayables.length > 0) && (
-        <div className="bg-[var(--surface-sunken)] border-l-4 border-[var(--data-error)] rounded-xl p-4 ">
+        <div className="bg-[var(--surface-sunken)] border-l-4 border-[var(--data-error-500)] rounded-xl p-4 ">
           <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
                 <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Alertas de Pagos</CardTitle>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                 {overduePayables.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">
+                    <span className="flex items-center gap-1 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">
                       <AlertTriangle className="h-4 w-4" />
                       {overduePayables.length} vencido{overduePayables.length > 1 ? 's' : ''}
                     </span>
@@ -250,7 +250,7 @@ export default function SuppliersTab() {
                 )}
                 {approachingPayables.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
+                    <span className="flex items-center gap-1 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
                       <Clock className="h-4 w-4" />
                       {approachingPayables.length} próximo{approachingPayables.length > 1 ? 's' : ''}
                     </span>
@@ -272,7 +272,7 @@ export default function SuppliersTab() {
           
           {/* Expandable Alerts Detail */}
           {showAlerts && (
-            <div className="mt-4 pt-4 border-t border-[var(--data-error)] dark:border-[var(--data-error)]/30 space-y-2">
+            <div className="mt-4 pt-4 border-t border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 space-y-2">
               {[...overduePayables, ...approachingPayables].map(p => {
                 const daysInfo = p.dueDate ? getDaysInfo(p.dueDate) : null;
                 return (
@@ -280,8 +280,8 @@ export default function SuppliersTab() {
                     key={p.id}
                     className={`flex items-center justify-between gap-3 p-3 rounded-lg ${
                       daysInfo?.overdue
-                        ? "bg-[var(--data-error-100)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)]"
-                        : "bg-[var(--data-warning-100)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+                        ? "bg-[var(--data-error-100)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
+                        : "bg-[var(--data-warning-100)] dark:bg-amber-950/30 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -295,7 +295,7 @@ export default function SuppliersTab() {
                       </div>
                       {daysInfo && (
                         <p className={`text-xs font-medium mt-0.5 ${
-                          daysInfo.overdue ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                          daysInfo.overdue ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                         }`}>
                           {daysInfo.text}
                         </p>
@@ -345,18 +345,18 @@ export default function SuppliersTab() {
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con deuda</p>
-                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]")}>{supplierIdsWithDebt.size}</p>
+                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{supplierIdsWithDebt.size}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">cuentas pendientes</p>
               </div>
-              <CreditCard className={cn("h-5 w-5 shrink-0", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
+              <CreditCard className={cn("h-5 w-5 shrink-0", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Deuda total</p>
-                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">{overduePayables.length > 0 ? `${overduePayables.length} vencida${overduePayables.length === 1 ? "" : "s"}` : "al día"}</p>
               </div>
-              <DollarSign className={cn("h-5 w-5 shrink-0", totalDebt > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")} />
+              <DollarSign className={cn("h-5 w-5 shrink-0", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
           </div>
         );
@@ -456,7 +456,7 @@ export default function SuppliersTab() {
                     <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
+                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
                       <Check className="h-4 w-4 inline mr-1" /> Guardar
                     </button>
                     <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
@@ -473,7 +473,7 @@ export default function SuppliersTab() {
 
                       {/* Mejora 15: Proveedor mas confiable badge */}
                       {topSupplierId === s.id && (
-                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
                           Mas confiable
                         </span>
                       )}
@@ -497,13 +497,13 @@ export default function SuppliersTab() {
                         return (
                           <>
                             {debt.overdue && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-red-950/30 px-2 py-0.5 rounded border border-[var(--data-error)] dark:border-[var(--data-error)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-red-950/30 px-2 py-0.5 rounded border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
                                 <AlertTriangle className="h-3 w-3" />
                                 Deuda vencida
                               </span>
                             )}
                             {debt.approaching && !debt.overdue && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-amber-950/30 px-2 py-0.5 rounded border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-amber-950/30 px-2 py-0.5 rounded border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
                                 <Clock className="h-3 w-3" />
                                 Próximo a vencer
                               </span>
@@ -522,7 +522,7 @@ export default function SuppliersTab() {
                         const debt = getSupplierDebt(s.id);
                         if (debt.count === 0) return null;
                         return (
-                          <span className="flex items-center gap-1 font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">
+                          <span className="flex items-center gap-1 font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             <DollarSign className="h-3.5 w-3.5" />
                             Deuda: S/ {debt.totalDebt.toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
                           </span>
@@ -596,7 +596,7 @@ export default function SuppliersTab() {
                     <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

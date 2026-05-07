@@ -202,11 +202,33 @@ export const CustomersDB = {
     await prisma.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { privateNotes } });
   },
   async updateCreditBalance(tenantId: string, phone: string, delta: number): Promise<number> {
-    await prisma.customer.updateMany({
-      where: { phone: normalizePhone(phone), tenantId },
-      data: { creditBalance: { increment: delta } },
-    });
-    const c = await prisma.customer.findFirst({ where: { phone: normalizePhone(phone), tenantId }, select: { creditBalance: true } });
+    // SECURITY 2026-05-06 (audit DB #5): si delta > 0 (gasta más fiado),
+    // verificar que `creditBalance + delta <= creditLimit` atómicamente vía
+    // raw SQL. Antes 2 orders concurrentes podían pasar el check de límite
+    // y luego ambas hacer increment → exceder creditLimit (fraude).
+    const normalized = normalizePhone(phone);
+    if (delta > 0) {
+      // eslint-disable-next-line no-restricted-properties -- guard atómico de credit limit
+      const result = await prisma.$executeRawUnsafe(
+        `UPDATE "Customer"
+            SET "creditBalance" = "creditBalance" + $1
+          WHERE phone = $2 AND "tenantId" = $3
+            AND "creditBalance" + $1 <= "creditLimit"`,
+        delta,
+        normalized,
+        tenantId,
+      );
+      if (result === 0) {
+        throw new Error("CREDIT_LIMIT_EXCEEDED");
+      }
+    } else {
+      // delta <= 0: pago/reverso, no necesita guard.
+      await prisma.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { creditBalance: { increment: delta } },
+      });
+    }
+    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, select: { creditBalance: true } });
     return toNumOrZero(c?.creditBalance);
   },
   /** Generate a unique referral code for a customer if they don't have one */

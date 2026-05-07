@@ -232,7 +232,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
               </span>
               <span className={cn(
                 "font-bold tabular-nums",
-                secondsLeft <= 60 ? "text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground"
+                secondsLeft <= 60 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground"
               )}>
                 {minutes}:{seconds.toString().padStart(2, "0")}
               </span>

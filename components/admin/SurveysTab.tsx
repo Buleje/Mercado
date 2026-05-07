@@ -76,7 +76,7 @@ export default function SurveysTab() {
               <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.average}</p>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`} />
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`} />
                 ))}
               </div>
             </div>
@@ -104,11 +104,11 @@ export default function SurveysTab() {
                 <div key={star} className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1 w-12 justify-end">
                     <span className="text-xs font-medium text-foreground">{star}</span>
-                    <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
+                    <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                   </div>
                   <div className="flex-1 h-5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[var(--data-warning)] rounded-full transition-all"
+                      className="h-full bg-[var(--data-warning-500)] rounded-full transition-all"
                       style={{ width: `${(count / maxCount) * 100}%` }}
                     />
                   </div>
@@ -133,7 +133,7 @@ export default function SurveysTab() {
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`} />
+                        <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`} />
                       ))}
                     </div>
                     <span className="text-xs text-muted">Pedido #{r.orderId.slice(-6)}</span>

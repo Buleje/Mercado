@@ -62,7 +62,7 @@ export default function ReferralProgram() {
 
   if (loading) {
     return (
-      <div className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-6 animate-pulse">
+      <div className="bg-[var(--surface-sunken)] rounded-2xl border border-[var(--accent)]/20 p-6 animate-pulse">
         <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3" />
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
       </div>
@@ -104,7 +104,7 @@ export default function ReferralProgram() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-5 sm:p-6"
+      className="bg-[var(--surface-sunken)] rounded-2xl border border-[var(--accent)]/20 p-5 sm:p-6"
     >
       {/* Header — tier-aware */}
       <div className="flex items-start gap-3 mb-4">
@@ -153,7 +153,7 @@ export default function ReferralProgram() {
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 mb-4">
         <p className="text-xs text-[var(--text-tertiary)] mb-1.5 font-medium">Tu codigo de referido</p>
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-extrabold text-[#00B4A6] dark:text-[#2dd4bf] tracking-wider flex-1">
+          <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#2dd4bf] tracking-wider flex-1">
             {data.code}
           </span>
           <button
@@ -169,7 +169,7 @@ export default function ReferralProgram() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 text-center">
-          <Users className="h-4 w-4 text-[#00B4A6] mx-auto mb-1" />
+          <Users className="h-4 w-4 text-[var(--accent)] mx-auto mb-1" />
           <p className="text-lg font-extrabold text-[var(--text-primary)]">{data.referredCount}</p>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Amigos referidos</p>
         </div>

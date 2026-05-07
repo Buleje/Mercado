@@ -35,10 +35,10 @@ type RedeemHistory = {
 };
 
 const TIER_STYLES: Record<string, string> = {
-  bronce: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  bronce: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
   plata: "bg-gray-100 text-[var(--text-primary)]",
-  oro: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-  diamante: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+  oro: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+  diamante: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
 };
 
 // ── Componente principal ───────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export default function LoyaltyRedeemTab() {
             "fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition",
             toast.type === "ok"
               ? "bg-primary text-white"
-              : "bg-[var(--data-error)] text-white",
+              : "bg-[var(--data-error-500)] text-white",
           )}
         >
           {toast.type === "ok" ? (
@@ -208,7 +208,7 @@ export default function LoyaltyRedeemTab() {
 
         {/* Info del cliente */}
         {notFound && (
-          <p className="mt-3 text-sm text-[var(--data-error)]">Cliente no encontrado</p>
+          <p className="mt-3 text-sm text-[var(--data-error-500)]">Cliente no encontrado</p>
         )}
         {customer && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-50 p-4">
@@ -227,7 +227,7 @@ export default function LoyaltyRedeemTab() {
             </div>
             <div className="ml-auto flex flex-col items-end gap-1">
               <div className="flex items-center gap-1.5">
-                <Star className="h-4 w-4 text-[var(--data-warning)]" />
+                <Star className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <span className="text-lg font-bold text-primary">
                   {customer.loyaltyPoints.toLocaleString()} pts
                 </span>

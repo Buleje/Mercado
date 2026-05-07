@@ -97,7 +97,12 @@ export async function POST(
 
     // If receta is linked to a product, increment its stock
     if (receta.productoId) {
-      const prod = await prisma.product.findUnique({ where: { id: receta.productoId } });
+      // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
+      // Antes si receta.productoId apuntaba a producto de otro tenant
+      // (configuración corrupta), incrementaba stock ajeno.
+      const prod = await prisma.product.findFirst({
+        where: { id: receta.productoId, tenantId: auth.tenantId },
+      });
       if (prod) {
         const prevStock = prod.stock ?? 0;
         const newStock = prevStock + parsed.data.cantidad;

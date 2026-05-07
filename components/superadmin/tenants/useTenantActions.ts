@@ -106,19 +106,26 @@ export function useTenantActions({
       });
       if (!res.ok) { showToast("Error al impersonar", false); return; }
       // [SEGURIDAD MULTI-TENANT] Limpiar TODO cache cliente antes de abrir el
-      // panel del tenant target. Sin esto, el localStorage compartido entre
-      // pestañas filtraría datos del tenant anterior al nuevo.
+      // panel del tenant target. Sin esto, el localStorage/sessionStorage/SW
+      // compartido entre pestañas filtraría datos del tenant anterior.
       try {
         const { clearAllTenantCache } = await import("@/lib/tenant-cache");
         clearAllTenantCache();
+        // Notificar a pestañas abiertas del mismo origen para que también
+        // limpien su estado en memoria si están en otro tenant.
+        try {
+          const bc = new BroadcastChannel("tenant-switch");
+          bc.postMessage({ type: "tenant-switched", slug, ts: Date.now() });
+          bc.close();
+        } catch { /* BroadcastChannel no disponible */ }
       } catch { /* fallback: assertTenantOwnership en /admin lo cubrirá */ }
-      // FIX 2026-05 (audit): antes abrimos /admin → el proxy podía resolver
-      // a "main" si las cookies de sesión no llegaban a la nueva pestaña
-      // (sameSite=strict + window.open edge cases). Ahora /t/{slug}/admin
-      // fuerza el slug-route handler del proxy, que setea x-tenant-id por
-      // URL y reescribe internamente a /admin. Funciona aunque cookies
-      // estén stale.
-      window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
+      // Cache-busting query (_fresh) garantiza que Next no sirva HTML cacheado
+      // de un tenant previo y que assertTenantOwnership detecte el switch.
+      // /t/{slug}/admin fuerza al proxy a setear x-tenant-id por URL.
+      window.open(
+        `/t/${encodeURIComponent(slug)}/admin?_fresh=${Date.now()}`,
+        "_blank",
+      );
     } catch { showToast("Error de red", false); }
   }, [showToast]);
 

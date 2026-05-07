@@ -22,14 +22,14 @@ function buildActions(slug: string): QuickAction[] {
       description: "Atiende los pedidos pendientes",
       href: "/admin?tab=pedidos",
       icon: Package,
-      color: "bg-[var(--data-warning)] hover:bg-[var(--data-warning)]",
+      color: "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]",
     },
     {
       label: "Cargar producto",
       description: "Agrega un nuevo producto",
       href: "/admin?tab=productos",
       icon: PlusSquare,
-      color: "bg-primary hover:bg-teal-500",
+      color: "bg-primary hover:bg-[var(--accent)]",
     },
     {
       label: "Ver mi tienda",

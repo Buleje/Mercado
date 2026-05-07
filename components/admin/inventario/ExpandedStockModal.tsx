@@ -186,7 +186,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
-                          noStock ? "bg-[var(--data-error)]" : lowStock ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]"
+                          noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
                         )} />
                         <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[220px]">{p.name}</span>
                       </div>
@@ -198,9 +198,9 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Stock */}
                     <td className="px-4 py-3">
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-                        noStock ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]" :
-                        lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]" :
-                        "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        noStock ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
+                        lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
+                        "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                       )}>
                         {noStock && <AlertTriangle className="h-3 w-3" />}
                         {p.stock ?? 0}
@@ -223,9 +223,9 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                       {p.margin ? (
                         <div className="flex flex-col">
                           <span className={cn("text-xs font-bold",
-                            p.margin.pct >= 30 ? "text-[var(--data-success)]" :
-                            p.margin.pct >= 15 ? "text-[var(--data-warning)]" :
-                            "text-[var(--data-error)]"
+                            p.margin.pct >= 30 ? "text-[var(--data-success-500)]" :
+                            p.margin.pct >= 15 ? "text-[var(--data-warning-500)]" :
+                            "text-[var(--data-error-500)]"
                           )}>
                             {p.margin.pct.toFixed(0)}%
                           </span>
@@ -241,19 +241,19 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Movimiento (sin movimiento / con movimiento) */}
                     <td className="px-4 py-3">
                       {p.daysSinceMove === null ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]">
                           Nunca vendido
                         </span>
                       ) : noMovement ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]">
                           <TrendingDown className="h-3 w-3" /> {p.daysSinceMove}d sin mov.
                         </span>
                       ) : recentMove ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
                           <TrendingUp className="h-3 w-3" /> Hace {p.daysSinceMove}d
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]">
                           Hace {p.daysSinceMove}d
                         </span>
                       )}
@@ -263,10 +263,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     <td className="px-4 py-3">
                       {(() => {
                         const spw = p.salesWeek;
-                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]">Rápido</span>;
+                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/30 dark:text-[var(--data-warning-500)]">Rápido</span>;
                         if (spw >= 3) return <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Normal</span>;
-                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/30 dark:text-[var(--data-warning)]">Lento</span>;
-                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">Sin rotar</span>;
+                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/30 dark:text-[var(--data-warning-500)]">Lento</span>;
+                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]">Sin rotar</span>;
                         return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
                       })()}
                     </td>
@@ -287,10 +287,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         {/* Footer summary */}
         <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
           <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{filtered.length} productos</span>
-          <span className="text-[var(--data-error)] font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
-          <span className="text-[var(--data-error)] font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>
-          <span className="text-[var(--data-warning)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct < 15).length} margen bajo (&lt;15%)</span>
-          <span className="text-[var(--data-success)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct >= 30).length} margen alto (&gt;30%)</span>
+          <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
+          <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>
+          <span className="text-[var(--data-warning-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct < 15).length} margen bajo (&lt;15%)</span>
+          <span className="text-[var(--data-success-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct >= 30).length} margen alto (&gt;30%)</span>
         </div>
       </div>
     </div>

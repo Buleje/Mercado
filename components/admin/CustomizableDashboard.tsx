@@ -61,28 +61,28 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "ventas-hoy":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">S/ 0.00</p>
+          <p className="text-3xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">S/ 0.00</p>
           <p className="text-xs text-[var(--text-tertiary)]">Cargando datos…</p>
         </div>
       );
     case "pedidos-pendientes":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">0</p>
+          <p className="text-3xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">0</p>
           <p className="text-xs text-[var(--text-tertiary)]">pedidos esperando</p>
         </div>
       );
     case "stock-bajo":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">0</p>
+          <p className="text-3xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">0</p>
           <p className="text-xs text-[var(--text-tertiary)]">productos con stock critico</p>
         </div>
       );
     case "fiados-pendientes":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">S/ 0.00</p>
+          <p className="text-3xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">S/ 0.00</p>
           <p className="text-xs text-[var(--text-tertiary)]">por cobrar</p>
         </div>
       );
@@ -123,7 +123,7 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "clientes-nuevos":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">0</p>
+          <p className="text-3xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">0</p>
           <p className="text-xs text-[var(--text-tertiary)]">esta semana</p>
         </div>
       );
@@ -294,7 +294,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
                 onClick={() => toggleVisibility(widget.id)}
                 className={`p-1.5 rounded-lg transition-colors ${
                   widget.visible
-                    ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                    ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
                     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 }`}
                 aria-label={widget.visible ? "Ocultar" : "Mostrar"}
@@ -350,7 +350,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
           <p className="text-sm">Todos los widgets estan ocultos.</p>
           <button
             onClick={() => setEditMode(true)}
-            className="mt-2 text-[var(--data-success)] text-sm underline"
+            className="mt-2 text-[var(--data-success-500)] text-sm underline"
           >
             Personalizar para mostrarlos
           </button>

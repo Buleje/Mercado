@@ -121,7 +121,7 @@ export default function MarketplaceBrandingTab() {
 
   if (error && !state) {
     return (
-      <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+      <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 p-6 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
         {error}
       </div>
     );

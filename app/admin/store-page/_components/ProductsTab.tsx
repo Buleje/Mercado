@@ -270,7 +270,7 @@ function OverrideRow({
         <p className="text-xs text-[var(--text-secondary)]">
           Precio base: <span className="font-mono">S/{override.productBasePrice.toFixed(2)}</span>
           {override.savingsPercent != null && override.savingsPercent > 0 && (
-            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold">
+            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">
               -{override.savingsPercent}%
             </span>
           )}
@@ -335,7 +335,7 @@ function OverrideRow({
         title="Destacado"
         className={`p-2 rounded-lg transition-colors ${
           override.featured
-            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30"
+            ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30"
             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
         }`}
       >
@@ -355,7 +355,7 @@ function OverrideRow({
         title={override.visible ? "Visible" : "Oculto"}
         className={`p-2 rounded-lg transition-colors ${
           override.visible
-            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
         }`}
       >
@@ -369,7 +369,7 @@ function OverrideRow({
       <button
         onClick={() => onRemove(override.productId)}
         title="Eliminar"
-        className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/20"
+        className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/20"
       >
         <Trash2 className="w-4 h-4" />
       </button>

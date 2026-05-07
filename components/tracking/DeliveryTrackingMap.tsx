@@ -47,10 +47,10 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; icon: React.ElementType; step: number }
 > = {
-  assigned:  { label: "Asignado",  color: "text-amber-600 dark:text-amber-400",   icon: Clock,        step: 1 },
-  picked_up: { label: "Recogido",  color: "text-emerald-600 dark:text-emerald-400",     icon: Package,      step: 2 },
-  en_camino: { label: "En camino", color: "text-[#00B4A6] dark:text-teal-400",    icon: Navigation,   step: 3 },
-  delivered: { label: "Entregado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle, step: 4 },
+  assigned:  { label: "Asignado",  color: "text-[var(--data-warning-600)] dark:text-amber-400",   icon: Clock,        step: 1 },
+  picked_up: { label: "Recogido",  color: "text-[var(--data-success-600)] dark:text-emerald-400",     icon: Package,      step: 2 },
+  en_camino: { label: "En camino", color: "text-[var(--accent)] dark:text-teal-400",    icon: Navigation,   step: 3 },
+  delivered: { label: "Entregado", color: "text-[var(--data-success-600)] dark:text-emerald-400", icon: CheckCircle, step: 4 },
 };
 
 function getStatusConfig(status: string) {
@@ -195,7 +195,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
         const riderIcon = L.divIcon({
           className: "delivery-rider-marker",
           html: `<div style="
-            background:#00B4A6;color:white;
+            background:var(--accent);color:white;
             width:40px;height:40px;border-radius:50%;
             display:flex;align-items:center;justify-content:center;
             font-size:18px;border:3px solid white;
@@ -258,7 +258,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
         }
         polylineRef.current = L.polyline(
           [[riderLat, riderLng], [dLat, dLng]],
-          { color: "#00B4A6", weight: 2, opacity: 0.6, dashArray: "8 6" }
+          { color: "var(--accent)", weight: 2, opacity: 0.6, dashArray: "8 6" }
         ).addTo(map);
 
         // Ajustar vista para mostrar ambos marcadores
@@ -281,8 +281,8 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
   if (error) {
     return (
       <div className={cn("flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/30 dark:bg-red-900/10", className)}>
-        <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <AlertCircle className="h-5 w-5 shrink-0 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-600)] dark:text-red-400">{error}</p>
       </div>
     );
   }
@@ -298,14 +298,14 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       {/* Status badge + info del repartidor */}
       <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
-            <Bike className="h-5 w-5 text-[#00B4A6]" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20">
+            <Bike className="h-5 w-5 text-[var(--accent)]" />
           </div>
           <div>
             <p className="font-bold text-gray-900 dark:text-white">{data.partnerName}</p>
             <a
               href={`tel:${data.partnerPhone}`}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#00B4A6] dark:text-gray-400"
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--accent)] dark:text-gray-400"
             >
               <Phone className="h-3.5 w-3.5" />
               {data.partnerPhone}
@@ -335,15 +335,15 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                 <div className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
                   isActive
-                    ? "bg-[#00B4A6] text-white"
+                    ? "bg-[var(--accent)] text-white"
                     : "bg-gray-200 text-gray-400 dark:bg-gray-700",
-                  isCurrent && "ring-2 ring-[#00B4A6] ring-offset-2 dark:ring-offset-gray-900",
+                  isCurrent && "ring-2 ring-[var(--accent)] ring-offset-2 dark:ring-offset-gray-900",
                 )}>
                   <StepIcon className="h-3.5 w-3.5" />
                 </div>
                 <span className={cn(
                   "whitespace-nowrap text-[length:var(--ts-2xs)] font-medium",
-                  isActive ? "text-[#00B4A6]" : "text-gray-400 dark:text-gray-600",
+                  isActive ? "text-[var(--accent)]" : "text-gray-400 dark:text-gray-600",
                 )}>
                   {cfg.label}
                 </span>
@@ -352,7 +352,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                 <div className={cn(
                   "mx-1 h-0.5 flex-1 rounded-full transition-colors",
                   cfg.step < statusCfg.step
-                    ? "bg-[#00B4A6]"
+                    ? "bg-[var(--accent)]"
                     : "bg-gray-200 dark:bg-gray-700",
                 )} />
               )}
@@ -364,12 +364,12 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       {/* Mapa */}
       {isDelivered ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-12 dark:border-emerald-900/30 dark:bg-emerald-900/10">
-          <CheckCircle className="h-12 w-12 text-emerald-500" />
-          <p className="text-center font-bold text-emerald-700 dark:text-emerald-400">
+          <CheckCircle className="h-12 w-12 text-[var(--data-success-500)]" />
+          <p className="text-center font-bold text-[var(--data-success-700)] dark:text-emerald-400">
             Pedido entregado exitosamente
           </p>
           {data.deliveredAt && (
-            <p className="text-center text-sm text-emerald-600 dark:text-emerald-500">
+            <p className="text-center text-sm text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
               Entregado a las {formatTime(data.deliveredAt)}
             </p>
           )}
@@ -393,7 +393,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
               </span>
             )}
             {!data.trackingLat && (
-              <span className="text-amber-500 dark:text-amber-400">
+              <span className="text-[var(--data-warning-500)] dark:text-amber-400">
                 Esperando ubicación del repartidor...
               </span>
             )}

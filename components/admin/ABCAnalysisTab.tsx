@@ -9,9 +9,9 @@ import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 
 const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
-  A: { badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", row: "bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)]", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
-  B: { badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",   row: "bg-[var(--data-warning-50)]/20 dark:bg-[var(--data-warning)]/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
-  C: { badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
+  A: { badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", row: "bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)]", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
+  B: { badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",   row: "bg-[var(--data-warning-50)]/20 dark:bg-[var(--data-warning-500)]/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
+  C: { badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
 };
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }

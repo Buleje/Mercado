@@ -205,7 +205,7 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
               </button>
               <button
                 onClick={confirmAndClose}
-                className="flex-1 py-2 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                className="flex-1 py-2 rounded-xl text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-600)] transition-colors"
               >
                 Cerrar
               </button>

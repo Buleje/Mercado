@@ -48,7 +48,7 @@ export default function POSFrequentProducts({
   return (
     <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--data-warning-50)]/30 dark:bg-amber-950/10">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <TrendingUp className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+        <TrendingUp className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
           Más vendidos hoy
         </span>
@@ -65,12 +65,12 @@ export default function POSFrequentProducts({
                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                 outOfStock
                   ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
-                  : "bg-white dark:bg-card border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5"
+                  : "bg-white dark:bg-card border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5"
               )}
             >
               <span className="truncate max-w-24">{p.name}</span>
               <span className="text-primary font-bold">{fmt(p.price)}</span>
-              <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] font-bold">
+              <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] font-bold">
                 x{p.soldToday}
               </span>
             </button>

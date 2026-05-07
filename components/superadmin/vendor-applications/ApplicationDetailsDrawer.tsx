@@ -92,10 +92,10 @@ export function ApplicationDetailsDrawer({
   };
 
   const statusStyles = {
-    pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-    aprobada: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-    rechazada: "bg-[var(--data-error-100)] text-[var(--data-error)]",
-    info_solicitada: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+    pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+    aprobada: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+    rechazada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+    info_solicitada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
   };
 
   const statusLabels = {
@@ -117,7 +117,7 @@ export function ApplicationDetailsDrawer({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-900 z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
@@ -184,12 +184,12 @@ export function ApplicationDetailsDrawer({
                 <p className="text-xs text-gray-500">Funcionalidades</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   {application.hasDelivery && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-success-100)] text-[var(--data-success)]">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-success-100)] text-[var(--data-success-500)]">
                       Delivery
                     </span>
                   )}
                   {application.hasPos && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-info-100)] text-[var(--data-info)]">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-info-100)] text-[var(--data-info-500)]">
                       POS
                     </span>
                   )}
@@ -239,22 +239,22 @@ export function ApplicationDetailsDrawer({
 
           {/* Motivos previos */}
           {application.rejectReason && (
-            <div className="p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl">
-              <p className="text-xs font-bold text-[var(--data-error)] uppercase tracking-wide mb-1">Motivo de rechazo</p>
-              <p className="text-sm text-[var(--data-error)]">{application.rejectReason}</p>
+            <div className="p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl">
+              <p className="text-xs font-bold text-[var(--data-error-500)] uppercase tracking-wide mb-1">Motivo de rechazo</p>
+              <p className="text-sm text-[var(--data-error-500)]">{application.rejectReason}</p>
             </div>
           )}
           {application.requestedInfo && (
-            <div className="p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl">
-              <p className="text-xs font-bold text-[var(--data-info)] uppercase tracking-wide mb-1">Info solicitada</p>
-              <p className="text-sm text-[var(--data-info)]">{application.requestedInfo}</p>
+            <div className="p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl">
+              <p className="text-xs font-bold text-[var(--data-info-500)] uppercase tracking-wide mb-1">Info solicitada</p>
+              <p className="text-sm text-[var(--data-info-500)]">{application.requestedInfo}</p>
             </div>
           )}
 
           {/* Forms de acción */}
           {rejecting && (
-            <div className="space-y-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl">
-              <div className="flex items-start gap-2 text-xs text-[var(--data-error)]">
+            <div className="space-y-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl">
+              <div className="flex items-start gap-2 text-xs text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>El solicitante recibirá un email con el motivo. Podrá volver a aplicar luego.</p>
               </div>
@@ -276,7 +276,7 @@ export function ApplicationDetailsDrawer({
                 <button
                   onClick={handleReject}
                   disabled={!reason.trim()}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50"
                 >
                   Confirmar rechazo
                 </button>
@@ -285,8 +285,8 @@ export function ApplicationDetailsDrawer({
           )}
 
           {requestingInfo && (
-            <div className="space-y-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl">
-              <div className="flex items-start gap-2 text-xs text-[var(--data-info)]">
+            <div className="space-y-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl">
+              <div className="flex items-start gap-2 text-xs text-[var(--data-info-500)]">
                 <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>El solicitante recibirá un email con tu mensaje y podrá completar la info faltante.</p>
               </div>
@@ -308,7 +308,7 @@ export function ApplicationDetailsDrawer({
                 <button
                   onClick={handleRequestInfo}
                   disabled={!info.trim()}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-info)] hover:bg-[var(--data-info)] disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-info-500)] hover:bg-[var(--data-info-500)] disabled:opacity-50"
                 >
                   Enviar solicitud
                 </button>
@@ -321,7 +321,7 @@ export function ApplicationDetailsDrawer({
             <div className="space-y-2 pt-2">
               <button
                 onClick={() => onApprove(application.id)}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-success)] hover:bg-[var(--data-success)] transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)] transition-colors"
               >
                 <CheckCircle className="h-4 w-4" />
                 Aprobar solicitud
@@ -329,14 +329,14 @@ export function ApplicationDetailsDrawer({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setRequestingInfo(true)}
-                  className="inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-info)] bg-[var(--data-info-50)] hover:bg-[var(--data-info-100)] transition-colors"
+                  className="inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-info-500)] bg-[var(--data-info-50)] hover:bg-[var(--data-info-100)] transition-colors"
                 >
                   <MessageSquare className="h-4 w-4" />
                   Solicitar info
                 </button>
                 <button
                   onClick={() => setRejecting(true)}
-                  className="inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                  className="inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
                 >
                   <X className="h-4 w-4" />
                   Rechazar

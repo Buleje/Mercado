@@ -145,7 +145,7 @@ export default function SavedFiltersTab() {
             <Plus className="h-4 w-4" /> Nuevo filtro
           </button>
           {filters.length > 0 && (
-            <button onClick={() => setFilters([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setFilters([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -168,7 +168,7 @@ export default function SavedFiltersTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Usos totales</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] mt-1">{filters.reduce((s, f) => s + f.usageCount, 0)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] mt-1">{filters.reduce((s, f) => s + f.usageCount, 0)}</p>
         </div>
       </div>
 
@@ -237,10 +237,10 @@ export default function SavedFiltersTab() {
                 <button onClick={() => handleToggleDefault(f.id)} className={cn("p-1.5 rounded-lg transition-colors", f.isDefault ? "text-primary hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")} title={f.isDefault ? "Quitar default" : "Marcar default"}>
                   <Play className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
-                  {copiedId === f.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success)]" /> : <Copy className="h-3.5 w-3.5" />}
+                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                  {copiedId === f.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
-                <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+                <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -292,7 +292,7 @@ export default function SavedFiltersTab() {
                       </select>
                       <input type="text" value={cond.value} onChange={e => updateCondition(i, "value", e.target.value)} placeholder="Valor" className="flex-1 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary" />
                       {newConditions.length > 1 && (
-                        <button onClick={() => removeCondition(i)} className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><X className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => removeCondition(i)} className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
                       )}
                     </div>
                   ))}

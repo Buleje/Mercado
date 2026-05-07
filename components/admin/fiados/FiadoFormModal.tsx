@@ -94,28 +94,28 @@ export default function FiadoFormModal({
                       </div>
                     ) : clienteResumen ? (
                       clienteResumen.bloqueado ? (
-                        <div className="border-2 border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 space-y-1">
-                          <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Cliente bloqueado por morosidad</p>
-                          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+                        <div className="border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 space-y-1">
+                          <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Cliente bloqueado por morosidad</p>
+                          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             {clienteResumen.nombre} tiene deudas vencidas hace más de 60 días. Deuda actual: {formatCurrency(clienteResumen.deudaActual)}
                           </p>
                         </div>
                       ) : (
                         <div className={cn(
                           "border-2 rounded-xl p-3 space-y-1.5",
-                          clienteResumen.score >= 4 ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
-                          clienteResumen.score === 3 ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/20" :
-                          "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20"
+                          clienteResumen.score >= 4 ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
+                          clienteResumen.score === 3 ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20" :
+                          "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
                         )}>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-[var(--text-primary)]">{clienteResumen.nombre}</span>
-                            <span className="text-xs text-[var(--data-warning)]">{clienteResumen.score}/5</span>
+                            <span className="text-xs text-[var(--data-warning-500)]">{clienteResumen.score}/5</span>
                           </div>
                           <p className="text-xs text-[var(--text-secondary)]">
                             Historial: {clienteResumen.pagados} fiados pagados de {clienteResumen.total} total
                           </p>
                           <p className="text-xs text-[var(--text-secondary)]">
-                            Deuda actual: <span className="font-bold text-[var(--data-error)]">{formatCurrency(clienteResumen.deudaActual)}</span>
+                            Deuda actual: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(clienteResumen.deudaActual)}</span>
                           </p>
                           <p className="text-xs text-[var(--text-secondary)]">
                             Limite: {formatCurrency(clienteResumen.limite)} · Disponible: <span className="font-bold">{formatCurrency(Math.max(0, clienteResumen.limite - clienteResumen.deudaActual))}</span>
@@ -197,7 +197,7 @@ export default function FiadoFormModal({
                           <button
                             type="button"
                             onClick={() => setDniPhoto(null)}
-                            className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-[var(--data-error)] text-white rounded-full flex items-center justify-center text-xs hover:bg-[var(--data-error)] transition-colors"
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-[var(--data-error-500)] text-white rounded-full flex items-center justify-center text-xs hover:bg-[var(--data-error-500)] transition-colors"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -229,8 +229,8 @@ export default function FiadoFormModal({
                   )}
 
                 {createError && (
-                  <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]/30 px-4 py-3">
-                    <p className="text-sm text-[var(--data-error)] font-semibold">{createError}</p>
+                  <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 px-4 py-3">
+                    <p className="text-sm text-[var(--data-error-500)] font-semibold">{createError}</p>
                   </div>
                 )}
         </div>

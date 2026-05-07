@@ -92,9 +92,9 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
             className={cn(
               "text-xs font-medium",
               item.stock === 0
-                ? "text-red-500"
+                ? "text-[var(--data-error-500)]"
                 : item.stock <= 5
-                  ? "text-amber-500"
+                  ? "text-[var(--data-warning-500)]"
                   : "text-green-600 dark:text-green-400"
             )}
           >
@@ -113,7 +113,7 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
       <button
         onClick={onRemove}
         aria-label={`Quitar ${item.name} de la comparacion`}
-        className="mt-auto rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+        className="mt-auto rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-[var(--data-error-600)] transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
       >
         Quitar
       </button>

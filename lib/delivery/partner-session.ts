@@ -15,7 +15,14 @@ const ENC = new TextEncoder();
 const ACCESS_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getSecret(): string {
-  return process.env.AUTH_SECRET ?? "dev-fallback-secret-min-32-chars-1234";
+  // SECURITY 2026-05-06 (audit delivery #19): fail-closed si AUTH_SECRET no
+  // está configurado. Antes el fallback `dev-fallback-secret-...` permitía
+  // forjar tokens en prod si la env var faltaba por error de deploy.
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("[partner-session] AUTH_SECRET no configurado (mínimo 32 chars)");
+  }
+  return secret;
 }
 
 async function signHmac(secret: string, data: string): Promise<Uint8Array> {

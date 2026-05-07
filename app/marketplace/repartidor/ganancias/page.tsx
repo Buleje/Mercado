@@ -164,7 +164,7 @@ export default function GananciasRepartidorPage() {
             tone="info"
           />
           <Stat
-            icon={<TrendIcon className="h-6 w-6 text-[var(--data-success)]" />}
+            icon={<TrendIcon className="h-6 w-6 text-[var(--data-success-500)]" />}
             label="Promedio"
             value={`S/ ${totals.avgFee.toFixed(2)}`}
             tone="success"
@@ -219,7 +219,7 @@ export default function GananciasRepartidorPage() {
                     <div
                       className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${
                         delivered
-                          ? "bg-[var(--data-success)]/10 text-[var(--data-success)]"
+                          ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                           : "bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]"
                       }`}
                     >
@@ -248,7 +248,7 @@ export default function GananciasRepartidorPage() {
                       </p>
                       <p
                         className={`text-xs font-extrabold uppercase tracking-wider mt-0.5 ${
-                          delivered ? "text-[var(--data-success)]" : "text-[var(--brand-secondary)]"
+                          delivered ? "text-[var(--data-success-500)]" : "text-[var(--brand-secondary)]"
                         }`}
                       >
                         {delivered ? "Pagado" : "Pendiente"}
@@ -288,7 +288,7 @@ function Stat({
   const ring: Record<typeof tone, string> = {
     accent: "bg-[var(--accent-soft)]",
     info: "bg-[var(--brand-info)]/10",
-    success: "bg-[var(--data-success)]/10",
+    success: "bg-[var(--data-success-500)]/10",
     amber: "bg-[var(--brand-secondary)]/10",
   } as const;
   return (

@@ -7,6 +7,7 @@ import type { OrderFilters, FiltersAction } from "../types";
 const initialFilters: OrderFilters = {
   statuses: new Set<OrderStatus>(),
   paymentMethod: "",
+  source: "",
   dateFrom: "",
   dateTo: "",
   amountMin: "",
@@ -22,6 +23,8 @@ function filtersReducer(state: OrderFilters, action: FiltersAction): OrderFilter
       return { ...state, statuses: action.statuses };
     case "SET_PAYMENT_METHOD":
       return { ...state, paymentMethod: action.value };
+    case "SET_SOURCE":
+      return { ...state, source: action.value };
     case "SET_DATE_FROM":
       return { ...state, dateFrom: action.value };
     case "SET_DATE_TO":
@@ -49,6 +52,7 @@ export function useOrdersFilters() {
   const activeFiltersCount =
     filters.statuses.size +
     (filters.paymentMethod ? 1 : 0) +
+    (filters.source ? 1 : 0) +
     (filters.dateFrom ? 1 : 0) +
     (filters.dateTo ? 1 : 0) +
     (filters.amountMin ? 1 : 0) +

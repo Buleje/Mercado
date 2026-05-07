@@ -25,7 +25,7 @@ const PALETTES: Record<
   aniversario:    { bg: "#F5F3FF", ink: "#5B21B6", muted: "#C4B5FD" },
   gracias:        { bg: "#F0F9FF", ink: "#075985", muted: "#7DD3FC" },
   "anio-nuevo":   { bg: "#EEF2FF", ink: "#3730A3", muted: "#A5B4FC" },
-  bienvenida:     { bg: "#F0FDFA", ink: "#115E59", muted: "#5EEAD4" },
+  bienvenida:     { bg: "#F0FDFA", ink: "#115E59", muted: "color-mix(in oklab, var(--accent) 60%, white)" },
   general:        { bg: "#F8FAFC", ink: "#334155", muted: "#CBD5E1" },
 };
 

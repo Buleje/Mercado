@@ -50,6 +50,20 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
+    // SECURITY 2026-05-05 (audit webhooks #5): defense-in-depth.
+    // Solo replay si el record viene de un enqueue genuino (eventType
+    // empieza con "stripe."). Si alguien con acceso a DB inyecta un payload
+    // con eventType arbitrario, lo descartamos. La firma original ya fue
+    // validada en el handler primario (`webhook/route.ts`) antes del enqueue.
+    if (!event.id || event.id !== record.stripeId) {
+      logger.warn("[webhook-replay] stripeId mismatch — payload tampered?", {
+        id: record.id, recordStripeId: record.stripeId, payloadId: event.id,
+      });
+      await recordReplayFailure(record.id, record.attempts, "stripeId mismatch — possible tampering");
+      failed++;
+      continue;
+    }
+
     try {
       await processStripeEvent(event);
       await markWebhookProcessed(record.stripeId);

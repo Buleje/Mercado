@@ -18,6 +18,8 @@ export interface TenantSubscriptionFields {
   plan: string;
   trialEndsAt: Date | null;
   stripeSubscriptionId: string | null;
+  /** Fin del período actual de Stripe — para detectar suscripciones huérfanas. */
+  stripeCurrentPeriodEnd?: Date | null;
   mpSubscriptionId: string | null;
   /** Reservado para ADR-084 cuando la migración corra. Hoy: undefined. */
   suspendedAt?: Date | null;
@@ -40,9 +42,18 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
  * Determinístico — solo depende de los campos pasados + Date.now().
  */
 export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
+  const now = Date.now();
   // 1. Plan pagado vía Stripe.
+  // SECURITY 2026-05-06 (pentest billing #3): exigir `stripeCurrentPeriodEnd
+  // > now`. Antes, si Stripe no enviaba `customer.subscription.deleted` (queue
+  // stuck), el tenant quedaba con plan paid eterno. Ahora si el período
+  // expiró, downgrade automático aunque el webhook no haya llegado.
   if (t.stripeSubscriptionId && t.plan !== "free") {
-    return { kind: "paid", provider: "stripe" };
+    const periodEnd = t.stripeCurrentPeriodEnd ? new Date(t.stripeCurrentPeriodEnd).getTime() : 0;
+    if (periodEnd > now) {
+      return { kind: "paid", provider: "stripe" };
+    }
+    // Período vencido sin renovación — caer a trial expirado.
   }
   // 2. Plan pagado vía Mercado Pago.
   if (t.mpSubscriptionId && t.plan !== "free") {

@@ -1,5 +1,6 @@
 import "server-only";
 import nodemailer from "nodemailer";
+import { escapeHtml } from "@/lib/email/escape-html";
 
 /**
  * Sends a new-order notification email.
@@ -59,21 +60,28 @@ export async function sendOrderNotification(order: {
   const paymentLabel =
     order.paymentMethod === "yape" ? "Yape" : order.paymentMethod === "efectivo" ? "Efectivo" : order.paymentMethod ?? "—";
 
+  // SECURITY 2026-05-06 (audit email #2): escapar campos del cliente.
+  // Antes `customerName` con HTML/links se inyectaba al inbox del dueño.
+  const safeName = escapeHtml(order.customerName);
+  const safePhone = escapeHtml(order.customerPhone ?? "");
+  const safeLocation = escapeHtml(order.customerLocation);
+  const safeTenantName = escapeHtml(tenantName).replace(/"/g, "");
+
   await transporter.sendMail({
-    from: `"${tenantName}" <${smtpUser}>`,
+    from: `"${safeTenantName}" <${smtpUser}>`,
     to: notifyEmail,
-    subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
+    subject: `🛒 Nuevo pedido — ${safeName} — S/${order.total.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
         <div style="background:#00B4A6;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Nuevo pedido recibido</h2>
-          <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${order.id}</p>
+          <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${escapeHtml(order.id)}</p>
         </div>
         <div style="padding:20px 24px;background:#f9fafb;">
           <h3 style="margin:0 0 8px;font-size:15px;color:#111;">Cliente</h3>
-          <p style="margin:0;font-size:14px;color:#333;"><strong>${order.customerName}</strong></p>
-          ${order.customerPhone ? `<p style="margin:2px 0;font-size:13px;color:#666;">📞 ${order.customerPhone}</p>` : ""}
-          <p style="margin:2px 0;font-size:13px;color:#666;">📍 ${order.customerLocation}</p>
+          <p style="margin:0;font-size:14px;color:#333;"><strong>${safeName}</strong></p>
+          ${order.customerPhone ? `<p style="margin:2px 0;font-size:13px;color:#666;">📞 ${safePhone}</p>` : ""}
+          <p style="margin:2px 0;font-size:13px;color:#666;">📍 ${safeLocation}</p>
           <p style="margin:4px 0 0;font-size:13px;color:#666;">💳 Pago: <strong>${paymentLabel}</strong></p>
         </div>
         <div style="padding:16px 24px;">

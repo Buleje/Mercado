@@ -34,7 +34,7 @@ export default async function PagosYapePage() {
             Pagos Yape pendientes
             {initialCount > 0 && (
               <span
-                className="inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded-full bg-[var(--data-warning)] text-white text-xs font-extrabold px-2"
+                className="inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-extrabold px-2"
                 aria-label={`${initialCount} pendientes`}
               >
                 {initialCount}

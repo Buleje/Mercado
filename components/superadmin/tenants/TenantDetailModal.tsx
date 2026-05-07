@@ -106,14 +106,14 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
     try {
       const cred = JSON.parse(savedCredentials) as SavedCredential;
       return (
-        <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-700/40 rounded-lg p-3 space-y-2">
+        <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-[var(--accent-dark)]/40 rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] uppercase tracking-wider">Credenciales guardadas</span>
-            {cred.savedAt && <span className="text-[length:var(--ts-xs)] text-teal-500">{new Date(cred.savedAt).toLocaleDateString("es-PE")}</span>}
+            {cred.savedAt && <span className="text-[length:var(--ts-xs)] text-[var(--accent)]">{new Date(cred.savedAt).toLocaleDateString("es-PE")}</span>}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div><span className="text-teal-500 text-[length:var(--ts-xs)]">Usuario</span><p className="font-mono text-teal-800 dark:text-teal-200">{cred.username}</p></div>
-            <div><span className="text-teal-500 text-[length:var(--ts-xs)]">Contraseña</span><p className="font-mono text-teal-800 dark:text-teal-200">{showPass ? cred.password : "••••••"}</p></div>
+            <div><span className="text-[var(--accent)] text-[length:var(--ts-xs)]">Usuario</span><p className="font-mono text-teal-800 dark:text-teal-200">{cred.username}</p></div>
+            <div><span className="text-[var(--accent)] text-[length:var(--ts-xs)]">Contraseña</span><p className="font-mono text-teal-800 dark:text-teal-200">{showPass ? cred.password : "••••••"}</p></div>
           </div>
         </div>
       );
@@ -128,7 +128,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-teal-500" /> {t.name}
+              <Building2 className="w-5 h-5 text-[var(--accent)]" /> {t.name}
             </h2>
             <p className="text-gray-500 text-xs mt-1 font-mono">{t.slug}</p>
             {t.ownerEmail && <p className="text-[var(--text-tertiary)] text-xs mt-0.5">{t.ownerEmail}</p>}
@@ -147,9 +147,9 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
           {[
             { value: t._count.AdminUser, label: "Usuarios", color: "text-[var(--text-primary)]" },
             { value: t.usage?.products ?? 0, label: "Productos", color: "text-[var(--text-primary)]" },
-            { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-[var(--data-success)]" },
-            { value: fmtMoney(t.monthRevenue ?? 0), label: "Ventas/mes", color: "text-[var(--data-success)]" },
-            { value: fmtMoney(t.monthProfit ?? 0), label: "Ganancia", color: (t.monthProfit ?? 0) >= 0 ? "text-teal-600" : "text-[var(--data-error)]" },
+            { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-[var(--data-success-500)]" },
+            { value: fmtMoney(t.monthRevenue ?? 0), label: "Ventas/mes", color: "text-[var(--data-success-500)]" },
+            { value: fmtMoney(t.monthProfit ?? 0), label: "Ganancia", color: (t.monthProfit ?? 0) >= 0 ? "text-[var(--accent-dark)]" : "text-[var(--data-error-500)]" },
           ].map(({ value, label, color }) => (
             <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center">
               <div className={`text-lg font-bold ${color}`}>{value}</div>
@@ -190,7 +190,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
                 <span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Contraseña</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-gray-500">{showPass ? "Encriptada — usar reset o guardar manual" : "••••••••"}</p>
-                  <button type="button" onClick={() => setShowPass((v) => !v)} className="text-gray-400 hover:text-teal-500">
+                  <button type="button" onClick={() => setShowPass((v) => !v)} className="text-gray-400 hover:text-[var(--accent)]">
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -206,12 +206,12 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
               <button type="button" onClick={handleCopyInfo} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
                 <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
               </button>
-              <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/40 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-semibold disabled:opacity-50">
+              <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/40 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-semibold disabled:opacity-50">
                 {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reset contraseña
               </button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <button type="button" onClick={handleSaveCredentials} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-success-50)] dark:bg-[var(--data-success)]/40 border border-[var(--data-success)] dark:border-[var(--data-success)]/40 text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-semibold hover:bg-[var(--data-success-100)] dark:hover:bg-[var(--data-success)]/60">
+              <button type="button" onClick={handleSaveCredentials} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/40 border border-[var(--data-success-500)] dark:border-[var(--data-success-500)]/40 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-semibold hover:bg-[var(--data-success-100)] dark:hover:bg-[var(--data-success-500)]/60">
                 <KeyRound className="w-3.5 h-3.5" /> Guardar credenciales
               </button>
               {savedCredentials && (
@@ -221,7 +221,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
               )}
             </div>
             {resetResult && (
-              <div className="text-xs bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-700/40 text-[var(--accent)] rounded-lg px-3 py-2 font-mono">
+              <div className="text-xs bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-[var(--accent-dark)]/40 text-[var(--accent)] rounded-lg px-3 py-2 font-mono">
                 {resetResult}
               </div>
             )}
@@ -246,14 +246,14 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
                 <div key={label}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-[var(--text-secondary)]">{label}</span>
-                    <span className={full ? "text-[var(--data-error)] font-bold" : warn ? "text-[var(--data-warning)]" : "text-gray-400"}>
+                    <span className={full ? "text-[var(--data-error-500)] font-bold" : warn ? "text-[var(--data-warning-500)]" : "text-gray-400"}>
                       {used.toLocaleString("es-PE")} / {unlimited(max)}
                     </span>
                   </div>
                   <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                     {max === -1
                       ? <div className="h-full bg-gray-300 dark:bg-gray-600/30 rounded-full w-full" />
-                      : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error)]" : warn ? "bg-[var(--data-warning)]" : "bg-teal-500"}`} style={{ width: `${p}%` }} />
+                      : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error-500)]" : warn ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]"}`} style={{ width: `${p}%` }} />
                     }
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
             ))}
           </div>
           {t.cancelAtPeriodEnd && (
-            <div className="flex items-center gap-2 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs bg-[var(--data-warning-50)] dark:bg-orange-950/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs bg-[var(--data-warning-50)] dark:bg-orange-950/30 rounded-lg px-3 py-2">
               <AlertTriangle className="w-4 h-4" /> Esta tienda cancelará al final del periodo.
             </div>
           )}
@@ -289,7 +289,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
         {t.customDomain && (
           <div className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2 text-xs">
             <span className="text-gray-400">Dominio personalizado</span>
-            <p className="text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold flex items-center gap-1.5 mt-0.5">
+            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold flex items-center gap-1.5 mt-0.5">
               <Globe className="w-4 h-4" /> {t.customDomain}
             </p>
           </div>

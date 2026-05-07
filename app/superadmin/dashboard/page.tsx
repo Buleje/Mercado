@@ -210,7 +210,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => void loadData()}
-              className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)] underline hover:no-underline"
+              className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error-500)] underline hover:no-underline"
             >
               Reintentar
             </button>

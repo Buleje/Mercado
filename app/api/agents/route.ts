@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tenantId = req.headers.get("x-tenant-id") || "main";
+    // SECURITY 2026-05-06: tenantId del JWT (no header) para evitar impersonation
+    // cross-tenant. El header x-tenant-id puede venir cruzado en ciertos flows
+    // (sticky session de un tenant previo). El JWT es la fuente de verdad.
+    const tenantId = admin.tenantId;
     const { domain, action, payload, priority } = parsed.data;
 
     logger.info("[agents] POST /api/agents — submitTask", {
@@ -104,6 +107,8 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
+    const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
+    if (admin instanceof NextResponse) return admin;
     const url = new URL(req.url);
     const rawQuery = {
       domain: url.searchParams.get("domain") ?? undefined,
@@ -126,7 +131,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const tenantId = req.headers.get("x-tenant-id") || "main";
+    // SECURITY 2026-05-06: tenantId del JWT (no header) para evitar impersonation
+    // cross-tenant. El header x-tenant-id puede venir cruzado en ciertos flows
+    // (sticky session de un tenant previo). El JWT es la fuente de verdad.
+    const tenantId = admin.tenantId;
     const { domain, status: taskStatus, limit } = parsed.data;
 
     logger.info("[agents] GET /api/agents — getHistory", {

@@ -403,18 +403,21 @@ export function AdminSidebar({
       case "buleje":
       case "shaded": // alias legacy → buleje
       case "cristal":
+        // Halo y bordes derivados de var(--accent) vía color-mix → cambian con el preset.
+        // El gradient navy base se mantiene (es la identidad oscura del sidebar buleje),
+        // pero el HALO superior, los bordes y el active state respetan el accent activo.
         return {
-          // Halo radial teal en el top + gradient slate-deep base.
-          bg: "bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,rgba(0,180,166,0.10)_0%,transparent_60%),linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] dark:bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,rgba(0,180,166,0.08)_0%,transparent_60%),linear-gradient(180deg,#050e15_0%,#040a10_50%,#03070d_100%)]",
+          // Halo radial accent en el top + gradient slate-deep base.
+          bg: "bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,color-mix(in_oklab,var(--accent)_18%,transparent)_0%,transparent_60%),linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] dark:bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,color-mix(in_oklab,var(--accent)_14%,transparent)_0%,transparent_60%),linear-gradient(180deg,#050e15_0%,#040a10_50%,#03070d_100%)]",
           // 70% white sobre slate-900 ≈ 9:1 AAA body.
           text: "text-white/70",
           // Hover gradient horizontal sutil — sensación de luz al pasar mouse.
           hover: "hover:bg-linear-to-r hover:from-white/[0.06] hover:to-white/[0.02] hover:text-white",
-          // Borde teal hairline sutil — separa del shell sin pelearse.
-          border: "border-[rgba(0,180,166,0.15)]",
-          // Active premium: gradient pill + texto blanco + ring teal-bright + glow exterior + barra inset 4px.
-          activeItem: "bg-linear-to-r from-[rgba(52,212,190,0.28)] via-[rgba(0,180,166,0.18)] to-[rgba(0,180,166,0.06)] text-white font-semibold shadow-[inset_4px_0_0_#34d4be,0_2px_16px_-2px_rgba(52,212,190,0.4)] ring-1 ring-inset ring-[rgba(52,212,190,0.22)]",
-          headerBorder: "border-[rgba(0,180,166,0.2)]",
+          // Borde accent hairline — separa del shell respetando el preset.
+          border: "border-[color-mix(in_oklab,var(--accent)_25%,transparent)]",
+          // Active premium: gradient pill + texto blanco + ring accent + glow + barra inset 4px.
+          activeItem: "bg-linear-to-r from-[color-mix(in_oklab,var(--accent)_42%,transparent)] via-[color-mix(in_oklab,var(--accent)_28%,transparent)] to-[color-mix(in_oklab,var(--accent)_10%,transparent)] text-white font-semibold shadow-[inset_4px_0_0_var(--accent),0_2px_16px_-2px_color-mix(in_oklab,var(--accent)_55%,transparent)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_35%,transparent)]",
+          headerBorder: "border-[color-mix(in_oklab,var(--accent)_30%,transparent)]",
         };
       case "dark":
         return {
@@ -431,7 +434,7 @@ export function AdminSidebar({
           text: "text-[var(--text-secondary)]",
           hover: "hover:bg-[var(--accent-soft)]/40 hover:text-[var(--text-primary)]",
           border: "border-[var(--rule-soft)] dark:border-card-border",
-          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_rgba(0,180,166,0.2)]",
+          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
           headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
         };
     }
@@ -579,7 +582,7 @@ export function AdminSidebar({
         inventario: "text-amber-300/90",
         compras: "text-orange-300/90",
         finanzas: "text-emerald-300/90",
-        clientes: "text-[var(--data-error)]/90",
+        clientes: "text-[var(--data-error-500)]/90",
         "marketplace-ops": "text-fuchsia-300/90",
         analytics: "text-cyan-300/90",
         comunicacion: "text-teal-300/90",
@@ -591,13 +594,13 @@ export function AdminSidebar({
         dashboard: "text-primary",
         ventas: "text-sky-600",
         productos: "text-[var(--accent)]",
-        inventario: "text-amber-600",
+        inventario: "text-[var(--data-warning-600)]",
         compras: "text-orange-600",
-        finanzas: "text-emerald-600",
-        clientes: "text-[var(--data-error)]",
+        finanzas: "text-[var(--data-success-600)]",
+        clientes: "text-[var(--data-error-500)]",
         "marketplace-ops": "text-fuchsia-600",
         analytics: "text-cyan-600",
-        comunicacion: "text-teal-600",
+        comunicacion: "text-[var(--accent-dark)]",
         documentos: "text-slate-600",
         "mi-tienda": "text-pink-600",
         metas: "text-yellow-600",
@@ -615,7 +618,7 @@ export function AdminSidebar({
   /* Accent color → active bar hex (para drop-shadow glow).
      Los classes Tailwind con arbitrary values aceptan hex literal. */
   const ACCENT_HEX: Record<AccentColor, string> = {
-    teal:    "#00B4A6",
+    teal:    "var(--accent)",
     emerald: "#10B981",
     sky:     "#0EA5E9",
     violet:  "#8B5CF6",
@@ -668,7 +671,7 @@ export function AdminSidebar({
           {activeTenantLogo ? (
             <div className={cn(
               "relative shrink-0",
-              isDarkTheme && "drop-shadow-[0_0_12px_rgba(52,212,190,0.25)]"
+              isDarkTheme && "drop-shadow-[0_0_12px_color-mix(in oklab, var(--accent) 25%, transparent)]"
             )}>
               <Image
                 src={activeTenantLogo}
@@ -678,7 +681,7 @@ export function AdminSidebar({
                 className={cn(
                   "h-10 w-10 rounded-xl object-cover",
                   isDarkTheme
-                    ? "ring-1 ring-[rgba(52,212,190,0.3)]"
+                    ? "ring-1 ring-[color-mix(in_oklab,var(--accent)_45%,transparent)]"
                     : "ring-2 ring-gray-100 dark:ring-card-border",
                 )}
               />
@@ -687,7 +690,7 @@ export function AdminSidebar({
             <div className={cn(
               "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
               isDarkTheme
-                ? "bg-linear-to-br from-[rgba(0,180,166,0.28)] to-[rgba(52,212,190,0.06)] ring-1 ring-[rgba(52,212,190,0.32)] text-[#5eead4] shadow-[0_0_16px_-2px_rgba(0,180,166,0.3)]"
+                ? "bg-linear-to-br from-[color-mix(in_oklab,var(--accent)_42%,transparent)] to-[color-mix(in_oklab,var(--accent)_8%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_50%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] shadow-[0_0_16px_-2px_color-mix(in_oklab,var(--accent)_45%,transparent)]"
                 : "bg-linear-to-br from-primary/15 to-primary/5 ring-1 ring-primary/20 text-primary",
             )}>
               <BulejeMark size={22} strokeWidth={1.75} />
@@ -713,7 +716,7 @@ export function AdminSidebar({
                 <span className={cn(
                   "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
                   isDarkTheme
-                    ? "bg-[rgba(52,212,190,0.14)] text-[#5eead4] ring-1 ring-inset ring-[rgba(52,212,190,0.25)]"
+                    ? "bg-[color-mix(in oklab, var(--accent) 14%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] ring-1 ring-inset ring-[color-mix(in oklab, var(--accent) 25%, transparent)]"
                     : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
                 )}>
                   {userRole}
@@ -778,7 +781,7 @@ export function AdminSidebar({
                       <span className={cn(
                         "text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
                         isDarkTheme
-                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[#5eead4]"
+                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[color-mix(in oklab, var(--accent) 60%, white)]"
                           : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                       )}>
                         {sectionLabel}
@@ -786,7 +789,7 @@ export function AdminSidebar({
                       <span className={cn(
                         "flex-1 ml-2 h-px",
                         isDarkTheme
-                          ? "bg-linear-to-r from-[rgba(52,212,190,0.18)] to-transparent"
+                          ? "bg-linear-to-r from-[color-mix(in oklab, var(--accent) 18%, transparent)] to-transparent"
                           : "bg-linear-to-r from-[var(--rule-soft)] to-transparent"
                       )} />
                     </button>
@@ -846,14 +849,14 @@ export function AdminSidebar({
                       <DisplayIcon className={cn(
                         "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
                         isActive
-                          ? (isDarkTheme ? "text-[#5eead4] drop-shadow-[0_0_6px_rgba(52,212,190,0.5)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]")
+                          ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)] drop-shadow-[0_0_6px_color-mix(in oklab, var(--accent) 50%, transparent)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")
                           : iconColor
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
 
                       {totalAlerts > 0 && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error)] text-white leading-none animate-pulse">
+                        <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
                           {totalAlerts}
                         </span>
                       )}
@@ -866,7 +869,7 @@ export function AdminSidebar({
                           <ChevronRight className={cn(
                             "h-3.5 w-3.5 shrink-0 transition-colors",
                             isActive
-                              ? (isDarkTheme ? "text-[#5eead4]" : "text-[var(--data-success)]")
+                              ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--data-success-500)]")
                               : (isDarkTheme ? "text-white/35 group-hover:text-white/60" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]")
                           )} />
                         </m.div>
@@ -924,12 +927,12 @@ export function AdminSidebar({
                                   <SubIcon className={cn(
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
                                     isSubActive
-                                      ? (isDarkTheme ? "text-[#5eead4]" : "text-[var(--data-success)]")
+                                      ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--data-success-500)]")
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
                                   {subAlertCount > 0 && (
-                                    <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error)] text-white leading-none ml-auto animate-pulse">
+                                    <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}
                                     </span>
                                   )}
@@ -962,12 +965,12 @@ export function AdminSidebar({
                 )}
               >
                 {tab === id && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,180,166,0.5)]" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_oklab,var(--accent)_60%,transparent)]" />
                 )}
-                <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success)]" : "")} />
+                <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success-500)]" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
                 {alertCount > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error)] text-white leading-none animate-pulse">
+                  <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
                     {alertCount}
                   </span>
                 )}
@@ -999,7 +1002,7 @@ export function AdminSidebar({
                   {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
                   <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
                   {alertCount > 0 && (
-                    <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-[var(--data-error)] text-white leading-none animate-pulse">
+                    <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}

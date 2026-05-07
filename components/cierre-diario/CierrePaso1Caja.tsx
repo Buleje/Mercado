@@ -87,7 +87,7 @@ export default function CierrePaso1Caja({
               }`}
             >
               <span className={`text-lg font-bold ${
-                d.tipo === "billete" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+                d.tipo === "billete" ? "text-[var(--data-success-700)] dark:text-emerald-400" : "text-[var(--data-warning-600)] dark:text-amber-400"
               }`}>
                 {formatDenom(d.valor)}
               </span>
@@ -166,7 +166,7 @@ export default function CierrePaso1Caja({
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-muted">Diferencia:</span>
               <span className={`font-bold text-lg ${
-                diferencia > 0 ? "text-emerald-600" : diferencia < 0 ? "text-red-500" : "text-gray-600 dark:text-foreground"
+                diferencia > 0 ? "text-[var(--data-success-600)]" : diferencia < 0 ? "text-[var(--data-error-500)]" : "text-gray-600 dark:text-foreground"
               }`}>
                 {diferencia >= 0 ? "+" : ""}S/ {diferencia.toFixed(2)}
               </span>

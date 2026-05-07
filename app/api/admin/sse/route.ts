@@ -1,22 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { sseAdminClients } from "@/lib/sse-emitter";
+import {
+  subscribeAdminSSE,
+  totalAdminSSEConnections,
+  tenantAdminSSEConnections,
+} from "@/lib/sse-emitter";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/admin/sse
- * Server-Sent Events stream for real-time admin notifications.
- * Events emitted: new_order, order_status_changed
+ * Server-Sent Events stream para admin notifications en tiempo real.
+ *
+ * SECURITY 2026-05-06 (audit notifs #1+#3+#10):
+ *  - Tenant-scoped: cada admin solo recibe eventos de su propio tenant.
+ *  - Rate limit STRICT por IP para frenar spam de conexiones.
+ *  - Cap global de 1000 conexiones + cap por tenant de 50 (anti DoS).
  */
 export async function GET(req: NextRequest) {
+  const rl = applyRateLimit(req, "STRICT", "admin-sse");
+  if (rl) return rl;
+
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
+  if (totalAdminSSEConnections() > 1000) {
+    return NextResponse.json({ error: "Capacity exceeded" }, { status: 503 });
+  }
+  if (tenantAdminSSEConnections(auth.tenantId) > 50) {
+    return NextResponse.json({ error: "Tenant capacity exceeded" }, { status: 503 });
+  }
+
   const encoder = new TextEncoder();
-  let send: ((data: string) => void) | undefined;
+  let unsubscribe: (() => void) | null = null;
 
   const stream = new ReadableStream({
     start(controller) {
-      send = (data: string) => {
+      const send = (data: string) => {
         try {
           controller.enqueue(encoder.encode(data));
         } catch {
@@ -24,7 +43,7 @@ export async function GET(req: NextRequest) {
         }
       };
 
-      sseAdminClients.add(send);
+      unsubscribe = subscribeAdminSSE(auth.tenantId, send);
 
       // Confirm connection
       controller.enqueue(encoder.encode(`: connected\n\n`));
@@ -40,12 +59,12 @@ export async function GET(req: NextRequest) {
 
       req.signal.addEventListener("abort", () => {
         clearInterval(ping);
-        if (send) sseAdminClients.delete(send);
+        unsubscribe?.();
         try { controller.close(); } catch { /* already closed */ }
       });
     },
     cancel() {
-      if (send) sseAdminClients.delete(send);
+      unsubscribe?.();
     },
   });
 

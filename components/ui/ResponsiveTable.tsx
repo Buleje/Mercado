@@ -88,7 +88,7 @@ function DesktopTable<T>({
     <div className="hidden sm:block overflow-x-auto rounded-xl border border-[var(--border-card-border,theme(colors.gray.200))]">
       <table className="w-full text-sm text-left text-[var(--text-foreground)]">
         <thead>
-          <tr className="border-b border-[var(--border-card-border,theme(colors.gray.200))] bg-[#00B4A6]/10 text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-300">
+          <tr className="border-b border-[var(--border-card-border,theme(colors.gray.200))] bg-[var(--accent)]/10 text-[var(--accent)] dark:bg-[var(--accent)]/20 dark:text-emerald-300">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -120,8 +120,8 @@ function DesktopTable<T>({
                   onClick={onRowClick ? () => onRowClick(item) : undefined}
                   className={`
                     border-b border-[var(--border-card-border,theme(colors.gray.100))]
-                    ${idx % 2 === 0 ? "bg-[var(--bg-card,white)] dark:bg-[var(--bg-card,#1a1a1a)]" : "bg-[#00B4A6]/[0.03] dark:bg-[#00B4A6]/[0.06]"}
-                    ${onRowClick ? "cursor-pointer hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20 transition-colors" : ""}
+                    ${idx % 2 === 0 ? "bg-[var(--bg-card,white)] dark:bg-[var(--bg-card,#1a1a1a)]" : "bg-[var(--accent)]/[0.03] dark:bg-[var(--accent)]/[0.06]"}
+                    ${onRowClick ? "cursor-pointer hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20 transition-colors" : ""}
                   `}
                 >
                   {columns.map((col) => (
@@ -184,7 +184,7 @@ function MobileCards<T>({
             rounded-xl border border-[var(--border-card-border,theme(colors.gray.200))]
             bg-[var(--bg-card,white)] dark:bg-[var(--bg-card,#1a1a1a)]
             p-4 space-y-2
-            ${onRowClick ? "cursor-pointer active:bg-[#00B4A6]/10 transition-colors" : ""}
+            ${onRowClick ? "cursor-pointer active:bg-[var(--accent)]/10 transition-colors" : ""}
           `}
         >
           {visibleCols.map((col) => (

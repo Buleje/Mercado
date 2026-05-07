@@ -120,6 +120,9 @@ export async function POST(req: NextRequest) {
       action: approval.action,
       payload: approval.payload,
       tenantId: approval.tenantId,
+      // SECURITY 2026-05-06 (audit AI #1): el approver autoriza con su rol;
+      // semánticamente correcto porque el HITL gate ya filtró el flujo.
+      actorRole: auth.role,
     });
 
     removePendingApproval(parsed.data.id);

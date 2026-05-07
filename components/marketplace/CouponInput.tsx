@@ -116,12 +116,12 @@ export default function CouponInput({
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Check className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 truncate">
+          <Check className="h-4 w-4 shrink-0 text-[var(--data-success-600)] dark:text-emerald-400" />
+          <span className="text-sm font-semibold text-[var(--data-success-700)] dark:text-emerald-300 truncate">
             {appliedCode}
           </span>
           {typeof appliedDiscount === "number" && appliedDiscount > 0 && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs text-[var(--data-success-600)] dark:text-emerald-400">
               -S/ {appliedDiscount.toFixed(2)}
             </span>
           )}
@@ -131,7 +131,7 @@ export default function CouponInput({
             type="button"
             onClick={handleRemove}
             disabled={disabled}
-            className="inline-flex items-center justify-center rounded-lg p-1.5 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
+            className="inline-flex items-center justify-center rounded-lg p-1.5 text-[var(--data-success-700)] hover:bg-emerald-100 disabled:opacity-50 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
             aria-label="Remover cupón"
           >
             <X className="h-4 w-4" />
@@ -186,7 +186,7 @@ export default function CouponInput({
       {error && (
         <p
           role="alert"
-          className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400"
+          className="mt-1.5 text-xs font-medium text-[var(--data-error-600)] dark:text-red-400"
         >
           {error}
         </p>

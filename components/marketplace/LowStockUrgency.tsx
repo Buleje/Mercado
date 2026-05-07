@@ -42,18 +42,18 @@ function getLevel(stock: number): Level | null {
 
 const LEVEL_STYLES: Record<Level, { container: string; icon: string; label: (n: number) => string }> = {
   1: {
-    container: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-900",
-    icon: "text-amber-600 dark:text-amber-400",
+    container: "bg-amber-50 dark:bg-amber-950/30 text-[var(--data-warning-700)] dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-900",
+    icon: "text-[var(--data-warning-600)] dark:text-amber-400",
     label: (n) => `Solo quedan ${n} unidades`,
   },
   2: {
-    container: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 ring-1 ring-red-200 dark:ring-red-900",
-    icon: "text-red-600 dark:text-red-400 motion-safe:animate-pulse",
+    container: "bg-red-50 dark:bg-red-950/30 text-[var(--data-error-700)] dark:text-red-300 ring-1 ring-red-200 dark:ring-red-900",
+    icon: "text-[var(--data-error-600)] dark:text-red-400 motion-safe:animate-pulse",
     label: (n) => `Solo ${n} unidades — se está agotando`,
   },
   3: {
     container: "bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-200 ring-1 ring-red-300 dark:ring-red-800 motion-safe:animate-pulse",
-    icon: "text-red-700 dark:text-red-300",
+    icon: "text-[var(--data-error-700)] dark:text-red-300",
     label: () => "Última unidad disponible",
   },
 };

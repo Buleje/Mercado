@@ -82,10 +82,10 @@ function exportCSV(rows: VendorApplication[]) {
 // ── Styles ──────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<VendorApplication["status"], string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
-  aprobada: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  rechazada: "bg-[var(--data-error-100)] text-[var(--data-error)]",
-  info_solicitada: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
+  aprobada: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  rechazada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+  info_solicitada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
 };
 
 const STATUS_LABELS: Record<VendorApplication["status"], string> = {
@@ -311,7 +311,7 @@ export default function VendorApplicationsModule() {
       </header>
 
       {error && (
-        <div className="rounded-xl border border-[var(--data-error)] bg-[var(--data-error)]/5 px-4 py-3 text-sm text-[var(--data-error)] flex items-center justify-between">
+        <div className="rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 px-4 py-3 text-sm text-[var(--data-error-500)] flex items-center justify-between">
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
@@ -363,7 +363,7 @@ export default function VendorApplicationsModule() {
             placeholder="Buscar por negocio, RUC, propietario o distrito..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] outline-none"
           />
         </div>
         <select
@@ -445,7 +445,7 @@ export default function VendorApplicationsModule() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelected(a)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-[var(--accent-dark)] hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />
@@ -454,21 +454,21 @@ export default function VendorApplicationsModule() {
                           <>
                             <button
                               onClick={() => handleApprove(a.id)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/20 transition-colors"
+                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 transition-colors"
                               title="Aprobar"
                             >
                               <Check className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => setSelected(a)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-info)] hover:bg-[var(--data-info-50)] dark:hover:bg-[var(--data-info)]/20 transition-colors"
+                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-info-500)] hover:bg-[var(--data-info-50)] dark:hover:bg-[var(--data-info-500)]/20 transition-colors"
                               title="Solicitar info"
                             >
                               <MessageSquare className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => setSelected(a)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                               title="Rechazar"
                             >
                               <X className="h-4 w-4" />

@@ -10,10 +10,10 @@ type TierStat = { name: string; minSpent: number; color: string; bgColor: string
 type PointsMovement = { id: string; customer: string; tier: string; action: "earn" | "redeem"; points: number; description: string; date: string };
 
 const TIER_CONFIG: Record<string, { color: string; bgColor: string; multiplier: number; perks: string[] }> = {
-  bronce:  { color: "bg-[var(--data-warning)]",  bgColor: "bg-amber-50 dark:bg-amber-950/20",  multiplier: 1,   perks: ["1 punto por S/1 gastado", "Descuento 2% en próxima compra"] },
+  bronce:  { color: "bg-[var(--data-warning-500)]",  bgColor: "bg-amber-50 dark:bg-amber-950/20",  multiplier: 1,   perks: ["1 punto por S/1 gastado", "Descuento 2% en próxima compra"] },
   plata:   { color: "bg-gray-400",   bgColor: "bg-[var(--surface-canvas)]/20",    multiplier: 1.5, perks: ["1.5 puntos por S/1", "Envío gratis +S/50", "Ofertas exclusivas"] },
-  oro:     { color: "bg-[var(--data-warning)]", bgColor: "bg-yellow-50 dark:bg-yellow-950/20",multiplier: 2,   perks: ["2 puntos por S/1", "Envío gratis siempre", "Atención prioritaria"] },
-  diamante:{ color: "bg-[var(--data-info)]",   bgColor: "bg-cyan-50 dark:bg-cyan-950/20",    multiplier: 3,   perks: ["3 puntos por S/1", "Envío gratis express", "Asesor personalizado", "Cumpleaños especial"] },
+  oro:     { color: "bg-[var(--data-warning-500)]", bgColor: "bg-yellow-50 dark:bg-yellow-950/20",multiplier: 2,   perks: ["2 puntos por S/1", "Envío gratis siempre", "Atención prioritaria"] },
+  diamante:{ color: "bg-[var(--data-info-500)]",   bgColor: "bg-cyan-50 dark:bg-cyan-950/20",    multiplier: 3,   perks: ["3 puntos por S/1", "Envío gratis express", "Asesor personalizado", "Cumpleaños especial"] },
 };
 
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
@@ -96,7 +96,7 @@ export default function PointsProgramTab() {
   );
   if (error) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error al cargar datos</p>
     </div>
   );
@@ -122,9 +122,9 @@ export default function PointsProgramTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Miembros totales",        value: totalMembers.toLocaleString(),        color: "text-[var(--data-success)]" },
-          { label: "Puntos acumulados",        value: totalPointsEmitidos.toLocaleString(), color: "text-[var(--data-success)]" },
-          { label: "Puntos canjeados (historial)", value: pointsRedeemed.toLocaleString(), color: "text-[var(--data-warning)]" },
+          { label: "Miembros totales",        value: totalMembers.toLocaleString(),        color: "text-[var(--data-success-500)]" },
+          { label: "Puntos acumulados",        value: totalPointsEmitidos.toLocaleString(), color: "text-[var(--data-success-500)]" },
+          { label: "Puntos canjeados (historial)", value: pointsRedeemed.toLocaleString(), color: "text-[var(--data-warning-500)]" },
           { label: "Puntos emitidos (historial)",  value: pointsEarned.toLocaleString(),   color: "text-[var(--text-secondary)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
@@ -239,7 +239,7 @@ export default function PointsProgramTab() {
             <div className="divide-y divide-gray-100 dark:divide-card-border">
               {movements.map(m => (
                 <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", m.action === "earn" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
+                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", m.action === "earn" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                     {m.action === "earn" ? <ArrowUp className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -247,7 +247,7 @@ export default function PointsProgramTab() {
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{m.description}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={cn("text-sm font-extrabold", m.action === "earn" ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>{m.action === "earn" ? "+" : "-"}{m.points} pts</p>
+                    <p className={cn("text-sm font-extrabold", m.action === "earn" ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>{m.action === "earn" ? "+" : "-"}{m.points} pts</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(m.date)}</p>
                   </div>
                 </div>

@@ -132,7 +132,7 @@ export function TenantCard({
         text: "Trial expirado",
         bg: "bg-red-50 dark:bg-red-950/40",
         border: "border-red-300 dark:border-red-800",
-        fg: "text-red-700 dark:text-red-300",
+        fg: "text-[var(--data-error-700)] dark:text-red-300",
         Icon: AlertTriangle,
       };
     }
@@ -141,7 +141,7 @@ export function TenantCard({
         text: `${daysLeft} día${daysLeft === 1 ? "" : "s"} restantes`,
         bg: "bg-amber-50 dark:bg-amber-950/40",
         border: "border-amber-300 dark:border-amber-800",
-        fg: "text-amber-700 dark:text-amber-300",
+        fg: "text-[var(--data-warning-700)] dark:text-amber-300",
         Icon: Clock,
       };
     }
@@ -149,7 +149,7 @@ export function TenantCard({
       text: `${daysLeft} días de prueba`,
       bg: "bg-emerald-50 dark:bg-emerald-950/40",
       border: "border-emerald-300 dark:border-emerald-800",
-      fg: "text-emerald-700 dark:text-emerald-300",
+      fg: "text-[var(--data-success-700)] dark:text-emerald-300",
       Icon: Clock,
     };
   })();
@@ -171,9 +171,9 @@ export function TenantCard({
                   setPendingModalOpen(true);
                 }}
                 title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver detalles`}
-                className="relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-red-500 text-white shadow-sm hover:bg-red-600 transition-colors"
+                className="relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-[var(--data-error-500)] text-white shadow-sm hover:bg-[var(--data-error-600)] transition-colors"
               >
-                <span aria-hidden className="absolute -inset-0.5 rounded-full bg-red-500/40 animate-ping pointer-events-none" />
+                <span aria-hidden className="absolute -inset-0.5 rounded-full bg-[var(--data-error-500)]/40 animate-ping pointer-events-none" />
                 <Bell className="relative w-3 h-3" strokeWidth={2.5} />
                 <span className="relative tabular-nums">{pendingCount}</span>
               </button>
@@ -240,14 +240,31 @@ export function TenantCard({
 
         {/* Avatar + Name + Status */}
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-[var(--surface-sunken)] text-[var(--text-primary)] font-bold text-base shrink-0 border border-[var(--rule-base)]">
+          {t.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- logo de tenant es URL externa o blob, no se puede usar next/image sin remotePatterns por host
+            <img
+              src={t.logoUrl}
+              alt={`Logo ${t.name}`}
+              className="w-12 h-12 rounded-lg object-cover shrink-0 border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+              onError={(e) => {
+                const el = e.currentTarget;
+                el.style.display = "none";
+                const fallback = el.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
+          ) : null}
+          <div
+            className="w-12 h-12 rounded-lg items-center justify-center bg-[var(--surface-sunken)] text-[var(--text-primary)] font-bold text-base shrink-0 border border-[var(--rule-base)]"
+            style={{ display: t.logoUrl ? "none" : "flex" }}
+          >
             {initials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="font-bold text-[var(--text-primary)] text-base truncate">{t.name}</div>
               <span
-                className={`w-2 h-2 rounded-full shrink-0 ${t.active ? "bg-[var(--data-success)]" : "bg-[var(--text-tertiary)]"}`}
+                className={`w-2 h-2 rounded-full shrink-0 ${t.active ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"}`}
                 title={t.active ? "Activo" : "Suspendido"}
               />
             </div>
@@ -345,9 +362,9 @@ export function TenantCard({
               <span
                 className={
                   totalUsagePct >= 100
-                    ? "text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)]"
                     : totalUsagePct >= 80
-                      ? "text-[var(--data-warning)]"
+                      ? "text-[var(--data-warning-500)]"
                       : "text-[var(--text-secondary)]"
                 }
               >
@@ -462,7 +479,7 @@ export function TenantCard({
             type="button"
             onClick={() => onDelete(t.slug, t.name)}
             disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title={t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
           >
             {actionLoading === `${t.slug}-delete` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

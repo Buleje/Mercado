@@ -356,7 +356,7 @@ export default function SubscribeAndSaveWidget({
               "w-full py-3 rounded-lg font-semibold text-[length:var(--ts-sm)]",
               "flex items-center justify-center gap-2 transition-opacity",
               subscribed
-                ? "bg-[var(--data-success)] text-white"
+                ? "bg-[var(--data-success-500)] text-white"
                 : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90",
               "disabled:cursor-default",
             )}

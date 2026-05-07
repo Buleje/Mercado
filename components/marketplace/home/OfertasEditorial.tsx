@@ -67,7 +67,7 @@ export default function OfertasEditorial() {
           {/* Banner editorial top */}
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 px-6 sm:px-10 py-8 sm:py-10 bg-linear-to-br from-[#fee2e2] via-[#ffedd5] to-[#fef3c7] border-b border-[var(--rule-soft)]">
             <div>
-              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error)] mb-3">
+              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-500)] mb-3">
                 <Flame className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                 Solo hoy
               </p>
@@ -125,7 +125,7 @@ export default function OfertasEditorial() {
                   href={`/marketplace/${d.storeSlug}/producto/${numId}`}
                   className="group relative p-4 sm:p-5 hover:bg-[var(--surface-sunken)] transition-colors"
                 >
-                  <span className="absolute top-3 left-3 z-10 inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-black tabular-nums">
+                  <span className="absolute top-3 left-3 z-10 inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-black tabular-nums">
                     -{d.discountPct}%
                   </span>
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-[var(--surface-sunken)] mb-3">

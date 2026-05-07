@@ -215,7 +215,7 @@ export function AddedToCartDrawerProvider({
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* ── Header — banner verde con check animado ──────────── */}
-                <div className="relative bg-gradient-to-br from-[var(--data-success)]/10 via-[var(--accent-soft)] to-[var(--accent-soft)] px-5 py-4">
+                <div className="relative bg-gradient-to-br from-[var(--data-success-500)]/10 via-[var(--accent-soft)] to-[var(--accent-soft)] px-5 py-4">
                   <button
                     onClick={close}
                     aria-label="Cerrar"
@@ -229,17 +229,17 @@ export function AddedToCartDrawerProvider({
                     <span className="relative inline-flex h-11 w-11 items-center justify-center shrink-0">
                       <m.span
                         aria-hidden
-                        className="absolute inset-0 rounded-full bg-[var(--data-success)]/30"
+                        className="absolute inset-0 rounded-full bg-[var(--data-success-500)]/30"
                         initial={{ scale: 0.6, opacity: 0.8 }}
                         animate={{ scale: 1.6, opacity: 0 }}
                         transition={{ duration: 0.9, ease: "easeOut" }}
                       />
-                      <span className="relative h-11 w-11 rounded-full bg-[var(--data-success)] inline-flex items-center justify-center shadow-md">
+                      <span className="relative h-11 w-11 rounded-full bg-[var(--data-success-500)] inline-flex items-center justify-center shadow-md">
                         <Check className="h-5 w-5 text-white" strokeWidth={3} aria-hidden />
                       </span>
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[0.1em] text-[var(--data-success)]">
+                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[0.1em] text-[var(--data-success-500)]">
                         ¡Listo!
                       </p>
                       <h2
@@ -356,7 +356,7 @@ export function AddedToCartDrawerProvider({
                             }
                             close();
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft,rgba(0,180,166,0.08))] px-3 h-8 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)]/15 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft,color-mix(in oklab, var(--accent) 8%, transparent))] px-3 h-8 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)]/15 transition-colors"
                         >
                           <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} />
                           Editar

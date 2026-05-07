@@ -402,7 +402,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
               <span
                 className={
                   "text-base font-extrabold tabular-nums " +
-                  (proyPct >= 100 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")
+                  (proyPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")
                 }
               >
                 {proyPct}%
@@ -416,10 +416,10 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             className={
               "h-full rounded-full transition-all duration-700 ease-out " +
               (metaPct >= 75
-                ? "bg-linear-to-r from-[var(--data-success)] to-emerald-400"
+                ? "bg-linear-to-r from-[var(--data-success-500)] to-emerald-400"
                 : metaPct >= 40
                   ? "bg-linear-to-r from-primary to-[var(--data-6)]"
-                  : "bg-linear-to-r from-[var(--data-warning)] to-amber-400")
+                  : "bg-linear-to-r from-[var(--data-warning-500)] to-amber-400")
             }
             style={{ width: `${Math.max(2, metaPct)}%` }}
           />
@@ -623,21 +623,21 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
 
       {/* ── FOOTER: alerta de comisión pendiente ──────────────────── */}
       {data.myCommission > 0 && (
-        <div className="rounded-2xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-6 py-5 flex items-center gap-4 flex-wrap shadow-sm">
-          <span className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] shrink-0">
+        <div className="rounded-2xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-6 py-5 flex items-center gap-4 flex-wrap shadow-sm">
+          <span className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] shrink-0">
             <DollarSign className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
+            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
               Comisión pendiente
             </p>
-            <p className="font-display text-lg sm:text-xl font-extrabold text-[var(--data-warning)] tabular-nums tracking-tight mt-0.5">
+            <p className="font-display text-lg sm:text-xl font-extrabold text-[var(--data-warning-500)] tabular-nums tracking-tight mt-0.5">
               S/ {data.myCommission.toFixed(2)} <span className="text-sm font-semibold text-[var(--text-secondary)] tracking-normal">pendientes de liquidación al marketplace</span>
             </p>
           </div>
           <a
             href="/admin?module=negocio&section=marketplace&tab=comisiones"
-            className="text-sm font-extrabold text-[var(--data-warning)] underline underline-offset-2 hover:opacity-80 shrink-0"
+            className="text-sm font-extrabold text-[var(--data-warning-500)] underline underline-offset-2 hover:opacity-80 shrink-0"
           >
             Ver detalle →
           </a>

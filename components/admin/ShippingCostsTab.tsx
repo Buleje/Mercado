@@ -147,10 +147,10 @@ export default function ShippingCostsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Ingreso delivery (mes)", value: fmt(kpis.totalRevenue), color: "text-[var(--data-success)]", icon: TrendingUp },
-          { label: "Pedidos con envío",       value: kpis.totalOrders,       color: "text-[var(--data-success)]",    icon: BarChart3 },
+          { label: "Ingreso delivery (mes)", value: fmt(kpis.totalRevenue), color: "text-[var(--data-success-500)]", icon: TrendingUp },
+          { label: "Pedidos con envío",       value: kpis.totalOrders,       color: "text-[var(--data-success-500)]",    icon: BarChart3 },
           { label: "Envíos gratis",            value: kpis.totalFree,         color: "text-[var(--text-secondary)]",  icon: TrendingDown },
-          { label: "Costo prom. pagado",       value: fmt(kpis.avgCost),      color: "text-[var(--data-warning)]",   icon: DollarSign },
+          { label: "Costo prom. pagado",       value: fmt(kpis.avgCost),      color: "text-[var(--data-warning-500)]",   icon: DollarSign },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
@@ -182,7 +182,7 @@ export default function ShippingCostsTab() {
                     <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{r.zone}</h4>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                       r.active
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                         : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted"
                     )}>
                       {r.active ? "Activa" : "Inactiva"}
@@ -199,7 +199,7 @@ export default function ShippingCostsTab() {
                     </div>
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Gratis desde</p>
-                      <p className="text-sm font-bold text-[var(--data-success)]">{r.freeAbove ? fmt(r.freeAbove) : "No aplica"}</p>
+                      <p className="text-sm font-bold text-[var(--data-success-500)]">{r.freeAbove ? fmt(r.freeAbove) : "No aplica"}</p>
                     </div>
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted flex items-center gap-1">
@@ -220,7 +220,7 @@ export default function ShippingCostsTab() {
                   <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary transition">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => deleteRule(r.id)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition">
+                  <button onClick={() => deleteRule(r.id)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -261,7 +261,7 @@ export default function ShippingCostsTab() {
                       <MapPin className="h-3.5 w-3.5 text-primary shrink-0" /> {s.zone}
                     </td>
                     <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{s.orders}</td>
-                    <td className="px-4 py-3 text-right font-bold text-[var(--data-success)]">{fmt(s.revenue)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-[var(--data-success-500)]">{fmt(s.revenue)}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(s.avgFee)}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] font-semibold">{s.freeCount}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted text-xs">{pct(s.freeCount, s.orders)}</td>

@@ -6,6 +6,7 @@ import {
   Users, BarChart3, Eye, Trash2, RefreshCw, BookTemplate, ChevronDown, FileDown,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { useSettings } from "@/contexts/settings-context";
 
 // ─── Message template type (from /api/message-templates) ─────────────────────
 interface MsgTemplate {
@@ -89,10 +90,10 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
 };
 const STATUS_COLOR: Record<CampaignStatus, string> = {
   borrador: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-  programada: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  activa: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  programada: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  activa: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   completada: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 const SEGMENT_LABEL: Record<AudienceSegment, string> = {
   todos: "Todos los clientes", vip: "Clientes VIP", inactivos: "Clientes inactivos (+30 días)", cumpleanos: "Cumpleaños este mes", deudores: "Con saldo pendiente",
@@ -101,8 +102,8 @@ const CHANNEL_LABEL: Record<CampaignChannel, string> = {
   whatsapp: "WhatsApp", inapp: "In-App", ambos: "WhatsApp + In-App",
 };
 const CHANNEL_COLOR: Record<CampaignChannel, string> = {
-  whatsapp: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  inapp: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",
+  whatsapp: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  inapp: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/30 dark:text-[var(--data-info-500)]",
   ambos: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
@@ -256,6 +257,10 @@ function CreateModal({ onClose, onSave }: ModalProps) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function CampañasTab() {
+  const { businessName, storeTheme } = useSettings();
+  const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
+    || businessName?.trim()
+    || "Tu Tienda";
   const [campaigns, setCampaigns] = useState<Campaign[]>(SEED);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | "todas">("todas");
@@ -401,7 +406,7 @@ export default function CampañasTab() {
     // Header
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("Buleje", 14, 16);
+    doc.text(storeName, 14, 16);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
@@ -532,11 +537,11 @@ export default function CampañasTab() {
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" />{c.status === "completada" ? `${c.delivered} entregados` : `~${c.totalAudience} destinatarios`}</span>
                   {c.status === "completada" && <>
                     <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{Math.round(c.opened / Math.max(c.delivered, 1) * 100)}% apertura</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-[var(--data-success)]" />{c.conversions} conv.</span>
-                    {c.revenue > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">{fmt(c.revenue)}</span>}
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-[var(--data-success-500)]" />{c.conversions} conv.</span>
+                    {c.revenue > 0 && <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">{fmt(c.revenue)}</span>}
                   </>}
                   {c.scheduledAt && c.status === "programada" && (
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[var(--data-success)]" />Prog. {fmtDate(c.scheduledAt)}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[var(--data-success-500)]" />Prog. {fmtDate(c.scheduledAt)}</span>
                   )}
                   <span>{fmtDate(c.createdAt)}</span>
                 </div>
@@ -551,7 +556,7 @@ export default function CampañasTab() {
                     Enviar
                   </button>
                 )}
-                <button onClick={() => handleDelete(c.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors">
+                <button onClick={() => handleDelete(c.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -618,7 +623,7 @@ export default function CampañasTab() {
               {detail.scheduledAt && <p className="text-xs text-[var(--text-secondary)] dark:text-muted"><Clock className="h-3 w-3 inline mr-1" />Programado: {fmtDate(detail.scheduledAt)}</p>}
             </div>
             <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 flex-wrap">
-              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-lg text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/10">Eliminar</button>
+              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-lg text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10">Eliminar</button>
               <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
                 <FileDown className="h-4 w-4" /> PDF
               </button>

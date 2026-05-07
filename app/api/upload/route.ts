@@ -5,14 +5,19 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
+// SECURITY 2026-05-06 (audit storefront H02): SVG REMOVIDO de allowlist.
+// SVG sirve scripts inline; al servirse con `Content-Type: image/svg+xml`
+// desde el bucket público de Supabase, abrir la URL directamente ejecuta
+// JS arbitrario (XSS stored). Mantener solo formatos raster.
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const BUCKET = "media";
 const MAX_WIDTH = 1200;
 // [SECURITY] Allowlist contra path traversal — admin malicioso o XSS
 // no puede escribir cross-tenant con folder="../otro-tenant".
 const ALLOWED_FOLDERS = new Set([
-  "products", "logos", "brand", "general",
+  "products", "logos", "brand", "branding", "general",
   "image-bank", "media", "covers", "banners", "superadmin",
+  "hero",
 ]);
 
 export async function POST(req: NextRequest) {

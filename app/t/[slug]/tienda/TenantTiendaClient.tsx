@@ -28,6 +28,7 @@ import CategoryBubbles from "@/components/CategoryBubbles";
 import TiendaSections from "@/components/TiendaSections";
 import TiendaHero from "@/components/store/TiendaHero";
 import TrustBar from "@/components/store/TrustBar";
+import StoreBaseTheme from "@/components/store/StoreBaseTheme";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 
 const ProductCatalog = dynamic(() => import("@/components/ProductCatalog"));
@@ -87,10 +88,25 @@ export default function TenantTiendaClient({
     hydrateStoreProductsCache(slug, products);
   }, [slug, products]);
 
+  // Ocultar los breadcrumbs globales que se inyectan desde el layout/shell —
+  // Brandon (2026-05-05) pidió que el hero arranque pegado al nav. Marca el
+  // body con `tenant-storefront` y app/globals.css aplica `display: none`.
+  useEffect(() => {
+    document.body.classList.add("tenant-storefront");
+    return () => {
+      document.body.classList.remove("tenant-storefront");
+    };
+  }, []);
+
   const visibleSet = new Set<string>(visibleSections);
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* Concepto de diseño base — fundación moderna para que los temas custom
+          se apliquen mejor encima. Sistema cohesivo de tipografía, espaciado,
+          sombras coloreadas y transitions consistentes. */}
+      <StoreBaseTheme />
+
       {/* Barra de anuncios (respeta config admin — se oculta sola si disabled). */}
       <AnnouncementBar />
 

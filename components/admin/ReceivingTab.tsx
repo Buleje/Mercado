@@ -47,18 +47,18 @@ type Reception = {
 };
 
 const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
-  programada:   { label: "Programada",  color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  "en-proceso": { label: "En proceso",  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  parcial:      { label: "Parcial",     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  rechazada:    { label: "Rechazada",   color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  "en-proceso": { label: "En proceso",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  parcial:      { label: "Parcial",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  rechazada:    { label: "Rechazada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string }> = {
-  ok:       { label: "OK",       color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  "dañado": { label: "Dañado",   color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20" },
-  vencido:  { label: "Vencido",  color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
-  faltante: { label: "Faltante", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
+  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  "dañado": { label: "Dañado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" },
+  vencido:  { label: "Vencido",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  faltante: { label: "Faltante", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 };
 
 function fmtDate(iso: string) {
@@ -255,9 +255,9 @@ export default function ReceivingTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Programadas",      value: stats.scheduled,    icon: ClipboardList, color: "text-[var(--text-primary)]"  },
-          { label: "En proceso",       value: stats.inProgress,   icon: ScanLine,      color: "text-[var(--data-warning)]"  },
-          { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success)]"  },
-          { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]" },
+          { label: "En proceso",       value: stats.inProgress,   icon: ScanLine,      color: "text-[var(--data-warning-500)]"  },
+          { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success-500)]"  },
+          { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
@@ -353,11 +353,11 @@ export default function ReceivingTab() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {r.nonConformities > 0 ? (
-                          <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] text-xs font-bold px-2 py-0.5 rounded-full">
+                          <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
                             {r.nonConformities}
                           </span>
                         ) : discrepancies.length === 0 ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success)] mx-auto" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
                         ) : null}
                       </td>
                       <td className="px-4 py-3">
@@ -397,7 +397,7 @@ export default function ReceivingTab() {
 
             {/* Discrepancy alert */}
             {getDiscrepancies(detail.items).length > 0 && (
-              <div className="flex items-start gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error)] dark:text-[var(--data-error)] px-3 py-2 rounded-xl">
+              <div className="flex items-start gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-3 py-2 rounded-xl">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 <span>
                   <strong>{getDiscrepancies(detail.items).length} discrepancia{getDiscrepancies(detail.items).length !== 1 ? "s" : ""}</strong> detectadas en esta recepción.
@@ -423,7 +423,7 @@ export default function ReceivingTab() {
                       <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] dark:text-foreground">{it.product}</td>
                       <td className="px-3 py-2.5 text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
                       <td className={cn("px-3 py-2.5 font-bold text-center",
-                        it.receivedQty < it.expectedQty ? "text-[var(--data-error)]" : "text-[var(--data-success)]"
+                        it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
                       )}>
                         {it.receivedQty}
                         {it.receivedQty !== it.expectedQty && (
@@ -447,10 +447,10 @@ export default function ReceivingTab() {
                 <span className="flex items-center gap-1"><Camera className="h-4 w-4" /> {detail.photos} fotos</span>
               )}
               {detail.nonConformities > 0 && (
-                <span className="flex items-center gap-1 text-[var(--data-error)]"><XCircle className="h-4 w-4" /> {detail.nonConformities} no conformidades</span>
+                <span className="flex items-center gap-1 text-[var(--data-error-500)]"><XCircle className="h-4 w-4" /> {detail.nonConformities} no conformidades</span>
               )}
               {detail.nonConformities === 0 && (
-                <span className="flex items-center gap-1 text-[var(--data-success)]"><CheckCircle2 className="h-4 w-4" /> Sin no conformidades</span>
+                <span className="flex items-center gap-1 text-[var(--data-success-500)]"><CheckCircle2 className="h-4 w-4" /> Sin no conformidades</span>
               )}
             </div>
           </div>
@@ -546,7 +546,7 @@ export default function ReceivingTab() {
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
                       placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs" />
                     {checklist.length > 1 && (
-                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition">
+                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}

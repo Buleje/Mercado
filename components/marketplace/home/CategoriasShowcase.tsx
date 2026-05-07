@@ -89,7 +89,7 @@ export default function CategoriasShowcase() {
                   "group relative overflow-hidden rounded-2xl",
                   "border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
                   "transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)]/30",
-                  "hover:shadow-[0_12px_32px_-16px_rgba(0,180,166,0.18)]",
+                  "hover:shadow-[0_12px_32px_-16px_color-mix(in oklab, var(--accent) 18%, transparent)]",
                 )}
               >
                 {/* Visual top — gradient surface sutil + dot accent */}

@@ -256,6 +256,32 @@ export const BundlesDB = {
     return (await prisma.bundle.findMany({ where: { active: true, tenantId }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
   async add(data: { name: string; description?: string; price: number; image?: string; tenantId: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
+    // SECURITY 2026-05-06 (audit promotions #5): validar que TODOS los
+    // productos del bundle pertenezcan al tenant. Antes admin de A podía
+    // armar bundle con productIds de tenant B → exponía catálogo ajeno.
+    const productIds = [...new Set(data.items.map((i) => i.productId))];
+    if (productIds.length > 0) {
+      const owned = await prisma.product.findMany({
+        where: { id: { in: productIds }, tenantId: data.tenantId, deletedAt: null },
+        select: { id: true, stock: true, active: true, name: true },
+      });
+      if (owned.length !== productIds.length) {
+        throw new Error("BUNDLE_PRODUCT_CROSS_TENANT");
+      }
+      // SECURITY 2026-05-05 (audit promotions #6): stock check al armar bundle.
+      // Antes se podía crear bundle con productos sin stock o inactivos —
+      // promesas vacías al cliente.
+      const stockMap = new Map(owned.map((p) => [p.id, { stock: p.stock ?? 0, active: p.active, name: p.name }]));
+      for (const item of data.items) {
+        const info = stockMap.get(item.productId);
+        if (!info || !info.active) {
+          throw new Error(`BUNDLE_PRODUCT_INACTIVE: ${info?.name ?? item.productId}`);
+        }
+        if (info.stock != null && info.stock < item.quantity) {
+          throw new Error(`BUNDLE_INSUFFICIENT_STOCK: ${info.name}`);
+        }
+      }
+    }
     const row = await prisma.bundle.create({
       data: { name: data.name, description: data.description ?? "", price: data.price, image: data.image ?? "", tenantId: data.tenantId, items: { create: data.items } },
       include: { items: true },

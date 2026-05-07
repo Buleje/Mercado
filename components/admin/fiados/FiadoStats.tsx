@@ -139,12 +139,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               <div className="flex items-center gap-1.5 shrink-0">
                 <CheckCircle2 className="h-3.5 w-3.5 text-[var(--text-primary)]" />
                 <span className="text-xs text-[var(--text-secondary)]">Cobrado:</span>
-                <span className="text-xs font-mono font-bold text-[var(--data-success)]">{formatCurrency(cobradoHoyKpi)}</span>
+                <span className="text-xs font-mono font-bold text-[var(--data-success-500)]">{formatCurrency(cobradoHoyKpi)}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <AlertTriangle className="h-3.5 w-3.5 text-[var(--text-primary)]" />
                 <span className="text-xs text-[var(--text-secondary)]">Vencidos:</span>
-                <span className={cn("text-xs font-mono font-bold", vencidosCountKpi > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]")}>{vencidosCountKpi}</span>
+                <span className={cn("text-xs font-mono font-bold", vencidosCountKpi > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>{vencidosCountKpi}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <TrendingUp className="h-3.5 w-3.5 text-[var(--text-primary)]" />
@@ -179,16 +179,16 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-[var(--text-primary)]">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
               {pct > 80 ? (
-                <span className="text-xs font-bold text-[var(--data-success)]">Casi todo cobrado!</span>
+                <span className="text-xs font-bold text-[var(--data-success-500)]">Casi todo cobrado!</span>
               ) : pct < 30 ? (
-                <span className="text-xs font-bold text-[var(--data-error)]">Falta mucho por cobrar</span>
+                <span className="text-xs font-bold text-[var(--data-error-500)]">Falta mucho por cobrar</span>
               ) : null}
             </div>
             <div className="w-full bg-[var(--surface-sunken)] rounded-full h-2">
               <div
                 className={cn(
                   "h-2 rounded-full transition-all",
-                  pct > 80 ? "bg-[var(--data-success)]" : pct < 30 ? "bg-[var(--data-error)]" : "bg-[var(--accent)]",
+                  pct > 80 ? "bg-[var(--data-success-500)]" : pct < 30 ? "bg-[var(--data-error-500)]" : "bg-[var(--accent)]",
                 )}
                 style={{ width: `${pct}%` }}
               />
@@ -214,11 +214,11 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Esta semana</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-extrabold text-[var(--data-warning)] tabular-nums">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
+              <p className="text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
               <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Promedio/día</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-extrabold text-[var(--data-error)] tabular-nums">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
+              <p className="text-lg font-extrabold text-[var(--data-error-500)] tabular-nums">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
               <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Pendiente</p>
             </div>
           </div>
@@ -230,7 +230,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             {proyeccionCobro.promedioDiario > 0 ? (
               <>Si cobras <span className="font-bold text-[var(--accent)]">{formatCurrency(proyeccionCobro.promedioDiario)}/día</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} días</span></>
             ) : (
-              <span className="text-[var(--data-warning)] font-bold">Aún no has cobrado esta semana — ¡empieza hoy!</span>
+              <span className="text-[var(--data-warning-500)] font-bold">Aún no has cobrado esta semana — ¡empieza hoy!</span>
             )}
           </p>
         </div>
@@ -310,7 +310,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           className="rounded-xl border border-[var(--rule-soft)] px-4 py-2.5 flex items-center gap-2"
           style={{ background: "color-mix(in oklch, var(--data-success) 10%, transparent)" }}
         >
-          <span className="text-xs font-bold text-[var(--data-success)]">
+          <span className="text-xs font-bold text-[var(--data-success-500)]">
             Mejor pagador: {mejorPagadorMes.nombre} — {formatCurrency(mejorPagadorMes.total)} este mes
           </span>
         </div>
@@ -323,7 +323,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           style={{ background: "color-mix(in oklch, var(--data-error) 8%, transparent)" }}
         >
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[var(--data-error)]">Fiado mas antiguo</p>
+            <p className="text-xs font-bold text-[var(--data-error-500)]">Fiado mas antiguo</p>
             <p className="text-sm text-[var(--text-primary)] mt-0.5 truncate">
               <span className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</span>
               {" · "}<span className="font-bold">{formatCurrency(fiadoMasAntiguo.saldo)}</span>
@@ -343,7 +343,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             )}
             <button
               onClick={() => setSelected(fiadoMasAntiguo)}
-              className="text-xs font-bold text-[var(--data-error)] hover:underline px-2 py-1.5"
+              className="text-xs font-bold text-[var(--data-error-500)] hover:underline px-2 py-1.5"
             >
               Ver detalle
             </button>
@@ -365,7 +365,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               className="border border-[var(--rule-soft)] rounded-xl p-4 text-center"
               style={{ background: "color-mix(in oklch, var(--data-success) 10%, transparent)" }}
             >
-              <p className="text-sm font-bold text-[var(--data-success)]">Sin deudores pendientes — Excelente!</p>
+              <p className="text-sm font-bold text-[var(--data-success-500)]">Sin deudores pendientes — Excelente!</p>
             </div>
           );
         }
@@ -495,7 +495,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
               className={cn(
                 "p-1 min-h-[50px] rounded-lg text-center transition-colors relative",
-                esHoy && "ring-2 ring-[var(--data-success)]",
+                esHoy && "ring-2 ring-[var(--data-success-500)]",
                 tieneVencidos && "bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
                 fiadosDia.length > 0 && "cursor-pointer hover:bg-[var(--surface-sunken)]",
                 calDiaSeleccionado === diaKey && "bg-[color-mix(in_oklch,var(--accent)_12%,transparent)]",
@@ -504,7 +504,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               <span
                 className={cn(
                   "text-xs font-bold",
-                  esHoy ? "text-[var(--data-success)]" : "text-[var(--text-primary)]",
+                  esHoy ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]",
                 )}
               >
                 {d}
@@ -514,7 +514,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                   <span
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      tieneVencidos ? "bg-[var(--data-error)]" : "bg-[var(--data-warning)]",
+                      tieneVencidos ? "bg-[var(--data-error-500)]" : "bg-[var(--data-warning-500)]",
                     )}
                   />
                   <span className="text-xs font-bold text-[var(--text-secondary)]">{fiadosDia.length}</span>
@@ -560,7 +560,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               {/* Grid dias */}
               <div className="grid grid-cols-7 gap-0.5">{celdas}</div>
               {sinVence > 0 && (
-                <p className="text-xs text-[var(--data-warning)] mt-2 text-center">
+                <p className="text-xs text-[var(--data-warning-500)] mt-2 text-center">
                   {sinVence} fiados activos sin fecha de vencimiento
                 </p>
               )}

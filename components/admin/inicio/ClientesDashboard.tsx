@@ -208,7 +208,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       { label: "S/ 0-50", min: 0, max: 50, color: "#94a3b8" },
       { label: "S/ 51-200", min: 50.01, max: 200, color: "#3b82f6" },
       { label: "S/ 201-500", min: 200.01, max: 500, color: "#8b5cf6" },
-      { label: "S/ 500+", min: 500.01, max: Infinity, color: "#00B4A6" },
+      { label: "S/ 500+", min: 500.01, max: Infinity, color: "var(--accent)" },
     ];
     const distribucionGasto = spendRanges.map(r => ({
       rango: r.label,
@@ -224,7 +224,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       { label: "1 compra", min: 1, max: 1, color: "#94a3b8" },
       { label: "2-3 compras", min: 2, max: 3, color: "#3b82f6" },
       { label: "4-7 compras", min: 4, max: 7, color: "#f59e0b" },
-      { label: "8+ compras", min: 8, max: Infinity, color: "#00B4A6" },
+      { label: "8+ compras", min: 8, max: Infinity, color: "var(--accent)" },
     ];
     const frecuenciaCompra = freqRanges.map(r => ({
       frecuencia: r.label,
@@ -273,7 +273,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
@@ -317,10 +317,10 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
             </span>
             <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
             <span className="text-[var(--text-secondary)] dark:text-muted">Nuevos:</span>
-            <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.nuevos}</span>
+            <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.nuevos}</span>
             <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
             <span className="text-[var(--text-secondary)] dark:text-muted">Recurrentes:</span>
-            <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.recurrentes}</span>
+            <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.recurrentes}</span>
           </div>
         </div>
       )}

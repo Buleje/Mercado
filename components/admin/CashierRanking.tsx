@@ -128,11 +128,11 @@ function RankRow({
         "flex items-center gap-4 p-4 rounded-xl border transition-all duration-[var(--dur-slow)]",
         isAnimating && "animate-pulse",
         cashier.rank === 1
-          ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 dark:border-[var(--data-warning)]"
+          ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 dark:border-[var(--data-warning-500)]"
           : cashier.rank === 2
           ? "border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 dark:border-gray-600"
           : cashier.rank === 3
-          ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 dark:border-[var(--data-warning)]"
+          ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 dark:border-[var(--data-warning-500)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
       )}
     >
@@ -148,12 +148,12 @@ function RankRow({
             {cashier.displayName}
           </p>
           {movedUp && (
-            <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium flex-shrink-0">
               &#9650; subi
             </span>
           )}
           {movedDown && (
-            <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium flex-shrink-0">
               &#9660; bajo
             </span>
           )}
@@ -168,8 +168,8 @@ function RankRow({
         <p className={cn(
           "font-bold text-lg",
           cashier.rank === 1
-            ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-            : "text-primary dark:text-[var(--data-success)]"
+            ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+            : "text-primary dark:text-[var(--data-success-500)]"
         )}>
           {fmt(cashier.totalRevenue)}
         </p>
@@ -236,11 +236,32 @@ export default function CashierRanking() {
     }
   }, []);
 
-  // Carga inicial + auto-refresh
+  // Carga inicial + auto-refresh — pausa si la pestaña está oculta para
+  // ahorrar cuota de DB cuando el admin abre otra tab. (BUG-FIX audit 2026-05-05)
   useEffect(() => {
     fetchRanking();
-    const interval = setInterval(fetchRanking, REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(fetchRanking, REFRESH_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchRanking();
+        start();
+      } else {
+        stop();
+      }
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [fetchRanking]);
 
   // ── Estadisticas globales del dia
@@ -252,7 +273,7 @@ export default function CashierRanking() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
+          <Users className="w-5 h-5 text-primary dark:text-[var(--data-success-500)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Ranking del dia
@@ -270,7 +291,7 @@ export default function CashierRanking() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-primary dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -290,7 +311,7 @@ export default function CashierRanking() {
             key={stat.label}
             className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center"
           >
-            <div className="flex justify-center text-primary dark:text-[var(--data-success)] mb-1">
+            <div className="flex justify-center text-primary dark:text-[var(--data-success-500)] mb-1">
               {stat.icon}
             </div>
             <p className="font-bold text-lg text-[var(--text-primary)]">{stat.value}</p>
@@ -310,11 +331,11 @@ export default function CashierRanking() {
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-center">
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-4 text-center">
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
           <button
             onClick={fetchRanking}
-            className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)] underline"
+            className="mt-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] underline"
           >
             Reintentar
           </button>

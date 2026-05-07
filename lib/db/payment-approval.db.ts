@@ -154,7 +154,10 @@ export const PaymentApprovalDb = {
    */
   async create(input: CreateInput): Promise<PaymentApproval> {
     await bootstrap();
-    const id = `pap_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    // SECURITY 2026-05-06 (audit WhatsApp #12): IDs con CSPRNG en vez de
+    // Math.random (~41 bits entropy → predecible). randomUUID = 122 bits.
+    const { randomUUID } = await import("crypto");
+    const id = `pap_${randomUUID()}`;
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentApproval" (
@@ -258,6 +261,29 @@ export const PaymentApprovalDb = {
       if (pct > 0.05) {
         nextStatus = "review_required";
         rejectionReason = `Diferencia de monto: esperado S/${existing.expectedAmount.toFixed(2)} vs detectado S/${result.detectedAmount.toFixed(2)} (${(pct * 100).toFixed(1)}%)`;
+      }
+    }
+
+    // SECURITY 2026-05-06 (pentest H002): si el yapeOpCode YA fue usado en
+    // otra approval `approved`, marcar como review_required en vez de
+    // auto-aprobar. Antes el atacante podía reusar 1 captura real para
+    // 5 órdenes — ahora la 2da+ entra en revisión manual.
+    if (result.yapeOpCode && nextStatus === "pending") {
+      // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+      const dupes = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT id FROM "PaymentApproval"
+          WHERE "yapeOpCode" = $1 AND status = 'approved' AND id <> $2
+          LIMIT 1`,
+        result.yapeOpCode,
+        id,
+      );
+      if (Array.isArray(dupes) && dupes.length > 0) {
+        nextStatus = "review_required";
+        rejectionReason = `OP de Yape ${result.yapeOpCode} ya fue usada en otra aprobación. Verificación manual requerida.`;
+        logger.warn("[payment-approval] OP code reuse detected", {
+          id,
+          yapeOpCode: result.yapeOpCode,
+        });
       }
     }
 

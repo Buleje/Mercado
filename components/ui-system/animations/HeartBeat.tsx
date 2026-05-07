@@ -37,7 +37,7 @@ export function HeartBeat({ filled, onToggle, size = 20, className, tapSize = 40
       }}
       className={cn(
         "inline-flex items-center justify-center rounded-full transition-colors",
-        filled ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+        filled ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
         className,
       )}
       style={{ width: tapSize, height: tapSize }}
@@ -45,7 +45,7 @@ export function HeartBeat({ filled, onToggle, size = 20, className, tapSize = 40
       aria-pressed={filled}
     >
       <Heart
-        className={filled ? "fill-[var(--data-error)]" : undefined}
+        className={filled ? "fill-[var(--data-error-500)]" : undefined}
         style={{ width: size, height: size }}
         strokeWidth={1.75}
         aria-hidden

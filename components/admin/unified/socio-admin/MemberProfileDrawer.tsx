@@ -44,8 +44,8 @@ const PLAN_LABELS: Record<SocioMember["plan"], string> = {
 };
 
 const STATUS_STYLES: Record<SocioMember["status"], string> = {
-  activo: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  pausado: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  activo: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  pausado: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
   cancelado: "bg-gray-100 text-[var(--text-secondary)]",
 };
 
@@ -107,7 +107,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[#00B4A6] to-emerald-500 text-white flex items-center justify-center font-bold">
+            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center font-bold">
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -157,21 +157,21 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
-                <ShoppingBag className="h-4 w-4 text-[var(--data-info)]" />
+                <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Gastado</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{fmt(member.totalSpent)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Award className="h-4 w-4 text-[var(--data-warning)]" />
+                <Award className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Ofertas usadas</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{member.offersUsed}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
-                <ShoppingBag className="h-4 w-4 text-[var(--data-info)]" />
+                <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Pedidos</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{member.ordersCount}</p>
@@ -211,7 +211,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
 
           {/* Extend form */}
           {extending && (
-            <div className="space-y-2 p-3 bg-[var(--data-success-50)] border border-[var(--data-success)] rounded-xl">
+            <div className="space-y-2 p-3 bg-[var(--data-success-50)] border border-[var(--data-success-500)] rounded-xl">
               <label className="text-xs font-bold text-[var(--text-primary)]">Extender membresía gratis</label>
               <select
                 value={months}
@@ -232,7 +232,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 </button>
                 <button
                   onClick={handleExtend}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-success)] hover:bg-[var(--data-success)]"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]"
                 >
                   Confirmar
                 </button>
@@ -242,8 +242,8 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
 
           {/* Cancel form */}
           {cancelling && (
-            <div className="space-y-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl">
-              <div className="flex items-start gap-2 text-xs text-[var(--data-error)]">
+            <div className="space-y-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl">
+              <div className="flex items-start gap-2 text-xs text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>La cancelación es definitiva. El cliente pierde acceso a precios Socio inmediatamente.</p>
               </div>
@@ -265,7 +265,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 <button
                   onClick={handleCancel}
                   disabled={!reason.trim()}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50"
                 >
                   Confirmar cancelación
                 </button>
@@ -278,14 +278,14 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
             <div className="space-y-2 pt-2">
               <button
                 onClick={() => setExtending(true)}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-success)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-success-500)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
               >
                 <Gift className="h-4 w-4" />
                 Extender membresía gratis
               </button>
               <button
                 onClick={() => setCancelling(true)}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
               >
                 Cancelar membresía
               </button>

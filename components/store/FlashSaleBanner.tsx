@@ -60,7 +60,7 @@ export default function FlashSaleBanner({ items = [], endsAt, className }: Flash
   const endDate = endsAt ?? fallbackEnd;
 
   return (
-    <div className={cn("bg-[var(--data-error)] rounded-xl p-4 text-white", className)}>
+    <div className={cn("bg-[var(--data-error-500)] rounded-xl p-4 text-white", className)}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-yellow-300 fill-yellow-300" />

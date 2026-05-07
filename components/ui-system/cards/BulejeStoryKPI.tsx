@@ -54,7 +54,7 @@ const TONE_STYLES = {
   celebrate: {
     bg: "bg-emerald-50/60 dark:bg-emerald-950/30",
     border: "border-emerald-200 dark:border-emerald-800/40",
-    accent: "text-emerald-700 dark:text-emerald-400",
+    accent: "text-[var(--data-success-700)] dark:text-emerald-400",
     icon: Sparkles,
   },
   motivate: {
@@ -153,8 +153,8 @@ export const BulejeStoryKPI = memo(function BulejeStoryKPI({
             <span
               className={cn(
                 "font-bold",
-                dir === "up" && "text-[var(--data-success)]",
-                dir === "down" && "text-[var(--data-error)]",
+                dir === "up" && "text-[var(--data-success-500)]",
+                dir === "down" && "text-[var(--data-error-500)]",
               )}
             >
               {dir === "up" && "↑"}

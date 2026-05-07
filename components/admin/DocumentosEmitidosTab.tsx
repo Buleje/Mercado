@@ -51,12 +51,12 @@ const TIPO_FILTERS: { id: TipoFiltro; label: string }[] = [
 ];
 
 const TIPO_BADGES: Record<string, { bg: string; text: string; label: string }> = {
-  boleta: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", label: "Boleta" },
+  boleta: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", label: "Boleta" },
   factura: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", label: "Factura" },
-  cotizacion: { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", label: "Cotizacion" },
-  proforma: { bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30", text: "text-[var(--data-info)] dark:text-[var(--data-info)]", label: "Proforma" },
-  grr: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", label: "GRR" },
-  nc: { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", text: "text-[var(--data-error)] dark:text-[var(--data-error)]", label: "NC" },
+  cotizacion: { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", label: "Cotizacion" },
+  proforma: { bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/30", text: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]", label: "Proforma" },
+  grr: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", label: "GRR" },
+  nc: { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", label: "NC" },
   ticket: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)]", label: "Ticket" },
   contrato: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", label: "Contrato" },
 };
@@ -162,7 +162,7 @@ export default function DocumentosEmitidosTab() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Boletas del mes</p>
-          <p className="text-xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{kpis.boletasMes}</p>
+          <p className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{kpis.boletasMes}</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Facturas del mes</p>
@@ -181,7 +181,7 @@ export default function DocumentosEmitidosTab() {
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">Contratos activos</p>
           <p className="text-xl font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{contratoKpis.activos}</p>
           {contratoKpis.porVencer > 0 && (
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-bold mt-0.5 flex items-center gap-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold mt-0.5 flex items-center gap-0.5">
               <AlertTriangle className="h-3 w-3" />
               {contratoKpis.porVencer} por vencer
             </p>
@@ -191,18 +191,18 @@ export default function DocumentosEmitidosTab() {
 
       {/* Contratos Alert Banner */}
       {contratoKpis.porVencer > 0 && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <div>
-              <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+              <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                 {contratoKpis.porVencer} contrato{contratoKpis.porVencer > 1 ? "s" : ""} por vencer en los proximos 30 dias
               </p>
             </div>
           </div>
           <button
             onClick={() => setTipoFiltro("contrato")}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-bold hover:bg-[var(--data-warning)] dark:hover:bg-[var(--data-warning)]/50 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-bold hover:bg-[var(--data-warning-500)] dark:hover:bg-[var(--data-warning-500)]/50 transition-colors"
           >
             Ver contratos <ArrowRight className="h-3 w-3" />
           </button>
@@ -315,11 +315,11 @@ export default function DocumentosEmitidosTab() {
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
                           doc.estado === "emitido" || doc.estado === "enviada" || doc.estado === "emitida" || doc.estado === "activo"
-                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                             : doc.estado === "anulado" || doc.estado === "anulada"
-                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                             : doc.estado === "vencido"
-                            ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                            ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                         )}>
                           {doc.estado}
@@ -336,13 +336,13 @@ export default function DocumentosEmitidosTab() {
                           </button>
                           <button
                             onClick={() => handleWhatsApp(doc)}
-                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] transition-colors"
                             title="Enviar por WhatsApp"
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] transition-colors"
                             title="Ver detalle"
                           >
                             <Eye className="h-3.5 w-3.5" />

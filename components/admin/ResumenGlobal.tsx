@@ -97,7 +97,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
               onClick={() => onNavigate?.(c.tab)}
               className={cn(
                 "bg-white border rounded-xl p-3 sm:p-4 text-left transition-all hover:shadow-sm hover:scale-[1.01]",
-                c.alert ? "border-[var(--data-error)] bg-[var(--data-error-50)]/50" : "border-[var(--rule-base)]",
+                c.alert ? "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50" : "border-[var(--rule-base)]",
               )}
             >
               {loading ? (
@@ -108,7 +108,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
                     <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: `${c.color}15` }}>
                       <Icon className="h-3.5 w-3.5" style={{ color: c.color }} />
                     </div>
-                    {c.alert && <span className="h-2 w-2 rounded-full bg-[var(--data-error)] animate-pulse" />}
+                    {c.alert && <span className="h-2 w-2 rounded-full bg-[var(--data-error-500)] animate-pulse" />}
                   </div>
                   <p className={cn(
                     "text-xl font-extrabold font-mono",

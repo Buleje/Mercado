@@ -115,7 +115,7 @@ export default function OrderTrackingTimeline({
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 text-xs text-[var(--data-error)] py-3">
+      <div className="flex items-center gap-2 text-xs text-[var(--data-error-500)] py-3">
         <AlertCircle className="h-4 w-4" /> {error}
       </div>
     );
@@ -205,7 +205,7 @@ export default function OrderTrackingTimeline({
                 </p>
               )}
               {step.note && (
-                <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5 italic">
                   &ldquo;{step.note}&rdquo;
                 </p>
               )}
@@ -221,12 +221,12 @@ export default function OrderTrackingTimeline({
             transition={{ delay: 0.28 }}
             className={cn("relative flex gap-4", compact ? "pb-2" : "pb-0")}
           >
-            <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[var(--data-error)] bg-[var(--data-error)] text-white">
+            <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[var(--data-error-500)] bg-[var(--data-error-500)] text-white">
               <XCircle className="h-3.5 w-3.5" />
             </div>
             <div className="flex-1 pt-0.5">
               <div className="flex flex-wrap items-baseline gap-2">
-                <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Cancelado</p>
+                <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Cancelado</p>
                 {cancelEntry && (
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDateTime(cancelEntry.createdAt)}</span>
                 )}
@@ -237,7 +237,7 @@ export default function OrderTrackingTimeline({
                 </p>
               )}
               {cancelEntry?.note && (
-                <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5 italic">
                   Motivo: &ldquo;{cancelEntry.note}&rdquo;
                 </p>
               )}

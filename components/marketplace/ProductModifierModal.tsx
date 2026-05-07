@@ -217,12 +217,12 @@ export default function ProductModifierModal({
                       aria-hidden
                       className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none lg:opacity-15"
                       style={{
-                        background: "radial-gradient(at 20% 0%, rgba(0,180,166,0.5) 0px, transparent 55%)",
+                        background: "radial-gradient(at 20% 0%, color-mix(in oklab, var(--accent) 50%, transparent) 0px, transparent 55%)",
                       }}
                     />
                   </div>
                 ) : (
-                  <div className="h-24 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success)] flex items-center justify-center">
+                  <div className="h-24 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
                     <Sparkles className="h-8 lg:h-12 w-8 lg:w-12 text-white/90" aria-hidden />
                   </div>
                 )}
@@ -345,7 +345,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-14 px-4 text-base font-black transition-all",
                     isValid
-                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
+                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >
@@ -417,7 +417,7 @@ export default function ProductModifierModal({
                               {g.name}
                             </h3>
                             {g.required && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-error)] text-white">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-error-500)] text-white">
                                 <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
                                 Obligatorio
                               </span>
@@ -427,7 +427,7 @@ export default function ProductModifierModal({
                             <span className={cn(
                               "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black transition-colors whitespace-nowrap",
                               isFull
-                                ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
+                                ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]"
                                 : count > 0
                                   ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -462,7 +462,7 @@ export default function ProductModifierModal({
                       {groupErr && (
                         <p
                           role="alert"
-                          className="mt-2 inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--data-error)]"
+                          className="mt-2 inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--data-error-500)]"
                         >
                           <AlertCircle className="h-3.5 w-3.5" />
                           {groupErr.message}
@@ -571,7 +571,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "flex-1 inline-flex items-center justify-center gap-2 rounded-2xl h-12 px-3 text-[length:var(--ts-base)] font-black transition-all",
                     isValid
-                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
+                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >
@@ -661,7 +661,7 @@ function OptionRow({
           {option.name}
         </span>
         {option.isDefault && (
-          <span className="inline-flex items-center gap-0.5 mt-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--data-warning)]">
+          <span className="inline-flex items-center gap-0.5 mt-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--data-warning-500)]">
             <Star className="h-2.5 w-2.5 fill-current" /> Recomendado
           </span>
         )}
@@ -671,7 +671,7 @@ function OptionRow({
               "block mt-0.5 text-[length:var(--ts-xs)] font-black tabular-nums",
               option.priceDelta > 0
                 ? "text-[var(--accent)]"
-                : "text-[var(--data-success)]",
+                : "text-[var(--data-success-500)]",
             )}
           >
             {option.priceDelta > 0 ? "+" : ""}{fmt(option.priceDelta)}

@@ -36,9 +36,9 @@ function fmtDate(iso: string) {
 }
 
 const STATUS_META: Record<ReconciliationStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  conciliado:   { label: "Conciliado",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  pendiente:    { label: "Pendiente",     color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",    icon: AlertTriangle },
-  discrepancia: { label: "Discrepancia",  color: "text-[var(--data-error)] dark:text-[var(--data-error)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",        icon: AlertTriangle },
+  conciliado:   { label: "Conciliado",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  pendiente:    { label: "Pendiente",     color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: AlertTriangle },
+  discrepancia: { label: "Discrepancia",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
 };
 
 const BANK_ACCOUNTS: { id: string; name: string; number: string }[] = [];
@@ -104,11 +104,11 @@ export default function BankReconciliationTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: "Conciliados", value: String(stats.conciliados), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Pendientes", value: String(stats.pendientes), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Discrepancias", value: String(stats.discrepancias), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Total egresos", value: fmt(stats.egresos), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+          { label: "Conciliados", value: String(stats.conciliados), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Pendientes", value: String(stats.pendientes), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Discrepancias", value: String(stats.discrepancias), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total egresos", value: fmt(stats.egresos), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
           { label: "% Conciliado", value: `${stats.pctConciliado.toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -120,11 +120,11 @@ export default function BankReconciliationTab() {
 
       {/* Alerts */}
       {(stats.pendientes > 0 || stats.discrepancias > 0) && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">Movimientos sin conciliar</p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+            <p className="font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">Movimientos sin conciliar</p>
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
               {stats.pendientes > 0 && <span>{stats.pendientes} pendiente(s) de cruce. </span>}
               {stats.discrepancias > 0 && <span className="font-bold">{stats.discrepancias} con discrepancia — requieren revisión manual.</span>}
             </p>
@@ -183,20 +183,20 @@ export default function BankReconciliationTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{m.description}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{accountName(m.bankAccount)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", m.type === "ingreso" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", m.type === "ingreso" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                         {m.type === "ingreso" ? "+ Ingreso" : "- Egreso"}
                       </span>
                     </td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", m.type === "ingreso" ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{m.type === "ingreso" ? "+" : "-"}{fmt(m.amount)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-[var(--text-tertiary)]">{m.systemRef || <span className="italic text-[var(--data-warning)]">sin cruce</span>}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", m.type === "ingreso" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{m.type === "ingreso" ? "+" : "-"}{fmt(m.amount)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-[var(--text-tertiary)]">{m.systemRef || <span className="italic text-[var(--data-warning-500)]">sin cruce</span>}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
                         {m.status !== "conciliado" && (
-                          <button onClick={() => reconcile(m.id)} title="Marcar conciliado" className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]">
+                          <button onClick={() => reconcile(m.id)} title="Marcar conciliado" className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]">
                             <Link2 className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]">
+                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </div>

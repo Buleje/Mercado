@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, startTransition } from "react";
+import { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar } from "@buleje/design-system/icons";
+import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar, ChefHat, ClipboardCheck, PackageCheck, Navigation } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/contexts/settings-context";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {});
 const Confetti  = dynamic(() => import("./Confetti"),   {});
@@ -37,8 +38,8 @@ type TrackedOrder = {
 };
 
 const STATUS_STEPS = [
-  { key: "pendiente",  label: "Recibido",   sublabel: "Pedido registrado",  icon: Receipt,       color: "#00B4A6", bg: "bg-primary",      ringColor: "ring-primary/30"    },
-  { key: "confirmado", label: "Confirmado", sublabel: "Preparando ítems",  icon: CheckCircle2,  color: "#10b981", bg: "bg-emerald-500", ringColor: "ring-emerald-300" },
+  { key: "pendiente",  label: "Recibido",   sublabel: "Pedido registrado",  icon: Receipt,       color: "var(--accent)", bg: "bg-primary",      ringColor: "ring-primary/30"    },
+  { key: "confirmado", label: "Confirmado", sublabel: "Preparando ítems",  icon: CheckCircle2,  color: "#10b981", bg: "bg-[var(--data-success-500)]", ringColor: "ring-emerald-300" },
   { key: "en_camino",  label: "En camino",  sublabel: "Delivery salió",    icon: Truck,         color: "#f4a261", bg: "bg-secondary",   ringColor: "ring-secondary/30"   },
   { key: "entregado",  label: "Entregado",  sublabel: "¡Listo!",           icon: CheckCircle2,  color: "#22c55e", bg: "bg-green-500",  ringColor: "ring-green-300"   },
 ] as const;
@@ -54,6 +55,24 @@ const STATUS_MESSAGE: Record<string, string> = {
   confirmado: "¡Confirmado! Estamos preparando tus productos.",
   en_camino:  "¡Tu delivery ya está en camino hacia ti!",
   entregado:  "¡Pedido entregado con éxito!",
+};
+
+/**
+ * Personalidad visual por estado — icono Lucide + título corto que cambia
+ * con el estado actual. Hace que el modal se sienta vivo en cada paso.
+ */
+type StatusVibe = {
+  Icon: typeof ClipboardCheck;
+  title: string;
+  tagline: string;
+  progress: number;
+};
+
+const STATUS_VIBE: Record<string, StatusVibe> = {
+  pendiente:  { Icon: ClipboardCheck, title: "Pedido recibido",       tagline: "Validando tu orden",          progress: 15 },
+  confirmado: { Icon: ChefHat,        title: "Preparando tu pedido",  tagline: "Cocinando con cariño",        progress: 45 },
+  en_camino:  { Icon: Truck,          title: "Tu pedido va en camino", tagline: "El repartidor se aproxima",  progress: 80 },
+  entregado:  { Icon: PackageCheck,   title: "Pedido entregado",      tagline: "Gracias por tu compra",       progress: 100 },
 };
 
 const PAY_LABELS: Record<string, string> = {
@@ -219,11 +238,58 @@ function playStatusSound(status: TrackedOrder["status"]) {
 }
 
 export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalProps) {
+  const { businessName, storeTheme } = useSettings();
+  const storeName = storeTheme?.name || businessName || "Tu tienda";
   const [order, setOrder] = useState<TrackedOrder | null>(null);
+  // Multi-order: lista de pedidos activos del cliente cuando tiene 2+
+  // simultáneos (ej: pidió pollo y luego un postre antes de recibir el primero).
+  const [activeOrders, setActiveOrders] = useState<TrackedOrder[]>([]);
+  const [viewMode, setViewMode] = useState<"list" | "detail">("detail");
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const prevStatusRef = useRef<TrackedOrder["status"] | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Fetch ALL active orders del cliente (no solo el último) — permite que
+  // el modal muestre lista cuando hay 2+ pedidos no entregados aún.
+  const loadActiveOrders = useCallback(async (signal?: AbortSignal): Promise<TrackedOrder[] | null> => {
+    const phoneRaw = (() => {
+      try {
+        const raw = localStorage.getItem("buleje-last-order");
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.customerPhone || parsed?.customer?.phone || null;
+      } catch { return null; }
+    })();
+    if (!phoneRaw) return null;
+    try {
+      const res = await fetch(
+        `/api/orders?phone=${encodeURIComponent(phoneRaw)}&limit=50`,
+        { signal, credentials: "include" },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!Array.isArray(data)) return null;
+      return (data as TrackedOrder[]).filter(
+        (o) => o.status !== "entregado" && o.status !== "cancelado",
+      );
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const ctrl = new AbortController();
+    loadActiveOrders(ctrl.signal).then((active) => {
+      if (!active) return;
+      setActiveOrders(active);
+      // Si hay 2+ activos, abrir en modo lista. Si 1, modo detalle directo.
+      if (active.length > 1) setViewMode("list");
+      else setViewMode("detail");
+    });
+    return () => ctrl.abort();
+  }, [isOpen, loadActiveOrders]);
 
   // Play sound + trigger confetti whenever order status TRANSITIONS (not on initial load).
   // prevStatusRef starts as null — the first time we receive an order we record the status
@@ -264,11 +330,18 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
         }
         localStorage.setItem("buleje-active-order", JSON.stringify(orderData));
         startTransition(() => { setOrder(orderData); });
+        // Refrescar la lista de pedidos activos: si ahora hay 2+, mostrar
+        // el selector. Si hay 1, mantener el detalle del recién creado.
+        loadActiveOrders().then((active) => {
+          if (!active) return;
+          setActiveOrders(active);
+          if (active.length > 1) setViewMode("list");
+        });
       }
     };
     window.addEventListener("buleje:orderCreated", handleNewOrder);
     return () => window.removeEventListener("buleje:orderCreated", handleNewOrder);
-  }, []);
+  }, [loadActiveOrders]);
 
   // Adaptive poll: 10s when open (for visibility), 30s in background
   useEffect(() => {
@@ -356,14 +429,21 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
           animate={cardAnimate}
           transition={cardTransition}
           onAnimationComplete={handleFlyComplete}
-          className="relative bg-white dark:bg-[#0f1117] rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg lg:max-w-3xl max-h-[94vh] overflow-hidden flex flex-col"
-          style={{ zIndex: 2147483647 }}
+          className="relative rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg lg:max-w-3xl max-h-[94vh] overflow-hidden flex flex-col dark:bg-[#0f1117]"
+          style={{
+            zIndex: 2147483647,
+            background:
+              "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, white)",
+          }}
           onClick={e => e.stopPropagation()}
         >
           {/* ══ HEADER ══ */}
           <div
             className="relative shrink-0 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #0a3d38 0%, #00B4A6 55%, #00d4c4 100%)" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 55%, color-mix(in oklch, var(--color-primary, #00B4A6) 70%, white) 100%)",
+            }}
           >
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
             <div className="absolute -bottom-4 -left-8 w-24 h-24 rounded-full bg-white/5" />
@@ -405,9 +485,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                 </div>
               )}
               {order?.status === "entregado" && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/30 border border-emerald-300/30">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-                  <span className="text-xs font-bold text-emerald-200 uppercase tracking-wide">¡Entregado!</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/30 backdrop-blur">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                  <span className="text-xs font-bold text-white uppercase tracking-wide">¡Entregado!</span>
                 </div>
               )}
             </div>
@@ -444,166 +524,590 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
 
           {/* ══ SCROLLABLE BODY ══ */}
           <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-            {order && !isTerminal ? (
-              <div className="p-4 lg:p-6">
-                {/* ETA card — spans full width */}
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-linear-to-r from-primary/5 to-teal-50 dark:from-primary/10 dark:to-teal-950/30 border border-primary/20 dark:border-primary/30 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/15 flex items-center justify-center shadow-sm shrink-0">
-                    <Clock className="h-5 w-5 text-primary dark:text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-primary dark:text-primary uppercase tracking-wide">Tiempo estimado</p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-foreground mt-0.5">{ETA[order.status]} · {STATUS_MESSAGE[order.status]}</p>
-                  </div>
+            {/* ═══ LIST VIEW — múltiples pedidos activos ═══ */}
+            {viewMode === "list" && activeOrders.length > 1 ? (
+              <div className="p-4 lg:p-6 space-y-3">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <h3
+                    className="text-base font-extrabold uppercase tracking-wider"
+                    style={{ color: "var(--color-primary-dark, #009690)" }}
+                  >
+                    {activeOrders.length} pedidos activos
+                  </h3>
+                  <span className="text-xs text-muted">
+                    Tocá uno para ver detalle
+                  </span>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {activeOrders.map((o) => {
+                    const idx = STATUS_INDEX[o.status] ?? 0;
+                    const step = STATUS_STEPS[idx];
+                    const StepIcon = step.icon;
+                    const itemCount =
+                      o.items?.reduce(
+                        (s, i) => s + (i.quantity ?? i.qty ?? 0),
+                        0,
+                      ) ?? 0;
+                    return (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => {
+                          setOrder(o);
+                          setViewMode("detail");
+                        }}
+                        className="text-left rounded-2xl p-4 transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+                        style={{
+                          background: "var(--color-card)",
+                          border:
+                            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                          boxShadow:
+                            "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span
+                            className="inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-1 rounded-full text-white"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            }}
+                          >
+                            <StepIcon
+                              className="h-3 w-3"
+                              strokeWidth={2.5}
+                            />
+                            {step.label}
+                          </span>
+                          <span
+                            className="text-xs font-mono font-bold tabular-nums"
+                            style={{
+                              color: "var(--color-primary-dark, #009690)",
+                            }}
+                          >
+                            #{o.id.slice(-6).toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-foreground">
+                          {itemCount}{" "}
+                          {itemCount === 1 ? "producto" : "productos"}
+                        </p>
+                        {o.items?.[0] && (
+                          <p className="text-xs text-muted truncate mt-0.5">
+                            {o.items[0].name}
+                            {o.items.length > 1
+                              ? ` y ${o.items.length - 1} más`
+                              : ""}
+                          </p>
+                        )}
+                        {o.total != null && (
+                          <p
+                            className="text-base font-extrabold tabular-nums mt-2"
+                            style={{
+                              color: "var(--color-primary-dark, #009690)",
+                            }}
+                          >
+                            S/ {o.total.toFixed(2)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted mt-2">
+                          {ETA[o.status]}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : order && !isTerminal ? (
+              <div className="p-4 lg:p-6">
+                {/* Botón "Volver a la lista" — visible solo si hay 2+ activos */}
+                {activeOrders.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    className="inline-flex items-center gap-1.5 mb-3 text-xs font-extrabold hover:underline"
+                    style={{ color: "var(--color-primary-dark, #009690)" }}
+                  >
+                    ← Ver todos mis pedidos ({activeOrders.length})
+                  </button>
+                )}
+                {/* ═══ HERO MAP — protagonista visual ═══ */}
+                {(() => {
+                  const vibe = STATUS_VIBE[order.status];
+                  if (!vibe) return null;
+                  const StatusIcon = vibe.Icon;
+                  const isOnWay = order.status === "en_camino";
+                  return (
+                    <m.div
+                      key={order.status}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="relative rounded-3xl overflow-hidden mb-4"
+                      style={{
+                        boxShadow:
+                          "0 18px 36px -14px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent)",
+                        border:
+                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                      }}
+                    >
+                      {/* MAPA grande como hero */}
+                      <div className="relative h-64 sm:h-80 bg-[var(--surface-sunken)]">
+                        <LeafletMap lat={STORE_LAT} lon={STORE_LON} zoom={15} height={320} />
 
-                {/* Desktop: 2-column grid | Mobile: single column */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* LEFT COLUMN: Products */}
+                        {/* Overlay degradado para legibilidad de chips */}
+                        <div
+                          className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 100%)",
+                          }}
+                          aria-hidden="true"
+                        />
+                        <div
+                          className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
+                          style={{
+                            background:
+                              "linear-gradient(0deg, rgba(0,0,0,0.55) 0%, transparent 100%)",
+                          }}
+                          aria-hidden="true"
+                        />
+
+                        {/* Pill superior — En vivo */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                          <div
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-md"
+                            style={{
+                              background: "rgba(255,255,255,0.95)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                            }}
+                          >
+                            <span
+                              className="h-2 w-2 rounded-full animate-pulse"
+                              style={{ background: "var(--color-primary, #00B4A6)" }}
+                            />
+                            <span
+                              className="text-xs font-extrabold uppercase tracking-wider"
+                              style={{ color: "var(--color-primary-dark, #009690)" }}
+                            >
+                              En vivo · {currentStep?.label}
+                            </span>
+                          </div>
+                          {isOnWay && (
+                            <div
+                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-md text-white"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.20)",
+                              }}
+                            >
+                              <Navigation
+                                className="h-3.5 w-3.5"
+                                strokeWidth={2.5}
+                              />
+                              <span className="text-xs font-extrabold">
+                                Ruta activa
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Floating ETA — esquina inferior izquierda del mapa */}
+                        <div
+                          className="absolute bottom-3 left-3 rounded-2xl px-4 py-3 backdrop-blur-md flex items-center gap-3"
+                          style={{
+                            background: "rgba(255,255,255,0.95)",
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.20)",
+                          }}
+                        >
+                          <m.div
+                            animate={
+                              isOnWay
+                                ? { x: [0, 4, 0] }
+                                : order.status === "confirmado"
+                                  ? { rotate: [-3, 3, -3] }
+                                  : { scale: [1, 1.05, 1] }
+                            }
+                            transition={{
+                              duration: 1.8,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                            className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            }}
+                          >
+                            <StatusIcon
+                              className="h-5 w-5 text-white"
+                              strokeWidth={2.25}
+                            />
+                          </m.div>
+                          <div>
+                            <p
+                              className="text-xs font-extrabold uppercase tracking-wider"
+                              style={{
+                                color: "var(--color-primary-dark, #009690)",
+                              }}
+                            >
+                              Llega en
+                            </p>
+                            <p className="text-xl font-extrabold text-foreground tabular-nums leading-none mt-0.5">
+                              {ETA[order.status]}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Status text bottom-right */}
+                        <div className="absolute bottom-3 right-3 text-right max-w-[55%]">
+                          <p className="text-base font-extrabold text-white leading-tight drop-shadow-md">
+                            {vibe.title}
+                          </p>
+                          <p className="text-xs text-white/90 mt-0.5 drop-shadow">
+                            {vibe.tagline}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Progress bar abajo del mapa */}
+                      <div
+                        className="relative h-1.5"
+                        style={{
+                          background:
+                            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                        }}
+                      >
+                        <m.div
+                          className="absolute inset-y-0 left-0"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          }}
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${vibe.progress}%` }}
+                          transition={{ duration: 1.2, ease: "easeOut" }}
+                        />
+                        <m.div
+                          className="absolute inset-y-0 w-1/3"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+                          }}
+                          animate={{ x: ["-100%", "300%"] }}
+                          transition={{
+                            duration: 2.4,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </m.div>
+                  );
+                })()}
+
+                {/* Single column — todo apilado para no dejar huecos blancos */}
                 <div className="space-y-4">
 
                 {/* Products table */}
                 {order.items && order.items.length > 0 && (
-                  <div className="rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden shadow-sm">
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-[#1a1f2e] border-b border-gray-200 dark:border-card-border">
+                  <div
+                    className="rounded-2xl overflow-hidden shadow-sm"
+                    style={{
+                      background: "var(--color-card)",
+                      border:
+                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-between px-4 py-2.5"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+                        borderBottom:
+                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                      }}
+                    >
                       <div className="flex items-center gap-2">
-                        <ShoppingBag className="h-4 w-4 text-primary" />
-                        <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Productos del pedido</span>
+                        <ShoppingBag
+                          className="h-4 w-4"
+                          strokeWidth={2.25}
+                          style={{ color: "var(--color-primary-dark, #009690)" }}
+                        />
+                        <span
+                          className="text-xs font-extrabold uppercase tracking-wider"
+                          style={{ color: "var(--color-primary-dark, #009690)" }}
+                        >
+                          Productos del pedido
+                        </span>
                       </div>
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted bg-gray-200 dark:bg-surface px-2 py-0.5 rounded-full">
+                      <span
+                        className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white tabular-nums"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        }}
+                      >
                         {order.items.length} ítem{order.items.length !== 1 ? "s" : ""}
                       </span>
                     </div>
-                    {/* Column headers */}
-                    <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50/50 dark:bg-[#1a1f2e]/50 border-b border-gray-100 dark:border-card-border/50">
-                      <div className="col-span-6 sm:col-span-5 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Producto</div>
-                      <div className="col-span-3 sm:col-span-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-center">Cant.</div>
-                      <div className="hidden sm:block col-span-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-right">P. Unit.</div>
-                      <div className="col-span-3 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-right">Subtotal</div>
-                    </div>
-                    {/* Rows */}
-                    <div className="divide-y divide-gray-100 dark:divide-card-border/50">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                          <div className="col-span-6 sm:col-span-5 flex items-center gap-2.5 min-w-0">
-                            {item.image ? (
-                              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-surface overflow-hidden shrink-0 relative border border-gray-200 dark:border-card-border">
-                                <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                              </div>
-                            ) : (
-                              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
-                                <Package className="h-4 w-4 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate leading-snug">{item.name}</p>
-                              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{item.unit}</p>
+                    {/* Cards visuales — image-first, no más table */}
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {order.items.map((item, idx) => {
+                        const qty = item.quantity ?? item.qty ?? 0;
+                        const subtotal = item.price * qty;
+                        return (
+                          <m.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="relative flex items-center gap-3 rounded-2xl p-2.5 transition-colors"
+                            style={{
+                              background:
+                                "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--color-card))",
+                              border:
+                                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                            }}
+                          >
+                            {/* Imagen prominente con badge cantidad */}
+                            <div
+                              className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0"
+                              style={{
+                                background:
+                                  "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--surface-sunken))",
+                                border:
+                                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                              }}
+                            >
+                              {item.image ? (
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <Package
+                                    className="h-6 w-6"
+                                    strokeWidth={2}
+                                    style={{
+                                      color: "var(--color-primary-dark, #009690)",
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              {/* Badge cantidad flotante */}
+                              <span
+                                className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 rounded-full text-xs font-extrabold tabular-nums text-white shadow-md"
+                                style={{
+                                  background:
+                                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                }}
+                              >
+                                {qty}
+                              </span>
                             </div>
-                          </div>
-                          <div className="col-span-3 sm:col-span-2 text-center">
-                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary text-xs font-bold">{(item.quantity ?? item.qty ?? 0)}</span>
-                          </div>
-                          <div className="hidden sm:block col-span-2 text-right">
-                            <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">S/{item.price.toFixed(2)}</span>
-                          </div>
-                          <div className="col-span-3 text-right">
-                            <span className="text-xs font-bold text-gray-900 dark:text-foreground">S/{(item.price * (item.quantity ?? item.qty ?? 0)).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      ))}
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-foreground truncate leading-tight">
+                                {item.name}
+                              </p>
+                              <p className="text-xs text-muted mt-0.5 tabular-nums">
+                                {item.unit} · S/{item.price.toFixed(2)} c/u
+                              </p>
+                              <p
+                                className="text-base font-extrabold tabular-nums mt-0.5"
+                                style={{
+                                  color: "var(--color-primary-dark, #009690)",
+                                }}
+                              >
+                                S/{subtotal.toFixed(2)}
+                              </p>
+                            </div>
+                          </m.div>
+                        );
+                      })}
                     </div>
                     {/* Totals */}
-                    <div className="px-4 py-3 bg-linear-to-r from-primary/5 to-indigo-500/5 dark:from-primary/10 dark:to-indigo-500/10 border-t border-gray-200 dark:border-card-border space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-muted">
+                    <div
+                      className="px-4 py-3 space-y-1.5"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                        borderTop:
+                          "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                      }}
+                    >
+                      <div className="flex items-center justify-between text-sm text-muted">
                         <span>Subtotal ({order.items.length} ítems)</span>
-                        <span className="font-medium">S/{subtotal.toFixed(2)}</span>
+                        <span
+                          className="font-semibold tabular-nums"
+                          style={{ color: "var(--color-primary-dark, #009690)" }}
+                        >
+                          S/{subtotal.toFixed(2)}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
-                        <span className="font-medium">✓ Delivery gratuito</span>
-                        <span className="font-medium">— S/ 0.00</span>
+                      <div
+                        className="flex items-center justify-between text-sm"
+                        style={{ color: "var(--data-success-700)" }}
+                      >
+                        <span className="font-semibold">✓ Delivery gratuito</span>
+                        <span className="font-bold tabular-nums">— S/ 0.00</span>
                       </div>
                       {order.paymentMethod && (
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-muted">
-                          <span className="flex items-center gap-1"><CreditCard className="h-3 w-3" /> Método de pago</span>
-                          <span className="font-semibold">{PAY_LABELS[order.paymentMethod] ?? order.paymentMethod}</span>
+                        <div className="flex items-center justify-between text-sm text-muted">
+                          <span className="flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5" strokeWidth={2} /> Método
+                          </span>
+                          <span
+                            className="font-semibold"
+                            style={{
+                              color: "var(--color-primary-dark, #009690)",
+                            }}
+                          >
+                            {PAY_LABELS[order.paymentMethod] ?? order.paymentMethod}
+                          </span>
                         </div>
                       )}
-                      <div className="flex items-center justify-between pt-1.5 border-t border-gray-200 dark:border-card-border">
-                        <span className="text-sm font-bold text-gray-800 dark:text-foreground">Total del pedido</span>
-                        <span className="text-lg font-extrabold text-primary">{fmt(order.total ?? subtotal)}</span>
+                      <div
+                        className="flex items-baseline justify-between pt-2 mt-1"
+                        style={{
+                          borderTop:
+                            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                        }}
+                      >
+                        <span
+                          className="text-sm font-extrabold uppercase tracking-wider"
+                          style={{ color: "var(--color-primary-dark, #009690)" }}
+                        >
+                          Total
+                        </span>
+                        <span
+                          className="text-2xl font-extrabold tabular-nums"
+                          style={{ color: "var(--color-primary-dark, #009690)" }}
+                        >
+                          {fmt(order.total ?? subtotal)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                </div>
-                {/* RIGHT COLUMN: Map + Customer info + Share */}
-                <div className="space-y-4">
-                {/* Map */}
-                <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-card-border shadow-sm">
-                  <div className="px-4 py-2.5 flex items-center justify-between bg-linear-to-r from-slate-700 to-slate-800">
-                    <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center">
-                        <MapPin className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Buleje"}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-white/60">Buleje — Software ERP para Bodegas</p>
-                      </div>
-                    </div>
-                    {order.status === "en_camino" && (
-                      <div className="flex items-center gap-1.5 bg-emerald-500/25 rounded-full px-2.5 py-1 border border-emerald-400/30">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-300">En vivo</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="h-44 sm:h-65">
-                    <LeafletMap lat={STORE_LAT} lon={STORE_LON} zoom={15} height={260} />
-                  </div>
-                  <div className="px-4 py-2 bg-gray-50 dark:bg-[#1a1f2e] flex items-center justify-between border-t border-gray-200 dark:border-card-border">
-                    <span className="text-xs text-gray-500 dark:text-muted">Tiempo estimado de entrega</span>
-                    <span className={cn(
-                      "text-xs font-bold px-2 py-0.5 rounded-full",
-                      order.status === "en_camino"
-                        ? "text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300"
-                        : "text-primary bg-primary/10 dark:bg-primary/20 dark:text-primary"
-                    )}>{ETA[order.status]}</span>
-                  </div>
-                </div>
-
                 {/* Customer info */}
                 {order.customer && (order.customer.name || order.customer.phone || order.customer.location) && (
-                  <div className="rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-                    <div className="px-4 py-2.5 bg-gray-50 dark:bg-[#1a1f2e] border-b border-gray-200 dark:border-card-border">
-                      <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Datos de entrega</p>
+                  <div
+                    className="rounded-2xl overflow-hidden"
+                    style={{
+                      background: "var(--color-card)",
+                      border:
+                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                    }}
+                  >
+                    <div
+                      className="px-4 py-2.5"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+                        borderBottom:
+                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                      }}
+                    >
+                      <p
+                        className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider"
+                        style={{ color: "var(--color-primary-dark, #009690)" }}
+                      >
+                        <Package className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        Datos de entrega
+                      </p>
                     </div>
-                    <div className="p-4 space-y-2.5">
+                    <div className="p-4 space-y-3">
                       {order.customer.name && (
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                            <User className="h-3.5 w-3.5 text-[var(--accent)] dark:text-violet-400" />
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background:
+                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                            }}
+                          >
+                            <User
+                              className="h-4 w-4"
+                              strokeWidth={2.25}
+                              style={{ color: "var(--color-primary-dark, #009690)" }}
+                            />
                           </div>
-                          <div><p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Nombre</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.name}</p></div>
+                          <div>
+                            <p className="text-xs text-muted">Nombre</p>
+                            <p className="text-sm font-bold text-foreground">{order.customer.name}</p>
+                          </div>
                         </div>
                       )}
                       {order.customer.phone && (
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                            <Phone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background:
+                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                            }}
+                          >
+                            <Phone
+                              className="h-4 w-4"
+                              strokeWidth={2.25}
+                              style={{ color: "var(--color-primary-dark, #009690)" }}
+                            />
                           </div>
-                          <div><p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Teléfono</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.phone}</p></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted">Teléfono</p>
+                            <p className="text-sm font-bold text-foreground tabular-nums">
+                              {order.customer.phone}
+                            </p>
+                          </div>
+                          <a
+                            href={`tel:${order.customer.phone}`}
+                            className="ml-auto inline-flex h-9 px-3 items-center justify-center rounded-xl text-xs font-extrabold text-white shrink-0 active:scale-95 transition-transform"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            }}
+                          >
+                            Llamar
+                          </a>
                         </div>
                       )}
                       {order.customer.location && (
                         <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <MapPin className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                            style={{
+                              background:
+                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                            }}
+                          >
+                            <MapPin
+                              className="h-4 w-4"
+                              strokeWidth={2.25}
+                              style={{ color: "var(--color-primary-dark, #009690)" }}
+                            />
                           </div>
-                          <div>
-                            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Dirección</p>
-                            <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.location}</p>
-                            {order.customer.reference && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Ref: {order.customer.reference}</p>}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted">Dirección</p>
+                            <p className="text-sm font-bold text-foreground leading-snug">
+                              {order.customer.location}
+                            </p>
+                            {order.customer.reference && (
+                              <p className="text-xs text-muted mt-0.5">
+                                Ref: {order.customer.reference}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -611,16 +1115,6 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                   </div>
                 )}
 
-                {/* WhatsApp share */}
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`🛝 Mi pedido en Buleje #${order.id.slice(-6)}\nEstado: ${currentStep?.label ?? order.status}\n⏱ ETA: ${ETA[order.status]}\n¡Encúentralos en buleje.pe!`)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-2xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1eb858] transition-all shadow-md"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Compartir en WhatsApp
-                </a>
-                </div>
                 </div>
               </div>
             ) : (
@@ -629,7 +1123,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                 {order?.status === "cancelado" ? (
                   <>
                     <div className="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
-                      <X className="w-10 h-10 text-red-500" />
+                      <X className="w-10 h-10 text-[var(--data-error-500)]" />
                     </div>
                     <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">Pedido cancelado</p>
                     <p className="text-sm text-gray-500 dark:text-muted mt-2 max-w-xs">Este pedido fue cancelado. Si tienes dudas, escríbenos por WhatsApp.</p>
@@ -640,13 +1134,27 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", damping: 14, stiffness: 220 }}
-                      className="w-24 h-24 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-4"
+                      className="w-24 h-24 rounded-full flex items-center justify-center mb-4"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        boxShadow:
+                          "0 14px 30px -10px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                      }}
                     >
-                      <span className="text-5xl">🎉</span>
+                      <PackageCheck
+                        className="h-12 w-12 text-white"
+                        strokeWidth={2.25}
+                      />
                     </m.div>
-                    <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">¡Pedido entregado!</p>
-                    <p className="text-sm text-gray-500 dark:text-muted mt-2 max-w-xs mx-auto">
-                      Tu pedido #{order.id.slice(-6)} llegó con éxito. ¡Gracias por confiar en Buleje!
+                    <p
+                      className="text-2xl font-extrabold tracking-tight"
+                      style={{ color: "var(--color-primary-dark, #009690)" }}
+                    >
+                      ¡Pedido entregado!
+                    </p>
+                    <p className="text-sm text-muted mt-2 max-w-xs mx-auto">
+                      Tu pedido #{order.id.slice(-6)} llegó con éxito. ¡Gracias por confiar en nosotros!
                     </p>
                     {order.items && order.items.length > 0 && (
                       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
@@ -666,8 +1174,8 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         </div>
                         {order.total && (
                           <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/20 flex justify-between">
-                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Total pagado</span>
-                            <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400">{fmt(order.total)}</span>
+                            <span className="text-xs font-bold text-[var(--data-success-700)] dark:text-emerald-400">Total pagado</span>
+                            <span className="text-xs font-extrabold text-[var(--data-success-700)] dark:text-emerald-400">{fmt(order.total)}</span>
                           </div>
                         )}
                       </m.div>
@@ -676,7 +1184,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       <div className="flex items-center gap-1 justify-center">
                         {[1,2,3,4,5].map(s => <Star key={s} className="h-5 w-5 text-amber-400 fill-amber-400" />)}
                       </div>
-                      <a href={`https://wa.me/?text=${encodeURIComponent("¡Me acaba de llegar mi pedido de Buleje! 🛒🎉 Los recomiendo al 100%")}`}
+                      <a href={`https://wa.me/?text=${encodeURIComponent(`¡Me acaba de llegar mi pedido de ${storeName}! 🛒🎉 Los recomiendo al 100%`)}`}
                         target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1eb858] transition-all"
                       >📲 Compartir con amigos</a>
@@ -695,14 +1203,6 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
             )}
           </div>
 
-          {/* ══ FOOTER ══ */}
-          <div className="shrink-0 px-4 py-3 border-t border-gray-200 dark:border-card-border bg-white dark:bg-[#0f1117]">
-            <button onClick={handleClose}
-              className="w-full py-3 rounded-2xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground font-bold text-sm hover:bg-gray-200 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
-            >
-              <X className="h-4 w-4" /> Cerrar
-            </button>
-          </div>
         </m.div>
       </m.div>
 

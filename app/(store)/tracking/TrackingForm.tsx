@@ -78,7 +78,7 @@ function TimelineStep({
         <span
           className={cn(
             "absolute left-4 top-8 h-full w-0.5 -translate-x-1/2",
-            isDone ? "bg-[#00B4A6]" : "bg-border dark:bg-border",
+            isDone ? "bg-[var(--accent)]" : "bg-border dark:bg-border",
           )}
         />
       )}
@@ -88,7 +88,7 @@ function TimelineStep({
         className={cn(
           "relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           isDone
-            ? "border-[#00B4A6] bg-[#00B4A6]"
+            ? "border-[var(--accent)] bg-[var(--accent)]"
             : "border-border bg-card dark:border-border dark:bg-card",
         )}
       >
@@ -158,8 +158,8 @@ function OrderResult({ order }: { order: PublicOrder }) {
 
       {isCancelled && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/40 dark:bg-red-950/20">
-          <p className="text-sm font-semibold text-red-700 dark:text-red-400">Pedido cancelado</p>
-          <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+          <p className="text-sm font-semibold text-[var(--data-error-700)] dark:text-red-400">Pedido cancelado</p>
+          <p className="mt-1 text-xs text-[var(--data-error-600)] dark:text-red-400">
             Este pedido fue cancelado. Si tienes dudas, contáctanos por WhatsApp.
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function TrackingForm() {
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+            "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
             "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -262,7 +262,7 @@ export default function TrackingForm() {
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+            "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
             "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -270,8 +270,8 @@ export default function TrackingForm() {
           type="submit"
           disabled={isPending}
           className={cn(
-            "rounded-xl bg-[#00B4A6] px-5 py-3 text-sm font-semibold text-white transition-colors",
-            "hover:bg-[#009690] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
+            "rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-colors",
+            "hover:bg-[var(--accent-dark)] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
           )}
         >
           {isPending ? "Buscando..." : "Buscar"}
@@ -279,7 +279,7 @@ export default function TrackingForm() {
       </form>
 
       {error && (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-[var(--data-error-700)] dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
           {error}
         </div>
       )}

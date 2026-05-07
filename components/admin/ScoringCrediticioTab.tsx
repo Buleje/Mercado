@@ -101,31 +101,31 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
 }> = {
   EXCELENTE: {
     label: "Excelente",
-    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-    bar: "#00B4A6",
+    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    bar: "var(--accent)",
     icon: CheckCircle,
   },
   BUENO: {
     label: "Bueno",
-    badge: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400",
+    badge: "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent-dark)] dark:text-teal-400",
     bar: "#38a169",
     icon: TrendingUp,
   },
   REGULAR: {
     label: "Regular",
-    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     bar: "#f97316",
     icon: AlertTriangle,
   },
   RIESGOSO: {
     label: "Riesgoso",
-    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     bar: "#ea580c",
     icon: AlertTriangle,
   },
   BLOQUEADO: {
     label: "Bloqueado",
-    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     bar: "#e63946",
     icon: XCircle,
   },
@@ -268,7 +268,7 @@ export default function ScoringCrediticioTab() {
     <div className="space-y-5 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-primary" style={{ backgroundColor: "#00B4A6" }}>
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-primary" style={{ backgroundColor: "var(--accent)" }}>
           <Shield className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
@@ -279,7 +279,7 @@ export default function ScoringCrediticioTab() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al cargar datos: {error}</span>
         </div>
@@ -296,7 +296,7 @@ export default function ScoringCrediticioTab() {
               onClick={() => setFilterLevel(lvl)}
               className={cn(
                 "px-3 h-8 rounded-full text-xs font-medium transition-all",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 isActive
                   ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-primary text-white"
                   : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
@@ -367,7 +367,7 @@ export default function ScoringCrediticioTab() {
                       <td className="px-4 py-3">
                         <p className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">{c.customerName}</p>
                         {c.fiadosOverdue > 0 && (
-                          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{c.fiadosOverdue} fiado{c.fiadosOverdue > 1 ? "s" : ""} vencido{c.fiadosOverdue > 1 ? "s" : ""}</p>
+                          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{c.fiadosOverdue} fiado{c.fiadosOverdue > 1 ? "s" : ""} vencido{c.fiadosOverdue > 1 ? "s" : ""}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -381,7 +381,7 @@ export default function ScoringCrediticioTab() {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
                         {c.fiadoActual > 0 ? (
-                          <span className={c.fiadoActual > c.limiteRecomendado ? "text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold" : ""}>
+                          <span className={c.fiadoActual > c.limiteRecomendado ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold" : ""}>
                             {fmt(c.fiadoActual)}
                           </span>
                         ) : (
@@ -390,16 +390,16 @@ export default function ScoringCrediticioTab() {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
                         {c.limiteRecomendado > 0 ? fmt(c.limiteRecomendado) : (
-                          <span className="text-[var(--data-error)] font-semibold">Sin crédito</span>
+                          <span className="text-[var(--data-error-500)] font-semibold">Sin crédito</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {c.fiadosTotal > 0 ? (
                           <span className={cn(
                             "font-mono text-xs font-semibold",
-                            c.payRate >= 80 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-                            c.payRate >= 50 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-                            "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                            c.payRate >= 80 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+                            c.payRate >= 50 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+                            "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                           )}>
                             {c.payRate}%
                           </span>
@@ -428,7 +428,7 @@ export default function ScoringCrediticioTab() {
                     <div className="min-w-0">
                       <p className="font-semibold text-[var(--text-primary)] truncate">{c.customerName}</p>
                       {c.fiadosOverdue > 0 && (
-                        <p className="text-xs text-[var(--data-error)] mt-0.5">{c.fiadosOverdue} fiado(s) vencido(s)</p>
+                        <p className="text-xs text-[var(--data-error-500)] mt-0.5">{c.fiadosOverdue} fiado(s) vencido(s)</p>
                       )}
                     </div>
                     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ml-2", cfg.badge)}>
@@ -448,7 +448,7 @@ export default function ScoringCrediticioTab() {
                       <p className="text-[var(--text-tertiary)]">Límite</p>
                       <p className={cn(
                         "font-mono font-semibold mt-0.5",
-                        c.limiteRecomendado > 0 ? "text-[var(--text-secondary)]" : "text-[var(--data-error)]",
+                        c.limiteRecomendado > 0 ? "text-[var(--text-secondary)]" : "text-[var(--data-error-500)]",
                       )}>
                         {c.limiteRecomendado > 0 ? fmt(c.limiteRecomendado) : "Sin crédito"}
                       </p>
@@ -458,9 +458,9 @@ export default function ScoringCrediticioTab() {
                       <p className={cn(
                         "font-mono font-semibold mt-0.5",
                         c.fiadosTotal === 0 ? "text-[var(--text-tertiary)]" :
-                        c.payRate >= 80 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-                        c.payRate >= 50 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-                        "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                        c.payRate >= 80 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+                        c.payRate >= 50 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+                        "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                       )}>
                         {c.fiadosTotal > 0 ? `${c.payRate}%` : "—"}
                       </p>

@@ -24,9 +24,9 @@ const EVENT_LABELS: Record<WebhookEvent, string> = {
 };
 
 const EVENT_COLORS: Record<WebhookEvent, string> = {
-  new_order:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  low_stock:    "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-  new_customer: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  new_order:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  low_stock:    "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+  new_customer: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   payment:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
@@ -156,7 +156,7 @@ export function WebhooksConfigTab() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-          <Webhook className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+          <Webhook className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         </div>
         <div>
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
@@ -186,7 +186,7 @@ export function WebhooksConfigTab() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://mi-servidor.com/webhook"
-            className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-[var(--surface-sunken)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40"
+            className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-[var(--surface-sunken)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40"
           />
         </div>
 
@@ -202,8 +202,8 @@ export function WebhooksConfigTab() {
                 onClick={() => toggleEvent(event)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedEvents.includes(event)
-                    ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-white"
-                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success)]/30"
+                    ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-white"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30"
                 }`}
               >
                 {EVENT_LABELS[event]}
@@ -213,7 +213,7 @@ export function WebhooksConfigTab() {
         </div>
 
         {formError && (
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{formError}</p>
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{formError}</p>
         )}
 
         <button
@@ -235,7 +235,7 @@ export function WebhooksConfigTab() {
         )}
 
         {!loading && error && (
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-xl p-3">
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-xl p-3">
             {error}
           </p>
         )}
@@ -272,15 +272,15 @@ export function WebhooksConfigTab() {
                     className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
                   >
                     {testState === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {testState === "ok"      && <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />}
-                    {testState === "error"   && <XCircle className="h-4 w-4 text-[var(--data-error)]" />}
+                    {testState === "ok"      && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />}
+                    {testState === "error"   && <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />}
                     {testState === "idle"    && <Send className="h-4 w-4" />}
                   </button>
                   {/* Boton eliminar */}
                   <button
                     onClick={() => handleDelete(webhook.id)}
                     title="Eliminar webhook"
-                    className="p-2 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                    className="p-2 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -300,7 +300,7 @@ export function WebhooksConfigTab() {
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                     webhook.active
-                      ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                      ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                       : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
                   }`}
                 >

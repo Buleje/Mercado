@@ -192,7 +192,7 @@ export default function WhatsAppAlertManager() {
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
         <div className="p-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-          <MessageCircle className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+          <MessageCircle className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         </div>
         <div>
           <SectionTitle className="font-bold text-[var(--text-primary)]">Alertas por WhatsApp</SectionTitle>
@@ -256,8 +256,8 @@ export default function WhatsAppAlertManager() {
 
         {/* Preview */}
         {previewType && (
-          <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4">
-            <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-2">
+          <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 p-4">
+            <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">
               Preview del mensaje
             </p>
             <p className="text-sm text-[var(--text-secondary)] font-mono leading-relaxed">
@@ -268,7 +268,7 @@ export default function WhatsAppAlertManager() {
                 addToHistory(previewType);
                 setPreviewType(null);
               }}
-              className="mt-3 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold hover:underline flex items-center gap-1"
+              className="mt-3 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold hover:underline flex items-center gap-1"
             >
               <MessageCircle className="w-3 h-3" />
               Simular envio

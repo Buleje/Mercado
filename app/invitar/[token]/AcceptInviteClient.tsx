@@ -95,11 +95,11 @@ export default function AcceptInviteClient({ token }: Props) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] p-6">
         <div className="max-w-md w-full rounded-2xl border-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-6 text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto text-red-600 dark:text-red-400" />
+          <AlertTriangle className="h-12 w-12 mx-auto text-[var(--data-error-600)] dark:text-red-400" />
           <h1 className="mt-3 text-xl font-extrabold text-red-800 dark:text-red-200">
             {error}
           </h1>
-          <p className="mt-2 text-sm text-red-700/80 dark:text-red-300/80">
+          <p className="mt-2 text-sm text-[var(--data-error-500)]/80 dark:text-red-300/80">
             Pedile al administrador que te envíe una nueva invitación.
           </p>
         </div>
@@ -110,17 +110,17 @@ export default function AcceptInviteClient({ token }: Props) {
   if (done) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] p-6">
-        <div className="max-w-md w-full rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 p-6 text-center">
-          <CheckCircle2 className="h-14 w-14 mx-auto text-emerald-600 dark:text-emerald-400" strokeWidth={2.25} />
+        <div className="max-w-md w-full rounded-2xl border-2 border-emerald-300 dark:border-[var(--data-success-700)] bg-emerald-50 dark:bg-emerald-950/30 p-6 text-center">
+          <CheckCircle2 className="h-14 w-14 mx-auto text-[var(--data-success-600)] dark:text-emerald-400" strokeWidth={2.25} />
           <h1 className="mt-3 text-xl font-extrabold text-emerald-800 dark:text-emerald-200">
             ¡Cuenta creada!
           </h1>
-          <p className="mt-2 text-sm text-emerald-700/80 dark:text-emerald-300/80">
+          <p className="mt-2 text-sm text-[var(--data-success-500)]/80 dark:text-emerald-300/80">
             Ya podés ingresar al panel admin con tu usuario y contraseña.
           </p>
           <a
             href="/admin"
-            className="mt-5 inline-flex items-center justify-center w-full h-12 rounded-xl bg-emerald-600 text-white text-base font-extrabold shadow-md hover:bg-emerald-700"
+            className="mt-5 inline-flex items-center justify-center w-full h-12 rounded-xl bg-[var(--data-success-600)] text-white text-base font-extrabold shadow-md hover:bg-[var(--data-success-700)]"
           >
             Ir al panel
           </a>
@@ -201,7 +201,7 @@ export default function AcceptInviteClient({ token }: Props) {
           </div>
 
           {error && (
-            <div className="rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
+            <div className="rounded-xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
               <AlertTriangle className="inline h-4 w-4 mr-1.5 mb-0.5" />
               {error}
             </div>

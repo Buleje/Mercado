@@ -138,7 +138,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
           <p
             className={cn(
               "text-sm font-bold",
-              trendDir === "up" ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              trendDir === "up" ? "text-primary dark:text-primary" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
             {trendDir === "up" ? "Al alza" : "A la baja"}
@@ -155,11 +155,11 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       {/* Legend */}
       <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-[var(--data-warning)]" style={{ backgroundColor: "#f97316" }} />
+          <span className="w-3 h-3 rounded-sm bg-[var(--data-warning-500)]" style={{ backgroundColor: "#f97316" }} />
           Ventas reales
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm opacity-40 bg-primary" style={{ backgroundColor: "#00B4A6" }} />
+          <span className="w-3 h-3 rounded-sm opacity-40 bg-primary" style={{ backgroundColor: "var(--accent)" }} />
           Proyeccion
         </div>
         <div className="flex items-center gap-1">
@@ -196,7 +196,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                     style={{
                       height: `${heightPct}%`,
                       minHeight: pt.actual > 0 ? "2px" : "0px",
-                      backgroundColor: pt.isForecast ? "#00B4A6" : "#f97316",
+                      backgroundColor: pt.isForecast ? "var(--accent)" : "#f97316",
                     }}
                   />
                 </div>

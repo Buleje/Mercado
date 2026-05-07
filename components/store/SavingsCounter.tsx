@@ -45,7 +45,7 @@ export default function SavingsCounter() {
     >
       <div className="flex items-start gap-3">
         <div className="h-12 w-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-          <PiggyBank className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+          <PiggyBank className="h-6 w-6 text-[var(--data-warning-600)] dark:text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">
@@ -53,11 +53,11 @@ export default function SavingsCounter() {
           </h3>
           {hasSavings ? (
             <>
-              <p className="text-3xl font-extrabold text-amber-700 dark:text-amber-300 mt-1">
+              <p className="text-3xl font-extrabold text-[var(--data-warning-700)] dark:text-amber-300 mt-1">
                 S/ {savings.monthTotal.toFixed(2)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-amber-500" />
+                <Sparkles className="h-3 w-3 text-[var(--data-warning-500)]" />
                 {savings.itemCount} producto{savings.itemCount !== 1 ? "s" : ""} con descuento
               </p>
               {savings.allTimeTotal > savings.monthTotal && (
@@ -89,7 +89,7 @@ export default function SavingsCounter() {
           </div>
           <div className="h-2.5 rounded-full bg-amber-100 dark:bg-amber-900/30 overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-[var(--data-warning)]"
+              className="h-full rounded-full bg-[var(--data-warning-500)]"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min((savings.monthTotal / 100) * 100, 100)}%` }}
               transition={{ duration: 1, ease: "easeOut" }}

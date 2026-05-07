@@ -220,12 +220,12 @@ export default function QuickStockCounter() {
 
         {/* Lookup feedback */}
         {lookupState === "notfound" && (
-          <p className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+          <p className="mt-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             Producto no encontrado con ese código.
           </p>
         )}
         {lookupState === "error" && (
-          <p className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{lookupError}</p>
+          <p className="mt-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{lookupError}</p>
         )}
 
         {/* Found product */}
@@ -240,7 +240,7 @@ export default function QuickStockCounter() {
                   SKU: {foundProduct.sku} · Stock sistema: {foundProduct.stock} {foundProduct.unit}
                 </p>
               </div>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-primary/20 dark:text-[var(--data-success)]">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-primary/20 dark:text-[var(--data-success-500)]">
                 {fmt(foundProduct.price)}
               </span>
             </div>
@@ -254,7 +254,7 @@ export default function QuickStockCounter() {
                   onClick={() =>
                     setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
                   }
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success)]"
+                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
                 >
                   <MinusCircle className="h-5 w-5" />
                 </button>
@@ -277,7 +277,7 @@ export default function QuickStockCounter() {
                 />
                 <button
                   onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success)]"
+                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
                 >
                   <PlusCircle className="h-5 w-5" />
                 </button>
@@ -290,8 +290,8 @@ export default function QuickStockCounter() {
                     Number(physicalStock) === foundProduct.stock
                       ? "text-[var(--text-secondary)]"
                       : Number(physicalStock) > foundProduct.stock
-                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                      : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   )}
                 >
                   {Number(physicalStock) === foundProduct.stock
@@ -340,14 +340,14 @@ export default function QuickStockCounter() {
                   <div className="text-right">
                     {diff === 0 ? (
                       <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                        <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                        <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                         OK
                       </span>
                     ) : (
                       <span
                         className={cn(
                           "flex items-center gap-1 text-xs font-semibold",
-                          diff < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          diff < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                         )}
                       >
                         <AlertTriangle className="h-3.5 w-3.5" />
@@ -359,7 +359,7 @@ export default function QuickStockCounter() {
 
                   <button
                     onClick={() => removeItem(item.productId)}
-                    className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:text-[var(--text-secondary)]"
+                    className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:text-[var(--text-secondary)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -382,7 +382,7 @@ export default function QuickStockCounter() {
                 <span
                   className={cn(
                     "font-semibold",
-                    summary.withDiff > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)]"
+                    summary.withDiff > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"
                   )}
                 >
                   {summary.withDiff}
@@ -394,9 +394,9 @@ export default function QuickStockCounter() {
                   className={cn(
                     "font-semibold",
                     summary.totalDiffValue < 0
-                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : summary.totalDiffValue > 0
-                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                       : "text-[var(--text-primary)]"
                   )}
                 >
@@ -413,7 +413,7 @@ export default function QuickStockCounter() {
                 saveState === "saved"
                   ? "bg-[var(--accent-soft)]"
                   : saveState === "error"
-                  ? "bg-[var(--data-error)]"
+                  ? "bg-[var(--data-error-500)]"
                   : "bg-primary hover:bg-[#245a40]",
                 "disabled:opacity-60"
               )}

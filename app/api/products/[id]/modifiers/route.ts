@@ -7,7 +7,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/require-admin";
+import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
@@ -57,7 +57,9 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
     if (!Number.isFinite(productId)) {
       return NextResponse.json({ error: "invalid_id" }, { status: 400 });
     }
-    const tenantId = await resolveTenantFromHeaders(req);
+    // SECURITY 2026-05-06: si hay sesión admin, JWT prioriza sobre header.
+    const session = await tryAdmin(req);
+    const tenantId = session ? session.tenantId : await resolveTenantFromHeaders(req);
 
     const groups = await prisma.productModifierGroup.findMany({
       where: { productId, tenantId, isActive: true },

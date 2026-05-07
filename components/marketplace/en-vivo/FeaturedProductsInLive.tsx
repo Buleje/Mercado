@@ -86,7 +86,7 @@ export function FeaturedProductsInLive({
                 />
                 {p.highlighted && (
                   <span
-                    className="absolute inset-x-0 top-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-[var(--data-error)] text-white text-center py-0.5"
+                    className="absolute inset-x-0 top-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-[var(--data-error-500)] text-white text-center py-0.5"
                     aria-label="Destacado ahora"
                   >
                     Ahora
@@ -110,7 +110,7 @@ export function FeaturedProductsInLive({
                 aria-label={`Agregar ${p.name} al carrito`}
                 className={
                   added
-                    ? "inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-success)] px-3 py-2 text-[length:var(--ts-xs)] font-bold text-white"
+                    ? "inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-success-500)] px-3 py-2 text-[length:var(--ts-xs)] font-bold text-white"
                     : "inline-flex items-center gap-1.5 rounded-lg bg-[var(--text-primary)] px-3 py-2 text-[length:var(--ts-xs)] font-semibold text-[var(--surface-canvas)] hover:opacity-90 transition-opacity"
                 }
               >

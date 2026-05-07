@@ -458,7 +458,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   {dniMsg && (
                     <p className={cn(
                       "text-xs mt-1",
-                      dniMsg.includes('completado') ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                      dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                     )}>{dniMsg}</p>
                   )}
                 </div>
@@ -551,7 +551,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     {dniMsg && (
                       <p className={cn(
                         "text-xs mt-1",
-                        dniMsg.includes('completado') ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                        dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                       )}>{dniMsg}</p>
                     )}
                   </div>
@@ -797,7 +797,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
           )}
 
           {/* Actions */}

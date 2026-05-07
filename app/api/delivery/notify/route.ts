@@ -40,8 +40,12 @@ export async function POST(req: NextRequest) {
 
   const { partnerId, orderId, message } = parsed.data;
 
-  // Buscar el partner
-  const partner = await prisma.deliveryPartner.findUnique({ where: { id: partnerId } });
+  // SECURITY 2026-05-05 (pentest delivery H003): scope tenant. Antes admin
+  // de A podía dispararle WhatsApp/email a un partner de B (facturable a costa
+  // de B). Ahora `findFirst` con tenantId.
+  const partner = await prisma.deliveryPartner.findFirst({
+    where: { id: partnerId, tenantId: auth.tenantId },
+  });
   if (!partner) {
     return NextResponse.json({ error: "Repartidor no encontrado" }, { status: 404 });
   }

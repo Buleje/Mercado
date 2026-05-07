@@ -111,7 +111,7 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
                   <span className="text-xs text-[var(--text-secondary)]">
                     Score perfecto (solo aplicadas)
                   </span>
-                  <span className="text-xs font-bold text-[var(--data-success)]">
+                  <span className="text-xs font-bold text-[var(--data-success-500)]">
                     {c.perfectPct}%
                   </span>
                 </div>

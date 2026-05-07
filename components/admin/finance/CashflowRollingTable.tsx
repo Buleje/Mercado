@@ -167,14 +167,14 @@ export default function CashflowRollingTable() {
 
       {/* Critical week alert */}
       {criticalWeek !== null && data && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-[var(--data-error)] bg-[var(--data-error-50)] dark:border-[var(--data-error)] dark:bg-red-950/40">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:border-[var(--data-error-500)] dark:bg-red-950/40">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               Alerta: en la semana {criticalWeek} tu caja podría caer en
               negativo.
             </p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">
               Acción sugerida: cobrar fiados vencidos, renegociar pagos a
               proveedores, o retrasar gastos no esenciales. Saldo proyectado al
               cierre de la semana {criticalWeek}:{" "}
@@ -204,7 +204,7 @@ export default function CashflowRollingTable() {
             <p className="text-xs font-bold text-[var(--text-tertiary)]">
               Semanas sanas
             </p>
-            <p className="text-2xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
+            <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">
               {data.weeks.filter((w) => !w.isNegative).length} / 13
             </p>
           </div>
@@ -219,14 +219,14 @@ export default function CashflowRollingTable() {
       {/* Error */}
       {error && !data && (
         <div className="flex flex-col items-center justify-center gap-3 py-12">
-          <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-          <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)] text-center">
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+          <p className="text-sm font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center">
             {error}
           </p>
           <button
             type="button"
             onClick={() => void fetchData()}
-            className="text-xs font-bold text-[var(--data-success)] hover:underline"
+            className="text-xs font-bold text-[var(--data-success-500)] hover:underline"
           >
             Reintentar
           </button>
@@ -252,7 +252,7 @@ export default function CashflowRollingTable() {
                     className={cn(
                       "py-3 px-2 text-right text-[length:var(--ts-2xs)] font-bold",
                       h.isNegative
-                        ? "text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/10"
+                        ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/10"
                         : "text-[var(--text-tertiary)]",
                     )}
                   >
@@ -300,25 +300,25 @@ export default function CashflowRollingTable() {
                           className={cn(
                             "py-3 px-2 text-right font-mono text-xs",
                             weekCellNegative &&
-                              "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
+                              "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",
                             row.tone === "positive" &&
                               !isClosing &&
-                              "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                              "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                             row.tone === "negative" &&
                               !isClosing &&
-                              "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                              "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                             row.tone === "neutral" &&
                               "text-[var(--text-secondary)]",
                             row.tone === "bold" &&
                               (weekCellNegative
-                                ? "text-[var(--data-error)] dark:text-[var(--data-error)] font-bold"
+                                ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold"
                                 : "text-[var(--text-primary)] font-bold"),
                           )}
                         >
                           {formatCurrency(value)}
                           {weekCellNegative && (
                             <TrendingDown
-                              className="inline-block ml-1 h-3 w-3 text-[var(--data-error)]"
+                              className="inline-block ml-1 h-3 w-3 text-[var(--data-error-500)]"
                               aria-label="saldo negativo"
                             />
                           )}

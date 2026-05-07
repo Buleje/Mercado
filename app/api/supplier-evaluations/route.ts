@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   const supplierId = req.nextUrl.searchParams.get("supplierId");
   if (supplierId) {
     const [evaluations, averages] = await Promise.all([
-      SupplierEvaluationsDB.getBySupplierId(supplierId),
-      SupplierEvaluationsDB.getAverages(supplierId),
+      SupplierEvaluationsDB.getBySupplierId(supplierId, auth.tenantId),
+      SupplierEvaluationsDB.getAverages(supplierId, auth.tenantId),
     ]);
     return NextResponse.json({ evaluations, averages });
   }

@@ -40,7 +40,7 @@ function AccessCell({ access }: { access: RbacAccess }) {
   if (access === "full") {
     return (
       <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--data-success)_14%,transparent)] text-[var(--data-success)]"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--data-success)_14%,transparent)] text-[var(--data-success-500)]"
         title="Acceso total"
       >
         <Check className="h-3.5 w-3.5" aria-label="Acceso total" />
@@ -50,7 +50,7 @@ function AccessCell({ access }: { access: RbacAccess }) {
   if (access === "write") {
     return (
       <span
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--data-info)_14%,transparent)] text-[var(--data-info)]"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--data-info)_14%,transparent)] text-[var(--data-info-500)]"
         title="Lectura + escritura"
       >
         <Check className="h-3.5 w-3.5" aria-label="Lectura y escritura" />

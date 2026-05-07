@@ -7,6 +7,7 @@ import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
+import { invalidateByPrefix } from "@/lib/cache";
 
 // [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
 const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
@@ -54,10 +55,20 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Si el SuperAdmin impersona una tienda, el header x-tenant-id puede diferir
-    // del tenantId del token. Damos prioridad al header explícito.
+    // [SECURITY] Solo el SuperAdmin puede impersonar otro tenant via header.
+    // Para cualquier otro rol, el tenantId canonico es el del JWT — sino un
+    // admin de tenant A podria escribir settings de tenant B mandando un
+    // header x-tenant-id arbitrario (privilege escalation).
+    //
+    // Esta logica DEBE alinearse con `resolveTenantIdForRoute` (usado en GET)
+    // para que PUT escriba al mismo tenant del que GET lee. Antes habia una
+    // asimetria que rompia la persistencia silenciosamente: PUT respondia
+    // {ok:true} pero el siguiente GET devolvia los valores viejos porque
+    // escribia y leia en tenants distintos. Bug encontrado al testear el
+    // StoreCustomizer mientras `qaadmin@main` navegaba `/t/mi-pollo/admin`.
     const headerTenantId = req.headers.get("x-tenant-id");
-    const rawTenantId = (headerTenantId && headerTenantId !== "main")
+    const isSuperAdmin = auth.role === "superadmin";
+    const rawTenantId = (isSuperAdmin && headerTenantId && headerTenantId !== auth.tenantId)
       ? headerTenantId
       : auth.tenantId;
 
@@ -88,13 +99,22 @@ export async function PUT(req: NextRequest) {
     const current = await SettingsDB.get(tenantId);
 
     // Si SOLO viene storeTheme, guardar solo eso (no todo el objeto settings)
+    // [BUG FIX 2026-05-05] MERGE en vez de REEMPLAZAR. Antes este path
+    // sobrescribia el blob completo. Si un cliente envia solo
+    // {storeTheme:{tiendaSections:[]}} se perdia logo/storeName/colores.
+    // Mantenemos los campos existentes y aplicamos solo lo que llega.
     if (body.storeTheme && Object.keys(body).length === 1) {
       try {
+        const merged = { ...(current.storeTheme ?? {}), ...body.storeTheme };
         await prisma.settings.upsert({
           where: { tenantId },
-          create: { tenantId, storeThemeJson: JSON.stringify(body.storeTheme) },
-          update: { storeThemeJson: JSON.stringify(body.storeTheme) },
+          create: { tenantId, storeThemeJson: JSON.stringify(merged) },
+          update: { storeThemeJson: JSON.stringify(merged) },
         });
+        // CRÍTICO: invalidar cache de SettingsDB (TTL 60s) — sino la storefront
+        // sirve datos viejos hasta que expire. Bug detectado al testear que los
+        // colores del customizer no se aplicaban en /t/[slug]/tienda.
+        invalidateByPrefix(`settings:${tenantId}`);
         return NextResponse.json({ ok: true });
       } catch (e) {
         const msg = (e as Error).message ?? String(e);
@@ -141,8 +161,11 @@ export async function PUT(req: NextRequest) {
       ...(body.timezone !== undefined && { timezone: body.timezone }),
       ...(body.businessType !== undefined && { businessType: body.businessType }),
       ...(body.socialLinks !== undefined && { socialLinks: body.socialLinks }),
-      ...(body.primaryColor !== undefined && { primaryColor: body.primaryColor }),
-      ...(body.secondaryColor !== undefined && { secondaryColor: body.secondaryColor }),
+      // SECURITY 2026-05-06 (audit CI #1): validar regex hex. Antes un admin
+      // malicioso podía guardar `primaryColor: "red}body{display:none}/*"` y
+      // romper el CSS de toda la tienda (CSS injection stored).
+      ...(typeof body.primaryColor === "string" && /^#[0-9a-fA-F]{6}$/.test(body.primaryColor) && { primaryColor: body.primaryColor }),
+      ...(typeof body.secondaryColor === "string" && /^#[0-9a-fA-F]{6}$/.test(body.secondaryColor) && { secondaryColor: body.secondaryColor }),
       ...(body.slogan !== undefined && { slogan: body.slogan }),
       ...(body.dateFormat !== undefined && { dateFormat: body.dateFormat }),
       ...(body.timeFormat !== undefined && { timeFormat: body.timeFormat }),
@@ -212,7 +235,14 @@ export async function PUT(req: NextRequest) {
       ...(body.transferAccountHolder !== undefined && { transferAccountHolder: body.transferAccountHolder }),
 
       // ── StoreCustomizer ──
-      ...(body.storeTheme !== undefined && { storeTheme: body.storeTheme }),
+      // [BUG FIX 2026-05-05] MERGE storeTheme en vez de REEMPLAZAR.
+      // Antes este path sobreescribia todo el blob. El StorefrontEditor envia
+      // solo {tiendaSections, tiendaSectionOrder, sectionContent} y eso
+      // borraba logo / storeName / colores / hero del row. Detectado tras
+      // guardar visibilidad de secciones — la tienda perdia branding completo.
+      ...(body.storeTheme !== undefined && {
+        storeTheme: { ...(current.storeTheme ?? {}), ...body.storeTheme },
+      }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
     // eslint-disable-next-line no-restricted-syntax -- activity log fire-and-forget; no debe bloquear la respuesta de Settings

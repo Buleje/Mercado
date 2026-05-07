@@ -81,8 +81,8 @@ interface OpsStats {
 const REFRESH_MS = 30_000;
 
 const DANGER_DOT: Record<DangerLevel, string> = {
-  ok: "bg-emerald-500",
-  warn: "bg-amber-500",
+  ok: "bg-[var(--data-success-500)]",
+  warn: "bg-[var(--data-warning-500)]",
   danger: "bg-rose-500 animate-pulse",
 };
 
@@ -283,14 +283,14 @@ export function OperationsTab() {
           sub={stats ? `de ${stats.totalOrders} en ventana` : undefined}
         />
         <StatCard
-          icon={<Clock className="h-5 w-5 text-amber-600" />}
+          icon={<Clock className="h-5 w-5 text-[var(--data-warning-600)]" />}
           label="Demorados"
           value={stats?.delayedOrders ?? "—"}
           sub="vs SLA por estado"
           trend={stats && stats.delayedOrders > 0 ? "down" : "neutral"}
         />
         <StatCard
-          icon={<AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />}
+          icon={<AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />}
           label="Críticos"
           value={stats?.dangerOrders ?? "—"}
           sub="2x SLA vencido"
@@ -395,7 +395,7 @@ export function OperationsTab() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -437,7 +437,7 @@ export function OperationsTab() {
                           href={wa}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
+                          className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--data-success-500)] text-white hover:bg-[var(--data-success-600)]"
                           aria-label={`WhatsApp ${t.tenantName}`}
                         >
                           <MessageCircle className="h-4 w-4" />
@@ -531,9 +531,9 @@ export function OperationsTab() {
                       <p
                         className={`text-sm font-bold tabular-nums ${
                           o.dangerLevel === "danger"
-                            ? "text-[var(--data-error)]"
+                            ? "text-[var(--data-error-500)]"
                             : o.dangerLevel === "warn"
-                              ? "text-amber-700"
+                              ? "text-[var(--data-warning-700)]"
                               : "text-[var(--text-primary)]"
                         }`}
                       >
@@ -563,7 +563,7 @@ export function OperationsTab() {
                         </span>
                       )}
                       {o.dangerLevel === "warn" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
                           <Clock className="h-3 w-3" />
                           Demora
                         </span>
@@ -574,7 +574,7 @@ export function OperationsTab() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--data-success-500)] text-white hover:bg-[var(--data-success-600)]"
                           aria-label="WhatsApp al negocio"
                         >
                           <MessageCircle className="h-4 w-4" />
@@ -590,7 +590,7 @@ export function OperationsTab() {
                         title={isAttended ? "Marcar como pendiente" : "Marcar como atendido"}
                         className={`inline-flex items-center justify-center h-8 w-8 rounded-lg transition-colors ${
                           isAttended
-                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                            ? "bg-emerald-100 text-[var(--data-success-700)] hover:bg-emerald-200"
                             : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:text-[var(--accent)] border border-[var(--rule-base)]"
                         }`}
                       >

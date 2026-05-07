@@ -381,7 +381,7 @@ function ExportDialog({
               />
             </label>
             {error && (
-              <p role="alert" className="text-xs text-[var(--data-error)] flex items-center gap-1">
+              <p role="alert" className="text-xs text-[var(--data-error-500)] flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {error}
               </p>

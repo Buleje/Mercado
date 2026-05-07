@@ -121,7 +121,7 @@ export default function DiscountsTab() {
                   <span
                     className={`text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                       d.active
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                        ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-950/30 dark:text-emerald-300"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >
@@ -146,7 +146,7 @@ export default function DiscountsTab() {
               <button
                 type="button"
                 aria-label={`Eliminar ${d.name}`}
-                className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] p-1"
+                className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] p-1"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>

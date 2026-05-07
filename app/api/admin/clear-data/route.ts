@@ -206,6 +206,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // COMPLIANCE 2026-05-06 (Ley 29733 Art. 18): audit trail OBLIGATORIO de
+    // operaciones destructivas. Antes solo iba a logger sin trazabilidad legal.
+    try {
+      const { logActivity } = await import("@/lib/activity-logger");
+      logActivity(
+        "clear_data",
+        "admin",
+        `Borrado masivo: ${deleted.length} tablas (${failed.length} omitidas)`,
+        auth.username,
+        auth.username,
+      ).catch(() => {});
+    } catch { /* logger no disponible */ }
+
     return NextResponse.json({
       success: true,
       deleted: deleted.length,

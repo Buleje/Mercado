@@ -1,12 +1,17 @@
 "use client";
 
-import { Hash, User, Phone, Loader2, CheckCircle2 } from "@buleje/design-system/icons";
+import { Hash, User, Phone, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DniLookupState } from "../types";
 
 /**
  * CustomerFormFields — los inputs DNI / Nombre / Teléfono.
  * El componente es controlado: padre maneja el state.
+ *
+ * Rediseño 2026-05-05: inputs h-12 con icono brand-tinted, labels más
+ * legibles, estados de validación con borde brand/success/error,
+ * tokens del DS (no más gray-200 hardcoded). Layout vertical en mobile
+ * y 3-col en md+ para no apretar.
  */
 
 export type PhoneValidation = {
@@ -26,6 +31,55 @@ export type CustomerFormFieldsProps = {
   onPhoneChange: (value: string) => void;
 };
 
+/** Wrapper de input con icono left + estado validation. */
+function FieldShell({
+  label,
+  required,
+  hint,
+  hintTone = "neutral",
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  hintTone?: "neutral" | "success" | "error";
+  children: React.ReactNode;
+}) {
+  const hintColor =
+    hintTone === "error"
+      ? "text-[var(--data-error-600)]"
+      : hintTone === "success"
+        ? "text-[var(--data-success-600)]"
+        : "text-muted";
+  return (
+    <div className="space-y-1.5">
+      <label
+        className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider"
+        style={{ color: "var(--color-primary-dark, #009690)" }}
+      >
+        {label}
+        {required && (
+          <span style={{ color: "var(--color-primary, #00B4A6)" }}>*</span>
+        )}
+      </label>
+      {children}
+      {hint && (
+        <p
+          className={cn(
+            "text-xs font-medium flex items-center gap-1",
+            hintColor,
+          )}
+        >
+          {hintTone === "error" && (
+            <AlertCircle className="h-3 w-3 shrink-0" strokeWidth={2.25} />
+          )}
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function CustomerFormFields({
   dni,
   name,
@@ -36,103 +90,134 @@ export function CustomerFormFields({
   onNameChange,
   onPhoneChange,
 }: CustomerFormFieldsProps) {
+  const dniBorder =
+    dniLookup.status === "success"
+      ? "border-[var(--data-success-500)]"
+      : dniLookup.status === "error"
+        ? "border-[var(--data-error-500)]"
+        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]";
+
+  const phoneBorder =
+    phone.length === 0
+      ? "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]"
+      : phoneValidation.valid
+        ? "border-[var(--data-success-500)]"
+        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]";
+
+  const inputBase =
+    "w-full h-12 rounded-xl border-2 bg-white dark:bg-card text-foreground placeholder:text-muted/60 focus:outline-none transition-colors text-base tabular-nums";
+
   return (
     <div className="grid md:grid-cols-3 gap-4">
       {/* DNI */}
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
-          DNI
-        </label>
+      <FieldShell
+        label="DNI"
+        hint={dniLookup.message || undefined}
+        hintTone={
+          dniLookup.status === "error"
+            ? "error"
+            : dniLookup.status === "success"
+              ? "success"
+              : "neutral"
+        }
+      >
         <div className="relative">
-          <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Hash
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+            strokeWidth={2}
+            style={{ color: "var(--color-primary, #00B4A6)" }}
+          />
           <input
             value={dni}
             onChange={(e) =>
               onDniChange(e.target.value.replace(/[^\d]/g, "").slice(0, 8))
             }
-            placeholder="Ej: 12345678"
+            placeholder="12345678"
             inputMode="numeric"
             maxLength={8}
             data-testid="dni-input"
-            className={cn(
-              "w-full pl-10 pr-10 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
-              dniLookup.status === "success"
-                ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
-                : dniLookup.status === "error"
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-gray-200 focus:border-primary focus:ring-primary/20"
-            )}
+            className={cn(inputBase, "pl-10 pr-10", dniBorder)}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <span className="absolute right-3.5 top-1/2 -translate-y-1/2">
             {dniLookup.status === "loading" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2
+                className="h-4 w-4 animate-spin"
+                style={{ color: "var(--color-primary, #00B4A6)" }}
+              />
             ) : dniLookup.status === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <CheckCircle2
+                className="h-4 w-4"
+                strokeWidth={2.5}
+                style={{ color: "var(--data-success-600)" }}
+              />
             ) : null}
-          </div>
+          </span>
         </div>
-        <p
-          className={cn(
-            "text-[length:var(--ts-2xs)] mt-1 font-semibold",
-            dniLookup.status === "error"
-              ? "text-red-500"
-              : dniLookup.status === "success"
-                ? "text-emerald-600"
-                : "text-gray-400"
-          )}
-        >
-          {dniLookup.message}
-        </p>
-      </div>
+      </FieldShell>
 
       {/* Nombre */}
-      <div className="md:col-span-1">
-        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
-          Nombre completo *
-        </label>
+      <FieldShell label="Nombre completo" required>
         <div className="relative">
-          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <User
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+            strokeWidth={2}
+            style={{ color: "var(--color-primary, #00B4A6)" }}
+          />
           <input
             required
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Ej: María García"
+            placeholder="María García"
             data-testid="name-input"
-            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+            className={cn(
+              inputBase,
+              "pl-10 pr-3",
+              "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]",
+            )}
           />
         </div>
-      </div>
+      </FieldShell>
 
       {/* Teléfono */}
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
-          Teléfono
-        </label>
+      <FieldShell
+        label="Teléfono"
+        hint={
+          phone.length > 0 && phoneValidation.hint
+            ? phoneValidation.hint
+            : undefined
+        }
+        hintTone={
+          phone.length > 0
+            ? phoneValidation.valid
+              ? "success"
+              : "error"
+            : "neutral"
+        }
+      >
         <div className="relative">
-          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Phone
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+            strokeWidth={2}
+            style={{ color: "var(--color-primary, #00B4A6)" }}
+          />
           <input
             type="tel"
             value={phone}
             onChange={(e) => onPhoneChange(e.target.value.replace(/[^\d]/g, ""))}
-            placeholder="Ej: 987654321"
+            placeholder="987 654 321"
             maxLength={9}
             data-testid="phone-input"
-            className={cn(
-              "w-full pl-10 pr-4 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
-              phone.length === 0
-                ? "border-gray-200 focus:border-primary focus:ring-primary/20"
-                : phoneValidation.valid
-                  ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
-                  : "border-gray-200 focus:border-primary focus:ring-primary/20"
-            )}
+            className={cn(inputBase, "pl-10 pr-10", phoneBorder)}
           />
+          {phone.length > 0 && phoneValidation.valid && (
+            <CheckCircle2
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+              strokeWidth={2.5}
+              style={{ color: "var(--data-success-600)" }}
+            />
+          )}
         </div>
-        {phone.length > 0 && phoneValidation.hint && (
-          <p className={`text-[length:var(--ts-2xs)] mt-1 font-semibold ${phoneValidation.color}`}>
-            {phoneValidation.hint}
-          </p>
-        )}
-      </div>
+      </FieldShell>
     </div>
   );
 }

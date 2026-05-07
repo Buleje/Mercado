@@ -38,7 +38,7 @@ function pillCls(error?: boolean) {
     "placeholder:text-[var(--text-tertiary)]",
     "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]",
     error
-      ? "border-[var(--data-error)] focus:ring-[var(--data-error)]/30"
+      ? "border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/30"
       : "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent-soft)]",
   );
 }
@@ -228,7 +228,7 @@ export default function CheckoutDatosPage() {
                 />
               </div>
               {showNameError && (
-                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error)]">
+                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
                   Ingresá tu nombre completo (mínimo 2 caracteres).
                 </p>
               )}
@@ -268,7 +268,7 @@ export default function CheckoutDatosPage() {
                 />
               </div>
               {showPhoneError ? (
-                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error)]">
+                <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
                   Ingresá un teléfono válido (mínimo 6 dígitos).
                 </p>
               ) : (

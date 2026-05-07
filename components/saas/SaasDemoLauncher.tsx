@@ -16,9 +16,9 @@ const DEMO_ADMIN = `/t/${DEMO_SLUG}/admin`;
 const DEMO_STORE = `/t/${DEMO_SLUG}`;
 
 const DEMO_LINKS = [
-  { label: "Panel Admin", desc: "Dashboard, ventas, inventario, reportes, IA", icon: <LayoutDashboard className="h-4 w-4" />, href: DEMO_ADMIN, color: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600" },
-  { label: "Tienda Online", desc: "La tienda que ven tus clientes con delivery", icon: <Store className="h-4 w-4" />, href: DEMO_STORE, color: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600" },
-  { label: "POS / Caja", desc: "Punto de venta con Yape, efectivo y Plin", icon: <ShoppingCart className="h-4 w-4" />, href: `${DEMO_ADMIN}`, color: "bg-teal-50 dark:bg-teal-950/30 text-teal-600" },
+  { label: "Panel Admin", desc: "Dashboard, ventas, inventario, reportes, IA", icon: <LayoutDashboard className="h-4 w-4" />, href: DEMO_ADMIN, color: "bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)]" },
+  { label: "Tienda Online", desc: "La tienda que ven tus clientes con delivery", icon: <Store className="h-4 w-4" />, href: DEMO_STORE, color: "bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)]" },
+  { label: "POS / Caja", desc: "Punto de venta con Yape, efectivo y Plin", icon: <ShoppingCart className="h-4 w-4" />, href: `${DEMO_ADMIN}`, color: "bg-teal-50 dark:bg-teal-950/30 text-[var(--accent-dark)]" },
   { label: "Catalogo", desc: "30 productos en 10 categorias con precios", icon: <Package className="h-4 w-4" />, href: `/t/${DEMO_SLUG}/tienda`, color: "bg-orange-50 dark:bg-orange-950/30 text-orange-600" },
 ];
 
@@ -31,7 +31,7 @@ const DATA_INCLUDED = [
   { icon: <CreditCard className="h-3.5 w-3.5" />, text: "5 fiados activos", color: "text-pink-400" },
   { icon: <BarChart3 className="h-3.5 w-3.5" />, text: "10 gastos operativos", color: "text-amber-400" },
   { icon: <BookOpen className="h-3.5 w-3.5" />, text: "6 lotes con vencimiento", color: "text-cyan-400" },
-  { icon: <Brain className="h-3.5 w-3.5" />, text: "IA + reportes + alertas", color: "text-[var(--data-error)]" },
+  { icon: <Brain className="h-3.5 w-3.5" />, text: "IA + reportes + alertas", color: "text-[var(--data-error-500)]" },
   { icon: <Shield className="h-3.5 w-3.5" />, text: "Plan Enterprise completo", color: "text-yellow-400" },
 ];
 
@@ -49,7 +49,7 @@ export default function SaasDemoLauncher() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 bg-teal-500/20 text-teal-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-[var(--accent)]/20 text-teal-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <Play className="h-3 w-3" /> Demo en vivo
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold">
@@ -115,7 +115,7 @@ export default function SaasDemoLauncher() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-teal-500/40 hover:scale-[1.01] transition-all group"
+                className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)]/40 hover:scale-[1.01] transition-all group"
               >
                 <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", link.color)}>
                   {link.icon}
@@ -133,7 +133,7 @@ export default function SaasDemoLauncher() {
               <p className="text-sm text-gray-400 mb-3">Te gusto? Crea tu propia tienda en 2 minutos.</p>
               <a
                 href="/registro"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-teal-500 to-emerald-600 text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-teal-500/20"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-[var(--accent)] to-[var(--data-success-600)] text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-teal-500/20"
               >
                 Crear mi tienda gratis
               </a>

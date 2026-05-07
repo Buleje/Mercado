@@ -73,14 +73,14 @@ interface QuotaBarProps {
 
 const LIGHT_COLORS: Record<TrafficLight, string> = {
   green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-  yellow: "bg-[var(--data-warning)]  dark:bg-[var(--data-warning)]",
-  red:    "bg-[var(--data-error)]    dark:bg-[var(--data-error)]",
+  yellow: "bg-[var(--data-warning-500)]  dark:bg-[var(--data-warning-500)]",
+  red:    "bg-[var(--data-error-500)]    dark:bg-[var(--data-error-500)]",
 };
 
 const LIGHT_TEXT: Record<TrafficLight, string> = {
-  green:  "text-[var(--data-success)] dark:text-[var(--data-success)]",
-  yellow: "text-amber-700   dark:text-amber-300",
-  red:    "text-red-700     dark:text-red-400",
+  green:  "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  yellow: "text-[var(--data-warning-700)]   dark:text-amber-300",
+  red:    "text-[var(--data-error-700)]     dark:text-red-400",
 };
 
 function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
@@ -164,9 +164,9 @@ interface PlanBadgeProps {
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
   free:       "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]",
-  starter:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+  starter:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
 export function PlanBadge({ plan }: PlanBadgeProps) {
@@ -226,7 +226,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           <PlanBadge plan={snapshot.plan} />
           {hasCritical && (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]"
               role="alert"
               aria-live="polite"
             >
@@ -235,7 +235,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           )}
           {!hasCritical && hasWarning && (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]"
               role="status"
               aria-live="polite"
             >
@@ -274,7 +274,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {allEvents.length > PRIORITY_EVENTS.length && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="min-h-[44px] text-sm text-primary-dark dark:text-[var(--data-success)] hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+          className="min-h-[44px] text-sm text-primary-dark dark:text-[var(--data-success-500)] hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
           aria-expanded={expanded}
           aria-controls="metering-all-metrics"
         >

@@ -87,7 +87,13 @@ Nunca inventes precios si no los tienes en los datos. Si no sabes algo, sugiere 
     }
     return moderation.output;
   } catch (err) {
-    logger.warn("WhatsApp AI fallback", { error: err });
+    // SECURITY 2026-05-06 (audit WhatsApp #12 + #20): no loggear el `err`
+    // crudo porque puede contener fragmentos del prompt con PII (phone,
+    // email, DNI). Solo el mensaje sanitizado.
+    const safeMsg = err instanceof Error
+      ? err.message.replace(/\b\d{8,}\b/g, "[REDACTED-NUM]").replace(/[\w.-]+@[\w.-]+/g, "[REDACTED-EMAIL]").slice(0, 200)
+      : "unknown";
+    logger.warn("WhatsApp AI fallback", { error: safeMsg });
     return fallbackResponse(customerMessage);
   }
 }

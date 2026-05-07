@@ -110,7 +110,7 @@ export default function MarginWaterfallChart() {
         value: totalRevenue,
         displayValue: totalRevenue,
         base: 0,
-        fill: "#00B4A6",
+        fill: "var(--accent)",
         label: "100%",
       },
       {
@@ -134,7 +134,7 @@ export default function MarginWaterfallChart() {
         value: Math.max(0, margen),
         displayValue: margen,
         base: 0,
-        fill: margen >= 0 ? "#00B4A6" : "#e63946",
+        fill: margen >= 0 ? "var(--accent)" : "#e63946",
         label: `${((margen / totalRevenue) * 100).toFixed(1)}%`,
       },
     ];
@@ -174,11 +174,11 @@ export default function MarginWaterfallChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de margenes</p>
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudieron cargar los datos de margenes</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -269,8 +269,8 @@ export default function MarginWaterfallChart() {
                 product.marginPct > 20
                   ? "bg-primary"
                   : product.marginPct > 10
-                  ? "bg-[var(--data-warning)]"
-                  : "bg-[var(--data-error)]";
+                  ? "bg-[var(--data-warning-500)]"
+                  : "bg-[var(--data-error-500)]";
 
               return (
                 <div key={product.productId} className="flex items-center gap-2 group">
@@ -280,7 +280,7 @@ export default function MarginWaterfallChart() {
                         {product.name}
                       </span>
                       <span
-                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}
+                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
                         {product.marginPct.toFixed(1)}%

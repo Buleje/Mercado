@@ -124,7 +124,7 @@ export default function StoreHero({
               type="button"
               aria-label="Agregar a favoritos"
               title="Guardar como favorita"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] transition-all hover:border-[var(--data-error)] hover:text-[var(--data-error)]"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] transition-all hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
             >
               <Heart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </button>
@@ -138,7 +138,7 @@ export default function StoreHero({
           <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Star
-                className="h-3 w-3 fill-amber-500 text-amber-500"
+                className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                 aria-hidden
               />
               Rating
@@ -169,7 +169,7 @@ export default function StoreHero({
                 min
               </span>
               {freeDelivery && (
-                <span className="ml-1.5 text-xs font-black text-[var(--data-success)]">
+                <span className="ml-1.5 text-xs font-black text-[var(--data-success-500)]">
                   GRATIS
                 </span>
               )}
@@ -198,15 +198,15 @@ export default function StoreHero({
                 aria-hidden
                 className={`inline-block h-2.5 w-2.5 rounded-full ${
                   isOpen
-                    ? "bg-[var(--data-success)] shadow-[0_0_0_4px_color-mix(in_oklch,var(--data-success)_25%,transparent)]"
-                    : "bg-[var(--data-error)]"
+                    ? "bg-[var(--data-success-500)] shadow-[0_0_0_4px_color-mix(in_oklch,var(--data-success)_25%,transparent)]"
+                    : "bg-[var(--data-error-500)]"
                 }`}
               />
               <span
                 className={
                   isOpen
-                    ? "text-[var(--data-success)]"
-                    : "text-[var(--data-error)]"
+                    ? "text-[var(--data-success-500)]"
+                    : "text-[var(--data-error-500)]"
                 }
               >
                 {isOpen ? "Abierto" : "Cerrado"}
@@ -217,7 +217,7 @@ export default function StoreHero({
 
         {/* ── Trust chips strip — payment methods + sello marca ─────── */}
         <div className="flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success-500)]">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
             Tienda verificada
           </span>

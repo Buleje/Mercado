@@ -110,18 +110,32 @@ export default function CouponsTab() {
   const handleCreate = async () => {
     if (!form.code.trim() || !form.discountValue) return;
     const storeId = couponScope === "tienda" ? getActiveStoreId() : null;
-    const res = await fetch("/api/coupons", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        ...form,
-        minPurchase: form.minPurchase || undefined,
-        maxUses: form.maxUses || undefined,
-        expiresAt: form.expiresAt || undefined,
-        storeId: storeId || undefined,
-      }),
-    });
-    if (res.ok) { load(); setShowForm(false); setCouponScope("plataforma"); setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" }); }
+    try {
+      const res = await fetch("/api/coupons", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          ...form,
+          minPurchase: form.minPurchase || undefined,
+          maxUses: form.maxUses || undefined,
+          expiresAt: form.expiresAt || undefined,
+          storeId: storeId || undefined,
+        }),
+      });
+      if (res.ok) {
+        load();
+        setShowForm(false);
+        setCouponScope("plataforma");
+        setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData?.error || `No se pudo crear el cupón (HTTP ${res.status})`;
+        showUndo({ message: "Error", detail: msg });
+      }
+    } catch (e) {
+      console.error("[CouponsTab] handleCreate error", e);
+      showUndo({ message: "Error de conexión", detail: "No se pudo crear el cupón. Reintentá." });
+    }
   };
 
   const toggleActive = async (c: Coupon) => {
@@ -231,7 +245,7 @@ export default function CouponsTab() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{config.label}</span>
                       {rule.enabled && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                           <Check className="h-3 w-3" /> Activa
                         </span>
                       )}
@@ -248,7 +262,7 @@ export default function CouponsTab() {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                       title="Configurar"
                     >
                       <Settings className="h-4 w-4" />
@@ -282,8 +296,8 @@ export default function CouponsTab() {
                   </p>
                 </div>
                 <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
-                  log.status === "sent" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
-                  log.status === "used" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                  log.status === "sent" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                  log.status === "used" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>
                   {log.status === "sent" ? "Enviado" : log.status === "used" ? "Usado" : "Pendiente"}
                 </span>
@@ -384,21 +398,21 @@ export default function CouponsTab() {
       <div className="space-y-3">
         {coupons.length === 0 && <p className="text-center text-[var(--text-tertiary)] dark:text-muted py-8">No hay cupones creados</p>}
         {coupons.map(c => (
-          <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3", c.active ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--data-error)] dark:border-[var(--data-error)]/30 opacity-60")}>
+          <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3", c.active ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 opacity-60")}>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
                 <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {c.storeId ? (
-                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
+                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
                 ) : (
                   <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 py-0.5 rounded-full font-bold">Plataforma</span>
                 )}
-                {!c.active && <span className="text-xs bg-[var(--data-error-100)] text-[var(--data-error)] px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
+                {!c.active && <span className="text-xs bg-[var(--data-error-100)] text-[var(--data-error-500)] px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
               </div>
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{c.description || "Sin descripción"}</p>
               <div className="flex flex-wrap gap-3 mt-1 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                <span className="font-bold text-[var(--data-success)]">{c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `GC S/${(c.balance ?? c.discountValue).toFixed(2)}` : `S/${c.discountValue}`}</span>
+                <span className="font-bold text-[var(--data-success-500)]">{c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `GC S/${(c.balance ?? c.discountValue).toFixed(2)}` : `S/${c.discountValue}`}</span>
                 {c.minPurchase ? <span>Min: S/{c.minPurchase}</span> : null}
                 {c.maxUses ? <span>Usos: {c.usedCount}/{c.maxUses}</span> : <span>Usos: {c.usedCount}/∞</span>}
                 {c.expiresAt && <span>Exp: {new Date(c.expiresAt).toLocaleDateString()}</span>}
@@ -407,7 +421,7 @@ export default function CouponsTab() {
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 onClick={() => { setWhatsappCoupon(c); setWhatsappPhone(""); }}
-                className="p-1.5 rounded-lg text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition"
+                className="p-1.5 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition"
                 title="Enviar por WhatsApp"
               >
                 <MessageCircle className="h-4 w-4" />
@@ -419,10 +433,10 @@ export default function CouponsTab() {
               >
                 <Copy className="h-4 w-4" />
               </button>
-              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:bg-[var(--data-warning)]" : "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]")}>
+              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
-              <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
@@ -507,7 +521,7 @@ export default function CouponsTab() {
             </div>
             <div className="px-5 py-4 space-y-4">
               {/* Preview del mensaje */}
-              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
+              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                 <p className="text-xs text-[var(--text-primary)] dark:text-foreground whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
               </div>
               {/* Enviar a un cliente */}

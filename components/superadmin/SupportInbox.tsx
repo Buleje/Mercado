@@ -131,15 +131,15 @@ const MOCK_TICKETS: SupportTicket[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: typeof Inbox }> = {
-  open: { label: "Abierto", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", icon: Mail },
-  in_progress: { label: "En progreso", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", icon: Clock },
-  closed: { label: "Cerrado", color: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]", icon: CheckCircle2 },
+  open: { label: "Abierto", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: Mail },
+  in_progress: { label: "En progreso", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", icon: Clock },
+  closed: { label: "Cerrado", color: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]", icon: CheckCircle2 },
 };
 
 const PRIORITY_COLOR: Record<TicketPriority, string> = {
   low: "text-gray-400",
-  medium: "text-[var(--data-warning)]",
-  high: "text-[var(--data-error)]",
+  medium: "text-[var(--data-warning-500)]",
+  high: "text-[var(--data-error-500)]",
 };
 
 function timeAgo(iso: string): string {
@@ -373,7 +373,7 @@ export default function SupportInbox() {
               {selected.status !== "closed" && (
                 <button
                   onClick={() => handleStatusChange(selected.id, "closed")}
-                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)] hover:opacity-80 flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)] hover:opacity-80 flex items-center gap-1"
                 >
                   <CheckCircle2 className="w-3 h-3" /> Cerrar
                 </button>
@@ -381,14 +381,14 @@ export default function SupportInbox() {
               {selected.status === "closed" && (
                 <button
                   onClick={() => handleStatusChange(selected.id, "open")}
-                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)] hover:opacity-80 flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)] hover:opacity-80 flex items-center gap-1"
                 >
                   <Mail className="w-3 h-3" /> Reabrir
                 </button>
               )}
               <button
                 onClick={() => handleStatusChange(selected.id, "in_progress")}
-                className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] hover:opacity-80 flex items-center gap-1"
+                className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] hover:opacity-80 flex items-center gap-1"
               >
                 <ArrowUpRight className="w-3 h-3" /> Escalar
               </button>

@@ -25,7 +25,7 @@ export const CHART_PALETTE = {
   /** Quaternary — subtle */
   quaternary: "var(--data-4, #d4d4d4)",
   /** Accent — brand teal */
-  accent: "var(--section-accent, var(--data-5, #00B4A6))",
+  accent: "var(--section-accent, var(--data-5, var(--accent)))",
   /** v4 — para dashboards con 8 categorias */
   info: "var(--section-info, var(--data-6, #0ea5e9))",
   amber: "var(--section-amber, var(--data-7, #d97706))",

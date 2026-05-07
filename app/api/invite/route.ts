@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveTenantSlug } from "@/lib/resolve-tenant";
+import { tryAdmin } from "@/lib/require-admin";
 import { createInvite, verifyInvite, acceptInvite } from "@/lib/invite";
-import { verifySessionToken, SESSION } from "@/lib/session";
 import type { InviteRole } from "@/lib/invite";
 
 // ─── POST /api/invite ─────────────────────────────────────────────────────────
 // Create a new invitation link. Requires admin session.
 
 export async function POST(req: NextRequest) {
-  const cookieToken = req.cookies.get(SESSION.COOKIE_NAME)?.value;
-  if (!cookieToken || !(await verifySessionToken(cookieToken))) {
+  // SECURITY 2026-05-06: tenantId del JWT, no del header. Antes un admin de
+  // tenant A podía generar un invite para tenant B forzando x-tenant-id=B.
+  const session = await tryAdmin(req);
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  const tenantId = session.tenantId;
 
   let body: { email?: unknown; role?: unknown };
   try {

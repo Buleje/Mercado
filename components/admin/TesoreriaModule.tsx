@@ -93,17 +93,17 @@ function fmtDateShort(iso: string) {
 }
 
 const TIPO_META: Record<CuentaTipo, { label: string; shortLabel: string; icon: typeof Landmark; color: string; bg: string }> = {
-  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-[var(--data-success)]",   bg: "bg-[var(--accent-soft)]" },
+  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)]" },
   BANCO_CORRIENTE: { label: "Banco Corriente",    shortLabel: "Corriente", icon: Building2,  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-  CAJA_FISICA:     { label: "Caja Física",        shortLabel: "Caja",     icon: Banknote,   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
-  MONEDERO_DIGITAL:{ label: "Monedero Digital",   shortLabel: "Digital",  icon: Smartphone, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)]" },
+  CAJA_FISICA:     { label: "Caja Física",        shortLabel: "Caja",     icon: Banknote,   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+  MONEDERO_DIGITAL:{ label: "Monedero Digital",   shortLabel: "Digital",  icon: Smartphone, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]" },
 };
 
 const MOV_META: Record<MovimientoTipo, { label: string; color: string; icon: typeof ArrowUpFromLine }> = {
-  INGRESO:          { label: "Ingreso",           color: "text-[var(--data-success)]", icon: ArrowDownToLine },
-  EGRESO:           { label: "Egreso",            color: "text-[var(--data-error)]",         icon: ArrowUpFromLine },
-  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-[var(--data-success)]",       icon: ArrowLeftRight },
-  TRANSFERENCIA_OUT:{ label: "Transferencia →",   color: "text-[var(--data-warning)]",     icon: ArrowLeftRight },
+  INGRESO:          { label: "Ingreso",           color: "text-[var(--data-success-500)]", icon: ArrowDownToLine },
+  EGRESO:           { label: "Egreso",            color: "text-[var(--data-error-500)]",         icon: ArrowUpFromLine },
+  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-[var(--data-success-500)]",       icon: ArrowLeftRight },
+  TRANSFERENCIA_OUT:{ label: "Transferencia →",   color: "text-[var(--data-warning-500)]",     icon: ArrowLeftRight },
 };
 
 const TIPO_COLORS: Record<CuentaTipo, string> = {
@@ -176,20 +176,20 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
 
           <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-emerald-500">
             <div className="flex items-center gap-1.5 mb-2">
-              <ArrowDownToLine className="h-4 w-4 text-[var(--data-success)]" />
+              <ArrowDownToLine className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ingresos mes</p>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-[var(--data-success)]">
+            <p className="text-2xl font-extrabold font-mono text-[var(--data-success-500)]">
               {showBalance ? fmtCurrency(ingresosMes) : "S/••••"}
             </p>
           </div>
 
           <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-red-500">
             <div className="flex items-center gap-1.5 mb-2">
-              <ArrowUpFromLine className="h-4 w-4 text-[var(--data-error)]" />
+              <ArrowUpFromLine className="h-4 w-4 text-[var(--data-error-500)]" />
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Egresos mes</p>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-[var(--data-error)]">
+            <p className="text-2xl font-extrabold font-mono text-[var(--data-error-500)]">
               {showBalance ? fmtCurrency(egresosMes) : "S/••••"}
             </p>
           </div>
@@ -199,10 +199,10 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             flujoNeto >= 0 ? "border-b-[#2563EB]" : "border-b-red-600"
           )}>
             <div className="flex items-center gap-1.5 mb-2">
-              {flujoNeto >= 0 ? <TrendingUp className="h-4 w-4 text-[#2563EB]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-error)]" />}
+              {flujoNeto >= 0 ? <TrendingUp className="h-4 w-4 text-[#2563EB]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-error-500)]" />}
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Flujo neto</p>
             </div>
-            <p className={cn("text-2xl font-extrabold font-mono", flujoNeto >= 0 ? "text-[#2563EB]" : "text-[var(--data-error)]")}>
+            <p className={cn("text-2xl font-extrabold font-mono", flujoNeto >= 0 ? "text-[#2563EB]" : "text-[var(--data-error-500)]")}>
               {showBalance ? fmtCurrency(flujoNeto) : "S/••••"}
             </p>
           </div>
@@ -253,8 +253,8 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
                 <AreaChart data={flowData}>
                   <defs>
                     <linearGradient id="tresoIngGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="tresoEgrGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -268,7 +268,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
                     formatter={((v: number, name: string) => [fmtCurrency(Number(v)), name === "ingresos" ? "Ingresos" : "Egresos"]) as never}
                     contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }}
                   />
-                  <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="url(#tresoIngGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ingresos" stroke="var(--accent)" fill="url(#tresoIngGrad)" strokeWidth={2} />
                   <Area type="monotone" dataKey="egresos" stroke="#ef4444" fill="url(#tresoEgrGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -316,7 +316,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
                   {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).map(c => (
                     <div key={c.id} className="flex items-center justify-between text-sm">
                       <span className="text-[var(--text-primary)] font-medium">{c.nombre}</span>
-                      <span className="font-mono font-bold text-[var(--data-warning)]">
+                      <span className="font-mono font-bold text-[var(--data-warning-500)]">
                         {fmtCurrency(c.saldo, c.moneda)}
                       </span>
                     </div>
@@ -768,7 +768,7 @@ export default function TesoreriaModule() {
             <Landmark className="h-5 w-5 currentColor" />
             Tesorería
             {activeCuentas.length > 0 && (
-              <span className="ml-2 text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)] px-2 py-0.5 rounded-full align-middle">
+              <span className="ml-2 text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)] px-2 py-0.5 rounded-full align-middle">
                 {activeCuentas.length} cuenta{activeCuentas.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -846,8 +846,8 @@ export default function TesoreriaModule() {
 
       {error && (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)]">{error}</p>
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)]">{error}</p>
           <button onClick={fetchAll} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
         </div>
       )}
@@ -895,7 +895,7 @@ export default function TesoreriaModule() {
                       <span className={cn(
                         "text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full",
                         cuenta.activa
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           : "bg-gray-100 text-[var(--text-secondary)]"
                       )}>
                         {cuenta.activa ? "Activa" : "Inactiva"}
@@ -907,7 +907,7 @@ export default function TesoreriaModule() {
                       {fmtCurrency(cuenta.saldo, cuenta.moneda)}
                     </p>
                     {cuenta.activa && cuenta.saldo < LOW_BALANCE_THRESHOLD && (
-                      <div className="flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] text-[var(--data-warning)]">
+                      <div className="flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]">
                         <AlertCircle className="h-3 w-3" />
                         <span className="font-bold">Saldo bajo</span>
                       </div>
@@ -927,7 +927,7 @@ export default function TesoreriaModule() {
                         )}
                         title={cuenta.activa ? "Desactivar" : "Activar"}
                       >
-                        <Power className={cn("h-3.5 w-3.5", cuenta.activa ? "text-[var(--data-error)]" : "text-[var(--data-success)]")} />
+                        <Power className={cn("h-3.5 w-3.5", cuenta.activa ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")} />
                       </button>
                     </div>
                   </m.div>
@@ -1068,22 +1068,22 @@ export default function TesoreriaModule() {
           {/* Totalizador Bar */}
           {filteredMov.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 text-center">
-                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-success)] mb-0.5">Ingresos</p>
-                <p className="text-lg font-extrabold font-mono text-[var(--data-success)]">+{fmtCurrency(movTotals.ingresos)}</p>
+              <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-success-500)] mb-0.5">Ingresos</p>
+                <p className="text-lg font-extrabold font-mono text-[var(--data-success-500)]">+{fmtCurrency(movTotals.ingresos)}</p>
               </div>
-              <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-3 text-center">
-                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-error)] mb-0.5">Egresos</p>
-                <p className="text-lg font-extrabold font-mono text-[var(--data-error)]">-{fmtCurrency(movTotals.egresos)}</p>
+              <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-error-500)] mb-0.5">Egresos</p>
+                <p className="text-lg font-extrabold font-mono text-[var(--data-error-500)]">-{fmtCurrency(movTotals.egresos)}</p>
               </div>
               <div className={cn(
                 "border rounded-xl p-3 text-center",
                 movTotals.neto >= 0
-                  ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30"
-                  : "bg-[var(--data-warning-50)] border-[var(--data-warning)]"
+                  ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30"
+                  : "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]"
               )}>
-                <p className={cn("text-[length:var(--ts-2xs)] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>Neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>
+                <p className={cn("text-[length:var(--ts-2xs)] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>Neto</p>
+                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>
                   {movTotals.neto >= 0 ? "+" : ""}{fmtCurrency(movTotals.neto)}
                 </p>
               </div>
@@ -1156,7 +1156,7 @@ export default function TesoreriaModule() {
                               ) : "—"}
                             </td>
                             <td className="px-4 py-3 text-[var(--text-secondary)] max-w-50 truncate">{m.descripcion || "—"}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold font-mono", isIngreso ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                            <td className={cn("px-4 py-3 text-right font-bold font-mono", isIngreso ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                               {isIngreso ? "+" : "-"}{fmtCurrency(m.monto)}
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)] hidden sm:table-cell">
@@ -1223,15 +1223,15 @@ export default function TesoreriaModule() {
                         {origenMeta ? (() => { const OI = origenMeta.icon; return <OI className={cn("h-5 w-5", origenMeta.color)} />; })() : <Wallet className="h-5 w-5 text-[var(--text-tertiary)]" />}
                       </div>
                       <p className="text-xs font-bold text-[var(--text-primary)] truncate">{t.origenNombre ?? "Origen"}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-mono font-bold">-{fmtCurrency(t.monto)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] font-mono font-bold">-{fmtCurrency(t.monto)}</p>
                     </div>
 
                     {/* Arrow */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
                       <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
-                        <ArrowLeftRight className="h-4 w-4 text-[var(--data-success)]" />
+                        <ArrowLeftRight className="h-4 w-4 text-[var(--data-success-500)]" />
                       </div>
-                      <p className="text-lg font-extrabold font-mono text-[var(--data-success)]">{fmtCurrency(t.monto)}</p>
+                      <p className="text-lg font-extrabold font-mono text-[var(--data-success-500)]">{fmtCurrency(t.monto)}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(t.createdAt)}</p>
                     </div>
 
@@ -1241,7 +1241,7 @@ export default function TesoreriaModule() {
                         {destinoMeta ? (() => { const DI = destinoMeta.icon; return <DI className={cn("h-5 w-5", destinoMeta.color)} />; })() : <Wallet className="h-5 w-5 text-[var(--text-tertiary)]" />}
                       </div>
                       <p className="text-xs font-bold text-[var(--text-primary)] truncate">{t.destinoNombre ?? "Destino"}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-mono font-bold">+{fmtCurrency(t.monto)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-mono font-bold">+{fmtCurrency(t.monto)}</p>
                     </div>
                   </div>
                   {t.descripcion && <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center truncate">{t.descripcion}</p>}
@@ -1373,9 +1373,9 @@ export default function TesoreriaModule() {
                 </div>
 
                 {formError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
-                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-                    <p className="text-sm text-[var(--data-error)]">{formError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error-500)]">{formError}</p>
                   </div>
                 )}
 
@@ -1450,7 +1450,7 @@ export default function TesoreriaModule() {
                         className={cn(
                           "flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-all",
                           movFormTipo === "INGRESO"
-                            ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)] ring-2 ring-[var(--data-success)]/40"
+                            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] ring-2 ring-[var(--data-success-500)]/40"
                             : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                         )}
                       >
@@ -1462,7 +1462,7 @@ export default function TesoreriaModule() {
                         className={cn(
                           "flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-all",
                           movFormTipo === "EGRESO"
-                            ? "border-[var(--data-error)] bg-[var(--data-error-50)] text-[var(--data-error)] ring-2 ring-[var(--data-error)]/20"
+                            ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] ring-2 ring-[var(--data-error-500)]/20"
                             : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                         )}
                       >
@@ -1524,9 +1524,9 @@ export default function TesoreriaModule() {
                   const monto = parseFloat(movFormMonto);
                   if (cuenta && monto > cuenta.saldo) {
                     return (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
-                        <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
-                        <p className="text-sm text-[var(--data-warning)]">
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]">
+                        <AlertCircle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+                        <p className="text-sm text-[var(--data-warning-500)]">
                           El monto ({fmtCurrency(monto)}) supera el saldo disponible ({fmtCurrency(cuenta.saldo)}). La cuenta quedará en negativo.
                         </p>
                       </div>
@@ -1536,9 +1536,9 @@ export default function TesoreriaModule() {
                 })()}
 
                 {movFormError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
-                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-                    <p className="text-sm text-[var(--data-error)]">{movFormError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error-500)]">{movFormError}</p>
                   </div>
                 )}
 
@@ -1554,7 +1554,7 @@ export default function TesoreriaModule() {
                     disabled={movFormSubmitting}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
-                      movFormTipo === "INGRESO" ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
+                      movFormTipo === "INGRESO" ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"
                     )}
                   >
                     {movFormSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1609,7 +1609,7 @@ export default function TesoreriaModule() {
 
                   <div className="flex justify-center">
                     <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
-                      <ArrowDownToLine className="h-4 w-4 text-[var(--data-success)]" />
+                      <ArrowDownToLine className="h-4 w-4 text-[var(--data-success-500)]" />
                     </div>
                   </div>
 
@@ -1657,9 +1657,9 @@ export default function TesoreriaModule() {
                   const monto = parseFloat(transMonto);
                   if (cuenta && monto > cuenta.saldo) {
                     return (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
-                        <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
-                        <p className="text-sm text-[var(--data-warning)]">
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]">
+                        <AlertCircle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+                        <p className="text-sm text-[var(--data-warning-500)]">
                           El monto supera el saldo de la cuenta origen ({fmtCurrency(cuenta.saldo)}).
                         </p>
                       </div>
@@ -1669,9 +1669,9 @@ export default function TesoreriaModule() {
                 })()}
 
                 {transError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
-                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-                    <p className="text-sm text-[var(--data-error)]">{transError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error-500)]">{transError}</p>
                   </div>
                 )}
 
@@ -1720,7 +1720,7 @@ export default function TesoreriaModule() {
                     "h-12 w-12 rounded-xl flex items-center justify-center",
                     deactivateTarget.activa ? "bg-[var(--data-error-100)]" : "bg-[var(--accent-soft)]"
                   )}>
-                    <Power className={cn("h-6 w-6", deactivateTarget.activa ? "text-[var(--data-error)]" : "text-[var(--data-success)]")} />
+                    <Power className={cn("h-6 w-6", deactivateTarget.activa ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")} />
                   </div>
                   <div>
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
@@ -1737,9 +1737,9 @@ export default function TesoreriaModule() {
                 </p>
 
                 {deactivateTarget.activa && deactivateTarget.saldo > 0 && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
-                    <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
-                    <p className="text-sm text-[var(--data-warning)]">
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]">
+                    <AlertCircle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+                    <p className="text-sm text-[var(--data-warning-500)]">
                       Esta cuenta tiene un saldo de {fmtCurrency(deactivateTarget.saldo)}. Considera transferir el dinero antes.
                     </p>
                   </div>
@@ -1757,7 +1757,7 @@ export default function TesoreriaModule() {
                     disabled={deactivating}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
-                      deactivateTarget.activa ? "bg-[var(--data-error)] hover:bg-[var(--data-error)]" : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
+                      deactivateTarget.activa ? "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]" : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
                     )}
                   >
                     {deactivating && <Loader2 className="h-4 w-4 animate-spin" />}

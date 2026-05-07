@@ -9,28 +9,28 @@ const MILESTONES = [
     title: "Nace Buleje",
     desc: "Abrimos nuestra primera tienda en el Jr. Ucayali con solo 50 productos.",
     icon: Heart,
-    color: "bg-red-500",
+    color: "bg-[var(--data-error-500)]",
   },
   {
     year: "2018",
     title: "Más de 500 familias",
     desc: "Nos convertimos en la bodega de confianza del barrio con productos frescos cada día.",
     icon: Users,
-    color: "bg-emerald-500",
+    color: "bg-[var(--data-success-500)]",
   },
   {
     year: "2021",
     title: "Delivery por WhatsApp",
     desc: "Comenzamos a entregar pedidos a domicilio durante la pandemia.",
     icon: Truck,
-    color: "bg-emerald-500",
+    color: "bg-[var(--data-success-500)]",
   },
   {
     year: "2024",
     title: "Tienda online",
     desc: "Lanzamos nuestra plataforma digital para que pidas desde cualquier lugar.",
     icon: Star,
-    color: "bg-amber-500",
+    color: "bg-[var(--data-warning-500)]",
   },
 ];
 

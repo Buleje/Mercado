@@ -7,8 +7,46 @@ import { z } from "zod";
 // ─── Page Types ─────────────────────────────────────────
 export type PageStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
+// SECURITY 2026-05-06 (audit CMS #7): slugs reservados que NO pueden ser
+// usados como páginas CMS porque colisionan con rutas reales del sistema.
+// Sin esta protección, un admin malicioso podía crear /cms/login, /cms/admin
+// o /cms/checkout y secuestrar el routing.
+const CMS_RESERVED_SLUGS = new Set<string>([
+  "login",
+  "logout",
+  "signup",
+  "setup",
+  "admin",
+  "superadmin",
+  "api",
+  "checkout",
+  "cuenta",
+  "carrito",
+  "tracking",
+  "delivery",
+  "delivery-app",
+  "supplier",
+  "marketplace",
+  "tienda",
+  "panel",
+  "cms",
+  "_next",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  "manifest.webmanifest",
+  "manifest.json",
+]);
+
 export const PageSchema = z.object({
-  slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
+  slug: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones")
+    .refine(
+      (s) => !CMS_RESERVED_SLUGS.has(s),
+      { message: "Slug reservado — colisiona con una ruta del sistema" },
+    ),
   title: z.string().min(1, "Título requerido"),
   description: z.string().optional(),
   metaTitle: z.string().optional(),
@@ -22,8 +60,42 @@ export const PageSchema = z.object({
 export type PageInput = z.infer<typeof PageSchema>;
 
 // ─── Block Types ────────────────────────────────────────
+// SECURITY 2026-05-06 (audit CMS #12): whitelist de tipos de bloque.
+// Antes `z.string().min(1)` permitía cualquier nombre — un admin malicioso
+// podía guardar `type="RemoteScript"` o tipo arbitrario que el frontend
+// fallback intentara renderear con código no validado.
+// SECURITY 2026-05-06 (audit CMS #10): tipo "html" REMOVIDO. Antes permitía
+// que un admin malicioso guardara HTML crudo (script tags, event handlers)
+// que se renderizara via `dangerouslySetInnerHTML` en algún caller futuro
+// → XSS stored para todos los visitantes de la página.
+export const VALID_BLOCK_TYPES = [
+  "hero",
+  "products",
+  "benefits",
+  "about",
+  "contact",
+  "faq",
+  "cta",
+  "image",
+  "spacer",
+  "divider",
+  "video",
+  "testimonials",
+  "gallery",
+  "stats",
+  "form",
+] as const;
+export type BlockType = (typeof VALID_BLOCK_TYPES)[number];
+
 export const BlockSchema = z.object({
-  type: z.string().min(1),
+  type: z
+    .string()
+    .min(1)
+    .refine(
+      (t) => (VALID_BLOCK_TYPES as readonly string[]).includes(t.toLowerCase()),
+      { message: "Tipo de bloque no permitido" },
+    )
+    .transform((t) => t.toLowerCase()),
   order: z.number().int().min(0),
   visible: z.boolean().default(true),
   props: z.record(z.string(), z.unknown()),

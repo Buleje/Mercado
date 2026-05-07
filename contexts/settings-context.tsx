@@ -57,6 +57,7 @@ export type StoreTheme = {
   heroCTA?: string;
   heroLink?: string;
   heroBadge?: string;
+  heroImage?: string;
   fontFamily?: string;
   borderRadius?: number;
   spacing?: string;
@@ -85,6 +86,15 @@ export type StoreTheme = {
   welcomePopupCoupon?: string;
   // CSS personalizado
   customCSS?: string;
+  // Banners promocionales por categoría (Oferta de Temporada custom)
+  categoryBanners?: Record<string, {
+    image?: string;
+    title?: string;
+    subtitle?: string;
+    ctaText?: string;
+    productSlug?: string;
+    enabled?: boolean;
+  }>;
 };
 
 type SettingsCtx = {
@@ -196,15 +206,34 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
               heroSubtitle: raw.heroSubtitle as string | undefined,
               heroCTA: raw.heroCTA as string | undefined,
               heroLink: raw.heroLink as string | undefined,
+              heroBadge: raw.heroBadge as string | undefined,
+              heroImage: raw.heroImage as string | undefined,
               fontFamily: raw.fontFamily as string | undefined,
               borderRadius: raw.borderRadius as number | undefined,
               spacing: raw.spacing as string | undefined,
               whatsapp: raw.whatsapp as string | undefined,
+              whatsappMessage: raw.whatsappMessage as string | undefined,
               email: raw.email as string | undefined,
               phone: raw.phone as string | undefined,
               address: raw.address as string | undefined,
               logo: raw.logo as string | undefined,
               visibleSections: Array.isArray(raw.sections) ? (raw.sections as string[]) : undefined,
+              // Estilos visuales avanzados — el ThemeInjector los consume.
+              cardStyle: raw.cardStyle as StoreTheme["cardStyle"],
+              cartStyle: raw.cartStyle as StoreTheme["cartStyle"],
+              buttonStyle: raw.buttonStyle as StoreTheme["buttonStyle"],
+              navbarStyle: raw.navbarStyle as StoreTheme["navbarStyle"],
+              shadowLevel: raw.shadowLevel as StoreTheme["shadowLevel"],
+              animations: raw.animations as StoreTheme["animations"],
+              backgroundPattern: raw.backgroundPattern as StoreTheme["backgroundPattern"],
+              footerText: raw.footerText as string | undefined,
+              welcomePopupEnabled: raw.welcomePopupEnabled as boolean | undefined,
+              welcomePopupTitle: raw.welcomePopupTitle as string | undefined,
+              welcomePopupMessage: raw.welcomePopupMessage as string | undefined,
+              welcomePopupCoupon: raw.welcomePopupCoupon as string | undefined,
+              customCSS: raw.customCSS as string | undefined,
+              categoryBanners: raw.categoryBanners as StoreTheme["categoryBanners"],
+              socialLinks: raw.socialLinks as StoreTheme["socialLinks"],
             });
           }
         }

@@ -28,8 +28,8 @@ const PRIORITY_LABELS: Record<Priority, string> = {
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   low: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-  medium: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  high: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  medium: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  high: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
@@ -129,7 +129,7 @@ export default function SupportWidget() {
           {open ? <X className="w-4 h-4" /> : <MessageCircleQuestion className="w-4 h-4" />}
           <span className="hidden sm:inline">{open ? "Cerrar" : "¿Necesitas ayuda?"}</span>
           {!open && unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--data-error)] text-white text-xs flex items-center justify-center font-bold">
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--data-error-500)] text-white text-xs flex items-center justify-center font-bold">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -170,7 +170,7 @@ export default function SupportWidget() {
             >
               Mis tickets
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold">
                   {unreadCount}
                 </span>
               )}
@@ -233,11 +233,11 @@ export default function SupportWidget() {
               </div>
 
               {error && (
-                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+                <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
               )}
 
               {submitted ? (
-                <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-medium">
+                <div className="flex items-center gap-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-medium">
                   <CheckCircle className="w-4 h-4" />
                   Ticket enviado correctamente
                 </div>
@@ -271,7 +271,7 @@ export default function SupportWidget() {
                   <p className="text-sm">No tienes tickets aún</p>
                   <button
                     onClick={() => setView("form")}
-                    className="mt-2 text-xs text-primary dark:text-[var(--data-success)] hover:underline"
+                    className="mt-2 text-xs text-primary dark:text-[var(--data-success-500)] hover:underline"
                   >
                     Crear el primero
                   </button>
@@ -290,9 +290,9 @@ export default function SupportWidget() {
                     </div>
                     <div className="flex items-center gap-2">
                       {t.status === "open" ? (
-                        <Circle className="w-3 h-3 text-[var(--data-warning)]" />
+                        <Circle className="w-3 h-3 text-[var(--data-warning-500)]" />
                       ) : t.status === "replied" ? (
-                        <CheckCircle className="w-3 h-3 text-[var(--data-success)]" />
+                        <CheckCircle className="w-3 h-3 text-[var(--data-success-500)]" />
                       ) : (
                         <CheckCircle className="w-3 h-3 text-[var(--text-tertiary)]" />
                       )}
@@ -303,8 +303,8 @@ export default function SupportWidget() {
                       </span>
                     </div>
                     {t.reply && (
-                      <div className="mt-1 text-xs text-[var(--text-secondary)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded p-2 border-l-2 border-[var(--data-success)]/30">
-                        <span className="font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">Respuesta: </span>
+                      <div className="mt-1 text-xs text-[var(--text-secondary)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded p-2 border-l-2 border-[var(--data-success-500)]/30">
+                        <span className="font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Respuesta: </span>
                         {t.reply}
                       </div>
                     )}

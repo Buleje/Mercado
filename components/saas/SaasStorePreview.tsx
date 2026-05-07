@@ -5,7 +5,7 @@ import { Store, ShoppingCart, Search, Star, ChevronRight, Sparkles, Package } fr
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
-  { name: "Teal", primary: "#00B4A6", secondary: "#f97316" },
+  { name: "Teal", primary: "var(--accent)", secondary: "#f97316" },
   { name: "Azul", primary: "#2563eb", secondary: "#7c3aed" },
   { name: "Rosa", primary: "#e11d48", secondary: "#f59e0b" },
   { name: "Verde", primary: "#16a34a", secondary: "#0ea5e9" },
@@ -49,7 +49,7 @@ export default function SaasStorePreview() {
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="Ej: Mi Bodega"
                 maxLength={30}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-400"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 placeholder:text-gray-400"
               />
             </div>
 

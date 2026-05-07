@@ -44,21 +44,21 @@ const HUB_TABS: { key: HubTab; label: string; icon: React.ElementType }[] = [
 const SEVERITY_STYLES = {
   critical: {
     border: "border-l-red-500",
-    icon: "text-red-500",
+    icon: "text-[var(--data-error-500)]",
     bg: "bg-red-50 dark:bg-red-950/10",
-    badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    badge: "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400",
   },
   warning: {
     border: "border-l-amber-400",
-    icon: "text-amber-500",
+    icon: "text-[var(--data-warning-500)]",
     bg: "bg-amber-50 dark:bg-amber-950/10",
-    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    badge: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
   },
   info: {
     border: "border-l-emerald-400",
-    icon: "text-emerald-500",
+    icon: "text-[var(--data-success-500)]",
     bg: "bg-emerald-50/50 dark:bg-emerald-950/10",
-    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    badge: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400",
   },
 };
 
@@ -450,7 +450,7 @@ export default function NotificationHub({
                   </p>
                 </div>
                 {totalAlertCount > 0 && (
-                  <span className="text-xs bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center">
+                  <span className="text-xs bg-[var(--data-error-500)] text-white font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center">
                     {totalAlertCount > 99 ? "99+" : totalAlertCount}
                   </span>
                 )}
@@ -518,7 +518,7 @@ export default function NotificationHub({
                   {alerts.filter(a => a.severity === "critical").length > 0 && (
                     <div>
                       <div className="px-4 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-600)] dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" /> Urgente
                         </span>
                       </div>
@@ -532,7 +532,7 @@ export default function NotificationHub({
                   {alerts.filter(a => a.severity === "warning").length > 0 && (
                     <div>
                       <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30">
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" /> Atención
                         </span>
                       </div>
@@ -637,14 +637,14 @@ export default function NotificationHub({
                 <div className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                   <div className="flex items-center gap-3">
                     {alerts.filter(a => a.severity === "critical").length > 0 && (
-                      <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="flex items-center gap-1 text-[var(--data-error-600)] dark:text-red-400 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-[var(--data-error-500)] animate-pulse" />
                         {alerts.filter(a => a.severity === "critical").length} urgente{alerts.filter(a => a.severity === "critical").length > 1 ? "s" : ""}
                       </span>
                     )}
                     {alerts.filter(a => a.severity === "warning").length > 0 && (
-                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span className="flex items-center gap-1 text-[var(--data-warning-600)] dark:text-amber-400 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-[var(--data-warning-500)]" />
                         {alerts.filter(a => a.severity === "warning").length} atención
                       </span>
                     )}

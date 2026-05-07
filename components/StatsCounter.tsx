@@ -14,7 +14,7 @@ function parseStatValue(str: string): { value: number; suffix: string; decimals?
 }
 
 const statMeta = [
-  { icon: ShoppingBag, label: "Productos disponibles", accent: "#00B4A6", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
+  { icon: ShoppingBag, label: "Productos disponibles", accent: "var(--accent)", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
   { icon: Users, label: "Clientes satisfechos", accent: "#f97316", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
   { icon: Truck, label: "Pedidos entregados", accent: "#60a5fa", accentGradient: "linear-gradient(to bottom, rgba(96,165,250,0.12), transparent)" },
   { icon: Star, label: "Calificación promedio", accent: "#fbbf24", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },

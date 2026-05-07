@@ -114,7 +114,14 @@ export function OrdersDetailPanel({
     }
     if (order.status === "confirmado") {
       return {
-        label: "Confirmado · esperando motorizado",
+        label: "Confirmado · listo para preparar",
+        sub: "Marcá cuando empieces a armar el pedido",
+        primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
+      };
+    }
+    if (order.status === "preparando") {
+      return {
+        label: "Preparando · armando el pedido",
         sub: "Asigná un motorizado abajo y avanzá cuando salga",
         primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
       };
@@ -131,14 +138,14 @@ export function OrdersDetailPanel({
 
   return (
     <div
-      className="modal-backdrop flex justify-end animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={`Detalle del pedido de ${order.customer.name}`}
     >
       <div
-        className="bg-[var(--surface-canvas)] w-full max-w-xl h-full flex flex-col shadow-[var(--shadow-xl)] animate-in slide-in-from-right duration-200"
+        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
@@ -221,7 +228,7 @@ export function OrdersDetailPanel({
                 className={cn(
                   "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold transition-colors text-white",
                   actionBanner.primary.tone === "success"
-                    ? "bg-[var(--data-success)] hover:opacity-90"
+                    ? "bg-[var(--data-success-500)] hover:opacity-90"
                     : "bg-primary hover:bg-primary/90",
                 )}
               >
@@ -232,7 +239,7 @@ export function OrdersDetailPanel({
                 <button
                   type="button"
                   onClick={actionBanner.secondary.onClick}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border border-[var(--data-error)]/40 text-[var(--data-error)] bg-white dark:bg-surface hover:bg-[var(--data-error)]/5 transition-colors"
+                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border border-[var(--data-error-500)]/40 text-[var(--data-error-500)] bg-white dark:bg-surface hover:bg-[var(--data-error-500)]/5 transition-colors"
                 >
                   <X className="h-4 w-4" strokeWidth={2} />
                   {actionBanner.secondary.label}
@@ -288,20 +295,20 @@ export function OrdersDetailPanel({
                     </div>
                     {(order.discountAmount ?? 0) > 0 && (
                       <div className="flex justify-between items-center px-4 py-1.5 text-xs">
-                        <span className="text-[var(--data-success)] font-semibold">
+                        <span className="text-[var(--data-success-500)] font-semibold">
                           Descuento{order.appliedPromoId ? ` · ${order.appliedPromoId}` : ""}
                         </span>
-                        <span className="font-semibold text-[var(--data-success)] tabular-nums">
+                        <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
                           −S/{Number(order.discountAmount).toFixed(2)}
                         </span>
                       </div>
                     )}
                     {(order.couponDiscount ?? 0) > 0 && (
                       <div className="flex justify-between items-center px-4 py-1.5 text-xs">
-                        <span className="text-[var(--data-success)] font-semibold">
+                        <span className="text-[var(--data-success-500)] font-semibold">
                           Cupón{order.appliedCouponCode ? ` · ${order.appliedCouponCode}` : ""}
                         </span>
-                        <span className="font-semibold text-[var(--data-success)] tabular-nums">
+                        <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
                           −S/{Number(order.couponDiscount).toFixed(2)}
                         </span>
                       </div>
@@ -341,7 +348,7 @@ export function OrdersDetailPanel({
                     href={`https://wa.me/${phoneDigits}?text=${encodeURIComponent(`Hola ${order.customer.name}, sobre tu pedido #${order.id.slice(-8)}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[var(--data-success)]/10 border border-[var(--data-success)]/30 text-xs font-semibold text-[var(--data-success)] hover:bg-[var(--data-success)]/15 transition-colors"
+                    className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30 text-xs font-semibold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/15 transition-colors"
                   >
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </a>
@@ -416,20 +423,20 @@ export function OrdersDetailPanel({
                 )}
                 {order.paymentMethod === "efectivo" && order.deuda && (
                   <>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error)]/10 text-[var(--data-error)] border border-[var(--data-error)]/30">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border border-[var(--data-error-500)]/30">
                       Deuda pendiente
                     </span>
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(order.id)}
-                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-semibold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 border border-[var(--data-success)]/30 transition-colors"
+                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
                     >
                       <Check className="h-3.5 w-3.5" /> Marcar cobrado
                     </button>
                   </>
                 )}
                 {order.paymentMethod === "efectivo" && order.deuda === false && (
-                  <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success)]/10 text-[var(--data-success)] border border-[var(--data-success)]/30">
+                  <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
                     Cobrado
                   </span>
                 )}
@@ -454,7 +461,7 @@ export function OrdersDetailPanel({
                 Notas internas
               </SectionTitle>
               {adminNotes && (
-                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--data-warning)]/15 text-[var(--data-warning)] text-xs font-bold">
+                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] text-xs font-bold">
                   !
                 </span>
               )}
@@ -462,7 +469,7 @@ export function OrdersDetailPanel({
             {notesOpen && (
               <div className="space-y-2 mt-2">
                 {adminNotes && (
-                  <div className="rounded-lg bg-[var(--data-warning)]/10 border border-[var(--data-warning)]/30 p-3">
+                  <div className="rounded-lg bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)]/30 p-3">
                     <pre className="text-sm text-[var(--text-primary)] whitespace-pre-wrap font-sans leading-relaxed">
                       {adminNotes}
                     </pre>
@@ -523,8 +530,8 @@ export function OrdersDetailPanel({
                             "absolute -left-6 top-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2 shrink-0",
                             step.completed || step.current
                               ? isCanceled
-                                ? "bg-[var(--data-error)] border-[var(--data-error)] text-white"
-                                : "bg-[var(--data-success)] border-[var(--data-success)] text-white"
+                                ? "bg-[var(--data-error-500)] border-[var(--data-error-500)] text-white"
+                                : "bg-[var(--data-success-500)] border-[var(--data-success-500)] text-white"
                               : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-tertiary)]",
                           )}
                         >
@@ -536,7 +543,7 @@ export function OrdersDetailPanel({
                               "text-sm font-semibold",
                               step.completed || step.current
                                 ? isCanceled
-                                  ? "text-[var(--data-error)]"
+                                  ? "text-[var(--data-error-500)]"
                                   : "text-[var(--text-primary)]"
                                 : "text-[var(--text-tertiary)]",
                             )}
@@ -564,7 +571,7 @@ export function OrdersDetailPanel({
             <button
               type="button"
               onClick={() => onShowRejectModal(order.id)}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--data-error)] border border-[var(--data-error)]/30 bg-[var(--data-error)]/5 hover:bg-[var(--data-error)]/10 transition-colors"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
             >
               <X className="h-4 w-4" />
               Rechazar

@@ -11,7 +11,7 @@
  * assignment) cae a un snapshot derivado solo del estado y los items —
  * sigue siendo info real, solo con detalle reducido.
  *
- * Share token: HMAC-SHA256(payload, AUTH_SECRET) — stateless, TTL 72h.
+ * Share token: HMAC-SHA256(payload, AUTH_SECRET) — stateless, TTL 24h (reducido 2026-05-05, audit H013).
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
@@ -25,7 +25,10 @@ import {
   type TrackingItem,
 } from "@/lib/mocks/order-tracking.mock";
 
-const DEFAULT_TTL_MS = 72 * 60 * 60 * 1000;
+// SECURITY 2026-05-05 (audit delivery H013): TTL reducido de 72h a 24h para
+// acotar la ventana de exposicion del token de seguimiento publico.
+// Rotacion de kid (multi-key support) diferido — ver H013 tracker.
+const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 // ── HMAC helpers (edge + node compatible, via WebCrypto) ────────────────────
 function getSecret(): string {

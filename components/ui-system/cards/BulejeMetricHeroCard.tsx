@@ -144,8 +144,8 @@ export const BulejeMetricHeroCard = memo(function BulejeMetricHeroCard({
           <span
             className={cn(
               "inline-flex items-center gap-0.5 text-sm font-bold tabular-nums",
-              primaryDir === "up" && "text-[var(--data-success)]",
-              primaryDir === "down" && "text-[var(--data-error)]",
+              primaryDir === "up" && "text-[var(--data-success-500)]",
+              primaryDir === "down" && "text-[var(--data-error-500)]",
               primaryDir === "flat" && "text-[var(--text-tertiary)]",
             )}
           >
@@ -209,8 +209,8 @@ export const BulejeMetricHeroCard = memo(function BulejeMetricHeroCard({
                 key={d.label}
                 className={cn(
                   "inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold tabular-nums",
-                  dir === "up" && "text-[var(--data-success)]",
-                  dir === "down" && "text-[var(--data-error)]",
+                  dir === "up" && "text-[var(--data-success-500)]",
+                  dir === "down" && "text-[var(--data-error-500)]",
                   dir === "flat" && "text-[var(--text-tertiary)]",
                 )}
               >

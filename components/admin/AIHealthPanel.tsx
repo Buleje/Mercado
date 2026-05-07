@@ -39,18 +39,18 @@ interface HealthResponse {
 const CATEGORY_CONFIG = {
   seguridad: { icon: Shield, color: "#ef4444", label: "Seguridad" },
   rendimiento: { icon: Zap, color: "#f59e0b", label: "Rendimiento" },
-  agentes: { icon: Bot, color: "#00B4A6", label: "Agentes IA" },
+  agentes: { icon: Bot, color: "var(--accent)", label: "Agentes IA" },
   datos: { icon: Database, color: "#8b5cf6", label: "Datos" },
 } as const;
 
 const STATUS_CONFIG = {
-  ok: { icon: CheckCircle2, color: "#00B4A6", label: "OK" },
+  ok: { icon: CheckCircle2, color: "var(--accent)", label: "OK" },
   warning: { icon: AlertTriangle, color: "#f59e0b", label: "Advertencia" },
   error: { icon: XCircle, color: "#ef4444", label: "Error" },
 } as const;
 
 const OVERALL_CONFIG = {
-  healthy: { color: "#00B4A6", label: "Todo funciona perfecto", icon: CheckCircle2 },
+  healthy: { color: "var(--accent)", label: "Todo funciona perfecto", icon: CheckCircle2 },
   warning: { color: "#f59e0b", label: "Funciona con advertencias", icon: AlertTriangle },
   degraded: { color: "#f97316", label: "Algunos sistemas con problemas", icon: Activity },
   critical: { color: "#ef4444", label: "Problemas críticos detectados", icon: XCircle },
@@ -101,7 +101,7 @@ export default function AIHealthPanel() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <div className="relative">
-          <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-[#00B4A6] animate-spin" />
+          <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-[var(--accent)] animate-spin" />
           <Heart className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-primary animate-pulse" />
         </div>
         <p className="text-sm text-[var(--text-tertiary)]">Revisando sistemas de IA...</p>
@@ -112,8 +112,8 @@ export default function AIHealthPanel() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <XCircle className="h-12 w-12 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)]">Error al verificar: {error}</p>
+        <XCircle className="h-12 w-12 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)]">Error al verificar: {error}</p>
         <button
           onClick={fetchHealth}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#009e92] transition-colors text-sm"

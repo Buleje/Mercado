@@ -117,9 +117,9 @@ export default function SmartReorderCard({ className }: Props) {
   }, [suggestions, selected]);
 
   const urgencyStyle: Record<ReorderSuggestion["urgency"], string> = {
-    critico: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]",
-    pronto: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/40 dark:text-[var(--data-warning)]",
-    planificar: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    critico: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",
+    pronto: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/40 dark:text-[var(--data-warning-500)]",
+    planificar: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   };
 
   const urgencyLabel: Record<ReorderSuggestion["urgency"], string> = {
@@ -158,7 +158,7 @@ export default function SmartReorderCard({ className }: Props) {
       {/* Error */}
       {!loading && error && (
         <div className="flex flex-col items-center py-6 gap-2 text-center">
-          <AlertTriangle className="w-6 h-6 text-[var(--data-warning)]" />
+          <AlertTriangle className="w-6 h-6 text-[var(--data-warning-500)]" />
           <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">No se pudo calcular las sugerencias.</p>
         </div>
       )}
@@ -167,9 +167,9 @@ export default function SmartReorderCard({ className }: Props) {
       {!loading && !error && suggestions.length === 0 && (
         <div className="flex flex-col items-center py-8 gap-2 text-center">
           <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-            <ShoppingBag className="w-5 h-5 text-[var(--data-success)]" />
+            <ShoppingBag className="w-5 h-5 text-[var(--data-success-500)]" />
           </div>
-          <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Stock al dia</p>
+          <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Stock al dia</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
             No hay productos que necesiten reposicion pronto.
           </p>
@@ -230,8 +230,8 @@ export default function SmartReorderCard({ className }: Props) {
                 </span>
                 <span className={cn(
                   "hidden sm:block text-xs font-bold text-right",
-                  s.daysUntilEmpty < 3 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
-                  s.daysUntilEmpty < 7 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+                  s.daysUntilEmpty < 3 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
+                  s.daysUntilEmpty < 7 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
                   "text-[var(--text-secondary)] dark:text-muted",
                 )}>
                   {s.daysUntilEmpty >= 999 ? "—" : s.daysUntilEmpty}
@@ -260,7 +260,7 @@ export default function SmartReorderCard({ className }: Props) {
               {selected.size > 0 && (
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                   <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{selected.size}</span> producto{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""} —{" "}
-                  <span className="font-bold text-primary dark:text-[var(--data-success)]">{formatCurrency(totalSelected)}</span>
+                  <span className="font-bold text-primary dark:text-[var(--data-success-500)]">{formatCurrency(totalSelected)}</span>
                 </p>
               )}
             </div>

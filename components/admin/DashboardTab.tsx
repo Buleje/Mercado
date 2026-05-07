@@ -12,7 +12,7 @@ import {
 import { CardTitle, ErrorAlert, SectionTitle, WarningAlert } from "@buleje/design-system";
 import { PeriodFilter } from "@buleje/design-system/dashboard";
 import type { DateRange, Period as DSPeriod } from "@buleje/design-system/dashboard";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, startOfLimaDay, startOfLimaDayDaysAgo } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { OrderStats } from "@/components/OrderStats";
 import { useTheme } from "@/contexts/theme-context";
@@ -498,10 +498,10 @@ export default function DashboardTab() {
 
     const allPeriodOrders = orders.filter(o => inPeriod(o.createdAt, period));
     const funnelData = [
-      { label: "Recibidos",   count: allPeriodOrders.length, color: "#00B4A6" },
+      { label: "Recibidos",   count: allPeriodOrders.length, color: "var(--accent)" },
       { label: "Confirmados", count: allPeriodOrders.filter(o => ["confirmado","en_camino","entregado"].includes(o.status)).length, color: "#3b82f6" },
       { label: "En camino",  count: allPeriodOrders.filter(o => ["en_camino","entregado"].includes(o.status)).length, color: "#06b6d4" },
-      { label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" },
+      { label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "var(--accent)" },
     ];
 
     // ── Conversion Funnel (simulated data based on completed orders) ──
@@ -511,7 +511,7 @@ export default function DashboardTab() {
       { label: "Productos vistos", count: Math.round(completedOrders * 3), pct: 60, color: "#06b6d4" },
       { label: "Carrito agregado", count: Math.round(completedOrders * 1.5), pct: 30, color: "#8b5cf6" },
       { label: "Checkout iniciado", count: Math.round(completedOrders * 1.2), pct: 24, color: "#f59e0b" },
-      { label: "Pedido completado", count: completedOrders, pct: 20, color: "#00B4A6" },
+      { label: "Pedido completado", count: completedOrders, pct: 20, color: "var(--accent)" },
     ];
     const overallConversionRate = conversionFunnelData[0].count > 0 
       ? (conversionFunnelData[4].count / conversionFunnelData[0].count) * 100 
@@ -928,13 +928,12 @@ export default function DashboardTab() {
       // Server-side paginated CSV export
       const params = new URLSearchParams();
       if (period === "hoy") {
-        params.set("from", new Date(new Date().setHours(0,0,0,0)).toISOString());
+        params.set("from", new Date(startOfLimaDay()).toISOString());
       } else if (period === "semana") {
-        const d = new Date(); d.setDate(d.getDate() - 7);
-        params.set("from", d.toISOString());
+        params.set("from", new Date(startOfLimaDayDaysAgo(7)).toISOString());
       } else if (period === "mes") {
-        const d = new Date(); d.setDate(1); d.setHours(0,0,0,0);
-        params.set("from", d.toISOString());
+        const d = new Date(); d.setDate(1);
+        params.set("from", new Date(startOfLimaDay(d)).toISOString());
       }
       window.open(`/api/orders/csv?${params.toString()}`, "_blank");
     } else if (type === "pdf") {
@@ -1452,8 +1451,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               className={cn(
                 "flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors",
                 expandAll
-                  ? "text-white bg-[var(--data-info)] hover:bg-[var(--data-info)] "
-                  : "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info)]/50"
+                  ? "text-white bg-[var(--data-info-500)] hover:bg-[var(--data-info-500)] "
+                  : "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/50"
               )}
               title={expandAll ? "Colapsar — volver a vista por sección (Esc)" : "Ver todos los gráficos en una vista"}
             >
@@ -1503,7 +1502,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             })()}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
             title="Enviar resumen por WhatsApp"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1514,7 +1513,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               onClick={() => setAutoRefresh(v => !v)}
               className={cn(
                 "px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase transition-colors",
-                autoRefresh ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-tertiary)] dark:bg-surface dark:text-muted"
+                autoRefresh ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-tertiary)] dark:bg-surface dark:text-muted"
               )}
             >
               {autoRefresh ? "En vivo" : "Auto"}
@@ -1522,7 +1521,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {newOrderCount > 0 && autoRefresh && (
               <button
                 onClick={() => { setNewOrderCount(0); setSection("resumen"); }}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold animate-pulse"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold animate-pulse"
               >
                 +{newOrderCount} nuevo{newOrderCount > 1 ? "s" : ""}
               </button>
@@ -1558,7 +1557,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {autoRefresh && lastUpdated && (
         <div className="h-0.5 w-full bg-gray-100 dark:bg-accent mb-3 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-[var(--data-success)] rounded-full"
+            className="h-full bg-[var(--data-success-500)] rounded-full"
             style={{
               animation: `countdown ${refreshInterval}s linear infinite`,
               animationPlayState: loading ? 'paused' : 'running'
@@ -1573,19 +1572,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* KPI Strip — wraps on smaller screens: 2 cols → 4 → 7 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 lg:gap-2 shrink-0">
             {([
-              { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dVentas },
-              { label: "Utilidad", value: fmt(st.utilidad), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dUtilidad },
-              { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
+              { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dVentas },
+              { label: "Utilidad", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dUtilidad },
+              { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
               { label: "Tickets", value: String(st.tickets), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dTickets },
               { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dClientes },
-              { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-gray-50 dark:bg-surface" },
-              { label: "Balance Caja", value: fmt(st.ventas - st.totalPurch), accent: (st.ventas - st.totalPurch) >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-gray-50 dark:bg-surface" },
+              { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-gray-50 dark:bg-surface" },
+              { label: "Balance Caja", value: fmt(st.ventas - st.totalPurch), accent: (st.ventas - st.totalPurch) >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-gray-50 dark:bg-surface" },
             ] as { label: string; value: string; accent: string; bg: string; delta?: number | null }[]).map(k => (
               <div key={k.label} className={cn("rounded-xl px-3 py-2.5", k.bg)}>
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted font-medium truncate">{k.label}</div>
                 <div className={cn("text-sm font-extrabold tabular-nums leading-tight mt-0.5 truncate", k.accent)}>{k.value}</div>
                 {k.delta != null && k.delta !== undefined ? (
-                  <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", k.delta >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                  <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", k.delta >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                     {k.delta >= 0 ? "↑" : "↓"} {Math.abs(k.delta).toFixed(1)}%
                   </div>
                 ) : k.delta === null ? (
@@ -1600,7 +1599,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
               <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
-                  <DollarSign className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                  <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Ventas</span>
                 </div>
                 {st.daily.length > 0 && (
@@ -1608,21 +1607,21 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <svg viewBox={`0 0 ${Math.max(st.daily.length, 1) * 36} 80`} className="w-full h-full" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="fsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path d={st.daily.map(([,v],i) => { const x=i*36+18; const y=70-((v/st.maxDaily)*60); return i===0?`M${x},${y}`:`L${x},${y}`; }).join(' ') + ` L${(st.daily.length-1)*36+18},70 L18,70 Z`} fill="url(#fsAreaGrad)" />
-                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                     </svg>
                   </div>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
-                    { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-                    { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+                    { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                    { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                     { label: "Uds. Vendidas", value: String(st.uds), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
-                    { label: "Cancelados", value: String(st.cancelados), accent: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+                    { label: "Cancelados", value: String(st.cancelados), accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                       <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{k.label}</div>
@@ -1638,10 +1637,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   {[
-                    { label: "Ingresos", value: fmt(st.ventas), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-                    { label: "Egresos", value: fmt(st.totalPurch), accent: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
-                    { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-                    { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+                    { label: "Ingresos", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                    { label: "Egresos", value: fmt(st.totalPurch), accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+                    { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                    { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                       <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{k.label}</div>
@@ -1666,7 +1665,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
               <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
-                  <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                  <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Productos (Top ingresos)</span>
                 </div>
                 {st.topRev.length === 0 ? (
@@ -1706,33 +1705,33 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
-                  <Package className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+                  <Package className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Inventario</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Valor stock</div>
-                    <div className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] tabular-nums truncate">{fmt(st.stockVal)}</div>
+                    <div className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] tabular-nums truncate">{fmt(st.stockVal)}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Sin stock</div>
-                    <div className={cn("text-sm font-bold tabular-nums", st.agotados.length > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]")}>{st.agotados.length}</div>
+                    <div className={cn("text-sm font-bold tabular-nums", st.agotados.length > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>{st.agotados.length}</div>
                   </div>
                 </div>
                 {st.stockCritico.length === 0 && st.agotados.length === 0 ? (
-                  <div className="text-xs text-[var(--data-success)] text-center py-1 font-medium">Inventario saludable</div>
+                  <div className="text-xs text-[var(--data-success-500)] text-center py-1 font-medium">Inventario saludable</div>
                 ) : (
                   <div className="space-y-1">
                     {st.agotados.slice(0, 2).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg">
                         <span className="text-xs text-[var(--text-primary)] dark:text-foreground truncate flex-1">{p.name}</span>
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] ml-2 shrink-0">Agotado</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] ml-2 shrink-0">Agotado</span>
                       </div>
                     ))}
                     {st.stockCritico.filter(p => (p.stock ?? 0) > 0).slice(0, 4).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-[var(--data-warning-50)] dark:bg-amber-950/30 rounded-lg">
                         <span className="text-xs text-[var(--text-primary)] dark:text-foreground truncate flex-1">{p.name}</span>
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] ml-2 shrink-0">{p.stock}/{p.stockMin}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] ml-2 shrink-0">{p.stock}/{p.stockMin}</span>
                       </div>
                     ))}
                     {(st.stockCritico.length + st.agotados.length) > 6 && (
@@ -1791,17 +1790,17 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
-                  <Truck className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                  <Truck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Total compras</div>
-                    <div className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums truncate">{fmt(st.totalPurch)}</div>
+                    <div className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums truncate">{fmt(st.totalPurch)}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Deuda pend.</div>
-                    <div className={cn("text-sm font-bold tabular-nums truncate", st.debt > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]")}>{fmt(st.debt)}</div>
+                    <div className={cn("text-sm font-bold tabular-nums truncate", st.debt > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>{fmt(st.debt)}</div>
                   </div>
                 </div>
                 {st.supPurchases.length > 0 && (
@@ -1826,13 +1825,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 )}
                 {st.overdue.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] mb-1">
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-1">
                       {st.overdue.length} cuenta{st.overdue.length !== 1 ? "s" : ""} vencida{st.overdue.length !== 1 ? "s" : ""}
                     </p>
                     {st.overdue.slice(0, 2).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1 text-xs">
                         <span className="text-[var(--text-secondary)] truncate">{p.supplierName}</span>
-                        <span className="font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 ml-2">{fmt(p.amount - p.paidAmount)}</span>
+                        <span className="font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0 ml-2">{fmt(p.amount - p.paidAmount)}</span>
                       </div>
                     ))}
                   </div>
@@ -1847,7 +1846,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {expandAll && (
         <div className="flex items-center justify-between mb-5 px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[var(--data-info)] flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-[var(--data-info-500)] flex items-center justify-center shrink-0">
               <LayoutDashboard className="h-3.5 w-3.5 text-white" />
             </div>
             <div>
@@ -1857,7 +1856,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           </div>
           <button
             onClick={() => setExpandAll(false)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info)]/50 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/50 transition-colors"
             title="Colapsar (Esc)"
           >
             <Minimize2 className="h-3.5 w-3.5" />
@@ -1920,15 +1919,15 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         const agotadosCount = products.filter(p => p.stock != null && p.stock <= 0).length;
         const stockBajoCount = products.filter(p => p.stock != null && p.stockMin != null && p.stock > 0 && p.stock <= p.stockMin).length;
         return (
-          <div className="mb-4 rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--surface-sunken)] px-5 py-4">
+          <div className="mb-4 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--surface-sunken)] px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Sun className="h-4.5 w-4.5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-                <span className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">Resumen de hoy</span>
-                <span className="text-[length:var(--ts-2xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/60">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}</span>
+                <Sun className="h-4.5 w-4.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
+                <span className="text-sm font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Resumen de hoy</span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/60">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}</span>
               </div>
               {ydRev > 0 && (
-                <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", isUp ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40")}>
+                <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", isUp ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40")}>
                   {isUp ? "↑" : "↓"} {Math.abs(delta).toFixed(0)}% vs ayer
                 </span>
               )}
@@ -1939,7 +1938,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{todayRev.toFixed(0)}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ingresos</p>
               </div>
-              <div className="text-center border-x border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+              <div className="text-center border-x border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{todayCount}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Transacciones</p>
               </div>
@@ -1950,24 +1949,24 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </div>
             {/* Status row — pending orders + stock */}
             {(pendingCount > 0 || enCaminoCount > 0 || agotadosCount > 0 || stockBajoCount > 0) && (
-              <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 {pendingCount > 0 && (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                     <Clock className="h-3 w-3" /> {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
                   </span>
                 )}
                 {enCaminoCount > 0 && (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     <Truck className="h-3 w-3" /> {enCaminoCount} en camino
                   </span>
                 )}
                 {agotadosCount > 0 && (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                     <PackageX className="h-3 w-3" /> {agotadosCount} agotado{agotadosCount !== 1 ? "s" : ""}
                   </span>
                 )}
                 {stockBajoCount > 0 && (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                     <AlertTriangle className="h-3 w-3" /> {stockBajoCount} stock bajo
                   </span>
                 )}
@@ -1988,7 +1987,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {st.insights.length > 0 && (expandAll || section === "resumen") && (
         <div style={{marginBottom:"16px"}}>
           <div className="flex items-center gap-1.5 mb-2.5">
-            <Lightbulb className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+            <Lightbulb className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
             <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Alertas inteligentes</span>
             <span className="text-xs text-[var(--text-tertiary)] dark:text-muted ml-1">{st.insights.length}</span>
           </div>
@@ -1996,16 +1995,16 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {st.insights.map((ins, i) => (
               <div key={i} className={cn(
                 "flex gap-3 p-3 rounded-xl border transition-colors",
-                ins.type === "danger" ? "bg-[var(--data-error-50)]/60 border-[var(--data-error)]" :
-                ins.type === "warning" ? "bg-[var(--data-warning-50)]/60 border-[var(--data-warning)]" :
-                ins.type === "success" ? "bg-[var(--accent-soft)]/60 border-[var(--data-success)]/30" :
+                ins.type === "danger" ? "bg-[var(--data-error-50)]/60 border-[var(--data-error-500)]" :
+                ins.type === "warning" ? "bg-[var(--data-warning-50)]/60 border-[var(--data-warning-500)]" :
+                ins.type === "success" ? "bg-[var(--accent-soft)]/60 border-[var(--data-success-500)]/30" :
                 "bg-gray-50/60 border-[var(--rule-soft)]"
               )}>
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                  ins.type === "danger" ? "bg-[var(--data-error-100)] text-[var(--data-error)]" :
-                  ins.type === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" :
-                  ins.type === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
+                  ins.type === "danger" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
+                  ins.type === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" :
+                  ins.type === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
                   "bg-gray-100 text-[var(--text-secondary)]"
                 )}>
                   <ins.icon className="h-4 w-4" />
@@ -2013,9 +2012,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 <div className="min-w-0">
                   <p className={cn(
                     "text-xs font-semibold leading-tight",
-                    ins.type === "danger" ? "text-[var(--data-error)]" :
-                    ins.type === "warning" ? "text-[var(--data-warning)]" :
-                    ins.type === "success" ? "text-[var(--data-success)]" :
+                    ins.type === "danger" ? "text-[var(--data-error-500)]" :
+                    ins.type === "warning" ? "text-[var(--data-warning-500)]" :
+                    ins.type === "success" ? "text-[var(--data-success-500)]" :
                     "text-[var(--text-primary)]"
                   )}>{ins.title}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{ins.desc}</p>
@@ -2031,7 +2030,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         <div className="flex gap-1.5 flex-wrap" style={{marginBottom:"16px"}}>
           {st.alerts.map((a,i) => (
             <div key={i} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap",
-              a.type==="danger"?"bg-[var(--data-error-50)] text-[var(--data-error)]":a.type==="warning"?"bg-[var(--data-warning-50)] text-[var(--data-warning)]":"bg-gray-50 text-[var(--text-secondary)]"
+              a.type==="danger"?"bg-[var(--data-error-50)] text-[var(--data-error-500)]":a.type==="warning"?"bg-[var(--data-warning-50)] text-[var(--data-warning-500)]":"bg-gray-50 text-[var(--text-secondary)]"
             )}>
               <AlertCircle className="h-3 w-3 shrink-0" />{a.msg}
             </div>
@@ -2045,7 +2044,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {expandAll && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-            <BarChart3 className="h-3.5 w-3.5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <BarChart3 className="h-3.5 w-3.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Resumen</CardTitle>
         </div>
@@ -2105,14 +2104,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               metric.color === "emerald" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
                               metric.color === "blue" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
                               metric.color === "violet" && "bg-[var(--surface-sunken)]",
-                              metric.color === "amber" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"
+                              metric.color === "amber" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"
                             )}>
                               <metric.icon className={cn(
                                 "h-4 w-4",
-                                metric.color === "emerald" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
-                                metric.color === "blue" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                                metric.color === "emerald" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                                metric.color === "blue" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                                 metric.color === "violet" && "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
-                                metric.color === "amber" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                                metric.color === "amber" && "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                               )} />
                             </div>
                             <div>
@@ -2120,17 +2119,17 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{metric.format(metric.value)}</p>
                             </div>
                           </div>
-                          {status === "complete" && <Trophy className="h-5 w-5 text-[var(--data-warning)]" />}
+                          {status === "complete" && <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />}
                         </div>
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-[var(--text-secondary)] dark:text-muted">Meta: {metric.format(metric.goal)}</span>
                             <span className={cn(
                               "font-bold",
-                              status === "complete" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
-                              status === "good" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
-                              status === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-                              status === "danger" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              status === "complete" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                              status === "good" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                              status === "warning" && "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+                              status === "danger" && "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                             )}>
                               {pct.toFixed(0)}%
                             </span>
@@ -2139,20 +2138,20 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all duration-[var(--dur-slow)]",
-                                status === "complete" && "bg-[var(--data-success)]",
-                                status === "good" && "bg-[var(--data-success)]",
-                                status === "warning" && "bg-[var(--data-warning)]",
-                                status === "danger" && "bg-[var(--data-error)]"
+                                status === "complete" && "bg-[var(--data-success-500)]",
+                                status === "good" && "bg-[var(--data-success-500)]",
+                                status === "warning" && "bg-[var(--data-warning-500)]",
+                                status === "danger" && "bg-[var(--data-error-500)]"
                               )}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
                           <p className={cn(
                             "text-[length:var(--ts-2xs)] font-medium",
-                            status === "complete" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                            status === "complete" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                             status === "good" && "text-[var(--text-secondary)]",
-                            status === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-                            status === "danger" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                            status === "warning" && "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+                            status === "danger" && "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                           )}>
                             {status === "complete" ? "¡Meta alcanzada!" :
                              status === "good" ? "En buen camino" :
@@ -2170,7 +2169,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     setTempGoals({ revenue: 0, orders: 0, customers: 0, avgTicket: 0 });
                     setEditingMonthlyGoals(true);
                   }}
-                  className="w-full py-8 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] dark:text-muted hover:border-[var(--data-info)] dark:hover:border-[var(--data-info)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors group"
+                  className="w-full py-8 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] dark:text-muted hover:border-[var(--data-info-500)] dark:hover:border-[var(--data-info-500)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors group"
                 >
                   <Target className="h-8 w-8 mx-auto mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
                   <p className="text-sm font-semibold">Definir metas del mes</p>
@@ -2253,8 +2252,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       />
                     </div>
                   </div>
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
-                    <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
+                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+                    <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
@@ -2304,7 +2303,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                                     {entry.goals?.revenue > 0 && (
                                       <span className={cn(
                                         "ml-auto text-xs font-bold",
-                                        (entry.actual?.revenue || 0) >= entry.goals.revenue ? "text-[var(--data-success)]" : "text-[var(--data-warning)]"
+                                        (entry.actual?.revenue || 0) >= entry.goals.revenue ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"
                                       )}>
                                         {((entry.actual?.revenue || 0) / entry.goals.revenue * 100).toFixed(0)}%
                                       </span>
@@ -2320,7 +2319,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                                     {entry.goals?.orders > 0 && (
                                       <span className={cn(
                                         "ml-auto text-xs font-bold",
-                                        (entry.actual?.orders || 0) >= entry.goals.orders ? "text-[var(--data-success)]" : "text-[var(--data-warning)]"
+                                        (entry.actual?.orders || 0) >= entry.goals.orders ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"
                                       )}>
                                         {((entry.actual?.orders || 0) / entry.goals.orders * 100).toFixed(0)}%
                                       </span>
@@ -2343,7 +2342,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {period !== "todo" && (
             <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
               <div className="flex flex-wrap items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                <CalendarDays className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
                 <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
                   Comparado con{" "}
                   {period === "hoy" ? "ayer" : period === "semana" ? "semana anterior" : period === "mes" ? "mes anterior" : "período anterior"}
@@ -2351,7 +2350,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               <div className="flex items-center gap-1.5">
                 {st.dVentas != null && (
-                  <span className={cn("text-xs font-bold px-2 py-1 rounded-lg", st.dVentas >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error)]/10 text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                  <span className={cn("text-xs font-bold px-2 py-1 rounded-lg", st.dVentas >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                     {st.dVentas >= 0 ? "↑" : "↓"} {Math.abs(st.dVentas).toFixed(1)}% ventas
                   </span>
                 )}
@@ -2364,7 +2363,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <Lightbulb className="h-4 w-4 text-[var(--data-warning)]" />
+                  <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" />
                 </div>
                 <div>
                   <CardTitle className="text-sm font-bold">Buenos días</CardTitle>
@@ -2373,7 +2372,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               {st.todayRevenue > 0 && (
                 <div className="text-right">
-                  <div className="text-lg font-bold text-[var(--data-success)]">{fmt(st.todayRevenue)}</div>
+                  <div className="text-lg font-bold text-[var(--data-success-500)]">{fmt(st.todayRevenue)}</div>
                   <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">hoy</div>
                 </div>
               )}
@@ -2390,7 +2389,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               {dailyGoal > 0 && (
                 <div className="text-right">
-                  <span className={cn("text-xs font-bold", st.yesterdayRevenue >= dailyGoal ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>
+                  <span className={cn("text-xs font-bold", st.yesterdayRevenue >= dailyGoal ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>
                     {st.yesterdayRevenue >= dailyGoal ? "Meta" : `${((st.yesterdayRevenue / dailyGoal) * 100).toFixed(0)}%`}
                   </span>
                 </div>
@@ -2411,21 +2410,21 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
             )}
             {st.briefingPriorities.length === 0 && (
-              <div className="text-xs text-[var(--data-success)] text-center py-1">Sin prioridades pendientes. ¡Buen día!</div>
+              <div className="text-xs text-[var(--data-success-500)] text-center py-1">Sin prioridades pendientes. ¡Buen día!</div>
             )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-[var(--data-success)]" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
-            <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-[var(--data-success)]" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
-            <Kpi label="Margen" value={`${st.margen.toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-[var(--data-success)]":st.margen>=15?"text-amber-500":"text-red-500"} delta={st.dMargen} />
+            <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-[var(--data-success-500)]" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
+            <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-[var(--data-success-500)]" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
+            <Kpi label="Margen" value={`${st.margen.toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-[var(--data-success-500)]":st.margen>=15?"text-[var(--data-warning-500)]":"text-[var(--data-error-500)]"} delta={st.dMargen} />
             <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-[var(--text-secondary)]" delta={st.dTickets} sparklineData={st.sparklineOrders} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Ticket Prom." value={fmt(st.ticketProm)} icon={ShoppingCart} accent="text-[var(--text-secondary)]" delta={st.dTicketProm} sparklineData={st.sparklineAvgTicket} />
             <Kpi label="Uds. Vendidas" value={String(st.uds)} icon={Package} accent="text-cyan-500" delta={st.dUds} />
             <Kpi label="Clientes" value={String(st.clientesAtendidos)} icon={Users} accent="text-[var(--text-secondary)]" delta={st.dClientes} />
-            <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={ShoppingBasket} accent="text-amber-500" />
+            <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={ShoppingBasket} accent="text-[var(--data-warning-500)]" />
           </div>
 
           {/* S3: Daily sales goal */}
@@ -2448,23 +2447,23 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             if (st.margen < 15) alertItems.push({ type: "warning", msg: `Margen general bajo: ${st.margen.toFixed(1)}% — revisar precios o costos` });
             if (alertItems.length === 0) return null;
             return (
-              <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/15 p-4">
+              <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/15 p-4">
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-                    <span className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Alertas activas ({alertItems.length})</span>
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
+                    <span className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Alertas activas ({alertItems.length})</span>
                   </div>
-                  <button onClick={() => setAlertsCollapsed(c => !c)} className="p-1 rounded-lg hover:bg-[var(--data-warning)]/50 dark:hover:bg-[var(--data-warning)]/30 transition-colors">
-                    <ChevronRight className={cn("h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] transition-transform", !alertsCollapsed && "rotate-90")} />
+                  <button onClick={() => setAlertsCollapsed(c => !c)} className="p-1 rounded-lg hover:bg-[var(--data-warning-500)]/50 dark:hover:bg-[var(--data-warning-500)]/30 transition-colors">
+                    <ChevronRight className={cn("h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] transition-transform", !alertsCollapsed && "rotate-90")} />
                   </button>
                 </div>
                 {!alertsCollapsed && <div className="space-y-1.5">
                   {alertItems.map((a, i) => (
                     <div key={i} className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium",
-                      a.type === "danger" ? "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]" :
-                      a.type === "warning" ? "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-                      "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      a.type === "danger" ? "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
+                      a.type === "warning" ? "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+                      "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                     )}>
                       {a.msg}
                     </div>
@@ -2542,14 +2541,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(todaySales)} de {fmt(dailyGoal)}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold ${pct >= 100 ? "text-[var(--data-success)]" : pct >= 60 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>{pct.toFixed(0)}%</span>
+                      <span className={`text-xs font-bold ${pct >= 100 ? "text-[var(--data-success-500)]" : pct >= 60 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}>{pct.toFixed(0)}%</span>
                       <button onClick={() => setEditingGoal(true)} className="text-[var(--text-tertiary)] hover:text-primary transition-colors"><Edit3 className="h-3 w-3" /></button>
                     </div>
                   </div>
                   <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${pct >= 100 ? "bg-[var(--accent-soft)]" : pct >= 60 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"}`} style={{ width: `${pct}%` }} />
+                    <div className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${pct >= 100 ? "bg-[var(--accent-soft)]" : pct >= 60 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`} style={{ width: `${pct}%` }} />
                   </div>
-                  {pct >= 100 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
+                  {pct >= 100 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
                 </div>
               );
             })() : (
@@ -2723,11 +2722,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           return (
                             <div key={v.id} className={cn(
                               "p-2 rounded-lg border-2 transition-all",
-                              isWinner ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface"
+                              isWinner ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface"
                             )}>
                               <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{v.name}</span>
-                                {isWinner && <Trophy className="h-3 w-3 text-[var(--data-success)]" />}
+                                {isWinner && <Trophy className="h-3 w-3 text-[var(--data-success-500)]" />}
                               </div>
                               <div className="text-xs">
                                 <div className="font-bold text-[var(--text-primary)] dark:text-foreground">{convRate.toFixed(1)}%</div>
@@ -2739,8 +2738,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         })}
                       </div>
                       {winner && isSignificant && (
-                        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg p-2 text-center">
-                          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg p-2 text-center">
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                             Ganador: {test.variants.find(v => v.id === winner)?.name} (+{Math.abs(diff).toFixed(1)}% mejor)
                           </p>
                         </div>
@@ -2821,8 +2820,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                   </div>
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
-                    <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
+                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+                    <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
@@ -2905,14 +2904,14 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   
   // Infer color value from Tailwind class
   const colorMap: Record<string, string> = {
-    "emerald-500": "#00B4A6",
+    "emerald-500": "var(--accent)",
     "violet-500": "#8b5cf6",
-    "indigo-500": "#00B4A6",
+    "indigo-500": "var(--accent)",
     "cyan-500": "#06b6d4",
     "amber-500": "#f59e0b",
     "red-500": "#ef4444",
   };
-  const strokeColor = colorMap[color] || "#00B4A6";
+  const strokeColor = colorMap[color] || "var(--accent)";
   
   return (
     <svg width="80" height="24" className="opacity-60">
@@ -2973,14 +2972,14 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
     <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />
       )}
       <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-col gap-1.5">
           <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{animatedValue}</p>
           {delta != null && delta !== undefined ? (
-            <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+            <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
               {arrowUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
               {Math.abs(delta).toFixed(1)}%
             </div>
@@ -3016,8 +3015,8 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = {
-    green:"bg-[var(--accent-soft)] text-[var(--data-success)]", red:"bg-red-50 text-red-600",
-    amber:"bg-amber-50 text-amber-600", blue:"bg-[var(--accent-soft)] text-[var(--data-success)]",
+    green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]",
+    amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]",
     purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;

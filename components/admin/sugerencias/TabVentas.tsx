@@ -110,7 +110,7 @@ export default function TabVentas() {
           <p className="text-base font-extrabold text-[var(--text-primary)]">Estrategia de venta</p>
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Qué impulsar y qué mover de stock
-            {usingMock && <span className="ml-2 text-[var(--data-warning)]">(datos demo)</span>}
+            {usingMock && <span className="ml-2 text-[var(--data-warning-500)]">(datos demo)</span>}
           </p>
         </div>
         <button
@@ -127,7 +127,7 @@ export default function TabVentas() {
         <section className="rounded-2xl border border-[var(--rule-base)] bg-white p-5">
           <header className="flex items-center gap-2 mb-4">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
-              <TrendingUp className="h-5 w-5 text-[var(--data-success)]" />
+              <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
               <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
@@ -165,12 +165,12 @@ export default function TabVentas() {
                     <p className="text-xs font-medium text-[var(--text-secondary)]">
                       <span className="font-bold tabular-nums text-[var(--text-primary)]">{i.weeklySales}</span> vendidos
                       {" · "}
-                      Margen <span className="font-bold tabular-nums text-[var(--data-success)]">{i.marginPct}%</span>
+                      Margen <span className="font-bold tabular-nums text-[var(--data-success-500)]">{i.marginPct}%</span>
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(i.weeklyRevenue)}</p>
-                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success)] hover:bg-[var(--accent-soft)]">
+                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]">
                       <Megaphone className="h-3 w-3" />
                       Promocionar
                     </button>
@@ -185,7 +185,7 @@ export default function TabVentas() {
         <section className="rounded-2xl border border-[var(--rule-base)] bg-white p-5">
           <header className="flex items-center gap-2 mb-4">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-warning-50,#fffbeb)]">
-              <TrendingDown className="h-5 w-5 text-[var(--data-warning)]" />
+              <TrendingDown className="h-5 w-5 text-[var(--data-warning-500)]" />
             </span>
             <div>
               <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
@@ -223,7 +223,7 @@ export default function TabVentas() {
                       <p className="text-xs font-medium text-[var(--text-secondary)]">
                         Stock <span className="font-bold tabular-nums text-[var(--text-primary)]">{i.product.stock}</span>
                         {" · "}
-                        <span className={cn("font-bold tabular-nums", i.weeklySales === 0 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
+                        <span className={cn("font-bold tabular-nums", i.weeklySales === 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]")}>
                           {i.weeklySales} vendidos
                         </span>
                       </p>
@@ -235,7 +235,7 @@ export default function TabVentas() {
                       <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
                         {fmt(newPrice)}
                       </p>
-                      <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-warning)] hover:bg-[var(--data-warning-50,#fffbeb)]">
+                      <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50,#fffbeb)]">
                         <Tag className="h-3 w-3" />
                         Bajar precio
                       </button>

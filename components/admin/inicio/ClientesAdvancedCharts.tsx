@@ -477,10 +477,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
               <span className="absolute top-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
                 🌱 Nuevos
               </span>
-              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
                 🏆 Champions
               </span>
-              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning)]">
+              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
                 ⚠️ En riesgo
               </span>
               <span className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
@@ -701,7 +701,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                     className="relative rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 overflow-hidden"
                   >
                     <div
-                      className="absolute inset-y-0 left-0 bg-[var(--data-warning)]/15 transition-all"
+                      className="absolute inset-y-0 left-0 bg-[var(--data-warning-500)]/15 transition-all"
                       style={{ width: `${width}%` }}
                     />
                     <div className="relative flex items-center gap-3">
@@ -709,8 +709,8 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                         className={
                           "flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 " +
                           (c.riskScore === 3
-                            ? "bg-[var(--data-warning)] text-white"
-                            : "bg-[var(--data-warning-50)] text-[var(--data-warning)]")
+                            ? "bg-[var(--data-warning-500)] text-white"
+                            : "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]")
                         }
                       >
                         {i + 1}

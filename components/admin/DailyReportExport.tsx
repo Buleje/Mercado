@@ -179,7 +179,7 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
           {loading ? "Generando reporte…" : "Descargar reporte del día"}
         </button>
         {error && (
-          <p className="text-xs text-[var(--data-error)] font-semibold">Error al cargar datos. Intenta de nuevo.</p>
+          <p className="text-xs text-[var(--data-error-500)] font-semibold">Error al cargar datos. Intenta de nuevo.</p>
         )}
         {!loading && !error && stats && (
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -193,44 +193,44 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp className="h-4 w-4 text-[var(--data-success)]" />
+              <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas hoy</p>
             </div>
-            <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(stats.totalSales)}</p>
+            <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(stats.totalSales)}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
           </div>
           <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <Package className="h-4 w-4 text-[var(--data-success)]" />
+              <Package className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Top producto</p>
             </div>
-            <p className="text-sm font-bold text-[var(--data-success)] truncate">
+            <p className="text-sm font-bold text-[var(--data-success-500)] truncate">
               {stats.topProducts[0]?.name ?? "—"}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               {stats.topProducts[0] ? `${stats.topProducts[0].qty} unidades` : "Sin ventas"}
             </p>
           </div>
-          <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-xl p-4">
+          <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <Download className="h-4 w-4 text-[var(--data-error)]" />
+              <Download className="h-4 w-4 text-[var(--data-error-500)]" />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Gastos hoy</p>
             </div>
-            <p className="text-lg font-extrabold text-[var(--data-error)]">{fmt(stats.totalExpenses)}</p>
+            <p className="text-lg font-extrabold text-[var(--data-error-500)]">{fmt(stats.totalExpenses)}</p>
           </div>
           <div className={cn(
             "rounded-xl p-4",
             stats.estimatedProfit >= 0
               ? "bg-primary/10 dark:bg-primary/20"
-              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
           )}>
             <div className="flex items-center gap-1.5 mb-1">
-              <Wallet className={cn("h-4 w-4", stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error)]")} />
+              <Wallet className={cn("h-4 w-4", stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error-500)]")} />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Utilidad est.</p>
             </div>
             <p className={cn(
               "text-lg font-extrabold",
-              stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error)]"
+              stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error-500)]"
             )}>
               {fmt(stats.estimatedProfit)}
             </p>

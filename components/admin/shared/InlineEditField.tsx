@@ -166,12 +166,12 @@ export function InlineEditField<T extends string | number>({
             "w-full px-2 py-1 rounded-md bg-[var(--surface-canvas)] text-sm outline-none",
             "border transition-colors",
             error
-              ? "border-[var(--data-error)] focus:border-[var(--data-error)]"
+              ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]"
               : "border-[var(--rule-base)] focus:border-[var(--accent)]",
           )}
         />
         {error && (
-          <div className="absolute top-full left-0 mt-1 text-xs text-[var(--data-error)] whitespace-nowrap">
+          <div className="absolute top-full left-0 mt-1 text-xs text-[var(--data-error-500)] whitespace-nowrap">
             {error}
           </div>
         )}
@@ -181,7 +181,7 @@ export function InlineEditField<T extends string | number>({
         onClick={() => void commit()}
         disabled={saving}
         aria-label="Guardar"
-        className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--data-success)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
+        className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
       >
         <Check className="h-3.5 w-3.5" strokeWidth={2} />
       </button>

@@ -33,12 +33,12 @@ type Msg = {
 };
 
 const QUICK_QUESTIONS = [
-  { icon: Truck, text: "¿Cuánto cuesta el delivery?", color: "text-primary" },
-  { icon: Clock, text: "¿Cuáles son los horarios?", color: "text-amber-500" },
-  { icon: CreditCard, text: "¿Tienen pago con Yape?", color: "text-violet-500" },
-  { icon: Package, text: "¿Cuándo llega mi pedido?", color: "text-emerald-500" },
-  { icon: ShoppingBag, text: "Quiero hacer un pedido", color: "text-emerald-500" },
-  { icon: HelpCircle, text: "¿Tienen descuentos hoy?", color: "text-pink-500" },
+  { icon: Truck,      text: "¿Cuánto cuesta el delivery?" },
+  { icon: Clock,      text: "¿Cuáles son los horarios?" },
+  { icon: CreditCard, text: "¿Tienen pago con Yape?" },
+  { icon: Package,    text: "¿Cuándo llega mi pedido?" },
+  { icon: ShoppingBag, text: "Quiero hacer un pedido" },
+  { icon: HelpCircle, text: "¿Tienen descuentos hoy?" },
 ];
 
 export default function LiveChatWidget() {
@@ -200,126 +200,236 @@ export default function LiveChatWidget() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          "fixed bottom-20 right-4 z-50 flex items-center justify-center shadow-xl transition-all duration-300 md:bottom-6",
-          open
-            ? "w-12 h-12 rounded-full bg-gray-600 hover:bg-gray-700"
-            : "h-14 rounded-full bg-linear-to-r from-primary to-teal-500 hover:from-primary/90 hover:to-teal-500/90 text-white px-5 gap-2.5"
-        )}
-        aria-label={open ? "Cerrar chat" : "Abrir chat"}
-      >
-        {open ? (
-          <X className="w-5 h-5 text-white" />
-        ) : (
-          <>
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-sm font-bold hidden sm:inline">Chat</span>
-          </>
-        )}
-        {hasUnread && !open && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center animate-bounce">
-            !
-          </span>
-        )}
-      </button>
+      {/* Floating button — solo visible cuando el chat está cerrado.
+          Mismo nivel vertical que Repetir pedido y WhatsApp (bottom-6).
+          Posicionado a la izquierda de WhatsApp con gap horizontal. */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-24 sm:right-28 z-50 h-14 rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-300 active:scale-95"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+            color: "white",
+            boxShadow:
+              "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+          }}
+          aria-label="Abrir chat"
+        >
+          <MessageCircle className="w-6 h-6" strokeWidth={2.25} />
+          <span className="text-base font-extrabold hidden sm:inline">Chat</span>
+          {hasUnread && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--data-error-500)] text-white text-xs font-bold flex items-center justify-center animate-bounce">
+              !
+            </span>
+          )}
+        </button>
+      )}
 
-      {/* Chat window */}
+      {/* Chat window — abre desde bottom-right donde estaba el botón */}
       {open && (
         <div
           className={cn(
             "fixed z-50 flex flex-col overflow-hidden",
-            "bottom-36 right-4 w-88 max-h-128 rounded-2xl shadow-2xl border md:bottom-22",
-            "bg-white dark:bg-[#0f1117] border-gray-200 dark:border-card-border",
-            "animate-[fadeUp_0.3s_ease-out]"
+            "bottom-24 right-4 sm:right-6 md:bottom-6 md:right-24 w-[92vw] sm:w-[420px] max-h-[640px] rounded-3xl",
+            "dark:bg-[#0f1117] animate-[fadeUp_0.3s_ease-out]",
           )}
+          style={{
+            background: "var(--color-card)",
+            border:
+              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+            boxShadow:
+              "0 32px 64px -16px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent), 0 8px 16px rgba(0,0,0,0.10)",
+          }}
         >
-          {/* Header */}
+          {/* Header brand */}
           <div
             className="relative shrink-0 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #0a3d38 0%, #00B4A6 55%, #00d4c4 100%)" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            }}
           >
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
-            <div className="absolute -bottom-3 -left-6 w-20 h-20 rounded-full bg-white/5" />
-            <div className="relative px-4 py-3.5 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 border border-white/20">
-                <Sparkles className="h-5 w-5 text-white" />
+            <div
+              className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
+              style={{ background: "rgba(255,255,255,0.10)" }}
+              aria-hidden="true"
+            />
+            <div
+              className="absolute -bottom-4 -left-8 w-24 h-24 rounded-full pointer-events-none"
+              style={{ background: "rgba(255,255,255,0.07)" }}
+              aria-hidden="true"
+            />
+            <div className="relative px-5 py-4 flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 border border-white/25">
+                <Sparkles className="h-6 w-6 text-white" strokeWidth={2.25} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-extrabold text-white leading-tight">Chatea con el Negocio</h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <h3 className="text-base font-extrabold text-white leading-tight">
+                  Chatea con el negocio
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1">
                   {aiStatus?.hasAI ? (
                     <>
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[length:var(--ts-2xs)] text-white/70 font-medium">IA activa · {aiStatus.activeProviderName}</span>
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      <span className="text-xs text-white/85 font-semibold">
+                        IA activa · {aiStatus.activeProviderName}
+                      </span>
                     </>
                   ) : (
                     <>
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      <span className="text-[length:var(--ts-2xs)] text-white/70 font-medium">Respuestas automáticas</span>
+                      <span className="h-2 w-2 rounded-full bg-white/60" />
+                      <span className="text-xs text-white/85 font-semibold">
+                        Respuestas automáticas
+                      </span>
                     </>
                   )}
                 </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="p-1.5 rounded-xl bg-white/15 hover:bg-white/25 transition-colors border border-white/20"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-2xl bg-white/15 hover:bg-white/25 transition-colors border border-white/25"
                 aria-label="Cerrar chat"
               >
-                <X className="h-4 w-4 text-white" />
+                <X className="h-5 w-5 text-white" strokeWidth={2.25} />
               </button>
             </div>
           </div>
 
           {/* Messages area */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-48 max-h-72" style={{ scrollbarWidth: "thin" }}>
+          <div
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 min-h-64 max-h-[400px]"
+            style={{ scrollbarWidth: "thin" }}
+          >
             {messages.length === 0 && !botTyping && (
-              <div className="text-center mt-4 space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                  <Bot className="h-7 w-7 text-primary" />
+              <div className="text-center mt-6 space-y-3">
+                <div
+                  className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    boxShadow:
+                      "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                  }}
+                >
+                  <Bot className="h-8 w-8 text-white" strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">¡Hola{customerName ? `, ${customerName.split(" ")[0]}` : ""}! 👋</p>
-                  <p className="text-xs text-muted mt-1">Pregúntame lo que necesites o usa las opciones rápidas</p>
+                  <p
+                    className="text-lg font-extrabold"
+                    style={{ color: "var(--color-primary-dark, #009690)" }}
+                  >
+                    ¡Hola{customerName ? `, ${customerName.split(" ")[0]}` : ""}!
+                  </p>
+                  <p className="text-sm text-muted mt-1 max-w-xs mx-auto leading-snug">
+                    Pregúntame lo que necesites o usa las opciones rápidas
+                  </p>
                 </div>
               </div>
             )}
 
             {messages.map(m => (
-              <div key={m.id} className={cn("flex gap-2", m.sender === "customer" ? "justify-end" : "justify-start")}>
+              <div
+                key={m.id}
+                className={cn(
+                  "flex gap-2.5",
+                  m.sender === "customer" ? "justify-end" : "justify-start",
+                )}
+              >
                 {m.sender !== "customer" && (
-                  <div className={cn(
-                    "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-                    m.sender === "bot" ? "bg-primary/10" : "bg-secondary/10"
-                  )}>
-                    {m.sender === "bot"
-                      ? <Bot className="h-3.5 w-3.5 text-primary" />
-                      : <User className="h-3.5 w-3.5 text-secondary" />}
+                  <div
+                    className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+                    style={
+                      m.sender === "bot"
+                        ? {
+                            background:
+                              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          }
+                        : {
+                            background:
+                              "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                          }
+                    }
+                  >
+                    {m.sender === "bot" ? (
+                      <Bot className="h-4 w-4 text-white" strokeWidth={2.25} />
+                    ) : (
+                      <User
+                        className="h-4 w-4"
+                        strokeWidth={2.25}
+                        style={{ color: "var(--color-primary-dark, #009690)" }}
+                      />
+                    )}
                   </div>
                 )}
-                <div className={cn(
-                  "max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed",
-                  m.sender === "customer"
-                    ? "bg-primary text-white rounded-br-md"
-                    : m.sender === "bot"
-                      ? "bg-gray-100 dark:bg-surface text-foreground rounded-bl-md border border-gray-200 dark:border-card-border"
-                      : "bg-secondary/10 text-foreground rounded-bl-md border border-secondary/20"
-                )}>
+                <div
+                  className={cn(
+                    "max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed",
+                  )}
+                  style={
+                    m.sender === "customer"
+                      ? {
+                          background:
+                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          color: "white",
+                          borderBottomRightRadius: "0.5rem",
+                        }
+                      : m.sender === "bot"
+                        ? {
+                            background: "var(--surface-sunken)",
+                            color: "var(--color-foreground)",
+                            borderBottomLeftRadius: "0.5rem",
+                            border:
+                              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                          }
+                        : {
+                            background:
+                              "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+                            color: "var(--color-foreground)",
+                            borderBottomLeftRadius: "0.5rem",
+                            border:
+                              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                          }
+                  }
+                >
                   <p className="whitespace-pre-line">{m.message}</p>
-                  <p className={cn(
-                    "text-[length:var(--ts-2xs)] mt-1.5",
-                    m.sender === "customer" ? "text-white/60" : "text-muted"
-                  )}>
-                    {m.sender === "bot" && "🤖 "}
-                    {m.sender === "admin" && "👤 Equipo · "}
-                    {new Date(m.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+                  <p
+                    className={cn(
+                      "text-xs mt-1.5 inline-flex items-center gap-1",
+                      m.sender === "customer" ? "text-white/70" : "text-muted",
+                    )}
+                  >
+                    {m.sender === "bot" && (
+                      <Bot className="h-3 w-3" strokeWidth={2.5} />
+                    )}
+                    {m.sender === "admin" && (
+                      <>
+                        <User className="h-3 w-3" strokeWidth={2.5} />
+                        <span>Equipo</span>
+                        <span>·</span>
+                      </>
+                    )}
+                    <span className="tabular-nums">
+                      {new Date(m.createdAt).toLocaleTimeString("es-PE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </p>
                 </div>
                 {m.sender === "customer" && (
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="h-3.5 w-3.5 text-primary" />
+                  <div
+                    className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+                    style={{
+                      background:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                    }}
+                  >
+                    <User
+                      className="h-4 w-4"
+                      strokeWidth={2.25}
+                      style={{ color: "var(--color-primary-dark, #009690)" }}
+                    />
                   </div>
                 )}
               </div>
@@ -327,15 +437,47 @@ export default function LiveChatWidget() {
 
             {/* Bot typing indicator */}
             {botTyping && (
-              <div className="flex gap-2 justify-start">
-                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bot className="h-3.5 w-3.5 text-primary" />
+              <div className="flex gap-2.5 justify-start">
+                <div
+                  className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  }}
+                >
+                  <Bot className="h-4 w-4 text-white" strokeWidth={2.25} />
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-surface border border-gray-200 dark:border-card-border">
+                <div
+                  className="px-5 py-4 rounded-2xl"
+                  style={{
+                    background: "var(--surface-sunken)",
+                    border:
+                      "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                    borderBottomLeftRadius: "0.5rem",
+                  }}
+                >
                   <div className="flex gap-1.5 items-center">
-                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
+                    <span
+                      className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                      }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                      }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]"
+                      style={{
+                        background:
+                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -346,25 +488,57 @@ export default function LiveChatWidget() {
 
           {/* Quick questions */}
           {messages.length === 0 && (
-            <div className="px-3 pb-2 border-t border-gray-100 dark:border-card-border pt-2">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 px-1">Preguntas frecuentes</p>
-              <div className="grid grid-cols-2 gap-1.5">
+            <div
+              className="px-4 pb-3 pt-3"
+              style={{
+                borderTop:
+                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+              }}
+            >
+              <p
+                className="text-xs font-extrabold uppercase tracking-wider mb-2.5 px-1"
+                style={{ color: "var(--color-primary-dark, #009690)" }}
+              >
+                Preguntas frecuentes
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 {contextProduct && (
                   <button
                     onClick={() => send(`¿Tienen ${contextProduct.name} disponible?`)}
-                    className="col-span-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-foreground bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors text-left"
+                    className="col-span-2 flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-bold text-foreground transition-colors text-left"
+                    style={{
+                      background:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+                      border:
+                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                    }}
                   >
-                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">¿Tienen {contextProduct.name} disponible?</span>
+                    <MapPin
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={2.25}
+                      style={{ color: "var(--color-primary-dark, #009690)" }}
+                    />
+                    <span className="truncate">
+                      ¿Tienen {contextProduct.name} disponible?
+                    </span>
                   </button>
                 )}
                 {QUICK_QUESTIONS.map(q => (
                   <button
                     key={q.text}
                     onClick={() => send(q.text)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[length:var(--ts-2xs)] font-semibold text-foreground bg-gray-50 dark:bg-surface hover:bg-primary/5 border border-gray-100 dark:border-card-border transition-colors text-left"
+                    className="flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-semibold text-foreground transition-colors text-left hover:bg-[var(--surface-sunken)]/60"
+                    style={{
+                      background: "var(--color-card)",
+                      border:
+                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                    }}
                   >
-                    <q.icon className={cn("h-3.5 w-3.5 shrink-0", q.color)} />
+                    <q.icon
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={2.25}
+                      style={{ color: "var(--color-primary-dark, #009690)" }}
+                    />
                     <span className="truncate">{q.text}</span>
                   </button>
                 ))}
@@ -374,12 +548,25 @@ export default function LiveChatWidget() {
 
           {/* Quick reply chips when in conversation */}
           {messages.length > 0 && messages.length < 6 && (
-            <div className="px-3 pb-2 flex flex-wrap gap-1 border-t border-gray-100 dark:border-card-border pt-2">
+            <div
+              className="px-4 pb-2 flex flex-wrap gap-1.5 pt-3"
+              style={{
+                borderTop:
+                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+              }}
+            >
               {QUICK_QUESTIONS.slice(0, 3).map(q => (
                 <button
                   key={q.text}
                   onClick={() => send(q.text)}
-                  className="text-[length:var(--ts-2xs)] font-semibold px-2.5 py-1 rounded-full border border-primary/15 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                  className="text-xs font-extrabold px-3 h-8 rounded-full transition-colors inline-flex items-center"
+                  style={{
+                    background:
+                      "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+                    color: "var(--color-primary-dark, #009690)",
+                    border:
+                      "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                  }}
                 >
                   {q.text}
                 </button>
@@ -389,8 +576,16 @@ export default function LiveChatWidget() {
 
           {/* Input */}
           <form
-            onSubmit={e => { e.preventDefault(); send(); }}
-            className="flex items-center gap-2 p-3 border-t border-gray-200 dark:border-card-border bg-white dark:bg-[#0f1117]"
+            onSubmit={e => {
+              e.preventDefault();
+              send();
+            }}
+            className="flex items-center gap-2 p-3 dark:bg-[#0f1117]"
+            style={{
+              background: "var(--color-card)",
+              borderTop:
+                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+            }}
           >
             <input
               ref={inputRef}
@@ -399,19 +594,45 @@ export default function LiveChatWidget() {
               onChange={e => setInput(e.target.value)}
               placeholder="Escribe tu mensaje..."
               maxLength={500}
-              className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-sm outline-none border border-transparent focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-muted"
+              className="flex-1 h-12 px-4 rounded-2xl text-sm outline-none transition-all placeholder:text-muted text-foreground"
+              style={{
+                background: "var(--surface-sunken)",
+                border:
+                  "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+              }}
+              onFocus={e =>
+                (e.currentTarget.style.borderColor =
+                  "var(--color-primary, #00B4A6)")
+              }
+              onBlur={e =>
+                (e.currentTarget.style.borderColor =
+                  "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)")
+              }
             />
             <button
               type="submit"
               disabled={!input.trim() || sending}
-              className={cn(
-                "p-2.5 rounded-xl transition-all",
+              className="h-12 w-12 inline-flex items-center justify-center rounded-2xl transition-all disabled:opacity-50 active:scale-95"
+              style={
                 input.trim()
-                  ? "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary/90"
-                  : "bg-gray-200 dark:bg-surface text-muted"
-              )}
+                  ? {
+                      background:
+                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      color: "white",
+                      boxShadow:
+                        "0 6px 16px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                    }
+                  : {
+                      background: "var(--surface-sunken)",
+                      color: "var(--color-muted)",
+                    }
+              }
             >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {sending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" strokeWidth={2.25} />
+              )}
             </button>
           </form>
 

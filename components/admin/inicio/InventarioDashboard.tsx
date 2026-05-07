@@ -201,7 +201,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
       { label: "1-10 uds", min: 1, max: 10, color: "#f59e0b" },
       { label: "11-50 uds", min: 11, max: 50, color: "#3b82f6" },
       { label: "51-100 uds", min: 51, max: 100, color: "#06b6d4" },
-      { label: "100+ uds", min: 101, max: Infinity, color: "#00B4A6" },
+      { label: "100+ uds", min: 101, max: Infinity, color: "var(--accent)" },
     ];
     const distribucionStock = ranges.map(r => ({
       rango: r.label,
@@ -222,7 +222,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
@@ -262,11 +262,11 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
 
       {/* ── Alert bar (critical) ── */}
       {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl px-5 py-3">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
+        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl px-5 py-3">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
             {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}
-            {data.agotados > 0 && data.stockCritico > 0 && <span className="mx-1.5 text-[var(--data-error)]">·</span>}
+            {data.agotados > 0 && data.stockCritico > 0 && <span className="mx-1.5 text-[var(--data-error-500)]">·</span>}
             {data.stockCritico > 0 && <span>{data.stockCritico} en stock crítico</span>}
           </p>
         </div>

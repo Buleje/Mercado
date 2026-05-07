@@ -133,11 +133,11 @@ export default function CategoryImagesClient() {
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" />
             {Object.keys(images).filter((k) => images[k]).length} imágenes globales activas
           </span>
           {dirty && (
-            <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600)] dark:text-amber-400 text-xs font-bold">
               Cambios sin guardar
             </span>
           )}
@@ -155,13 +155,13 @@ export default function CategoryImagesClient() {
 
       {/* Banners */}
       {success && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-[var(--data-success)]">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-[var(--data-success-500)]">
           <CheckCircle className="h-4 w-4 shrink-0" />
           <span className="text-sm font-medium">{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="text-sm font-medium">{error}</span>
         </div>

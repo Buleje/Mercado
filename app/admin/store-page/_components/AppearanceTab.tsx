@@ -153,7 +153,7 @@ export default function AppearanceTab() {
         <div>
           <div className="flex items-center gap-2 font-semibold">
             {data.published ? (
-              <Eye className="w-4 h-4 text-[var(--data-success)]" />
+              <Eye className="w-4 h-4 text-[var(--data-success-500)]" />
             ) : (
               <EyeOff className="w-4 h-4 text-[var(--text-secondary)]" />
             )}
@@ -360,9 +360,9 @@ export default function AppearanceTab() {
 
       {/* Save bar */}
       <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
-        {error && <span className="text-sm text-[var(--data-error)]">{error}</span>}
+        {error && <span className="text-sm text-[var(--data-error-500)]">{error}</span>}
         {saved && (
-          <span className="text-sm text-[var(--data-success)] font-semibold">
+          <span className="text-sm text-[var(--data-success-500)] font-semibold">
             Guardado
           </span>
         )}

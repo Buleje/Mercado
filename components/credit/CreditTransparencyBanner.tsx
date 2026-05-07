@@ -57,7 +57,7 @@ export function CreditTransparencyBanner({
     <div className="rounded-2xl border border-emerald-200 bg-linear-to-br from-emerald-50 to-teal-50 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-          <TrendingUp className="h-5 w-5 text-emerald-700" aria-hidden />
+          <TrendingUp className="h-5 w-5 text-[var(--data-success-700)]" aria-hidden />
         </div>
 
         <div className="flex-1">
@@ -77,7 +77,7 @@ export function CreditTransparencyBanner({
           <button
             type="button"
             onClick={() => setShowDetails((prev) => !prev)}
-            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:underline"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success-700)] hover:text-emerald-900 hover:underline"
             aria-expanded={showDetails}
           >
             <Info className="h-3.5 w-3.5" aria-hidden />

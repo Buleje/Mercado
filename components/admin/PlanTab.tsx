@@ -58,16 +58,16 @@ function formatLimit(max: number) {
 
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-gray-200 dark:bg-gray-700 text-[var(--text-primary)]",
-  pro: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+  pro: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
   free: "bg-gray-400",
   pro: "bg-[var(--accent-soft)]",
   business: "bg-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning)]",
+  enterprise: "bg-[var(--data-warning-500)]",
 };
 
 const WARNING_THRESHOLD = 80; // % usage where we show a warning
@@ -94,9 +94,9 @@ function UsageBar({
           {icon}
           {label}
         </div>
-        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error)]" : isWarning ? "text-[var(--data-warning)]" : "text-muted"}`}>
+        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error-500)]" : isWarning ? "text-[var(--data-warning-500)]" : "text-muted"}`}>
           {unlimited ? (
-            <span className="text-[var(--data-success)] font-bold">∞ ilimitado</span>
+            <span className="text-[var(--data-success-500)] font-bold">∞ ilimitado</span>
           ) : (
             <>{used.toLocaleString("es-PE")} / {max.toLocaleString("es-PE")}</>
           )}
@@ -105,18 +105,18 @@ function UsageBar({
       {!unlimited && (
         <div className="h-2 w-full bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${isFull ? "bg-[var(--data-error)]" : isWarning ? "bg-[var(--data-warning)]" : PLAN_BAR_COLOR[planId] ?? "bg-primary"}`}
+            className={`h-full rounded-full transition-all ${isFull ? "bg-[var(--data-error-500)]" : isWarning ? "bg-[var(--data-warning-500)]" : PLAN_BAR_COLOR[planId] ?? "bg-primary"}`}
             style={{ width: `${percent}%` }}
           />
         </div>
       )}
       {isWarning && !isFull && (
-        <p className="text-xs text-[var(--data-warning)] flex items-center gap-1">
+        <p className="text-xs text-[var(--data-warning-500)] flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" /> Cerca del límite ({percent}%)
         </p>
       )}
       {isFull && (
-        <p className="text-xs text-[var(--data-error)] flex items-center gap-1">
+        <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1">
           <XCircle className="w-3 h-3" /> Límite alcanzado — actualiza tu plan
         </p>
       )}
@@ -129,7 +129,7 @@ function FeatureRow({ label, available }: { label: string; available: boolean })
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {available ? (
-        <CheckCircle2 className="w-4 h-4 text-[var(--data-success)] shrink-0" />
+        <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)] shrink-0" />
       ) : (
         <XCircle className="w-4 h-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
       )}
@@ -169,7 +169,7 @@ function PlanCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]"}`} />}
+            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`} />}
             <CardTitle className="font-bold text-base">{def.name}</CardTitle>
           </div>
           <div className="mt-1">
@@ -448,7 +448,7 @@ export default function PlanTab() {
       {toast && (
         <div
           className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm font-medium ${
-            toast.ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]"
+            toast.ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"
           }`}
         >
           {toast.msg}
@@ -457,13 +457,13 @@ export default function PlanTab() {
 
       {/* Trial banner */}
       {trialActive && (
-        <div className="flex flex-wrap items-center gap-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning)] shrink-0" />
+        <div className="flex flex-wrap items-center gap-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] shrink-0" />
           <div>
-            <p className="font-semibold text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <p className="font-semibold text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               Período de prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""} restantes
             </p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
               Actualiza tu plan antes de que venza para no perder el acceso.
             </p>
           </div>
@@ -534,7 +534,7 @@ export default function PlanTab() {
         </CardTitle>
         {!limits.customDomain ? (
           <div className="flex flex-wrap items-start gap-3 text-sm text-muted">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--data-warning)]" />
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" />
             <span>El dominio personalizado está disponible en los planes <strong>Pro</strong>, <strong>Business</strong> y <strong>Enterprise</strong>. Actualiza tu plan para configurarlo.</span>
           </div>
         ) : (
@@ -564,7 +564,7 @@ export default function PlanTab() {
                   onClick={handleRemoveDomain}
                   disabled={domainRemoving}
                   title="Eliminar dominio"
-                  className="p-2.5 rounded-lg border border-[var(--data-error)] text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950 disabled:opacity-50"
+                  className="p-2.5 rounded-lg border border-[var(--data-error-500)] text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950 disabled:opacity-50"
                 >
                   {domainRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
@@ -594,18 +594,18 @@ export default function PlanTab() {
                     Verificar CNAME
                   </button>
                   {domainVerified === true && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-success)] font-medium">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-success-500)] font-medium">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
                     </span>
                   )}
                   {domainVerified === false && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-error)]">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-error-500)]">
                       <XCircle className="w-3.5 h-3.5" /> No verificado
                     </span>
                   )}
                 </div>
                 {domainVerifyMsg && (
-                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{domainVerifyMsg}</p>
+                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>{domainVerifyMsg}</p>
                 )}
               </div>
             )}

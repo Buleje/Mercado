@@ -123,7 +123,7 @@ function getInitials(name: string) {
 
 // ── Mejora 9: Avatar color auto-generado ─────────────────────────────────────
 function getAvatarColor(name: string): string {
-  const colors = ["#00B4A6", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
+  const colors = ["var(--accent)", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -131,9 +131,9 @@ function getAvatarColor(name: string): string {
 
 // ── Mejora 9: Customer segment badge ─────────────────────────────────────────
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
-  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Nuevo</span>;
-  if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)]">VIP</span>;
-  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Premium</span>;
+  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
+  if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]">VIP</span>;
+  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
   return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
 }
 
@@ -166,7 +166,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-          <Award className="h-4 w-4 text-[var(--data-warning)]" /> Productos Favoritos
+          <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
         </CardTitle>
         <div className="animate-pulse space-y-2">
           {[1,2,3].map(i => <div key={i} className="h-6 bg-[var(--surface-sunken)] rounded" />)}
@@ -181,7 +181,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-          <Award className="h-4 w-4 text-[var(--data-warning)]" /> Productos Favoritos
+          <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-2">Aun no hay suficiente historial</p>
       </div>
@@ -199,7 +199,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
   return (
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-        <Award className="h-4 w-4 text-[var(--data-warning)]" /> Productos Favoritos
+        <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
       </CardTitle>
       <div className="space-y-2.5">
         {favorites.map((p, i) => (
@@ -217,7 +217,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{
                     width: `${Math.max(8, (p.totalQty / maxQty) * 100)}%`,
-                    backgroundColor: i === 0 ? "#00B4A6" : i === 1 ? "#f97316" : "#457b9d",
+                    backgroundColor: i === 0 ? "var(--accent)" : i === 1 ? "#f97316" : "#457b9d",
                   }}
                 />
               </div>
@@ -232,25 +232,25 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string }> = {
-  frecuente: { label: "Frecuente",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
-  ocasional: { label: "Ocasional",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+  frecuente: { label: "Frecuente",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  ocasional: { label: "Ocasional",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   nuevo:     { label: "Nuevo",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
-  perdido:   { label: "Perdido",    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error)] dark:border-[var(--data-error)]" },
+  perdido:   { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" },
 };
 
 const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color: string; bg: string; border: string; tooltip: string }> = {
-  activo:      { label: "Activo",     color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", tooltip: "Compra en últimos 30 días" },
-  en_riesgo:   { label: "En riesgo",  color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",     bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",     border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",   tooltip: "Sin compras hace 31-90 días" },
-  perdido:     { label: "Perdido",    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",         bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",         border: "border-[var(--data-error)] dark:border-[var(--data-error)]",       tooltip: "Sin compras hace +90 días" },
+  activo:      { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", tooltip: "Compra en últimos 30 días" },
+  en_riesgo:   { label: "En riesgo",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",     border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   tooltip: "Sin compras hace 31-90 días" },
+  perdido:     { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",         border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       tooltip: "Sin compras hace +90 días" },
   desconocido: { label: "Desconocido", color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-sunken)]/30",      border: "border-[var(--rule-base)] dark:border-gray-600",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
-  pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",   Icon: Clock },
-  confirmado: { label: "Confirmado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     Icon: CheckCircle },
+  pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",   Icon: Clock },
+  confirmado: { label: "Confirmado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     Icon: CheckCircle },
   en_camino:  { label: "En camino",  color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", Icon: Truck },
-  entregado:  { label: "Entregado",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", Icon: CheckCircle },
-  cancelado:  { label: "Cancelado",  color: "text-[var(--data-error)] dark:text-[var(--data-error)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       Icon: XCircle },
+  entregado:  { label: "Entregado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", Icon: CheckCircle },
+  cancelado:  { label: "Cancelado",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       Icon: XCircle },
 };
 
 const TIMELINE_ICON: Record<string, React.ElementType> = {
@@ -303,7 +303,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-          <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
+          <Clock className="h-4 w-4" style={{ color: "var(--accent)" }} /> Cuando compra?
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">
           Aun no hay suficientes datos (mínimo 5 compras)
@@ -339,7 +339,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
     if (val === 0) return "transparent";
     const intensity = val / Math.max(maxVal, 1);
     // Interpolate between light green and dark green
-    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#2dd4bf", "#33C4B8", "#00B4A6", "#007A72"];
+    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#2dd4bf", "color-mix(in oklab, var(--accent) 70%, white)", "var(--accent)", "#007A72"];
     const idx = Math.min(Math.floor(intensity * (colors.length - 1)), colors.length - 1);
     return colors[idx];
   };
@@ -350,7 +350,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   return (
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-        <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
+        <Clock className="h-4 w-4" style={{ color: "var(--accent)" }} /> Cuando compra?
       </CardTitle>
 
       {/* Heatmap grid */}
@@ -432,7 +432,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-          <Users className="h-4 w-4 text-[var(--data-success)]" /> Cuenta Familiar
+          <Users className="h-4 w-4 text-[var(--data-success-500)]" /> Cuenta Familiar
           {savingFamily && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-tertiary)]" />}
         </CardTitle>
         <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{familyMembers.length} miembros</span>
@@ -444,10 +444,10 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           {getInitials(customer.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{customer.name} <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">(titular)</span></p>
+          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{customer.name} <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">(titular)</span></p>
           <p className="text-xs text-[var(--text-tertiary)]">{customer.phone}</p>
         </div>
-        <Star className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" />
+        <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
       </div>
 
       {familyMembers.map((m, i) => (
@@ -459,7 +459,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
             <p className="text-xs text-[var(--text-tertiary)]">{m.teléfono}</p>
           </div>
-          <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0">
+          <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -467,7 +467,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
 
       {addingMember ? (
         <div className="mt-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
-          <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo miembro familiar</p>
+          <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
             <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
             <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
@@ -679,7 +679,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
   if (error || !customer) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-        <AlertCircle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertCircle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Cliente no encontrado</p>
         <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">No existe el número {phone}</p>
       </div>
@@ -745,7 +745,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 if (dias < 30) return <span className="text-xs text-[var(--text-tertiary)]">Nuevo (hace {dias}d)</span>;
                 if (dias < 90) return <span className="text-xs text-[var(--text-tertiary)]">Cliente hace {dias} dias</span>;
                 if (dias < 365) return <span className="text-xs text-[var(--text-tertiary)]">Cliente hace {meses} meses</span>;
-                return <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Cliente hace {anos}+ ano(s)</span>;
+                return <span className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Cliente hace {anos}+ ano(s)</span>;
               })()}
               <HealthBadge score={customer.healthScore} />
               <span className={cn("text-xs font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>
@@ -797,9 +797,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-            <FileText className="h-4 w-4 text-[var(--data-warning)]" />
+            <FileText className="h-4 w-4 text-[var(--data-warning-500)]" />
             Notas
-            {observaciones && <span className="h-2 w-2 rounded-full bg-[var(--data-warning)] inline-block" />}
+            {observaciones && <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)] inline-block" />}
           </span>
           <span className="text-xs text-[var(--text-tertiary)]">{obsExpanded ? "\u25B2" : "\u25BC"}</span>
         </button>
@@ -814,7 +814,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-[var(--text-tertiary)] flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
-              {obsSaved && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Guardado</span>}
+              {obsSaved && <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Guardado</span>}
               <span className="text-[var(--text-tertiary)] dark:text-muted ml-auto">Auto-guarda al escribir</span>
             </div>
           </div>
@@ -825,7 +825,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {orders.length > 0 && (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" style={{ color: "#00B4A6" }} /> Compras ultimos 6 meses
+            <TrendingUp className="h-4 w-4" style={{ color: "var(--accent)" }} /> Compras ultimos 6 meses
           </CardTitle>
           <div className="flex items-end gap-1" style={{ height: 80 }}>
             {(() => {
@@ -850,7 +850,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 const monthName = new Date(label + "-01").toLocaleDateString("es-PE", { month: "short" });
                 return (
                   <div key={label} className="flex-1 flex flex-col items-center gap-1" title={`${monthName}: S/${val.toFixed(0)}`}>
-                    <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "#00B4A6", opacity: val > 0 ? 1 : 0.2 }} />
+                    <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "var(--accent)", opacity: val > 0 ? 1 : 0.2 }} />
                     <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{monthName}</span>
                   </div>
                 );
@@ -907,17 +907,17 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 capitalize">{customer.categoria}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] capitalize">{customer.canal}</span>
             )}
             {customer.listaPrecio && customer.listaPrecio !== 'general' && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] capitalize">Lista: {customer.listaPrecio}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] capitalize">Lista: {customer.listaPrecio}</span>
             )}
             {customer.estado && customer.estado !== 'activo' && (
               <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full border",
-                customer.estado === 'bloqueado' ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)] border-[var(--data-error)] dark:border-[var(--data-error)]" : "bg-[var(--surface-sunken)]/30 text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-gray-600"
+                customer.estado === 'bloqueado' ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "bg-[var(--surface-sunken)]/30 text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-gray-600"
               )}>
                 {customer.estado === 'bloqueado' ? 'BLOQUEADO' : 'INACTIVO'}
               </span>
@@ -934,7 +934,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         {/* Límite de crédito */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[var(--data-warning)]" /> Límite de crédito
+            <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Límite de crédito
           </CardTitle>
           {editingCreditLimit ? (
             <div className="flex items-center gap-2">
@@ -972,10 +972,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     <span className={cn(
                       "inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border",
                       pct <= 0
-                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] border-[var(--data-error)] dark:border-[var(--data-error)]"
+                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                         : pct < 0.2
-                          ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] border-[var(--data-warning)] dark:border-[var(--data-warning)]"
-                          : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                          ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
+                          : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                     )}>
                       {pct <= 0
                         ? "Sin crédito disponible"
@@ -1015,10 +1015,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               // Auto-color by hash
               const hash = tag.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
               const colors = [
-                "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-                "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                 "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
               ];
@@ -1068,10 +1068,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total gastado",  value: fmt(totalSpent),        icon: CreditCard,   color: "text-[var(--data-success)]" },
-          { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-[var(--data-success)]" },
+          { label: "Total gastado",  value: fmt(totalSpent),        icon: CreditCard,   color: "text-[var(--data-success-500)]" },
+          { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-[var(--data-success-500)]" },
           { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-[var(--text-secondary)]" },
-          { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-[var(--data-warning)]" },
+          { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <m.div
             key={k.label}
@@ -1201,7 +1201,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {/* Mejora 16: Historial de Puntos de Lealtad */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
-          <Star className="h-4 w-4 text-[var(--data-warning)]" /> Historial de Puntos
+          <Star className="h-4 w-4 text-[var(--data-warning-500)]" /> Historial de Puntos
         </CardTitle>
         {(() => {
           // Calcular puntos desde ordenes del cliente
@@ -1223,14 +1223,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           return (
             <div className="space-y-3">
               {/* Saldo actual */}
-              <div className="flex items-center gap-3 p-3 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl">
-                <Star className="h-6 w-6 text-[var(--data-warning)]" />
+              <div className="flex items-center gap-3 p-3 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl">
+                <Star className="h-6 w-6 text-[var(--data-warning-500)]" />
                 <div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{totalPoints} puntos</p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
-                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                     Canjeable
                   </span>
                 )}
@@ -1241,7 +1241,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                   <div key={entry.id} className="flex items-center gap-2 text-xs">
                     <span className={cn(
                       "shrink-0 font-bold",
-                      entry.type === "earn" ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                      entry.type === "earn" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                     )}>
                       {entry.type === "earn" ? "+" : "-"}{entry.points} pts
                     </span>
@@ -1274,7 +1274,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>
             {notesSaved && (
-              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-1">
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1">
                 <CheckCircle className="h-3 w-3" /> Guardado
               </m.p>
             )}

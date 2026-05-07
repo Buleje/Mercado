@@ -49,18 +49,18 @@ function stockBadge(stock: number | undefined) {
     );
   if (stock <= 2)
     return (
-      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)]">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)]">
         {stock}
       </span>
     );
   if (stock <= 10)
     return (
-      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)]">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)]">
         {stock}
       </span>
     );
   return (
-    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
+    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
       {stock}
     </span>
   );
@@ -214,7 +214,7 @@ export default function POSSearchBar({
                         </span>
                       )}
                       {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-warning)] px-1 py-0.5 rounded">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-warning-500)] px-1 py-0.5 rounded">
                           Nuevo precio
                         </span>
                       )}

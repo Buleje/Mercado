@@ -23,15 +23,15 @@ interface Props {
 const STATUS_META: Record<SiteRoute["status"], { label: string; className: string }> = {
   live: {
     label: "Live",
-    className: "bg-[var(--data-success-50)] text-[var(--data-success)]",
+    className: "bg-[var(--data-success-50)] text-[var(--data-success-500)]",
   },
   beta: {
     label: "Beta",
-    className: "bg-[var(--data-info-50)] text-[var(--data-info)]",
+    className: "bg-[var(--data-info-50)] text-[var(--data-info-500)]",
   },
   wip: {
     label: "WIP",
-    className: "bg-[var(--data-warning-50)] text-[var(--data-warning)]",
+    className: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
   },
   mock: {
     label: "Mock",

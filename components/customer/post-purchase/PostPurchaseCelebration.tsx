@@ -63,12 +63,12 @@ export default function PostPurchaseCelebration({
           className={cn(
             "shrink-0 rounded-full",
             "w-14 h-14 md:w-16 md:h-16",
-            "bg-[var(--data-success)]/10 border border-[var(--data-success)]/30",
+            "bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30",
             "flex items-center justify-center",
           )}
           aria-hidden
         >
-          <CheckCircle2 className="h-7 w-7 md:h-8 md:w-8 text-[var(--data-success)]" />
+          <CheckCircle2 className="h-7 w-7 md:h-8 md:w-8 text-[var(--data-success-500)]" />
         </div>
 
         <div className="flex-1 min-w-0">

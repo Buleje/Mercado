@@ -47,15 +47,15 @@ const ConfirmContext = createContext<ConfirmContextValue | null>(null);
 const INTENT_STYLES: Record<Intent, { icon: typeof AlertTriangle; color: string; bg: string; btn: string }> = {
   danger: {
     icon: XCircle,
-    color: "text-[var(--data-error)]",
+    color: "text-[var(--data-error-500)]",
     bg: "bg-[var(--data-error-50)]",
-    btn: "bg-[var(--data-error)] hover:opacity-90",
+    btn: "bg-[var(--data-error-500)] hover:opacity-90",
   },
   warning: {
     icon: AlertTriangle,
-    color: "text-[var(--data-warning)]",
+    color: "text-[var(--data-warning-500)]",
     bg: "bg-[var(--data-warning-50)]",
-    btn: "bg-[var(--data-warning)] hover:opacity-90",
+    btn: "bg-[var(--data-warning-500)] hover:opacity-90",
   },
   info: {
     icon: Info,

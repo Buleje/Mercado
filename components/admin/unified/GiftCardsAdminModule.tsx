@@ -206,10 +206,10 @@ const STATUS_LABELS: Record<GiftCardDetails["status"], string> = {
 };
 
 const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
-  pendiente: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  canjeada: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+  pendiente: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  canjeada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
   expirada: "bg-gray-100 text-[var(--text-secondary)]",
-  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error)]",
+  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 
 // ── Main Component ──────────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ export default function GiftCardsAdminModule() {
           label="Vendidas (30d)"
           value={vendidasEsteMes}
           icon={Gift}
-          color="#00B4A6"
+          color="var(--accent)"
           subtitle="Tarjetas emitidas"
         />
         <KPICard
@@ -543,7 +543,7 @@ export default function GiftCardsAdminModule() {
                         {c.status === "pendiente" && (
                           <button
                             onClick={() => handleCancel(c.id)}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                             title="Cancelar y reembolsar"
                           >
                             <Trash2 className="h-4 w-4" />

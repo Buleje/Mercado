@@ -36,9 +36,9 @@ export default function NewsletterWhatsApp() {
   };
 
   const BENEFITS = [
-    { icon: Gift, text: "Ofertas exclusivas cada semana", accent: "bg-amber-500/10 text-amber-600" },
-    { icon: Zap, text: "Aviso de productos nuevos al instante", accent: "bg-emerald-500/10 text-emerald-600" },
-    { icon: Shield, text: "Cupones solo por WhatsApp", accent: "bg-emerald-500/10 text-emerald-600" },
+    { icon: Gift, text: "Ofertas exclusivas cada semana", accent: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-600)]" },
+    { icon: Zap, text: "Aviso de productos nuevos al instante", accent: "bg-[var(--data-success-500)]/10 text-[var(--data-success-600)]" },
+    { icon: Shield, text: "Cupones solo por WhatsApp", accent: "bg-[var(--data-success-500)]/10 text-[var(--data-success-600)]" },
   ];
 
   return (
@@ -177,7 +177,7 @@ export default function NewsletterWhatsApp() {
                       />
                     </div>
                     {error && (
-                      <p className="text-xs text-red-500 mt-1.5">{error}</p>
+                      <p className="text-xs text-[var(--data-error-500)] mt-1.5">{error}</p>
                     )}
                   </div>
 

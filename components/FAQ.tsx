@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, HelpCircle } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 const faqs = [
   {
@@ -86,7 +87,7 @@ export default function FAQ() {
     <section id="preguntas" className="py-20 sm:py-28 bg-surface" ref={ref}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
       />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">

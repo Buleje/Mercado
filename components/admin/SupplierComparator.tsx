@@ -84,10 +84,10 @@ function ScoreBar({ value, color }: { value: number; color: string }) {
 function ScoreBadge({ score }: { score: number }) {
   const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : "D";
   const colors: Record<string, string> = {
-    A: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    B: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    C: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-    D: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+    A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+    D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   };
   return (
     <span className={cn("inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold", colors[grade])}>
@@ -121,7 +121,7 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
             tick={{ fontSize: 8, fill: "var(--muted, #9ca3af)" }}
             tickCount={3}
           />
-          <Radar dataKey="value" stroke="#00B4A6" fill="#00B4A6" fillOpacity={0.2} />
+          <Radar dataKey="value" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.2} />
           <Tooltip
             contentStyle={{
               backgroundColor: "var(--card, #fff)",
@@ -256,8 +256,8 @@ export default function SupplierComparator() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
@@ -290,14 +290,14 @@ export default function SupplierComparator() {
               <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">Score {kpis.topScore}/100</p>
             </div>
-            <Star className="h-5 w-5 text-[var(--data-warning)] fill-[var(--data-warning)] shrink-0" />
+            <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
               <p className={cn(
                 "text-2xl font-extrabold tabular-nums leading-none mt-1.5",
-                kpis.avgScore >= 70 ? "text-[var(--data-success)]" : kpis.avgScore >= 50 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                kpis.avgScore >= 70 ? "text-[var(--data-success-500)]" : kpis.avgScore >= 50 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
               )}>{kpis.avgScore}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">de 100 puntos</p>
             </div>
@@ -387,7 +387,7 @@ export default function SupplierComparator() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {idx === 0 && (
-                            <Star className="h-3.5 w-3.5 text-[var(--data-warning)] fill-[var(--data-warning)] shrink-0" />
+                            <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
                           )}
                           <div>
                             <p className="text-xs font-bold text-[var(--text-primary)]">{s.name}</p>
@@ -460,7 +460,7 @@ export default function SupplierComparator() {
                 { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-primary" },
                 { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-[var(--accent-soft)]" },
                 { label: "Variedad", value: selectedSupplier.scoreVariedad, icon: Package, color: "bg-[var(--text-primary)]" },
-                { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning)]" },
+                { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning-500)]" },
               ].map(({ label, value, icon: Icon, color }) => (
                 <div key={label} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">

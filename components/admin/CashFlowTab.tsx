@@ -212,18 +212,18 @@ export default function CashFlowTab() {
       </div>
 
       {/* Opening balance */}
-      <div className="flex flex-wrap items-center gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-        <Calendar className="h-5 w-5 text-[var(--data-success)] shrink-0" />
-        <span className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Saldo inicial del período:</span>
+      <div className="flex flex-wrap items-center gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+        <Calendar className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
+        <span className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Saldo inicial del período:</span>
         <input
           type="number"
           value={openingBalance}
           onChange={e => setOpeningBalance(parseFloat(e.target.value) || 0)}
-          className="w-32 text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-transparent border-b-2 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 focus:outline-none text-right px-1"
+          className="w-32 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-transparent border-b-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 focus:outline-none text-right px-1"
           min="0"
           step="100"
         />
-        <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">soles</span>
+        <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">soles</span>
       </div>
 
       {/* Quick form */}
@@ -267,10 +267,10 @@ export default function CashFlowTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos totales", value: totalInflow, icon: TrendingUp, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-              { label: "Egresos totales", value: totalOutflow, icon: TrendingDown, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-              { label: "Flujo neto", value: netFlow, icon: netFlow >= 0 ? ArrowUpRight : ArrowDownRight, color: netFlow >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: netFlow >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-              { label: "Saldo proyectado", value: closingBalance, icon: closingBalance > 1000 ? CheckCircle : AlertTriangle, color: closingBalance > 1000 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]", bg: closingBalance > 1000 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+              { label: "Ingresos totales", value: totalInflow, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Egresos totales", value: totalOutflow, icon: TrendingDown, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+              { label: "Flujo neto", value: netFlow, icon: netFlow >= 0 ? ArrowUpRight : ArrowDownRight, color: netFlow >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: netFlow >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+              { label: "Saldo proyectado", value: closingBalance, icon: closingBalance > 1000 ? CheckCircle : AlertTriangle, color: closingBalance > 1000 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]", bg: closingBalance > 1000 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className={cn("rounded-xl p-4", bg)}>
                 <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -282,11 +282,11 @@ export default function CashFlowTab() {
 
           {/* Alert if low balance days */}
           {warningDays.length > 0 && (
-            <div className="flex flex-wrap items-start gap-3 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+            <div className="flex flex-wrap items-start gap-3 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+              <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Alerta de liquidez</p>
-                <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+                <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Alerta de liquidez</p>
+                <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
                   {warningDays.length} día{warningDays.length > 1 ? "s" : ""} con saldo por debajo de S/ 1,000 — revisa pagos programados.
                   Saldo mínimo proyectado: {fmt(minBalance)}.
                 </p>
@@ -319,14 +319,14 @@ export default function CashFlowTab() {
                   {dailySummaries.map(day => (
                     <tr key={day.date} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", day.hasWarning && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
                       <td className="px-3 sm:px-6 py-3 font-medium text-[var(--text-primary)] dark:text-foreground">{day.label}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success)] font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-error)] font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
-                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold", day.net >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)] font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-error-500)] font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
+                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold", day.net >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                         {day.net >= 0 ? "+" : ""}{fmt(day.net)}
                       </td>
-                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", day.hasWarning ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", day.hasWarning ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                         {fmt(day.balance)}
-                        {day.hasWarning && <AlertTriangle className="h-3.5 w-3.5 inline ml-1 text-[var(--data-warning)]" />}
+                        {day.hasWarning && <AlertTriangle className="h-3.5 w-3.5 inline ml-1 text-[var(--data-warning-500)]" />}
                       </td>
                     </tr>
                   ))}
@@ -354,9 +354,9 @@ export default function CashFlowTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{e.description}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-surface capitalize text-[var(--text-secondary)] dark:text-muted">{e.category}</span>
-                        {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">Proyectado</span>}
+                        {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Proyectado</span>}
                       </td>
-                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                         {e.type === "ingreso" ? "+" : "−"}{fmt(e.amount)}
                       </td>
                     </tr>

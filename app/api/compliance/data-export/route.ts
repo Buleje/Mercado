@@ -121,6 +121,9 @@ export async function POST(req: NextRequest) {
           include: { cuotas: true },
           orderBy: { createdAt: "desc" },
         }),
+        // Customer.phone es @id global y SavedLocation no tiene tenantId
+        // (relación directa por phone). Customer es global, tenantId es solo
+        // referencia informativa. Confirmé que customer.phone único = OK.
         prisma.savedLocation.findMany({
           where: { customerPhone: customer.phone },
         }),

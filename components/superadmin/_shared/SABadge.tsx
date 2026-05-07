@@ -6,9 +6,9 @@ type PlanId = "free" | "pro" | "business" | "enterprise";
 
 const PLAN_STYLES: Record<PlanId, string> = {
   free:       "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-  pro:        "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+  pro:        "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
   business:   "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
 const PLAN_LABEL: Record<PlanId, string> = {
@@ -40,11 +40,11 @@ export function StatusBadge({ active }: { active: boolean }) {
         "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold",
         active
           ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-          : "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300",
+          : "bg-red-100 text-[var(--data-error-600)] dark:bg-red-900/40 dark:text-red-300",
       ].join(" ")}
     >
       <span
-        className={["w-1.5 h-1.5 rounded-full", active ? "bg-green-500" : "bg-red-500"].join(" ")}
+        className={["w-1.5 h-1.5 rounded-full", active ? "bg-green-500" : "bg-[var(--data-error-500)]"].join(" ")}
       />
       {active ? "Activo" : "Suspendido"}
     </span>
@@ -55,11 +55,11 @@ export function StatusBadge({ active }: { active: boolean }) {
 type StatusVariant = "active" | "inactive" | "trial" | "pending" | "settled" | "cancelled";
 
 const STATUS_STYLES: Record<StatusVariant, string> = {
-  active:    "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/40 dark:text-[var(--data-success)]",
-  inactive:  "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
-  trial:     "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/40 dark:text-[var(--data-success)]",
-  pending:   "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
-  settled:   "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+  active:    "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
+  inactive:  "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
+  trial:     "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
+  pending:   "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
+  settled:   "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
   cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 

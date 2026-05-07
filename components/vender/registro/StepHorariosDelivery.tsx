@@ -20,7 +20,7 @@ interface StepHorariosDeliveryProps {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-xs font-medium text-[var(--data-error)]" role="alert">
+    <p className="mt-1.5 text-xs font-medium text-[var(--data-error-500)]" role="alert">
       {message}
     </p>
   );
@@ -179,7 +179,7 @@ export default function StepHorariosDelivery({
             className={cn(
               inputClass,
               "w-24 py-2.5",
-              errors.tarifaDelivery && "border-[var(--data-error)]",
+              errors.tarifaDelivery && "border-[var(--data-error-500)]",
             )}
           />
           <span className="text-xs text-[var(--text-tertiary)]">por entrega</span>

@@ -167,20 +167,20 @@ export default function DemandPredictionTab() {
         </div>
       </div>
 
-      {error && <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 text-sm text-[var(--data-error)]">{error}</div>}
+      {error && <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 text-sm text-[var(--data-error-500)]">{error}</div>}
 
       {/* Stock Alerts Section */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Package className="h-5 w-5 text-[var(--data-warning)]" />
+            <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
             Alertas de Stock
           </CardTitle>
           {stockAlerts.filter(a => a.daysUntilStockout < 7).length > 0 && (
             <button
               onClick={generateBulkPurchaseOrders}
               disabled={generatingBulk}
-              className="flex flex-wrap items-center gap-2 bg-[var(--data-warning)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--data-warning)] transition disabled:opacity-50"
+              className="flex flex-wrap items-center gap-2 bg-[var(--data-warning-500)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--data-warning-500)] transition disabled:opacity-50"
             >
               {generatingBulk ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -212,16 +212,16 @@ export default function DemandPredictionTab() {
                   key={alert.product.id}
                   className={`flex items-center gap-3 p-3 rounded-xl border ${
                     isUrgent
-                      ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+                      ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                       : isWarning
-                      ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
-                      : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                      ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
+                      : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   }`}
                 >
                   {(isUrgent || isWarning) && (
                     <AlertTriangle
                       className={`h-5 w-5 shrink-0 ${
-                        isUrgent ? "text-[var(--data-error)]" : "text-[var(--data-warning)]"
+                        isUrgent ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]"
                       }`}
                     />
                   )}
@@ -234,7 +234,7 @@ export default function DemandPredictionTab() {
                       <span>Stock: <strong>{alert.product.stock}</strong> {alert.product.unit}</span>
                       <span>Promedio diario: <strong>{alert.dailyAvg.toFixed(1)}</strong></span>
                       <span className={`font-extrabold ${
-                        isUrgent ? "text-[var(--data-error)]" : isWarning ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
+                        isUrgent ? "text-[var(--data-error-500)]" : isWarning ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]"
                       }`}>
                         ~{Math.floor(alert.daysUntilStockout)} días restantes
                       </span>
@@ -295,7 +295,7 @@ export default function DemandPredictionTab() {
                   <div key={i} className="flex flex-wrap items-center gap-3 text-sm">
                     <span className="flex-1 truncate font-medium">{p.productName}</span>
                     <span className="font-extrabold text-primary">{p.estimatedDemand} uds</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-gray-100 text-[var(--text-secondary)]"}`}>{p.confidence}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-gray-100 text-[var(--text-secondary)]"}`}>{p.confidence}</span>
                   </div>
                 ))}
               </div>

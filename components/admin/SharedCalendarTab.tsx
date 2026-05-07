@@ -12,12 +12,12 @@ type CalEvent = {
 };
 
 const TYPE_CONFIG: Record<EventType, { label: string; color: string }> = {
-  tarea: { label: "Tarea", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
-  entrega: { label: "Entrega", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
-  pago: { label: "Pago", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
+  tarea: { label: "Tarea", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  entrega: { label: "Entrega", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  pago: { label: "Pago", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
   reunion: { label: "Reunión", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
-  recordatorio: { label: "Recordatorio", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--data-info)] dark:border-[var(--data-info)]" },
-  promocion: { label: "Promoción", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
+  recordatorio: { label: "Recordatorio", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--data-info-500)] dark:border-[var(--data-info-500)]" },
+  promocion: { label: "Promoción", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
 };
 
 /* ── Seed ── */
@@ -77,7 +77,7 @@ export default function SharedCalendarTab() {
             <Plus className="h-4 w-4" /> Nuevo Evento
           </button>
           {events.length > 0 && (
-            <button onClick={() => setEvents([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setEvents([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -176,7 +176,7 @@ export default function SharedCalendarTab() {
                     {e.notes && <span className="truncate max-w-[200px]">{e.notes}</span>}
                   </div>
                 </div>
-                <button onClick={() => deleteEvent(e.id)} className="p-2 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => deleteEvent(e.id)} className="p-2 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 shrink-0"><Trash2 className="h-4 w-4" /></button>
               </div>
             );
           })}

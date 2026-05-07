@@ -187,7 +187,10 @@ export async function extractYapePayment(
   let rawText = "";
   const visionImage = toVisionImage(imageUrl);
 
-  try {
+  // SECURITY/RELIABILITY 2026-05-06 (audit AI #10): retry con backoff para
+  // errores transitorios 429/5xx. Antes un 429 transitorio devolvía
+  // confidence:low y el cliente reenviaba la captura → 2× costo Anthropic.
+  async function callVisionOnce(): Promise<string> {
     const { text } = await generateText({
       model: anthropicProvider("claude-sonnet-4-6"),
       maxOutputTokens: 400,
@@ -196,20 +199,36 @@ export async function extractYapePayment(
         {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: "Analiza esta captura de Yape y devuelve el JSON.",
-            },
-            {
-              type: "image",
-              image: visionImage,
-            },
+            { type: "text", text: "Analiza esta captura de Yape y devuelve el JSON." },
+            { type: "image", image: visionImage },
           ],
         },
       ],
     });
+    return text;
+  }
 
-    rawText = text;
+  function isRetryable(err: unknown): boolean {
+    const e = err as { statusCode?: number; status?: number; message?: string };
+    const code = e?.statusCode ?? e?.status ?? 0;
+    if (code === 429) return true;
+    if (code >= 500 && code < 600) return true;
+    if ((e?.message ?? "").toLowerCase().includes("timeout")) return true;
+    return false;
+  }
+
+  try {
+    let attempt = 0;
+    while (true) {
+      try {
+        rawText = await callVisionOnce();
+        break;
+      } catch (err) {
+        attempt++;
+        if (attempt >= 2 || !isRetryable(err)) throw err;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
     aiCostGuard.recordSpend(COST_BUCKET, COST_PER_CALL_USD);
   } catch (err) {
     logger.error("[yape-vision] modelo falló", {

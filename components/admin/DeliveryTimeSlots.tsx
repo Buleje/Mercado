@@ -238,7 +238,7 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
           className={cn(
             "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-[var(--dur-fast)]",
             value === slot.id
-              ? "border-primary bg-primary/10 dark:bg-primary/20 text-primary dark:text-[var(--data-success)]"
+              ? "border-primary bg-primary/10 dark:bg-primary/20 text-primary dark:text-[var(--data-success-500)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/50 hover:bg-primary/5"
           )}
         >

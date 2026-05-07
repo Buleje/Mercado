@@ -114,9 +114,9 @@ function getConfidence(visionResponse: Record<string, unknown> | null): number |
 }
 
 const DELTA_CLASS: Record<string, string> = {
-  exact: "text-[var(--data-success)] font-extrabold",
-  near:  "text-[var(--data-warning)] font-extrabold",
-  far:   "text-[var(--data-error)] font-extrabold",
+  exact: "text-[var(--data-success-500)] font-extrabold",
+  near:  "text-[var(--data-warning-500)] font-extrabold",
+  far:   "text-[var(--data-error-500)] font-extrabold",
   unknown: "text-[var(--text-tertiary)]",
 };
 
@@ -288,7 +288,7 @@ export default function PagosYapeClient({ initialCount }: Props) {
       {error && (
         <div
           role="alert"
-          className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-error)]"
+          className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-error-500)]"
         >
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span className="flex-1">{error}</span>
@@ -426,7 +426,7 @@ export default function PagosYapeClient({ initialCount }: Props) {
 
                   {/* review_required badge */}
                   {a.status === "review_required" && (
-                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning)]/15 px-2 py-0.5 text-[10px] font-extrabold text-[var(--data-warning)]">
+                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-[10px] font-extrabold text-[var(--data-warning-500)]">
                       <AlertTriangle className="w-3 h-3" />
                       Revision requerida
                     </div>
@@ -437,7 +437,7 @@ export default function PagosYapeClient({ initialCount }: Props) {
                     const conf = getConfidence(a.visionResponse);
                     if (conf != null && conf < 0.7) {
                       return (
-                        <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--data-warning)]">
+                        <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--data-warning-500)]">
                           <AlertTriangle className="w-3 h-3" />
                           IA {Math.round(conf * 100)}% confianza
                         </div>
@@ -525,7 +525,7 @@ export default function PagosYapeClient({ initialCount }: Props) {
                 type="button"
                 onClick={() => void confirmReject()}
                 disabled={rejectReason.trim().length < 5 || actioning != null}
-                className="flex-1 h-11 rounded-xl bg-[var(--data-error)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
+                className="flex-1 h-11 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
               >
                 Confirmar rechazo
               </button>
@@ -722,7 +722,7 @@ function DetailPanel({
                   {approval.yapeLast4 ? (
                     <span className="font-extrabold text-[var(--text-primary)]">
                       {approval.yapeLast4}
-                      <CheckCircle className="w-3.5 h-3.5 inline ml-1 text-[var(--data-success)]" />
+                      <CheckCircle className="w-3.5 h-3.5 inline ml-1 text-[var(--data-success-500)]" />
                     </span>
                   ) : (
                     <span className="text-[var(--text-tertiary)]">—</span>
@@ -736,10 +736,10 @@ function DetailPanel({
                 if (conf == null) return null;
                 const colorClass =
                   conf >= 0.85
-                    ? "text-[var(--data-success)]"
+                    ? "text-[var(--data-success-500)]"
                     : conf >= 0.7
-                      ? "text-[var(--data-warning)]"
-                      : "text-[var(--data-error)]";
+                      ? "text-[var(--data-warning-500)]"
+                      : "text-[var(--data-error-500)]";
                 return (
                   <tr>
                     <td className="px-4 py-2.5 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
@@ -767,7 +767,7 @@ function DetailPanel({
             </span>
           )}
           {approval.rejectionReason && (
-            <span className="text-[var(--data-warning)]">
+            <span className="text-[var(--data-warning-500)]">
               Razon IA: {approval.rejectionReason}
             </span>
           )}
@@ -782,7 +782,7 @@ function DetailPanel({
             type="button"
             onClick={onApprove}
             disabled={actioning}
-            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-success)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             {actioning ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -795,7 +795,7 @@ function DetailPanel({
             type="button"
             onClick={onRejectOpen}
             disabled={actioning}
-            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-error)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             {actioning ? (
               <Loader2 className="w-4 h-4 animate-spin" />

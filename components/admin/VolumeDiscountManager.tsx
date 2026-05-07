@@ -325,7 +325,7 @@ export default function VolumeDiscountManager() {
                     className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors"
                     aria-label="Eliminar"
                   >
-                    <Trash2 className="w-4 h-4 text-[var(--data-error)]" />
+                    <Trash2 className="w-4 h-4 text-[var(--data-error-500)]" />
                   </button>
                 </div>
               </div>

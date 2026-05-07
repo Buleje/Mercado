@@ -13,9 +13,9 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { icon: Users, value: "2,500+", label: "Familias confían en nosotros", color: "text-emerald-600" },
-  { icon: TrendingUp, value: "15,000+", label: "Pedidos entregados", color: "text-emerald-600" },
-  { icon: Star, value: "4.8", label: "Calificación promedio", color: "text-amber-500" },
+  { icon: Users, value: "2,500+", label: "Familias confían en nosotros", color: "text-[var(--data-success-600)]" },
+  { icon: TrendingUp, value: "15,000+", label: "Pedidos entregados", color: "text-[var(--data-success-600)]" },
+  { icon: Star, value: "4.8", label: "Calificación promedio", color: "text-[var(--data-warning-500)]" },
   { icon: Zap, value: "30 min", label: "Tiempo de entrega promedio", color: "text-primary" },
 ];
 

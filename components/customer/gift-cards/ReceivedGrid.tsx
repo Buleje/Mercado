@@ -123,7 +123,7 @@ export default function ReceivedGrid({ cards }: Props) {
                 >
                   {copied === card.code ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                      <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" aria-hidden="true" />
                       Copiado
                     </>
                   ) : (
@@ -169,7 +169,7 @@ function StatusBadge({
       className={[
         "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide",
         isUsable
-          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+          ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300"
           : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
       ].join(" ")}
     >

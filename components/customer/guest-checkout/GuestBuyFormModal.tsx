@@ -172,8 +172,8 @@ export default function GuestBuyFormModal({
       >
         {succeeded ? (
           <div className="p-8 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-[var(--data-success)]/10 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-[var(--data-success)]" aria-hidden />
+            <div className="mx-auto w-16 h-16 rounded-full bg-[var(--data-success-500)]/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-[var(--data-success-500)]" aria-hidden />
             </div>
             <h2 className="text-[length:var(--ts-lg)] font-bold text-[var(--text-primary)]">
               Pedido enviado
@@ -335,8 +335,8 @@ export default function GuestBuyFormModal({
               )}
 
               {error && (
-                <div className="rounded-lg border border-[var(--data-error)]/30 bg-[var(--data-error)]/5 p-3">
-                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error)]">{error}</p>
+                <div className="rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-3">
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)]">{error}</p>
                 </div>
               )}
             </div>

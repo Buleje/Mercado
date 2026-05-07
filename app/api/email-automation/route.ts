@@ -1,18 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { timingSafeCompare } from "@/lib/timing-safe";
 
 /**
  * GET /api/email-automation — Automated customer lifecycle notifications.
  * Triggered via Vercel Cron every hour.
  *
- * 1. Welcome: first-time customers (1 order placed in last 2h) → bell notification
- * 2. Post-delivery review request: orders delivered in last 2h → bell notification
- * 3. Abandoned cart reminder: SavedCart updated >1h ago → bell notification
+ * SECURITY 2026-05-06 (audit email #4): comparación timing-safe + fail-closed
+ * si CRON_SECRET no está configurado. Antes `===` permitía timing attack.
  */
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const authHeader = req.headers.get("authorization") ?? "";
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    logger.error("[email-automation] CRON_SECRET no configurado");
+    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+  }
+  if (!timingSafeCompare(authHeader, `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const results = { welcome: 0, review: 0, abandoned: 0 };

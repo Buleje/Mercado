@@ -91,6 +91,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({});
       }
 
+      // Read hoursJson via raw query — column added 2026-05 (expand fase) y
+      // todavia no esta declarada en schema.prisma. Usar el id resuelto arriba.
+      let hoursJson: unknown = null;
+      try {
+        const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+          SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
+        `;
+        hoursJson = rows[0]?.hoursJson ?? null;
+      } catch {
+        hoursJson = null;
+      }
+
       return NextResponse.json({
         id:              store.id,
         slug:            store.slug,
@@ -103,6 +115,7 @@ export async function GET(req: NextRequest) {
         isActive:        store.isPublished,
         vacationMode:    store.vacationMode,
         vacationMessage: store.vacationMessage ?? "",
+        hours:           hoursJson,
       });
     }
 
@@ -167,21 +180,27 @@ export async function GET(req: NextRequest) {
         take: limit * 2,
       });
 
-      // Patch in `cover` por raw query — la columna existe en DB pero el
-      // schema.prisma no se regenera (zona peligrosa). Patrón expand seguro.
-      // Loop simple porque normalmente son <100 tiendas.
+      // Patch in `cover` y `hoursJson` por raw query — columnas existen en DB
+      // pero el schema.prisma no se regenera (zona peligrosa). Patrón expand
+      // seguro. Loop simple porque normalmente son <100 tiendas.
       if (stores.length > 0) {
         try {
-          const covers = await prisma.$queryRawUnsafe<Array<{ id: string; cover: string | null }>>(
-            `SELECT id, cover FROM "Store" WHERE id = ANY($1::text[])`,
+          const rows = await prisma.$queryRawUnsafe<
+            Array<{ id: string; cover: string | null; hoursJson: unknown }>
+          >(
+            `SELECT id, cover, "hoursJson" FROM "Store" WHERE id = ANY($1::text[])`,
             stores.map((s) => s.id as string),
-          ).catch(() => [] as Array<{ id: string; cover: string | null }>);
-          const coverMap = new Map(covers.map((c) => [c.id, c.cover]));
+          ).catch(
+            () => [] as Array<{ id: string; cover: string | null; hoursJson: unknown }>,
+          );
+          const map = new Map(rows.map((r) => [r.id, r]));
           for (const s of stores) {
-            (s as Record<string, unknown>).cover = coverMap.get(s.id as string) ?? null;
+            const row = map.get(s.id as string);
+            (s as Record<string, unknown>).cover = row?.cover ?? null;
+            (s as Record<string, unknown>).hoursJson = row?.hoursJson ?? null;
           }
         } catch {
-          // sin cover → marketplace sigue funcionando con logo de fallback
+          // sin cover/hours → marketplace sigue funcionando
         }
       }
     } catch (dbErr) {
@@ -405,6 +424,12 @@ export async function GET(req: NextRequest) {
         return {};
       });
 
+    // Helpers de horario — derivan isOpenNow + nextOpening desde hoursJson
+    // del Store (más preciso que el autoCloseTime legacy de Settings).
+    const { isOpenNow: storeIsOpenNow, nextOpening, sortStoresByStatus } =
+      await import("@/lib/marketplace-store-hours");
+    const NOW = new Date();
+
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
@@ -426,6 +451,12 @@ export async function GET(req: NextRequest) {
       const ownZone = ((s.zone as string | null | undefined) ?? "").trim();
       const finalZone = ownZone !== "" ? ownZone : (manualStoreZones[slug] ?? "");
       const construction = constructionMap[slug];
+      const hoursJson = (s as { hoursJson?: unknown }).hoursJson ?? null;
+      // Si la tienda configuró horario propio, lo usamos como source-of-truth.
+      // Si no, caemos al autoCloseTime legacy (meta.isOpenNow).
+      const hasOwnHours = hoursJson && typeof hoursJson === "object";
+      const ownIsOpenNow = hasOwnHours ? storeIsOpenNow(hoursJson as never, NOW) : null;
+      const ownNextOpen = hasOwnHours ? nextOpening(hoursJson as never, NOW) : null;
       return {
         id: s.id,
         slug: s.slug,
@@ -455,13 +486,40 @@ export async function GET(req: NextRequest) {
         freeDelivery:    meta.freeDelivery,
         deliveryMinutes: meta.deliveryMinutes,
         activePromos:    meta.activePromos,
-        openHours:       meta.openHours,
-        isOpenNow:       meta.isOpenNow,
+        // openHours / isOpenNow — preferir hoursJson configurado por el dueño.
+        openHours:       hasOwnHours ? hoursJson : meta.openHours,
+        isOpenNow:       ownIsOpenNow ?? meta.isOpenNow,
+        nextOpeningAt:   ownNextOpen ? ownNextOpen.toISOString() : null,
       };
     });
 
+    // Sort por estado: open → vacation → closed → construction. Mantiene
+    // qualityScore como tiebreak dentro de cada bucket.
+    // Para tiendas sin hoursJson configurado, usamos el flag `isOpenNow` ya
+    // calculado por el backend (legacy autoCloseTime) — pasamos un mock de
+    // hours abierto 24/7 en el día actual, así el helper devuelve "open".
+    const todayKey = (["sun","mon","tue","wed","thu","fri","sat"] as const)[NOW.getDay()];
+    const ALWAYS_OPEN_TODAY = { [todayKey]: { open: "00:00", close: "23:59", closed: false } };
+    const sortable = safeStores.map((s) => {
+      const hasOwnHours =
+        s.openHours && typeof s.openHours === "object" && !Array.isArray(s.openHours);
+      const hours = hasOwnHours
+        ? (s.openHours as never)
+        : s.isOpenNow !== false
+          ? (ALWAYS_OPEN_TODAY as never) // legacy "abierto"
+          : null;                         // legacy "cerrado"
+      return {
+        __ref: s,
+        isPublished: true,
+        underConstruction: !!s.underConstruction,
+        vacationMode: !!s.vacationMode,
+        hours,
+      };
+    });
+    const ordered = sortStoresByStatus(sortable, NOW).map((x) => x.__ref);
+
     return NextResponse.json(
-      { data: safeStores, total: safeStores.length },
+      { data: ordered, total: ordered.length },
       {
         headers: {
           // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
@@ -479,6 +537,22 @@ export async function GET(req: NextRequest) {
 
 // ── Schemas para crear/editar ─────────────────────────────────────────────────
 
+const HoursDaySchema = z.object({
+  open:   z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  close:  z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  closed: z.boolean().optional(),
+});
+
+const HoursSchema = z.object({
+  mon: HoursDaySchema.optional(),
+  tue: HoursDaySchema.optional(),
+  wed: HoursDaySchema.optional(),
+  thu: HoursDaySchema.optional(),
+  fri: HoursDaySchema.optional(),
+  sat: HoursDaySchema.optional(),
+  sun: HoursDaySchema.optional(),
+});
+
 const StoreBodySchema = z.object({
   slug:           z.string().max(100).optional().default(""),
   name:           z.string().min(1).max(200),
@@ -490,6 +564,7 @@ const StoreBodySchema = z.object({
   isActive:        z.boolean().optional(),
   vacationMode:    z.boolean().optional(),
   vacationMessage: z.string().max(500).optional(),
+  hours:           HoursSchema.optional(),
 });
 
 /**
@@ -560,6 +635,8 @@ export async function POST(req: NextRequest) {
       slug = `${slug}-${Date.now().toString(36)}`;
     }
 
+    // (nota: hoursJson se persiste post-create via $executeRaw porque la
+    //  columna aún no está declarada en schema.prisma — fase expand.)
     const store = await prisma.store.create({
       data: {
         tenantId:    tenant.id,
@@ -576,9 +653,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Persist hoursJson via raw query (columna fuera del schema Prisma).
+    let createdHours: unknown = null;
+    if (parsed.data.hours !== undefined) {
+      const hoursStr = JSON.stringify(parsed.data.hours);
+      await prisma.$executeRaw`
+        UPDATE "Store" SET "hoursJson" = ${hoursStr}::jsonb WHERE id = ${store.id}
+      `;
+      createdHours = parsed.data.hours;
+    }
+
     invalidateByPrefix("marketplace:stores");
 
     return NextResponse.json({
+      hours:           createdHours,
       id:              store.id,
       slug:            store.slug,
       name:            store.name,
@@ -661,6 +749,21 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // Persist hoursJson via raw query (columna fuera del schema Prisma).
+    let savedHours: unknown = null;
+    if (parsed.data.hours !== undefined) {
+      const hoursStr = JSON.stringify(parsed.data.hours);
+      await prisma.$executeRaw`
+        UPDATE "Store" SET "hoursJson" = ${hoursStr}::jsonb WHERE id = ${store.id}
+      `;
+      savedHours = parsed.data.hours;
+    } else {
+      const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+        SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
+      `;
+      savedHours = rows[0]?.hoursJson ?? null;
+    }
+
     invalidateByPrefix("marketplace:stores");
 
     return NextResponse.json({
@@ -675,6 +778,7 @@ export async function PUT(req: NextRequest) {
       isActive:        store.isPublished,
       vacationMode:    store.vacationMode,
       vacationMessage: store.vacationMessage ?? "",
+      hours:           savedHours,
     });
   } catch (err) {
     logger.error("[PUT /api/marketplace/stores] Error", { err: err instanceof Error ? err.message : String(err) });

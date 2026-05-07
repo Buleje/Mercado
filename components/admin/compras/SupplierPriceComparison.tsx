@@ -42,7 +42,7 @@ export function QuotationComparator({ orders, suppliers }: {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info)]/30 px-3 py-2 rounded-lg transition-colors"
+        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/30 px-3 py-2 rounded-lg transition-colors"
       >
         <BarChart3 className="h-4 w-4" /> Comparar cotizaciones
       </button>
@@ -126,7 +126,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   className={cn(
                     "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
                     isSelected
-                      ? "border-[var(--data-info)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
+                      ? "border-[var(--data-info-500)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
                       : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface text-[var(--text-primary)] dark:text-foreground",
                     !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
                   )}
@@ -166,14 +166,14 @@ export function QuotationComparator({ orders, suppliers }: {
                         const item = oc.items.find(i => i.productId === pid);
                         const isBest = best && best.ocId === oc.id;
                         return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                             {item ? `S/ ${item.unitCost.toFixed(2)}` : "—"}
                           </td>
                         );
                       })}
                       <td className="py-2 px-2 text-center">
                         {best && (
-                          <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                          <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                             {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} ✓
                           </span>
                         )}
@@ -188,13 +188,13 @@ export function QuotationComparator({ orders, suppliers }: {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
                     const isBest = oc.id === bestTotalOcId;
                     return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                         S/ {total.toFixed(2)}
                       </td>
                     );
                   })}
                   <td className="py-2 px-2 text-center">
-                    <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} ✓
                     </span>
                   </td>
@@ -204,9 +204,9 @@ export function QuotationComparator({ orders, suppliers }: {
 
             {/* Savings */}
             {savings > 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-4 py-2.5">
-                <TrendingDown className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-                <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <div className="mt-3 flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
+                <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+                <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   Ahorro vs mas caro: S/ {savings.toFixed(2)}
                 </span>
               </div>
@@ -275,7 +275,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       </h4>
 
       {comparaciones.length === 1 && (
-        <div className="flex items-center gap-2 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           Solo has comprado a 1 proveedor. Considera cotizar con otros.
         </div>
@@ -306,7 +306,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
                     {c.supplierName}
                     {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
                       </span>
                     )}
@@ -322,9 +322,9 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   </td>
                   <td className="py-2 px-2 text-right">
                     {c.isCheapest ? (
-                      <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold text-xs">Mejor</span>
+                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-xs">Mejor</span>
                     ) : (
-                      <span className="text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold text-xs flex items-center justify-end gap-0.5">
+                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold text-xs flex items-center justify-end gap-0.5">
                         <TrendingUp className="h-3 w-3" /> +{diff.toFixed(0)}%
                       </span>
                     )}

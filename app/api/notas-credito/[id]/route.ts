@@ -40,6 +40,27 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   }
 
   try {
+    // SECURITY 2026-05-06 (pentest H7): validar transición de estado.
+    // Antes EMITIDA → BORRADOR permitía revertir y re-emitir → duplicar
+    // comprobante SUNAT. ANULADA es terminal, no debe cambiar.
+    const current = await NotasCreditoDB.getById(id, auth.tenantId);
+    if (!current) {
+      return NextResponse.json({ error: "Nota de crédito no encontrada" }, { status: 404 });
+    }
+    const nextStatus = parsed.data.status;
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      BORRADOR: ["EMITIDA", "ANULADA"],
+      EMITIDA: ["ANULADA"],
+      ANULADA: [],
+    };
+    const allowed = VALID_TRANSITIONS[current.status] ?? [];
+    if (!allowed.includes(nextStatus) && current.status !== nextStatus) {
+      return NextResponse.json(
+        { error: `Transición no permitida: ${current.status} → ${nextStatus}` },
+        { status: 409 },
+      );
+    }
+
     const updated = await NotasCreditoDB.updateStatus(id, auth.tenantId, parsed.data.status);
     if (!updated) {
       return NextResponse.json({ error: "Nota de crédito no encontrada" }, { status: 404 });

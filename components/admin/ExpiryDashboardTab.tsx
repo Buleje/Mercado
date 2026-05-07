@@ -184,7 +184,7 @@ export default function ExpiryDashboardTab() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <RefreshCw className="h-8 w-8 animate-spin text-[var(--data-success)] dark:text-[var(--data-success)]" />
+        <RefreshCw className="h-8 w-8 animate-spin text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         <p className="text-[var(--text-tertiary)] text-sm">
           Cargando datos de vencimiento...
         </p>
@@ -195,8 +195,8 @@ export default function ExpiryDashboardTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <AlertCircle className="h-10 w-10 text-[var(--data-error)]" />
-        <p className="text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">{error}</p>
+        <AlertCircle className="h-10 w-10 text-[var(--data-error-500)]" />
+        <p className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">{error}</p>
         <button
           onClick={fetchData}
           className="px-4 py-2 text-sm bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
@@ -248,7 +248,7 @@ export default function ExpiryDashboardTab() {
         <KPICard
           icon={<XCircle className="h-5 w-5" />}
           iconBg="bg-red-100 dark:bg-red-900/40"
-          iconColor="text-red-600 dark:text-red-400"
+          iconColor="text-[var(--data-error-600)] dark:text-red-400"
           label="Vencidos"
           value={summary.expiredCount.toString()}
           alert={summary.expiredCount > 0}
@@ -266,7 +266,7 @@ export default function ExpiryDashboardTab() {
         <KPICard
           icon={<Clock className="h-5 w-5" />}
           iconBg="bg-amber-100 dark:bg-amber-900/40"
-          iconColor="text-amber-600 dark:text-amber-400"
+          iconColor="text-[var(--data-warning-600)] dark:text-amber-400"
           label="Vence este mes"
           value={summary.monthCount.toString()}
           alert={summary.monthCount > 0}
@@ -275,7 +275,7 @@ export default function ExpiryDashboardTab() {
         <KPICard
           icon={<DollarSign className="h-5 w-5" />}
           iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
+          iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           label="Valor en riesgo"
           value={formatCurrency(summary.valorTotalRiesgo)}
         />
@@ -290,21 +290,21 @@ export default function ExpiryDashboardTab() {
           <div className="flex h-4 rounded-full overflow-hidden bg-[var(--surface-sunken)]">
             {summary.valorExpired > 0 && (
               <div
-                className="bg-[var(--data-error)] dark:bg-[var(--data-error)] transition-all"
+                className="bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)] transition-all"
                 style={{ width: `${(summary.valorExpired / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Vencidos: ${formatCurrency(summary.valorExpired)}`}
               />
             )}
             {summary.valorWeek > 0 && (
               <div
-                className="bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all"
+                className="bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] transition-all"
                 style={{ width: `${(summary.valorWeek / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Esta semana: ${formatCurrency(summary.valorWeek)}`}
               />
             )}
             {summary.valorMonth > 0 && (
               <div
-                className="bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all"
+                className="bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] transition-all"
                 style={{ width: `${(summary.valorMonth / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Este mes: ${formatCurrency(summary.valorMonth)}`}
               />
@@ -312,15 +312,15 @@ export default function ExpiryDashboardTab() {
           </div>
           <div className="flex flex-wrap gap-4 mt-2 text-xs text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]" />
               Vencidos: {formatCurrency(summary.valorExpired)}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]" />
               7 días: {formatCurrency(summary.valorWeek)}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]" />
               30 días: {formatCurrency(summary.valorMonth)}
             </span>
           </div>
@@ -334,7 +334,7 @@ export default function ExpiryDashboardTab() {
           placeholder="Buscar por producto, lote o categoría..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2.5 pl-10 text-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 transition-colors"
+          className="w-full px-4 py-2.5 pl-10 text-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 transition-colors"
         />
         <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
       </div>
@@ -384,7 +384,7 @@ export default function ExpiryDashboardTab() {
       {summary.totalAtRisk === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="h-14 w-14 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mb-4">
-            <CalendarClock className="h-7 w-7 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+            <CalendarClock className="h-7 w-7 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <p className="text-sm font-medium text-[var(--text-secondary)]">
             No hay lotes vencidos ni por vencer
@@ -418,9 +418,9 @@ function KPICard({
   alertColor?: "amber" | "red" | "orange";
 }) {
   const ringColors: Record<string, string> = {
-    amber: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
-    red: "ring-[var(--data-error)] dark:ring-[var(--data-error)]",
-    orange: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+    amber: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
+    red: "ring-[var(--data-error-500)] dark:ring-[var(--data-error-500)]",
+    orange: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
   };
 
   return (
@@ -473,24 +473,24 @@ function BatchSection({
 }) {
   const colorMap = {
     red: {
-      bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
-      border: "border-[var(--data-error)] dark:border-[var(--data-error)]/50",
-      text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
-      badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]",
+      bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",
+      border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50",
+      text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+      badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
       headerBg: "hover:bg-red-50/50 dark:hover:bg-red-900/10",
     },
     orange: {
-      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/50",
-      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50",
+      text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
       headerBg: "hover:bg-orange-50/50 dark:hover:bg-orange-900/10",
     },
     amber: {
-      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/50",
-      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50",
+      text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
       headerBg: "hover:bg-amber-50/50 dark:hover:bg-amber-900/10",
     },
   };
@@ -612,7 +612,7 @@ function BatchSection({
                         onClick={() => onAction(batch.id, "liquidar")}
                         disabled={actionLoading === batch.id}
                         title="Liquidar (marcar para descuento)"
-                        className="p-1.5 rounded-lg text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors disabled:opacity-50"
+                        className="p-1.5 rounded-lg text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors disabled:opacity-50"
                       >
                         <Tag className="h-4 w-4" />
                       </button>
@@ -620,7 +620,7 @@ function BatchSection({
                         onClick={() => onAction(batch.id, "baja")}
                         disabled={actionLoading === batch.id}
                         title="Dar de baja (registrar como pérdida)"
-                        className="p-1.5 rounded-lg text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors disabled:opacity-50"
+                        className="p-1.5 rounded-lg text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -658,7 +658,7 @@ function BatchSection({
 function ExpiryBadge({ days }: { days: number }) {
   if (days < 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full">
         <XCircle className="h-3 w-3" />
         {daysLabel(days)}
       </span>
@@ -666,7 +666,7 @@ function ExpiryBadge({ days }: { days: number }) {
   }
   if (days === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-full">
         <AlertCircle className="h-3 w-3" />
         Vence hoy
       </span>
@@ -674,14 +674,14 @@ function ExpiryBadge({ days }: { days: number }) {
   }
   if (days <= 7) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded-full">
         <AlertTriangle className="h-3 w-3" />
         {days}d
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded-full">
       <Clock className="h-3 w-3" />
       {days}d
     </span>

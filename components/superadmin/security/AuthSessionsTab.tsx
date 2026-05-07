@@ -191,7 +191,7 @@ export function AuthSessionsTab() {
         <button
           type="button"
           onClick={() => setRevokeOpen(true)}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-error)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-error-500)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
         >
           <LogOut className="h-3.5 w-3.5" />
           Forzar logout global
@@ -208,7 +208,7 @@ export function AuthSessionsTab() {
             Cargando sesiones…
           </div>
         ) : error ? (
-          <div role="alert" className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-4 flex items-start gap-2 text-[var(--data-error)]">
+          <div role="alert" className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4 flex items-start gap-2 text-[var(--data-error-500)]">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
           </div>
@@ -342,8 +342,8 @@ export function AuthSessionsTab() {
           <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl p-5">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--data-error)]/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-error-500)]/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div className="flex-1 min-w-0">
                 <AlertDialog.Title className="text-base font-extrabold text-[var(--text-primary)]">
@@ -371,7 +371,7 @@ export function AuthSessionsTab() {
               <button
                 onClick={(e) => { e.preventDefault(); void handleRevokeAll(); }}
                 disabled={revoking}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-[var(--data-error)] hover:brightness-110 text-white disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-[var(--data-error-500)] hover:brightness-110 text-white disabled:opacity-50"
               >
                 {revoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
                 Sí, cerrar todas

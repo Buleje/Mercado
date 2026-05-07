@@ -306,7 +306,7 @@ export default function OfertasClient() {
 
       {error && (
         <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="rounded-2xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/5 p-4 text-sm text-[var(--data-error)]">
+          <div className="rounded-2xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-500)]">
             {error}
           </div>
         </section>

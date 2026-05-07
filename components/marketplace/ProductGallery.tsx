@@ -136,7 +136,7 @@ export default function ProductGallery({ images, productName, fallbackImage }: P
                   "relative h-16 w-16 shrink-0 rounded-xl overflow-hidden border-2 transition-all",
                   i === activeIndex
                     ? "border-primary scale-105 shadow-md"
-                    : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/50"
+                    : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/50"
                 )}
               >
                 <Image

@@ -126,28 +126,28 @@ export default function CxPCalendar() {
       {/* Summary strip */}
       {data?.resumen && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-3">
+          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-              <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Vence esta semana</p>
+              <Clock className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
+              <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Vence esta semana</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.venceEstaSemana.toFixed(2)}
             </p>
           </div>
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
+          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-              <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Vence este mes</p>
+              <Calendar className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
+              <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Vence este mes</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.venceEsteMes.toFixed(2)}
             </p>
           </div>
-          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl p-3">
+          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
-              <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] uppercase">Vencido</p>
+              <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
+              <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] uppercase">Vencido</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.vencido.toFixed(2)}
@@ -205,7 +205,7 @@ export default function CxPCalendar() {
                 onClick={() => setSelectedDay(isSelected ? null : cell.dateStr)}
                 className={cn(
                   "h-16 border-t border-r border-[var(--rule-soft)] dark:border-card-border/30 p-1 text-left transition-colors relative",
-                  isToday && "ring-2 ring-inset ring-[var(--data-success)]/40",
+                  isToday && "ring-2 ring-inset ring-[var(--data-success-500)]/40",
                   isSelected && "bg-primary/5 dark:bg-primary/10",
                   hasOverdue && !isSelected && "bg-[var(--data-error-50)]/60 dark:bg-red-950/10",
                   !hasEntries && "hover:bg-gray-50 dark:hover:bg-accent/30",
@@ -214,14 +214,14 @@ export default function CxPCalendar() {
               >
                 <span className={cn(
                   "text-xs font-semibold",
-                  isToday ? "text-[var(--data-success)] dark:text-[var(--data-success)] font-extrabold" : "text-[var(--text-secondary)] dark:text-muted",
+                  isToday ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-extrabold" : "text-[var(--text-secondary)] dark:text-muted",
                 )}>
                   {cell.day}
                 </span>
                 {hasEntries && (
                   <div className="mt-0.5">
                     <div className="flex items-center gap-0.5">
-                      <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", hasOverdue ? "bg-[var(--data-error)]" : "bg-primary")} />
+                      <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", hasOverdue ? "bg-[var(--data-error-500)]" : "bg-primary")} />
                       <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">
                         S/{totalAmount.toFixed(0)}
                       </span>
@@ -251,9 +251,9 @@ export default function CxPCalendar() {
               className={cn(
                 "flex items-center justify-between p-3 rounded-lg border",
                 entry.status === "pagado"
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   : entry.daysOverdue > 0
-                    ? "bg-[var(--data-error-50)] dark:bg-red-950/10 border-[var(--data-error)] dark:border-[var(--data-error)]/30"
+                    ? "bg-[var(--data-error-50)] dark:bg-red-950/10 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                     : "bg-gray-50 dark:bg-accent/50 border-[var(--rule-base)] dark:border-card-border",
               )}
             >
@@ -261,7 +261,7 @@ export default function CxPCalendar() {
                 <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{entry.supplierName}</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{entry.description}</p>
                 {entry.daysOverdue > 0 && entry.status !== "pagado" && (
-                  <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold mt-0.5">
+                  <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold mt-0.5">
                     Vencido hace {entry.daysOverdue} dia{entry.daysOverdue !== 1 ? "s" : ""}
                   </p>
                 )}
@@ -280,14 +280,14 @@ export default function CxPCalendar() {
                 {entry.status !== "pagado" && (
                   <button
                     onClick={() => markPaid(entry.id)}
-                    className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                    className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
                     title="Marcar como pagado"
                   >
                     <Check className="h-4 w-4" />
                   </button>
                 )}
                 {entry.status === "pagado" && (
-                  <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-full">
+                  <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-full">
                     Pagado
                   </span>
                 )}

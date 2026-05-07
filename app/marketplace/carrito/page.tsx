@@ -106,7 +106,7 @@ function ItemRow({
             type="button"
             onClick={onRemove}
             aria-label="Eliminar producto del carrito"
-            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
           >
             <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Eliminar
@@ -227,7 +227,7 @@ export default function CarritoPage() {
                 });
                 if (ok) clearAll();
               }}
-              className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error)]/70 hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
+              className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error-500)]/70 hover:text-[var(--data-error-500)] underline-offset-2 hover:underline transition-colors"
             >
               Vaciar carrito
             </button>

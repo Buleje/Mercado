@@ -74,7 +74,7 @@ export default function ReferralBanner() {
 
         {/* Main card */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{
-          background: "linear-gradient(135deg, #1e1b4b 0%, #009690 40%, #00B4A6 70%, #009690 100%)",
+          background: "linear-gradient(135deg, #1e1b4b 0%, var(--accent-dark) 40%, var(--accent) 70%, var(--accent-dark) 100%)",
         }}>
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(244,162,97,0.18) 0%, transparent 70%)" }} />
@@ -146,7 +146,7 @@ export default function ReferralBanner() {
                   onClick={handleCopy}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95",
-                    copied ? "bg-emerald-500 text-white" : "bg-white text-primary hover:bg-white/90"
+                    copied ? "bg-[var(--data-success-500)] text-white" : "bg-white text-primary hover:bg-white/90"
                   )}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

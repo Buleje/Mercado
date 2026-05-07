@@ -148,8 +148,8 @@ function GaugeCircle({ score, color }: { score: number; color: "green" | "yellow
   const circumference = Math.PI * r; // half circle
   const progress = (score / 100) * circumference;
 
-  const strokeColor = color === "green" ? "#00B4A6" : color === "yellow" ? "#f59e0b" : "#ef4444";
-  const textColor = color === "green" ? "text-[var(--data-success)]" : color === "yellow" ? "text-[var(--data-warning)]" : "text-[var(--data-error)]";
+  const strokeColor = color === "green" ? "var(--accent)" : color === "yellow" ? "#f59e0b" : "#ef4444";
+  const textColor = color === "green" ? "text-[var(--data-success-500)]" : color === "yellow" ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -221,25 +221,25 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
   const colorClasses = {
     green: {
-      badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+      badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
       icon: ShieldCheck,
-      iconColor: "text-[var(--data-success)]",
+      iconColor: "text-[var(--data-success-500)]",
       bar: "bg-[var(--accent-soft)]",
-      border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+      border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     },
     yellow: {
-      badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+      badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
       icon: AlertTriangle,
-      iconColor: "text-[var(--data-warning)]",
-      bar: "bg-[var(--data-warning)]",
-      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+      iconColor: "text-[var(--data-warning-500)]",
+      bar: "bg-[var(--data-warning-500)]",
+      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
     },
     red: {
-      badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+      badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
       icon: ShieldAlert,
-      iconColor: "text-[var(--data-error)]",
-      bar: "bg-[var(--data-error)]",
-      border: "border-[var(--data-error)] dark:border-[var(--data-error)]",
+      iconColor: "text-[var(--data-error-500)]",
+      bar: "bg-[var(--data-error-500)]",
+      border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
     },
   };
 
@@ -259,9 +259,9 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
         {/* Error */}
         {!loading && error && (
-          <div className="flex items-center gap-2 px-3 py-3 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-            <ShieldAlert className="h-4 w-4 text-[var(--data-error)] shrink-0" />
-            <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+          <div className="flex items-center gap-2 px-3 py-3 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+            <ShieldAlert className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
+            <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
           </div>
         )}
 
@@ -312,9 +312,9 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
                 { label: "Fiados pagados tarde", value: result.breakdown.latePaidFiados, icon: AlertTriangle },
               ].map(({ label, value, icon: Icon }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <Icon className={cn("h-3.5 w-3.5 shrink-0", value >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")} />
+                  <Icon className={cn("h-3.5 w-3.5 shrink-0", value >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")} />
                   <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">{label}</span>
-                  <span className={cn("text-xs font-bold", value > 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : value < 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                  <span className={cn("text-xs font-bold", value > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : value < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
                     {value > 0 ? `+${value}` : value === 0 ? "—" : value}
                   </span>
                 </div>
@@ -323,9 +323,9 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
             {/* Pending balance */}
             {result.totalPending > 0 && (
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-                <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">Deuda pendiente actual</span>
-                <span className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Deuda pendiente actual</span>
+                <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   S/ {result.totalPending.toFixed(2)}
                 </span>
               </div>

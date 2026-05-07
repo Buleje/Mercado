@@ -137,10 +137,10 @@ function BannerForm({
         placeholder={placeholder}
         className={cn(
           "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-          errors[field] ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
+          errors[field] ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
         )}
       />
-      {errors[field] && <p className="text-xs text-[var(--data-error)]">{errors[field]}</p>}
+      {errors[field] && <p className="text-xs text-[var(--data-error-500)]">{errors[field]}</p>}
     </div>
   );
 
@@ -299,7 +299,7 @@ export default function BannerEditor() {
       </div>
 
       {activeCount >= MAX_ACTIVE && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Limite de {MAX_ACTIVE} banners activos. Desactiva uno para agregar otro.
         </div>
@@ -384,7 +384,7 @@ export default function BannerEditor() {
                   <button
                     onClick={() => handleDelete(banner.id)}
                     title="Eliminar"
-                    className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                    className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

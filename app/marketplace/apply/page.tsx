@@ -120,7 +120,7 @@ export default function MarketplaceApplyPage() {
   const fireConfetti = async () => {
     const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 1500;
-    const colors = ["#00B4A6", "#F59E0B", "#EC4899", "#8B5CF6"];
+    const colors = ["var(--accent)", "#F59E0B", "#EC4899", "#8B5CF6"];
     (function frame() {
       confetti({
         particleCount: 3,
@@ -185,9 +185,9 @@ export default function MarketplaceApplyPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 260 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[var(--data-success-500)]/10"
           >
-            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+            <CheckCircle2 className="h-10 w-10 text-[var(--data-success-500)]" />
           </m.div>
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
             ¡Solicitud enviada!
@@ -208,7 +208,7 @@ export default function MarketplaceApplyPage() {
                 key={i}
                 className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
               >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-xs font-extrabold">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[var(--data-success-600)] text-xs font-extrabold">
                   {i + 1}
                 </span>
                 <span>{t}</span>
@@ -222,7 +222,7 @@ export default function MarketplaceApplyPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl bg-[var(--data-success-500)] text-white font-bold hover:bg-[var(--data-success-600)] transition-colors"
             >
               Contactar por WhatsApp
             </a>
@@ -262,7 +262,7 @@ export default function MarketplaceApplyPage() {
                   step === s
                     ? "bg-primary text-white scale-110 shadow-lg shadow-primary/30"
                     : step > s
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-[var(--data-success-500)] text-white"
                     : "bg-gray-200 dark:bg-gray-700 text-gray-400",
                 )}
               >
@@ -272,7 +272,7 @@ export default function MarketplaceApplyPage() {
                 <div
                   className={cn(
                     "w-8 sm:w-16 h-0.5 rounded-full transition-colors",
-                    step > s ? "bg-emerald-500" : "bg-gray-200 dark:bg-gray-700",
+                    step > s ? "bg-[var(--data-success-500)]" : "bg-gray-200 dark:bg-gray-700",
                   )}
                 />
               )}
@@ -521,7 +521,7 @@ export default function MarketplaceApplyPage() {
                 <m.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-4 text-sm text-red-500 font-semibold"
+                  className="mt-4 text-sm text-[var(--data-error-500)] font-semibold"
                 >
                   {error}
                 </m.p>
@@ -629,7 +629,7 @@ export default function MarketplaceApplyPage() {
                     {form.description || "Tu descripción aparecerá aquí — contale a los vecinos qué hace tu tienda especial."}
                   </p>
                   <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[length:var(--ts-2xs)]">
-                    <span className="inline-flex items-center gap-1 text-amber-500 font-bold">
+                    <span className="inline-flex items-center gap-1 text-[var(--data-warning-500)] font-bold">
                       ★ Nueva
                     </span>
                     <span className="text-gray-400">Próximamente en Buleje</span>

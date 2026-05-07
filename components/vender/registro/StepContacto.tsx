@@ -17,7 +17,7 @@ interface StepContactoProps {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-xs font-medium text-[var(--data-error)]" role="alert">
+    <p className="mt-1.5 text-xs font-medium text-[var(--data-error-500)]" role="alert">
       {message}
     </p>
   );
@@ -70,7 +70,7 @@ export default function StepContacto({
               className={cn(
                 inputClass,
                 "font-mono tabular-nums",
-                errors.whatsapp && "border-[var(--data-error)]",
+                errors.whatsapp && "border-[var(--data-error-500)]",
               )}
             />
           </div>
@@ -95,7 +95,7 @@ export default function StepContacto({
             placeholder="tu@email.com"
             value={value.email ?? ""}
             onChange={(e) => onChange({ email: e.target.value })}
-            className={cn(inputClass, errors.email && "border-[var(--data-error)]")}
+            className={cn(inputClass, errors.email && "border-[var(--data-error-500)]")}
           />
           <FieldError message={errors.email} />
         </div>
@@ -123,7 +123,7 @@ export default function StepContacto({
                 }
                 className={cn(
                   inputClass,
-                  errors.responsableNombre && "border-[var(--data-error)]",
+                  errors.responsableNombre && "border-[var(--data-error-500)]",
                 )}
               />
               <FieldError message={errors.responsableNombre} />
@@ -148,7 +148,7 @@ export default function StepContacto({
                 className={cn(
                   inputClass,
                   "font-mono tabular-nums",
-                  errors.responsableDni && "border-[var(--data-error)]",
+                  errors.responsableDni && "border-[var(--data-error-500)]",
                 )}
               />
               <FieldError message={errors.responsableDni} />

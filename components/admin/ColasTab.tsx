@@ -83,7 +83,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
       className={cn(
         "rounded-xl border bg-white p-5  transition-shadow hover:shadow-sm",
         "dark:border-[var(--rule-base)] dark:bg-gray-800",
-        hasFailed && "border-[var(--data-error)] dark:border-[var(--data-error)]",
+        hasFailed && "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
       )}
     >
       {/* Header */}
@@ -104,27 +104,27 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="En espera"
           value={queue.waiting}
-          colorClasses="bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+          colorClasses="bg-amber-50 text-[var(--data-warning-700)] dark:bg-amber-900/20 dark:text-amber-400"
           icon={<Clock className="h-4 w-4" />}
         />
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
           label="Completados"
           value={queue.completed}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
           icon={<CheckCircle className="h-4 w-4" />}
         />
         <StatBadge
           label="Fallidos"
           value={queue.failed}
           colorClasses={cn(
-            "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-            hasFailed && "ring-1 ring-red-300 dark:ring-red-700",
+            "bg-red-50 text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400",
+            hasFailed && "ring-1 ring-red-300 dark:ring-[var(--data-error-700)]",
           )}
           icon={<AlertTriangle className="h-4 w-4" />}
         />
@@ -200,12 +200,12 @@ export default function ColasTab() {
   if (error && stats.length === 0) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button
           type="button"
           onClick={() => fetchStats(true)}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
+          className="rounded-lg bg-[var(--accent-dark)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
         >
           Reintentar
         </button>
@@ -264,7 +264,7 @@ export default function ColasTab() {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               autoRefresh
-                ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
+                ? "border-teal-300 bg-teal-50 text-[var(--accent-dark)] dark:border-[var(--accent-dark)] dark:bg-teal-900/20 dark:text-teal-400"
                 : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)] dark:border-gray-600 dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
             )}
             title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
@@ -279,8 +279,8 @@ export default function ColasTab() {
             onClick={() => fetchStats(false)}
             disabled={loading}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-1.5 text-sm font-medium text-white transition-colors",
-              "hover:bg-teal-700 disabled:opacity-50 dark:bg-teal-500 dark:hover:bg-teal-600",
+              "flex items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-4 py-1.5 text-sm font-medium text-white transition-colors",
+              "hover:bg-[var(--accent-dark)] disabled:opacity-50 dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]",
             )}
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -291,7 +291,7 @@ export default function ColasTab() {
 
       {/* Error banner (non-blocking — shown when we have stale data) */}
       {error && stats.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-2 text-sm text-[var(--data-error)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 text-sm text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al actualizar: {error}. Mostrando datos anteriores.</span>
         </div>
@@ -299,31 +299,31 @@ export default function ColasTab() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-warning-50)] p-4 dark:border-[var(--data-warning)] dark:bg-[var(--data-warning)]/10">
-          <Clock className="h-8 w-8 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-warning-50)] p-4 dark:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/10">
+          <Clock className="h-8 w-8 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
           <div>
-            <p className="text-2xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <p className="text-2xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               {totalWaiting.toLocaleString("es-PE")}
             </p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">En espera (total)</p>
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En espera (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]">
-          <Activity className="h-8 w-8 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+        <div className="flex items-center gap-3 rounded-xl border bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]">
+          <Activity className="h-8 w-8 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           <div>
-            <p className="text-2xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {totalActive.toLocaleString("es-PE")}
             </p>
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">Activos (total)</p>
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activos (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-error-50)] p-4 dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/10">
-          <AlertTriangle className="h-8 w-8 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-error-50)] p-4 dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10">
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           <div>
-            <p className="text-2xl font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="text-2xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               {totalFailed.toLocaleString("es-PE")}
             </p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">Fallidos (total)</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Fallidos (total)</p>
           </div>
         </div>
       </div>

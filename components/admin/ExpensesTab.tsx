@@ -143,7 +143,7 @@ export default function ExpensesTab() {
           <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)]">S/{totalPeriod.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">S/{totalPeriod.toFixed(2)}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Este periodo</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
@@ -156,7 +156,7 @@ export default function ExpensesTab() {
       {summary.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
-            <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
               <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">S/{s.total.toFixed(0)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
@@ -184,7 +184,7 @@ export default function ExpensesTab() {
                       S/{m.total.toFixed(0)}
                     </span>
                     <div
-                      className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-[var(--data-error)]" : "bg-[var(--data-error)]/70 dark:bg-[var(--data-error)]/40")}
+                      className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-[var(--data-error-500)]" : "bg-[var(--data-error-500)]/70 dark:bg-[var(--data-error-500)]/40")}
                       style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
                       title={`${m.label}: S/${m.total.toFixed(2)}`}
                     />
@@ -247,8 +247,8 @@ export default function ExpensesTab() {
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{e.description}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
-              <p className="font-extrabold text-[var(--data-error)] shrink-0">-S/{e.amount.toFixed(2)}</p>
-              <button onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition"><Trash2 className="h-4 w-4" /></button>
+              <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{e.amount.toFixed(2)}</p>
+              <button onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
             </div>
             );
           })}

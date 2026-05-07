@@ -48,8 +48,8 @@ export default function BusinessOverviewChart({ data, fmtR, fmtShortR }: Props) 
       <ComposedChart data={enrichedData} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
         <defs>
           <linearGradient id="emeraldFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.15} />
-            <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.15} />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -57,7 +57,7 @@ export default function BusinessOverviewChart({ data, fmtR, fmtShortR }: Props) 
         <YAxis fontSize={10} tickLine={false} axisLine={false} width={55} tickFormatter={(v: number) => fmtShortR(v)} tick={{ fill: "#9ca3af" }} />
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Tooltip content={((props: any) => <CustomTooltip {...props} fmtR={fmtR} />) as any} />
-        <Area type="monotone" dataKey="ventas" fill="url(#emeraldFill)" stroke="#00B4A6" strokeWidth={2} name="Ventas" dot={false} activeDot={{ r: 4, fill: "#00B4A6", stroke: "#fff", strokeWidth: 2 }} />
+        <Area type="monotone" dataKey="ventas" fill="url(#emeraldFill)" stroke="var(--accent)" strokeWidth={2} name="Ventas" dot={false} activeDot={{ r: 4, fill: "var(--accent)", stroke: "#fff", strokeWidth: 2 }} />
         <Line type="monotone" dataKey="objetivo" stroke="#d1d5db" strokeDasharray="5 5" strokeWidth={1.5} dot={false} name="Objetivo" />
         <Bar dataKey="clientes" fill="#8b5cf6" opacity={0.3} barSize={16} name="Clientes" />
         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />

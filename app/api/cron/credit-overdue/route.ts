@@ -1,24 +1,15 @@
 import "server-only";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { checkOverdue } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
+import { withCronAuth } from "@/lib/cron-auth";
 
 // ── GET /api/cron/credit-overdue ──────────────────────────────────────────────
-// Cron diario. Protegido por CRON_SECRET (Vercel Cron Jobs).
-// Configura en vercel.json:
-//   { "crons": [{ "path": "/api/cron/credit-overdue", "schedule": "0 6 * * *" }] }
+// Cron diario. Protegido por CRON_SECRET con timing-safe compare + fail-closed
+// si el secret no está configurado (FIX 2026-05-06: antes era fail-open).
 
-export async function GET(req: NextRequest) {
-  // Validar CRON_SECRET para evitar ejecuciones no autorizadas
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    logger.warn("[cron/credit-overdue] Unauthorized attempt");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("credit-overdue", async () => {
   logger.info("[cron/credit-overdue] Starting overdue check");
 
   try {
@@ -69,4 +60,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/credit-overdue] Fatal error", { message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

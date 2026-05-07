@@ -38,9 +38,9 @@ function fmtDate(iso: string) {
 }
 
 const RESULT_META: Record<InspectionResult, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  aprobado:  { label: "Aprobado",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  observado: { label: "Observado", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",    icon: AlertTriangle },
-  rechazado: { label: "Rechazado", color: "text-[var(--data-error)] dark:text-[var(--data-error)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",        icon: AlertTriangle },
+  aprobado:  { label: "Aprobado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  observado: { label: "Observado", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: AlertTriangle },
+  rechazado: { label: "Rechazado", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
 };
 
 const TYPE_META: Record<InspectionType, { label: string }> = {
@@ -124,10 +124,10 @@ export default function QualityControlTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total inspecciones", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Aprobados", value: String(stats.aprobados), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Observados", value: String(stats.observados), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Rechazados", value: String(stats.rechazados), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Total inspecciones", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Aprobados", value: String(stats.aprobados), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Observados", value: String(stats.observados), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Rechazados", value: String(stats.rechazados), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "% Aprobación", value: `${stats.pctAprobado.toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -139,11 +139,11 @@ export default function QualityControlTab() {
 
       {/* Alert */}
       {stats.rechazados > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Productos rechazados</p>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{stats.rechazados} inspección(es) con rechazo activo — revisar acciones correctivas.</p>
+            <p className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">Productos rechazados</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">{stats.rechazados} inspección(es) con rechazo activo — revisar acciones correctivas.</p>
           </div>
         </div>
       )}
@@ -222,7 +222,7 @@ export default function QualityControlTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{i.inspector}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] max-w-50 truncate">{i.observations || "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 );

@@ -61,10 +61,10 @@ export interface AdminModuleManagerModalProps {
 }
 
 const PRIORITY_CONFIG: Record<ModulePriority, { label: string; cls: string; dot: string }> = {
-  core:   { label: "Esencial", cls: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]",         dot: "" },
-  high:   { label: "Alta",     cls: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/40 dark:text-[var(--data-warning)]", dot: "" },
-  medium: { label: "Media",    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/40 dark:text-[var(--data-warning)]",     dot: "" },
-  low:    { label: "Normal",   cls: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",     dot: "" },
+  core:   { label: "Esencial", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",         dot: "" },
+  high:   { label: "Alta",     cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]", dot: "" },
+  medium: { label: "Media",    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]",     dot: "" },
+  low:    { label: "Normal",   cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",     dot: "" },
 };
 
 export function AdminModuleManagerModal({
@@ -115,7 +115,7 @@ export function AdminModuleManagerModal({
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-semibold">Total</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-extrabold text-[var(--data-success)]">
+                <div className="text-xl font-extrabold text-[var(--data-success-500)]">
                   {allowedTabs.length - hiddenTabs.size}
                 </div>
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-semibold">Visibles</div>
@@ -125,16 +125,16 @@ export function AdminModuleManagerModal({
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-semibold">Ocultos</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-extrabold text-[var(--data-error)]">{demoCount}</div>
+                <div className="text-xl font-extrabold text-[var(--data-error-500)]">{demoCount}</div>
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-semibold">Con demo</div>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-semibold mr-1">Prioridad:</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]">Esencial</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/40 dark:text-[var(--data-warning)]">Alta</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/40 dark:text-[var(--data-warning)]">Media</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">Normal</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]">Esencial</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]">Alta</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]">Media</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Normal</span>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ export function AdminModuleManagerModal({
                             );
                           })()}
                           {hasDemo && (
-                            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--data-error)]" />
+                            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
                           )}
                         </div>
 
@@ -211,8 +211,8 @@ export function AdminModuleManagerModal({
                               </span>
                             )}
                             {hasDemo && (
-                              <span className="shrink-0 flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)] inline-block" />
+                              <span className="shrink-0 flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)] inline-block" />
                                 Demo
                               </span>
                             )}
@@ -234,7 +234,7 @@ export function AdminModuleManagerModal({
                             <button
                               onClick={() => onClearDemoData(tabId)}
                               disabled={isClearing}
-                              className="text-xs font-semibold text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                              className="text-xs font-semibold text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                             >
                               {isClearing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Eliminar datos"}
                             </button>
@@ -245,8 +245,8 @@ export function AdminModuleManagerModal({
                             className={cn(
                               "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
                               isHidden
-                                ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success)]"
-                                : "bg-primary/10 text-primary hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error)]"
+                                ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success-500)]"
+                                : "bg-primary/10 text-primary hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
                             )}
                           >
                             {isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -265,7 +265,7 @@ export function AdminModuleManagerModal({
             {hiddenTabs.size > 0 ? (
               <button
                 onClick={onClearAllHidden}
-                className="text-sm font-semibold text-[var(--data-success)] hover:text-[var(--data-success)] flex items-center gap-1.5"
+                className="text-sm font-semibold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] flex items-center gap-1.5"
               >
                 <CheckCircle className="h-4 w-4" />
                 Mostrar todos ({hiddenTabs.size})

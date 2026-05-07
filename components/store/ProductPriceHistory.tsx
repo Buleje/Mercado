@@ -55,9 +55,9 @@ function MiniChart({ points }: { points: PricePoint[] }) {
             <div
               className={cn(
                 "w-full rounded-t-sm transition-all",
-                isLast  ? "bg-[#00B4A6]" :
-                isMax   ? "bg-red-400 dark:bg-red-500" :
-                isMin   ? "bg-emerald-400 dark:bg-emerald-500" :
+                isLast  ? "bg-[var(--accent)]" :
+                isMax   ? "bg-red-400 dark:bg-[var(--data-error-500)]" :
+                isMin   ? "bg-emerald-400 dark:bg-[var(--data-success-500)]" :
                 "bg-gray-200 dark:bg-gray-700"
               )}
               style={{ height: `${Math.max(heightPct, 8)}%` }}
@@ -106,7 +106,7 @@ export default function ProductPriceHistory({ productId }: ProductPriceHistoryPr
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 py-2">
-        <div className="w-3 h-3 border-2 border-[var(--rule-base)] dark:border-gray-600 border-t-[#00B4A6] rounded-full animate-spin" />
+        <div className="w-3 h-3 border-2 border-[var(--rule-base)] dark:border-gray-600 border-t-[var(--accent)] rounded-full animate-spin" />
         Cargando historial...
       </div>
     );
@@ -149,8 +149,8 @@ export default function ProductPriceHistory({ productId }: ProductPriceHistoryPr
             className={cn(
               "text-xs font-medium px-1.5 py-0.5 rounded-md",
               priceDiff > 0
-                ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                ? "bg-red-100 text-[var(--data-error-600)] dark:bg-red-900/30 dark:text-red-400"
+                : "bg-emerald-100 text-[var(--data-success-600)] dark:bg-emerald-900/30 dark:text-emerald-400"
             )}
           >
             {priceDiff > 0 ? "+" : ""}{fmt(Math.abs(priceDiff))} vs hace 30 dias

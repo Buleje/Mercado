@@ -111,7 +111,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
               "rounded-xl text-white text-[length:var(--ts-2xs)] font-bold",
               "transition-all duration-200 active:scale-90",
               justAdded
-                ? "bg-emerald-500 dark:bg-emerald-600"
+                ? "bg-[var(--data-success-500)] dark:bg-[var(--data-success-600)]"
                 : "bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-primary-dark",
             )}
           >

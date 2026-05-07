@@ -9,7 +9,6 @@ import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import type { Product } from "@/data/products";
 import TenantTiendaClient from "./TenantTiendaClient";
-import Breadcrumbs from "@/components/store/Breadcrumbs";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 
 interface TenantTiendaPageProps {
@@ -80,15 +79,26 @@ async function TenantTiendaContent({ slug }: { slug: string }) {
 
   const products = toProductShape(catalogRows);
 
-  const breadcrumbItems = [
-    { label: "Inicio", href: "/" },
-    { label: "Tiendas", href: "/tienda" },
-    { label: storeName },
-  ];
+  // Theme colors del customizer (Settings.storeTheme). Solo aplicamos overrides
+  // si el valor es un color literal (#hex/rgb) — los presets que apuntan a
+  // `var(--color-primary)` se ignoran para evitar loops y dejar el default.
+  const storeTheme = (settings?.storeTheme as Record<string, unknown> | undefined) ?? {};
+  const themeStyle = buildThemeStyle({
+    primaryColor: storeTheme.primaryColor as string | undefined,
+    secondaryColor: storeTheme.secondaryColor as string | undefined,
+    accentColor: storeTheme.accentColor as string | undefined,
+  });
+
+  // Sin breadcrumb arriba — el hero arranca pegado al nav para mayor impacto visual.
+  // Brandon (2026-05-05): el breadcrumb genera un espacio blanco que rompe el flujo.
+  // Inyectamos un <style> inline que oculta cualquier nav[aria-label="Breadcrumb"]
+  // que esté como hijo directo del body. Funciona pre-paint sin flash.
 
   return (
-    <>
-      <Breadcrumbs items={breadcrumbItems} />
+    <div style={themeStyle}>
+      <style>{`
+        body > nav[aria-label="Breadcrumb"] { display: none !important; }
+      `}</style>
       <TenantTiendaClient
         slug={tenant.slug}
         storeName={storeName}
@@ -97,8 +107,39 @@ async function TenantTiendaContent({ slug }: { slug: string }) {
         sectionOrder={config.order}
       />
       <StickyCouponBanner tenantSlug={tenant.slug} />
-    </>
+    </div>
   );
+}
+
+/**
+ * Construye un style con CSS variables override SOLO para colores literales.
+ * Si el valor empieza con `var(...)` lo ignora para no crear loops infinitos
+ * (ej: el preset "Teal" guarda `var(--color-primary)` que apuntaria a si misma).
+ */
+function buildThemeStyle({
+  primaryColor,
+  secondaryColor,
+  accentColor,
+}: {
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+}): React.CSSProperties {
+  const style: Record<string, string> = {};
+  const isLiteral = (v: string | undefined): v is string =>
+    typeof v === "string" && v.length > 0 && !v.trim().startsWith("var(");
+
+  if (isLiteral(primaryColor)) {
+    style["--color-primary"] = primaryColor;
+    style["--accent"] = primaryColor;
+  }
+  if (isLiteral(secondaryColor)) {
+    style["--color-secondary"] = secondaryColor;
+  }
+  if (isLiteral(accentColor)) {
+    style["--accent-soft"] = accentColor;
+  }
+  return style as React.CSSProperties;
 }
 
 function TenantTiendaSkeleton() {

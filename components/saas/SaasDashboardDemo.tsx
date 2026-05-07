@@ -5,8 +5,8 @@ import { TrendingUp, ShoppingCart, Users, Package, Bell, ArrowUpRight } from "@b
 import { cn } from "@/lib/utils";
 
 const KPIS = [
-  { label: "Ventas hoy", target: 2450, prefix: "S/ ", suffix: "", icon: <TrendingUp className="h-4 w-4" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30", change: "+18%" },
-  { label: "Pedidos", target: 47, prefix: "", suffix: "", icon: <ShoppingCart className="h-4 w-4" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30", change: "+12%" },
+  { label: "Ventas hoy", target: 2450, prefix: "S/ ", suffix: "", icon: <TrendingUp className="h-4 w-4" />, color: "text-[var(--data-success-600)] bg-emerald-50 dark:bg-emerald-950/30", change: "+18%" },
+  { label: "Pedidos", target: 47, prefix: "", suffix: "", icon: <ShoppingCart className="h-4 w-4" />, color: "text-[var(--data-success-600)] bg-emerald-50 dark:bg-emerald-950/30", change: "+12%" },
   { label: "Clientes nuevos", target: 8, prefix: "", suffix: "", icon: <Users className="h-4 w-4" />, color: "text-[var(--accent)] bg-violet-50 dark:bg-violet-950/30", change: "+3" },
   { label: "Productos activos", target: 342, prefix: "", suffix: "", icon: <Package className="h-4 w-4" />, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30", change: "342" },
 ];
@@ -48,7 +48,7 @@ function AnimatedKPI({ kpi }: { kpi: typeof KPIS[number] }) {
         <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", kpi.color)}>
           {kpi.icon}
         </div>
-        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 flex items-center gap-0.5">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] flex items-center gap-0.5">
           <ArrowUpRight className="h-3 w-3" />{kpi.change}
         </span>
       </div>
@@ -75,7 +75,7 @@ export default function SaasDashboardDemo() {
     <section className="py-20 sm:py-28 bg-white dark:bg-background overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)] dark:text-emerald-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <TrendingUp className="h-3 w-3" /> Dashboard en vivo
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -98,13 +98,13 @@ export default function SaasDashboardDemo() {
             <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Ventas mensuales</p>
-                <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">+23% vs anterior</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">+23% vs anterior</span>
               </div>
               <div className="flex items-end gap-1.5 h-32">
                 {CHART_DATA.map((val, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className="w-full rounded-t transition-all duration-1000 ease-out bg-linear-to-t from-teal-500 to-teal-400"
+                      className="w-full rounded-t transition-all duration-1000 ease-out bg-linear-to-t from-[var(--accent)] to-teal-400"
                       style={{
                         height: `${(val / maxBar) * 100}%`,
                         animationDelay: `${i * 100}ms`,
@@ -119,7 +119,7 @@ export default function SaasDashboardDemo() {
             {/* Alertas */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-3">
-                <Bell className="h-4 w-4 text-amber-500" />
+                <Bell className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Alertas del dia</p>
               </div>
               <div className="space-y-2">
@@ -128,18 +128,18 @@ export default function SaasDashboardDemo() {
                     key={i}
                     className={cn(
                       "flex items-start gap-2 p-2.5 rounded-lg text-xs transition-all duration-300",
-                      alert.type === "critical" && "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400",
-                      alert.type === "warn" && "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400",
-                      alert.type === "info" && "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400",
-                      alert.type === "success" && "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400",
+                      alert.type === "critical" && "bg-red-50 dark:bg-red-950/20 text-[var(--data-error-700)] dark:text-red-400",
+                      alert.type === "warn" && "bg-amber-50 dark:bg-amber-950/20 text-[var(--data-warning-700)] dark:text-amber-400",
+                      alert.type === "info" && "bg-emerald-50 dark:bg-emerald-950/20 text-[var(--data-success-700)] dark:text-emerald-400",
+                      alert.type === "success" && "bg-emerald-50 dark:bg-emerald-950/20 text-[var(--data-success-700)] dark:text-emerald-400",
                     )}
                   >
                     <div className={cn(
                       "h-1.5 w-1.5 rounded-full mt-1 shrink-0",
-                      alert.type === "critical" && "bg-red-500",
-                      alert.type === "warn" && "bg-amber-500",
-                      alert.type === "info" && "bg-emerald-500",
-                      alert.type === "success" && "bg-emerald-500",
+                      alert.type === "critical" && "bg-[var(--data-error-500)]",
+                      alert.type === "warn" && "bg-[var(--data-warning-500)]",
+                      alert.type === "info" && "bg-[var(--data-success-500)]",
+                      alert.type === "success" && "bg-[var(--data-success-500)]",
                     )} />
                     {alert.text}
                   </div>

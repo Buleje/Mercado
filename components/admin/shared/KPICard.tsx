@@ -61,14 +61,14 @@ function KPICard({ label, value, icon: Icon, color, change, subtitle, alert, onC
           <div className="flex items-baseline gap-1.5 mt-1">
             <p className={cn(
               "text-2xl font-mono font-bold truncate",
-              alert ? "text-[var(--data-error)]" : "text-[var(--text-primary)]",
+              alert ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
             )}>
               {value}
             </p>
             {change != null && (
               <span className={cn(
                 "text-xs font-medium shrink-0 tabular-nums",
-                change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
+                change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
               )}>
                 {change >= 0 ? "↑" : "↓"} {Math.abs(change).toFixed(1)}%
               </span>

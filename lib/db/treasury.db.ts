@@ -263,6 +263,11 @@ export const TreasuryDB = {
       const saldoAnterior = Number(cuenta.saldo);
       const monto = data.monto;
       const isIngreso = data.tipo === "INGRESO" || data.tipo === "TRANSFERENCIA_IN";
+      // SECURITY 2026-05-06 (audit warehouse H4): guard de saldo para egresos.
+      // Antes egresos sin guard dejaban saldo negativo silenciosamente.
+      if (!isIngreso && saldoAnterior < monto) {
+        throw new Error(`Saldo insuficiente: disponible ${saldoAnterior}, solicitado ${monto}`);
+      }
       const saldoPosterior = isIngreso ? saldoAnterior + monto : saldoAnterior - monto;
 
       // Create movement

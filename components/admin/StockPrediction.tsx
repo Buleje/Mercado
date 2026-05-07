@@ -17,10 +17,10 @@ type PredictionItem = {
 
 function urgencyColor(days: number | null): string {
   if (days === null) return "text-[var(--text-tertiary)] dark:text-muted";
-  if (days < 3) return "text-red-600 dark:text-red-400";
+  if (days < 3) return "text-[var(--data-error-600)] dark:text-red-400";
   if (days < 7) return "text-orange-600 dark:text-orange-400";
-  if (days < 14) return "text-amber-600 dark:text-amber-400";
-  return "text-[var(--data-success)] dark:text-[var(--data-success)]";
+  if (days < 14) return "text-[var(--data-warning-600)] dark:text-amber-400";
+  return "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 }
 
 function urgencyBg(days: number | null): string {
@@ -89,17 +89,17 @@ export default function StockPrediction() {
       {!loading && !error && items.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {criticalCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error)]" />
-              <span className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)]" />
+              <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 {criticalCount} se agotan en menos de 3 dias
               </span>
             </div>
           )}
           {warningCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-warning-50)] dark:bg-orange-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning)]" />
-              <span className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-warning-50)] dark:bg-orange-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)]" />
+              <span className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                 {warningCount} se agotan en menos de 7 dias
               </span>
             </div>
@@ -124,9 +124,9 @@ export default function StockPrediction() {
 
       {/* Error */}
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       )}
 
@@ -182,11 +182,11 @@ export default function StockPrediction() {
                       <span className={cn(
                         "inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full",
                         item.daysRemaining !== null && item.daysRemaining < 3
-                          ? "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                          ? "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                           : item.daysRemaining !== null && item.daysRemaining < 7
-                            ? "bg-[var(--data-warning-100)] dark:bg-orange-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                            ? "bg-[var(--data-warning-100)] dark:bg-orange-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                             : item.daysRemaining !== null && item.daysRemaining < 14
-                              ? "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              ? "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                               : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
                       )}>
                         {item.daysRemaining !== null && item.daysRemaining < 7 && <ShoppingCart className="h-3 w-3" />}

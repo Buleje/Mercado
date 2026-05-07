@@ -262,7 +262,7 @@ export default function OrderSuccessModal() {
                   href={`https://wa.me/51${cleanPhone}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-9 px-3 rounded-lg bg-[var(--data-success)] text-white flex items-center gap-1.5 text-sm font-bold"
+                  className="h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-white flex items-center gap-1.5 text-sm font-bold"
                 >
                   <WhatsAppIcon className="h-4 w-4" />
                   WhatsApp

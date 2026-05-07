@@ -111,15 +111,15 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Proximos pagos */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
-                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
+                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
-                <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                <AlertTriangle className="w-3 h-3 text-[var(--data-error-500)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -136,7 +136,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 })}
               </ul>
             ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-[var(--data-success)] font-medium">Sin pagos pendientes esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
@@ -145,7 +145,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-                <Users className="w-3.5 h-3.5 text-[var(--data-success)]" />
+                <Users className="w-3.5 h-3.5 text-[var(--data-success-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
             </div>
@@ -153,9 +153,9 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
@@ -165,8 +165,8 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Productos que se agotan */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
-                <Package className="w-3.5 h-3.5 text-[var(--data-error)]" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20">
+                <Package className="w-3.5 h-3.5 text-[var(--data-error-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Se agotan esta semana</span>
             </div>
@@ -178,9 +178,9 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     <span className="text-[var(--text-tertiary)] ml-1">quedan {p.stock}</span>
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" :
-                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" :
-                      "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" :
+                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" :
+                      "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
                     )}>
                       {p.daysLeft}d
                     </span>
@@ -188,7 +188,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-[var(--data-success)] font-medium">Stock estable para esta semana</p>
+              <p className="text-xs text-[var(--data-success-500)] font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
@@ -203,18 +203,18 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {sectionId === "clientes-alertas" && (
             <div className="space-y-6">
               {abandonedCartCount > 0 && (
-                <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 p-4">
+                <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center shrink-0">
-                      <ShoppingCart className="w-5 h-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                    <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center shrink-0">
+                      <ShoppingCart className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                      <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                         {abandonedCartCount} carrito{abandonedCartCount !== 1 ? "s" : ""} abandonado{abandonedCartCount !== 1 ? "s" : ""} hoy
                       </p>
-                      <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmtR(abandonedCartValue)} en ventas potenciales</p>
+                      <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmtR(abandonedCartValue)} en ventas potenciales</p>
                     </div>
-                    <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning)]/60 dark:bg-[var(--data-warning)]/40 hover:bg-[var(--data-warning)] dark:hover:bg-[var(--data-warning)]/60 transition-colors">
+                    <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/60 dark:bg-[var(--data-warning-500)]/40 hover:bg-[var(--data-warning-500)] dark:hover:bg-[var(--data-warning-500)]/60 transition-colors">
                       Ver y contactar
                     </a>
                   </div>
@@ -258,7 +258,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 {/* Alertas activas */}
                 <AdminCard padding="sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-[var(--data-warning)]" />
+                    <AlertTriangle className="w-4 h-4 text-[var(--data-warning-500)]" />
                     <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Alertas activas</span>
                   </div>
                   {loading ? (
@@ -269,14 +269,14 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     </div>
                   ) : !hasAnyAlert ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-                      <TrendingUp className="w-8 h-8 text-[var(--data-success)] mx-auto" />
+                      <TrendingUp className="w-8 h-8 text-[var(--data-success-500)] mx-auto" />
                       <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">Todo bajo control</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">No hay alertas pendientes</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800" />
-                      <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
+                      <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-[var(--data-error-700)] dark:text-red-400 border border-red-200 dark:border-red-800" />
+                      <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-[var(--data-warning-700)] dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
                       <AlertBadge Icon={DollarSign} label="Fiados vencidos" count={alerts.overduePayables} colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800" />
                     </div>
                   )}
@@ -296,12 +296,12 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {bestDay && (
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-[var(--data-warning)]" />
+                <TrendingUp className="w-4 h-4 text-[var(--data-warning-500)]" />
                 <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Mejor dia de la semana</span>
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
-                Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}
+                Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}
               </p>
               {bestDay.worst && (
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
@@ -311,13 +311,13 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {growingCategory?.top && (
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-[var(--data-success)]" />
+                <TrendingUp className="w-4 h-4 text-[var(--data-success-500)]" />
                 <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Categoria en crecimiento</span>
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
               {growingCategory.bottom && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
               )}
             </AdminCard>
           )}
@@ -336,7 +336,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-1">
                 {topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}
               </p>
-              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
                 Cliente mas fiel de {topClientMonth.monthName}
               </span>
             </AdminCard>

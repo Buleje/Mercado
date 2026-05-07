@@ -152,10 +152,10 @@ const PLAN_LABELS: Record<SubPlan, string> = {
 };
 
 const STATUS_STYLES: Record<SubStatus, string> = {
-  activa: "bg-[var(--data-success-100)] text-[var(--data-success)]",
-  pausada: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  activa: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
+  pausada: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
   cancelada: "bg-gray-100 text-[var(--text-secondary)]",
-  prueba: "bg-[var(--data-info-100)] text-[var(--data-info)]",
+  prueba: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
 };
 
 const STATUS_LABELS: Record<SubStatus, string> = {
@@ -313,7 +313,7 @@ function SubscriptionList({
                         {s.status === "activa" && (
                           <button
                             onClick={() => onAction(s.id, "pausar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] transition-colors"
+                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] transition-colors"
                             title="Pausar"
                           >
                             <Pause className="h-4 w-4" />
@@ -322,7 +322,7 @@ function SubscriptionList({
                         {s.status === "pausada" && (
                           <button
                             onClick={() => onAction(s.id, "reanudar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--data-success-50)] transition-colors"
+                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] transition-colors"
                             title="Reanudar"
                           >
                             <Play className="h-4 w-4" />
@@ -331,7 +331,7 @@ function SubscriptionList({
                         {s.status !== "cancelada" && (
                           <button
                             onClick={() => onAction(s.id, "cancelar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                             title="Cancelar"
                           >
                             <X className="h-4 w-4" />
@@ -355,7 +355,7 @@ function SubscriptionList({
 function PlansTab({ plans }: { plans: PlanCatalog[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info)] rounded-xl text-sm text-[var(--data-info)]">
+      <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-sm text-[var(--data-info-500)]">
         <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
         <div>
           <p className="font-semibold">Catálogo de planes Bodega al Mes</p>
@@ -458,7 +458,7 @@ export default function SubscriptionsModule() {
           label="Suscripciones activas"
           value={activas.length}
           icon={Users}
-          color="#00B4A6"
+          color="var(--accent)"
           subtitle="Incluye periodo de prueba"
         />
         <KPICard

@@ -92,10 +92,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Verify both warehouses exist
+  // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
+  // Antes admin de A podía referenciar warehouses de B y mover stock.
   const [from, to] = await Promise.all([
-    prisma.warehouse.findUnique({ where: { id: fromWarehouseId } }),
-    prisma.warehouse.findUnique({ where: { id: toWarehouseId } }),
+    prisma.warehouse.findFirst({ where: { id: fromWarehouseId, tenantId: auth.tenantId } }),
+    prisma.warehouse.findFirst({ where: { id: toWarehouseId, tenantId: auth.tenantId } }),
   ]);
   if (!from) return NextResponse.json({ error: "Almacén origen no encontrado" }, { status: 404 });
   if (!to) return NextResponse.json({ error: "Almacén destino no encontrado" }, { status: 404 });
@@ -183,7 +184,9 @@ export async function PATCH(req: NextRequest) {
 
   // When completing, verify origin has enough stock before committing the change
   if (status === "completado") {
-    const existing = await prisma.transfer.findUnique({ where: { id } });
+    // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
+    // Antes admin de A podía completar un transfer de B (modificación de stock ajeno).
+    const existing = await prisma.transfer.findFirst({ where: { id, tenantId: auth.tenantId } });
     if (existing) {
       const originLoc = await prisma.location.findFirst({
         where: { warehouseId: existing.fromWarehouseId, productId: existing.productId, tenantId: existing.tenantId },
@@ -198,12 +201,21 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  const updated = await prisma.transfer.update({
-    where: { id },
+  // SECURITY 2026-05-05 (audit cross-tenant #high): updateMany con tenantId
+  // bloquea modificación cross-tenant. update directo sin guard permitía a
+  // admin de A cambiar status de transfer de B.
+  const claim = await prisma.transfer.updateMany({
+    where: { id, tenantId: auth.tenantId },
     data: {
       status,
       ...(status === "completado" && { deliveredDate: new Date() }),
     },
+  });
+  if (claim.count === 0) {
+    return NextResponse.json({ error: "Transfer no encontrado" }, { status: 404 });
+  }
+  const updated = await prisma.transfer.findFirstOrThrow({
+    where: { id, tenantId: auth.tenantId },
     include: {
       fromWarehouse: { select: { name: true } },
       toWarehouse: { select: { name: true } },

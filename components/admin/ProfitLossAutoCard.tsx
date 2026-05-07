@@ -148,7 +148,7 @@ export default function ProfitLossAutoCard() {
         {loading ? (
           <LoadingState />
         ) : error ? (
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : (
           <div className="space-y-2">
             {/* Tabla P&L */}
@@ -182,10 +182,10 @@ export default function ProfitLossAutoCard() {
                     "text-sm font-semibold tabular-nums",
                     row.isFinal
                       ? netProfit >= 0
-                        ? "text-[var(--data-success)] dark:text-[var(--data-success)] text-base"
-                        : "text-[var(--data-error)] dark:text-[var(--data-error)] text-base"
+                        ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-base"
+                        : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-base"
                       : row.isSubtract
-                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : "text-[var(--text-primary)]"
                   )}
                 >
@@ -201,8 +201,8 @@ export default function ProfitLossAutoCard() {
                 <div className={cn(
                   "flex items-center gap-1 text-sm font-bold",
                   netMargin >= 0
-                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}>
                   {netMargin >= 0
                     ? <TrendingUp className="h-4 w-4" />

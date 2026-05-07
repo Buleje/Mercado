@@ -122,13 +122,13 @@ export default function ReviewModal() {
 
   const selectedStyle =
     tier === "critical"
-      ? "border-red-400 bg-red-50 text-red-700 font-medium"
+      ? "border-red-400 bg-red-50 text-[var(--data-error-700)] font-medium"
       : tier === "neutral"
-      ? "border-amber-400 bg-amber-50 text-amber-700 font-medium"
+      ? "border-amber-400 bg-amber-50 text-[var(--data-warning-700)] font-medium"
       : "border-primary bg-primary/8 text-primary font-medium";
 
   const labelColor =
-    tier === "critical" ? "text-red-500" : "text-amber-500";
+    tier === "critical" ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]";
 
   return (
     <AnimatePresence>
@@ -361,7 +361,7 @@ export default function ReviewModal() {
                           />
                           <button
                             onClick={() => setPhotoBase64(null)}
-                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[var(--data-error-500)] text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="h-3 w-3" />
                           </button>

@@ -46,8 +46,8 @@ export default function PriceComparisonBadge({ productId }: PriceComparisonBadge
       className={cn(
         "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold border",
         cheaperThanMarket
-          ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-700/40 text-emerald-700 dark:text-emerald-400"
-          : "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-700/40 text-emerald-700 dark:text-emerald-400"
+          ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-[var(--data-success-500)]/40 text-[var(--data-success-700)] dark:text-emerald-400"
+          : "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-[var(--data-success-500)]/40 text-[var(--data-success-700)] dark:text-emerald-400"
       )}
     >
       {cheaperThanMarket ? (

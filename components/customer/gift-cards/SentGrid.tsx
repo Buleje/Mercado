@@ -63,12 +63,12 @@ export default function SentGrid({ cards }: Props) {
                   </div>
                 </div>
                 {isPending ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-300">
                     <Clock className="h-3 w-3" aria-hidden="true" />
                     Pendiente
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300">
                     <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
                     Canjeada
                   </span>

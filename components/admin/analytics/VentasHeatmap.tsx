@@ -168,11 +168,11 @@ export default function VentasHeatmap() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudo cargar el mapa de calor</p>
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudo cargar el mapa de calor</p>
         <button
           onClick={() => { const days = HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60; fetchData(days); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -326,11 +326,11 @@ export default function VentasHeatmap() {
         const bestIsQuincena = bestSlot.dow === 1 || bestSlot.dow === 3; // Lun o Mie (quincenas tipicas)
 
         return (
-          <div className="mt-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-l-4 border-[var(--data-success)]/30 p-4 rounded-r-lg space-y-3">
+          <div className="mt-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-l-4 border-[var(--data-success-500)]/30 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Análisis de Horario</span>
+              <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Análisis de Horario</span>
             </div>
-            <div className="space-y-2 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <div className="space-y-2 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {bestSlot.avg > 0 && (
                 <p>
                   <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {bestSlot.avg.toFixed(0)} ({bestSlot.count} ventas)

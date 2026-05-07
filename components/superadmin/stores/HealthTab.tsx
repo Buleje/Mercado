@@ -68,21 +68,21 @@ interface HealthStats {
 }
 
 const STATUS_DOT: Record<CheckStatus, string> = {
-  done: "bg-emerald-500",
-  warning: "bg-amber-500",
+  done: "bg-[var(--data-success-500)]",
+  warning: "bg-[var(--data-warning-500)]",
   missing: "bg-rose-500",
 };
 
 const STATUS_BG: Record<CheckStatus, string> = {
-  done: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
-  warning: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900",
-  missing: "bg-rose-50 dark:bg-rose-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border-rose-200 dark:border-rose-900",
+  done: "bg-emerald-50 dark:bg-emerald-950/40 text-[var(--data-success-700)] dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
+  warning: "bg-amber-50 dark:bg-amber-950/40 text-[var(--data-warning-700)] dark:text-amber-300 border-amber-200 dark:border-amber-900",
+  missing: "bg-rose-50 dark:bg-rose-950/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-rose-200 dark:border-rose-900",
 };
 
 function scoreColor(pct: number): { bar: string; text: string; label: string } {
-  if (pct >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600", label: "Saludable" };
-  if (pct >= 50) return { bar: "bg-amber-500", text: "text-amber-600", label: "Atención" };
-  return { bar: "bg-rose-500", text: "text-[var(--data-error)]", label: "Crítica" };
+  if (pct >= 80) return { bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-600)]", label: "Saludable" };
+  if (pct >= 50) return { bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-600)]", label: "Atención" };
+  return { bar: "bg-rose-500", text: "text-[var(--data-error-500)]", label: "Crítica" };
 }
 
 function whatsAppHref(phone: string | null, tenantName: string) {
@@ -205,20 +205,20 @@ export function HealthTab() {
       {/* Stats hero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+          icon={<CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)]" />}
           label="Saludables (≥80%)"
           value={stats?.healthy ?? "—"}
           sub={stats ? `${Math.round(((stats.healthy) / (stats.total || 1)) * 100)}% del total` : undefined}
           trend="up"
         />
         <StatCard
-          icon={<AlertTriangle className="h-5 w-5 text-amber-600" />}
+          icon={<AlertTriangle className="h-5 w-5 text-[var(--data-warning-600)]" />}
           label="En atención (50-79%)"
           value={stats?.warning ?? "—"}
           sub="Falta detalle"
         />
         <StatCard
-          icon={<XCircle className="h-5 w-5 text-[var(--data-error)]" />}
+          icon={<XCircle className="h-5 w-5 text-[var(--data-error-500)]" />}
           label="Críticas (<50%)"
           value={stats?.critical ?? "—"}
           sub="Acción urgente"
@@ -287,7 +287,7 @@ export function HealthTab() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -383,12 +383,12 @@ export function HealthTab() {
                         {item.plan}
                       </span>
                       {!item.active && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-[var(--data-error)]">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-[var(--data-error-500)]">
                           Inactiva
                         </span>
                       )}
                       {item.store && !item.store.isPublished && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-[var(--data-warning-700)]">
                           No publicada
                         </span>
                       )}
@@ -400,7 +400,7 @@ export function HealthTab() {
                       {item.missingCount > 0 && (
                         <>
                           <span>·</span>
-                          <span className="text-[var(--data-error)] font-bold">
+                          <span className="text-[var(--data-error-500)] font-bold">
                             {item.missingCount} faltan
                           </span>
                         </>
@@ -408,7 +408,7 @@ export function HealthTab() {
                       {item.warningCount > 0 && (
                         <>
                           <span>·</span>
-                          <span className="text-amber-600 font-bold">
+                          <span className="text-[var(--data-warning-600)] font-bold">
                             {item.warningCount} con detalle
                           </span>
                         </>
@@ -446,7 +446,7 @@ export function HealthTab() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
                         WhatsApp
@@ -462,7 +462,7 @@ export function HealthTab() {
                       title={isAttended ? "Marcar como pendiente" : "Marcar como atendido"}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                         isAttended
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          ? "bg-emerald-100 text-[var(--data-success-700)] hover:bg-emerald-200"
                           : "border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
                       }`}
                     >

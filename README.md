@@ -1,8 +1,10 @@
 # 🛒 Buleje - E-commerce Platform
 
-Plataforma completa de e-commerce para abarrotes con delivery, construida con Next.js 16, React 19, Tailwind CSS 4, y Prisma + Supabase.
+> **Última verificación:** 2026-05-04 · Fuente: `package.json`, `CLAUDE.md`, `MEMORIA-PROYECTO.md`
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?logo=next.js)
+Plataforma SaaS para retail de barrio: **e-commerce + POS + ERP + marketplace multi-tenant** para operación real en Pucallpa, construida con Next.js 16, React 19, Tailwind CSS 4, y Prisma + Supabase.
+
+![Next.js](https://img.shields.io/badge/Next.js-16.2.3-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.3-blue?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-4.0-38bdf8?logo=tailwind-css)
@@ -105,7 +107,7 @@ Plataforma completa de e-commerce para abarrotes con delivery, construida con Ne
 ```bash
 # Clonar repositorio
 git clone https://github.com/Buleje/Mercado.git
-cd buleje
+cd Mercado
 
 # Instalar dependencias
 npm install
@@ -121,7 +123,7 @@ npx prisma generate
 npx prisma db push
 
 # Seed inicial (opcional)
-npm run seed
+npm run db:seed
 
 # Iniciar servidor de desarrollo
 npm run dev
@@ -134,7 +136,7 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ## 📦 Stack Tecnológico
 
 ### **Frontend**
-- **Next.js 16.1.6** - App Router, Turbopack
+- **Next.js 16.2.3** - App Router, Turbopack
 - **React 19.2.3** - React Compiler
 - **TypeScript 5.7** - Type safety
 - **Tailwind CSS 4** - Utility-first CSS
@@ -167,57 +169,18 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ## 📁 Estructura del Proyecto
 
 ```
-buleje/
-├── app/                          # Next.js App Router
-│   ├── (store)/                  # Grupo de rutas públicas
-│   │   ├── page.tsx             # Landing page
-│   │   ├── tienda/              # Catálogo completo
-│   │   └── cuenta/              # Perfil de usuario
-│   ├── admin/                    # Dashboard administrativo
-│   ├── api/                      # API Routes
-│   │   ├── orders/              # Gestión de pedidos
-│   │   ├── products/            # CRUD productos
-│   │   ├── auth/                # Autenticación
-│   │   └── ...
-│   ├── layout.tsx               # Root layout
-│   ├── globals.css              # Estilos globales
-│   └── manifest.ts              # PWA manifest
-├── components/                   # Componentes React
-│   ├── Header.tsx               # Navegación principal
-│   ├── Hero.tsx                 # Landing hero
-│   ├── ProductCatalog.tsx       # Catálogo principal
-│   ├── CartSidebar.tsx          # Carrito lateral
-│   ├── CheckoutModal.tsx        # Modal de checkout
-│   ├── ErrorBoundary.tsx        # Error handling
-│   ├── InstallPrompt.tsx        # PWA install
-│   ├── LoadingSkeleton.tsx      # Skeletons
-│   └── admin/                   # Componentes admin
-├── contexts/                     # React Contexts
-│   ├── cart-context.tsx         # Estado del carrito
-│   ├── favorites-context.tsx    # Favoritos
-│   ├── theme-context.tsx        # Dark mode
-│   └── ...
-├── lib/                          # Utilidades y lógica
-│   ├── analytics.ts             # Tracking de eventos
-│   ├── rate-limit.ts            # Rate limiting
-│   ├── prisma.ts                # Cliente Prisma
-│   ├── session.ts               # Auth sessions
-│   ├── events.ts                # Event system
-│   └── ...
-├── data/                         # Data estática
-│   └── products.ts              # Productos de ejemplo
-├── prisma/                       # Prisma schema y migraciones
-│   └── schema.prisma
-├── public/                       # Assets estáticos
-│   ├── sw.js                    # Service worker
-│   └── offline.html             # Offline fallback
-├── __tests__/                    # Tests unitarios
-├── next.config.ts               # Configuración Next.js
-├── tailwind.config.ts           # Configuración Tailwind
-├── tsconfig.json                # Configuración TypeScript
-└── package.json                 # Dependencies
-
+Mercado/
+├── app/                         # App Router (store, admin, marketplace, superadmin, delivery, api-docs)
+├── components/                  # UI por dominio (admin, store, checkout, superadmin, supplier, etc.)
+├── contexts/                    # Estado global (cart, tenant, locale, settings, dashboard, assistant...)
+├── lib/                         # Core app logic (db classes, auth, middleware, cache, billing, queue, ai)
+├── prisma/                      # Schema y migraciones
+├── docs/                        # ADRs, historia del proyecto, deuda técnica, runbooks
+├── scripts/                     # Tooling de DX, DB sanity, verificaciones y automatizaciones
+└── packages/                    # Workspaces (design system)
 ```
+
+> Para mapa técnico detallado y convenciones operativas: revisa `CLAUDE.md` y `MEMORIA-PROYECTO.md`.
 
 ---
 
@@ -226,20 +189,24 @@ buleje/
 ```bash
 # Desarrollo
 npm run dev              # Inicia servidor dev en localhost:3000 (Turbopack)
+npm run dev:health       # Verificación rápida del entorno de desarrollo
 
 # Producción
-npm run build            # Build optimizado + genera sitemap
+npm run build            # Build optimizado
 npm start                # Inicia servidor producción
 
 # Prisma
-npx prisma generate      # Genera Prisma Client
-npx prisma db push       # Sincroniza schema con Supabase
-npx prisma studio        # Abre Prisma Studio (GUI)
-npx prisma db seed       # Ejecuta seed (productos, usuarios)
+npm run db:seed          # Seed principal
+npm run db:migrate       # Prisma migrate dev (solo cuando aplique al entorno)
+npm run db:sanity        # Detecta drift de schema / consistencia
 
 # Calidad de código
 npm run lint             # Ejecuta ESLint
 npm run test             # Ejecuta tests con Vitest
+npm run test:e2e         # E2E con Playwright
+npm run test:load        # Load tests con k6
+npm run openapi:generate # Generación de OpenAPI
+npm run queue:workers    # Workers BullMQ
 ```
 
 ---
@@ -286,18 +253,21 @@ NEXT_PUBLIC_BASE_URL="http://localhost:3000"  # Cambiar en producción
 
 ### Configuración de Prisma
 
-El proyecto usa **Prisma 7.4.2** con el adaptador de PostgreSQL para Supabase:
+El proyecto usa **Prisma 7.4.2** con PostgreSQL (Supabase). Hay dos flujos:
+
+- **Bootstrap local rápido:** `prisma generate` + `prisma db push`.
+- **Migraciones controladas en entornos críticos:** seguir la guía operativa de `MEMORIA-PROYECTO.md` (consideraciones de Supabase/pgBouncer y uso de `DIRECT_URL` cuando corresponda).
 
 ```bash
 # 1. Configura DATABASE_URL en .env.local
 # 2. Genera el cliente
 npx prisma generate
 
-# 3. Sincroniza schema
+# 3. Sincroniza schema (local/dev)
 npx prisma db push
 
 # 4. (Opcional) Carga datos de ejemplo
-npx prisma db seed
+npm run db:seed
 ```
 
 ### Schema Principal
@@ -360,7 +330,7 @@ model Order {
    npx prisma db push
    
    # (Opcional) Carga productos
-   npx prisma db seed
+   npm run db:seed
    ```
 
 ### Checklist Pre-Deploy
@@ -389,6 +359,14 @@ model Order {
 ---
 
 ## 📡 API Endpoints
+
+La lista siguiente es **referencial**. El contrato vivo se genera con:
+
+```bash
+npm run openapi:generate
+```
+
+Y puede consultarse desde la interfaz de documentación en `app/api-docs`.
 
 ### Productos
 

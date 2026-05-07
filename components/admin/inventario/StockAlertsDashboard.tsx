@@ -81,7 +81,7 @@ export default function StockAlertsDashboard() {
 
   if (error) {
     return (
-      <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 rounded-lg text-sm">
+      <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 rounded-lg text-sm">
         {error}
       </div>
     );
@@ -95,13 +95,13 @@ export default function StockAlertsDashboard() {
     <div className="space-y-6">
       {/* Summary strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-3 text-center">
-          <div className="text-2xl font-bold text-[var(--data-error)]">{resumen.sinStockCount}</div>
-          <div className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">Sin stock</div>
+        <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-3 text-center">
+          <div className="text-2xl font-bold text-[var(--data-error-500)]">{resumen.sinStockCount}</div>
+          <div className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">Sin stock</div>
         </div>
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 text-center">
-          <div className="text-2xl font-bold text-[var(--data-warning)]">{resumen.criticoCount}</div>
-          <div className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Stock critico</div>
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3 text-center">
+          <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.criticoCount}</div>
+          <div className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Stock critico</div>
         </div>
         <div className="bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
           <div className="text-lg font-bold text-[var(--text-secondary)]">
@@ -111,9 +111,9 @@ export default function StockAlertsDashboard() {
             Sin movimiento ({resumen.sinMovimientoCount})
           </div>
         </div>
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 text-center">
-          <div className="text-2xl font-bold text-[var(--data-warning)]">{resumen.porVencerCount}</div>
-          <div className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Por vencer (7d)</div>
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3 text-center">
+          <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.porVencerCount}</div>
+          <div className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Por vencer (7d)</div>
         </div>
       </div>
 
@@ -124,9 +124,9 @@ export default function StockAlertsDashboard() {
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[var(--data-error)]" />
+            <span className="w-3 h-3 rounded-full bg-[var(--data-error-500)]" />
             <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">SIN STOCK</span>
-            <span className="text-xs bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-2 py-0.5 rounded-full">
               {resumen.sinStockCount}
             </span>
           </div>
@@ -137,7 +137,7 @@ export default function StockAlertsDashboard() {
         {!collapsed.sinStock && (
           <div className="px-4 pb-4">
             {data.sinStock.length === 0 ? (
-              <p className="text-sm text-[var(--data-success)] py-2">Todos los productos tienen stock</p>
+              <p className="text-sm text-[var(--data-success-500)] py-2">Todos los productos tienen stock</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -171,9 +171,9 @@ export default function StockAlertsDashboard() {
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[var(--data-warning)]" />
+            <span className="w-3 h-3 rounded-full bg-[var(--data-warning-500)]" />
             <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">STOCK CRITICO</span>
-            <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2 py-0.5 rounded-full">
               {resumen.criticoCount}
             </span>
           </div>
@@ -184,7 +184,7 @@ export default function StockAlertsDashboard() {
         {!collapsed.critico && (
           <div className="px-4 pb-4">
             {data.stockCritico.length === 0 ? (
-              <p className="text-sm text-[var(--data-success)] py-2">Ningun producto en nivel critico</p>
+              <p className="text-sm text-[var(--data-success-500)] py-2">Ningun producto en nivel critico</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -200,7 +200,7 @@ export default function StockAlertsDashboard() {
                       <tr key={p.id} className="border-b border-[var(--rule-base)]">
                         <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
                         <td className="py-2 px-2 text-center">
-                          <span className="text-[var(--data-error)] font-bold">{p.stock}</span>
+                          <span className="text-[var(--data-error-500)] font-bold">{p.stock}</span>
                         </td>
                         <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">{p.stockMin}</td>
                       </tr>
@@ -233,14 +233,14 @@ export default function StockAlertsDashboard() {
         {!collapsed.sinMovimiento && (
           <div className="px-4 pb-4">
             {data.sinMovimiento.length === 0 ? (
-              <p className="text-sm text-[var(--data-success)] py-2">Todos los productos con stock tienen movimiento</p>
+              <p className="text-sm text-[var(--data-success-500)] py-2">Todos los productos con stock tienen movimiento</p>
             ) : (
               <>
-                <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-lg p-3 mb-3 text-center">
-                  <span className="text-lg font-bold text-[var(--data-error)]">
+                <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-lg p-3 mb-3 text-center">
+                  <span className="text-lg font-bold text-[var(--data-error-500)]">
                     S/{resumen.sinMovimientoValor.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                   </span>
-                  <span className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] ml-2">de capital sin rotar</span>
+                  <span className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] ml-2">de capital sin rotar</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -257,7 +257,7 @@ export default function StockAlertsDashboard() {
                         <tr key={p.id} className="border-b border-[var(--rule-base)]">
                           <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
                           <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">{p.stock}</td>
-                          <td className="py-2 px-2 text-right text-[var(--data-error)] font-medium">
+                          <td className="py-2 px-2 text-right text-[var(--data-error-500)] font-medium">
                             S/{p.valorAtado.toFixed(2)}
                           </td>
                           <td className="py-2 px-2 text-[var(--text-secondary)] dark:text-muted">{formatDate(p.lastSaleDate)}</td>
@@ -279,9 +279,9 @@ export default function StockAlertsDashboard() {
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[var(--data-warning)]" />
+            <span className="w-3 h-3 rounded-full bg-[var(--data-warning-500)]" />
             <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">POR VENCER (7 dias)</span>
-            <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2 py-0.5 rounded-full">
               {resumen.porVencerCount}
             </span>
           </div>
@@ -292,7 +292,7 @@ export default function StockAlertsDashboard() {
         {!collapsed.porVencer && (
           <div className="px-4 pb-4">
             {data.porVencer.length === 0 ? (
-              <p className="text-sm text-[var(--data-success)] py-2">Ningun producto próximo a vencer</p>
+              <p className="text-sm text-[var(--data-success-500)] py-2">Ningun producto próximo a vencer</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -314,7 +314,7 @@ export default function StockAlertsDashboard() {
                           {new Date(b.expiryDate).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' })}
                         </td>
                         <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">{b.quantity}</td>
-                        <td className={`py-2 px-2 text-center font-bold ${b.daysToExpiry < 3 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]"}`}>
+                        <td className={`py-2 px-2 text-center font-bold ${b.daysToExpiry < 3 ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]"}`}>
                           {b.daysToExpiry}d
                         </td>
                       </tr>

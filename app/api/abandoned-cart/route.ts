@@ -49,7 +49,10 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
     }
 
     const { phone, items, total } = parsed.data;
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06: si hay sesión admin, JWT manda. Anónimos: header (proxy).
+    const { tryAdmin } = await import("@/lib/require-admin");
+    const session = await tryAdmin(req);
+    const tenantId = session?.tenantId ?? req.headers.get("x-tenant-id") ?? "main";
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;

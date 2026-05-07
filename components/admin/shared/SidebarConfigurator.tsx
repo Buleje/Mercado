@@ -76,7 +76,7 @@ type SidebarConfiguratorProps = {
 // ─── Accent color palette ────────────────────────────────────────────────────
 
 const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string; ring: string }> = [
-  { id: "teal",    label: "Teal",    hex: "#00B4A6", ring: "ring-teal-400" },
+  { id: "teal",    label: "Teal",    hex: "var(--accent)", ring: "ring-teal-400" },
   { id: "emerald", label: "Verde",   hex: "#10B981", ring: "ring-emerald-400" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9", ring: "ring-sky-400" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6", ring: "ring-violet-400" },
@@ -102,7 +102,7 @@ const PRESETS: Preset[] = [
     id: "buleje",
     label: "Buleje",
     description: "Editorial slate-deep · teal vibrante · branded total.",
-    // Theme dedicado "buleje" — sidebar branded slate-deep con teal #00B4A6
+    // Theme dedicado "buleje" — sidebar branded slate-deep con teal var(--accent)
     // (color de marca real). Active state usa barra inset teal lateral
     // = firma editorial Buleje. Render en AdminSidebar.tsx → themeClasses.
     theme: "buleje",
@@ -289,7 +289,7 @@ function ThemePreview({
     },
   };
   const s = styles[theme] ?? styles.cristal;
-  const accentHex = ACCENT_COLORS.find((c) => c.id === accent)?.hex ?? "#00B4A6";
+  const accentHex = ACCENT_COLORS.find((c) => c.id === accent)?.hex ?? "var(--accent)";
 
   return (
     <div
@@ -681,7 +681,7 @@ export default function SidebarConfigurator({
           <div className="grid grid-cols-2 gap-2">
             {PRESETS.map((p) => {
               const selected = activePresetId === p.id;
-              const presetAccent = ACCENT_COLORS.find((c) => c.id === p.accent)?.hex ?? "#00B4A6";
+              const presetAccent = ACCENT_COLORS.find((c) => c.id === p.accent)?.hex ?? "var(--accent)";
               return (
                 <button
                   key={p.id}
@@ -924,7 +924,7 @@ export default function SidebarConfigurator({
           className={cn(
             "rounded-lg py-2.5 w-full font-semibold text-sm transition-all",
             isDirty
-              ? "bg-primary text-white hover:bg-primary/90 shadow-[0_4px_14px_rgba(0,180,166,0.35)]"
+              ? "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
           )}
         >

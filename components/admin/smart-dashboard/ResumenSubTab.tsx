@@ -287,7 +287,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-primary dark:text-[var(--data-success)] text-sm">Tu tienda esta lista.</p>
+            <p className="font-bold text-primary dark:text-[var(--data-success-500)] text-sm">Tu tienda esta lista.</p>
             <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Agrega productos y empieza a vender. Los datos apareceran aqui automaticamente.</p>
           </div>
         </div>
@@ -365,9 +365,9 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               key={i}
               className={cn(
                 "border-l-4 p-3 rounded-r-xl text-sm",
-                insight.type === "positive" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
-                insight.type === "negative" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)]",
-                insight.type === "neutral" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+                insight.type === "positive" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                insight.type === "negative" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+                insight.type === "neutral" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
               )}
             >
               <span className="font-medium">{insight.text}</span>
@@ -380,8 +380,8 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
       {!loading && comboData.products.some(p => p.found) && (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 flex items-center justify-center">
-              <Lightbulb className="h-5 w-5 text-[var(--data-warning)]" />
+            <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center">
+              <Lightbulb className="h-5 w-5 text-[var(--data-warning-500)]" />
             </div>
             <div>
               <p className="text-sm font-bold text-[var(--text-primary)]">Combo del día disponible</p>
@@ -393,10 +393,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Logro desbloqueado */}
       {showLogro && logro && (
-        <div className="relative border border-[var(--data-success)]/40 bg-[var(--surface-sunken)] rounded-xl p-4 flex items-center gap-3">
-          <TrendingUp className="w-8 h-8 text-[var(--data-success)]" />
+        <div className="relative border border-[var(--data-success-500)]/40 bg-[var(--surface-sunken)] rounded-xl p-4 flex items-center gap-3">
+          <TrendingUp className="w-8 h-8 text-[var(--data-success-500)]" />
           <div className="flex-1">
-            <p className="text-xs font-extrabold text-[var(--data-success)]">Logro desbloqueado!</p>
+            <p className="text-xs font-extrabold text-[var(--data-success-500)]">Logro desbloqueado!</p>
             <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{logro.texto}</p>
           </div>
           <button onClick={() => setShowLogro(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] p-1 shrink-0"><span className="text-lg">&times;</span></button>
@@ -407,12 +407,12 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
       {!loading && (
         <div className="flex flex-wrap items-center gap-2">
           {semanaAnterior && (
-            <span className={cn("inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border", semanaAnterior.pct >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+            <span className={cn("inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border", semanaAnterior.pct >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
               Hace 1 sem ({semanaAnterior.diaLabel}): {fmtR(semanaAnterior.monto)} {semanaAnterior.pct >= 0 ? "+" : ""}{semanaAnterior.pct.toFixed(0)}%
             </span>
           )}
           {hitoProximo && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               {hitoProximo.falta ? `Te faltan ${hitoProximo.falta} para ${hitoProximo.label}` : hitoProximo.label}
             </span>
           )}
@@ -426,8 +426,8 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             <span className={cn(
               "inline-flex items-center gap-1 text-xs font-bold rounded-lg px-3 py-2",
               diasSinCierre >= 2
-                ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)]/30"
-                : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30"
+                ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
+                : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30"
             )}>
               <AlertTriangle className="h-3.5 w-3.5" />
               {diasSinCierre >= 2 ? `${diasSinCierre} dias sin cerrar caja` : "Ayer no cerraste caja"}
@@ -535,7 +535,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                   const isActive = bucket.hour === new Date().getHours();
                   return (
                     <div key={bucket.hour} className="flex items-center gap-2 text-xs">
-                      <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
+                      <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
                       <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                         {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
                         {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
@@ -564,7 +564,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                     <p className="text-2xl font-bold font-mono text-[var(--text-primary)] dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">mes actual</p>
                   </div>
-                  <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                  <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                     {monthDelta >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
                     {Math.abs(monthDelta).toFixed(1)}%
                   </div>
@@ -603,7 +603,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                   {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-[var(--text-tertiary)]">de {fmtR(monthProjection.proyeccion)}</span>
                 </p>
                 <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mt-2">
-                  <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-[var(--accent-soft)]" : monthProjection.porcentaje >= 50 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
+                  <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-[var(--accent-soft)]" : monthProjection.porcentaje >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
                 </div>
                 <p className="text-xs mt-1 text-[var(--text-tertiary)]">
                   {monthProjection.porcentaje > 100 ? "Superando proyeccion!" : `${monthProjection.porcentaje}% — dia ${monthProjection.diasTranscurridos}/${monthProjection.diasTotales}`}
@@ -611,14 +611,14 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
             {noClosedYesterday && !ignoredClose && revenueYesterday > 0 && (
-              <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 p-4">
-                <span className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">No cerraste ayer</span>
-                <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">
+              <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 p-4">
+                <span className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">No cerraste ayer</span>
+                <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">
                   Ventas: <span className="font-bold">{fmtR(revenueYesterday)}</span> &middot; {salesYesterdayCount} transacciones
                 </p>
                 <button
                   onClick={() => { localStorage.setItem("last-daily-close", new Date().toISOString().slice(0, 10)); setIgnoredClose(true); }}
-                  className="mt-2 text-xs font-bold text-[var(--data-warning)] hover:underline"
+                  className="mt-2 text-xs font-bold text-[var(--data-warning-500)] hover:underline"
                 >
                   Ignorar
                 </button>
@@ -638,12 +638,12 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
             {decliningProduct && (
-              <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 p-4">
-                <span className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">En declive</span>
-                <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1 font-medium">
+              <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 p-4">
+                <span className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En declive</span>
+                <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1 font-medium">
                   {decliningProduct.name} (-{decliningProduct.pct}% vs semana pasada)
                 </p>
-                <p className="text-xs text-[var(--data-warning)] mt-0.5">Revisa stock, precio o visibilidad</p>
+                <p className="text-xs text-[var(--data-warning-500)] mt-0.5">Revisa stock, precio o visibilidad</p>
               </div>
             )}
             </div>
@@ -654,18 +654,18 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         <div key="clientes-alertas" className="col-span-1 md:col-span-2">
           <div className="space-y-6">
             {abandonedCartCount > 0 && (
-              <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 p-4">
+              <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center shrink-0">
-                    <ShoppingCart className="w-5 h-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center shrink-0">
+                    <ShoppingCart className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                    <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                       {abandonedCartCount} carrito{abandonedCartCount !== 1 ? "s" : ""} abandonado{abandonedCartCount !== 1 ? "s" : ""} hoy
                     </p>
-                    <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmtR(abandonedCartValue)} en ventas potenciales</p>
+                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmtR(abandonedCartValue)} en ventas potenciales</p>
                   </div>
-                  <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning)]/60 dark:bg-[var(--data-warning)]/40 hover:bg-[var(--data-warning)] dark:hover:bg-[var(--data-warning)]/60 transition-colors">
+                  <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/60 dark:bg-[var(--data-warning-500)]/40 hover:bg-[var(--data-warning-500)] dark:hover:bg-[var(--data-warning-500)]/60 transition-colors">
                     Ver y contactar
                   </a>
                 </div>
@@ -709,7 +709,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               {/* Alertas activas */}
               <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-4 h-4 text-[var(--data-warning)]" />
+                  <AlertTriangle className="w-4 h-4 text-[var(--data-warning-500)]" />
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Alertas activas</span>
                 </div>
                 {loading ? (
@@ -720,14 +720,14 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                   </div>
                 ) : !hasAnyAlert ? (
                   <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-                    <TrendingUp className="w-8 h-8 text-[var(--data-success)] mx-auto" />
+                    <TrendingUp className="w-8 h-8 text-[var(--data-success-500)] mx-auto" />
                     <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">Todo bajo control</p>
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">No hay alertas pendientes</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800" />
-                    <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
+                    <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-[var(--data-error-700)] dark:text-red-400 border border-red-200 dark:border-red-800" />
+                    <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-[var(--data-warning-700)] dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
                     <AlertBadge Icon={DollarSign} label="Fiados vencidos" count={alerts.overduePayables} colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800" />
                   </div>
                 )}
@@ -740,7 +740,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         <div key="logros" className="col-span-1 md:col-span-2">
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 flex items-center justify-center"><Target className="h-5 w-5 text-[var(--data-warning)]" /></div>
+              <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center"><Target className="h-5 w-5 text-[var(--data-warning-500)]" /></div>
               <div>
                 <p className="text-sm font-bold text-[var(--text-primary)]">
                   {logrosData.unlocked}/{logrosData.total} logros desbloqueados

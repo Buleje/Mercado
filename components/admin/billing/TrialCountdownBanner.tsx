@@ -52,21 +52,21 @@ const STYLES: Record<Exclude<Severity, "none">, {
 }> = {
   warning: {
     bg: "bg-amber-50 dark:bg-amber-900/20",
-    border: "border-amber-300 dark:border-amber-700/50",
+    border: "border-amber-300 dark:border-[var(--data-warning-500)]/50",
     text: "text-amber-800 dark:text-amber-200",
     icon: Clock,
     liveMode: "polite",
   },
   critical: {
     bg: "bg-red-50 dark:bg-red-900/20",
-    border: "border-red-300 dark:border-red-700/50",
+    border: "border-red-300 dark:border-[var(--data-error-500)]/50",
     text: "text-red-800 dark:text-red-200",
     icon: AlertTriangle,
     liveMode: "assertive",
   },
   expired: {
     bg: "bg-red-100 dark:bg-red-950/40",
-    border: "border-red-500 dark:border-red-700",
+    border: "border-[var(--data-error-500)] dark:border-[var(--data-error-700)]",
     text: "text-red-900 dark:text-red-100",
     icon: ShieldCheck,
     liveMode: "assertive",
@@ -147,10 +147,10 @@ export function TrialCountdownBanner({
             href={upgradeHref}
             className={`inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl font-bold text-sm transition-all ${
               severity === "expired"
-                ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
+                ? "bg-[var(--data-error-600)] hover:bg-[var(--data-error-700)] text-white shadow-md"
                 : severity === "critical"
-                  ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
-                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                  ? "bg-[var(--data-error-600)] hover:bg-[var(--data-error-700)] text-white shadow-md"
+                  : "bg-[var(--data-warning-600)] hover:bg-[var(--data-warning-700)] text-white shadow-sm"
             }`}
           >
             {cta}

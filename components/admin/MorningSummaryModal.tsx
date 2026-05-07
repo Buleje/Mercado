@@ -181,7 +181,7 @@ export default function MorningSummaryModal() {
                   <GreetingIcon className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/85">
                     {dateLabel}
                   </p>
                   <h2

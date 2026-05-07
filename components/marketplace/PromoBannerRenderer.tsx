@@ -314,12 +314,12 @@ function PromoItemCard({
 
   if (layout === "hero") {
     const badge = item.badge ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-500)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
         {item.badge}
       </span>
     ) : null;
     const buyChip = (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap shadow-md">
         {item.buyLabel || "Comprar"}
         <ChevronRight className="h-3.5 w-3.5" />
       </span>
@@ -432,7 +432,7 @@ function PromoItemCard({
       </div>
       <div className="flex-1 min-w-0">
         {item.badge && (
-          <span className="inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-1.5 py-px text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider mb-0.5">
+          <span className="inline-flex items-center rounded-full bg-[var(--data-error-500)] text-white px-1.5 py-px text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider mb-0.5">
             {item.badge}
           </span>
         )}
@@ -453,7 +453,7 @@ function PromoItemCard({
             </span>
           )}
         </div>
-        <span className="inline-flex items-center gap-0.5 mt-1 rounded-full bg-[var(--data-success)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold">
+        <span className="inline-flex items-center gap-0.5 mt-1 rounded-full bg-[var(--data-success-500)] text-white px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold">
           {item.buyLabel || "Comprar"}
           <ChevronRight className="h-2.5 w-2.5" />
         </span>

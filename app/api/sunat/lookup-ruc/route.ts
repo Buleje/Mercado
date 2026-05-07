@@ -56,7 +56,9 @@ export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, "MODERATE", "sunat-lookup-ruc");
   if (rateLimited) return rateLimited;
 
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  // SECURITY 2026-05-06 (pentest H11): solo admin. Antes almacenero podía
+  // iterar el padrón SUNAT.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const ruc = (req.nextUrl.searchParams.get("ruc") ?? "").trim();

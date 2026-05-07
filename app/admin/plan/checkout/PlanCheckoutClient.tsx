@@ -167,16 +167,22 @@ export default function PlanCheckoutClient() {
   const activatePlan = async () => {
     setSubmitting(true);
     try {
-      await fetch("/api/admin/plan/checkout/confirm", {
+      // SECURITY 2026-05-05 (audit Stripe #5): solo actualizar UI si el
+      // backend confirmó la activación. Antes setCurrentPlan se llamaba
+      // siempre (incluso con confirm 5xx) → usuario veía plan activo cuando
+      // realmente seguía en free.
+      const res = await fetch("/api/admin/plan/checkout/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: targetPlan, method }),
         credentials: "include",
-      }).catch(() => {
-        /* mock falla → seguimos local */
-      });
-      setCurrentPlan(targetPlan);
-      setStep("success");
+      }).catch(() => null);
+      if (res && res.ok) {
+        setCurrentPlan(targetPlan);
+        setStep("success");
+      } else {
+        alert("No pudimos confirmar la activación. Intentá nuevamente.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -225,11 +231,11 @@ export default function PlanCheckoutClient() {
     return (
       <div className="min-h-screen bg-[var(--surface-sunken)] flex items-center justify-center px-4 py-12">
         <div className="max-w-xl w-full">
-          <div className="rounded-3xl border-2 border-[var(--data-success)]/30 bg-[var(--surface-canvas)] p-8 sm:p-10 shadow-md text-center">
-            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--data-success)]/10 text-[var(--data-success)]">
+          <div className="rounded-3xl border-2 border-[var(--data-success-500)]/30 bg-[var(--surface-canvas)] p-8 sm:p-10 shadow-md text-center">
+            <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
               <Check className="h-10 w-10" strokeWidth={3} />
             </div>
-            <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success)]">
+            <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
               {method === "cash" ? "Solicitud recibida" : "¡Plan activado!"}
             </p>
@@ -280,7 +286,7 @@ export default function PlanCheckoutClient() {
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Volver
           </Link>
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success)]/30 bg-[var(--data-success)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success-500)]">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
             Pago seguro
           </span>
@@ -470,7 +476,7 @@ export default function PlanCheckoutClient() {
 
               <div className="flex items-start gap-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
                 <ShieldCheck
-                  className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success)]"
+                  className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success-500)]"
                   strokeWidth={2.5}
                 />
                 <span>
@@ -590,7 +596,7 @@ function PayInstructions({
               Diners.
             </p>
             <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[var(--text-tertiary)]">
-              <ShieldCheck className="h-4 w-4 text-[var(--data-success)]" strokeWidth={2.5} />
+              <ShieldCheck className="h-4 w-4 text-[var(--data-success-500)]" strokeWidth={2.5} />
               Encriptación 256-bit · PCI DSS · Stripe nunca comparte tus datos
             </div>
           </div>

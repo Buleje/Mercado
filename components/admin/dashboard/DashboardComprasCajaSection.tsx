@@ -14,9 +14,9 @@ function fmtDateFull(iso: string) { try { return new Date(iso).toLocaleDateStrin
 // FlowRow helper — semantic intent via tokens
 function FlowRow({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "success" | "danger" | "warning" | "neutral" }) {
   const toneColor = {
-    success: "text-[var(--data-success)]",
-    danger: "text-[var(--data-error)]",
-    warning: "text-[var(--data-warning)]",
+    success: "text-[var(--data-success-500)]",
+    danger: "text-[var(--data-error-500)]",
+    warning: "text-[var(--data-warning-500)]",
     neutral: "text-[var(--text-secondary)]",
   }[tone];
   return (
@@ -129,8 +129,8 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                         >
                           <td className="px-2 sm:px-4 py-2 font-medium text-[var(--text-primary)]">{p.supplierName}</td>
                           <td className="px-2 sm:px-4 py-2 text-right text-[var(--text-secondary)]">{fmt(p.amount)}</td>
-                          <td className="px-2 sm:px-4 py-2 text-right text-[var(--data-success)] font-medium">{fmt(p.paidAmount)}</td>
-                          <td className="px-2 sm:px-4 py-2 text-right text-[var(--data-error)] font-medium">{fmt(rem)}</td>
+                          <td className="px-2 sm:px-4 py-2 text-right text-[var(--data-success-500)] font-medium">{fmt(p.paidAmount)}</td>
+                          <td className="px-2 sm:px-4 py-2 text-right text-[var(--data-error-500)] font-medium">{fmt(rem)}</td>
                           <td className="px-2 sm:px-4 py-2 text-[var(--text-secondary)]">{fmtDateFull(p.dueDate)}</td>
                           <td className="px-2 sm:px-4 py-2">
                             <StatusBadge variant={badgeVariant} label={badgeLabel} size="sm" />
@@ -204,12 +204,12 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               {/* Summary row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="rounded-lg p-3 text-center bg-[color-mix(in_oklch,var(--data-success)_10%,transparent)]">
-                  <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)] mb-0.5">Ingresos Est.</div>
-                  <div className="text-sm font-bold text-[var(--data-success)]">{fmt(st.forecastTotalRev)}</div>
+                  <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] mb-0.5">Ingresos Est.</div>
+                  <div className="text-sm font-bold text-[var(--data-success-500)]">{fmt(st.forecastTotalRev)}</div>
                 </div>
                 <div className="rounded-lg p-3 text-center bg-[color-mix(in_oklch,var(--data-error)_10%,transparent)]">
-                  <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error)] mb-0.5">Egresos Est.</div>
-                  <div className="text-sm font-bold text-[var(--data-error)]">{fmt(st.forecastTotalExp)}</div>
+                  <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)] mb-0.5">Egresos Est.</div>
+                  <div className="text-sm font-bold text-[var(--data-error-500)]">{fmt(st.forecastTotalExp)}</div>
                 </div>
                 {(() => {
                   const positive = st.forecastTotalRev - st.forecastTotalExp >= 0;
@@ -244,7 +244,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                             <span
                               className={cn(
                                 "text-xs font-bold tabular-nums",
-                                f.net >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
+                                f.net >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
                               )}
                             >
                               {f.net >= 0 ? "+" : ""}
@@ -254,13 +254,13 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                           <div className="flex flex-wrap gap-1 h-3">
                             <div className="flex-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden relative">
                               <div
-                                className="absolute inset-y-0 left-0 rounded-full bg-[var(--data-success)]"
+                                className="absolute inset-y-0 left-0 rounded-full bg-[var(--data-success-500)]"
                                 style={{ width: `${(f.estRevenue / maxVal) * 100}%` }}
                               />
                             </div>
                             <div className="flex-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden relative">
                               <div
-                                className="absolute inset-y-0 left-0 rounded-full bg-[var(--data-error)]"
+                                className="absolute inset-y-0 left-0 rounded-full bg-[var(--data-error-500)]"
                                 style={{ width: `${(f.estExpense / maxVal) * 100}%` }}
                               />
                             </div>
@@ -270,11 +270,11 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                       {/* Legend */}
                       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-2 border-t border-[var(--rule-soft)]">
                         <div className="flex items-center gap-1.5 text-xs">
-                          <div className="w-3 h-3 bg-[var(--data-success)] rounded-sm" />
+                          <div className="w-3 h-3 bg-[var(--data-success-500)] rounded-sm" />
                           <span className="text-[var(--text-secondary)]">Ingresos</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs">
-                          <div className="w-3 h-3 bg-[var(--data-error)] rounded-sm" />
+                          <div className="w-3 h-3 bg-[var(--data-error-500)] rounded-sm" />
                           <span className="text-[var(--text-secondary)]">Egresos</span>
                         </div>
                       </div>
@@ -285,8 +285,8 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               {/* Warning if negative cash flow expected */}
               {st.forecastTotalRev - st.forecastTotalExp < 0 && (
                 <div className="rounded-lg p-3 text-xs bg-[color-mix(in_oklch,var(--data-warning)_10%,transparent)]">
-                  <div className="font-semibold text-[var(--data-warning)] mb-1">Flujo negativo proyectado</div>
-                  <p className="text-[var(--data-warning)] text-[length:var(--ts-2xs)]">
+                  <div className="font-semibold text-[var(--data-warning-500)] mb-1">Flujo negativo proyectado</div>
+                  <p className="text-[var(--data-warning-500)] text-[length:var(--ts-2xs)]">
                     Se proyectan más egresos que ingresos esta semana. Considera postergar compras no urgentes o activar
                     promociones para impulsar ventas.
                   </p>
@@ -294,8 +294,8 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               )}
               {st.forecastTotalRev - st.forecastTotalExp >= 0 && (
                 <div className="rounded-lg p-3 text-xs bg-[color-mix(in_oklch,var(--data-success)_10%,transparent)]">
-                  <div className="font-semibold text-[var(--data-success)] mb-1">Estimación por día de semana</div>
-                  <p className="text-[var(--data-success)] text-[length:var(--ts-2xs)]">
+                  <div className="font-semibold text-[var(--data-success-500)] mb-1">Estimación por día de semana</div>
+                  <p className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     Basado en promedios de ingresos/egresos de los últimos 30 días agrupados por día de la semana.
                   </p>
                 </div>

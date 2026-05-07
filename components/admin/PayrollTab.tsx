@@ -86,9 +86,9 @@ export default function PayrollTab() {
   }
 
   const STATUS_META: Record<PayrollStatus, { label: string; color: string; bg: string }> = {
-    pendiente:   { label: "Pendiente",   color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"   },
-    pagado:      { label: "Pagado",      color: "text-[var(--data-success)] dark:text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-    observacion: { label: "Observación", color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30"        },
+    pendiente:   { label: "Pendiente",   color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"   },
+    pagado:      { label: "Pagado",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+    observacion: { label: "Observación", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30"        },
   };
 
   return (
@@ -126,19 +126,19 @@ export default function PayrollTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total bruto</p>
-          <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(totals.gross)}</p>
+          <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(totals.gross)}</p>
         </div>
         <div className="rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 p-4">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descuentos (AFP+IR)</p>
-          <p className="text-lg font-extrabold text-[var(--data-warning)]">{fmt(totals.afp + totals.tax)}</p>
+          <p className="text-lg font-extrabold text-[var(--data-warning-500)]">{fmt(totals.afp + totals.tax)}</p>
         </div>
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total neto a pagar</p>
-          <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(totals.net)}</p>
+          <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(totals.net)}</p>
         </div>
         <div className={cn("rounded-xl p-4", totals.pending > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{totals.pending > 0 ? "Pagos pendientes" : "Todo pagado"}</p>
-          <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
+          <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
         </div>
       </div>
 
@@ -162,9 +162,9 @@ export default function PayrollTab() {
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Empleado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Bruto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning)]">AFP/ONP</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning)]">Renta 5ta</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success)]">Neto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning-500)]">AFP/ONP</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning-500)]">Renta 5ta</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">Neto</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
               </tr>
@@ -179,9 +179,9 @@ export default function PayrollTab() {
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.role} · {p.department}</p>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(p.grossSalary)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning)]">{fmt(p.snpOrAfp)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning)]">{fmt(p.incomeTax)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success)]">{fmt(p.netSalary)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning-500)]">{fmt(p.snpOrAfp)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning-500)]">{fmt(p.incomeTax)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success-500)]">{fmt(p.netSalary)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full", sm.bg, sm.color)}>
                         {p.status === "pagado" ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -190,7 +190,7 @@ export default function PayrollTab() {
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Ver detalle">
+                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Ver detalle">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                         {p.status === "pendiente" && (
@@ -208,9 +208,9 @@ export default function PayrollTab() {
               <tr>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-primary)] dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(totals.gross)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning)]">{fmt(totals.afp)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning)]">{fmt(totals.tax)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success)]">{fmt(totals.net)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning-500)]">{fmt(totals.afp)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning-500)]">{fmt(totals.tax)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success-500)]">{fmt(totals.net)}</td>
                 <td colSpan={2} />
               </tr>
             </tfoot>
@@ -232,14 +232,14 @@ export default function PayrollTab() {
             </div>
             <div className="space-y-2 text-sm">
               <Row label="Salario base" value={fmt(detail.baseSalary)} />
-              {detail.overtime > 0 && <Row label="Horas extra" value={`+${fmt(detail.overtime)}`} vcolor="text-[var(--data-success)]" />}
-              {detail.bonuses > 0 && <Row label="Bonificaciones" value={`+${fmt(detail.bonuses)}`} vcolor="text-[var(--data-success)]" />}
+              {detail.overtime > 0 && <Row label="Horas extra" value={`+${fmt(detail.overtime)}`} vcolor="text-[var(--data-success-500)]" />}
+              {detail.bonuses > 0 && <Row label="Bonificaciones" value={`+${fmt(detail.bonuses)}`} vcolor="text-[var(--data-success-500)]" />}
               <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
                 <Row label="Salario bruto" value={fmt(detail.grossSalary)} bold />
               </div>
-              <Row label="AFP / ONP (13%)" value={`-${fmt(detail.snpOrAfp)}`} vcolor="text-amber-600" />
-              {detail.incomeTax > 0 && <Row label="Renta 5ta cat." value={`-${fmt(detail.incomeTax)}`} vcolor="text-amber-600" />}
-              {detail.otherDiscounts > 0 && <Row label="Otros descuentos" value={`-${fmt(detail.otherDiscounts)}`} vcolor="text-red-500" />}
+              <Row label="AFP / ONP (13%)" value={`-${fmt(detail.snpOrAfp)}`} vcolor="text-[var(--data-warning-600)]" />
+              {detail.incomeTax > 0 && <Row label="Renta 5ta cat." value={`-${fmt(detail.incomeTax)}`} vcolor="text-[var(--data-warning-600)]" />}
+              {detail.otherDiscounts > 0 && <Row label="Otros descuentos" value={`-${fmt(detail.otherDiscounts)}`} vcolor="text-[var(--data-error-500)]" />}
               <div className="border-t-2 border-[var(--rule-base)] dark:border-card-border pt-2">
                 <Row label="SALARIO NETO" value={fmt(detail.netSalary)} bold accent />
               </div>
@@ -249,7 +249,7 @@ export default function PayrollTab() {
                 <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)]">Marcar como pagado</button>
               )}
               {detail.status === "pagado" && (
-                <p className="text-xs text-[var(--data-success)] font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>
+                <p className="text-xs text-[var(--data-success-500)] font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>
               )}
             </div>
           </div>
@@ -263,7 +263,7 @@ function Row({ label, value, bold, accent, vcolor }: { label: string; value: str
   return (
     <div className="flex justify-between">
       <span className={cn("text-[var(--text-secondary)] dark:text-muted", bold && "font-bold text-[var(--text-primary)] dark:text-foreground")}>{label}</span>
-      <span className={cn("font-semibold", bold && "font-extrabold", accent ? "text-[var(--data-success)] text-base" : vcolor ?? "text-[var(--text-primary)] dark:text-foreground")}>{value}</span>
+      <span className={cn("font-semibold", bold && "font-extrabold", accent ? "text-[var(--data-success-500)] text-base" : vcolor ?? "text-[var(--text-primary)] dark:text-foreground")}>{value}</span>
     </div>
   );
 }

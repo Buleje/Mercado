@@ -243,7 +243,7 @@ export default function PedidoPage() {
                   href={`https://wa.me/51${assignment.order.customerPhone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[var(--data-success)] text-base font-extrabold text-white"
+                  className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[var(--data-success-500)] text-base font-extrabold text-white"
                 >
                   <WhatsAppIcon className="h-5 w-5" />
                   WhatsApp
@@ -343,14 +343,14 @@ export default function PedidoPage() {
           >
             {proofUrl ? (
               <div className="space-y-3">
-                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[var(--data-success)]">
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[var(--data-success-500)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={proofUrl}
                     alt="Foto de entrega"
                     className="absolute inset-0 h-full w-full object-cover"
                   />
-                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                     Lista
                   </span>
@@ -420,8 +420,8 @@ export default function PedidoPage() {
         )}
 
         {isDone && (
-          <div className="rounded-3xl bg-[var(--data-success)]/10 border-2 border-[var(--data-success)] p-6 text-center">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
+          <div className="rounded-3xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-6 text-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
               <CheckBadge className="h-10 w-10" />
             </div>
             <p className="mt-3 text-xl font-extrabold text-[var(--text-primary)]">
@@ -455,7 +455,7 @@ export default function PedidoPage() {
               className={`w-full h-14 inline-flex items-center justify-center gap-2 rounded-2xl text-base lg:text-lg font-extrabold text-white shadow-lg disabled:opacity-50 transition-all ${
                 needsProofToDeliver
                   ? "bg-[var(--text-tertiary)] cursor-not-allowed"
-                  : "bg-[var(--data-success)] shadow-[var(--data-success)]/30"
+                  : "bg-[var(--data-success-500)] shadow-[var(--data-success)]/30"
               }`}
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
@@ -526,7 +526,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
                 <div
                   className={`h-10 w-10 lg:h-12 lg:w-12 rounded-2xl flex items-center justify-center transition-colors ${
                     done
-                      ? "bg-[var(--data-success)] text-white"
+                      ? "bg-[var(--data-success-500)] text-white"
                       : active
                       ? "bg-[var(--accent)] text-white ring-4 ring-[var(--accent-soft)]"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -545,7 +545,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
               {i < STEPS.length - 1 && (
                 <div
                   className={`flex-1 h-1 rounded-full ${
-                    done ? "bg-[var(--data-success)]" : "bg-[var(--surface-sunken)]"
+                    done ? "bg-[var(--data-success-500)]" : "bg-[var(--surface-sunken)]"
                   }`}
                 />
               )}

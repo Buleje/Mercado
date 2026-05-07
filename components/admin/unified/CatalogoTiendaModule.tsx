@@ -387,7 +387,7 @@ function ProductsDashboard() {
                   <p className="text-xs font-bold text-[var(--text-primary)] mb-1">{d.name}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Precio: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.precio?.toFixed(2)}</span></p>
                   <p className="text-xs text-[var(--text-secondary)]">Costo: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.costo?.toFixed(2)}</span></p>
-                  <p className="text-xs text-[var(--text-secondary)]">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-[var(--data-success)]" : margen >= 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{margen}%</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-[var(--data-success-500)]" : margen >= 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{margen}%</span></p>
                   <p className="text-xs text-[var(--text-secondary)]">Stock: <span className="font-mono font-medium text-[var(--text-primary)]">{d.stock}</span></p>
                 </div>
               );
@@ -404,8 +404,8 @@ function ProductsDashboard() {
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
           <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]" /> {"<"}10%</span>
         </div>
       </div>
 
@@ -434,28 +434,28 @@ function ProductsDashboard() {
       {/* === SECCION 7: Alertas del catalogo === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {kpis.sinImagen > 0 && (
-          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--data-warning-100)] flex items-center justify-center shrink-0">
-              <Camera className="h-5 w-5 text-[var(--data-warning)]" />
+              <Camera className="h-5 w-5 text-[var(--data-warning-500)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[var(--data-warning)]">{kpis.sinImagen} sin imagen</p>
-              <p className="text-xs text-[var(--data-warning)] mt-0.5">Productos sin foto se venden menos</p>
-              <button className="mt-2 text-xs font-semibold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning)] transition-colors">
+              <p className="text-sm font-bold text-[var(--data-warning-500)]">{kpis.sinImagen} sin imagen</p>
+              <p className="text-xs text-[var(--data-warning-500)] mt-0.5">Productos sin foto se venden menos</p>
+              <button className="mt-2 text-xs font-semibold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning-500)] transition-colors">
                 Completar
               </button>
             </div>
           </div>
         )}
         {kpis.sinCosto > 0 && (
-          <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl p-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+              <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[var(--data-error)]">{kpis.sinCosto} sin costo</p>
-              <p className="text-xs text-[var(--data-error)] mt-0.5">Sin costo no se calcula el margen</p>
-              <button className="mt-2 text-xs font-semibold text-[var(--data-error)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error)] transition-colors">
+              <p className="text-sm font-bold text-[var(--data-error-500)]">{kpis.sinCosto} sin costo</p>
+              <p className="text-xs text-[var(--data-error-500)] mt-0.5">Sin costo no se calcula el margen</p>
+              <button className="mt-2 text-xs font-semibold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error-500)] transition-colors">
                 Agregar costos
               </button>
             </div>

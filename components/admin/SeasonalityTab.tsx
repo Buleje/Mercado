@@ -37,10 +37,10 @@ const SEASON_ICONS = {
   primavera: Flower2,
 };
 const SEASON_COLORS = {
-  verano: "text-[var(--data-warning)]",
-  otoño: "text-[var(--data-warning)]",
-  invierno: "text-[var(--data-success)]",
-  primavera: "text-[var(--data-success)]",
+  verano: "text-[var(--data-warning-500)]",
+  otoño: "text-[var(--data-warning-500)]",
+  invierno: "text-[var(--data-success-500)]",
+  primavera: "text-[var(--data-success-500)]",
 };
 
 /* ── component ──────────────────────────────────────────────── */
@@ -89,12 +89,12 @@ export default function SeasonalityTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Mejor mes</p>
-          <p className="text-lg font-extrabold text-[var(--data-success)] mt-1">{bestMonth.shortMonth}</p>
+          <p className="text-lg font-extrabold text-[var(--data-success-500)] mt-1">{bestMonth.shortMonth}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(bestMonth.sales)}</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Peor mes</p>
-          <p className="text-lg font-extrabold text-[var(--data-error)] mt-1">{worstMonth.shortMonth}</p>
+          <p className="text-lg font-extrabold text-[var(--data-error-500)] mt-1">{worstMonth.shortMonth}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(worstMonth.sales)}</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
@@ -103,7 +103,7 @@ export default function SeasonalityTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Variación estacional</p>
-          <p className="text-lg font-extrabold text-[var(--data-warning)] mt-1">{seasonVariation.toFixed(1)}%</p>
+          <p className="text-lg font-extrabold text-[var(--data-warning-500)] mt-1">{seasonVariation.toFixed(1)}%</p>
         </div>
       </div>
 
@@ -122,11 +122,11 @@ export default function SeasonalityTab() {
                   <div className="w-10 text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{m.shortMonth}</div>
                   <div className="flex-1">
                     <div className="w-full h-6 bg-gray-100 dark:bg-surface rounded-lg overflow-hidden relative">
-                      <div className={cn("h-full rounded-lg transition-all", m.sales === maxSales ? "bg-[var(--accent-soft)]" : m.sales === minSales ? "bg-[var(--data-error)]" : "bg-primary/70")} style={{ width: `${pct}%` }} />
+                      <div className={cn("h-full rounded-lg transition-all", m.sales === maxSales ? "bg-[var(--accent-soft)]" : m.sales === minSales ? "bg-[var(--data-error-500)]" : "bg-primary/70")} style={{ width: `${pct}%` }} />
                       <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(m.sales)}</span>
                     </div>
                   </div>
-                  <div className={cn("w-16 text-right text-xs font-bold", vsAvg >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{vsAvg >= 0 ? "+" : ""}{vsAvg.toFixed(1)}%</div>
+                  <div className={cn("w-16 text-right text-xs font-bold", vsAvg >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{vsAvg >= 0 ? "+" : ""}{vsAvg.toFixed(1)}%</div>
                   <div className="w-24 text-xs text-[var(--text-secondary)] dark:text-muted text-right">{m.topCategory}</div>
                 </div>
               );
@@ -162,18 +162,18 @@ export default function SeasonalityTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{p.product}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <div className="flex flex-wrap gap-1">{p.peakMonths.map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-bold">{m}</span>)}</div>
+                      <div className="flex flex-wrap gap-1">{p.peakMonths.map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold">{m}</span>)}</div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <div className="flex flex-wrap gap-1">{p.lowMonths.slice(0, 3).map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-xs font-bold">{m}</span>)}</div>
+                      <div className="flex flex-wrap gap-1">{p.lowMonths.slice(0, 3).map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-xs font-bold">{m}</span>)}</div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                      <span className={cn("font-bold", p.variationPct >= 50 ? "text-[var(--data-error)]" : p.variationPct >= 30 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)] dark:text-muted")}>{p.variationPct}%</span>
+                      <span className={cn("font-bold", p.variationPct >= 50 ? "text-[var(--data-error-500)]" : p.variationPct >= 30 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)] dark:text-muted")}>{p.variationPct}%</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-0.5 justify-center">
                         {["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"].map(m => (
-                          <div key={m} title={m} className={cn("w-3 h-3 rounded-sm", p.peakMonths.includes(m) ? "bg-[var(--accent-soft)]" : p.lowMonths.includes(m) ? "bg-[var(--data-error)]" : "bg-gray-200 dark:bg-surface")} />
+                          <div key={m} title={m} className={cn("w-3 h-3 rounded-sm", p.peakMonths.includes(m) ? "bg-[var(--accent-soft)]" : p.lowMonths.includes(m) ? "bg-[var(--data-error-500)]" : "bg-gray-200 dark:bg-surface")} />
                         ))}
                       </div>
                     </td>
@@ -186,9 +186,9 @@ export default function SeasonalityTab() {
       )}
 
       {/* Recommendations */}
-      <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm flex flex-wrap items-center gap-2"><Calendar className="h-4 w-4" /> Recomendaciones estacionales</CardTitle>
-        <ul className="mt-3 space-y-2 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+      <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3 sm:p-5">
+        <CardTitle className="font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm flex flex-wrap items-center gap-2"><Calendar className="h-4 w-4" /> Recomendaciones estacionales</CardTitle>
+        <ul className="mt-3 space-y-2 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           <li>• <strong>Dic-Mar (Verano):</strong> Incrementar stock de bebidas, helados y agua. Promociones de hidratación.</li>
           <li>• <strong>Jul (Fiestas Patrias):</strong> Preparar stock de cervezas, golosinas, snacks. Mes de mayor demanda.</li>
           <li>• <strong>Nov-Dic:</strong> Stock agresivo de panetones, cervezas, gaseosas. Decoración navideña.</li>

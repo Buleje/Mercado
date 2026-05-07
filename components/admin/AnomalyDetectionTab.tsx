@@ -18,18 +18,18 @@ function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFracti
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
 
 const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typeof TrendingUp }> = {
-  "venta-alta": { label: "Venta Inusual Alta", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: TrendingUp },
-  "venta-baja": { label: "Venta Inusual Baja", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", icon: TrendingDown },
-  "stock-inusual": { label: "Stock Inusual", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", icon: Boxes },
+  "venta-alta": { label: "Venta Inusual Alta", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp },
+  "venta-baja": { label: "Venta Inusual Baja", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: TrendingDown },
+  "stock-inusual": { label: "Stock Inusual", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", icon: Boxes },
   "precio-anomalo": { label: "Precio Anómalo", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]", icon: DollarSign },
-  "fraude-potencial": { label: "Fraude Potencial", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", icon: AlertTriangle },
-  "patron-raro": { label: "Patrón Raro", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: ShoppingCart },
+  "fraude-potencial": { label: "Fraude Potencial", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: AlertTriangle },
+  "patron-raro": { label: "Patrón Raro", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: ShoppingCart },
 };
 const SEV_COLORS: Record<Severity, string> = {
   baja: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-  media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  alta: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  critica: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  alta: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  critica: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 /* ── Seed Data ── */
@@ -61,7 +61,7 @@ export default function AnomalyDetectionTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <AlertTriangle className="h-6 w-6 text-[var(--data-warning)]" /> Detección de Anomalías
+            <AlertTriangle className="h-6 w-6 text-[var(--data-warning-500)]" /> Detección de Anomalías
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Detección automática de patrones inusuales en ventas, stock y operaciones</p>
         </div>
@@ -74,11 +74,11 @@ export default function AnomalyDetectionTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Sin Resolver</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">{unresolvedCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{unresolvedCount}</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Críticas/Altas</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{criticalCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">{criticalCount}</p>
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Total Detectadas</p>
@@ -86,7 +86,7 @@ export default function AnomalyDetectionTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Resueltas</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{resolvedIds.size}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{resolvedIds.size}</p>
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export default function AnomalyDetectionTab() {
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{a.title}</CardTitle>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", SEV_COLORS[a.severity])}>{a.severity.toUpperCase()}</span>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", config.color)}>{config.label}</span>
-                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">Resuelta</span>}
+                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Resuelta</span>}
                   </div>
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{a.description}</p>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -132,7 +132,7 @@ export default function AnomalyDetectionTab() {
                     <span>Módulo: {a.module}</span>
                     <span>Valor: {typeof a.value === "number" && a.value > 10 ? fmt(a.value) : a.value}</span>
                     <span>Esperado: {typeof a.expected === "number" && a.expected > 10 ? fmt(a.expected) : a.expected}</span>
-                    <span className={cn("font-bold", a.deviation > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+                    <span className={cn("font-bold", a.deviation > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
                       Desviación: {a.deviation > 0 ? "+" : ""}{a.deviation}%
                     </span>
                   </div>
@@ -165,12 +165,12 @@ export default function AnomalyDetectionTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Fecha</span><p className="font-bold">{fmtDate(selected.date)}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Módulo</span><p className="font-bold">{selected.module}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Detectado</span><p className="font-bold text-[var(--data-error)]">{selected.value}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Esperado</span><p className="font-bold text-[var(--data-success)]">{selected.expected}</p></div>
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Detectado</span><p className="font-bold text-[var(--data-error-500)]">{selected.value}</p></div>
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Esperado</span><p className="font-bold text-[var(--data-success-500)]">{selected.expected}</p></div>
               </div>
               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
-                <h4 className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Recomendación</h4>
-                <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+                <h4 className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Recomendación</h4>
+                <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   {selected.type === "fraude-potencial" ? "Revisar cámaras de seguridad y confrontar con el empleado. Verificar recibos anulados." :
                    selected.type === "stock-inusual" ? "Realizar conteo físico inmediato. Revisar movimientos de almacén y mermas." :
                    selected.type === "precio-anomalo" ? "Corregir precio en el sistema. Verificar si se pueden revertir las ventas afectadas." :

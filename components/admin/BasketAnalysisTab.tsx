@@ -59,7 +59,7 @@ export default function BasketAnalysisTab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-6 w-6 text-primary" /> Análisis de Cesta
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Descubre qué productos se compran juntos</p>
         </div>
@@ -84,10 +84,10 @@ export default function BasketAnalysisTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Asociaciones detectadas", value: associations.length, color: "text-[var(--data-success)]" },
-          { label: "Tamaño prom. cesta", value: `${avgBasketSize.toFixed(1)} items`, color: "text-[var(--data-success)]" },
+          { label: "Asociaciones detectadas", value: associations.length, color: "text-[var(--data-success-500)]" },
+          { label: "Tamaño prom. cesta", value: `${avgBasketSize.toFixed(1)} items`, color: "text-[var(--data-success-500)]" },
           { label: "Valor prom. cesta", value: `S/ ${avgBasketValue.toFixed(2)}`, color: "text-[var(--text-secondary)]" },
-          { label: "Sugerencias cross-sell", value: crossSell.length, color: "text-[var(--data-warning)]" },
+          { label: "Sugerencias cross-sell", value: crossSell.length, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -99,20 +99,20 @@ export default function BasketAnalysisTab() {
       </div>
 
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</div>
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</div>
       )}
 
       {/* Cross-sell suggestions */}
       {!loading && crossSell.length > 0 && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-3 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-3 flex items-center gap-2">
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3 flex items-center gap-2">
             <Lightbulb className="h-4 w-4" /> Sugerencias de Cross-sell (lift &gt; 1.8x)
           </CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {crossSell.map((a, i) => (
-              <div key={i} className="bg-white dark:bg-card rounded-xl p-3 flex items-center gap-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/20">
-                <div className="h-8 w-8 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{a.lift.toFixed(1)}x</span>
+              <div key={i} className="bg-white dark:bg-card rounded-xl p-3 flex items-center gap-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20">
+                <div className="h-8 w-8 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{a.lift.toFixed(1)}x</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">
@@ -148,7 +148,7 @@ export default function BasketAnalysisTab() {
                   <div className="flex-1 h-1.5 bg-gray-200 dark:bg-card rounded-full overflow-hidden">
                     <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                   </div>
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{(a.confidence * 100).toFixed(0)}%</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                 </div>
               </div>
             ))}
@@ -217,17 +217,17 @@ export default function BasketAnalysisTab() {
                     <td className="px-4 py-2.5">
                       <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted">{a.category}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-[var(--data-success)]">{(a.support * 100).toFixed(0)}%</span></td>
+                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-[var(--data-success-500)]">{(a.support * 100).toFixed(0)}%</span></td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="w-12 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                           <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                         </div>
-                        <span className="text-xs font-bold text-[var(--data-success)]">{(a.confidence * 100).toFixed(0)}%</span>
+                        <span className="text-xs font-bold text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                       </div>
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]")}>{a.lift.toFixed(1)}x</span>
+                      <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{a.lift.toFixed(1)}x</span>
                     </td>
                     <td className="px-4 py-2.5 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{a.count}</td>
                   </tr>

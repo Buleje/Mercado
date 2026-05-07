@@ -106,7 +106,6 @@ export const InventoryMovementsDB = {
 
   /**
    * Cursor-based paginated listing of inventory movements.
-   * Returns up to `limit` rows plus the cursor for the next page.
    */
   async getPage(opts: {
     tenantId: string;
@@ -139,6 +138,7 @@ export const InventoryMovementsDB = {
 
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
+
   async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findFirst({ where: { id: data.productId, tenantId: data.tenantId } });
@@ -146,7 +146,16 @@ export const InventoryMovementsDB = {
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
     const clampedNewStock = Math.max(0, newStock);
-    await prisma.product.updateMany({ where: { id: data.productId, tenantId: data.tenantId }, data: { stock: clampedNewStock } });
+    // SECURITY 2026-05-06 (audit stock #1): updateMany con guard `stock=prevStock`
+    // detecta lost-update si dos escritores leyeron el mismo prevStock. El
+    // segundo update no afecta filas y el caller debe reintentar.
+    const updateResult = await prisma.product.updateMany({
+      where: { id: data.productId, tenantId: data.tenantId, stock: prevStock },
+      data: { stock: clampedNewStock },
+    });
+    if (updateResult.count === 0) {
+      throw new Error("STOCK_RACE_CONFLICT");
+    }
     const row = await prisma.inventoryMovement.create({
       data: {
         productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
@@ -159,32 +168,32 @@ export const InventoryMovementsDB = {
     });
 
     // Fire-and-forget: push notification when stock drops below minimum
-    const stockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
+    const lowStockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
     if (
       !isIncrease &&
-      stockMin != null &&
-      prevStock > stockMin &&
-      clampedNewStock <= stockMin &&
+      lowStockMin != null &&
+      prevStock > lowStockMin &&
+      clampedNewStock <= lowStockMin &&
       product
     ) {
-      // 1) Legacy push notification (mantenido por compatibilidad)
+      // 1) Legacy push notification — scoped por tenantId (audit WhatsApp #14).
       import("@/lib/push-sender").then(({ broadcastPush }) =>
         broadcastPush({
           title: `⚠️ Stock bajo: ${product.name}`,
           body: clampedNewStock === 0
             ? `Se agotó "${product.name}". Reabastece cuanto antes.`
-            : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${stockMin}).`,
+            : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${lowStockMin}).`,
           url: "/admin?tab=inventario",
-        })
+        }, data.tenantId)
       ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: data.productId }));
 
-      // 2) Domain event — permite que otros módulos reaccionen (ver ADR 007)
+      // 2) Domain event
       if (data.tenantId) {
         DomainEvents.stockBajo(data.tenantId, {
           productId:     data.productId,
           productName:   product.name,
           currentStock:  clampedNewStock,
-          stockMin,
+          stockMin:      lowStockMin,
           lastDeduction: data.quantity,
           reason:        (data.type === "venta" || data.type === "venta_online")
             ? "venta"
@@ -199,21 +208,19 @@ export const InventoryMovementsDB = {
 
     return mapInventoryMovement(row);
   },
+
   /**
    * Decrement stock using FEFO (First Expired, First Out) batch selection.
-   * Deducts from the earliest-expiring batch first, then moves to the next.
-   * Also decrements Product.stock globally.
    */
   async decrementFEFO(productId: number, quantity: number, tenantId: string, reference?: string, type: string = "venta_online"): Promise<void> {
     // 1. Decrement Product.stock globally
     await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId });
 
-    // 2. Decrement from batches in FEFO order (earliest expiry first)
-    // N+1 fix: resolve all deductions up-front, then update in a single transaction
-    // with parallel writes (was: 1 findMany + N sequential updates).
+    // 2. Decrement from batches (FEFO order). SECURITY 2026-05-06: filtrar
+    // por tenantId para evitar consumir batches de otro tenant.
     await prisma.$transaction(async (tx) => {
       const batches = await tx.batch.findMany({
-        where: { productId, quantity: { gt: 0 } },
+        where: { productId, tenantId, quantity: { gt: 0 } },
         orderBy: { expiryDate: "asc" },
       });
 
@@ -235,7 +242,7 @@ export const InventoryMovementsDB = {
       }
     });
 
-    // 3. Update Product.expiresAt to reflect the nearest batch expiry
+    // 3. Update Product.expiresAt
     await refreshProductExpiresAt(productId, tenantId);
   },
 
@@ -246,19 +253,24 @@ export const InventoryMovementsDB = {
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
     await prisma.product.updateMany({ where: { id: productId, tenantId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
-      data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes,
+      data: {
+        productId,
+        type,
+        quantity: Math.abs(diff),
+        previousStock: prevStock,
+        newStock: Math.max(0, newStock),
+        notes,
         tenantId,
         ...(warehouseId ? { warehouseId } : {}),
-        ...(createdBy ? { createdBy } : {}) },
+        ...(createdBy ? { createdBy } : {}),
+      },
     });
     return mapInventoryMovement(row);
   },
 };
 
 /**
- * Update Product.expiresAt to the nearest batch expiry date (FEFO).
- * Called after any batch quantity change (sale, adjustment, purchase).
- * tenantId is required to prevent cross-tenant stock updates.
+ * Update Product.expiresAt to the nearest batch expiry date.
  */
 async function refreshProductExpiresAt(productId: number, tenantId: string): Promise<void> {
   const nearestBatch = await prisma.batch.findFirst({

@@ -131,7 +131,7 @@ export default function ReferidosTiendasTab() {
 
         {data?.referralCode ? (
           <div className="flex items-center gap-3">
-            <div className="flex-1 font-mono text-lg font-bold tracking-widest text-primary bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-4 py-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 select-all">
+            <div className="flex-1 font-mono text-lg font-bold tracking-widest text-primary bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-4 py-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 select-all">
               {data.referralCode}
             </div>
             <button
@@ -166,7 +166,7 @@ export default function ReferidosTiendasTab() {
       </div>
 
       {error && (
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
@@ -207,13 +207,13 @@ export default function ReferidosTiendasTab() {
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         t.status === "activo"
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                           : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]"
                       }`}>
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-primary dark:text-[var(--data-success)] font-medium text-xs">
+                    <td className="px-5 py-3 text-primary dark:text-[var(--data-success-500)] font-medium text-xs">
                       {t.reward}
                     </td>
                   </tr>

@@ -228,14 +228,14 @@ export default function TabHoy({ onTabChange }: Props) {
                 {snapshot.urgentBuy.name}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-2">
-                <p className="text-3xl font-extrabold tabular-nums leading-none text-[var(--data-error)]">
+                <p className="text-3xl font-extrabold tabular-nums leading-none text-[var(--data-error-500)]">
                   {snapshot.urgentBuy.stock}
                 </p>
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   {snapshot.urgentBuy.stock === 1 ? "unidad" : "unidades"}
                 </p>
               </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-error)] mt-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-error-500)] mt-1">
                 {snapshot.urgentBuy.daysLeft === 0
                   ? "Sin stock"
                   : snapshot.urgentBuy.daysLeft === 1

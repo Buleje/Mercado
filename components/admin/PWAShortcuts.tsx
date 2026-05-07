@@ -150,7 +150,7 @@ export default function PWAShortcuts() {
         </div>
 
         {isInstalled ? (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2.5 py-1 rounded-full">
             <Check className="w-3.5 h-3.5" />
             App instalada
           </span>
@@ -300,21 +300,21 @@ export default function PWAShortcuts() {
       {activeTab === "install" && (
         <div className="space-y-6">
           {isInstalled ? (
-            <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-start gap-3">
-              <Check className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0 mt-0.5" />
+            <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-start gap-3">
+              <Check className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
+                <p className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
                   La app ya esta instalada en este dispositivo
                 </p>
-                <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-0.5">
+                <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-0.5">
                   Los shortcuts estan disponibles en tu pantalla de inicio.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-start gap-3">
-              <Info className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0 mt-0.5" />
-              <p className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-start gap-3">
+              <Info className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0 mt-0.5" />
+              <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Esta app aun no esta instalada en este dispositivo. Sigue los pasos para instalarla.
               </p>
             </div>

@@ -114,7 +114,7 @@ export default function BundlesTab() {
           <p className="text-xs text-[var(--text-tertiary)]">Total Combos</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)]">{bundles.filter(b => b.active).length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{bundles.filter(b => b.active).length}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Activos</p>
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
@@ -167,7 +167,7 @@ export default function BundlesTab() {
                         <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
                         <span className="text-xs text-[var(--text-tertiary)]">S/{p.price.toFixed(2)}</span>
                         <input type="number" min={1} value={i.quantity} onChange={e => updateQty(i.productId, Number(e.target.value))} className="w-14 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card py-1" />
-                        <button onClick={() => removeItem(i.productId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => removeItem(i.productId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     );
                   })}
@@ -177,8 +177,8 @@ export default function BundlesTab() {
                   </div>
                   {Number(price) > 0 && itemsTotal > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[var(--data-success)] font-bold">Ahorro:</span>
-                      <span className="font-extrabold text-[var(--data-success)]">S/{(itemsTotal - Number(price)).toFixed(2)} ({((1 - Number(price) / itemsTotal) * 100).toFixed(0)}%)</span>
+                      <span className="text-[var(--data-success-500)] font-bold">Ahorro:</span>
+                      <span className="font-extrabold text-[var(--data-success-500)]">S/{(itemsTotal - Number(price)).toFixed(2)} ({((1 - Number(price) / itemsTotal) * 100).toFixed(0)}%)</span>
                     </div>
                   )}
                 </div>
@@ -216,7 +216,7 @@ export default function BundlesTab() {
                       {b.description && <p className="text-xs text-[var(--text-tertiary)]">{b.description}</p>}
                     </div>
                     <button onClick={() => toggleActive(b.id, b.active)} title={b.active ? "Desactivar" : "Activar"}>
-                      {b.active ? <ToggleRight className="h-6 w-6 text-[var(--data-success)]" /> : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
+                      {b.active ? <ToggleRight className="h-6 w-6 text-[var(--data-success-500)]" /> : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
                     </button>
                   </div>
                   <div className="space-y-1">
@@ -232,7 +232,7 @@ export default function BundlesTab() {
                       <p className="text-xl sm:text-2xl font-extrabold text-primary">S/{b.price.toFixed(2)}</p>
                       {individual > 0 && <p className="text-xs text-[var(--text-tertiary)] line-through">S/{individual.toFixed(2)}</p>}
                     </div>
-                    <button onClick={() => remove(b.id)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => remove(b.id)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
               </div>

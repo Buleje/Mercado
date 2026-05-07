@@ -17,9 +17,14 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
+  // SECURITY 2026-05-06 (pentest billing #2): allow-list explícita en vez
+  // de "NODE_ENV !== production". Vercel preview deployments tienen
+  // NODE_ENV=production por default, pero un branch preview público con
+  // override accidental podía darle plan enterprise gratis. Ahora requiere
+  // ENABLE_MOCK_CHECKOUT="true" explícito (NUNCA setear en prod).
+  if (process.env.ENABLE_MOCK_CHECKOUT !== "true") {
     return NextResponse.json(
-      { error: "Mock checkout no disponible en producción" },
+      { error: "Mock checkout no disponible" },
       { status: 503 },
     );
   }

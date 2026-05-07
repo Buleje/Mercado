@@ -1,5 +1,5 @@
 import "server-only";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyOtp } from "@/lib/auth/otp-store";
 import { CustomersDB } from "@/lib/db/customers.db";
@@ -7,6 +7,7 @@ import {
   createCustomerToken,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const VerifyOtpSchema = z.object({
@@ -41,7 +42,20 @@ const PLATFORM_TENANT_ID = "main";
  * Verifica el OTP, hace upsert del cliente en DB y establece la cookie
  * de sesion `buleje-customer-sess`.
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // SECURITY 2026-05-06 (audit auth #5): rate limit en /verify para frenar
+  // brute-force del OTP de 6 dígitos. Antes solo había contador in-memory de
+  // 5 intentos que se evadía cambiando de instance Vercel multi-region.
+  // Aplicamos doble: por IP (50/h) y por phone+IP combinado (10/15min).
+  const ip = getClientIp(req);
+  const ipRl = rateLimit(`otp:verify:ip:${ip}`, 50, 3600);
+  if (!ipRl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Espera 1 hora." },
+      { status: 429 },
+    );
+  }
+
   // 1. Parseo del body
   let body: unknown;
   try {
@@ -63,6 +77,15 @@ export async function POST(req: Request) {
   }
 
   const { phone, code, name } = parsed.data;
+
+  // Rate limit por phone+IP (10 intentos cada 15 min) — anti brute-force.
+  const phoneIpRl = rateLimit(`otp:verify:${phone}:${ip}`, 10, 900);
+  if (!phoneIpRl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos para este numero. Espera 15 minutos." },
+      { status: 429 },
+    );
+  }
 
   // 3. Verificar OTP
   const result = verifyOtp(phone, code);

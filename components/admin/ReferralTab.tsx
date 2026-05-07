@@ -39,10 +39,10 @@ type TopReferrer = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_META: Record<ReferralStatus, { label: string; color: string; bg: string }> = {
-  activo:    { label: "Activo",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  canjeado:  { label: "Canjeado",  color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  activo:    { label: "Activo",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  canjeado:  { label: "Canjeado",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   expirado:  { label: "Expirado",  color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -103,8 +103,8 @@ export default function ReferralTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total referidos", value: String(stats.totalReferred), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "Convertidos", value: `${stats.converted} (${stats.conversionRate.toFixed(0)}%)`, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Ingresos generados", value: fmt(stats.totalRevenue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Convertidos", value: `${stats.converted} (${stats.conversionRate.toFixed(0)}%)`, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ingresos generados", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Referidores activos", value: String(stats.activeReferrers), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -116,21 +116,21 @@ export default function ReferralTab() {
 
       {/* Top Referrers */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Star className="h-4 w-4 text-[var(--data-warning)]" /> Ranking de referidores</CardTitle>
+        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Star className="h-4 w-4 text-[var(--data-warning-500)]" /> Ranking de referidores</CardTitle>
         <div className="space-y-2">
           {TOP_REFERRERS.map((tr, i) => (
             <div key={tr.code} className="flex flex-wrap items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
-              <span className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold", i === 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]" : i === 1 ? "bg-gray-200 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]")}>{i + 1}</span>
+              <span className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold", i === 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]" : i === 1 ? "bg-gray-200 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]")}>{i + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">{tr.name}</p>
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-mono text-primary">{tr.code}</span>
-                  <button onClick={() => handleCopy(tr.code)} className="text-[var(--text-tertiary)] hover:text-primary">{copiedCode === tr.code ? <CheckCircle2 className="h-3 w-3 text-[var(--data-success)]" /> : <Copy className="h-3 w-3" />}</button>
+                  <button onClick={() => handleCopy(tr.code)} className="text-[var(--text-tertiary)] hover:text-primary">{copiedCode === tr.code ? <CheckCircle2 className="h-3 w-3 text-[var(--data-success-500)]" /> : <Copy className="h-3 w-3" />}</button>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{tr.totalConverted}/{tr.totalReferred}</p>
-                <p className="text-xs text-[var(--data-success)] font-bold">{fmt(tr.totalRevenue)}</p>
+                <p className="text-xs text-[var(--data-success-500)] font-bold">{fmt(tr.totalRevenue)}</p>
               </div>
             </div>
           ))}

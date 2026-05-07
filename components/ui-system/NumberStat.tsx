@@ -80,8 +80,8 @@ export function NumberStat({
         <p
           className={cn(
             "mt-2 text-[length:var(--ts-xs)] font-semibold tabular-nums",
-            direction === "up" && "text-emerald-600 dark:text-emerald-400",
-            direction === "down" && "text-red-600 dark:text-red-400",
+            direction === "up" && "text-[var(--data-success-600)] dark:text-emerald-400",
+            direction === "down" && "text-[var(--data-error-600)] dark:text-red-400",
             direction === "neutral" && "text-gray-500",
           )}
         >

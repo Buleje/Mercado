@@ -24,9 +24,9 @@ const PLAN_ICONS: Record<PlanId, React.ReactNode> = {
 
 const PLAN_GRADIENT: Record<PlanId, string> = {
   free: "from-gray-600 to-gray-500",
-  pro: "from-emerald-600 to-indigo-600",
+  pro: "from-[var(--data-success-600)] to-indigo-600",
   business: "from-violet-600 to-purple-600",
-  enterprise: "from-amber-500 to-orange-500",
+  enterprise: "from-[var(--data-warning-500)] to-orange-500",
 };
 
 
@@ -85,7 +85,7 @@ export default function PricingPage() {
               }`}
             >
               Anual
-              <span className="text-[length:var(--ts-2xs)] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">
                 -20%
               </span>
             </button>
@@ -152,7 +152,7 @@ export default function PricingPage() {
                     isPopular
                       ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg"
                       : planId === "enterprise"
-                        ? "bg-amber-600 hover:bg-amber-500 text-white"
+                        ? "bg-[var(--data-warning-600)] hover:bg-[var(--data-warning-500)] text-white"
                         : "bg-gray-800 hover:bg-gray-700 text-gray-200"
                   }`}
                 >

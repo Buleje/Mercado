@@ -10,8 +10,21 @@ async function requirePlatform(req: NextRequest) {
   return getPlatformSession(token);
 }
 
+// SECURITY 2026-05-06 (pentest H001): Allowlist estricta para nombres de
+// tabla/columna interpolados en raw SQL. Sin esto, un futuro contributor
+// que pase user input a estas helpers podría inyectar DROP TABLE / SQL
+// arbitrario. Identifier-name pattern: solo PascalCase y camelCase ASCII,
+// 1-64 chars. Prisma siempre genera identifiers que matchean.
+const SQL_IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+function assertSqlIdentifier(name: string, role: string): void {
+  if (!SQL_IDENTIFIER_RE.test(name)) {
+    throw new Error(`[delete-tenant] invalid SQL identifier in ${role}: ${name}`);
+  }
+}
+
 /** Helper: delete rows by tenantId (tries both tenant.id and slug) */
 async function deleteByTenant(table: string, tenantId: string, slug: string): Promise<number> {
+  assertSqlIdentifier(table, "table");
   try {
     return await prisma.$executeRawUnsafe(
       `DELETE FROM "${table}" WHERE "tenantId" = $1 OR "tenantId" = $2`,
@@ -28,6 +41,10 @@ async function deleteByParentFK(
   parentTable: string, parentPK: string,
   tenantId: string, slug: string,
 ): Promise<number> {
+  assertSqlIdentifier(childTable, "childTable");
+  assertSqlIdentifier(childFK, "childFK");
+  assertSqlIdentifier(parentTable, "parentTable");
+  assertSqlIdentifier(parentPK, "parentPK");
   try {
     return await prisma.$executeRawUnsafe(
       `DELETE FROM "${childTable}" WHERE "${childFK}" IN (

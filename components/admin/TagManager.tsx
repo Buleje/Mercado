@@ -155,7 +155,7 @@ export default function TagManager() {
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">{error}</p>
+        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg px-3 py-2">{error}</p>
       )}
 
       {/* Tag list */}
@@ -184,7 +184,7 @@ export default function TagManager() {
                 type="button"
                 onClick={() => handleDelete(tag.name)}
                 disabled={deleteId === tag.name}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-all disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-all disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
                 aria-label={`Eliminar etiqueta ${tag.name}`}
               >
                 {deleteId === tag.name

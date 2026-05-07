@@ -52,8 +52,8 @@ export default function ScrollProgressBar() {
         style={{
           transform: `scaleX(${progress / 100})`,
           background:
-            "linear-gradient(90deg, var(--brand-primary, #00B4A6) 0%, #34d4be 50%, var(--brand-primary, #00B4A6) 100%)",
-          boxShadow: "0 0 12px rgba(0, 180, 166, 0.5)",
+            "linear-gradient(90deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, var(--accent) 100%)",
+          boxShadow: "0 0 12px color-mix(in oklab, var(--accent) 50%, transparent)",
           transition: "transform 0.08s linear",
         }}
       />

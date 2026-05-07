@@ -26,8 +26,8 @@ const DEVICE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const DEVICE_COLORS: Record<string, string> = {
-  celular: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  tablet: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  celular: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  tablet: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   computadora: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-[var(--accent)]/20 dark:text-[var(--text-primary)]",
 };
 

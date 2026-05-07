@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 interface ModuleLayoutProps {
   /** Icono del módulo (componente React) */
   icon: React.ComponentType<{ className?: string }>;
-  /** Clase de color del icono, ej. "text-[var(--data-success)] dark:text-[var(--data-success)]" */
+  /** Clase de color del icono, ej. "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" */
   iconColor?: string;
   /** Clase de fondo del icono, ej. "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" */
   iconBg?: string;
@@ -145,7 +145,7 @@ export default function ModuleLayout({
             >
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="ml-1.5 bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                <span className="ml-1.5 bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
                   {tab.count > 99 ? "99+" : tab.count}
                 </span>
               )}

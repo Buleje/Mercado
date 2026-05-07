@@ -19,7 +19,7 @@ export interface DeliveryZone {
 // ── Defaults ───────────────────────────────────────────────────────────────────
 
 const DEFAULT_ZONES: DeliveryZone[] = [
-  { id: "zone-a", name: "Zona A",  radiusKm: 1, fee: 0, color: "#00B4A6", active: true },
+  { id: "zone-a", name: "Zona A",  radiusKm: 1, fee: 0, color: "var(--accent)", active: true },
   { id: "zone-b", name: "Zona B",  radiusKm: 3, fee: 3, color: "#f97316", active: true },
   { id: "zone-c", name: "Zona C",  radiusKm: 5, fee: 5, color: "#e63946", active: true },
 ];
@@ -220,7 +220,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
       <td className="px-3 py-2.5 text-sm text-[var(--text-secondary)]">{zone.radiusKm} km</td>
       <td className="px-3 py-2.5 text-sm text-[var(--text-secondary)]">
         {zone.fee === 0 ? (
-          <span className="text-primary dark:text-[var(--data-success)] font-medium">Gratis</span>
+          <span className="text-primary dark:text-[var(--data-success-500)] font-medium">Gratis</span>
         ) : (
           `S/ ${zone.fee.toFixed(2)}`
         )}
@@ -257,7 +257,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
           </button>
           <button
             onClick={() => onDelete(zone.id)}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors"
             aria-label="Eliminar zona"
           >
             <Trash2 size={13} />

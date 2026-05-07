@@ -13,13 +13,23 @@
  */
 
 import { ImageResponse } from "next/og";
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
-  const title = req.nextUrl.searchParams.get("title") ?? "Buleje";
-  const subtitle =
+  // SECURITY 2026-05-06 (audit storefront H07): rate limit + truncate.
+  // Antes atacante mandaba ?title=AAA*5000 en loop → spike CPU de sharp +
+  // cobro Vercel functions. Cap a 80/160 chars y RL STRICT.
+  const rl = applyRateLimit(req, "STRICT", "og");
+  if (rl) return rl;
+
+  const rawTitle = req.nextUrl.searchParams.get("title") ?? "Buleje";
+  const rawSubtitle =
     req.nextUrl.searchParams.get("subtitle") ??
     "Software ERP para Bodegas y Tiendas del Peru";
+  const title = rawTitle.slice(0, 80);
+  const subtitle = rawSubtitle.slice(0, 160);
+  void NextResponse; // keep import alive across edits
 
   return new ImageResponse(
     (
@@ -43,7 +53,7 @@ export async function GET(req: NextRequest) {
             left: 0,
             right: 0,
             height: 6,
-            background: "linear-gradient(90deg, #00B4A6, #10b981, #f97316)",
+            background: "linear-gradient(90deg, var(--accent), #10b981, #f97316)",
           }}
         />
 
@@ -53,12 +63,12 @@ export async function GET(req: NextRequest) {
             width: 80,
             height: 80,
             borderRadius: 20,
-            background: "linear-gradient(145deg, #00B4A6, #009690)",
+            background: "linear-gradient(145deg, var(--accent), var(--accent-dark))",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 24,
-            boxShadow: "0 8px 32px rgba(0,180,166,0.3)",
+            boxShadow: "0 8px 32px color-mix(in oklab, var(--accent) 30%, transparent)",
           }}
         >
           <span

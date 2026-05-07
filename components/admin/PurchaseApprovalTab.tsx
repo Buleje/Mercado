@@ -40,10 +40,10 @@ type PurchaseApproval = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<ApprovalStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
-  pendiente:    { label: "Pendiente",   color: "text-[var(--data-warning)]",   icon: Clock },
-  "en-revision":{ label: "En revisión", color: "text-[var(--data-success)]",    icon: Eye },
-  aprobado:     { label: "Aprobado",    color: "text-[var(--data-success)]", icon: CheckCircle },
-  rechazado:    { label: "Rechazado",   color: "text-[var(--data-error)]",     icon: XCircle },
+  pendiente:    { label: "Pendiente",   color: "text-[var(--data-warning-500)]",   icon: Clock },
+  "en-revision":{ label: "En revisión", color: "text-[var(--data-success-500)]",    icon: Eye },
+  aprobado:     { label: "Aprobado",    color: "text-[var(--data-success-500)]", icon: CheckCircle },
+  rechazado:    { label: "Rechazado",   color: "text-[var(--data-error-500)]",     icon: XCircle },
 };
 
 const LEVEL_LABELS: Record<ApprovalLevel, string> = {
@@ -54,8 +54,8 @@ const LEVEL_LABELS: Record<ApprovalLevel, string> = {
 
 const urgencyStyle: Record<string, string> = {
   normal: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]/30",
-  urgente: "text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
-  "crítica": "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
+  urgente: "text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
+  "crítica": "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",
 };
 
 function overallStatus(steps: ApprovalStep[]): ApprovalStatus {
@@ -110,10 +110,10 @@ export default function PurchaseApprovalTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "En espera", value: String(stats.pending), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
-          { label: "Aprobadas", value: String(stats.approved), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-          { label: "Rechazadas", value: String(stats.rejected), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: XCircle },
-          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
+          { label: "En espera", value: String(stats.pending), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
+          { label: "Aprobadas", value: String(stats.approved), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+          { label: "Rechazadas", value: String(stats.rejected), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: XCircle },
+          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />

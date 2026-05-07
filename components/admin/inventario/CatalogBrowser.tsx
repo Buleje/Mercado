@@ -40,12 +40,12 @@ function ProductCard({
         <span className="text-3xl">{product.emoji}</span>
         <div className="flex items-center gap-1">
           {product.tags?.includes("popular") && (
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
               Popular
             </span>
           )}
           {margin !== null && (
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {margin}% margen
             </span>
           )}
@@ -148,7 +148,7 @@ function CartItemRow({
         </div>
         <button
           onClick={() => onRemove(item.product.catalogId)}
-          className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors shrink-0"
+          className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors shrink-0"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -208,7 +208,7 @@ function CartItemRow({
       {/* Subtotales */}
       <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--rule-base)] dark:border-card-border">
         <span className="text-muted">Inversion: <span className="font-bold text-foreground">S/ {costTotal.toFixed(2)}</span></span>
-        <span className="text-muted">Ganancia: <span className="font-bold text-[var(--data-success)]">+S/ {profit.toFixed(2)}</span></span>
+        <span className="text-muted">Ganancia: <span className="font-bold text-[var(--data-success-500)]">+S/ {profit.toFixed(2)}</span></span>
       </div>
     </div>
   );
@@ -432,7 +432,7 @@ export default function CatalogBrowser() {
                 </div>
                 <div>
                   <p className="text-xs text-muted">Ganancia</p>
-                  <p className="text-sm font-bold text-[var(--data-success)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                 </div>
               </div>
               {cartExpanded ? <ChevronDown className="h-5 w-5 text-muted" /> : <ChevronUp className="h-5 w-5 text-muted" />}
@@ -468,12 +468,12 @@ export default function CatalogBrowser() {
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted">Ganancia</p>
-                    <p className="text-sm font-bold text-[var(--data-success)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  <button onClick={() => setCart([])} className="text-xs font-semibold text-[var(--data-error)] hover:underline">
+                  <button onClick={() => setCart([])} className="text-xs font-semibold text-[var(--data-error-500)] hover:underline">
                     Vaciar carrito
                   </button>
                   <button
@@ -491,8 +491,8 @@ export default function CatalogBrowser() {
 
                 {result && (
                   <div className="flex items-center gap-2 mt-3 p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-                    <Check className="h-5 w-5 text-[var(--data-success)] shrink-0" />
-                    <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">
+                    <Check className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
+                    <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">
                       {result.created} productos importados exitosamente{result.skipped > 0 ? `. ${result.skipped} ya existian y se omitieron.` : ""}
                     </span>
                   </div>

@@ -86,10 +86,10 @@ const COLOR: Record<
   { bg: string; border: string; text: string; metricText: string }
 > = {
   teal: {
-    bg: "#00B4A6",
-    border: "linear-gradient(135deg, #00B4A6, #2dd4bf)",
+    bg: "var(--accent)",
+    border: "linear-gradient(135deg, var(--accent), #2dd4bf)",
     text: "rgba(20,184,166,0.15)",
-    metricText: "#33C4B8",
+    metricText: "color-mix(in oklab, var(--accent) 70%, white)",
   },
   blue: {
     bg: "#1d4ed8",
@@ -221,10 +221,10 @@ function TestimonialCard({
                   style={{ background: "rgba(239,68,68,0.15)" }}
                   aria-hidden="true"
                 >
-                  <X className="w-3 h-3 text-red-500" strokeWidth={3} />
+                  <X className="w-3 h-3 text-[var(--data-error-500)]" strokeWidth={3} />
                 </div>
                 <span
-                  className="text-xs font-bold uppercase tracking-widest text-red-500"
+                  className="text-xs font-bold uppercase tracking-widest text-[var(--data-error-500)]"
                   style={{ letterSpacing: "0.08em" }}
                 >
                   Antes
@@ -470,7 +470,7 @@ export default function SaasTestimonials() {
           <button
             onClick={prev}
             aria-label="Testimonio anterior"
-            className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-[#121f17] border shadow-md transition-all duration-200 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+            className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-[#121f17] border shadow-md transition-all duration-200 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             style={{ borderColor: "rgba(45,106,79,0.2)" }}
           >
             <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-[#f0f4f1]" />
@@ -478,7 +478,7 @@ export default function SaasTestimonials() {
           <button
             onClick={next}
             aria-label="Testimonio siguiente"
-            className="absolute -right-4 sm:-right-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-[#121f17] border shadow-md transition-all duration-200 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+            className="absolute -right-4 sm:-right-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-[#121f17] border shadow-md transition-all duration-200 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             style={{ borderColor: "rgba(45,106,79,0.2)" }}
           >
             <ChevronRight className="w-5 h-5 text-gray-700 dark:text-[#f0f4f1]" />
@@ -498,13 +498,13 @@ export default function SaasTestimonials() {
               aria-selected={i === index}
               aria-label={`Ir al testimonio ${i + 1}`}
               onClick={() => go(i, i > index ? 1 : -1)}
-              className="transition-all duration-300 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+              className="transition-all duration-300 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
               style={{
                 width: i === index ? 24 : 8,
                 height: 8,
                 background:
                   i === index
-                    ? "#00B4A6"
+                    ? "var(--accent)"
                     : "rgba(15,118,110,0.28)",
               }}
             />

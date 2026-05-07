@@ -21,7 +21,7 @@ interface StepDatosNegocioProps {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-xs font-medium text-[var(--data-error)]" role="alert">
+    <p className="mt-1.5 text-xs font-medium text-[var(--data-error-500)]" role="alert">
       {message}
     </p>
   );
@@ -62,7 +62,7 @@ export default function StepDatosNegocio({
             placeholder="Ej: Bodega Don Pedro"
             value={value.nombreNegocio ?? ""}
             onChange={(e) => onChange({ nombreNegocio: e.target.value })}
-            className={cn(inputClass, errors.nombreNegocio && "border-[var(--data-error)]")}
+            className={cn(inputClass, errors.nombreNegocio && "border-[var(--data-error-500)]")}
           />
           <FieldError message={errors.nombreNegocio} />
         </div>
@@ -87,7 +87,7 @@ export default function StepDatosNegocio({
             className={cn(
               inputClass,
               "font-mono tabular-nums",
-              errors.ruc && "border-[var(--data-error)]",
+              errors.ruc && "border-[var(--data-error-500)]",
             )}
           />
           <FieldError message={errors.ruc} />
@@ -111,7 +111,7 @@ export default function StepDatosNegocio({
             placeholder="Jr. Ucayali 450, Callería"
             value={value.direccion ?? ""}
             onChange={(e) => onChange({ direccion: e.target.value })}
-            className={cn(inputClass, errors.direccion && "border-[var(--data-error)]")}
+            className={cn(inputClass, errors.direccion && "border-[var(--data-error-500)]")}
           />
           <FieldError message={errors.direccion} />
         </div>
@@ -133,7 +133,7 @@ export default function StepDatosNegocio({
                   distrito: e.target.value as DatosNegocioForm["distrito"],
                 })
               }
-              className={cn(inputClass, errors.distrito && "border-[var(--data-error)]")}
+              className={cn(inputClass, errors.distrito && "border-[var(--data-error-500)]")}
             >
               <option value="">Seleccioná…</option>
               {DISTRITOS_PUCALLPA.map((d) => (
@@ -160,7 +160,7 @@ export default function StepDatosNegocio({
                   categoria: e.target.value as DatosNegocioForm["categoria"],
                 })
               }
-              className={cn(inputClass, errors.categoria && "border-[var(--data-error)]")}
+              className={cn(inputClass, errors.categoria && "border-[var(--data-error-500)]")}
             >
               <option value="">Seleccioná…</option>
               {CATEGORIAS_VENDOR.map((c) => (

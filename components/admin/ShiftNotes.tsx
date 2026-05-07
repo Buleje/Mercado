@@ -108,7 +108,7 @@ export default function ShiftNotes() {
             </p>
           </div>
           {unreadCount > 0 && (
-            <span className="flex items-center gap-1.5 rounded-full bg-[var(--data-warning)] px-3 py-1 text-xs font-bold text-white">
+            <span className="flex items-center gap-1.5 rounded-full bg-[var(--data-warning-500)] px-3 py-1 text-xs font-bold text-white">
               <Bell className="h-3.5 w-3.5" />
               {unreadCount} nueva{unreadCount > 1 ? "s" : ""}
             </span>
@@ -117,7 +117,7 @@ export default function ShiftNotes() {
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            className="flex items-center gap-1.5 text-sm text-primary hover:underline dark:text-[var(--data-success)]"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline dark:text-[var(--data-success-500)]"
           >
             <CheckCheck className="h-4 w-4" />
             Marcar todo como leido
@@ -198,12 +198,12 @@ export default function ShiftNotes() {
                   "group relative rounded-xl border p-4 transition",
                   note.read
                     ? "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
-                    : "border-[var(--data-warning)]/40 bg-[var(--data-warning-50)] dark:border-[var(--data-warning)]/30 dark:bg-[var(--data-warning)]/10"
+                    : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:border-[var(--data-warning-500)]/30 dark:bg-[var(--data-warning-500)]/10"
                 )}
               >
                 {/* Unread dot */}
                 {!note.read && (
-                  <div className="absolute right-4 top-4 h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" />
+                  <div className="absolute right-4 top-4 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]" />
                 )}
 
                 {/* Author & time */}
@@ -231,7 +231,7 @@ export default function ShiftNotes() {
                   {!note.read && (
                     <button
                       onClick={() => markAsRead(note.id)}
-                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline dark:text-[var(--data-success)]"
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline dark:text-[var(--data-success-500)]"
                     >
                       <CheckCheck className="h-3.5 w-3.5" />
                       Marcar como leido
@@ -239,13 +239,13 @@ export default function ShiftNotes() {
                   )}
                   {note.read && (
                     <span className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-                      <CheckCheck className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                      <CheckCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                       Leido
                     </span>
                   )}
                   <button
                     onClick={() => removeNote(note.id)}
-                    className="ml-auto flex items-center gap-1 text-xs text-[var(--text-tertiary)] opacity-0 transition-opacity hover:text-[var(--data-error)] group-hover:opacity-100 dark:text-[var(--text-secondary)]"
+                    className="ml-auto flex items-center gap-1 text-xs text-[var(--text-tertiary)] opacity-0 transition-opacity hover:text-[var(--data-error-500)] group-hover:opacity-100 dark:text-[var(--text-secondary)]"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Eliminar

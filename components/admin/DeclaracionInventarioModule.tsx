@@ -222,9 +222,9 @@ export default function DeclaracionInventarioModule() {
 
       {/* Card informativa */}
       {!infoDismissed ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-5">
-          <CardTitle className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-2">Para que sirve la Declaracion de Inventario?</CardTitle>
-          <div className="space-y-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-5">
+          <CardTitle className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">Para que sirve la Declaracion de Inventario?</CardTitle>
+          <div className="space-y-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <p><strong>Que es:</strong> Es un documento oficial que muestra todos tus productos, cuantos tienes y cuanto valen. Es como una &quot;foto&quot; de tu almacen en un momento especifico.</p>
             <p><strong>Cuando hacerla:</strong></p>
             <ul className="list-disc pl-5 space-y-0.5 text-xs">
@@ -243,7 +243,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <button
             onClick={handleDismissInfo}
-            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
           >
             Entendido, no mostrar de nuevo
           </button>
@@ -252,7 +252,7 @@ export default function DeclaracionInventarioModule() {
         <div className="flex justify-end">
           <button
             onClick={handleShowInfo}
-            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)] hover:text-[var(--data-success)] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
             title="Que es la Declaracion de Inventario?"
           >
             <HelpCircle className="h-4 w-4" />
@@ -280,14 +280,14 @@ export default function DeclaracionInventarioModule() {
               <Package className="h-5 w-5 text-primary" />
               <p className="text-sm font-bold text-[var(--text-secondary)]">Tu inventario</p>
             </div>
-            <p className={cn("text-3xl font-mono font-bold", isDown ? "text-[var(--data-error)]" : "text-[var(--text-primary)]")}>
+            <p className={cn("text-3xl font-mono font-bold", isDown ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>
               {formatCurrency(valorTotal)}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
               {resumen?.totalProductos ?? 0} productos · {resumen?.totalUnidades ?? 0} unidades · {Object.keys(resumen?.porCategoria ?? resumen?.categorias ?? {}).length} categorías
             </p>
             {lastHist && (
-              <p className={cn("text-xs font-bold mt-2 inline-flex items-center gap-1", isUp ? "text-[var(--data-success)]" : isDown ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+              <p className={cn("text-xs font-bold mt-2 inline-flex items-center gap-1", isUp ? "text-[var(--data-success-500)]" : isDown ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
                 {isUp ? <TrendingUp className="h-3 w-3" /> : isDown ? <TrendingDown className="h-3 w-3" /> : null}
                 {isUp ? "+" : ""}{pct.toFixed(1)}% vs anterior
               </p>
@@ -322,7 +322,7 @@ export default function DeclaracionInventarioModule() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={handleGenerar} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
@@ -340,9 +340,9 @@ export default function DeclaracionInventarioModule() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-              { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
               { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]" },
             ].map(card => {
               const CardIcon = card.icon;
@@ -391,8 +391,8 @@ export default function DeclaracionInventarioModule() {
 
             return (
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
-                <div className="px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                <div className="px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
                   </p>
                 </div>
@@ -420,11 +420,11 @@ export default function DeclaracionInventarioModule() {
                           <td className="font-medium text-[var(--text-primary)]">{cat}</td>
                           <td className="text-right text-[var(--text-tertiary)]">{prev.unidades} uds</td>
                           <td className="text-right font-medium text-[var(--text-primary)]">{curr.unidades} uds</td>
-                          <td className={cn("text-right font-bold", significantDrop ? "text-[var(--data-error)]" : isUp ? "text-[var(--data-success)]" : isDown ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]")}>
+                          <td className={cn("text-right font-bold", significantDrop ? "text-[var(--data-error-500)]" : isUp ? "text-[var(--data-success-500)]" : isDown ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>
                             {diff > 0 ? "+" : ""}{diff} ({pct > 0 ? "+" : ""}{pct.toFixed(0)}%)
                           </td>
                           <td className="text-center text-lg">
-                            {isUp ? <span className="text-[var(--data-success)]">&#8593;</span> : isDown ? <span className={significantDrop ? "text-[var(--data-error)]" : "text-[var(--data-warning)]"}>&#8595;</span> : <span className="text-[var(--text-tertiary)]">&#8594;</span>}
+                            {isUp ? <span className="text-[var(--data-success-500)]">&#8593;</span> : isDown ? <span className={significantDrop ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]"}>&#8595;</span> : <span className="text-[var(--text-tertiary)]">&#8594;</span>}
                           </td>
                         </tr>
                       );
@@ -434,7 +434,7 @@ export default function DeclaracionInventarioModule() {
                 <div className="px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)]">Valor total anterior: <strong>{formatCurrency(prevTotal)}</strong></span>
                   <span className="text-[var(--text-secondary)]">Actual: <strong>{formatCurrency(currentTotal)}</strong></span>
-                  <span className={cn("font-bold", diffTotal > 0 ? "text-[var(--data-success)]" : diffTotal < 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)]")}>
+                  <span className={cn("font-bold", diffTotal > 0 ? "text-[var(--data-success-500)]" : diffTotal < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}>
                     {diffTotal > 0 ? "+" : ""}{formatCurrency(diffTotal)} ({pctTotal > 0 ? "+" : ""}{pctTotal.toFixed(1)}%)
                   </span>
                 </div>
@@ -551,7 +551,7 @@ export default function DeclaracionInventarioModule() {
                           <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">
                             {formatCurrency(h.valorCosto)}
                             {prev && (
-                              <span className={cn("ml-1 text-[length:var(--ts-2xs)]", diff > 0 ? "text-[var(--data-success)]" : diff < 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                              <span className={cn("ml-1 text-[length:var(--ts-2xs)]", diff > 0 ? "text-[var(--data-success-500)]" : diff < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
                                 {diff > 0 ? "+" : ""}{((diff / (prev.valorCosto || 1)) * 100).toFixed(0)}%
                               </span>
                             )}

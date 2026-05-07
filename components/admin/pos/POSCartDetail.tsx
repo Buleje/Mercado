@@ -64,7 +64,7 @@ export default function POSCartDetail({ items, count }: POSCartDetailProps) {
                         x{item.quantity}
                       </span>
                       {item.discount && item.discount > 0 ? (
-                        <span className="text-[var(--data-success)] ml-1">
+                        <span className="text-[var(--data-success-500)] ml-1">
                           -{item.discount}%
                         </span>
                       ) : null}

@@ -429,7 +429,7 @@ export default function ChatIAClean({
                 type="button"
                 onClick={handleStop}
                 title="Detener generación"
-                className="absolute right-3 bottom-3 h-10 w-10 rounded-xl bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 text-white flex items-center justify-center transition-colors"
+                className="absolute right-3 bottom-3 h-10 w-10 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 text-white flex items-center justify-center transition-colors"
                 aria-label="Detener"
               >
                 <span className="block h-3 w-3 bg-white rounded-sm" />
@@ -573,7 +573,7 @@ function MessageRow({
           className={cn(
             "h-4 w-4",
             message.error
-              ? "text-[var(--data-error)]"
+              ? "text-[var(--data-error-500)]"
               : "text-[color:var(--data-success)]",
           )}
         />
@@ -603,7 +603,7 @@ function MessageRow({
                 >
                   {copied ? (
                     <>
-                      <Check className="h-3 w-3 text-[var(--data-success)]" />
+                      <Check className="h-3 w-3 text-[var(--data-success-500)]" />
                       Copiado
                     </>
                   ) : (

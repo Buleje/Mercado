@@ -22,7 +22,7 @@ import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
-import { Plane, HardHat } from "lucide-react";
+import { Plane, HardHat, Moon } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
@@ -96,15 +96,59 @@ interface ProductPreview {
  * (/admin?tab=marketplace → Mi Tienda Personal). Cubre la imagen con tinte
  * + cinta amarilla con el mensaje custom o "Tienda en construccion" default.
  */
+/**
+ * ClosedNowOverlay — marca de agua semi-transparente sobre la portada cuando
+ * la tienda está fuera de su horario configurado. Distinto de
+ * UnderConstructionOverlay (cinta amarilla diagonal) — éste es un velo
+ * gris con ícono luna + "CERRADA" + próxima apertura.
+ */
+/** Formatea ISO "2026-05-04T08:00:00" → "Abre mañana 8:00 AM" / "Abre lunes 7:00 AM". */
+function formatNextOpening(iso?: string | null): string | null {
+  if (!iso) return null;
+  const next = new Date(iso);
+  if (Number.isNaN(next.getTime())) return null;
+  const now = new Date();
+  const sameDay = next.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = next.toDateString() === tomorrow.toDateString();
+  const time = next.toLocaleTimeString("es-PE", { hour: "numeric", minute: "2-digit", hour12: true });
+  if (sameDay) return `Abre hoy ${time}`;
+  if (isTomorrow) return `Abre mañana ${time}`;
+  const day = next.toLocaleDateString("es-PE", { weekday: "long" });
+  return `Abre ${day} ${time}`;
+}
+
+function ClosedNowOverlay({ nextOpeningLabel }: { nextOpeningLabel?: string | null }) {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 z-10 bg-linear-to-br from-slate-900/55 via-slate-800/55 to-slate-900/55 flex flex-col items-center justify-center text-center pointer-events-none backdrop-blur-[1px]"
+    >
+      <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-slate-100 text-slate-700 shadow-lg">
+        <Moon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+      </div>
+      <p className="mt-2 px-3 text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
+        Cerrada ahora
+      </p>
+      {nextOpeningLabel && (
+        <p className="mt-1 px-3 text-xs sm:text-sm font-medium text-white/90 drop-shadow">
+          {nextOpeningLabel}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function UnderConstructionOverlay({ message }: { message?: string | null }) {
   return (
     <>
       {/* Tinte semi-translucido + iconos centro */}
       <div
         aria-hidden
-        className="absolute inset-0 z-10 bg-linear-to-br from-amber-900/45 via-amber-700/40 to-amber-600/35 flex flex-col items-center justify-center text-center pointer-events-none"
+        className="absolute inset-0 z-10 bg-linear-to-br from-amber-900/45 via-[var(--data-warning-500)]/40 to-[var(--data-warning-500)]/35 flex flex-col items-center justify-center text-center pointer-events-none"
       >
-        <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-[var(--data-warning)] text-white shadow-lg">
+        <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-[var(--data-warning-500)] text-white shadow-lg">
           <HardHat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
         </div>
         <p className="mt-2 px-3 text-[length:var(--ts-xs)] sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-md">
@@ -114,7 +158,7 @@ function UnderConstructionOverlay({ message }: { message?: string | null }) {
       {/* Cinta diagonal amarillo/negro */}
       <div
         aria-hidden
-        className="absolute -left-8 top-3 z-20 rotate-[-25deg] bg-[var(--data-warning)] text-black px-10 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-widest shadow-md pointer-events-none"
+        className="absolute -left-8 top-3 z-20 rotate-[-25deg] bg-[var(--data-warning-500)] text-black px-10 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-widest shadow-md pointer-events-none"
       >
         En construcción
       </div>
@@ -199,13 +243,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       )}
       {/* Ofertas activas */}
       {store.activePromos != null && store.activePromos > 0 && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
         </span>
       )}
       {/* Vacaciones — solo si aplica */}
       {store.vacationMode && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning-500)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">
           <Plane className="h-2.5 w-2.5" strokeWidth={1.75} aria-hidden="true" />
           Vacaciones
         </span>
@@ -237,8 +281,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           <ChevronRight className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
         </span>
         {store.vacationMode ? (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)]">
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)]">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
             Vacaciones
           </span>
         ) : (
@@ -317,6 +361,21 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       onFocus={loadPreview}
       className="relative"
     >
+      {/* Overlay status (cerrado / construcción) — sobrepuesto al canonical
+          card limitado al área del cover (aspect-[4/3]) via posicionamiento
+          absoluto. Necesario porque StoreCardCanonical ignora renderImageFallback
+          cuando imageUrl es null y usa su propio fallback interno (TIENDA
+          BULEJE banner). */}
+      {store.underConstruction ? (
+        <div className="absolute top-0 left-0 right-0 aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+          <UnderConstructionOverlay message={store.underConstructionMessage} />
+        </div>
+      ) : store.isOpenNow === false ? (
+        <div className="absolute top-0 left-0 right-0 aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+          <ClosedNowOverlay nextOpeningLabel={formatNextOpening(store.nextOpeningAt)} />
+        </div>
+      ) : null}
+
       {/* StoreCardCanonical: aria-label override via href hack not needed —
           the canonical already sets aria-label={name} on the <a>. The richer
           aria description (zone, rating, vacation) is provided via the sr-only
@@ -330,22 +389,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         badges={badges}
         footer={footer}
         renderImage={({ src, alt, className }) => (
-          <>
-            <Image
-              src={src}
-              alt={alt}
-              fill
-              className={className}
-              sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
-            />
-            {store.underConstruction && <UnderConstructionOverlay message={store.underConstructionMessage} />}
-          </>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className={className}
+            sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+          />
         )}
         renderImageFallback={() => (
-          <>
-            <MiniBulejeBanner storeName={store.name} category={store.category} />
-            {store.underConstruction && <UnderConstructionOverlay message={store.underConstructionMessage} />}
-          </>
+          <MiniBulejeBanner storeName={store.name} category={store.category} />
         )}
         avatar={
           <div
@@ -537,11 +590,11 @@ export default function MarketplaceStoresView({
           role="alert"
           className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4"
         >
-          <span className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</span>
+          <span className="text-sm text-[var(--data-error-700)] dark:text-red-400 flex-1">{error}</span>
           <button
             onClick={onRetry}
             aria-label="Reintentar cargar tiendas"
-            className="text-xs font-bold text-red-600 hover:text-red-800 underline"
+            className="text-xs font-bold text-[var(--data-error-600)] hover:text-red-800 underline"
           >
             Reintentar
           </button>

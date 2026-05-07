@@ -33,7 +33,7 @@ export function ImageValidationPanel({ result, className }: Props) {
           className,
         )}
       >
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success)]" strokeWidth={1.75} />
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" strokeWidth={1.75} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-[var(--text-primary)]">
             Imagen cumple los requisitos
@@ -57,14 +57,14 @@ export function ImageValidationPanel({ result, className }: Props) {
             className={cn(
               "flex gap-2.5 rounded-lg border px-3 py-2.5",
               isError
-                ? "border-[var(--data-error)] bg-[var(--data-error-50)]"
-                : "border-[var(--data-warning)] bg-[var(--data-warning-50)]",
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)]"
+                : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)]",
             )}
           >
             <Icon
               className={cn(
                 "h-4 w-4 shrink-0 mt-0.5",
-                isError ? "text-[var(--data-error)]" : "text-[var(--data-warning)]",
+                isError ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
               )}
               strokeWidth={1.75}
             />
@@ -72,7 +72,7 @@ export function ImageValidationPanel({ result, className }: Props) {
               <p
                 className={cn(
                   "text-sm font-semibold",
-                  isError ? "text-[var(--data-error)]" : "text-[var(--data-warning)]",
+                  isError ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
                 )}
               >
                 {issue.message}

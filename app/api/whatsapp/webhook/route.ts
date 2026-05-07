@@ -54,11 +54,17 @@ async function verifySignature(
   signatureHeader: string | null,
   appSecret: string
 ): Promise<boolean> {
+  if (!signatureHeader) return false;
   const crypto = await import("crypto");
   const expected =
     "sha256=" +
     crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex");
-  return signatureHeader === expected;
+  // SECURITY 2026-05-06 (audit WhatsApp #2): comparación timing-safe.
+  // Antes `===` permitía byte-by-byte timing attack para forjar la firma.
+  const a = Buffer.from(signatureHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 /**
@@ -155,9 +161,18 @@ export async function POST(req: NextRequest) {
   // Leer el body crudo antes de cualquier operación (firma requiere raw bytes)
   const rawBody = await req.text();
 
-  // Verificar firma si el secret global está configurado
+  // SECURITY 2026-05-06 (audit WhatsApp #1): fail-closed en producción si
+  // falta APP_SECRET. Antes el endpoint aceptaba CUALQUIER POST sin firma
+  // si la env var no estaba seteada → vector trivial de forge de webhooks.
   const appSecret = process.env.WHATSAPP_APP_SECRET;
-  if (appSecret) {
+  const isProd = process.env.NODE_ENV === "production";
+  if (!appSecret) {
+    if (isProd) {
+      logger.error("[whatsapp/webhook] WHATSAPP_APP_SECRET ausente en prod — rechazando");
+      return NextResponse.json({ error: "service unavailable" }, { status: 503 });
+    }
+    logger.warn("[whatsapp/webhook] WHATSAPP_APP_SECRET ausente — solo permitido en dev");
+  } else {
     const signature = req.headers.get("x-hub-signature-256");
     const valid = await verifySignature(rawBody, signature, appSecret);
     if (!valid) {
@@ -245,16 +260,26 @@ async function handleSingleMessage(
     return;
   }
 
-  // Si no hay config de tenant, usar token global de entorno como fallback
+  // SECURITY 2026-05-06 (audit WhatsApp #5): si no hay tenantConfig para el
+  // phone_number_id receptor, descartar el mensaje (no asumir "main").
+  // Antes ordenes/facturas/respuestas AI se generaban en el tenant `main`
+  // sin querer cuando un tenant no tenía config.
+  if (!tenantConfig) {
+    logger.warn("[whatsapp/webhook] Sin tenantConfig — mensaje descartado", {
+      from: senderPhone,
+    });
+    return;
+  }
+
   const effectiveToken =
-    tenantConfig?.whatsappToken ??
+    tenantConfig.whatsappToken ??
     process.env.WHATSAPP_ACCESS_TOKEN ??
     process.env.WHATSAPP_API_TOKEN ??
     "";
 
-  const effectiveTenantId = tenantConfig?.tenantId ?? "main";
-  const businessName = tenantConfig?.businessName ?? "Bodega";
-  const yapeNumber = tenantConfig?.yapeNumber ?? null;
+  const effectiveTenantId = tenantConfig.tenantId;
+  const businessName = tenantConfig.businessName ?? "Bodega";
+  const yapeNumber = tenantConfig.yapeNumber ?? null;
 
   if (!effectiveToken) {
     logger.warn("[whatsapp/webhook] Sin token de WhatsApp configurado", {

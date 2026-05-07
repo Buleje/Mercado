@@ -20,7 +20,7 @@ interface FeaturedStore {
 }
 
 const FALLBACK_TONES = [
-  "#00B4A6", // teal
+  "var(--accent)", // teal
   "#F59E0B", // amber
   "#F43F5E", // rose
   "#8B5CF6", // violet

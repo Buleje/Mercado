@@ -35,15 +35,15 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
     label: "Mañana",
     range: "8:00 – 12:00",
     icon: Sun,
-    color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+    color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
   },
   tarde: {
     label: "Tarde",
     range: "12:00 – 18:00",
     icon: Sunset,
-    color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
-    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+    color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",
+    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
   },
   noche: {
     label: "Noche",
@@ -55,10 +55,10 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
 };
 
 const STATUS_SLOT_CONFIG: Record<string, { label: string; dot: string }> = {
-  pendiente:  { label: "Pendiente",   dot: "bg-[var(--data-warning)]" },
+  pendiente:  { label: "Pendiente",   dot: "bg-[var(--data-warning-500)]" },
   "en-camino":{ label: "En camino",   dot: "bg-[var(--accent-soft)]" },
   entregado:  { label: "Entregado",   dot: "bg-[var(--accent-soft)]" },
-  fallido:    { label: "Fallido",     dot: "bg-[var(--data-error)]" },
+  fallido:    { label: "Fallido",     dot: "bg-[var(--data-error-500)]" },
 };
 
 function getWeekDates(offset: number): string[] {
@@ -197,9 +197,9 @@ export default function DeliveryCalendarTab() {
       <div className="grid grid-cols-4 gap-2">
         {[
           { label: "Total",       value: dayKpis.total,      color: "text-[var(--text-primary)] dark:text-foreground" },
-          { label: "Entregados",  value: dayKpis.entregados, color: "text-[var(--data-success)]" },
-          { label: "En camino",   value: dayKpis.enCamino,   color: "text-[var(--data-success)]" },
-          { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-[var(--data-error)]" },
+          { label: "Entregados",  value: dayKpis.entregados, color: "text-[var(--data-success-500)]" },
+          { label: "En camino",   value: dayKpis.enCamino,   color: "text-[var(--data-success-500)]" },
+          { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-[var(--data-error-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -271,7 +271,7 @@ export default function DeliveryCalendarTab() {
                         </div>
                         <button
                           onClick={() => removeSlot(s.id)}
-                          className="opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                          className="opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
                         >
                           <X className="h-3 w-3" />
                         </button>

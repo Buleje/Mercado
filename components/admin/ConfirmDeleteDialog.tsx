@@ -72,8 +72,8 @@ export function ConfirmDeleteDialog({
           >
             {/* Header */}
             <div className="flex items-start gap-4 px-6 pt-6 pb-4">
-              <div className="shrink-0 w-11 h-11 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+              <div className="shrink-0 w-11 h-11 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
               </div>
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">
@@ -104,7 +104,7 @@ export function ConfirmDeleteDialog({
               <button
                 onClick={onConfirm}
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] active:scale-95 text-white text-sm font-bold  transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] active:scale-95 text-white text-sm font-bold  transition-all disabled:opacity-50"
               >
                 {loading && (
                   <svg

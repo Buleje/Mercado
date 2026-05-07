@@ -119,9 +119,9 @@ export default function TabCombos() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-[var(--data-error)] bg-[var(--data-error-50)] p-6 text-center">
-        <p className="text-sm font-bold text-[var(--data-error)]">No se pudieron cargar las ventas.</p>
-        <button onClick={load} className="mt-2 text-xs font-bold text-[var(--data-error)] underline">
+      <div className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-6 text-center">
+        <p className="text-sm font-bold text-[var(--data-error-500)]">No se pudieron cargar las ventas.</p>
+        <button onClick={load} className="mt-2 text-xs font-bold text-[var(--data-error-500)] underline">
           Reintentar
         </button>
       </div>

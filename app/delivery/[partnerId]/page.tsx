@@ -49,7 +49,7 @@ const TONE_BG: Record<NonNullable<typeof STATUS_CFG[string]["tone"]>, string> = 
   amber: "bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]",
   blue: "bg-[var(--brand-info)]/10 text-[var(--brand-info)]",
   accent: "bg-[var(--accent-soft)] text-[var(--accent)]",
-  success: "bg-[var(--data-success)]/10 text-[var(--data-success)]",
+  success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
   muted: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
 
@@ -234,7 +234,7 @@ export default function DriverDashboardPage() {
             <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] divide-y divide-[var(--rule-base)] overflow-hidden">
               {completed.map((a) => (
                 <div key={a.id} className="flex items-center gap-4 px-5 py-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success)]/10 text-[var(--data-success)] flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] flex items-center justify-center shrink-0">
                     <CheckBadge className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -250,7 +250,7 @@ export default function DriverDashboardPage() {
                         : "—"}
                     </p>
                   </div>
-                  <span className="text-base font-extrabold text-[var(--data-success)] tabular-nums shrink-0">
+                  <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums shrink-0">
                     +S/ {a.fee.toFixed(2)}
                   </span>
                 </div>

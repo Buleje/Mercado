@@ -88,7 +88,7 @@ export default function CompartirListaWhatsApp({
       aria-label={label}
       className={
         className ??
-        "inline-flex items-center gap-2 rounded-full bg-emerald-500 text-white px-4 py-2.5 text-sm font-bold hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+        "inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)] text-white px-4 py-2.5 text-sm font-bold hover:bg-[var(--data-success-600)] disabled:opacity-60 transition-colors"
       }
     >
       <Share2 className="h-4 w-4" strokeWidth={2.25} />

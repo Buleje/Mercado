@@ -68,15 +68,15 @@ function calcStockPredictions(
 
 function urgencyClass(days: number) {
   if (days < 3)
-    return "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400";
+    return "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-[var(--data-error-700)] dark:text-red-400";
   if (days < 7)
     return "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400";
   return "bg-muted dark:bg-muted/40 border-border text-foreground dark:text-foreground";
 }
 
 function urgencyIcon(days: number) {
-  if (days < 3) return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-error)] dark:text-[var(--data-error)]" />;
-  if (days < 7) return <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />;
+  if (days < 3) return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />;
+  if (days < 7) return <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />;
   return <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
 }
 
@@ -162,12 +162,12 @@ export default function StockPredictionWidget() {
       {!loading && (criticalCount > 0 || warningCount > 0) && (
         <div className="flex gap-2 flex-wrap">
           {criticalCount > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)]">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
               {criticalCount} critico{criticalCount > 1 ? "s" : ""}
             </span>
           )}
           {warningCount > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-yellow-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-yellow-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
               {warningCount} en riesgo
             </span>
           )}
@@ -184,9 +184,9 @@ export default function StockPredictionWidget() {
 
       {/* Error state */}
       {!loading && error && (
-        <div className="flex items-start gap-2 rounded-md bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] px-3 py-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
-          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <div className="flex items-start gap-2 rounded-md bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] px-3 py-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         </div>
       )}
 

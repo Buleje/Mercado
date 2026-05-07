@@ -146,7 +146,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
           </SectionTitle>
         </div>
         {totalSavings > 0 && (
-          <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-3 py-1.5 rounded-lg text-sm font-medium">
+          <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg text-sm font-medium">
             <TrendingDown className="w-4 h-4" />
             Ahorro potencial mensual: {fmt(totalSavings)}
           </div>
@@ -170,7 +170,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -194,7 +194,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                 {group.productName}
               </span>
               {group.potentialSavings > 0 && (
-                <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+                <span className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
                   Ahorro posible: {fmt(group.potentialSavings)}/mes
                 </span>
               )}
@@ -236,7 +236,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                           isCheapest
                             ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]"
                             : isExpensive
-                            ? "bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error)]/5"
+                            ? "bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error-500)]/5"
                             : "hover:bg-gray-50 dark:hover:bg-gray-750"
                         )}
                       >
@@ -247,9 +247,9 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                           className={cn(
                             "px-4 py-2.5 text-right font-semibold",
                             isCheapest
-                              ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                              ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                               : isExpensive
-                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                               : "text-[var(--text-primary)]"
                           )}
                         >
@@ -266,12 +266,12 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           {isCheapest ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full">
                               <CheckCircle2 className="w-3 h-3" />
                               Mas barato
                             </span>
                           ) : isExpensive ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 px-2 py-0.5 rounded-full">
                               Mas caro
                             </span>
                           ) : (
@@ -287,7 +287,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
 
             {/* Recomendacion */}
             {group.suppliers.length > 1 && (
-              <div className="px-4 py-2.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-t border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+              <div className="px-4 py-2.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-t border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 Si compras todo a{" "}
                 <span className="font-semibold">
                   {group.suppliers.find((s) => s.supplierId === group.cheapest)?.supplierName}

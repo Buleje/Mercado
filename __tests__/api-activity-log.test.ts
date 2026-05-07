@@ -231,30 +231,24 @@ describe("POST /api/activity-log", () => {
 });
 
 // ── DELETE tests ──────────────────────────────────────────────────────────────
+// COMPLIANCE 2026-05-06: el endpoint DELETE fue deshabilitado (Art. 11 Ley 29733).
+// Antes cualquier admin podía borrar TODO el audit log. Ahora siempre devuelve 410.
 
-describe("DELETE /api/activity-log", () => {
+describe("DELETE /api/activity-log (deshabilitado por compliance)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockDeleteMany.mockResolvedValue({ count: 10 });
   });
 
-  it("returns 401 when not authenticated", async () => {
-    mockRequireAdmin.mockResolvedValue(NextResponse.json({ error: "unauthorized" }, { status: 401 }));
-    const res = await DELETE(makeDeleteRequest());
-    expect(res.status).toBe(401);
-  });
-
-  it("calls deleteMany scoped to tenantId", async () => {
-    const res = await DELETE(makeDeleteRequest());
-    expect(res.status).toBe(200);
-    const call = mockDeleteMany.mock.calls[0][0];
-    expect(call?.where?.tenantId).toBe("tenant-1");
-  });
-
-  it("returns ok:true on success", async () => {
-    const res = await DELETE(makeDeleteRequest());
+  it("returns 410 Gone with compliance reason", async () => {
+    const res = await DELETE();
+    expect(res.status).toBe(410);
     const body = await res.json();
-    expect(body.ok).toBe(true);
+    expect(body.error).toMatch(/compliance|29733/i);
+  });
+
+  it("does NOT call deleteMany regardless of auth", async () => {
+    await DELETE();
+    expect(mockDeleteMany).not.toHaveBeenCalled();
   });
 });

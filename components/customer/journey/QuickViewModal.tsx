@@ -138,7 +138,7 @@ export function QuickViewModal({
                               className={cn(
                                 "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
                                 b.variant === "accent" && "bg-[var(--accent)] text-white",
-                                b.variant === "warning" && "bg-amber-500 text-white",
+                                b.variant === "warning" && "bg-[var(--data-warning-500)] text-white",
                                 !b.variant && "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
                               )}
                             >
@@ -149,7 +149,7 @@ export function QuickViewModal({
                       )}
                       {/* Discount tag */}
                       {hasDiscount && (
-                        <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-[var(--data-error)] text-white px-2.5 py-1 text-xs font-bold tabular-nums">
+                        <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-[var(--data-error-500)] text-white px-2.5 py-1 text-xs font-bold tabular-nums">
                           -{discountPercent}%
                         </span>
                       )}
@@ -212,7 +212,7 @@ export function QuickViewModal({
                       {/* Scarcity REAL (Cialdini) */}
                       {lowStock && (
                         <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-3 py-1.5 self-start">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)] animate-pulse" />
                           <span className="text-xs font-bold text-amber-800 dark:text-amber-300 tabular-nums">
                             Últimas {product.stock} unidades
                           </span>
@@ -270,7 +270,7 @@ export function QuickViewModal({
                             className={cn(
                               "flex-1 inline-flex items-center justify-center gap-2 rounded-full font-bold text-sm py-3 px-6 transition-colors",
                               added
-                                ? "bg-[var(--data-success)] text-white"
+                                ? "bg-[var(--data-success-500)] text-white"
                                 : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90",
                             )}
                           >
@@ -298,7 +298,7 @@ export function QuickViewModal({
                             aria-pressed={isFavorite}
                           >
                             <Heart
-                              className={cn("h-4 w-4", isFavorite ? "fill-[var(--data-error)] text-[var(--data-error)]" : "text-[var(--text-secondary)]")}
+                              className={cn("h-4 w-4", isFavorite ? "fill-[var(--data-error-500)] text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}
                               strokeWidth={1.75}
                             />
                           </button>

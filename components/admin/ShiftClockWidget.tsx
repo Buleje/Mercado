@@ -207,10 +207,10 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
             "transition-colors duration-[var(--dur-fast)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning-500)]",
             !hasEntry || hasExit
               ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
-              : "bg-[var(--data-warning)] text-white hover:bg-[#e08c4a]"
+              : "bg-[var(--data-warning-500)] text-white hover:bg-[#e08c4a]"
           )}
           aria-label="Marcar salida"
         >

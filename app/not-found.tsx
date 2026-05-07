@@ -81,7 +81,7 @@ export default function NotFound() {
               <Link
                 key={zone.slug}
                 href={`/zona/${zone.slug}`}
-                className="text-xs text-slate-400 hover:text-emerald-600 transition-colors"
+                className="text-xs text-slate-400 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {zone.name}
               </Link>
@@ -92,7 +92,7 @@ export default function NotFound() {
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
-                className="text-xs text-slate-400 hover:text-emerald-600 transition-colors"
+                className="text-xs text-slate-400 hover:text-[var(--data-success-600)] transition-colors"
               >
                 {cat.label}
               </Link>

@@ -102,7 +102,7 @@ function MobileNav() {
           <Link
             href="/admin"
             onClick={close}
-            className="block text-center bg-[#00B4A6] text-white font-bold py-3 rounded-xl hover:bg-[#009b8f] transition-colors"
+            className="block text-center bg-[var(--accent)] text-white font-bold py-3 rounded-xl hover:bg-[#009b8f] transition-colors"
           >
             Iniciar sesion
           </Link>

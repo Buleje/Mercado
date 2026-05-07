@@ -145,7 +145,7 @@ export default function OrderProgress() {
       <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out]">
         <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <CheckCircle2 className="w-5 h-5 text-[var(--data-success-500)]" />
             <span className="text-xs font-bold text-foreground">¡Pedido entregado!</span>
           </div>
           <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
@@ -242,8 +242,8 @@ export default function OrderProgress() {
           <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-linear-to-b from-primary/5 to-transparent">
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="relative">
-                <AlertCircle className="w-8 h-8 text-amber-500 animate-pulse" />
-                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping" />
+                <AlertCircle className="w-8 h-8 text-[var(--data-warning-500)] animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)] animate-ping" />
               </div>
             </div>
             <h3 className="text-xl font-extrabold text-foreground">
@@ -265,8 +265,8 @@ export default function OrderProgress() {
           <div className="px-6 py-5 space-y-4">
             {progressContent}
             {/* ETA */}
-            <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl px-4 py-3 border border-amber-100 dark:border-amber-700/30">
-              <p className="text-sm text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+            <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl px-4 py-3 border border-amber-100 dark:border-[var(--data-warning-500)]/30">
+              <p className="text-sm text-[var(--data-warning-700)] dark:text-amber-400 font-semibold flex items-center gap-2">
                 <Clock className="w-4 h-4 shrink-0" />
                 Tiempo estimado: {currentIdx < 2 ? "30-45 min" : "10-15 min"}
               </p>
@@ -300,8 +300,8 @@ export default function OrderProgress() {
       <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <AlertCircle className="w-5 h-5 text-amber-500 animate-pulse" />
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+            <AlertCircle className="w-5 h-5 text-[var(--data-warning-500)] animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--data-warning-500)] animate-ping" />
           </div>
           <span className="text-xs font-bold text-foreground">Pedido #{order.id.slice(-6)}</span>
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
@@ -351,7 +351,7 @@ export default function OrderProgress() {
             })}
           </div>
           <div className="bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-2">
-            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+            <p className="text-xs text-[var(--data-warning-700)] dark:text-amber-400 font-medium flex items-center gap-1.5">
               <Clock className="w-3 h-3" />
               Tiempo estimado: {currentIdx < 2 ? "30-45 min" : "10-15 min"}
             </p>

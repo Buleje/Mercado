@@ -41,7 +41,7 @@ export default function TiendaPreviewHero({ nombreNegocio }: TiendaPreviewHeroPr
             >
               <SellerCentralBodega size={140} />
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success)]/30 bg-[var(--data-success)]/10 px-3 py-1 text-xs font-semibold text-[var(--data-success)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 px-3 py-1 text-xs font-semibold text-[var(--data-success-500)]">
               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
               Cuenta activa (demo)
             </span>

@@ -19,17 +19,17 @@ type Note = {
 type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
 
 const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
-  yellow: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning)]", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
-  green:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success)]/30" },
-  blue:   { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success)]/30" },
-  pink:   { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--data-info)]", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
+  yellow: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
+  green:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  blue:   { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  pink:   { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--data-info-500)]", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
   purple: { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", darkBg: "dark:bg-[var(--accent-muted)]/20", darkBorder: "dark:border-[var(--rule-base)]" },
-  orange: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning)]", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
+  orange: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
 };
 
 const COLOR_DOTS: Record<NoteColor, string> = {
-  yellow: "bg-[var(--data-warning)]", green: "bg-[var(--accent-soft)]", blue: "bg-[var(--accent-soft)]",
-  pink: "bg-[var(--data-info)]", purple: "bg-[var(--accent-soft)]", orange: "bg-[var(--data-warning)]",
+  yellow: "bg-[var(--data-warning-500)]", green: "bg-[var(--accent-soft)]", blue: "bg-[var(--accent-soft)]",
+  pink: "bg-[var(--data-info-500)]", purple: "bg-[var(--accent-soft)]", orange: "bg-[var(--data-warning-500)]",
 };
 
 /* ── seed notes ─────────────────────────────────────────────── */
@@ -156,7 +156,7 @@ export default function QuickNotesTab() {
       {/* Stats */}
       <div className="flex flex-wrap items-center gap-6 text-sm">
         <span className="text-[var(--text-secondary)] dark:text-muted">{notes.length} notas</span>
-        <span className="text-[var(--data-warning)] font-semibold">{notes.filter(n => n.pinned).length} fijadas</span>
+        <span className="text-[var(--data-warning-500)] font-semibold">{notes.filter(n => n.pinned).length} fijadas</span>
       </div>
 
       {/* Notes grid */}
@@ -222,8 +222,8 @@ export default function QuickNotesTab() {
                     <>
                       <div className="flex items-start justify-between mb-2">
                         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm leading-snug pr-2">{note.title}</CardTitle>
-                        <button onClick={() => handlePin(note.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning)] transition-colors shrink-0">
-                          {note.pinned ? <Pin className="h-3.5 w-3.5 text-[var(--data-warning)]" /> : <PinOff className="h-3.5 w-3.5" />}
+                        <button onClick={() => handlePin(note.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] transition-colors shrink-0">
+                          {note.pinned ? <Pin className="h-3.5 w-3.5 text-[var(--data-warning-500)]" /> : <PinOff className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                       <p className="text-sm text-[var(--text-secondary)] dark:text-muted leading-relaxed mb-3 line-clamp-4">{note.content}</p>
@@ -231,7 +231,7 @@ export default function QuickNotesTab() {
                         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{note.updatedAt}</p>
                         <div className="flex items-center gap-1">
                           <button onClick={() => startEdit(note)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-white/50 dark:hover:bg-accent transition-colors"><Edit3 className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => handleDelete(note.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-white/50 dark:hover:bg-accent transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => handleDelete(note.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-accent transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
                     </>

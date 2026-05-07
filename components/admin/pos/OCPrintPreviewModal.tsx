@@ -208,7 +208,7 @@ export default function OCPrintPreviewModal({
               <span className="font-mono dark:text-gray-200">S/{subtotal.toFixed(2)}</span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-sm text-[var(--data-error)]">
+              <div className="flex justify-between text-sm text-[var(--data-error-500)]">
                 <span>Descuento {discount}%</span>
                 <span className="font-mono">-S/{discountAmount.toFixed(2)}</span>
               </div>

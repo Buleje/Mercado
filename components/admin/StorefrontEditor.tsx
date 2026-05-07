@@ -13,6 +13,7 @@ import {
   X, Search, Plus, ChevronUp, ChevronDown, Pencil,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
   closestCenter,
@@ -74,14 +75,14 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Banner de anuncio",
     description: "Barra superior con mensajes promocionales",
     icon: <Megaphone className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
   },
   {
     key: "hero",
     label: "Hero principal",
     description: "Banner grande con foto y llamada a la acción",
     icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
   {
     key: "categories",
@@ -102,28 +103,28 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Ofertas del día",
     description: "Producto con descuento especial y cuenta regresiva",
     icon: <Tag className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
   },
   {
     key: "combos",
     label: "Combos",
     description: "Paquetes de productos con precio especial",
     icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
   },
   {
     key: "recipes",
     label: "Recetas",
     description: "Ideas de recetas peruanas con ingredientes de la bodega",
     icon: <BookOpen className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
   {
     key: "testimonials",
     label: "Testimonios",
     description: "Opiniones de clientes satisfechos",
     icon: <MessageSquare className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
   },
   {
     key: "faq",
@@ -137,14 +138,14 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Contacto",
     description: "Formulario y datos de contacto de la bodega",
     icon: <Phone className="h-4 w-4" />,
-    iconBg: "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400",
+    iconBg: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-400",
   },
   {
     key: "delivery_map",
     label: "Mapa de delivery",
     description: "Mapa interactivo con la zona de cobertura",
     icon: <MapIcon className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
   },
 ];
 
@@ -166,7 +167,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Oferta Especial de Hoy",
     description: "El producto del día con precio especial",
     icon: <Star className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
     defaultEnabled: true,
   },
   {
@@ -182,7 +183,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Cuenta Regresiva",
     description: "Banner con cuenta atrás para ofertas limitadas",
     icon: <Clock className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
     defaultEnabled: true,
   },
   {
@@ -190,7 +191,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Ofertas Relámpago",
     description: "Ofertas por tiempo limitado con temporizador",
     icon: <Zap className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
     defaultEnabled: true,
   },
   {
@@ -198,7 +199,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Más Vendidos de la Semana",
     description: "Los productos que más se venden esta semana",
     icon: <TrendingUp className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -206,7 +207,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Productos Destacados",
     description: "Carrusel de productos que quieres resaltar",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -214,7 +215,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Combos Inteligentes",
     description: "Paquetes de productos con precio especial",
     icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
     defaultEnabled: true,
   },
   {
@@ -246,7 +247,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Últimas Unidades",
     description: "Productos con poco stock — incentiva compra por urgencia",
     icon: <AlertTriangle className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
     defaultEnabled: true,
   },
 ];
@@ -268,21 +269,21 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Tienda",
     description: "Catálogo completo de productos",
     icon: <Store className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
   {
     id: "recetas",
     label: "Recetas",
     description: "Ideas de recetas con ingredientes de la tienda",
     icon: <ChefHat className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
   },
   {
     id: "marketplace",
     label: "Marketplace",
     description: "Enlace al marketplace con todas las tiendas",
     icon: <Globe className="h-4 w-4" />,
-    iconBg: "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400",
+    iconBg: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-400",
   },
   {
     id: "historial",
@@ -303,14 +304,14 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Beneficios",
     description: "Sección de ¿Por qué elegirnos?",
     icon: <Award className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
   },
   {
     id: "contacto",
     label: "Contacto",
     description: "Información de contacto y formulario",
     icon: <Mail className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
   },
 ];
 
@@ -370,6 +371,36 @@ type SectionContentMap = Record<string, SectionContent>;
 
 // ── Modal de edición de contenido de sección ───────────────────────────────
 
+// Sugerencias de título por tipo de sección — el dueño puede tomarlas con 1 click.
+const TITLE_SUGGESTIONS: Record<string, string[]> = {
+  daily_special:     ["Solo por hoy", "Oferta del día", "Imperdible", "Hoy con descuento", "El especial de la casa"],
+  seasonal_promo:    ["Promo de temporada", "Especial del mes", "Oferta limitada", "No te lo pierdas"],
+  countdown:         ["Apurate, se termina", "Oferta por tiempo limitado", "Quedan pocas horas", "Última oportunidad"],
+  flash_deals:       ["Ofertas flash", "Solo hoy a este precio", "Liquidación exprés", "Precio bomba"],
+  popular_products:  ["Lo más vendido", "Los favoritos del barrio", "Top 10 de esta semana", "Lo que más se llevan"],
+  featured_carousel: ["Productos destacados", "Recomendados para vos", "Selección de la casa", "Los mejor calificados"],
+  combos:            ["Combos imperdibles", "Pack ahorrador", "Más por menos", "Combinaciones perfectas"],
+  recipes:           ["Para cocinar hoy", "Ideas peruanas", "Recetas con ingredientes que tenemos", "Inspirate en la cocina"],
+  favorites:         ["Tus favoritos", "Productos que te gustaron", "Tu lista guardada"],
+  recently_viewed:   ["Vistos hace poco", "Tu historial reciente", "Donde te quedaste"],
+  last_units:        ["Últimas unidades", "Quedan pocas", "Antes que se agote", "Stock final"],
+};
+
+// Tips contextuales por sección — guían al dueño sobre qué productos elegir.
+const SECTION_TIPS: Record<string, string> = {
+  daily_special:     "Tip: elegí 1 producto estrella con precio agresivo. Funciona mejor con stock limitado real.",
+  seasonal_promo:    "Tip: agrupá 2-4 productos relacionados con la temporada (panetón, parrilla, helados, etc.).",
+  countdown:         "Tip: usá esto para promos REALES con tiempo límite. Si abusas, el cliente deja de creerte.",
+  flash_deals:       "Tip: 4-8 productos con descuento real que duren pocas horas. Genera FOMO sano.",
+  popular_products:  "Tip: 6-12 best-sellers del último mes. Aumenta confianza social y ticket promedio.",
+  featured_carousel: "Tip: elegí los productos con mejor margen y mejor foto — se llevan la atención del cliente.",
+  combos:            "Tip: combinaciones que aumentan ticket: pollo + papa + bebida, salchipapa + gaseosa, etc.",
+  recipes:           "Tip: recetas peruanas con ingredientes que TENÉS en stock. Linkea cada paso a un producto.",
+  favorites:         "Tip: esta sección es automática — el cliente arma su lista. No necesita configuración.",
+  recently_viewed:   "Tip: automática — recuerda los productos que el cliente vio hace poco.",
+  last_units:        "Tip: productos con stock < 10 unidades. Genera urgencia honesta — si lo hace falso, te rebota.",
+};
+
 function SectionEditorModal({
   sectionKey,
   sectionLabel,
@@ -387,7 +418,11 @@ function SectionEditorModal({
   const [productIds, setProductIds] = useState<number[]>(initialContent.productIds || []);
   const [allProducts, setAllProducts] = useState<Array<{ id: number; name: string; image: string; price: number; category: string }>>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
+
+  const titleSuggestions = TITLE_SUGGESTIONS[sectionKey] ?? [];
+  const sectionTip = SECTION_TIPS[sectionKey] ?? "";
 
   useEffect(() => {
     fetch("/api/products", { cache: "no-store" })
@@ -467,161 +502,564 @@ function SectionEditorModal({
     });
   };
 
+  // Categorías únicas del catálogo para los chips de filtro.
+  const availableCategories = Array.from(
+    new Set(allProducts.filter(p => !productIds.includes(p.id)).map(p => p.category || "Sin categoría"))
+  ).sort();
+
+  // Catálogo filtrado por categoría + search.
+  const availableFiltered = available.filter(p => {
+    if (categoryFilter === "todos") return true;
+    return (p.category || "Sin categoría") === categoryFilter;
+  });
+
+  // Total estimado de productos asignados (suma de precios).
+  const assignedTotal = assignedProducts.reduce((sum, p) => sum + p.price, 0);
+
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-[var(--rule-base)] dark:border-card-border flex flex-col"
+        className="bg-white dark:bg-card rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border-2 border-[var(--rule-base)] dark:border-card-border flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
-          <div>
-            <SectionTitle className="text-lg font-extrabold text-foreground">Editar sección</SectionTitle>
-            <p className="text-xs text-muted mt-0.5">{sectionLabel}</p>
-          </div>
-          <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Section title */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Título de la sección</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={sectionLabel}
-              className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-          </div>
-
-          {/* Assigned products */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-              Productos en esta sección ({assignedProducts.length})
-            </label>
-            {assignedProducts.length === 0 ? (
-              <div className="mt-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-card-border text-center">
-                <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" />
-                <p className="text-sm text-muted">No hay productos asignados</p>
-                <p className="text-xs text-muted mt-1">Busca y agrega productos abajo</p>
-              </div>
-            ) : (
-              <div className="mt-2 space-y-1.5">
-                {assignedProducts.map((p, idx) => (
-                  <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
-                    <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                      {p.image ? (
-                        <Image src={p.image} alt={p.name} fill className="object-cover" sizes="36px" />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
-                      <p className="text-xs text-primary font-bold">S/{p.price.toFixed(2)}</p>
-                    </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button type="button" onClick={() => moveUp(idx)} disabled={idx === 0} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
-                        <ChevronUp className="h-3.5 w-3.5" />
-                      </button>
-                      <button type="button" onClick={() => moveDown(idx)} disabled={idx === assignedProducts.length - 1} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      </button>
-                      <button type="button" onClick={() => removeProduct(p.id)} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Search and add products */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Agregar productos</label>
-            <div className="relative mt-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar producto para agregar…"
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-              {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+        {/* Header con kicker descriptivo + counter */}
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Package className="h-5 w-5 text-primary" />
             </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
-                {available.slice(0, 20).map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => addProduct(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
-                  >
-                    <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                      {p.image ? (
-                        <Image src={p.image} alt={p.name} fill className="object-cover" sizes="32px" />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-                    </div>
-                    <span className="text-xs font-bold text-primary">S/{p.price.toFixed(2)}</span>
-                    <Plus className="h-4 w-4 text-primary shrink-0" />
-                  </button>
-                ))}
-                {available.length === 0 && (
-                  <p className="text-center text-sm text-muted py-3">
-                    {searchQuery ? "No se encontraron productos" : "Todos los productos ya están asignados"}
-                  </p>
-                )}
-              </div>
-            )}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Editar sección</p>
+              <h2 className="text-lg font-extrabold text-foreground leading-tight">{sectionLabel}</h2>
+            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="shrink-0 px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            aria-label="Cerrar"
           >
-            Cancelar
+            <X className="h-5 w-5" />
           </button>
-          <button
-            onClick={() => onSave({ productIds, title: title.trim() || undefined })}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold  hover:bg-primary/90 active:scale-95 transition-all"
-          >
-            <Save className="h-4 w-4" />
-            Guardar sección
-          </button>
+        </div>
+
+        {/* Tip contextual */}
+        {sectionTip && (
+          <div className="px-6 py-3 bg-primary/5 dark:bg-primary/10 border-b border-primary/10 shrink-0">
+            <p className="text-sm text-foreground"><span className="font-bold">💡 </span>{sectionTip}</p>
+          </div>
+        )}
+
+        {/* Body — Layout 2 columnas: izquierda título+asignados, derecha catálogo */}
+        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+
+          {/* ── COLUMNA IZQUIERDA: TÍTULO + ASIGNADOS ──────────────── */}
+          <div className="overflow-y-auto p-6 space-y-5 border-b lg:border-b-0 lg:border-r-2 border-[var(--rule-soft)] dark:border-card-border">
+            {/* Título con sugerencias */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-foreground">Título de la sección</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={sectionLabel}
+                maxLength={50}
+                className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted">Aparece arriba de la sección en tu tienda.</p>
+                <span className="text-xs font-mono text-muted shrink-0">{(title || "").length}/50</span>
+              </div>
+
+              {/* Sugerencias clickeables */}
+              {titleSuggestions.length > 0 && (
+                <div className="pt-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">
+                    Sugerencias para esta sección
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {titleSuggestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setTitle(s)}
+                        className={cn(
+                          "px-3 h-8 rounded-full text-xs font-semibold border-2 transition-all",
+                          title === s
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Productos asignados — header con count + total */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground">Productos en esta sección</h3>
+                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                    {assignedProducts.length}
+                  </span>
+                </div>
+                {assignedProducts.length > 0 && (
+                  <span className="text-xs font-mono tabular-nums text-muted">
+                    Total: <span className="font-bold text-foreground">S/{assignedTotal.toFixed(2)}</span>
+                  </span>
+                )}
+              </div>
+
+              {assignedProducts.length === 0 ? (
+                <div className="p-8 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-center">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Package className="h-7 w-7 text-primary" />
+                  </div>
+                  <p className="text-base font-bold text-foreground">Sin productos todavía</p>
+                  <p className="text-sm text-muted mt-1">Buscá y agregá productos del catálogo de la derecha.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {assignedProducts.map((p, idx) => (
+                    <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 transition-all">
+                      <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-primary text-xs font-bold tabular-nums shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border shrink-0">
+                        {p.image ? (
+                          <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-5 w-5" /></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate leading-tight">{p.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-sm font-bold text-primary tabular-nums">S/{p.price.toFixed(2)}</span>
+                          {p.category && (
+                            <>
+                              <span className="text-xs text-muted">·</span>
+                              <span className="text-xs text-muted truncate">{p.category}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => moveUp(idx)}
+                          disabled={idx === 0}
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          aria-label="Mover arriba"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveDown(idx)}
+                          disabled={idx === assignedProducts.length - 1}
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          aria-label="Mover abajo"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(p.id)}
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
+                          aria-label="Quitar"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── COLUMNA DERECHA: CATÁLOGO ─────────────────────────── */}
+          <div className="overflow-hidden flex flex-col">
+            {/* Search bar grande */}
+            <div className="p-6 pb-4 space-y-3 shrink-0 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div>
+                <label className="text-sm font-bold text-foreground">Catálogo de productos</label>
+                <p className="text-xs text-muted mt-0.5">Click en un producto para agregarlo a la sección.</p>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted pointer-events-none" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por nombre…"
+                  className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface text-muted hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Chips de categoría */}
+              {availableCategories.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter("todos")}
+                    className={cn(
+                      "shrink-0 px-3 h-8 rounded-full text-xs font-bold border-2 transition-all",
+                      categoryFilter === "todos"
+                        ? "bg-primary text-white border-primary"
+                        : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40"
+                    )}
+                  >
+                    Todas
+                  </button>
+                  {availableCategories.map((cat) => {
+                    const active = categoryFilter === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategoryFilter(cat)}
+                        className={cn(
+                          "shrink-0 px-3 h-8 rounded-full text-xs font-bold border-2 transition-all",
+                          active
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Catálogo grid scrolleable */}
+            <div className="flex-1 overflow-y-auto p-6 pt-3">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : availableFiltered.length === 0 ? (
+                <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border">
+                  <Search className="h-10 w-10 mx-auto text-muted mb-2" />
+                  <p className="text-base font-bold text-foreground">
+                    {searchQuery || categoryFilter !== "todos" ? "Sin resultados" : "Todos los productos están asignados"}
+                  </p>
+                  <p className="text-sm text-muted mt-1">
+                    {searchQuery || categoryFilter !== "todos" ? "Probá con otros filtros." : "Sumá más productos en Inventario."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableFiltered.slice(0, 60).map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addProduct(p.id)}
+                      className="group flex items-center gap-3 p-2.5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
+                    >
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border shrink-0">
+                        {p.image ? (
+                          <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-5 w-5" /></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate leading-tight">{p.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-sm font-bold text-primary tabular-nums">S/{p.price.toFixed(2)}</span>
+                          {p.category && (
+                            <>
+                              <span className="text-xs text-muted">·</span>
+                              <span className="text-xs text-muted truncate">{p.category}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                        <Plus className="h-4 w-4" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {availableFiltered.length > 60 && (
+                <p className="text-xs text-center text-muted mt-4">
+                  Mostrando primeros 60 — usá el buscador o filtros para encontrar más.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer con counter */}
+        <div className="shrink-0 px-6 py-4 border-t-2 border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between gap-3 bg-gray-50/50 dark:bg-surface/30">
+          <p className="text-sm text-muted">
+            <span className="font-bold text-foreground">{assignedProducts.length}</span> producto{assignedProducts.length !== 1 ? "s" : ""} en la sección
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => onSave({ productIds, title: title.trim() || undefined })}
+              className="flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
+            >
+              <Save className="h-4 w-4" />
+              Guardar sección
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+// ── Mini-mockup visual de cada seccion ──────────────────────────────────────
+// Renderiza una "stripe" que aproxima el layout real de cada seccion en la
+// tienda. Asi el dueño no tipea a ciegas — ve qué bloque está activando.
+
+function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
+  const cell = "rounded-md bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700";
+  const accent = "bg-primary/30";
+  const muted = "rounded-full bg-gray-300 dark:bg-gray-600";
+
+  switch (sectionKey) {
+    // ── Storefront sections ──
+    case "announcement":
+      return (
+        <div className="h-full w-full flex items-center justify-center bg-primary/15 px-2 gap-1">
+          <Megaphone className="h-3 w-3 text-primary" />
+          <div className={cn("h-1 w-2/3", muted)} />
+        </div>
+      );
+    case "hero":
+      return (
+        <div className="h-full w-full grid grid-cols-5 gap-2 p-2">
+          <div className="col-span-3 flex flex-col justify-center gap-1">
+            <div className={cn("h-1.5 w-3/4", muted)} />
+            <div className={cn("h-1 w-1/2", muted)} />
+            <div className={cn("h-1.5 w-12 mt-0.5", accent, "rounded-full")} />
+          </div>
+          <div className="col-span-2 rounded-md bg-primary/20 flex items-center justify-center">
+            <ShoppingBag className="h-4 w-4 text-primary/60" />
+          </div>
+        </div>
+      );
+    case "categories":
+      return (
+        <div className="h-full w-full flex items-center justify-around px-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex flex-col items-center gap-0.5">
+              <div className="h-4 w-4 rounded-full bg-primary/30" />
+              <div className={cn("h-0.5 w-4", muted)} />
+            </div>
+          ))}
+        </div>
+      );
+    case "popular":
+    case "popular_products":
+    case "flash_deals":
+    case "favorites":
+    case "recently_viewed":
+    case "last_units":
+      return (
+        <div className="h-full w-full grid grid-cols-4 gap-1.5 p-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={cn("relative", cell)}>
+              {sectionKey === "last_units" && i < 2 && (
+                <div className="absolute top-0.5 left-0.5 h-1 w-1 rounded-full bg-[var(--data-error-500)]" />
+              )}
+              {sectionKey === "favorites" && (
+                <div className="absolute top-0.5 right-0.5 text-[6px]">♥</div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    case "deals":
+    case "daily_special":
+      return (
+        <div className="h-full w-full flex items-center gap-2 p-2">
+          <div className={cn("h-12 w-12 shrink-0", cell, "bg-gradient-to-br from-[var(--data-warning-500)]/40 to-[var(--data-error-500)]/40")} />
+          <div className="flex-1 flex flex-col gap-1">
+            <div className={cn("h-1.5 w-3/4", muted)} />
+            <div className={cn("h-1 w-1/2", muted)} />
+            <div className={cn("h-1.5 w-10 mt-0.5", "bg-[var(--data-error-500)]/40 rounded-full")} />
+          </div>
+        </div>
+      );
+    case "seasonal_promo":
+      return (
+        <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-primary/30 via-primary/15 to-primary/30 px-2 gap-1.5">
+          <Tag className="h-3.5 w-3.5 text-primary" />
+          <div className={cn("h-1.5 w-1/3", muted)} />
+        </div>
+      );
+    case "countdown":
+      return (
+        <div className="h-full w-full flex items-center justify-center bg-[var(--data-error-500)]/15 gap-1.5 px-2">
+          <Clock className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
+          <div className="flex gap-0.5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-3 w-4 rounded-sm bg-[var(--data-error-500)]/40 flex items-center justify-center">
+                <span className="text-[7px] font-mono text-[var(--data-error-500)]">0{i}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    case "combos":
+      return (
+        <div className="h-full w-full grid grid-cols-3 gap-1.5 p-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={cn("relative", cell)}>
+              <div className="absolute top-0.5 left-0.5 h-2 w-2 rounded-full bg-[var(--data-warning-500)]/60 flex items-center justify-center">
+                <Package className="h-1 w-1 text-white" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    case "recipes":
+      return (
+        <div className="h-full w-full grid grid-cols-3 gap-1.5 p-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={cn("flex flex-col gap-0.5", cell, "p-1")}>
+              <ChefHat className="h-2 w-2 text-white/70" />
+            </div>
+          ))}
+        </div>
+      );
+    case "featured_carousel":
+      return (
+        <div className="h-full w-full flex items-center gap-1.5 p-2">
+          <div className="text-[8px] text-muted">‹</div>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={cn("flex-1", cell)} />
+          ))}
+          <div className="text-[8px] text-muted">›</div>
+        </div>
+      );
+    case "testimonials":
+      return (
+        <div className="h-full w-full grid grid-cols-3 gap-1.5 p-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex flex-col gap-0.5 rounded-md border border-[var(--rule-soft)] dark:border-card-border p-1">
+              <div className="flex gap-0.5">
+                {[0, 1, 2, 3, 4].map((s) => (
+                  <Star key={s} className="h-1 w-1 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+                ))}
+              </div>
+              <div className={cn("h-0.5 w-full", muted)} />
+              <div className={cn("h-0.5 w-2/3", muted)} />
+            </div>
+          ))}
+        </div>
+      );
+    case "faq":
+      return (
+        <div className="h-full w-full flex flex-col gap-1 p-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center justify-between rounded border border-[var(--rule-soft)] dark:border-card-border px-1.5 py-0.5">
+              <div className={cn("h-1 w-1/2", muted)} />
+              <ChevronDown className="h-2 w-2 text-muted" />
+            </div>
+          ))}
+        </div>
+      );
+    case "contact":
+      return (
+        <div className="h-full w-full grid grid-cols-3 gap-1.5 p-2">
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <Phone className="h-3 w-3 text-primary" />
+            <div className={cn("h-0.5 w-3/4", muted)} />
+          </div>
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <Mail className="h-3 w-3 text-primary" />
+            <div className={cn("h-0.5 w-3/4", muted)} />
+          </div>
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <MapIcon className="h-3 w-3 text-primary" />
+            <div className={cn("h-0.5 w-3/4", muted)} />
+          </div>
+        </div>
+      );
+    case "delivery_map":
+      return (
+        <div className="h-full w-full bg-gradient-to-br from-primary/10 to-primary/30 flex items-center justify-center relative">
+          <MapIcon className="h-5 w-5 text-primary/70" />
+          <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-white/30 rounded-full" />
+        </div>
+      );
+    default:
+      return (
+        <div className="h-full w-full grid grid-cols-3 gap-1.5 p-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={cn(cell)} />
+          ))}
+        </div>
+      );
+  }
+}
+
+// ── Categorias visuales para agrupar las secciones ──────────────────────────
+// El array original sigue siendo plano (orden importa para dnd-kit). Esto solo
+// agrupa visualmente para que el dueño escanee mas facil.
+
+const SECTION_GROUPS: Record<string, { label: string; keys: readonly string[] }> = {
+  promos: {
+    label: "Promociones y ofertas",
+    keys: ["daily_special", "seasonal_promo", "countdown", "flash_deals", "deals", "announcement"] as const,
+  },
+  productos: {
+    label: "Productos",
+    keys: ["popular_products", "popular", "featured_carousel", "combos", "categories", "hero"] as const,
+  },
+  engagement: {
+    label: "Engagement y descubrimiento",
+    keys: ["recipes", "favorites", "recently_viewed", "last_units", "testimonials"] as const,
+  },
+  ayuda: {
+    label: "Ayuda y contacto",
+    keys: ["faq", "contact", "delivery_map"] as const,
+  },
+};
+
+function getSectionGroup(key: string): keyof typeof SECTION_GROUPS {
+  for (const [groupKey, group] of Object.entries(SECTION_GROUPS)) {
+    if (group.keys.includes(key)) return groupKey as keyof typeof SECTION_GROUPS;
+  }
+  return "engagement";
+}
+
 // ── Componente SortableRow (dnd-kit) ────────────────────────────────────────
 
 function SortableRow({
   section,
+  position,
   onToggle,
   onEdit,
 }: {
   section: StorefrontSection | TiendaSection;
+  position: number;
   onToggle: () => void;
   onEdit?: () => void;
 }) {
@@ -646,72 +1084,112 @@ function SortableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-[var(--dur-fast)] select-none",
+        "group rounded-2xl border-2 transition-all duration-[var(--dur-fast)] select-none overflow-hidden",
         section.enabled
-          ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border "
-          : "bg-gray-50 dark:bg-surface border-[var(--rule-soft)] dark:border-card-border opacity-60",
-        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10"
+          ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+          : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-card-border hover:opacity-100",
+        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-xl scale-[1.01]"
       )}
     >
-      {/* Drag handle */}
-      <button
-        type="button"
-        className="cursor-grab active:cursor-grabbing touch-none p-0.5 -m-0.5"
-        aria-label={`Reordenar ${section.label}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
-      </button>
-
-      {/* Icon */}
-      <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", section.iconBg)}>
-        {section.icon}
-      </div>
-
-      {/* Info — clickable to edit */}
-      <div
-        className={cn("flex-1 min-w-0", onEdit && "cursor-pointer hover:opacity-80")}
-        onClick={onEdit}
-      >
-        <p className={cn("text-sm font-semibold leading-tight", section.enabled ? "text-foreground" : "text-muted")}>
-          {section.label}
-        </p>
-        <p className="text-xs text-muted mt-0.5 truncate">{section.description}</p>
-      </div>
-
-      {/* Edit button */}
-      {onEdit && (
+      {/* ── Top row: drag, icon, info, actions ────────────────────────── */}
+      <div className="flex items-center gap-3 p-3.5">
+        {/* Drag handle */}
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-          aria-label={`Editar ${section.label}`}
+          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface transition-colors shrink-0"
+          aria-label={`Reordenar ${section.label}`}
+          {...attributes}
+          {...listeners}
         >
-          <Pencil className="h-3.5 w-3.5" />
+          <GripVertical className="h-5 w-5 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] dark:text-[var(--text-secondary)]" />
         </button>
-      )}
 
-      {/* Toggle */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
-          section.enabled
-            ? "bg-primary border-primary"
-            : "bg-gray-200 dark:bg-gray-700 border-transparent"
-        )}
-        aria-label={section.enabled ? `Ocultar ${section.label}` : `Mostrar ${section.label}`}
-        aria-pressed={section.enabled}
-      >
+        {/* Position pill — orden visual sobre el storefront */}
         <span
           className={cn(
-            "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
-            section.enabled ? "translate-x-5" : "translate-x-0.5"
+            "inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg text-xs font-bold tabular-nums shrink-0 border",
+            section.enabled
+              ? "bg-primary/10 text-primary border-primary/20"
+              : "bg-gray-100 dark:bg-gray-700 text-[var(--text-tertiary)] border-transparent"
           )}
-        />
-      </button>
+          aria-label={`Posición ${position}`}
+        >
+          {position}
+        </span>
+
+        {/* Icon */}
+        <div className={cn(
+          "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+          section.iconBg,
+          !section.enabled && "opacity-50"
+        )}>
+          {section.icon}
+        </div>
+
+        {/* Info — clickable to edit */}
+        <div
+          className={cn("flex-1 min-w-0", onEdit && "cursor-pointer")}
+          onClick={onEdit}
+        >
+          <div className="flex items-center gap-2">
+            <p className={cn("text-base font-bold leading-tight", section.enabled ? "text-foreground" : "text-muted")}>
+              {section.label}
+            </p>
+            {!section.enabled && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                Oculta
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted leading-snug mt-0.5 line-clamp-1">{section.description}</p>
+        </div>
+
+        {/* Edit button */}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+            aria-label={`Editar ${section.label}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Toggle */}
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
+            section.enabled
+              ? "bg-primary border-primary"
+              : "bg-gray-200 dark:bg-gray-700 border-transparent"
+          )}
+          aria-label={section.enabled ? `Ocultar ${section.label}` : `Mostrar ${section.label}`}
+          aria-pressed={section.enabled}
+        >
+          <span
+            className={cn(
+              "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+              section.enabled ? "translate-x-6" : "translate-x-1"
+            )}
+          />
+        </button>
+      </div>
+
+      {/* ── Mini-mockup visual del bloque ─────────────────────────────── */}
+      <div
+        className={cn(
+          "h-16 mx-3.5 mb-3.5 rounded-xl border overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card transition-all",
+          section.enabled
+            ? "border-[var(--rule-soft)] dark:border-card-border"
+            : "border-dashed border-[var(--rule-soft)] dark:border-card-border opacity-50"
+        )}
+        aria-hidden="true"
+      >
+        <SectionThumbnail sectionKey={section.key} />
+      </div>
     </div>
   );
 }
@@ -795,7 +1273,10 @@ export default function StorefrontEditor() {
     setSaved(false);
   }, []);
 
-  // Guardar: persiste visibilidad + orden en storeTheme + navLinks
+  // Guardar: persiste visibilidad + orden en storeTheme + navLinks.
+  // [BUG FIX 2026-05-05] Antes faltaba el header x-csrf-token → el proxy
+  // devolvia 403 silenciosamente y el usuario nunca veia su cambio aplicado.
+  // El catch generico tampoco distinguia el motivo del fallo.
   const handleSave = useCallback(async () => {
     setSaving(true);
     const tiendaVisible = tiendaSections.filter((s) => s.enabled).map((s) => s.key);
@@ -804,7 +1285,8 @@ export default function StorefrontEditor() {
     try {
       const res = await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeTheme: {
             tiendaSections: tiendaVisible,
@@ -837,24 +1319,36 @@ export default function StorefrontEditor() {
     );
   }
 
+  // Vista previa: detecta el tenant slug del URL (/t/[slug]/admin) o cae a /tienda.
+  // [BUG FIX 2026-05-05] Antes el link era hardcoded a "/tienda" y abria la
+  // tienda de "main" aun cuando el dueño estaba editando otra tienda.
+  let previewHref = "/tienda";
+  if (typeof window !== "undefined") {
+    const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+    if (m?.[1]) previewHref = `/t/${m[1]}/tienda`;
+  }
+
   return (
-    <div className="space-y-5 max-w-2xl">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <SectionTitle className="text-lg font-extrabold text-foreground">Secciones de la tienda online</SectionTitle>
-          <p className="text-sm text-muted mt-0.5">
-            Activa, desactiva y reordena las secciones.{" "}
-            <span className="font-semibold text-foreground">{enabledCount} de {totalCount}</span> {activeTab === "navegacion" ? "enlaces visibles" : "secciones visibles"}.
+    <div className="space-y-5">
+      {/* Header — solo contador y CTAs (titulo lo da el wrapper de StoreCustomizer) */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl bg-primary/10 text-primary font-bold text-base">
+            {enabledCount}
+            <span className="text-muted/70 mx-1">/</span>
+            <span className="text-muted">{totalCount}</span>
+          </span>
+          <p className="text-sm text-muted">
+            {activeTab === "navegacion" ? "enlaces visibles en el menú" : "secciones visibles en la tienda"}
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href="/tienda"
+            href={previewHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface hover:border-primary/40 transition-colors"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -865,10 +1359,10 @@ export default function StorefrontEditor() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all min-h-[44px]",
+              "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-bold text-white transition-all",
               saved
                 ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
-                : "bg-primary hover:bg-primary/90 active:scale-[0.98]",
+                : "bg-primary hover:bg-primary/90 active:scale-[0.98] shadow-md",
               saving && "opacity-70 cursor-not-allowed"
             )}
           >
@@ -927,7 +1421,7 @@ export default function StorefrontEditor() {
         </p>
       </div>
 
-      {/* Lista de secciones con dnd-kit (Tienda tab) */}
+      {/* Lista de secciones con dnd-kit (Tienda tab) — agrupada por categoria */}
       {activeTab !== "navegacion" ? (
         <DndContext
           sensors={sensors}
@@ -938,62 +1432,129 @@ export default function StorefrontEditor() {
             items={currentSections.map((s) => s.key)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
-              {tiendaSections.map((section) => (
-                    <SortableRow
-                      key={section.key}
-                      section={section}
-                      onToggle={() => toggleTiendaSection(section.key)}
-                      onEdit={() => setEditingSection({ key: section.key, label: section.label })}
-                    />
-                  ))
-              }
+            <div className="space-y-6">
+              {(() => {
+                // Agrupamos visualmente sin alterar el orden funcional
+                // (dnd-kit sigue trabajando sobre el array plano).
+                const groups = ["promos", "productos", "engagement", "ayuda"] as const;
+                const indexMap = new Map(tiendaSections.map((s, i) => [s.key, i + 1]));
+                return groups.map((groupKey) => {
+                  const sectionsInGroup = tiendaSections.filter((s) => getSectionGroup(s.key) === groupKey);
+                  if (sectionsInGroup.length === 0) return null;
+                  const enabledInGroup = sectionsInGroup.filter((s) => s.enabled).length;
+                  return (
+                    <section key={groupKey} className="space-y-2.5">
+                      <header className="flex items-center justify-between gap-2 px-1">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                          {SECTION_GROUPS[groupKey].label}
+                        </h3>
+                        <span className="text-xs font-mono tabular-nums text-muted shrink-0">
+                          {enabledInGroup}/{sectionsInGroup.length}
+                        </span>
+                      </header>
+                      {/* Grid 2-col en >= xl, single col en mobile/tablet */}
+                      <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+                        {sectionsInGroup.map((section) => (
+                          <SortableRow
+                            key={section.key}
+                            section={section}
+                            position={indexMap.get(section.key) ?? 0}
+                            onToggle={() => toggleTiendaSection(section.key)}
+                            onEdit={() => setEditingSection({ key: section.key, label: section.label })}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                });
+              })()}
             </div>
           </SortableContext>
         </DndContext>
       ) : (
-        /* Lista de navegación (sin drag — solo toggle) */
-        <div className="space-y-2">
-          {navItems.map((item) => (
-            <div
-              key={item.id}
-              className={cn(
-                "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-[var(--dur-fast)]",
-                item.visible
-                  ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border "
-                  : "bg-gray-50 dark:bg-surface border-[var(--rule-soft)] dark:border-card-border opacity-60"
-              )}
-            >
-              <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", item.iconBg)}>
-                {item.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={cn("text-sm font-semibold leading-tight", item.visible ? "text-foreground" : "text-muted")}>
-                  {item.label}
-                </p>
-                <p className="text-xs text-muted mt-0.5 truncate">{item.description}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => toggleNavItem(item.id)}
-                className={cn(
-                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
-                  item.visible
-                    ? "bg-primary border-primary"
-                    : "bg-gray-200 dark:bg-gray-700 border-transparent"
-                )}
-                aria-label={item.visible ? `Ocultar ${item.label}` : `Mostrar ${item.label}`}
-                aria-pressed={item.visible}
-              >
-                <span
-                  className={cn(
-                    "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
-                    item.visible ? "translate-x-5" : "translate-x-0.5"
-                  )}
-                />
-              </button>
+        /* Lista de navegación (sin drag — solo toggle).
+           Replica el estilo visual del tab Tienda + agrega un preview real
+           del menu navbar arriba para que el dueño vea exactamente qué
+           cambia cuando activa/desactiva un link. */
+        <div className="space-y-5">
+          {/* ── Preview del menu navbar real ────────────────────────── */}
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gradient-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
+            <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-card-border bg-white/50 dark:bg-card/50">
+              Vista previa de tu menú
             </div>
-          ))}
+            <div className="px-4 py-3 flex items-center gap-2.5 flex-wrap">
+              {navItems.filter(i => i.visible).length === 0 ? (
+                <span className="text-xs text-muted italic">Sin enlaces visibles. El menú estará vacío.</span>
+              ) : (
+                navItems.filter(i => i.visible).map((item) => (
+                  <span
+                    key={item.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border text-sm font-semibold text-foreground"
+                  >
+                    <span className={cn("h-4 w-4 rounded flex items-center justify-center", item.iconBg)}>
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ── Lista editable — grid 2-col en >= xl ─────────────────── */}
+          <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+            {navItems.map((item) => (
+              <div
+                key={item.id}
+                className={cn(
+                  "group flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-[var(--dur-fast)]",
+                  item.visible
+                    ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                    : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-card-border opacity-70 hover:opacity-100"
+                )}
+              >
+                <div className={cn(
+                  "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                  item.iconBg,
+                  !item.visible && "opacity-50"
+                )}>
+                  {item.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className={cn("text-base font-bold leading-tight", item.visible ? "text-foreground" : "text-muted")}>
+                      {item.label}
+                    </p>
+                    {!item.visible && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                        Oculto
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted leading-snug mt-0.5 line-clamp-1">{item.description}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleNavItem(item.id)}
+                  className={cn(
+                    "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
+                    item.visible
+                      ? "bg-primary border-primary"
+                      : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                  )}
+                  aria-label={item.visible ? `Ocultar ${item.label}` : `Mostrar ${item.label}`}
+                  aria-pressed={item.visible}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                      item.visible ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

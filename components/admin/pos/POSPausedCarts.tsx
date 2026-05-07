@@ -165,7 +165,7 @@ export default function POSPausedCarts({
                     setShowNameInput(true);
                   }
                 }}
-                className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning)] hover:text-[var(--data-warning)] transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning-500)] hover:text-[var(--data-warning-500)] transition-colors"
                 title="Pausar carrito"
               >
                 <Pause className="h-3.5 w-3.5" />
@@ -217,7 +217,7 @@ export default function POSPausedCarts({
               </button>
               <button
                 onClick={() => handleDelete(cart.id)}
-                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
+                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

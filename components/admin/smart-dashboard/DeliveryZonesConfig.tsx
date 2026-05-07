@@ -40,14 +40,14 @@ export function DeliveryZonesConfig() {
             <span className={cn(
               "text-xs font-bold px-2 py-0.5 rounded-full",
               z.tarifa === 0
-                ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
             )}>
               {z.tarifa === 0 ? "GRATIS" : `S/${z.tarifa.toFixed(0)}`}
             </span>
             <button
               onClick={() => saveZones(zones.filter((_, idx) => idx !== i))}
-              className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors text-xs"
+              className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors text-xs"
             >&times;</button>
           </div>
         ))}

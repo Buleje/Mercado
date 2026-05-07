@@ -23,7 +23,7 @@ import { useTenantActions } from "@/components/superadmin/tenants/useTenantActio
 import type { SortField, SortDir, ViewMode, GrowthEntry } from "@/components/superadmin/tenants/types";
 
 const inputCls =
-  "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+  "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
 const selectCls = `appearance-none ${inputCls} pr-8 text-[var(--text-secondary)] cursor-pointer`;
 
 export default function TenantsPage() {
@@ -180,7 +180,7 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => setNuclearResetOpen(true)}
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--rule-base)] bg-transparent text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:border-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--rule-base)] bg-transparent text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
             title="Mantenimiento del sistema · Reinicio total (acción destructiva — requiere confirmación tipeando BORRAR TODO)"
             aria-label="Reinicio total del sistema (acción destructiva)"
           >
@@ -217,7 +217,7 @@ export default function TenantsPage() {
           </div>
 
           {error && (
-            <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
               {error}
               <button type="button" onClick={() => void loadTenants()} className="underline hover:no-underline text-xs">Reintentar</button>
             </div>
@@ -275,7 +275,7 @@ export default function TenantsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? "bg-[var(--accent)]" : "bg-[var(--data-error)]"}`}>
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? "bg-[var(--accent)]" : "bg-[var(--data-error-500)]"}`}>
           {toast.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
           {toast.msg}
         </div>

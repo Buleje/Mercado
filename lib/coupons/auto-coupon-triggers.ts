@@ -58,13 +58,16 @@ function expiresInDays(days: number): Date {
 
 /**
  * Genera un código de cupón único para el cliente.
- * Formato: {PREFIX}-{últimos6 del phone}-{timestamp4}
- * Ej: BIENVENIDO-123456-A1B2
+ * Formato: {PREFIX}-{phone normalizado}-{timestamp4}
+ * Ej: BIENVENIDO-51987654321-A1B2
+ *
+ * SECURITY 2026-05-05 (audit promotions #3): antes usaba slice(-6) → dos
+ * phones con los mismos 6 últimos dígitos (común en POS) compartían cupón.
  */
 function buildCouponCode(prefix: string, customerPhone: string): string {
-  const phoneSuffix = customerPhone.replace(/\D/g, "").slice(-6);
+  const phoneNorm = customerPhone.replace(/\D/g, "");
   const timeSuffix = Date.now().toString(36).slice(-4).toUpperCase();
-  return `${prefix}-${phoneSuffix}-${timeSuffix}`;
+  return `${prefix}-${phoneNorm}-${timeSuffix}`;
 }
 
 /**
@@ -76,8 +79,8 @@ async function alreadyHasCoupon(
   customerPhone: string,
   tenantId: string
 ): Promise<boolean> {
-  const phoneSuffix = customerPhone.replace(/\D/g, "").slice(-6);
-  const partialCode = `${prefix}-${phoneSuffix}-`;
+  const phoneNorm = customerPhone.replace(/\D/g, "");
+  const partialCode = `${prefix}-${phoneNorm}-`;
 
   const existing = await prisma.coupon.findFirst({
     where: {

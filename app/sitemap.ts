@@ -11,13 +11,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     process.env.NEXT_PUBLIC_URL || "https://www.buleje.pe";
   const lastModified = new Date();
 
-  // Fetch live product IDs from DB for dynamic sitemap entries
+  // SECURITY 2026-05-06 (audit storefront H03): el sitemap raíz solo expone
+  // productos del tenant "main" (Buleje plataforma) + cap a 1000 entries
+  // (audit H11). Antes se listaban productos cross-tenant → competidores
+  // enumeraban todo el catálogo de tiendas privadas. Cada tenant debe
+  // generar su propio sitemap por subdominio (futuro: sitemap multi-archivo).
   let dbProducts: { id: number; name: string }[] = [];
   try {
     dbProducts = await prisma.product.findMany({
-      where: { active: true, deletedAt: null },
+      where: { tenantId: "main", active: true, deletedAt: null },
       select: { id: true, name: true },
       orderBy: { id: "asc" },
+      take: 1000,
     });
   } catch {
     // DB unavailable during static build — fall back to empty

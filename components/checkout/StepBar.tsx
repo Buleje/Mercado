@@ -26,7 +26,7 @@ export function StepBar({ current }: { current: Step }) {
   const currentIdx = stepIds.indexOf(current);
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 px-6 py-3 border-b border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-gray-950/50 shrink-0">
+    <div className="flex items-center gap-2 sm:gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-gradient-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent shrink-0">
       {STEPS.map(({ id, label, num }, idx) => {
         const isActive = current === id;
         const isDone = currentIdx > idx;
@@ -35,37 +35,39 @@ export function StepBar({ current }: { current: Step }) {
             {idx > 0 && (
               <div
                 className={cn(
-                  "flex-1 h-0.5 rounded-full transition-colors",
-                  isDone ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
+                  "flex-1 h-1 rounded-full transition-all duration-300",
+                  isDone
+                    ? "bg-[var(--color-primary,#00B4A6)]"
+                    : "bg-[var(--rule-base)]"
                 )}
               />
             )}
             <div
               className={cn(
-                "flex items-center gap-1.5 transition-colors",
+                "flex items-center gap-2 transition-colors",
                 isActive
-                  ? "text-primary"
+                  ? "text-[var(--color-primary,#00B4A6)]"
                   : isDone
-                    ? "text-primary/70"
-                    : "text-gray-400 dark:text-gray-500"
+                    ? "text-[var(--color-primary,#00B4A6)]/70"
+                    : "text-muted"
               )}
             >
               <div
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black transition-all",
+                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold transition-all duration-300",
                   isActive
-                    ? "bg-primary text-white shadow-md shadow-primary/30 scale-105"
+                    ? "bg-[var(--color-primary,#00B4A6)] text-white shadow-lg shadow-[var(--color-primary,#00B4A6)]/35 scale-110 ring-4 ring-[var(--color-primary,#00B4A6)]/15"
                     : isDone
-                      ? "bg-primary/20 text-primary"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+                      ? "bg-[var(--color-primary,#00B4A6)]/15 text-[var(--color-primary,#00B4A6)]"
+                      : "bg-[var(--surface-sunken)] text-muted border-2 border-[var(--rule-soft)]"
                 )}
               >
-                {isDone ? <Check className="h-3.5 w-3.5" /> : num}
+                {isDone ? <Check className="h-4 w-4" strokeWidth={3} /> : num}
               </div>
               <span
                 className={cn(
-                  "text-[length:var(--ts-2xs)] font-semibold hidden sm:inline",
-                  isActive ? "font-bold" : ""
+                  "text-xs font-bold uppercase tracking-wider hidden sm:inline transition-colors",
+                  isActive ? "font-extrabold" : ""
                 )}
               >
                 {label}

@@ -20,17 +20,17 @@ const DEFAULT_ROWS = 4;
 const DEFAULT_COLS = 6;
 
 const CATEGORIES = [
-  { name: "Abarrotes", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
-  { name: "Bebidas", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  { name: "Lacteos", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
-  { name: "Limpieza", color: "bg-[var(--data-info)] text-[var(--data-info)] dark:bg-[var(--data-info)] dark:text-[var(--data-info)]" },
-  { name: "Snacks", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
-  { name: "Carnes", color: "bg-[var(--data-error)] text-[var(--data-error)] dark:bg-[var(--data-error)] dark:text-[var(--data-error)]" },
-  { name: "Frutas", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  { name: "Abarrotes", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+  { name: "Bebidas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  { name: "Lacteos", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+  { name: "Limpieza", color: "bg-[var(--data-info-500)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)] dark:text-[var(--data-info-500)]" },
+  { name: "Snacks", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+  { name: "Carnes", color: "bg-[var(--data-error-500)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+  { name: "Frutas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   { name: "Granos", color: "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-100" },
   { name: "Higiene", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
   { name: "Panaderia", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
-  { name: "Congelados", color: "bg-[var(--data-info)] text-[var(--data-info)] dark:bg-[var(--data-info)] dark:text-[var(--data-info)]" },
+  { name: "Congelados", color: "bg-[var(--data-info-500)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)] dark:text-[var(--data-info-500)]" },
   { name: "Otros", color: "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-700 dark:text-gray-100" },
 ];
 
@@ -195,7 +195,7 @@ export default function WarehouseLayoutEditor() {
       {highlight && (
         <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2.5 dark:bg-primary/20">
           <Grid3X3 className="h-4 w-4 text-primary" />
-          <p className="text-sm font-medium text-primary dark:text-[var(--data-success)]">
+          <p className="text-sm font-medium text-primary dark:text-[var(--data-success-500)]">
             Las celdas resaltadas contienen: {highlight}
           </p>
         </div>
@@ -264,7 +264,7 @@ export default function WarehouseLayoutEditor() {
                     ? catColor(cell.category)
                     : "border-dashed border-[var(--rule-base)] bg-gray-50 text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",
                   isHighlighted &&
-                    "ring-4 ring-[var(--data-warning)] ring-offset-1",
+                    "ring-4 ring-[var(--data-warning-500)] ring-offset-1",
                   !cell.category && "border-[var(--rule-base)]"
                 )}
               >

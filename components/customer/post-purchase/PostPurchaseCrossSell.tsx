@@ -152,7 +152,7 @@ export default function PostPurchaseCrossSell({
                     "inline-flex items-center justify-center",
                     "h-7 w-7 rounded-full transition-colors",
                     isAdded
-                      ? "bg-[var(--data-success)] text-white"
+                      ? "bg-[var(--data-success-500)] text-white"
                       : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90",
                   )}
                 >

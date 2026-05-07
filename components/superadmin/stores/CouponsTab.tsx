@@ -31,7 +31,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     key: "discount",
     label: "Descuento",
     render: (row) => (
-      <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+      <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
         {row.discountType === "percent" ? `${row.discountValue}%` : fmt(row.discountValue)}
       </span>
     ),
@@ -50,7 +50,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     label: "Estado",
     render: (row) => (
       <span
-        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-[var(--data-success)]" : "text-gray-400"}`}
+        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-[var(--data-success-500)]" : "text-gray-400"}`}
       >
         {row.active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
         {row.active ? "Activo" : "Inactivo"}
@@ -116,7 +116,7 @@ export function CouponsTab() {
       </div>
 
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm">
           {error}
         </div>
       )}

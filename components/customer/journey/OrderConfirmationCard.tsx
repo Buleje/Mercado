@@ -66,9 +66,9 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
       {/* Hero confirmation */}
       <div className="p-8 sm:p-10 text-center border-b border-[var(--rule-soft)]" style={{ background: "var(--brand-ink)" }}>
         {/* Big animated check */}
-        <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-[var(--data-success)] mb-5 relative">
+        <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-[var(--data-success-500)] mb-5 relative">
           <Check className="h-10 w-10 text-white" strokeWidth={2.5} />
-          <span className="absolute inset-0 rounded-full bg-[var(--data-success)] opacity-30 animate-ping" />
+          <span className="absolute inset-0 rounded-full bg-[var(--data-success-500)] opacity-30 animate-ping" />
         </div>
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-2">
           Pedido confirmado

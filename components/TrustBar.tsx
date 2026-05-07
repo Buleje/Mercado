@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 const TRUST_ITEMS = [
   { icon: Truck, text: "Delivery gratis desde S/50", color: "text-primary", bgStyle: { background: "rgba(45,106,79,0.08)" } },
   { icon: Clock, text: "Entrega en menos de 45 min", color: "text-secondary", bgStyle: { background: "rgba(244,162,97,0.08)" } },
-  { icon: Shield, text: "Productos frescos garantizados", color: "text-emerald-600", bgStyle: { background: "rgba(16,185,129,0.08)" } },
+  { icon: Shield, text: "Productos frescos garantizados", color: "text-[var(--data-success-600)]", bgStyle: { background: "rgba(16,185,129,0.08)" } },
   { icon: CreditCard, text: "Paga con Yape o efectivo", color: "text-purple-600", bgStyle: { background: "rgba(147,51,234,0.08)" } },
   { icon: Leaf, text: "Productos locales de Ucayali", color: "text-primary", bgStyle: { background: "rgba(45,106,79,0.08)" } },
-  { icon: HeartHandshake, text: "Atención personalizada", color: "text-[var(--data-error)]", bgStyle: { background: "rgba(244,63,94,0.08)" } },
+  { icon: HeartHandshake, text: "Atención personalizada", color: "text-[var(--data-error-500)]", bgStyle: { background: "rgba(244,63,94,0.08)" } },
 ];
 
 export default function TrustBar() {

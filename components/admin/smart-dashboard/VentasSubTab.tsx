@@ -207,7 +207,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                       <button onClick={() => moveChart(index, "down")} disabled={index === activeCharts.length - 1} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-30 transition-colors">
                         <ChevronDown className="w-3 h-3 text-[var(--text-tertiary)]" />
                       </button>
-                      <button onClick={() => removeChart(chartId)} className="p-1 rounded hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
+                      <button onClick={() => removeChart(chartId)} className="p-1 rounded hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -257,7 +257,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
             <div className="flex flex-wrap gap-3">
               {ranking.map((c, i) => (
                 <span key={c.name} className="text-xs text-[var(--text-primary)] dark:text-zinc-300">
-                  <span className={cn("font-bold", i === 0 && "text-[var(--data-warning)]")}>{i + 1}.</span>{" "}
+                  <span className={cn("font-bold", i === 0 && "text-[var(--data-warning-500)]")}>{i + 1}.</span>{" "}
                   {c.name}: <strong>{fmtR(c.ventas)}</strong> ({c.count} ventas)
                 </span>
               ))}
@@ -337,7 +337,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                     const isActive = bucket.hour === new Date().getHours();
                     return (
                       <div key={bucket.hour} className="flex items-center gap-2 text-xs">
-                        <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
+                        <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
                           {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}

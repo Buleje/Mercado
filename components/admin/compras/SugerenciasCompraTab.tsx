@@ -35,9 +35,9 @@ const URGENCY_CONFIG: Record<Urgency, {
   text: string;
   icon: LucideIcon;
 }> = {
-  CRITICO:    { label: "Crítico — se acaba en 3 días o menos", short: "Crítico",    border: "border-l-[var(--data-error)]",   bg: "bg-[var(--data-error-50)]",   text: "text-[var(--data-error)]",   icon: AlertTriangle },
-  URGENTE:    { label: "Urgente — se acaba esta semana",       short: "Urgente",    border: "border-l-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]", text: "text-[var(--data-warning)]", icon: Clock         },
-  PLANIFICAR: { label: "Planificar — más de 7 días",           short: "Planificar", border: "border-l-[var(--data-success)]", bg: "bg-[var(--accent-soft)]",     text: "text-[var(--data-success)]", icon: Package       },
+  CRITICO:    { label: "Crítico — se acaba en 3 días o menos", short: "Crítico",    border: "border-l-[var(--data-error)]",   bg: "bg-[var(--data-error-50)]",   text: "text-[var(--data-error-500)]",   icon: AlertTriangle },
+  URGENTE:    { label: "Urgente — se acaba esta semana",       short: "Urgente",    border: "border-l-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]", text: "text-[var(--data-warning-500)]", icon: Clock         },
+  PLANIFICAR: { label: "Planificar — más de 7 días",           short: "Planificar", border: "border-l-[var(--data-success)]", bg: "bg-[var(--accent-soft)]",     text: "text-[var(--data-success-500)]", icon: Package       },
 };
 
 const URGENCY_ORDER: Urgency[] = ["CRITICO", "URGENTE", "PLANIFICAR"];
@@ -69,9 +69,9 @@ interface KPIProps {
 
 function KPICard({ label, value, sub, icon: Icon, accent = "neutral" }: KPIProps) {
   const accentText = {
-    danger:  "text-[var(--data-error)]",
-    warning: "text-[var(--data-warning)]",
-    success: "text-[var(--data-success)]",
+    danger:  "text-[var(--data-error-500)]",
+    warning: "text-[var(--data-warning-500)]",
+    success: "text-[var(--data-success-500)]",
     neutral: "text-[var(--text-primary)]",
   }[accent];
   return (
@@ -285,7 +285,7 @@ export default function SugerenciasCompraTab() {
   if (sugerencias.length === 0) {
     return (
       <div className="text-center py-12">
-        <Check className="h-12 w-12 text-[var(--data-success)] mx-auto mb-3" />
+        <Check className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-3" />
         <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
           Tu inventario está al día
         </SectionTitle>
@@ -386,7 +386,7 @@ export default function SugerenciasCompraTab() {
       {stats.withoutSupplier > 0 && filter !== "sin-proveedor" && (
         <button
           onClick={() => setFilter("sin-proveedor")}
-          className="w-full text-left flex items-start gap-2 rounded-lg border border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] transition-colors"
+          className="w-full text-left flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] transition-colors"
         >
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
@@ -493,7 +493,7 @@ export default function SugerenciasCompraTab() {
                           {s.suggestedSupplier ? (
                             <span className="truncate">→ {s.suggestedSupplier.name}</span>
                           ) : (
-                            <span className="text-[var(--data-warning)] font-semibold">⚠ Sin proveedor anterior</span>
+                            <span className="text-[var(--data-warning-500)] font-semibold">⚠ Sin proveedor anterior</span>
                           )}
                           {s.lastPrice != null && (
                             <span className="text-[var(--text-tertiary)] tabular-nums">Último S/{s.lastPrice.toFixed(2)}</span>

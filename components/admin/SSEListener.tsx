@@ -12,18 +12,19 @@ export default function SSEListener() {
     if (typeof window === "undefined") return;
 
     let es: EventSource | null = null;
-    let fallbackTimer: NodeJS.Timeout;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let unmounted = false;
 
     const connect = () => {
+      if (unmounted) return;
       es = new EventSource("/api/admin/sse");
 
       es.onmessage = (e) => {
         try {
           if (e.data.startsWith(":")) return; // ping
-          
+
           const ev = JSON.parse(e.data);
           if (ev.type === "new_order") {
-            // Fuerza un refetch si se están usando store globales / o un mutate local
             window.dispatchEvent(new CustomEvent("refresh-orders"));
             window.dispatchEvent(new CustomEvent("refresh-dashboard"));
           } else if (ev.type === "order_status_changed") {
@@ -34,7 +35,12 @@ export default function SSEListener() {
 
       es.onerror = () => {
         es?.close();
-        // Reconnect after 5s
+        es = null;
+        // BUG-FIX (audit 2026-05-05): clearTimeout previo antes de asignar nuevo —
+        // si onerror dispara 2 veces antes del reconnect, los timers anteriores
+        // se acumulaban causando reconexiones duplicadas.
+        if (fallbackTimer) clearTimeout(fallbackTimer);
+        if (unmounted) return;
         fallbackTimer = setTimeout(connect, 5000);
       };
     };
@@ -42,8 +48,9 @@ export default function SSEListener() {
     connect();
 
     return () => {
+      unmounted = true;
       if (es) es.close();
-      clearTimeout(fallbackTimer);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
   }, []);
 

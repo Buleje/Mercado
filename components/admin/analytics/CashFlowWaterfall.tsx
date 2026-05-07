@@ -128,7 +128,7 @@ export default function CashFlowWaterfall({
         color: step.isFinal
           ? "#3b82f6"
           : step.isPositive
-          ? "#00B4A6"
+          ? "var(--accent)"
           : "#ef4444",
       });
     });
@@ -175,7 +175,7 @@ export default function CashFlowWaterfall({
         </div>
         <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Salidas</p>
-          <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+          <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             {fmt(-(Math.abs(supplierPayments) + Math.abs(operationalCosts)))}
           </p>
         </div>
@@ -184,14 +184,14 @@ export default function CashFlowWaterfall({
             "flex-1 rounded-lg border p-2 text-center",
             isPositiveFinal
               ? "bg-primary/10 dark:bg-primary/20 border-primary/30"
-              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
           )}
         >
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Saldo final</p>
           <p
             className={cn(
               "text-sm font-bold",
-              isPositiveFinal ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              isPositiveFinal ? "text-primary dark:text-primary" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
             {fmt(finalBalance?.value ?? 0)}
@@ -258,7 +258,7 @@ export default function CashFlowWaterfall({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-primary" style={{ backgroundColor: "#00B4A6" }} />
+          <span className="w-3 h-3 rounded-sm bg-primary" style={{ backgroundColor: "var(--accent)" }} />
           Entradas
         </div>
         <div className="flex items-center gap-1">

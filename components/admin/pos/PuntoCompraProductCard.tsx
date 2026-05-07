@@ -41,7 +41,7 @@ export default memo(function PuntoCompraProductCard({
       aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
       className={cn(
         "relative border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 transition-all bg-white dark:bg-card",
-        "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
+        "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         isOutOfStock
           ? "opacity-60 cursor-not-allowed"
           : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
@@ -51,17 +51,17 @@ export default memo(function PuntoCompraProductCard({
       {(product.stock ?? 0) === 0 ? (
         <span
           aria-label="Producto agotado"
-          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error)]/30 text-[var(--data-error)] z-10"
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
         <span
           aria-label="Necesita reposición"
-          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning)]/30 text-[var(--data-warning)] z-10"
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] z-10"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
           REPONER
         </span>
       ) : null}
@@ -121,7 +121,7 @@ export default memo(function PuntoCompraProductCard({
       </div>
 
       {/* Cantidad sugerida */}
-      <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+      <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
         <span title={`Stock: ${product.stock ?? 0} | Meta: ${targetStock} → Pedir ${suggestedQty}`}>
           Sugerido: {suggestedQty} {product.unit}
         </span>

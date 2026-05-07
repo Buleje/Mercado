@@ -114,7 +114,7 @@ export default function CategoryImageUploader({
           </div>
         )}
         {isUsingDefault && (
-          <span className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[length:var(--ts-2xs)] font-bold text-white text-center py-0.5">
+          <span className="absolute bottom-0 left-0 right-0 bg-[var(--data-warning-500)]/90 text-[length:var(--ts-2xs)] font-bold text-white text-center py-0.5">
             global
           </span>
         )}
@@ -141,14 +141,14 @@ export default function CategoryImageUploader({
           <button
             type="button"
             onClick={handleClear}
-            className="inline-flex items-center gap-0.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] hover:text-red-500"
+            className="inline-flex items-center gap-0.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"
             title="Borrar imagen propia (vuelve al default global o sin imagen)"
           >
             <Trash2 className="h-3 w-3" /> Borrar
           </button>
         )}
         {error && (
-          <span className="text-[length:var(--ts-2xs)] font-medium text-red-500" title={error}>
+          <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--data-error-500)]" title={error}>
             Error
           </span>
         )}

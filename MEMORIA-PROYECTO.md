@@ -1,5 +1,6 @@
 # MEMORIA-PROYECTO.md — Buleje
 
+> **Última verificación:** 2026-05-04 · Fuente: `package.json`, `CLAUDE.md`, `docs/HISTORY.md`
 > **Versión:** v15 — slim (2026-04-26). Snapshot histórico (133 tabs, 14 fases ERP, batches) movido a `docs/HISTORY.md`.
 > **Propósito:** contexto vivo NO derivable del código (decisiones, patrones, operaciones críticas, gaps).
 
@@ -203,3 +204,101 @@ Después usar `prisma migrate deploy` para aplicar las genuinamente nuevas. `dep
 | `docs/TECH-DEBT.md` | Backlog técnico activo |
 | `README.md` | Quick start, deploy, API endpoints |
 | `SESSION_HANDOFF.md` | Estado última sesión |
+
+---
+
+## 2026-05-05 — Sesión 15: 35 fixes seguridad
+
+Sesión enfocada en cerrar hallazgos de auditoría de seguridad antes del
+canary 25%. 35 fixes aplicados en 6 áreas + 3 ADRs + 2 docs nuevos.
+
+### POS / Sales / Caja
+- `app/api/sales/[id]/route.ts` — IDOR cross-tenant: `findFirst` con
+  `tenantId` en GET, PATCH, DELETE.
+- `app/api/sales/refund/[id]/route.ts` — mismo guard antes de revertir
+  inventario.
+- `app/api/cash-register/close/[id]/route.ts` — bloquea cierre de
+  turno ajeno; chequea `cashier.tenantId === auth.tenantId`.
+- `lib/db/sales.db.ts` — métodos `byId`, `update`, `delete` pasan a
+  recibir `tenantId` como 1er argumento (breaking refactor de 12
+  callsites).
+
+### SUNAT / Facturación electrónica
+- `app/api/sunat/comprobante/[id]/route.ts` — IDOR fix: la consulta de
+  estado de comprobante validaba sólo por `id`.
+- `app/api/sunat/anular/[id]/route.ts` — guard antes de generar nota
+  de crédito.
+- `app/api/invoices/boleta/[id]/route.ts` — guard antes de exponer el
+  PDF firmado.
+- `lib/sunat/sender.ts` — `tenantId` validado antes de cualquier
+  envío a Nubefact (evita usar credenciales de otro tenant).
+
+### Delivery
+- `app/api/delivery/me/assignments/[id]/route.ts` — guard de
+  `assignment.partner.tenantId === auth.tenantId`.
+- `app/api/delivery/me/assignments/[id]/proof/route.ts` — guard +
+  ADR-094: foto de prueba ahora vive en bucket privado con UUID v4 y
+  signed URL de 60min en GET.
+- `app/api/delivery/assignments/[id]/deliver/route.ts` — guard antes
+  de marcar como entregada.
+- `app/api/delivery/tip/[orderId]/route.ts` — token firmado validado
+  contra `Order.id + tenantId`; antes aceptaba cualquier `orderId`.
+
+### Webhooks (idempotencia atómica + anti-replay)
+- `app/api/billing/mp-webhook/route.ts` — refactor a patrón
+  `create + catch P2002` (ADR-092). Antes `findUnique + upsert` con
+  race window. Aplicado tanto al handler de `payment` como al de
+  `subscription_preapproval` y `subscription_authorized_payment`.
+- Validación timestamp de `x-signature` (anti-replay >5min).
+- Fail-closed: 503 si falta `MERCADOPAGO_WEBHOOK_SECRET`.
+- `app/api/billing/webhook/route.ts` (Stripe) — mismo patrón aplicado
+  con `event.id` como key.
+- `app/api/whatsapp/yape-capture/route.ts` — idempotencia por
+  `MessageSid`; storage migrado a UUID + signed URL.
+
+### Billing / SaaS
+- `app/api/billing/checkout/route.ts` — validación de plan target ≥
+  plan actual (no permitir downgrade vía checkout); antes se aceptaba
+  cualquier `planId` con monto manipulado en el cliente.
+- Totales calculados 100% en backend desde `MP_PLAN_ITEMS` /
+  `STRIPE_PRICE_IDS`. Cliente sólo ve preview (Regla 6).
+- `lib/billing/trial-suspension.ts` — handler de gracia +24h con
+  `tenantId` propagado.
+
+### Marketplace
+- `app/api/marketplace/payment-proof/route.ts` — guard cross-tenant
+  + storage privado (ADR-094).
+- `app/api/marketplace/reviews/route.ts` — POST requiere
+  `customerToken` firmado o reCAPTCHA score >0.5.
+- `lib/db/marketplace.db.ts` — `commissionFor` ahora requiere
+  `tenantId` para evitar leer config de otro vendor.
+
+### Documentación nueva
+- `docs/adr/092-webhook-idempotency-unique-p2002.md` — patrón canónico
+  de idempotencia (UNIQUE + P2002).
+- `docs/adr/093-cross-tenant-guard-pattern.md` — patrón canónico
+  Source 0 + `findFirst({ id, tenantId })`; lista de tablas exentas.
+- `docs/adr/094-signed-urls-pii.md` — UUID v4 + bucket privado +
+  signed URL para todo PII (delivery, payment proofs, vendor docs,
+  SUNAT futuro).
+- `docs/security/public-endpoints.md` — inventario canónico de
+  endpoints sin auth con justificación, mitigación y riesgo residual
+  por cada uno.
+
+### Pendientes detectados
+- `app/api/api-keys/route.ts` — sigue sin `requireAdmin`. P0 para
+  próxima sesión.
+- `app/api/supplier/*` — guard de sesión `requireSupplier`
+  inconsistente. PR de unificación pendiente.
+- `app/api/birthday-coupons`, `customer-preferences`, `shopping-lists`,
+  `stock-alerts`, `reorder-alerts`, `daily-digest`,
+  `email-automation` — auditar IDOR sobre `customerId`.
+- Migración de PII existente: ~3000 fotos de delivery proof a re-subir
+  a bucket privado con UUID. Script en backlog.
+
+### Verificación
+- `npx tsc --noEmit` pasa.
+- `npm run lint` pasa.
+- `scripts/visual-verify-admin-focused.mjs` 9/9 verde.
+- Tests E2E de checkout MP/Stripe verde con webhooks simulados de
+  carrera (2 requests simultáneos al mismo `paymentId`).

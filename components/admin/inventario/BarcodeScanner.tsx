@@ -32,7 +32,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
 
       {error ? (
         <div className="text-center px-6">
-          <div className="text-[var(--data-error)] text-lg mb-2">No disponible</div>
+          <div className="text-[var(--data-error-500)] text-lg mb-2">No disponible</div>
           <p className="text-white/70 text-sm">{error}</p>
           <p className="text-white/50 text-xs mt-3">
             Usa Google Chrome en un dispositivo Android para escanear.
@@ -59,7 +59,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
             <div className="relative w-72 h-48 border-2 border-white/50 rounded-xl">
               {/* Sweep line animation */}
               <div
-                className="absolute left-2 right-2 h-0.5 bg-[var(--data-error)] rounded"
+                className="absolute left-2 right-2 h-0.5 bg-[var(--data-error-500)] rounded"
                 style={{
                   animation: 'barcodeSweep 2s ease-in-out infinite',
                 }}

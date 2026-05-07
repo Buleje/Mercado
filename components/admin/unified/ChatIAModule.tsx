@@ -154,10 +154,10 @@ export default function ChatIAModule() {
   const usagePct = Math.min(100, (usage.used / usage.limit) * 100);
   const usageColor =
     usagePct >= 90
-      ? "bg-[var(--data-error)]"
+      ? "bg-[var(--data-error-500)]"
       : usagePct >= 70
-        ? "bg-[var(--data-warning)]"
-        : "bg-[var(--data-success)]";
+        ? "bg-[var(--data-warning-500)]"
+        : "bg-[var(--data-success-500)]";
 
   // ESC sale de maximize
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function ChatIAModule() {
       <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
-            <Sparkles className="h-4 w-4 text-[var(--data-success)]" />
+            <Sparkles className="h-4 w-4 text-[var(--data-success-500)]" />
           </span>
           <div className="min-w-0">
             <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight truncate">

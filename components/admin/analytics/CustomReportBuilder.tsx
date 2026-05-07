@@ -628,7 +628,7 @@ export default function CustomReportBuilder({
                 </button>
                 <button
                   onClick={() => deleteTemplate(t.id)}
-                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-[var(--data-error)] border border-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-[var(--data-error-500)] border border-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                 >
                   Borrar
                 </button>

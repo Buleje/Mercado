@@ -449,6 +449,7 @@ export async function POST(req: NextRequest) {
                       action: mapping.action,
                       payload: args,
                       tenantId: auth.tenantId,
+                      actorRole: auth.role, // SECURITY 2026-05-06 (audit AI #1)
                     });
                     toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
                   }
@@ -590,6 +591,7 @@ export async function POST(req: NextRequest) {
               action: mapping.action,
               payload: args,
               tenantId: auth.tenantId,
+              actorRole: auth.role, // SECURITY 2026-05-06 (audit AI #1)
             });
 
             toolResult = JSON.stringify(

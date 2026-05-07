@@ -6,17 +6,17 @@ import { z } from "zod";
 const ZoneSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(100),
-  color: z.string().max(50).default("bg-emerald-500"),
+  color: z.string().max(50).default("bg-[var(--data-success-500)]"),
   deliveryFee: z.number().min(0).default(3),
   estimatedMin: z.number().min(0).default(30),
   neighborhoods: z.array(z.string()).default([]),
 });
 
 const DEFAULT_ZONES = [
-  { id: "z-1", name: "Zona Centro", color: "bg-emerald-500", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Jr. Ucayali", "Av. Centenario"] },
+  { id: "z-1", name: "Zona Centro", color: "bg-[var(--data-success-500)]", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Jr. Ucayali", "Av. Centenario"] },
   { id: "z-2", name: "Zona Norte", color: "bg-green-500", deliveryFee: 4, estimatedMin: 30, neighborhoods: ["Manantay", "San Fernando", "9 de Octubre"] },
-  { id: "z-3", name: "Zona Sur", color: "bg-amber-500", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "Puerto Callao", "San José"] },
-  { id: "z-4", name: "Zona Este", color: "bg-red-500", deliveryFee: 5, estimatedMin: 40, neighborhoods: ["Campo Verde", "Nueva Requena"] },
+  { id: "z-3", name: "Zona Sur", color: "bg-[var(--data-warning-500)]", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "Puerto Callao", "San José"] },
+  { id: "z-4", name: "Zona Este", color: "bg-[var(--data-error-500)]", deliveryFee: 5, estimatedMin: 40, neighborhoods: ["Campo Verde", "Nueva Requena"] },
 ];
 
 // GET /api/admin/delivery-zones

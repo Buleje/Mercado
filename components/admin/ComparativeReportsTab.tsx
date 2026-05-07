@@ -118,8 +118,8 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
     <span className={cn(
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
-        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-        : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+        : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     )}>
       {change > 0
         ? <TrendingUp className="h-2.5 w-2.5" />
@@ -190,8 +190,8 @@ export default function ComparativeReportsTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
@@ -272,7 +272,7 @@ export default function ComparativeReportsTab() {
                         <td className="px-4 py-3 text-right">
                           <span className={cn(
                             "text-xs font-bold font-mono",
-                            change >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]",
+                            change >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                           )}>
                             {change >= 0 ? "+" : ""}{change.toFixed(1)}%
                           </span>
@@ -316,7 +316,7 @@ export default function ComparativeReportsTab() {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey={periods.labelA} fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={periods.labelA} fill="var(--accent)" radius={[4, 4, 0, 0]} />
                   <Bar dataKey={periods.labelB} fill="#f4a261" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

@@ -436,14 +436,14 @@ export default function POSReturnModal({
                 result.success ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]"
               )}>
                 {result.success ? (
-                  <Check className="h-7 w-7 text-[var(--data-success)]" />
+                  <Check className="h-7 w-7 text-[var(--data-success-500)]" />
                 ) : (
-                  <X className="h-7 w-7 text-[var(--data-error)]" />
+                  <X className="h-7 w-7 text-[var(--data-error-500)]" />
                 )}
               </div>
               <p className={cn(
                 "text-sm font-bold",
-                result.success ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                result.success ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
               )}>
                 {result.message}
               </p>
@@ -485,7 +485,7 @@ export default function POSReturnModal({
                 </button>
               )}
               {ncResult && (
-                <p className={cn("text-xs font-bold", ncResult.startsWith("Error") ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
+                <p className={cn("text-xs font-bold", ncResult.startsWith("Error") ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
                   {ncResult}
                 </p>
               )}

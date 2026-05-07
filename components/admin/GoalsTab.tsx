@@ -28,10 +28,10 @@ interface Goal {
 }
 
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType; trackable: boolean }> = {
-  ventas:    { label: "Ventas",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
-  pedidos:   { label: "Pedidos",   color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
+  ventas:    { label: "Ventas",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
+  pedidos:   { label: "Pedidos",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
   clientes:  { label: "Clientes",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Users,      trackable: true  },
-  productos: { label: "Productos", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
+  productos: { label: "Productos", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
   caja:      { label: "Caja",      color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Coins,      trackable: false },
 };
 
@@ -155,20 +155,20 @@ function getStatusBorder(status: GoalStatus): string {
 }
 
 function StatusIcon({ status }: { status: GoalStatus }) {
-  if (status === "completed") return <CheckCircle2 className="h-4 w-4 text-[var(--data-success)]" aria-label="Completada" />;
-  if (status === "overdue")   return <AlertTriangle className="h-4 w-4 text-[var(--data-error)]" aria-label="Vencida" />;
-  if (status === "urgent")    return <Clock className="h-4 w-4 text-[var(--data-warning)]" aria-label="Por vencer" />;
+  if (status === "completed") return <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)]" aria-label="Completada" />;
+  if (status === "overdue")   return <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)]" aria-label="Vencida" />;
+  if (status === "urgent")    return <Clock className="h-4 w-4 text-[var(--data-warning-500)]" aria-label="Por vencer" />;
   return <Target className="h-4 w-4 text-[var(--text-tertiary)]" aria-label="Activa" />;
 }
 
 function ProgressBar({ current, target }: { current: number; target: number }) {
   const pct = Math.min(100, target > 0 ? Math.round((current / target) * 100) : 0);
-  const barColor = pct >= 100 ? "bg-[var(--data-success)]" : pct >= 70 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
+  const barColor = pct >= 100 ? "bg-[var(--data-success-500)]" : pct >= 70 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs font-semibold">
         <span className="text-[var(--text-primary)]">{current.toLocaleString("es-PE")} / {target.toLocaleString("es-PE")}</span>
-        <span className={cn(pct >= 100 ? "text-[var(--data-success)]" : pct >= 70 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{pct}%</span>
+        <span className={cn(pct >= 100 ? "text-[var(--data-success-500)]" : pct >= 70 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{pct}%</span>
       </div>
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
         <div
@@ -190,8 +190,8 @@ function KPISummary({ goals }: { goals: Goal[] }) {
 
   const cards = [
     { label: "Activas",        value: String(total - completed), icon: Target,          color: "text-primary" },
-    { label: "Logradas",       value: String(completed),         icon: CheckCircle2,    color: "text-[var(--data-success)]" },
-    { label: "Vencidas",       value: String(overdue),           icon: AlertTriangle,   color: "text-[var(--data-error)]" },
+    { label: "Logradas",       value: String(completed),         icon: CheckCircle2,    color: "text-[var(--data-success-500)]" },
+    { label: "Vencidas",       value: String(overdue),           icon: AlertTriangle,   color: "text-[var(--data-error-500)]" },
     { label: "Promedio global", value: `${avgPct}%`,             icon: BarChart3,       color: "text-primary" },
   ];
 
@@ -337,6 +337,8 @@ export default function GoalsTab() {
   }, [form.category, form.period, autoStats]);
 
   const save = async () => {
+    // BUG-FIX (audit 2026-05-05): guard contra doble-submit que creaba metas duplicadas
+    if (saving) return;
     if (!form.name.trim() || !form.target) return;
     setSaving(true);
     const targetNum  = parseFloat(form.target);
@@ -354,10 +356,15 @@ export default function GoalsTab() {
       dueDate: form.dueDate || undefined,
     };
     try {
-      if (editId) {
-        await fetch(`/api/goals/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
-      } else {
-        await fetch("/api/goals", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      const res = editId
+        ? await fetch(`/api/goals/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) })
+        : await fetch("/api/goals", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      // BUG-FIX (audit 2026-05-05): chequear res.ok — antes el modal se cerraba aunque el API fallara
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(errBody?.error || `No se pudo guardar la meta (HTTP ${res.status})`);
+        setSaving(false);
+        return;
       }
       setShowForm(false);
       await load();
@@ -381,22 +388,46 @@ export default function GoalsTab() {
 
   const remove = async (id: string) => {
     const goal = goals.find(g => g.id === id);
-    await fetch(`/api/goals/${id}`, { method: "DELETE", headers: csrfHeaders() });
+    // BUG-FIX (audit 2026-05-05): optimistic update con rollback si el API falla
+    const prevGoals = goals;
     setGoals(prev => prev.filter(g => g.id !== id));
-    if (goal) toast(`Meta eliminada: ${goal.name}`);
+    try {
+      const res = await fetch(`/api/goals/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        setGoals(prevGoals); // rollback
+        toast.error("No se pudo eliminar la meta. Reintentá.");
+        return;
+      }
+      if (goal) toast(`Meta eliminada: ${goal.name}`);
+    } catch {
+      setGoals(prevGoals); // rollback
+      toast.error("Error de conexión. Reintentá.");
+    }
   };
 
   const updateProgress = async (id: string, current: number) => {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
     const wasCompleted = goal.current >= goal.target;
-    await fetch(`/api/goals/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ current }) });
+    // BUG-FIX (audit 2026-05-05): rollback en error de PATCH
+    const prevCurrent = goal.current;
     setGoals(prev => prev.map(g => g.id === id ? { ...g, current } : g));
-    if (current >= goal.target && !wasCompleted) {
-      toast.success(`Meta alcanzada: ${goal.name}`, {
-        description: `Llegaste a ${formatNumber(current, goal.unit)} de ${formatNumber(goal.target, goal.unit)}.`,
-        duration: 4000,
-      });
+    try {
+      const res = await fetch(`/api/goals/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ current }) });
+      if (!res.ok) {
+        setGoals(prev => prev.map(g => g.id === id ? { ...g, current: prevCurrent } : g));
+        toast.error("No se pudo actualizar el progreso");
+        return;
+      }
+      if (current >= goal.target && !wasCompleted) {
+        toast.success(`Meta alcanzada: ${goal.name}`, {
+          description: `Llegaste a ${formatNumber(current, goal.unit)} de ${formatNumber(goal.target, goal.unit)}.`,
+          duration: 4000,
+        });
+      }
+    } catch {
+      setGoals(prev => prev.map(g => g.id === id ? { ...g, current: prevCurrent } : g));
+      toast.error("Error de conexión");
     }
   };
 
@@ -536,7 +567,7 @@ export default function GoalsTab() {
                       <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     </button>
                     <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
-                      <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)]" />
+                      <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
                     </button>
                   </div>
                 </div>
@@ -546,10 +577,10 @@ export default function GoalsTab() {
                 {/* Forecast */}
                 {forecast && status !== "completed" && (
                   <div className="flex items-center gap-1.5 text-xs">
-                    <TrendingUp className={cn("h-3.5 w-3.5", forecast.willHit ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")} />
+                    <TrendingUp className={cn("h-3.5 w-3.5", forecast.willHit ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")} />
                     <span className="text-[var(--text-secondary)]">
                       A este ritmo:{" "}
-                      <strong className={forecast.willHit ? "text-[var(--data-success)]" : "text-[var(--data-warning)]"}>
+                      <strong className={forecast.willHit ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"}>
                         {formatNumber(forecast.projected, g.unit)}
                       </strong>
                       {forecast.willHit ? " — vas a superar" : ` (${Math.round(forecast.pctOfTarget)}% de la meta)`}
@@ -562,14 +593,14 @@ export default function GoalsTab() {
                   <div className="flex items-center gap-1.5 text-xs">
                     <Calendar className={cn(
                       "h-3.5 w-3.5",
-                      dueInfo.tone === "danger" ? "text-[var(--data-error)]" :
-                      dueInfo.tone === "warn"   ? "text-[var(--data-warning)]" :
+                      dueInfo.tone === "danger" ? "text-[var(--data-error-500)]" :
+                      dueInfo.tone === "warn"   ? "text-[var(--data-warning-500)]" :
                       "text-[var(--text-tertiary)]"
                     )} />
                     <span className={cn(
                       "font-medium",
-                      dueInfo.tone === "danger" ? "text-[var(--data-error)]" :
-                      dueInfo.tone === "warn"   ? "text-[var(--data-warning)]" :
+                      dueInfo.tone === "danger" ? "text-[var(--data-error-500)]" :
+                      dueInfo.tone === "warn"   ? "text-[var(--data-warning-500)]" :
                       "text-[var(--text-tertiary)]"
                     )}>
                       {dueInfo.text}
@@ -635,7 +666,7 @@ export default function GoalsTab() {
                       <p className="font-bold text-sm text-[var(--text-primary)]">{t.label}</p>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                       {auto != null && auto > 0 && (
-                        <p className="text-xs text-[var(--data-success)] mt-1.5 font-semibold">
+                        <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
                           Hoy llevás {formatNumber(Math.round(auto), t.unit)}
                         </p>
                       )}
@@ -815,7 +846,7 @@ function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) 
                 <p className="font-bold text-sm text-[var(--text-primary)]">{t.label}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                 {auto != null && auto > 0 && (
-                  <p className="text-xs text-[var(--data-success)] mt-1.5 font-semibold">
+                  <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
                     Hoy llevás {formatNumber(Math.round(auto), t.unit)}
                   </p>
                 )}

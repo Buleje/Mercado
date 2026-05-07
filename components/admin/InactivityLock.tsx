@@ -110,8 +110,8 @@ export default function InactivityLock({
           className={cn(
             "fixed bottom-4 left-1/2 -translate-x-1/2 z-40",
             "flex items-center gap-3 px-5 py-3 rounded-xl",
-            "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]",
-            "text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm font-medium",
+            "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",
+            "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm font-medium",
             "animate-in slide-in-from-bottom-4 duration-[var(--dur-base)]"
           )}
           role="alert"
@@ -124,7 +124,7 @@ export default function InactivityLock({
           </span>
           <button
             onClick={resetTimers}
-            className="ml-2 text-xs underline underline-offset-2 hover:text-[var(--data-warning)] dark:hover:text-[var(--data-warning)] transition-colors"
+            className="ml-2 text-xs underline underline-offset-2 hover:text-[var(--data-warning-500)] dark:hover:text-[var(--data-warning-500)] transition-colors"
           >
             Seguir activo
           </button>

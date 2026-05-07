@@ -23,10 +23,10 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
         : "var(--data-error)";
   const textColor =
     clamped >= 70
-      ? "text-[var(--data-success)]"
+      ? "text-[var(--data-success-500)]"
       : clamped >= 40
-        ? "text-[var(--data-warning)]"
-        : "text-[var(--data-error)]";
+        ? "text-[var(--data-warning-500)]"
+        : "text-[var(--data-error-500)]";
 
   return (
     <div className="inline-flex flex-col items-center gap-1">

@@ -9,6 +9,10 @@ import {
   CheckCircle2,
   X,
   Gift,
+  Truck,
+  HandCoins,
+  Sparkles,
+  Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
@@ -22,10 +26,8 @@ interface Promo {
 }
 
 export interface CheckoutPaymentSectionProps {
-  // Tip
   tip: number;
   onTipChange: (v: number) => void;
-  // Coupon
   couponCode: string;
   onCouponCodeChange: (v: string) => void;
   couponApplied: boolean;
@@ -34,7 +36,6 @@ export interface CheckoutPaymentSectionProps {
   validatingCoupon: boolean;
   onValidateCoupon: () => void;
   onRemoveCoupon: () => void;
-  // Totals
   total: number;
   finalTotal: number;
   discount: number;
@@ -42,11 +43,9 @@ export interface CheckoutPaymentSectionProps {
   tierDiscount: number;
   tierDiscountPct: number;
   loyaltyTier: string | null;
-  // Loyalty redemption
   loyaltyPoints: number | null;
   redemptionSoles: number;
   onRedemptionChange: (soles: number) => void;
-  // Payment method
   paymentMethod: PaymentMethod | null;
   onPaymentMethodChange: (method: PaymentMethod) => void;
   yapeEnabled: boolean;
@@ -55,12 +54,68 @@ export interface CheckoutPaymentSectionProps {
   yapeOpNumber: string;
   onYapeOpNumberChange: (v: string) => void;
   showPaymentHint: boolean;
-  // Submit
   submitting: boolean;
   submitError: string;
   onBack: () => void;
-  // Delivery ETA (render in this column)
   deliveryEtaNode?: React.ReactNode;
+}
+
+/**
+ * Header de sub-sección — icono brand + label brand-dark.
+ * Reemplaza la numeración "1 2 3" por algo más elegante.
+ */
+function SectionHeader({
+  icon: Icon,
+  title,
+  hint,
+}: {
+  icon: React.ComponentType<{
+    className?: string;
+    strokeWidth?: number;
+    style?: React.CSSProperties;
+  }>;
+  title: string;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div
+        className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background:
+            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+        }}
+      >
+        <Icon
+          className="h-4 w-4"
+          strokeWidth={2.25}
+          style={{ color: "var(--color-primary-dark, #009690)" }}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-sm font-extrabold leading-tight"
+          style={{ color: "var(--color-primary-dark, #009690)" }}
+        >
+          {title}
+        </p>
+        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
+function BrandHair() {
+  return (
+    <div
+      className="h-px"
+      aria-hidden="true"
+      style={{
+        background:
+          "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+      }}
+    />
+  );
 }
 
 export function CheckoutPaymentSection({
@@ -96,272 +151,71 @@ export function CheckoutPaymentSection({
   submitError,
   onBack,
 }: CheckoutPaymentSectionProps) {
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/Lima" }),
+  );
+  const h = now.getHours();
+  const isOpen = h >= 8 && h < 21;
+  const eta = isOpen ? "~30 minutos" : "Mañana 8 a 10 am";
+  const etaDetail = isOpen
+    ? "Empezamos a preparar al confirmar"
+    : "Abrimos a las 8:00 AM";
+
   return (
-    <div className="space-y-4 pl-0 sm:pl-6 pt-5 sm:pt-0">
-      {/* Delivery time estimate */}
-      {(() => {
-        const now = new Date(
-          new Date().toLocaleString("en-US", { timeZone: "America/Lima" })
-        );
-        const h = now.getHours();
-        const isOpen = h >= 8 && h < 21;
-        const eta = isOpen ? "~30 minutos" : "Manana de 8:00 a 10:00 am";
-        const etaDetail = isOpen
-          ? "Tu pedido esta siendo preparado"
-          : "Abrimos a las 8:00 AM";
-        return (
-          <m.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 via-primary/8 to-emerald-50/50 dark:from-primary/10 dark:via-primary/15 dark:to-emerald-900/10 p-4 relative overflow-hidden"
-          >
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="flex items-center gap-3.5 relative z-10">
-              <m.div
-                animate={{ x: [0, 4, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"
-              >
-                <span className="text-2xl">🚚</span>
-              </m.div>
-              <div className="flex-1">
-                <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-wider">
-                  Entrega estimada
-                </p>
-                <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">
-                  {eta}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">{etaDetail}</p>
-              </div>
-              <div
-                className={`h-3 w-3 rounded-full shrink-0 ${
-                  isOpen ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                }`}
-              />
-            </div>
-            {/* Progress bar */}
-            {isOpen && (
-              <div className="mt-3 relative z-10">
-                <div className="h-1.5 bg-gray-200/60 dark:bg-gray-700/40 rounded-full overflow-hidden">
-                  <m.div
-                    className="h-full bg-linear-to-r from-primary to-emerald-400 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: "15%" }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1.5 text-[length:var(--ts-2xs)] font-semibold text-gray-400">
-                  <span>Confirmado</span>
-                  <span>Preparando</span>
-                  <span>En camino</span>
-                  <span>Entregado</span>
-                </div>
-              </div>
-            )}
-          </m.div>
-        );
-      })()}
-
-      {/* Tip */}
-      <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-          <span className="text-base">🛵</span> Propina para el repartidor
-        </p>
-        <div className="flex gap-2">
-          {[0, 1, 2, 5].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onTipChange(v)}
-              className={cn(
-                "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border-2",
-                tip === v
-                  ? "border-primary bg-primary text-white shadow-md shadow-primary/25"
-                  : "border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-muted hover:border-primary/50 hover:text-primary bg-white dark:bg-card"
-              )}
-            >
-              {v === 0 ? "Sin\npropina" : `S/${v}`}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Coupon */}
-      <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-          <Tag className="h-4 w-4" /> Cupon de descuento
-        </p>
-        {couponApplied ? (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 px-3 py-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex-1">
-              {couponMsg}
-            </span>
-            <button
-              type="button"
-              onClick={onRemoveCoupon}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-            >
-              Quitar
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => onCouponCodeChange(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
-              placeholder="CODIGO"
-              className="flex-1 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-card px-3 py-2 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-            <button
-              type="button"
-              onClick={onValidateCoupon}
-              disabled={validatingCoupon || !couponCode.trim()}
-              className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-50 hover:bg-primary/90 transition-colors"
-            >
-              {validatingCoupon ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Aplicar"
-              )}
-            </button>
-          </div>
-        )}
-        {couponMsg && !couponApplied && (
-          <p className="text-xs text-red-500 mt-1.5">{couponMsg}</p>
-        )}
-      </div>
-
-      {/* Totals */}
-      <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm">
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">
-            Resumen del pago
-          </p>
-        </div>
-        <div className="flex justify-between px-4 py-2.5 text-sm bg-white dark:bg-card">
-          <span className="text-gray-500">Subtotal</span>
-          <span className="font-semibold text-gray-800 dark:text-foreground">
-            S/{total.toFixed(2)}
-          </span>
-        </div>
-        {discount > 0 && promo && (
-          <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-              Promo {promo.discountPercent}% off
-            </span>
-            <span className="font-bold text-emerald-600">
-              &minus;S/{discount.toFixed(2)}
-            </span>
-          </div>
-        )}
-        {couponApplied && couponDiscount > 0 && (
-          <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-              Cupon {couponCode}
-            </span>
-            <span className="font-bold text-emerald-600">
-              &minus;S/{couponDiscount.toFixed(2)}
-            </span>
-          </div>
-        )}
-        {tierDiscount > 0 && loyaltyTier && (
-          <div className="flex justify-between px-4 py-2.5 text-sm bg-purple-50/50 dark:bg-purple-900/10">
-            <span className="text-[var(--accent)] dark:text-purple-400 font-semibold flex items-center gap-1">
-              <Award className="h-3.5 w-3.5" /> Tier {loyaltyTier} (
-              {tierDiscountPct}%)
-            </span>
-            <span className="font-bold text-purple-600">
-              &minus;S/{tierDiscount.toFixed(2)}
-            </span>
-          </div>
-        )}
-        {/* Loyalty points redemption */}
-        {loyaltyPoints !== null && loyaltyPoints >= 50 && (() => {
-          const PTS_PER_SOL = 50;
-          const maxSoles = Math.floor(loyaltyPoints / PTS_PER_SOL);
-          return (
-            <div className="px-4 py-3 bg-sky-50/50 dark:bg-sky-900/10 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sky-700 dark:text-sky-400 font-semibold text-sm flex items-center gap-1">
-                  <Gift className="h-3.5 w-3.5" /> Canjear puntos
-                  <span className="text-xs font-normal opacity-70">({loyaltyPoints} pts)</span>
-                </span>
-                {redemptionSoles > 0 && (
-                  <span className="font-bold text-sky-600 text-sm">
-                    &minus;S/{redemptionSoles.toFixed(2)}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={0}
-                  max={maxSoles}
-                  step={1}
-                  value={redemptionSoles}
-                  onChange={(e) => onRedemptionChange(Number(e.target.value))}
-                  className="flex-1 h-1.5 accent-sky-500 cursor-pointer"
-                  aria-label="Soles a canjear con puntos"
-                />
-                <span className="text-xs text-sky-600 font-bold w-16 text-right">
-                  S/{redemptionSoles} ({redemptionSoles * PTS_PER_SOL} pts)
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] text-sky-500 dark:text-sky-400/70">
-                50 puntos = S/ 1 · Máximo S/{maxSoles} con tus puntos
-              </p>
-            </div>
-          );
-        })()}
-        {tip > 0 && (
-          <div className="flex justify-between px-4 py-2.5 text-sm bg-amber-50/50 dark:bg-amber-900/10">
-            <span className="text-amber-700 dark:text-amber-400 font-semibold">
-              Propina
-            </span>
-            <span className="font-bold text-amber-600">
-              +S/{tip.toFixed(2)}
-            </span>
-          </div>
-        )}
-        <div className="flex justify-between items-center px-4 py-4 bg-linear-to-r from-primary/8 to-emerald-400/8 dark:from-primary/15 dark:to-emerald-500/15 border-t-2 border-primary/30">
-          <span className="font-extrabold text-gray-900 dark:text-foreground text-base">
-            Total a pagar
-          </span>
-          <m.span
-            key={finalTotal}
-            initial={{ scale: 1.2, color: "#00B4A6" }}
-            animate={{ scale: 1, color: "#00B4A6" }}
-            className="text-2xl font-extrabold text-primary"
-          >
-            S/{finalTotal.toFixed(2)}
-          </m.span>
-        </div>
-        {/* Points you'll earn with this purchase */}
-        {loyaltyPoints !== null && finalTotal >= 5 && (
-          <div className="flex justify-between items-center px-4 py-2 bg-primary/5 dark:bg-primary/10">
-            <span className="text-xs text-primary font-medium flex items-center gap-1">
-              ⭐ Ganarás con esta compra
-            </span>
-            <span className="text-xs font-bold text-primary">
-              +{Math.floor(finalTotal)} puntos
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Payment method */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
-          <span className="text-base">💳</span> Metodo de pago
-        </p>
+    <div className="space-y-5 pl-0 sm:pl-6 pt-5 sm:pt-0">
+      {/* ─── ETA — banner brand sólido ─── */}
+      <m.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden flex items-center gap-3 rounded-2xl px-3.5 py-3 text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+          boxShadow:
+            "0 10px 24px -10px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+        }}
+      >
         <div
-          className="grid grid-cols-2 gap-3"
+          className="absolute -top-6 -right-6 h-20 w-20 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.10)" }}
+          aria-hidden="true"
+        />
+        <m.div
+          animate={isOpen ? { x: [0, 3, 0] } : {}}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          className="relative h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0"
+        >
+          <Truck className="h-5 w-5 text-white" strokeWidth={2.25} />
+        </m.div>
+        <div className="relative flex-1 min-w-0">
+          <p className="text-base font-extrabold text-white leading-tight">
+            {eta}
+          </p>
+          <p className="text-xs text-white/85 leading-tight mt-0.5">{etaDetail}</p>
+        </div>
+        <span
+          className={cn(
+            "relative h-2.5 w-2.5 rounded-full shrink-0",
+            isOpen
+              ? "bg-white animate-pulse"
+              : "bg-[var(--data-warning-300)]",
+          )}
+          aria-hidden="true"
+        />
+      </m.div>
+
+      {/* ═══ Método de pago ═══ */}
+      <section className="space-y-3">
+        <SectionHeader
+          icon={Wallet}
+          title="Método de pago"
+          hint="Elegí cómo pagar"
+        />
+
+        <div
+          className="grid grid-cols-2 gap-2.5"
           role="radiogroup"
-          aria-label="Metodo de pago"
+          aria-label="Método de pago"
         >
           {yapeEnabled && (
             <m.button
@@ -370,54 +224,49 @@ export function CheckoutPaymentSection({
               aria-checked={paymentMethod === "yape"}
               data-testid="payment-yape"
               onClick={() => onPaymentMethodChange("yape")}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                damping: 15,
-                stiffness: 300,
-                delay: 0.1,
-              }}
-              whileHover={{ scale: 1.04, y: -2 }}
               whileTap={{ scale: 0.97 }}
               className={cn(
-                "flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
-                paymentMethod === "yape"
-                  ? "border-purple-400 bg-purple-50 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/30"
-                  : "border-gray-200 hover:border-purple-300 hover:shadow-md"
+                "relative flex flex-col items-center justify-center gap-2 h-24 rounded-2xl border-2 transition-all",
               )}
+              style={
+                paymentMethod === "yape"
+                  ? {
+                      borderColor: "var(--color-primary, #00B4A6)",
+                      background:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                      boxShadow:
+                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                    }
+                  : {
+                      borderColor:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                      background: "var(--color-card)",
+                    }
+              }
             >
               {paymentMethod === "yape" && (
-                <m.div
-                  layoutId="payment-glow"
-                  className="absolute inset-0 bg-linear-to-br from-purple-100/80 to-purple-50/40 dark:from-purple-900/20 dark:to-purple-800/10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
+                <span
+                  className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-white"
+                  style={{ background: "var(--color-primary, #00B4A6)" }}
+                  aria-hidden="true"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </span>
               )}
-              <m.div
-                animate={
-                  paymentMethod === "yape"
-                    ? { scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
-                className="relative z-10 h-12 w-12 rounded-xl bg-purple-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg"
-              >
+              <div className="h-10 w-10 rounded-lg bg-[#742C8D] flex items-center justify-center text-white font-extrabold text-xl">
                 Y
-              </m.div>
+              </div>
               <span
-                className={cn(
-                  "relative z-10 text-sm font-bold",
-                  paymentMethod === "yape" ? "text-[var(--accent)]" : "text-gray-500"
-                )}
+                className="text-sm font-extrabold"
+                style={{
+                  color:
+                    paymentMethod === "yape"
+                      ? "var(--color-primary-dark, #009690)"
+                      : "var(--color-muted)",
+                }}
               >
                 Yape
               </span>
-              {paymentMethod !== "yape" && (
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-              )}
             </m.button>
           )}
           {cashEnabled && (
@@ -427,66 +276,63 @@ export function CheckoutPaymentSection({
               aria-checked={paymentMethod === "efectivo"}
               data-testid="payment-efectivo"
               onClick={() => onPaymentMethodChange("efectivo")}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                damping: 15,
-                stiffness: 300,
-                delay: 0.2,
-              }}
-              whileHover={{ scale: 1.04, y: -2 }}
               whileTap={{ scale: 0.97 }}
               className={cn(
-                "flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
-                paymentMethod === "efectivo"
-                  ? "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/30"
-                  : "border-gray-200 hover:border-emerald-300 hover:shadow-md"
+                "relative flex flex-col items-center justify-center gap-2 h-24 rounded-2xl border-2 transition-all",
               )}
+              style={
+                paymentMethod === "efectivo"
+                  ? {
+                      borderColor: "var(--color-primary, #00B4A6)",
+                      background:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                      boxShadow:
+                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                    }
+                  : {
+                      borderColor:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                      background: "var(--color-card)",
+                    }
+              }
             >
               {paymentMethod === "efectivo" && (
-                <m.div
-                  layoutId="payment-glow"
-                  className="absolute inset-0 bg-linear-to-br from-emerald-100/80 to-emerald-50/40 dark:from-emerald-900/20 dark:to-emerald-800/10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
+                <span
+                  className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-white"
+                  style={{ background: "var(--color-primary, #00B4A6)" }}
+                  aria-hidden="true"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </span>
               )}
-              <m.div
-                animate={
-                  paymentMethod === "efectivo"
-                    ? { scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
-                className="relative z-10"
+              <div
+                className="h-10 w-10 rounded-lg flex items-center justify-center"
+                style={{
+                  background:
+                    "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                }}
               >
                 <Banknote
-                  className={cn(
-                    "h-12 w-12 drop-shadow-md",
-                    paymentMethod === "efectivo"
-                      ? "text-emerald-600"
-                      : "text-gray-400"
-                  )}
+                  className="h-6 w-6"
+                  strokeWidth={2}
+                  style={{ color: "var(--color-primary-dark, #009690)" }}
                 />
-              </m.div>
+              </div>
               <span
-                className={cn(
-                  "relative z-10 text-sm font-bold",
-                  paymentMethod === "efectivo"
-                    ? "text-emerald-700"
-                    : "text-gray-500"
-                )}
+                className="text-sm font-extrabold"
+                style={{
+                  color:
+                    paymentMethod === "efectivo"
+                      ? "var(--color-primary-dark, #009690)"
+                      : "var(--color-muted)",
+                }}
               >
                 Efectivo
               </span>
-              {paymentMethod !== "efectivo" && (
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              )}
             </m.button>
           )}
         </div>
+
         {paymentMethod === "yape" && yapeEnabled && (
           <YapePaymentPanel
             yape={yape}
@@ -499,73 +345,376 @@ export function CheckoutPaymentSection({
           <CashChangeCalculator finalTotal={finalTotal} />
         )}
         {showPaymentHint && (
-          <p className="text-xs text-red-500 font-semibold">
+          <p className="flex items-center gap-1.5 text-sm text-[var(--data-error-600)] font-semibold">
+            <X className="h-4 w-4" strokeWidth={2.5} />
             {!paymentMethod
-              ? "Selecciona un metodo de pago para continuar"
-              : "Ingresa el número de operacion de Yape para continuar"}
+              ? "Elegí un método para continuar"
+              : "Falta el número de operación de Yape"}
           </p>
+        )}
+      </section>
+
+      <BrandHair />
+
+      {/* ═══ Propina ═══ */}
+      <section className="space-y-3">
+        <SectionHeader
+          icon={HandCoins}
+          title="Propina"
+          hint="Para tu repartidor (opcional)"
+        />
+        <div className="grid grid-cols-4 gap-2">
+          {[0, 1, 2, 5].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onTipChange(v)}
+              className={cn(
+                "h-12 rounded-xl text-sm font-extrabold transition-all border-2 flex items-center justify-center gap-1",
+              )}
+              style={
+                tip === v
+                  ? {
+                      borderColor: "transparent",
+                      background:
+                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      color: "white",
+                      boxShadow:
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                    }
+                  : {
+                      borderColor:
+                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                      background: "var(--color-card)",
+                      color: "var(--color-primary-dark, #009690)",
+                    }
+              }
+            >
+              {v === 0 ? "Sin" : `S/${v}`}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <BrandHair />
+
+      {/* ═══ Cupón ═══ */}
+      <section className="space-y-3">
+        <SectionHeader
+          icon={Tag}
+          title="¿Tienes un cupón?"
+          hint="Ingresa el código"
+        />
+        {couponApplied ? (
+          <div
+            className="flex items-center gap-2.5 rounded-xl px-3 h-12 border-2"
+            style={{
+              background:
+                "color-mix(in oklch, var(--data-success-500) 8%, transparent)",
+              borderColor:
+                "color-mix(in oklch, var(--data-success-500) 30%, transparent)",
+            }}
+          >
+            <CheckCircle2
+              className="h-5 w-5 shrink-0"
+              strokeWidth={2.25}
+              style={{ color: "var(--data-success-600)" }}
+            />
+            <span
+              className="text-sm font-bold flex-1 truncate"
+              style={{ color: "var(--data-success-700)" }}
+            >
+              {couponMsg}
+            </span>
+            <button
+              type="button"
+              onClick={onRemoveCoupon}
+              className="text-xs font-bold text-muted hover:text-[var(--data-error-500)] transition-colors px-2"
+            >
+              Quitar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Tag
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                strokeWidth={2}
+                style={{ color: "var(--color-primary, #00B4A6)" }}
+              />
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) =>
+                  onCouponCodeChange(e.target.value.toUpperCase())
+                }
+                onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
+                placeholder="CÓDIGO"
+                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-foreground bg-white dark:bg-card focus:outline-none transition-colors"
+                style={{
+                  borderColor:
+                    "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                }}
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor =
+                    "var(--color-primary, #00B4A6)")
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor =
+                    "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)")
+                }
+              />
+            </div>
+            <button
+              type="button"
+              onClick={onValidateCoupon}
+              disabled={validatingCoupon || !couponCode.trim()}
+              className="px-4 h-12 rounded-xl text-sm font-extrabold text-white disabled:opacity-50 transition-all shrink-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              }}
+            >
+              {validatingCoupon ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Aplicar"
+              )}
+            </button>
+          </div>
+        )}
+        {couponMsg && !couponApplied && (
+          <p className="text-sm text-[var(--data-error-600)] font-medium">
+            {couponMsg}
+          </p>
+        )}
+      </section>
+
+      {/* Loyalty redemption */}
+      {loyaltyPoints !== null && loyaltyPoints >= 50 && (() => {
+        const PTS_PER_SOL = 50;
+        const maxSoles = Math.floor(loyaltyPoints / PTS_PER_SOL);
+        return (
+          <>
+            <BrandHair />
+            <section className="space-y-3">
+              <SectionHeader
+                icon={Gift}
+                title="Canjear puntos"
+                hint={`Tienes ${loyaltyPoints} pts · 50 pts = S/1`}
+              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={maxSoles}
+                  step={1}
+                  value={redemptionSoles}
+                  onChange={(e) => onRedemptionChange(Number(e.target.value))}
+                  className="flex-1 h-2 cursor-pointer accent-[var(--color-primary,#00B4A6)]"
+                  aria-label="Soles a canjear con puntos"
+                />
+                <div className="text-right shrink-0">
+                  <p
+                    className="text-base font-extrabold tabular-nums leading-tight"
+                    style={{ color: "var(--color-primary-dark, #009690)" }}
+                  >
+                    −S/{redemptionSoles.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted tabular-nums">
+                    {redemptionSoles * PTS_PER_SOL} pts
+                  </p>
+                </div>
+              </div>
+            </section>
+          </>
+        );
+      })()}
+
+      {/* ═══ Resumen del pago — bloque brand-tinted ═══ */}
+      <div
+        className="rounded-2xl px-4 py-4 space-y-1.5"
+        style={{
+          background:
+            "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+          border:
+            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+        }}
+      >
+        <p
+          className="text-xs font-extrabold uppercase tracking-wider mb-1"
+          style={{ color: "var(--color-primary-dark, #009690)" }}
+        >
+          Resumen del pago
+        </p>
+        <div className="space-y-1 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted">Subtotal</span>
+            <span
+              className="tabular-nums font-semibold"
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            >
+              S/{total.toFixed(2)}
+            </span>
+          </div>
+          {discount > 0 && promo && (
+            <div className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400">
+              <span className="truncate pr-2">
+                Promo {promo.discountPercent}% off
+              </span>
+              <span className="tabular-nums font-bold shrink-0">
+                −S/{discount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          {couponApplied && couponDiscount > 0 && (
+            <div className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400">
+              <span className="truncate pr-2">Cupón {couponCode}</span>
+              <span className="tabular-nums font-bold shrink-0">
+                −S/{couponDiscount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          {tierDiscount > 0 && loyaltyTier && (
+            <div
+              className="flex items-center justify-between"
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            >
+              <span className="flex items-center gap-1.5 truncate pr-2">
+                <Award className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                <span className="truncate">
+                  Tier {loyaltyTier} ({tierDiscountPct}%)
+                </span>
+              </span>
+              <span className="tabular-nums font-bold shrink-0">
+                −S/{tierDiscount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          {redemptionSoles > 0 && (
+            <div
+              className="flex items-center justify-between"
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            >
+              <span className="flex items-center gap-1.5 truncate pr-2">
+                <Gift className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                <span className="truncate">Puntos canjeados</span>
+              </span>
+              <span className="tabular-nums font-bold shrink-0">
+                −S/{redemptionSoles.toFixed(2)}
+              </span>
+            </div>
+          )}
+          {tip > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted">Propina</span>
+              <span
+                className="tabular-nums font-semibold"
+                style={{ color: "var(--color-primary-dark, #009690)" }}
+              >
+                +S/{tip.toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+        <div
+          className="pt-3 mt-2 flex items-baseline justify-between"
+          style={{
+            borderTop:
+              "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+          }}
+        >
+          <span
+            className="text-sm font-extrabold uppercase tracking-wider"
+            style={{ color: "var(--color-primary-dark, #009690)" }}
+          >
+            Total
+          </span>
+          <m.span
+            key={finalTotal}
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="tabular-nums text-3xl font-extrabold"
+            style={{ color: "var(--color-primary-dark, #009690)" }}
+          >
+            S/{finalTotal.toFixed(2)}
+          </m.span>
+        </div>
+        {loyaltyPoints !== null && finalTotal >= 5 && (
+          <div className="flex items-center justify-between pt-1.5 text-xs">
+            <span className="text-muted flex items-center gap-1.5">
+              <Sparkles
+                className="h-3.5 w-3.5"
+                strokeWidth={2}
+                style={{ color: "var(--color-primary, #00B4A6)" }}
+              />
+              Ganarás
+            </span>
+            <span
+              className="font-extrabold tabular-nums"
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            >
+              +{Math.floor(finalTotal)} pts
+            </span>
+          </div>
         )}
       </div>
 
       {submitError && (
-        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 animate-[fadeUp_0.2s_ease-out]">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-red-50 dark:bg-red-950/20 border-2 border-red-200/60 dark:border-red-800/30">
           <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-            <X className="h-4 w-4 text-red-500" />
+            <X
+              className="h-4 w-4 text-[var(--data-error-600)]"
+              strokeWidth={2.5}
+            />
           </div>
-          <p className="text-red-700 dark:text-red-300 text-sm font-medium">
+          <p className="text-sm font-medium text-[var(--data-error-700)] dark:text-red-300">
             {submitError}
           </p>
         </div>
       )}
 
-      {/* Points preview */}
-      {finalTotal > 0 && (
-        <div className="flex items-center gap-3 bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 rounded-2xl border border-violet-100 dark:border-violet-800/30 px-4 py-3">
-          <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center shrink-0">
-            <span className="text-xl leading-none">⭐</span>
-          </div>
-          <div>
-            <p className="text-sm font-extrabold text-violet-800 dark:text-[var(--accent)]">
-              +{Math.floor(finalTotal / 10) * 5} puntos
-            </p>
-            <p className="text-[length:var(--ts-2xs)] text-violet-500 dark:text-violet-400">
-              Ganaras puntos por este pedido!
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-3 pt-1">
-        <m.button
+      <div className="flex items-center gap-2.5 pt-1">
+        <button
           type="button"
           onClick={onBack}
           data-testid="pago-back"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.96 }}
-          className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          disabled={submitting}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl transition-all shrink-0 disabled:opacity-50"
+          style={{
+            border:
+              "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+            color: "var(--color-primary-dark, #009690)",
+          }}
+          aria-label="Volver al paso de datos"
         >
-          &larr; Volver
-        </m.button>
-        <m.button
+          <span className="text-xl leading-none">←</span>
+        </button>
+        <button
           type="submit"
           data-testid="pago-submit"
           disabled={submitting}
-          whileHover={submitting ? {} : { scale: 1.03, y: -2 }}
-          whileTap={submitting ? {} : { scale: 0.96 }}
-          className="flex-1 py-4 rounded-xl bg-linear-to-r from-primary via-emerald-500 to-primary text-white font-extrabold text-base transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2.5 relative overflow-hidden"
+          className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl font-extrabold text-base text-white transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+            boxShadow:
+              "0 12px 28px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
+          }}
         >
-          {!submitting && (
-            <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            {submitting ? (
+          {submitting ? (
+            <>
               <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <CheckCircle2 className="h-5 w-5" />
-            )}
-            {submitting ? "Enviando..." : "🛒 Finalizar pedido"}
-          </span>
-        </m.button>
+              Enviando…
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-5 w-5" strokeWidth={2.25} />
+              <span className="tracking-wide">Continuar</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

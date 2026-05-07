@@ -61,7 +61,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@empresa.com"
-                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 />
               </div>
               <div>
@@ -69,7 +69,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as typeof role)}
-                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 >
                   <option value="admin">Administrador</option>
                   <option value="editor">Editor</option>
@@ -77,7 +77,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                 </select>
               </div>
             </div>
-            {error && <p className="text-[var(--data-error)] text-xs">{error}</p>}
+            {error && <p className="text-[var(--data-error-500)] text-xs">{error}</p>}
             <button
               type="button"
               onClick={() => void handleSend()}
@@ -91,7 +91,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
           </>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
+            <div className="flex items-center gap-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
               <CheckCircle2 className="w-4 h-4 shrink-0" /> Enlace generado.
             </div>
             <div className="bg-[var(--surface-sunken)] rounded-xl p-3 text-xs font-mono break-all">{inviteUrl}</div>

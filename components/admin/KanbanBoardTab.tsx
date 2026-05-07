@@ -14,14 +14,14 @@ type Task = {
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
   baja: { label: "Baja", color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
-  media: { label: "Media", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  alta: { label: "Alta", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
-  urgente: { label: "Urgente", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
+  media: { label: "Media", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  alta: { label: "Alta", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
+  urgente: { label: "Urgente", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };
 const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: typeof Clock }> = {
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/10", icon: Clock },
-  "en-progreso": { label: "En Progreso", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ListChecks },
-  completado: { label: "Completado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/10", icon: Clock },
+  "en-progreso": { label: "En Progreso", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ListChecks },
+  completado: { label: "Completado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
 };
 
 /* ── Seed Data ── */
@@ -67,7 +67,7 @@ export default function KanbanBoardTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <ListChecks className="h-6 w-6 text-[var(--data-success)]" /> Kanban de Tareas
+            <ListChecks className="h-6 w-6 text-[var(--data-success-500)]" /> Kanban de Tareas
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Organiza tareas del equipo en columnas de estado</p>
         </div>
@@ -80,7 +80,7 @@ export default function KanbanBoardTab() {
             <Plus className="h-4 w-4" /> Nueva Tarea
           </button>
           {tasks.length > 0 && (
-            <button onClick={() => setTasks([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setTasks([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -160,7 +160,7 @@ export default function KanbanBoardTab() {
                           <button onClick={() => moveTask(t.id, col === "pendiente" ? "en-progreso" : "completado")} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent text-xs">Adelante</button>
                         )}
                         <button onClick={() => setEditing(t)} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><Pencil className="h-3 w-3" /></button>
-                        <button onClick={() => deleteTask(t.id)} className="p-1 rounded text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-3 w-3" /></button>
+                        <button onClick={() => deleteTask(t.id)} className="p-1 rounded text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     </div>
                   </div>

@@ -4,11 +4,11 @@ import { Truck, CheckCircle2, MapPin, Clock } from "@buleje/design-system/icons"
 import { useInView } from "@/hooks/use-in-view";
 
 const ZONES = [
-  { name: "Centro", time: "20-30 min", free: true,  price: "Gratis", color: "bg-emerald-500", ring: "ring-emerald-500/20", circleColor: "rgba(45,106,79,0.25)" },
+  { name: "Centro", time: "20-30 min", free: true,  price: "Gratis", color: "bg-[var(--data-success-500)]", ring: "ring-[var(--data-success-500)]/20", circleColor: "rgba(45,106,79,0.25)" },
   { name: "San Fernando",       time: "30-40 min", free: true,  price: "Gratis", color: "bg-emerald-400", ring: "ring-emerald-400/20", circleColor: "rgba(52,211,153,0.20)" },
-  { name: "Manantay",           time: "30-45 min", free: false, price: "S/3",    color: "bg-amber-500",   ring: "ring-amber-500/20",   circleColor: "rgba(245,158,11,0.18)" },
+  { name: "Manantay",           time: "30-45 min", free: false, price: "S/3",    color: "bg-[var(--data-warning-500)]",   ring: "ring-[var(--data-warning-500)]/20",   circleColor: "rgba(245,158,11,0.18)" },
   { name: "Yarinacocha",        time: "40-60 min", free: false, price: "S/3",    color: "bg-orange-500",  ring: "ring-orange-500/20",  circleColor: "rgba(249,115,22,0.15)" },
-  { name: "Campo Verde",        time: "50-70 min", free: false, price: "S/5",    color: "bg-red-500",     ring: "ring-red-500/20",     circleColor: "rgba(239,68,68,0.12)" },
+  { name: "Campo Verde",        time: "50-70 min", free: false, price: "S/5",    color: "bg-[var(--data-error-500)]",     ring: "ring-[var(--data-error-500)]/20",     circleColor: "rgba(239,68,68,0.12)" },
 ];
 
 export default function DeliveryZoneMap() {
@@ -57,7 +57,7 @@ export default function DeliveryZoneMap() {
                   </p>
                 </div>
                 {zone.free ? (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-500 px-3 py-1.5 rounded-full shadow-sm">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-white bg-[var(--data-success-500)] px-3 py-1.5 rounded-full shadow-sm">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Gratis
                   </span>
                 ) : (

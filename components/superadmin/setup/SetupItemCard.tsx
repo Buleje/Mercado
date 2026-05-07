@@ -39,7 +39,7 @@ export default function SetupItemCard({
           ? "border-emerald-200 dark:border-emerald-900/40 opacity-60"
           : isBlocked
             ? "border-amber-200 dark:border-amber-900/40"
-            : "border-[var(--rule-base)] hover:border-teal-300 dark:hover:border-teal-700",
+            : "border-[var(--rule-base)] hover:border-teal-300 dark:hover:border-[var(--accent-dark)]",
       ].join(" ")}
     >
       <div className="flex items-start gap-4">
@@ -50,7 +50,7 @@ export default function SetupItemCard({
           title={isDone ? "Marcar como pendiente" : "Marcar como hecho"}
         >
           {isDone ? (
-            <CheckCircle2 className="w-6 h-6 text-[var(--data-success)]" />
+            <CheckCircle2 className="w-6 h-6 text-[var(--data-success-500)]" />
           ) : (
             <Circle className="w-6 h-6 text-gray-300 dark:text-gray-600 hover:text-[var(--accent)]" />
           )}
@@ -92,7 +92,7 @@ export default function SetupItemCard({
 
           {/* Blocked reason */}
           {item.blockedReason && (
-            <div className="mb-3 p-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-2">
+            <div className="mb-3 p-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex items-center gap-2">
               <AlertCircle className="w-3 h-3 shrink-0" />
               {item.blockedReason}
             </div>
@@ -101,7 +101,7 @@ export default function SetupItemCard({
           {/* Steps */}
           {!isDone && (
             <details className="mb-3 group">
-              <summary className="text-xs font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-teal-600 list-none flex items-center gap-1">
+              <summary className="text-xs font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--accent-dark)] list-none flex items-center gap-1">
                 <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
                 Pasos exactos ({item.steps.length})
               </summary>
@@ -125,7 +125,7 @@ export default function SetupItemCard({
                 href={item.link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-dark)] hover:bg-[var(--accent-dark)] text-white text-xs font-semibold transition-colors"
               >
                 {item.link.label}
                 <ExternalLink className="w-3 h-3" />
@@ -138,7 +138,7 @@ export default function SetupItemCard({
                 className={[
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                   isBlocked
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-300"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
                 ].join(" ")}
               >

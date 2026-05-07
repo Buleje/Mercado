@@ -107,7 +107,7 @@ function PopularPanel({ products, loading, onAdd, onClose }: PopularPanelProps) 
                     {fmt(p.price)}
                     {p.unit ? ` / ${p.unit}` : ""}
                     {p.stock !== undefined && (
-                      <span className={cn("ml-2", p.stock <= 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                      <span className={cn("ml-2", p.stock <= 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
                         stock: {p.stock}
                       </span>
                     )}
@@ -368,11 +368,11 @@ export default function QuickActionsBar({
           >
             {(lastSaleLoading || repeatLoading)
               ? <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
-              : <History className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+              : <History className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             }
             <span className="hidden sm:inline">Última venta</span>
             {lastSale && !lastSaleLoading && (
-              <span className="text-[length:var(--ts-xs)] font-mono text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-1.5 py-0.5 rounded-md">
+              <span className="text-[length:var(--ts-xs)] font-mono text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-1.5 py-0.5 rounded-md">
                 {fmt(lastSale.total)}
               </span>
             )}

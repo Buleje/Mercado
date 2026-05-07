@@ -124,9 +124,9 @@ function buildForecast(
 }
 
 const SCENARIO_META: Record<Scenario, { label: string; color: string }> = {
-  base:      { label: "Base",      color: "text-[var(--data-success)]"    },
-  optimista: { label: "Optimista", color: "text-[var(--data-success)]" },
-  pesimista: { label: "Pesimista", color: "text-[var(--data-error)]"     },
+  base:      { label: "Base",      color: "text-[var(--data-success-500)]"    },
+  optimista: { label: "Optimista", color: "text-[var(--data-success-500)]" },
+  pesimista: { label: "Pesimista", color: "text-[var(--data-error-500)]"     },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ export default function LiquidityForecastTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
         <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
@@ -250,10 +250,10 @@ export default function LiquidityForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Wallet },
-          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.minCum < 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowDown },
-          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowUp },
-          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.deficitWeeks > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: AlertTriangle },
+          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Wallet },
+          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.minCum < 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowDown },
+          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowUp },
+          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.deficitWeeks > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -306,13 +306,13 @@ export default function LiquidityForecastTab() {
 
       {/* Alerta de déficit */}
       {stats.deficitWeeks > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
+            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
               Alerta: {stats.deficitWeeks} semana(s) con saldo negativo — escenario {SCENARIO_META[scenario].label}
             </p>
-            <p className="text-xs text-[var(--data-error)]/80">
+            <p className="text-xs text-[var(--data-error-500)]/80">
               Considera adelantar cobros o postergar pagos a proveedores
             </p>
           </div>
@@ -341,14 +341,14 @@ export default function LiquidityForecastTab() {
                     style={{ width: `${(w.inflows / barMax) * 100}%` }}
                   />
                   <div
-                    className="h-3 rounded-full bg-[var(--data-error)]"
+                    className="h-3 rounded-full bg-[var(--data-error-500)]"
                     style={{ width: `${(w.outflows / barMax) * 100}%` }}
                   />
                 </div>
                 <span
                   className={cn(
                     "w-24 text-right font-bold",
-                    w.balance >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                    w.balance >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                   )}
                 >
                   {w.balance >= 0 ? "+" : ""}
@@ -363,7 +363,7 @@ export default function LiquidityForecastTab() {
             <span className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" /> Ingresos (proyectados)
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-[var(--data-error)]" /> Egresos (proyectados)
+            <span className="w-3 h-3 rounded-full bg-[var(--data-error-500)]" /> Egresos (proyectados)
           </span>
         </div>
       </div>
@@ -393,11 +393,11 @@ export default function LiquidityForecastTab() {
                   <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground text-xs">
                     {w.weekLabel}
                   </td>
-                  <td className="px-4 py-3 text-[var(--data-success)] font-bold flex items-center gap-1">
+                  <td className="px-4 py-3 text-[var(--data-success-500)] font-bold flex items-center gap-1">
                     <ArrowUp className="h-3 w-3" />
                     {fmt(w.inflows)}
                   </td>
-                  <td className="px-4 py-3 text-[var(--data-error)] font-bold">
+                  <td className="px-4 py-3 text-[var(--data-error-500)] font-bold">
                     <span className="flex items-center gap-1">
                       <ArrowDown className="h-3 w-3" />
                       {fmt(w.outflows)}
@@ -406,7 +406,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.balance >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                      w.balance >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                     )}
                   >
                     {w.balance >= 0 ? "+" : ""}
@@ -415,7 +415,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.cumulative >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                      w.cumulative >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                     )}
                   >
                     {fmt(w.cumulative)}
@@ -454,12 +454,12 @@ export default function LiquidityForecastTab() {
                         {p.supplierName || "Proveedor"}
                       </td>
                       <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(p.amount)}</td>
-                      <td className="py-2 text-right text-[var(--data-success)]">{fmt(p.paidAmount)}</td>
-                      <td className="py-2 text-right font-bold text-[var(--data-error)]">{fmt(remaining)}</td>
+                      <td className="py-2 text-right text-[var(--data-success-500)]">{fmt(p.paidAmount)}</td>
+                      <td className="py-2 text-right font-bold text-[var(--data-error-500)]">{fmt(remaining)}</td>
                       <td
                         className={cn(
                           "py-2 text-right text-xs",
-                          isOverdue ? "text-[var(--data-error)] font-bold" : "text-[var(--text-secondary)] dark:text-muted"
+                          isOverdue ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-secondary)] dark:text-muted"
                         )}
                       >
                         {new Date(p.dueDate).toLocaleDateString("es-PE")}
@@ -478,14 +478,14 @@ export default function LiquidityForecastTab() {
       <div className="flex flex-wrap items-center gap-4 bg-gray-50 dark:bg-surface rounded-xl p-3 text-sm">
         <div>
           <span className="text-[var(--text-tertiary)]">Total ingresos proyect.: </span>
-          <span className="font-extrabold text-[var(--data-success)] flex items-center gap-1 inline-flex">
+          <span className="font-extrabold text-[var(--data-success-500)] flex items-center gap-1 inline-flex">
             <DollarSign className="h-3.5 w-3.5" />
             {fmt(stats.totalInflows)}
           </span>
         </div>
         <div>
           <span className="text-[var(--text-tertiary)]">Total egresos proyect.: </span>
-          <span className="font-extrabold text-[var(--data-error)] flex items-center gap-1 inline-flex">
+          <span className="font-extrabold text-[var(--data-error-500)] flex items-center gap-1 inline-flex">
             <DollarSign className="h-3.5 w-3.5" />
             {fmt(stats.totalOutflows)}
           </span>
@@ -495,7 +495,7 @@ export default function LiquidityForecastTab() {
           <span
             className={cn(
               "font-extrabold",
-              stats.totalInflows - stats.totalOutflows >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+              stats.totalInflows - stats.totalOutflows >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
             )}
           >
             {fmt(stats.totalInflows - stats.totalOutflows)}

@@ -109,7 +109,7 @@ export function DashboardKpis() {
 
   if (state.kind === "error") {
     return (
-      <div className="rounded border border-[var(--data-error)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error)] dark:border-[var(--data-error)] dark:bg-red-950 dark:text-[var(--data-error)]">
+      <div className="rounded border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-red-950 dark:text-[var(--data-error-500)]">
         Dashboard KPIs unavailable: {state.message}
       </div>
     );
@@ -171,7 +171,7 @@ function KpiCard({ label, value, sub, icon, danger }: KpiCardProps) {
       className={
         "rounded-lg border bg-white p-4  dark:bg-card " +
         (danger
-          ? "border-amber-300 dark:border-amber-700"
+          ? "border-amber-300 dark:border-[var(--data-warning-700)]"
           : "border-[var(--rule-base)]")
       }
     >

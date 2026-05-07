@@ -28,23 +28,23 @@ interface StatusBadgeProps {
 const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
   success: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]",
-    dot: "bg-[var(--data-success)]",
+      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   warning: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)]",
-    dot: "bg-[var(--data-warning)]",
+      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning-500)]",
+    dot: "bg-[var(--data-warning-500)]",
   },
   error: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
-    dot: "bg-[var(--data-error)]",
+      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-500)]",
+    dot: "bg-[var(--data-error-500)]",
   },
   info: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info)]",
-    dot: "bg-[var(--data-info)]",
+      "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info-500)]",
+    dot: "bg-[var(--data-info-500)]",
   },
   neutral: {
     badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",

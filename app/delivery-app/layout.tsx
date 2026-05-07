@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#00B4A6",
+  themeColor: "var(--accent)",
 };
 
 export default function DeliveryAppLayout({

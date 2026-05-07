@@ -24,14 +24,14 @@ interface SupplierScorecardProps {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  A: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  B: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  C: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  D: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 function MetricBar({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
-  const color = value > 70 ? "bg-[var(--accent-soft)]" : value > 55 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
+  const color = value > 70 ? "bg-[var(--accent-soft)]" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
@@ -104,8 +104,8 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
   }
 
   const score = data.score ?? 0;
-  const scoreColor = score > 70 ? "text-[var(--data-success)]" : score > 55 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]";
-  const ringColor = score > 70 ? "stroke-[var(--data-success)]" : score > 55 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]";
+  const scoreColor = score > 70 ? "text-[var(--data-success-500)]" : score > 55 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
+  const ringColor = score > 70 ? "stroke-[var(--data-success-500)]" : score > 55 ? "stroke-[var(--data-warning-500)]" : "stroke-[var(--data-error-500)]";
 
   return (
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
@@ -137,11 +137,11 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
               {data.grade}
             </span>
             {score > 70 ? (
-              <span className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-1">
+              <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Proveedor confiable
               </span>
             ) : score <= 55 ? (
-              <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-1">
+              <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5" /> Revisa condiciones
               </span>
             ) : null}

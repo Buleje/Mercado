@@ -57,7 +57,14 @@ export async function GET(req: NextRequest) {
       s.cashierId ?? "",
       s.customerPhone ?? "",
     ].map((val) => {
-      const str = String(val);
+      let str = String(val);
+      // SECURITY 2026-05-05 (audit POS #7): formula injection. Antes
+      // celdas que comenzaban con `=`, `+`, `-`, `@`, `\t`, `\r` se
+      // ejecutaban como fórmulas en Excel/Sheets cuando el usuario abría
+      // el CSV. cashierId y customerPhone son user-controlled.
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+      }
       if (str.includes(",") || str.includes('"') || str.includes("\n")) {
         return `"${str.replace(/"/g, '""')}"`;
       }

@@ -58,17 +58,17 @@ function daysUntil(iso: string) {
 }
 
 const CATEGORY_META: Record<DocCategory, { label: string; color: string }> = {
-  factura:     { label: "Factura",     color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  factura:     { label: "Factura",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   contrato:    { label: "Contrato",    color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  comprobante: { label: "Comprobante", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
-  recibo:      { label: "Recibo",      color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
+  comprobante: { label: "Comprobante", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  recibo:      { label: "Recibo",      color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   otro:        { label: "Otro",        color: "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" },
 };
 
 const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof FileCheck }> = {
-  vigente:    { label: "Vigente",    color: "text-[var(--data-success)]", icon: FileCheck },
-  "por-vencer": { label: "Por vencer", color: "text-[var(--data-warning)]", icon: Clock },
-  vencido:    { label: "Vencido",    color: "text-[var(--data-error)]",     icon: AlertCircle },
+  vigente:    { label: "Vigente",    color: "text-[var(--data-success-500)]", icon: FileCheck },
+  "por-vencer": { label: "Por vencer", color: "text-[var(--data-warning-500)]", icon: Clock },
+  vencido:    { label: "Vencido",    color: "text-[var(--data-error-500)]",     icon: AlertCircle },
   archivado:  { label: "Archivado",  color: "text-[var(--text-tertiary)]",    icon: FolderOpen },
 };
 
@@ -237,10 +237,10 @@ export default function DocumentManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total docs", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Vigentes", value: String(stats.vigentes), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Por vencer", value: String(stats.porVencer), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Vencidos", value: String(stats.vencidos), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Total docs", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Vigentes", value: String(stats.vigentes), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Por vencer", value: String(stats.porVencer), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Vencidos", value: String(stats.vencidos), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Contratos activos", value: String(stats.contratosActivos), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -252,11 +252,11 @@ export default function DocumentManagerTab() {
 
       {/* Alerts */}
       {(stats.porVencer > 0 || stats.vencidos > 0) && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">Documentos que necesitan atencion</p>
-            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+            <p className="font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-sm">Documentos que necesitan atencion</p>
+            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
               {stats.porVencer > 0 && <span>{stats.porVencer} próximo(s) a vencer. </span>}
               {stats.vencidos > 0 && <span className="font-bold">{stats.vencidos} vencido(s) — renovar o archivar.</span>}
               {stats.contratosPorVencer > 0 && (
@@ -346,7 +346,7 @@ export default function DocumentManagerTab() {
                           <p className="text-xs text-[var(--text-tertiary)]">{d.size}</p>
                         </div>
                         {isContratoPorVencer && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] animate-pulse">
+                          <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] animate-pulse">
                             {d.status === "vencido" ? "VENCIDO" : `${daysTilExpiry}d`}
                           </span>
                         )}
@@ -357,7 +357,7 @@ export default function DocumentManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{fmtDate(d.uploadDate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs">
                       {d.expiryDate ? (
-                        <span className={cn("font-semibold", daysTilExpiry < 0 ? "text-[var(--data-error)]" : daysTilExpiry < 30 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]")}>
+                        <span className={cn("font-semibold", daysTilExpiry < 0 ? "text-[var(--data-error-500)]" : daysTilExpiry < 30 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>
                           {fmtDate(d.expiryDate)} {daysTilExpiry < 0 ? "(vencido)" : daysTilExpiry < 30 ? `(${daysTilExpiry}d)` : ""}
                         </span>
                       ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
@@ -365,7 +365,7 @@ export default function DocumentManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{d.relatedTo}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
                         {/* Renew button for contracts about to expire */}
                         {d.isContrato && (d.status === "por-vencer" || d.status === "vencido") && (
                           <button
@@ -382,7 +382,7 @@ export default function DocumentManagerTab() {
                           </button>
                         )}
                         {!d.isContrato && (
-                          <button onClick={() => removeDoc(d.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => removeDoc(d.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-3.5 w-3.5" /></button>
                         )}
                       </div>
                     </td>

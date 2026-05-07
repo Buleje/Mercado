@@ -27,8 +27,12 @@ if (self.location && self.location.hostname === "localhost") {
   self.addEventListener("fetch", () => {});
 } else {
 
-const CACHE_NAME = "buleje-v12";
+const CACHE_NAME = "buleje-v13";
 const CATALOG_CACHE = "buleje-catalog-v2";
+// FIX 2026-05-06: removidos /offline (no existe — solo /offline.html) y /admin
+// (redirige 30x → cache.addAll lo rechaza como "illegal path"). cache.addAll
+// es atómico, una sola URL inválida tiraba TODA la operación con
+// "No se puede añadir el sistema de archivos: <illegal path>".
 const STATIC_URLS = [
   "/",
   "/tienda",
@@ -40,8 +44,6 @@ const STATIC_URLS = [
   "/tienda/categoria/limpieza",
   "/manifest.webmanifest",
   "/offline.html",
-  "/offline",
-  "/admin",
 ];
 const API_CACHE = "buleje-api-v4";
 const IMG_CACHE = "buleje-img-v4";
@@ -53,11 +55,17 @@ const ASSET_CACHE_LIMIT = 100;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => 
-      cache.addAll(STATIC_URLS).catch((err) => {
-        console.log("[SW] Failed to cache some static URLs:", err);
-      })
-    )
+    caches.open(CACHE_NAME).then((cache) =>
+      // Promise.allSettled + cache.add por URL: tolera fallos individuales
+      // (404, redirect, network) sin reventar la instalación del SW.
+      Promise.allSettled(
+        STATIC_URLS.map((u) =>
+          cache.add(u).catch((err) => {
+            console.log("[SW] skip " + u + ":", err && err.message ? err.message : err);
+          }),
+        ),
+      ),
+    ),
   );
   self.skipWaiting();
 });

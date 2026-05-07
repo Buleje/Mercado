@@ -26,10 +26,10 @@ interface LoyaltyMetrics {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  bronce: "bg-[var(--data-warning)]",
+  bronce: "bg-[var(--data-warning-500)]",
   plata: "bg-slate-400",
-  oro: "bg-[var(--data-warning)]",
-  diamante: "bg-[var(--data-info)]",
+  oro: "bg-[var(--data-warning-500)]",
+  diamante: "bg-[var(--data-info-500)]",
 };
 
 export default function LoyaltyMetricsTab() {
@@ -93,21 +93,21 @@ export default function LoyaltyMetricsTab() {
       value: summary.totalPointsCirculating.toLocaleString("es-PE"),
       sub: `≈ S/${Math.floor(summary.totalPointsCirculating / 50)} en valor`,
       icon: Award,
-      color: "text-[var(--data-warning)]",
+      color: "text-[var(--data-warning-500)]",
     },
     {
       label: "Emitidos (30 días)",
       value: `+${summary.pointsIssuedLast30d.toLocaleString("es-PE")}`,
       sub: `${summary.earnTransactions} transacciones`,
       icon: TrendingUp,
-      color: "text-[var(--data-success)]",
+      color: "text-[var(--data-success-500)]",
     },
     {
       label: "Canjeados (30 días)",
       value: summary.pointsRedeemedLast30d.toLocaleString("es-PE"),
       sub: `Tasa canje: ${redemptionRate}%`,
       icon: BarChart3,
-      color: "text-[var(--data-info)]",
+      color: "text-[var(--data-info-500)]",
     },
   ];
 

@@ -3,6 +3,24 @@ import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendCashSummaryEmail } from "@/lib/mailer";
 import { toErrorPayload } from "@/lib/api-error";
+import { prisma } from "@/lib/prisma";
+
+/**
+ * SECURITY 2026-05-06 (pentest H003): asegura ownership de la caja antes de
+ * cualquier mutación. Sin esto, un cajero del tenant A podía inyectar
+ * movimientos/arqueos en cajas del tenant B (CashMovement.create no filtraba
+ * por tenant). Devuelve true si la caja existe y pertenece al tenant.
+ */
+async function assertRegisterOwnership(
+  registerId: string,
+  tenantId: string,
+): Promise<boolean> {
+  const reg = await prisma.cashRegister.findFirst({
+    where: { id: registerId, tenantId },
+    select: { id: true },
+  });
+  return !!reg;
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -59,6 +77,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (body.action === "movement") {
+      // SECURITY 2026-05-06 (pentest H003): verificar tenant ownership.
+      if (!(await assertRegisterOwnership(id, auth.tenantId))) {
+        return NextResponse.json({ error: "Register not found" }, { status: 404 });
+      }
       const movement = await CashRegistersDB.addMovement(id, {
         type: body.type ?? "ingreso",
         amount: Number(body.amount) || 0,
@@ -70,6 +92,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (body.action === "arqueo") {
+      if (!(await assertRegisterOwnership(id, auth.tenantId))) {
+        return NextResponse.json({ error: "Register not found" }, { status: 404 });
+      }
       const arqueoAmount = Number(body.closingAmount) || 0;
       const movement = await CashRegistersDB.addMovement(id, {
         type: "arqueo",

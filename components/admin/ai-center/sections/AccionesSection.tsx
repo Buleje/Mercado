@@ -223,14 +223,14 @@ const PRIORITY_CONFIG: Record<
 > = {
   urgente: {
     label: "Urgente",
-    dotClass: "bg-[var(--data-error)]",
-    labelClass: "text-red-600 dark:text-red-400",
+    dotClass: "bg-[var(--data-error-500)]",
+    labelClass: "text-[var(--data-error-600)] dark:text-red-400",
     icon: AlertCircle,
   },
   importante: {
     label: "Importante",
-    dotClass: "bg-[var(--data-warning)]",
-    labelClass: "text-amber-600 dark:text-amber-400",
+    dotClass: "bg-[var(--data-warning-500)]",
+    labelClass: "text-[var(--data-warning-600)] dark:text-amber-400",
     icon: Clock,
   },
   recomendado: {
@@ -259,7 +259,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-              <CheckSquare className="h-5 w-5 text-[var(--data-success)]" />
+              <CheckSquare className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
               <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
@@ -284,7 +284,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
-              pct === 100 ? "bg-[var(--data-success)]" : "bg-[var(--text-primary)]",
+              pct === 100 ? "bg-[var(--data-success-500)]" : "bg-[var(--text-primary)]",
             )}
             style={{ width: `${pct}%` }}
           />
@@ -305,7 +305,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               )}
             >
               {done ? (
-                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--data-success)]">
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--data-success-500)]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </span>
               ) : (
@@ -328,8 +328,8 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
 
       {completedCount === total && (
         <div className="flex items-center justify-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-5 py-3">
-          <Check className="h-4 w-4 text-[var(--data-success)]" />
-          <span className="text-sm font-extrabold text-[var(--data-success)]">
+          <Check className="h-4 w-4 text-[var(--data-success-500)]" />
+          <span className="text-sm font-extrabold text-[var(--data-success-500)]">
             ¡Día completo! Buen trabajo.
           </span>
         </div>
@@ -390,7 +390,7 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
         onClick={() => onMarkDone(task.id)}
         className={cn(
           "shrink-0 inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
-          "transition-colors hover:border-[var(--data-success)] hover:bg-[var(--data-success)] hover:text-white",
+          "transition-colors hover:border-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white",
         )}
       >
         <Check className="h-3.5 w-3.5" />
@@ -419,9 +419,9 @@ function PriorityGroup({ priority, tasks, doneTasks, onMarkDone }: PriorityGroup
           className={cn(
             "text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md",
             priority === "urgente"
-              ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)]"
+              ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)]"
               : priority === "importante"
-                ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)]"
+                ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)]"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
           )}
         >
@@ -510,7 +510,7 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
               "dark:border-[var(--rule-base)] dark:bg-gray-900",
             )}
           >
-            <Check className="mx-auto mb-2 h-5 w-5 text-[var(--data-success)]" />
+            <Check className="mx-auto mb-2 h-5 w-5 text-[var(--data-success-500)]" />
             <p className="text-sm text-[var(--text-tertiary)]">
               Todo en orden — no hay acciones urgentes hoy
             </p>

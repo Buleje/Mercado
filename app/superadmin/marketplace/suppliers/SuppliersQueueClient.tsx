@@ -169,7 +169,7 @@ export default function SuppliersQueueClient() {
               className={
                 "px-4 py-2 rounded-lg text-sm font-semibold transition " +
                 (active
-                  ? "bg-[var(--surface-raised)] text-emerald-600 shadow-sm"
+                  ? "bg-[var(--surface-raised)] text-[var(--data-success-600)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-gray-900 dark:hover:text-white")
               }
             >
@@ -178,7 +178,7 @@ export default function SuppliersQueueClient() {
                 className={
                   "ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold " +
                   (active
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    ? "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/40 dark:text-emerald-300"
                     : "bg-gray-200 dark:bg-gray-700 text-[var(--text-secondary)]")
                 }
               >
@@ -197,11 +197,11 @@ export default function SuppliersQueueClient() {
           </div>
         ) : error ? (
           <div className="p-10 text-center">
-            <p className="text-sm text-[var(--data-error)]">{error}</p>
+            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
             <button
               type="button"
               onClick={load}
-              className="mt-3 text-xs text-[var(--data-success)] hover:underline"
+              className="mt-3 text-xs text-[var(--data-success-500)] hover:underline"
             >
               Reintentar
             </button>
@@ -264,7 +264,7 @@ export default function SuppliersQueueClient() {
                                 handleApprove(r.id, r.razonSocial ?? r.name)
                               }
                               disabled={busyId === r.id}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)] text-white disabled:opacity-50"
                             >
                               {busyId === r.id ? "…" : "Aprobar"}
                             </button>
@@ -272,7 +272,7 @@ export default function SuppliersQueueClient() {
                               type="button"
                               onClick={() => openReject(r.id)}
                               disabled={busyId === r.id}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 disabled:opacity-50"
                             >
                               Rechazar
                             </button>
@@ -316,12 +316,12 @@ export default function SuppliersQueueClient() {
           <p className="text-sm text-[var(--text-secondary)] mb-2">
             <strong>{approvedKey.name}</strong> fue aprobado y recibirá un
             mensaje por WhatsApp. Esta es su API key — cópiala ahora porque{" "}
-            <span className="font-bold text-[var(--data-error)]">
+            <span className="font-bold text-[var(--data-error-500)]">
               no se volverá a mostrar
             </span>
             .
           </p>
-          <div className="rounded-lg bg-gray-900 dark:bg-black border border-gray-700 p-3 font-mono text-xs text-[var(--data-success)] break-all">
+          <div className="rounded-lg bg-gray-900 dark:bg-black border border-gray-700 p-3 font-mono text-xs text-[var(--data-success-500)] break-all">
             {approvedKey.apiKey}
           </div>
           <div className="mt-4 flex justify-end gap-2">
@@ -333,7 +333,7 @@ export default function SuppliersQueueClient() {
                   .then(() => alert("Copiado"))
                   .catch(() => alert("No se pudo copiar"));
               }}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)] text-white"
             >
               Copiar API key
             </button>
@@ -367,7 +367,7 @@ export default function SuppliersQueueClient() {
             rows={4}
             maxLength={500}
             placeholder="Ej: No podemos verificar la información del RUC. Por favor contáctanos."
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error)]/30"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/30"
           />
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -385,7 +385,7 @@ export default function SuppliersQueueClient() {
               type="button"
               onClick={confirmReject}
               disabled={!!busyId || rejectReason.trim().length < 5}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white disabled:opacity-50"
             >
               {busyId ? "Rechazando…" : "Confirmar rechazo"}
             </button>

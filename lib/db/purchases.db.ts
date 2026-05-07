@@ -149,8 +149,11 @@ export const PurchasesDB = {
 // ── Supplier Evaluations DB ───────────────────────────────────────────────────
 
 export const SupplierEvaluationsDB = {
-  async getBySupplierId(supplierId: string): Promise<DbSupplierEvaluation[]> {
-    return (await prisma.supplierEvaluation.findMany({ where: { supplierId }, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
+  // SECURITY 2026-05-06 (audit delivery #2): tenantId obligatorio. Antes
+  // getBySupplierId/getAverages no filtraban por tenantId → un supplier
+  // que existiera en 2 tenants veía/contaminaba evaluaciones de ambos.
+  async getBySupplierId(supplierId: string, tenantId: string): Promise<DbSupplierEvaluation[]> {
+    return (await prisma.supplierEvaluation.findMany({ where: { supplierId, tenantId }, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
   async getAll(tenantId: string): Promise<DbSupplierEvaluation[]> {
     const where: Record<string, unknown> = { tenantId };
@@ -160,9 +163,9 @@ export const SupplierEvaluationsDB = {
     const row = await prisma.supplierEvaluation.create({ data: { ...data, tenantId } });
     return mapSupplierEvaluation(row);
   },
-  async getAverages(supplierId: string): Promise<{ punctuality: number; quality: number; price: number; count: number }> {
+  async getAverages(supplierId: string, tenantId: string): Promise<{ punctuality: number; quality: number; price: number; count: number }> {
     const agg = await prisma.supplierEvaluation.aggregate({
-      where: { supplierId },
+      where: { supplierId, tenantId },
       _avg: { punctuality: true, quality: true, price: true },
       _count: true,
     });

@@ -58,7 +58,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
           className="flex items-start gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] animate-in slide-in-from-right"
         >
           <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
-            <ShoppingBag className="h-5 w-5 text-[var(--data-success)]" />
+            <ShoppingBag className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-foreground">Nuevo pedido</p>
@@ -78,9 +78,9 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
       ))}
 
       {lowStockCount > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
-          <p className="text-xs font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+          <p className="text-xs font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
             {lowStockCount} producto{lowStockCount > 1 ? "s" : ""} con stock bajo
           </p>
         </div>

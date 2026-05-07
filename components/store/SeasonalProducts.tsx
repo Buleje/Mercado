@@ -187,14 +187,14 @@ export default function SeasonalProducts() {
                   <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">{p.name}</h4>
                   <p className="text-xs text-[var(--text-tertiary)]">{p.unit}</p>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
+                    <span className="text-sm font-extrabold text-[var(--accent)] dark:text-[#2dd4bf]">
                       S/ {p.price.toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleAdd(p)}
                       className={cn(
                         "h-10 w-10 rounded-2xl flex items-center justify-center transition-all",
-                        "bg-[#00B4A6] hover:bg-[#009690] text-white shadow-md active:scale-95"
+                        "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white shadow-md active:scale-95"
                       )}
                       aria-label={`Agregar ${p.name}`}
                     >

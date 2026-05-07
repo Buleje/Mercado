@@ -37,9 +37,9 @@ type MaintenanceLog = {
 };
 
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: string }> = {
-  activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
-  "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             dot: "bg-[var(--accent-soft)]" },
-  mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         dot: "bg-[var(--data-warning)]" },
+  activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
+  "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             dot: "bg-[var(--accent-soft)]" },
+  mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         dot: "bg-[var(--data-warning-500)]" },
   inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
 };
 
@@ -145,10 +145,10 @@ export default function FleetManagementTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-[var(--data-success)]", icon: Truck },
-          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-[var(--data-success)]",    icon: Route },
+          { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-[var(--data-success-500)]", icon: Truck },
+          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-[var(--data-success-500)]",    icon: Route },
           { label: "Entregas hoy",      value: kpis.totalDel,                        color: "text-primary",     icon: BarChart3 },
-          { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-[var(--data-warning)]",   icon: Wrench },
+          { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-[var(--data-warning-500)]",   icon: Wrench },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
@@ -237,7 +237,7 @@ export default function FleetManagementTab() {
                           <Fuel className="h-3 w-3" /> Combustible
                         </span>
                         <span className={cn("font-bold",
-                          v.fuelLevel > 50 ? "text-[var(--data-success)]" : v.fuelLevel > 20 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                          v.fuelLevel > 50 ? "text-[var(--data-success-500)]" : v.fuelLevel > 20 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
                         )}>
                           {v.fuelLevel}%
                         </span>
@@ -245,7 +245,7 @@ export default function FleetManagementTab() {
                       <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div
                           className={cn("h-full rounded-full transition-all",
-                            v.fuelLevel > 50 ? "bg-[var(--accent-soft)]" : v.fuelLevel > 20 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+                            v.fuelLevel > 50 ? "bg-[var(--accent-soft)]" : v.fuelLevel > 20 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
                           )}
                           style={{ width: `${v.fuelLevel}%` }}
                         />
@@ -254,7 +254,7 @@ export default function FleetManagementTab() {
 
                     {/* Maintenance warning */}
                     {new Date(v.nextMaintenance) <= MAINTENANCE_THRESHOLD && (
-                      <div className="flex items-center gap-2 text-xs bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Mantenimiento próximo: {fmtDate(v.nextMaintenance)}
                       </div>
@@ -296,7 +296,7 @@ export default function FleetManagementTab() {
                   <tr key={m.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
                     <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{m.vehicleName}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
-                      <Wrench className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" /> {m.type}
+                      <Wrench className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" /> {m.type}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.date)}</td>
                     <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(m.cost)}</td>

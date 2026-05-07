@@ -29,7 +29,7 @@ export default function AdminError({
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)] p-4">
       <div className="w-full max-w-md rounded-xl bg-[var(--surface-raised)] p-8 text-center">
         <div className="mb-4 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/20 dark:text-[var(--data-warning)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="h-7 w-7" />
           </div>
         </div>

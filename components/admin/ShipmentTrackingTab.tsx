@@ -44,10 +44,10 @@ interface Order {
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   pendiente:  { label: "Pendiente",   color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]" },
-  confirmado: { label: "Confirmado",  color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
-  en_camino:  { label: "En camino",   color: "text-[var(--data-success)] dark:text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  entregado:  { label: "Entregado",   color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  cancelado:  { label: "Cancelado",   color: "text-[var(--data-error)] dark:text-[var(--data-error)]",      bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  confirmado: { label: "Confirmado",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
+  en_camino:  { label: "En camino",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  entregado:  { label: "Entregado",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  cancelado:  { label: "Cancelado",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",      bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 // Transiciones válidas (mismo mapa que en la API)
@@ -88,7 +88,7 @@ const PROGRESS_STAGES: { key: OrderStatus; label: string }[] = [
 function ProgressBar({ status }: { status: OrderStatus }) {
   if (status === "cancelado") {
     return (
-      <div className="mt-3 flex items-center gap-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl px-3 py-2">
+      <div className="mt-3 flex items-center gap-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl px-3 py-2">
         <AlertCircle className="h-3.5 w-3.5 shrink-0" /> Pedido cancelado
       </div>
     );
@@ -231,7 +231,7 @@ function OrderCard({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   next === "cancelado"
-                    ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)] dark:border-[var(--data-error)]"
+                    ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                     : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20",
                   updating && "opacity-50 cursor-not-allowed"
                 )}
@@ -470,10 +470,10 @@ export default function ShipmentTrackingTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { label: "En camino",      value: kpis.enCurso,          color: "text-[var(--data-success)]",    icon: Truck },
-          { label: "Por preparar",   value: kpis.confirmados,       color: "text-[var(--data-warning)]",   icon: Package },
-          { label: "Entregados hoy", value: kpis.entregadosHoy,    color: "text-[var(--data-success)]", icon: CheckCircle },
-          { label: "Cancelados",     value: kpis.cancelados,        color: "text-[var(--data-error)]",     icon: AlertCircle },
+          { label: "En camino",      value: kpis.enCurso,          color: "text-[var(--data-success-500)]",    icon: Truck },
+          { label: "Por preparar",   value: kpis.confirmados,       color: "text-[var(--data-warning-500)]",   icon: Package },
+          { label: "Entregados hoy", value: kpis.entregadosHoy,    color: "text-[var(--data-success-500)]", icon: CheckCircle },
+          { label: "Cancelados",     value: kpis.cancelados,        color: "text-[var(--data-error-500)]",     icon: AlertCircle },
           {
             label: "Tiempo prom.",
             value: kpis.tiempoPromedio !== null ? `${kpis.tiempoPromedio}min` : "—",
@@ -551,7 +551,7 @@ export default function ShipmentTrackingTab() {
       )}
 
       {error && !loading && (
-        <div className="flex items-center gap-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl px-4 py-3">
           <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           <button onClick={fetchOrders} className="ml-auto font-bold underline text-xs">Reintentar</button>
         </div>

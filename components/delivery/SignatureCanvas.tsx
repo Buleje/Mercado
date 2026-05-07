@@ -164,7 +164,7 @@ export default function SignatureCanvas({
           className="
             flex items-center justify-center gap-2
             min-h-[44px] rounded-xl
-            bg-[#00B4A6] hover:bg-teal-600
+            bg-[var(--accent)] hover:bg-[var(--accent-dark)]
             text-white font-bold text-sm
             active:scale-95 transition-all
             disabled:opacity-40 disabled:cursor-not-allowed

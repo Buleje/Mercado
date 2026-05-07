@@ -58,9 +58,9 @@ type Fiado = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2; variant: BadgeVariant }> = {
-  ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock,       variant: "warning" },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2, variant: "success" },
-  VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
+  ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock,       variant: "warning" },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2, variant: "success" },
+  VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban,         variant: "neutral" },
 };
 
@@ -184,7 +184,7 @@ function FiadoStreakBadge({ customerId, fiados }: { customerId: string; fiados: 
   return (
     <span className={cn(
       "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold",
-      streak >= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+      streak >= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
     )}>
       {streak >= 5 ? "\u2B50" : "\uD83D\uDD25"} {streak} pagos a tiempo
     </span>
@@ -213,9 +213,9 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
   const colorMap: Record<number, string> = {
     5: "text-yellow-500",
     4: "text-yellow-500",
-    3: "text-amber-500",
+    3: "text-[var(--data-warning-500)]",
     2: "text-orange-500",
-    1: "text-red-500",
+    1: "text-[var(--data-error-500)]",
   };
 
   return (
@@ -994,11 +994,11 @@ export default function FiadosModule() {
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pend.</span>
             <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(totalSaldo)}</span>
             <span className="text-[var(--text-tertiary)]">·</span>
-            <span className="font-semibold text-[var(--data-success)]">{activosCount}</span>
+            <span className="font-semibold text-[var(--data-success-500)]">{activosCount}</span>
             {vencidosCount > 0 && (
               <>
                 <span className="text-[var(--text-tertiary)]">·</span>
-                <span className="font-semibold text-[var(--data-error)]">{vencidosCount} venc.</span>
+                <span className="font-semibold text-[var(--data-error-500)]">{vencidosCount} venc.</span>
               </>
             )}
           </div>
@@ -1059,8 +1059,8 @@ export default function FiadosModule() {
           <LoadingState />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-            <p className="text-sm text-[var(--data-error)]">{error}</p>
+            <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
             <button onClick={fetchFiados} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : fiados.length === 0 ? (
@@ -1117,7 +1117,7 @@ export default function FiadosModule() {
                           <div className="flex items-center gap-2">
                             {(() => {
                               const name = f.customerName || f.customerId;
-                              const avatarColors = ['#00B4A6','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
+                              const avatarColors = ['var(--accent)','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
@@ -1140,7 +1140,7 @@ export default function FiadosModule() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-[var(--text-primary)]">{formatCurrency(f.total)}</td>
-                        <td className={cn("px-4 py-3 text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{formatCurrency(f.saldo)}</td>
+                        <td className={cn("px-4 py-3 text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
                           {f.fechaVence ? formatDate(f.fechaVence) : "—"}
                         </td>
@@ -1282,11 +1282,11 @@ export default function FiadosModule() {
                     </div>
                     <div>
                       <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Pagado</p>
-                      <p className="text-sm font-bold text-[var(--data-success)]">{formatCurrency(selected.total - selected.saldo)}</p>
+                      <p className="text-sm font-bold text-[var(--data-success-500)]">{formatCurrency(selected.total - selected.saldo)}</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Saldo</p>
-                      <p className="text-sm font-bold text-[var(--data-error)]">{formatCurrency(selected.saldo)}</p>
+                      <p className="text-sm font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</p>
                     </div>
                   </div>
                   {selected.fechaVence && (
@@ -1319,7 +1319,7 @@ export default function FiadosModule() {
                         {[...selected.cuotas].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(c => (
                           <div key={c.id} className="flex items-start gap-3 relative">
                             <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0 z-10 border-2 border-white">
-                              <DollarSign className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                              <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                             </div>
                             <div className="flex-1 min-w-0 bg-gray-50 rounded-xl p-3">
                               <div className="flex items-center justify-between gap-2">

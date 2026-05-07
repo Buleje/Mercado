@@ -49,8 +49,8 @@ function buildMonthLabel(year: number, month: number) {
 }
 
 function deltaColor(val: number) {
-  if (val > 0) return "text-[var(--data-success)] dark:text-[var(--data-success)]";
-  if (val < 0) return "text-red-500 dark:text-red-400";
+  if (val > 0) return "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+  if (val < 0) return "text-[var(--data-error-500)] dark:text-red-400";
   return "text-[var(--text-tertiary)] dark:text-muted";
 }
 function deltaIcon(val: number) {
@@ -222,10 +222,10 @@ export default function PLTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
               { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-              { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: summary.netProfit >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+              { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
             ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
               <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
@@ -249,7 +249,7 @@ export default function PLTab() {
               <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
                 Ganancias y Pérdidas — {summary.period}
               </SectionTitle>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)]")}>
+              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
                 {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
               </span>
             </div>
@@ -271,7 +271,7 @@ export default function PLTab() {
                     <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({Object.keys(summary.expenses).length} categorías)</span>
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-[var(--data-warning)]">{fmt(summary.totalExpenses)}</span>
+                    <span className="font-bold text-[var(--data-warning-500)]">{fmt(summary.totalExpenses)}</span>
                     {expandExpenses ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </button>
@@ -311,7 +311,7 @@ export default function PLTab() {
                     />
                     {/* Net profit overlay */}
                     <div
-                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")}
+                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")}
                       style={{ height: `${(Math.abs(m.netProfit) / maxRevenue) * 100}px`, marginTop: "2px" }}
                       title={`Utilidad neta: ${fmt(m.netProfit)}`}
                     />
@@ -350,10 +350,10 @@ function PLRow({
   large?: boolean;
 }) {
   const valueColor =
-    highlight === "blue" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-    highlight === "green" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
-    highlight === "red" ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
-    value < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground";
+    highlight === "blue" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+    highlight === "green" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+    highlight === "red" ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
+    value < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground";
 
   return (
     <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>

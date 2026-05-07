@@ -108,13 +108,13 @@ export default function POSMetricsStrip() {
       icon: Clock,
       label: "Turno",
       value: formatMinutes(data.turnoMinutos ?? 0),
-      color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     },
     {
       icon: DollarSign,
       label: "Ventas",
       value: `S/ ${(data.totalVentas ?? 0).toFixed(0)}`,
-      color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     },
     {
       icon: Receipt,
@@ -126,7 +126,7 @@ export default function POSMetricsStrip() {
       icon: TrendingUp,
       label: "Ticket",
       value: `S/ ${(data.ticketPromedio ?? 0).toFixed(1)}`,
-      color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     },
   ];
 

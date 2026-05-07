@@ -58,7 +58,7 @@ const VARIANT_CLASS: Record<Variant, string> = {
   secondary: ADMIN_TOKENS.btnSecondary,
   ghost: ADMIN_TOKENS.btnGhost,
   danger:
-    "inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] px-4 py-2 text-sm font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-error)]",
+    "inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] px-4 py-2 text-sm font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-error)]",
 };
 
 const SIZE_CLASS: Record<Size, string> = {

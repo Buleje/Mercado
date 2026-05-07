@@ -193,7 +193,7 @@ export default function LoanCalculator() {
               <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
                 Interés total
               </p>
-              <p className="mt-1 text-2xl font-semibold text-[var(--data-warning)] tabular-nums">
+              <p className="mt-1 text-2xl font-semibold text-[var(--data-warning-500)] tabular-nums">
                 {fmt(totalInterest)}
               </p>
             </div>
@@ -215,20 +215,20 @@ export default function LoanCalculator() {
                 className={cn(
                   "mt-0.5 h-5 w-5 shrink-0",
                   salesRatio > 30
-                    ? "text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)]"
                     : salesRatio > 15
-                    ? "text-[var(--data-warning)]"
-                    : "text-[var(--data-success)]"
+                    ? "text-[var(--data-warning-500)]"
+                    : "text-[var(--data-success-500)]"
                 )}
               />
               <p
                 className={cn(
                   "text-sm font-medium",
                   salesRatio > 30
-                    ? "text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)]"
                     : salesRatio > 15
-                    ? "text-[var(--data-warning)]"
-                    : "text-[var(--data-success)]"
+                    ? "text-[var(--data-warning-500)]"
+                    : "text-[var(--data-success-500)]"
                 )}
               >
                 La cuota mensual representa el {salesRatio.toFixed(1)}% de tus
@@ -340,7 +340,7 @@ export default function LoanCalculator() {
                       <td className="px-4 py-2 text-right text-primary">
                         {fmt(row.principal)}
                       </td>
-                      <td className="px-4 py-2 text-right text-[var(--data-warning)]">
+                      <td className="px-4 py-2 text-right text-[var(--data-warning-500)]">
                         {fmt(row.interest)}
                       </td>
                       <td className="px-4 py-2 text-right text-[var(--text-primary)]">

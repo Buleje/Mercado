@@ -40,7 +40,7 @@ const STEPS: Step[] = [
     label: "Pedido recibido",
     desc: "Tu pedido llegó a la bodega",
     icon: Clock,
-    color: "text-amber-600",
+    color: "text-[var(--data-warning-600)]",
     bg: "bg-amber-100",
   },
   {
@@ -48,7 +48,7 @@ const STEPS: Step[] = [
     label: "Confirmado",
     desc: "Estamos preparando tu pedido",
     icon: CheckCircle2,
-    color: "text-emerald-600",
+    color: "text-[var(--data-success-600)]",
     bg: "bg-emerald-100",
   },
   {
@@ -64,7 +64,7 @@ const STEPS: Step[] = [
     label: "Entregado",
     desc: "¡Tu pedido fue entregado!",
     icon: PackageCheck,
-    color: "text-emerald-600",
+    color: "text-[var(--data-success-600)]",
     bg: "bg-emerald-100",
   },
 ];
@@ -179,7 +179,7 @@ export default function PedidoPage() {
       <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 flex items-center justify-center p-6">
         <div className="max-w-sm w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 text-center">
           <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-red-500" />
+            <AlertCircle className="h-8 w-8 text-[var(--data-error-500)]" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Pedido no encontrado</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm">{error ?? "No se encontró el pedido."}</p>
@@ -193,7 +193,7 @@ export default function PedidoPage() {
     return (
       <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 flex items-center justify-center p-6">
         <div className="max-w-sm w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
-          <div className="bg-red-500 px-6 py-5 text-white text-center">
+          <div className="bg-[var(--data-error-500)] px-6 py-5 text-white text-center">
             <XCircle className="h-12 w-12 mx-auto mb-2" />
             <h2 className="text-xl font-bold">Pedido cancelado</h2>
             <p className="text-red-100 text-sm mt-1">Nº {order.id}</p>
@@ -246,7 +246,7 @@ export default function PedidoPage() {
           </p>
           {/* P2 — ETA estimado */}
           {order.status === "confirmado" && (
-            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 mt-2">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--data-success-700)] mt-2">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
               Entrega estimada: ~30–45 min
             </p>
@@ -336,7 +336,7 @@ export default function PedidoPage() {
               <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${
                 order.paymentMethod === "yape"
                   ? "bg-purple-100 text-[var(--accent)]"
-                  : "bg-emerald-100 text-emerald-700"
+                  : "bg-emerald-100 text-[var(--data-success-700)]"
               }`}>
                 {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
               </span>
@@ -431,14 +431,14 @@ export default function PedidoPage() {
           </div>
           {(order.couponDiscount ?? 0) > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-emerald-600">🎟️ Descuento cupón</span>
-              <span className="text-sm font-bold text-emerald-600">-S/{(order.couponDiscount ?? 0).toFixed(2)}</span>
+              <span className="text-sm text-[var(--data-success-600)]">🎟️ Descuento cupón</span>
+              <span className="text-sm font-bold text-[var(--data-success-600)]">-S/{(order.couponDiscount ?? 0).toFixed(2)}</span>
             </div>
           )}
           {(order.discountAmount ?? 0) > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-emerald-600">🏷️ Promoción</span>
-              <span className="text-sm font-bold text-emerald-600">-S/{(order.discountAmount ?? 0).toFixed(2)}</span>
+              <span className="text-sm text-[var(--data-success-600)]">🏷️ Promoción</span>
+              <span className="text-sm font-bold text-[var(--data-success-600)]">-S/{(order.discountAmount ?? 0).toFixed(2)}</span>
             </div>
           )}
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-200 dark:border-gray-700">
@@ -503,9 +503,9 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
   if (sent) {
     return (
       <div className="bg-emerald-50 rounded-2xl p-5 text-center space-y-2">
-        <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
-        <p className="font-bold text-emerald-700">¡Gracias por tu reseña!</p>
-        <p className="text-xs text-emerald-600/70">Tu opinión nos ayuda a mejorar</p>
+        <CheckCircle2 className="h-8 w-8 text-[var(--data-success-500)] mx-auto" />
+        <p className="font-bold text-[var(--data-success-700)]">¡Gracias por tu reseña!</p>
+        <p className="text-xs text-[var(--data-success-500)]/70">Tu opinión nos ayuda a mejorar</p>
       </div>
     );
   }

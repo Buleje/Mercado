@@ -76,8 +76,8 @@ export const ADMIN_TOKENS = {
     "inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]",
   /** Banner de error. */
   errorBanner:
-    "rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]",
+    "rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
   /** Banner de exito. */
   successBanner:
-    "rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300",
+    "rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 px-4 py-2 text-sm text-[var(--data-success-700)] dark:text-emerald-300",
 } as const;

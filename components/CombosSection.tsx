@@ -192,7 +192,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
             <div>
               <span className="block text-xs text-muted line-through">S/{combo.originalTotal.toFixed(2)}</span>
               <span className="text-xl font-extrabold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
-              <span className="block text-[length:var(--ts-2xs)] text-emerald-600 font-semibold">
+              <span className="block text-[length:var(--ts-2xs)] text-[var(--data-success-600)] font-semibold">
                 Ahorras S/{(combo.originalTotal - combo.comboPrice).toFixed(2)}
               </span>
             </div>
@@ -213,7 +213,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
                 className={cn(
                   "flex items-center justify-center h-11 w-11 rounded-2xl shadow-lg shrink-0",
                   adding
-                    ? "bg-emerald-500 text-white scale-95"
+                    ? "bg-[var(--data-success-500)] text-white scale-95"
                     : "bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95"
                 )}
                 aria-label={adding ? "¡Combo agregado!" : "Agregar combo al carrito"}

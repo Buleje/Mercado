@@ -110,7 +110,7 @@ function GiftCardDisplay({ card }: { card: GiftCard }) {
 
   return (
     <div className="relative rounded-xl overflow-hidden p-5 text-white"
-      style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #00B4A6 50%, #1a3a2a 100%)" }}>
+      style={{ background: "linear-gradient(135deg, #1a3a2a 0%, var(--accent) 50%, #1a3a2a 100%)" }}>
       {/* Gold border accent */}
       <div className="absolute inset-0 rounded-xl pointer-events-none"
         style={{ border: "2px solid rgba(244,162,97,0.5)" }} />
@@ -145,7 +145,7 @@ function GiftCardDisplay({ card }: { card: GiftCard }) {
           <button type="button" onClick={copy}
             className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-mono font-bold tracking-widest transition-colors">
             {card.code}
-            {copied ? <Check className="h-3 w-3 text-[var(--data-success)]" /> : <Copy className="h-3 w-3 opacity-60" />}
+            {copied ? <Check className="h-3 w-3 text-[var(--data-success-500)]" /> : <Copy className="h-3 w-3 opacity-60" />}
           </button>
           <span className="text-xs text-white/50">Vence: {fmtDate(card.expiresAt)}</span>
         </div>
@@ -264,9 +264,9 @@ export default function GiftCardManager() {
 
   const statusLabel: Record<GiftCardStatus, string> = { activo: "Activo", usado: "Usado", vencido: "Vencido" };
   const statusColor: Record<GiftCardStatus, string> = {
-    activo: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    activo: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     usado: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-    vencido: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+    vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   };
 
   const TABS: { key: ActiveTab; label: string }[] = [
@@ -364,9 +364,9 @@ export default function GiftCardManager() {
           <div className="space-y-6">
             {justCreated ? (
               <div className="space-y-6">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <Check className="h-4 w-4 text-[var(--data-success)] shrink-0" />
-                  <p className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">Vale creado exitosamente</p>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <Check className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
+                  <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Vale creado exitosamente</p>
                 </div>
                 <GiftCardDisplay card={justCreated} />
                 <button type="button" onClick={() => setJustCreated(null)}
@@ -473,11 +473,11 @@ export default function GiftCardManager() {
             })()}
 
             {redeemResult && (
-              <div className={cn("flex items-start gap-2 px-3 py-2.5 rounded-xl border", redeemResult.success ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)]")}>
+              <div className={cn("flex items-start gap-2 px-3 py-2.5 rounded-xl border", redeemResult.success ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]")}>
                 {redeemResult.success
-                  ? <Check className="h-4 w-4 text-[var(--data-success)] shrink-0 mt-0.5" />
-                  : <AlertCircle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />}
-                <p className={cn("text-sm", redeemResult.success ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
+                  ? <Check className="h-4 w-4 text-[var(--data-success-500)] shrink-0 mt-0.5" />
+                  : <AlertCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />}
+                <p className={cn("text-sm", redeemResult.success ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                   {redeemResult.msg}
                 </p>
               </div>

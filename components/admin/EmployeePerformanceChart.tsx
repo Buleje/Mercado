@@ -272,7 +272,7 @@ function TopProductsTable({ products }: { products: TopProduct[] }) {
               </div>
               <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[var(--data-warning)] rounded-full transition-all duration-[var(--dur-slow)]"
+                  className="h-full bg-[var(--data-warning-500)] rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${barPct}%` }}
                 />
               </div>
@@ -334,7 +334,7 @@ export default function EmployeePerformanceChart() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
+          <BarChart3 className="w-5 h-5 text-primary dark:text-[var(--data-success-500)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Rendimiento por empleado
@@ -352,7 +352,7 @@ export default function EmployeePerformanceChart() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-primary dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -370,7 +370,7 @@ export default function EmployeePerformanceChart() {
               "w-full appearance-none rounded-xl border border-[var(--rule-base)]",
               "bg-[var(--surface-raised)] text-[var(--text-primary)]",
               "px-4 py-3 pr-10 text-sm font-medium",
-              "focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-[var(--data-success)]/40"
+              "focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-[var(--data-success-500)]/40"
             )}
           >
             {allStats.map((s) => (
@@ -392,9 +392,9 @@ export default function EmployeePerformanceChart() {
         </div>
       )}
       {!loading && error && (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-center">
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
-          <button onClick={fetchData} className="mt-2 text-xs text-[var(--data-error)] underline">
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-4 text-center">
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
+          <button onClick={fetchData} className="mt-2 text-xs text-[var(--data-error-500)] underline">
             Reintentar
           </button>
         </div>
@@ -422,8 +422,8 @@ export default function EmployeePerformanceChart() {
                   : "primera semana",
                 subColor: weekChange != null
                   ? weekChange >= 0
-                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                    : "text-red-500 dark:text-red-400"
+                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    : "text-[var(--data-error-500)] dark:text-red-400"
                   : "text-[var(--text-tertiary)]",
               },
               {
@@ -474,8 +474,8 @@ export default function EmployeePerformanceChart() {
             <div className={cn(
               "rounded-xl p-3 flex items-center justify-between",
               weekChange != null && weekChange >= 0
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
-                : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
             )}>
               <span className="text-sm text-[var(--text-secondary)]">
                 Semana anterior: <strong>{fmt(selected.totalPrevWeek)}</strong>
@@ -484,8 +484,8 @@ export default function EmployeePerformanceChart() {
                 <span className={cn(
                   "text-sm font-bold",
                   weekChange >= 0
-                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
-                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}>
                   {weekChange >= 0 ? "+" : ""}{weekChange.toFixed(1)}%
                 </span>

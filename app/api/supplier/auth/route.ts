@@ -8,6 +8,8 @@ import {
   SUPPLIER_SESSION,
 } from "@/lib/supplier-session";
 import { toErrorPayload } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -18,6 +20,12 @@ const loginSchema = z.object({
 // ── POST /api/supplier/auth — login con API Key ──────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // SECURITY 2026-05-06 (audit delivery #7): rate limit estricto AUTH para
+  // frenar brute-force de apiKey. Antes 0 RL → atacante con botnet probaba
+  // cualquier longitud de apiKey hasta dar.
+  const rl = applyRateLimit(req, "AUTH", "supplier-auth");
+  if (rl) return rl;
+
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = loginSchema.safeParse(body);
@@ -38,8 +46,23 @@ export async function POST(req: NextRequest) {
     });
 
     if (!portal || !portal.isActive) {
+      logger.warn("[supplier/auth] login fallido", {
+        ip: req.headers.get("x-forwarded-for") ?? null,
+      });
       return NextResponse.json({ error: "API Key inválida o portal inactivo" }, { status: 401 });
     }
+
+    // Audit trail del login exitoso (Ley 29733).
+    try {
+      const { logActivity } = await import("@/lib/activity-logger");
+      logActivity(
+        "supplier_login_success",
+        "supplier",
+        `Supplier "${portal.supplier.name}" autenticado`,
+        portal.supplier.id,
+        portal.supplier.id,
+      ).catch(() => {});
+    } catch { /* logger not available */ }
 
     const token = await createSupplierToken({
       supplierId: portal.supplier.id,

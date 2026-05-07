@@ -10,7 +10,7 @@ const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 function getColor(ratio: number): string {
-  if (ratio > 0.85) return "bg-red-500 text-white";
+  if (ratio > 0.85) return "bg-[var(--data-error-500)] text-white";
   if (ratio > 0.65) return "bg-orange-400 text-white";
   if (ratio > 0.45) return "bg-yellow-400 text-[var(--text-primary)]";
   if (ratio > 0.25) return "bg-[var(--accent-soft)] text-[var(--text-primary)]";
@@ -72,7 +72,7 @@ export default function HeatMapTab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Mapa de Calor
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Patrones de ventas por hora y día de la semana</p>
         </div>
@@ -94,10 +94,10 @@ export default function HeatMapTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-[var(--data-success)]" },
-          { label: "Hora pico", value: `${peakHour.hour}:00`, color: "text-[var(--data-success)]" },
+          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-[var(--data-success-500)]" },
+          { label: "Hora pico", value: `${peakHour.hour}:00`, color: "text-[var(--data-success-500)]" },
           { label: "Día más activo", value: peakDay.day, color: "text-[var(--text-secondary)]" },
-          { label: "Monto total", value: `S/ ${totalAmount.toFixed(0)}`, color: "text-[var(--data-warning)]" },
+          { label: "Monto total", value: `S/ ${totalAmount.toFixed(0)}`, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -115,7 +115,7 @@ export default function HeatMapTab() {
         </CardTitle>
 
         {error ? (
-          <div className="flex items-center justify-center h-40 text-sm text-[var(--data-error)]">{error}</div>
+          <div className="flex items-center justify-center h-40 text-sm text-[var(--data-error-500)]">{error}</div>
         ) : loading ? (
           <div className="min-w-[500px] space-y-1.5">
             {DAYS.map(d => (
@@ -162,7 +162,7 @@ export default function HeatMapTab() {
             {/* Leyenda */}
             <div className="flex flex-wrap items-center gap-2 mt-4 justify-center">
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Menos</span>
-              {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-yellow-400", "bg-orange-400", "bg-red-500"].map((c, i) => (
+              {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-yellow-400", "bg-orange-400", "bg-[var(--data-error-500)]"].map((c, i) => (
                 <div key={i} className={cn("h-4 w-6 rounded", c)} />
               ))}
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Más</span>
@@ -178,7 +178,7 @@ export default function HeatMapTab() {
           >
             <p className="font-bold">{tooltip.day} {tooltip.hour}:00</p>
             <p>{tooltip.value} transacciones</p>
-            <p className="text-[var(--data-success)]">S/ {tooltip.amount.toFixed(2)}</p>
+            <p className="text-[var(--data-success-500)]">S/ {tooltip.amount.toFixed(2)}</p>
           </div>
         )}
       </div>

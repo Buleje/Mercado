@@ -69,7 +69,7 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">
         {formatDate(d.fecha)}
-        {d.isProjected && <span className="ml-2 text-[length:var(--ts-2xs)] font-normal text-[var(--data-warning)]">(Proyectado)</span>}
+        {d.isProjected && <span className="ml-2 text-[length:var(--ts-2xs)] font-normal text-[var(--data-warning-500)]">(Proyectado)</span>}
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ingresos</span>
@@ -77,12 +77,12 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Egresos</span>
-        <span className="font-mono font-medium text-[var(--data-error)]">{formatCurrency(d.egresos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrency(d.egresos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Balance</span>
-          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-primary" : "text-[var(--data-error)]")}>{formatCurrency(d.balance)}</span>
+          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrency(d.balance)}</span>
         </p>
       </div>
     </div>
@@ -197,11 +197,11 @@ export default function CashFlowChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de flujo de caja</p>
+      <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudieron cargar los datos de flujo de caja</p>
         <button
           onClick={() => { const days = CF_PILLS.find(p => p.key === cfPeriod)?.days ?? 30; fetchData(days); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -221,9 +221,9 @@ export default function CashFlowChart() {
 
   const summaryCards = summary
     ? [
-        { label: "Total ingresos", value: formatCurrency(summary.totalIngresos), icon: TrendingUp, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-        { label: "Total egresos", value: formatCurrency(summary.totalEgresos), icon: TrendingDown, color: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
-        { label: "Balance proyectado", value: formatCurrency(summary.balanceFinal), icon: Wallet, color: summary.balanceFinal >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+        { label: "Total ingresos", value: formatCurrency(summary.totalIngresos), icon: TrendingUp, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+        { label: "Total egresos", value: formatCurrency(summary.totalEgresos), icon: TrendingDown, color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+        { label: "Balance proyectado", value: formatCurrency(summary.balanceFinal), icon: Wallet, color: summary.balanceFinal >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
       ]
     : [];
 
@@ -316,7 +316,7 @@ export default function CashFlowChart() {
           <Bar
             yAxisId="bars"
             dataKey="ingresos"
-            fill="#00B4A6"
+            fill="var(--accent)"
             radius={[4, 4, 0, 0]}
             barSize={12}
             isAnimationActive={false}

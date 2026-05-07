@@ -229,9 +229,9 @@ export default function POSCustomerSearch({
   if (selectedPhone) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-3 p-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl">
-          <div className="h-10 w-10 rounded-full bg-[var(--data-success)]/15 flex items-center justify-center shrink-0">
-            <User className="h-5 w-5 text-[var(--data-success)]" />
+        <div className="flex items-center gap-3 p-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+          <div className="h-10 w-10 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center shrink-0">
+            <User className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
@@ -244,20 +244,20 @@ export default function POSCustomerSearch({
           <button
             onClick={onClear}
             aria-label="Quitar cliente"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-white/50 dark:hover:bg-card/50 transition-colors shrink-0"
+            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-card/50 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
         {/* Mejora 11: Reliability score badge */}
         {reliabilityScore && (
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg">
-            <Star className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
+            <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
             <span className={cn(
               "text-sm font-bold",
-              reliabilityScore.score >= 4 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-              reliabilityScore.score >= 3 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
-              "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              reliabilityScore.score >= 4 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+              reliabilityScore.score >= 3 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+              "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}>
               Confiabilidad: {reliabilityScore.label}
             </span>
@@ -266,13 +266,13 @@ export default function POSCustomerSearch({
         {/* Mejora M-3: Abono rápido de fiado */}
         {fiadoSaldo > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-lg">
-              <span className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)] flex-1">
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg">
+              <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
                 Fiado pendiente: S/{fiadoSaldo.toFixed(2)}
               </span>
               <button
                 onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
-                className="text-sm font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded transition-colors"
+                className="text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded transition-colors"
               >
                 Abonar
               </button>
@@ -325,9 +325,9 @@ export default function POSCustomerSearch({
         )}
         {/* Mejora 10R2: Notes badge */}
         {customerNotes && (
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
             <span className="text-xs shrink-0">&#128221;</span>
-            <span className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium truncate">
+            <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium truncate">
               Nota: {customerNotes.slice(0, 50)}{customerNotes.length > 50 ? "..." : ""}
             </span>
           </div>
@@ -335,13 +335,13 @@ export default function POSCustomerSearch({
         {/* Mejora 15: Loyalty points */}
         {loyaltyPoints > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg">
-              <Star className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" />
-              <span className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
+              <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
+              <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold">
                 {loyaltyPoints} puntos (= S/{(loyaltyPoints * POINTS_RATE).toFixed(2)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (
-                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">Canjeable</span>
+                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">Canjeable</span>
               )}
             </div>
             {loyaltyPoints >= 100 && !showRedeemSlider && (
@@ -402,8 +402,8 @@ export default function POSCustomerSearch({
         )}
         {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg">
-            <ShoppingBag className="h-3 w-3 text-[var(--data-success)] shrink-0" />
-            <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">Primera compra de este cliente</span>
+            <ShoppingBag className="h-3 w-3 text-[var(--data-success-500)] shrink-0" />
+            <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Primera compra de este cliente</span>
           </div>
         )}
         {/* Mejora 2: Payment history */}
@@ -503,11 +503,11 @@ export default function POSCustomerSearch({
                   </p>
                 </div>
                 {c.creditBalance != null && c.creditBalance > 0 ? (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] shrink-0">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] shrink-0">
                     Fiado S/{c.creditBalance.toFixed(2)}
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] shrink-0">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] shrink-0">
                     Sin deuda
                   </span>
                 )}

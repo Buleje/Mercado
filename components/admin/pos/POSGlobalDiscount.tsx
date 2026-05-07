@@ -133,7 +133,7 @@ export default function POSGlobalDiscount({
             <span>Subtotal</span>
             <span>{fmt(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-[var(--data-error)] font-semibold">
+          <div className="flex justify-between text-[var(--data-error-500)] font-semibold">
             <span>
               Desc. {mode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}
             </span>

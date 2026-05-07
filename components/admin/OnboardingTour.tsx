@@ -160,7 +160,7 @@ export function OnboardingTour({
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#2563EB] dark:text-[var(--data-success)]">
+            <span className="text-xs font-bold text-[#2563EB] dark:text-[var(--data-success-500)]">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
@@ -198,8 +198,8 @@ export function OnboardingTour({
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg px-3 py-2">
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
+          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               {step.example}
             </p>
           </div>

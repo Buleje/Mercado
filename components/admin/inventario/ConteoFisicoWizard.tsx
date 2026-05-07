@@ -195,7 +195,7 @@ export default function ConteoFisicoWizard() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] text-[var(--data-error)] px-4 py-3 rounded-lg text-sm">
+        <div className="bg-[var(--data-error-50)] border border-[var(--data-error-500)] text-[var(--data-error-500)] px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
@@ -274,7 +274,7 @@ export default function ConteoFisicoWizard() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning)] px-2 py-1 rounded-full">
+                      <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-2 py-1 rounded-full">
                         {c.status}
                       </span>
                       <span className="text-xs text-[var(--text-secondary)]">{c._count.items} items</span>
@@ -342,8 +342,8 @@ export default function ConteoFisicoWizard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         item.stockContado !== null
                           ? item.diferencia === 0
-                            ? 'bg-[var(--accent-soft)] text-[var(--data-success)]'
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                            ? 'bg-[var(--accent-soft)] text-[var(--data-success-500)]'
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                           : 'bg-gray-100 text-[var(--text-secondary)]'
                       }`}>
                         {item.stockContado !== null
@@ -399,9 +399,9 @@ export default function ConteoFisicoWizard() {
                     <div className="text-center">
                       {(() => {
                         const diff = parseInt(inputValue) - selected.stockSistema;
-                        if (diff === 0) return <span className="text-[var(--data-success)] font-bold text-lg">Igual</span>;
+                        if (diff === 0) return <span className="text-[var(--data-success-500)] font-bold text-lg">Igual</span>;
                         return (
-                          <span className={`font-bold text-lg ${diff > 0 ? 'text-[var(--data-success)]' : "text-[var(--data-error)]"}`}>
+                          <span className={`font-bold text-lg ${diff > 0 ? 'text-[var(--data-success-500)]' : "text-[var(--data-error-500)]"}`}>
                             {diff > 0 ? '+' : ''}{diff}
                           </span>
                         );
@@ -471,7 +471,7 @@ export default function ConteoFisicoWizard() {
                         </td>
                         <td className="py-2 px-2 text-center text-[var(--text-secondary)]">{item.stockSistema}</td>
                         <td className="py-2 px-2 text-center font-medium text-[var(--text-primary)]">{item.stockContado}</td>
-                        <td className={`py-2 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? 'text-[var(--data-success)]' : "text-[var(--data-error)]"}`}>
+                        <td className={`py-2 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? 'text-[var(--data-success-500)]' : "text-[var(--data-error-500)]"}`}>
                           {(item.diferencia ?? 0) > 0 ? '+' : ''}{item.diferencia}
                         </td>
                         <td className="py-2 px-2 text-center">
@@ -512,7 +512,7 @@ export default function ConteoFisicoWizard() {
       {paso === 4 && resumen && (
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 text-center space-y-6">
           <div className="w-16 h-16 mx-auto bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-[var(--data-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-8 h-8 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -529,11 +529,11 @@ export default function ConteoFisicoWizard() {
               <div className="text-xs text-[var(--text-secondary)]">Total items</div>
             </div>
             <div className="bg-[var(--data-warning-50)] rounded-lg p-4">
-              <div className="text-2xl font-bold text-[var(--data-warning)]">{resumen.conDiferencia}</div>
+              <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.conDiferencia}</div>
               <div className="text-xs text-[var(--text-secondary)]">Con diferencia</div>
             </div>
             <div className="bg-[var(--accent-soft)] rounded-lg p-4">
-              <div className="text-2xl font-bold text-[var(--data-success)]">{resumen.ajustados}</div>
+              <div className="text-2xl font-bold text-[var(--data-success-500)]">{resumen.ajustados}</div>
               <div className="text-xs text-[var(--text-secondary)]">Ajustes aplicados</div>
             </div>
           </div>

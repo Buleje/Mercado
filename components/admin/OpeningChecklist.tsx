@@ -123,7 +123,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slow)]",
-              allDone ? "bg-[var(--data-warning)]" : "bg-primary"
+              allDone ? "bg-[var(--data-warning-500)]" : "bg-primary"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -170,12 +170,12 @@ export function OpeningChecklist({ className }: { className?: string }) {
       {/* Felicitacion */}
       {allDone && (
         <div
-          className="mt-4 flex items-center gap-2 rounded-lg bg-[var(--data-warning)]/20 px-3 py-2"
+          className="mt-4 flex items-center gap-2 rounded-lg bg-[var(--data-warning-500)]/20 px-3 py-2"
           role="status"
           aria-live="polite"
         >
-          <PartyPopper className="h-4 w-4 flex-shrink-0 text-[var(--data-warning)]" aria-hidden="true" />
-          <p className="text-sm font-medium text-[#c07040] dark:text-[var(--data-warning)]">
+          <PartyPopper className="h-4 w-4 flex-shrink-0 text-[var(--data-warning-500)]" aria-hidden="true" />
+          <p className="text-sm font-medium text-[#c07040] dark:text-[var(--data-warning-500)]">
             Excelente — la tienda esta lista para abrir
           </p>
         </div>

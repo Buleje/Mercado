@@ -64,7 +64,7 @@ function RevenueChart({
             <span
               className={cn(
                 "text-xs font-medium",
-                mom >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                mom >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
               )}
             >
               {mom >= 0 ? "\u25B2" : "\u25BC"} {Math.abs(mom).toFixed(1)}% MoM
@@ -78,8 +78,8 @@ function RevenueChart({
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -109,7 +109,7 @@ function RevenueChart({
           <Area
             type="monotone"
             dataKey="value"
-            stroke="#00B4A6"
+            stroke="var(--accent)"
             strokeWidth={2}
             fill="url(#emeraldGradient)"
           />

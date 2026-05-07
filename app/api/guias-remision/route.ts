@@ -76,6 +76,19 @@ export async function POST(req: NextRequest) {
     // If orderId provided and no items, load items from the order
     let items = data.items ?? [];
     if (data.orderId && items.length === 0) {
+      // SECURITY 2026-05-06 (pentest H8): validar que la orden pertenezca al
+      // tenant que crea la guía. Antes `findMany({where:{orderId}})` leía
+      // items de OTRO tenant si el atacante conocía un orderId ajeno.
+      const order = await prisma.order.findFirst({
+        where: { id: data.orderId, tenantId: auth.tenantId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!order) {
+        return NextResponse.json(
+          { error: "Orden no encontrada en este tenant" },
+          { status: 404 }
+        );
+      }
       const orderItems = await prisma.orderItem.findMany({
         where: { orderId: data.orderId },
       });

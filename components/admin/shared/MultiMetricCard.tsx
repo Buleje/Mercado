@@ -78,9 +78,9 @@ interface Props {
 }
 
 const INTENT_COLORS = {
-  success: "bg-[var(--accent-soft)] text-[var(--data-success)]",
-  warning: "bg-[var(--data-warning-50)] text-[var(--data-warning)]",
-  error: "bg-[var(--data-error-50)] text-[var(--data-error)]",
+  success: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  warning: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
+  error: "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
   neutral: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 } as const;
 
@@ -171,12 +171,12 @@ export function MultiMetricCard({
               className={cn(
                 "h-full rounded-full transition-all duration-700",
                 progress >= 100
-                  ? "bg-[var(--data-success)]"
+                  ? "bg-[var(--data-success-500)]"
                   : progress >= 66
                     ? "bg-[var(--accent)]"
                     : progress >= 33
-                      ? "bg-[var(--data-warning)]"
-                      : "bg-[var(--data-error)]",
+                      ? "bg-[var(--data-warning-500)]"
+                      : "bg-[var(--data-error-500)]",
               )}
               style={{ width: `${progress}%` }}
             />
@@ -215,8 +215,8 @@ function DeltaBadge({ delta }: { delta: NonNullable<Props["delta"]> }) {
     delta.value === 0
       ? "text-[var(--text-secondary)] bg-[var(--surface-sunken)]"
       : delta.value > 0
-        ? "text-[var(--data-success)] bg-[var(--accent-soft)]"
-        : "text-[var(--data-error)] bg-[var(--data-error-50)]";
+        ? "text-[var(--data-success-500)] bg-[var(--accent-soft)]"
+        : "text-[var(--data-error-500)] bg-[var(--data-error-50)]";
   return (
     <span
       className={cn(

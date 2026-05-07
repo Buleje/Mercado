@@ -23,7 +23,7 @@ const PLATFORM_TENANT_ID = "main";
  */
 export async function GET(req: NextRequest) {
   const tenantId =
-    req.cookies.get("oauth-tenant")?.value ??
+    req.cookies.get("__Host-oauth-tenant")?.value ??
     req.headers.get("x-tenant-id") ??
     PLATFORM_TENANT_ID;
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
-  const storedState = req.cookies.get("oauth-state")?.value;
+  const storedState = req.cookies.get("__Host-oauth-state")?.value;
   const errorParam = req.nextUrl.searchParams.get("error");
 
   // Google returned an error (user denied consent, etc.)
@@ -69,6 +69,21 @@ export async function GET(req: NextRequest) {
   try {
     const tokens = await exchangeCodeForTokens(code);
     const googleUser = await getGoogleUserInfo(tokens.access_token);
+
+    // SECURITY 2026-05-06 (audit ATO crítico): rechazar emails NO verificados.
+    // Sin esto, atacante crea cuenta Google con email "victima@gmail.com"
+    // (Workspace permite emails sin verificar) y secuestra cuenta de víctima
+    // en nuestro sistema vía merge-by-email.
+    if (googleUser.verified_email !== true) {
+      logger.warn("[oauth/google] Refused login — email not verified", {
+        email: googleUser.email,
+        googleId: googleUser.id,
+        tenantId,
+      });
+      return NextResponse.redirect(
+        new URL("/?oauth=error&reason=email_not_verified", req.url),
+      );
+    }
 
     logger.info("[oauth/google] User authenticated", {
       email: googleUser.email,
@@ -121,7 +136,7 @@ export async function GET(req: NextRequest) {
     // ── Resolver destino post-login ──
     // Prioridad: cookie `oauth-redirect` (ruta interna guardada en /api/auth/google)
     //           > /marketplace/explorar (default — landing -> explorar)
-    const redirectCookie = req.cookies.get("oauth-redirect")?.value;
+    const redirectCookie = req.cookies.get("__Host-oauth-redirect")?.value;
     const safeRedirect =
       redirectCookie &&
       redirectCookie.startsWith("/") &&
@@ -146,9 +161,9 @@ export async function GET(req: NextRequest) {
     });
 
     // Clear OAuth cookies
-    response.cookies.set("oauth-state", "", { maxAge: 0, path: "/" });
-    response.cookies.set("oauth-tenant", "", { maxAge: 0, path: "/" });
-    response.cookies.set("oauth-redirect", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-state", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-tenant", "", { maxAge: 0, path: "/" });
+    response.cookies.set("__Host-oauth-redirect", "", { maxAge: 0, path: "/" });
 
     logger.info("[oauth/google] Customer session created", {
       phone: customer.phone,

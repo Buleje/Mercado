@@ -234,8 +234,8 @@ export default function QuickReorderModal({
                         <span className={cn(
                           "inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full",
                           item.priceDiff > 0
-                            ? "text-red-600 bg-red-50 dark:bg-red-950/30"
-                            : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
+                            ? "text-[var(--data-error-600)] bg-red-50 dark:bg-red-950/30"
+                            : "text-[var(--data-success-600)] bg-emerald-50 dark:bg-emerald-950/30"
                         )}>
                           {item.priceDiff > 0 ? (
                             <TrendingUp className="h-3 w-3" />
@@ -246,7 +246,7 @@ export default function QuickReorderModal({
                         </span>
                       )}
                       {!item.available && (
-                        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)] bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
                           <AlertCircle className="h-3 w-3" />
                           No disponible
                         </span>

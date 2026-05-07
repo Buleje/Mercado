@@ -115,7 +115,7 @@ export function AdminTopHeader({
   const isBulejeTheme = theming.theme === "buleje" || theming.theme === "cristal" || theming.theme === "shaded";
   const headerThemeClasses = (theming.applyToHeader || isBulejeTheme)
     ? isBulejeTheme
-      ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[rgba(0,180,166,0.2)] text-white/80"
+      ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
       : theming.theme === "dark"
         ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
         : "bg-white border-[var(--rule-base)] text-[var(--text-primary)]"
@@ -147,13 +147,13 @@ export function AdminTopHeader({
           className={cn(
             "group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
             isBulejeTheme
-              ? "bg-white/[0.04] border-[rgba(52,212,190,0.15)] hover:border-[rgba(52,212,190,0.4)] hover:bg-white/[0.07]"
+              ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
               : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-sm"
           )}
         >
           <Search className={cn(
             "h-4 w-4 shrink-0 transition-colors",
-            isBulejeTheme ? "text-white/50 group-hover:text-[#5eead4]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
+            isBulejeTheme ? "text-white/50 group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
           )} strokeWidth={2} />
           <span className={cn(
             "flex-1 text-left text-sm font-medium truncate transition-colors",
@@ -183,7 +183,7 @@ export function AdminTopHeader({
             className={cn(
               "hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
               isBulejeTheme
-                ? "border-[rgba(52,212,190,0.3)] bg-[rgba(52,212,190,0.1)] text-[#5eead4] hover:bg-[rgba(52,212,190,0.18)]"
+                ? "border-[color-mix(in oklab, var(--accent) 30%, transparent)] bg-[color-mix(in oklab, var(--accent) 10%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] hover:bg-[color-mix(in oklab, var(--accent) 18%, transparent)]"
                 : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
             )}
           >

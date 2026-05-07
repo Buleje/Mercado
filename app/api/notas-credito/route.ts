@@ -48,6 +48,45 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   try {
+    // SECURITY/CRITICAL 2026-05-06 (pentest H2): validar que la nota crédito
+    // no exceda el monto de la venta original ni acumule duplicados. Antes
+    // un atacante podía emitir N notas por S/99999 contra la misma venta de
+    // S/100 → fraude tributario directo SUNAT.
+    if (data.saleId) {
+      const { prisma } = await import("@/lib/prisma");
+      const sale = await prisma.sale.findFirst({
+        where: { id: data.saleId, tenantId: auth.tenantId },
+        select: { id: true, total: true },
+      });
+      if (!sale) {
+        return NextResponse.json(
+          { error: "Venta no encontrada en este tenant" },
+          { status: 404 }
+        );
+      }
+      const acum = await prisma.notaCredito.aggregate({
+        _sum: { monto: true },
+        where: {
+          saleId: data.saleId,
+          tenantId: auth.tenantId,
+          status: { not: "ANULADA" as never },
+        },
+      });
+      const yaEmitido = Number(acum._sum.monto ?? 0);
+      const saleTotal = Number(sale.total);
+      if (yaEmitido + data.monto > saleTotal) {
+        return NextResponse.json(
+          {
+            error: "El monto excede el total de la venta",
+            saleTotal,
+            yaEmitido,
+            disponible: Math.max(0, saleTotal - yaEmitido),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const numero = await NotasCreditoDB.siguienteNumero(auth.tenantId);
 
     // Calculate IGV over the monto

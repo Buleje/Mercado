@@ -234,15 +234,15 @@ export default function RecetarioAdminTab() {
     <div className="space-y-6">
       {/* Stats bar */}
       <div className="flex flex-wrap gap-3 text-xs">
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--data-warning-50)] text-[var(--data-warning)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-warning-50)] text-[var(--data-warning-500)] px-3 py-1.5 rounded-lg font-bold">
           Costo promedio: {formatCurrency(avgCost)}
         </div>
       </div>
@@ -329,7 +329,7 @@ export default function RecetarioAdminTab() {
                         className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                           r.activa !== false
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                             : "bg-gray-100 text-[var(--text-secondary)]"
                         )}
                       >
@@ -347,7 +347,7 @@ export default function RecetarioAdminTab() {
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(r._noteId || null)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -373,7 +373,7 @@ export default function RecetarioAdminTab() {
                 <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">Cancelar</button>
-                  <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error)] text-white hover:bg-[var(--data-error)] transition-colors">Eliminar</button>
+                  <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
                 </div>
               </div>
             </m.div>
@@ -516,7 +516,7 @@ export default function RecetarioAdminTab() {
                                       <button
                                         key={p.id}
                                         onClick={() => selectProduct(idx, p)}
-                                        className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
+                                        className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
                                       >
                                         {p.name} — S/{p.price.toFixed(2)}
                                       </button>
@@ -524,7 +524,7 @@ export default function RecetarioAdminTab() {
                                 </div>
                               )}
                             </div>
-                            <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors mt-4 shrink-0">
+                            <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -581,7 +581,7 @@ export default function RecetarioAdminTab() {
                             <button onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition-colors">
                               <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                             </button>
-                            <button onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
+                            <button onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -605,7 +605,7 @@ export default function RecetarioAdminTab() {
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning)]/30" : "bg-[var(--data-error)]/30"
+                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
                                 )}>{dificultad}</span>
                               </div>
                             </div>

@@ -33,7 +33,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error-500)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -367,7 +367,7 @@ export default function BulkPriceEditorTab() {
 
       {/* Aviso de error de carga */}
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Usando datos de ejemplo — {error}
         </div>
@@ -412,7 +412,7 @@ export default function BulkPriceEditorTab() {
                     key={p.id}
                     className={cn(
                       "hover:bg-[var(--surface-sunken)]/50 transition-colors",
-                      isChanged && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10",
+                      isChanged && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10",
                       selected.has(p.id) && "bg-teal-50/50 dark:bg-teal-900/10",
                     )}
                   >

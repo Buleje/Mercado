@@ -149,7 +149,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     const allProds = [...prodMap.values()].sort((a, b) => b.ingresos - a.ingresos);
     const totalRevenue = allProds.reduce((a, p) => a + p.ingresos, 0);
     let cumulative = 0;
-    const claseAColor = "#00B4A6", claseBColor = "#3b82f6", claseCColor = "#94a3b8";
+    const claseAColor = "var(--accent)", claseBColor = "#3b82f6", claseCColor = "#94a3b8";
     const paretoWithClass = allProds.map(p => {
       cumulative += p.ingresos;
       const pct = totalRevenue > 0 ? (cumulative / totalRevenue) * 100 : 0;
@@ -227,7 +227,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
   if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>

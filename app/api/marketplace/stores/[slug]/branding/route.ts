@@ -21,14 +21,19 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { isAllowedImageUrl } from "@/lib/url-allowlist";
+
+// F6: validar URLs contra allowlist para prevenir SSRF
+const AllowedUrlOrEmpty = z
+  .union([
+    z.string().url().refine(isAllowedImageUrl, "URL de imagen no permitida"),
+    z.literal(""),
+    z.null(),
+  ]);
 
 const BrandingSchema = z.object({
-  logo: z
-    .union([z.string().url("URL del logo invalida"), z.literal(""), z.null()])
-    .optional(),
-  banner: z
-    .union([z.string().url("URL del banner invalida"), z.literal(""), z.null()])
-    .optional(),
+  logo:   AllowedUrlOrEmpty.optional(),
+  banner: AllowedUrlOrEmpty.optional(),
 });
 
 export const PATCH = withApiHandler("marketplace-store-branding", async (

@@ -124,9 +124,9 @@ export default function ScenarioSimulatorTab() {
           return (
             <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">{kpi.label}</p>
-              <p className={cn("text-lg font-extrabold mt-1", kpi.value < 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground")}>{kpi.format(kpi.value)}</p>
+              <p className={cn("text-lg font-extrabold mt-1", kpi.value < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{kpi.format(kpi.value)}</p>
               {d !== 0 && (
-                <div className={cn("flex items-center gap-1 text-xs font-bold mt-1", d > 0 ? (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-error)]" : "text-[var(--data-success)]") : (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-success)]" : "text-[var(--data-error)]"))}>
+                <div className={cn("flex items-center gap-1 text-xs font-bold mt-1", d > 0 ? (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]") : (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"))}>
                   {d > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   <span>{d > 0 ? "+" : ""}{kpi.label === "Margen neto" ? fmtPct(d) : kpi.format(d)} vs base</span>
                 </div>
@@ -176,7 +176,7 @@ export default function ScenarioSimulatorTab() {
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Comparación con: {saved.find(s => s.id === compareId)?.name}</CardTitle>
-            <button onClick={() => setCompareId(null)} className="text-sm text-[var(--text-secondary)] dark:text-muted hover:text-[var(--data-error)]">Cerrar</button>
+            <button onClick={() => setCompareId(null)} className="text-sm text-[var(--text-secondary)] dark:text-muted hover:text-[var(--data-error-500)]">Cerrar</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
@@ -199,7 +199,7 @@ export default function ScenarioSimulatorTab() {
                     <td className="py-2 text-[var(--text-primary)] dark:text-foreground font-semibold">{row.label}</td>
                     <td className="py-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{row.label === "Margen" ? fmtPct(row.a) : fmt(row.a)}</td>
                     <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{row.label === "Margen" ? fmtPct(row.b) : fmt(row.b)}</td>
-                    <td className={cn("py-2 text-right font-bold", row.a - row.b > 0 ? "text-[var(--data-success)]" : row.a - row.b < 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)]")}>
+                    <td className={cn("py-2 text-right font-bold", row.a - row.b > 0 ? "text-[var(--data-success-500)]" : row.a - row.b < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}>
                       {row.a - row.b > 0 ? "+" : ""}{row.label === "Margen" ? fmtPct(row.a - row.b) : fmt(row.a - row.b)}
                     </td>
                   </tr>
@@ -223,13 +223,13 @@ export default function ScenarioSimulatorTab() {
                 <div key={sc.id} className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:border-primary/50 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{sc.name}</h4>
-                    <button onClick={() => handleDelete(sc.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+                    <button onClick={() => handleDelete(sc.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-3">{sc.createdAt} · {Object.keys(sc.overrides).length} variables</p>
                   <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
-                    <span className={cn("font-bold", result.profit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{fmt(result.profit)}</span>
+                    <span className={cn("font-bold", result.profit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(result.profit)}</span>
                     <span className="text-[var(--text-tertiary)] dark:text-muted">utilidad</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -249,11 +249,11 @@ export default function ScenarioSimulatorTab() {
 
       {/* Impact alert */}
       {currentResult.profit < 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Escenario con pérdidas</h4>
-            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">Con estas variables el negocio genera una pérdida de {fmt(Math.abs(currentResult.profit))} al mes. Ajusta las variables para encontrar un punto viable.</p>
+            <h4 className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">Escenario con pérdidas</h4>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">Con estas variables el negocio genera una pérdida de {fmt(Math.abs(currentResult.profit))} al mes. Ajusta las variables para encontrar un punto viable.</p>
           </div>
         </div>
       )}

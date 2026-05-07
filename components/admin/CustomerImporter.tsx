@@ -218,12 +218,12 @@ export default function CustomerImporter() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <span className="text-[var(--text-secondary)]">Archivo: <strong>{fileName}</strong></span>
-            <span className="flex items-center gap-1 text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="flex items-center gap-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               <CheckCircle className="h-4 w-4" />
               {valid.length} validos
             </span>
             {invalid.length > 0 && (
-              <span className="flex items-center gap-1 text-[var(--data-error)]">
+              <span className="flex items-center gap-1 text-[var(--data-error-500)]">
                 <AlertTriangle className="h-4 w-4" />
                 {invalid.length} con errores
               </span>
@@ -245,23 +245,23 @@ export default function CustomerImporter() {
                     key={c._rowIndex}
                     className={cn(
                       c._errors.length > 0
-                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10"
+                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10"
                         : "hover:bg-[var(--surface-sunken)]/50"
                     )}
                   >
                     <td className="px-4 py-2 text-[var(--text-secondary)]">{c._rowIndex}</td>
                     <td className="px-4 py-2 font-medium text-[var(--text-primary)]">
-                      {c.nombre || <span className="text-[var(--data-error)] italic">vacio</span>}
+                      {c.nombre || <span className="text-[var(--data-error-500)] italic">vacio</span>}
                     </td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">
-                      {c.teléfono || <span className="text-[var(--data-error)] italic">vacio</span>}
+                      {c.teléfono || <span className="text-[var(--data-error-500)] italic">vacio</span>}
                     </td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">{c.email || "—"}</td>
                     <td className="px-4 py-2">
                       {c._errors.length === 0 ? (
-                        <span className="text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-medium">OK</span>
+                        <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-medium">OK</span>
                       ) : (
-                        <span className="text-[var(--data-error)] text-xs">{c._errors.join(", ")}</span>
+                        <span className="text-[var(--data-error-500)] text-xs">{c._errors.join(", ")}</span>
                       )}
                     </td>
                   </tr>
@@ -310,7 +310,7 @@ export default function CustomerImporter() {
       {step === "done" && summary && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+            <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
             <div>
               <p className="font-semibold text-[var(--text-primary)]">Importacion completada</p>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -320,18 +320,18 @@ export default function CustomerImporter() {
           </div>
 
           {summary.duplicates > 0 && (
-            <div className="rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 px-4 py-3">
-              <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <div className="rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-4 py-3">
+              <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
                 {summary.duplicates} cliente{summary.duplicates !== 1 ? "s" : ""} ya existian en el sistema (no duplicados).
               </p>
             </div>
           )}
 
           {summary.errors.length > 0 && (
-            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 space-y-1">
-              <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)]">Clientes no importados:</p>
+            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-4 space-y-1">
+              <p className="text-sm font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Clientes no importados:</p>
               {summary.errors.map((e, i) => (
-                <p key={i} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
+                <p key={i} className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                   Fila {e.row} — {e.nombre}: {e.error}
                 </p>
               ))}

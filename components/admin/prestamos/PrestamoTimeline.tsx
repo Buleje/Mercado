@@ -64,9 +64,9 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
           <span className={cn(
             "text-xs font-bold px-2 py-0.5 rounded-lg",
             porcentaje === 100
-              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
               : porcentaje > 50
-                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           )}>
             {porcentaje}%
@@ -109,17 +109,17 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               <div className="absolute left-[-20px] top-0.5">
                 {status === "pagada" && (
                   <div className="h-6 w-6 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
-                    <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
+                    <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
                   </div>
                 )}
                 {status === "vencida" && (
-                  <div className="h-6 w-6 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 flex items-center justify-center">
-                    <XCircle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+                  <div className="h-6 w-6 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 flex items-center justify-center">
+                    <XCircle className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
                   </div>
                 )}
                 {status === "próxima" && (
-                  <div className="h-6 w-6 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center animate-pulse">
-                    <Clock className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                  <div className="h-6 w-6 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center animate-pulse">
+                    <Clock className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
                   </div>
                 )}
                 {status === "futura" && (
@@ -133,8 +133,8 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               <div className={cn(
                 "ml-2 rounded-xl p-3 transition-colors",
                 status === "pagada" && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]",
-                status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/10",
-                status === "próxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10 ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+                status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/10",
+                status === "próxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10 ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
                 status === "futura" && "bg-gray-50/50 dark:bg-white/[0.02]",
               )}>
                 <div className="flex items-center justify-between">
@@ -143,9 +143,9 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </p>
                   <span className={cn(
                     "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
-                    status === "pagada" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-                    status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
-                    status === "próxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                    status === "pagada" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                    status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
+                    status === "próxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
                     status === "futura" && "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                   )}>
                     {status === "pagada" && "PAGADA"}

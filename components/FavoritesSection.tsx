@@ -75,11 +75,11 @@ export default function FavoritesSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+            <Heart className="h-6 w-6 text-[var(--data-error-500)] fill-[var(--data-error-500)]" />
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
               Mis Favoritos
             </h2>
-            <span className="bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
+            <span className="bg-red-100 dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-600)] dark:text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
               {favProducts.length}
             </span>
           </div>
@@ -129,7 +129,7 @@ export default function FavoritesSection() {
               <button
                 onClick={() => toggle(String(product.id))}
                 aria-label="Quitar de favoritos"
-                className="absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition-colors"
+                className="absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-[var(--data-error-500)] text-white shadow-md hover:bg-[var(--data-error-600)] transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

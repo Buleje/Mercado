@@ -48,9 +48,9 @@ type Notification = {
 const KIND_META: Record<NotifKind, { Icon: LucideIcon; label: string; tone: string }> = {
   order: { Icon: Package, label: "Pedido", tone: "text-blue-500 bg-blue-500/10" },
   promo: { Icon: Tag, label: "Oferta", tone: "text-[var(--accent)] bg-[var(--accent-soft)]" },
-  delivery: { Icon: Truck, label: "Envío", tone: "text-amber-500 bg-amber-500/10" },
+  delivery: { Icon: Truck, label: "Envío", tone: "text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10" },
   chat: { Icon: MessageCircle, label: "Mensaje", tone: "text-violet-500 bg-violet-500/10" },
-  system: { Icon: Sparkles, label: "Sistema", tone: "text-emerald-500 bg-emerald-500/10" },
+  system: { Icon: Sparkles, label: "Sistema", tone: "text-[var(--data-success-500)] bg-[var(--data-success-500)]/10" },
 };
 
 async function fetchNotificationsForCustomer(

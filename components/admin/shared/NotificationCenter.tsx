@@ -41,17 +41,17 @@ const TYPE_CONFIG: Record<
 > = {
   order: {
     icon: ShoppingCart,
-    color: "text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   stock: {
     icon: Package,
-    color: "text-[var(--data-warning)]",
+    color: "text-[var(--data-warning-500)]",
     bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",
   },
   message: {
     icon: MessageSquare,
-    color: "text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   system: {
@@ -185,7 +185,7 @@ export default function NotificationCenter() {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)] rounded-full px-1 ">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error-500)] rounded-full px-1 ">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -209,7 +209,7 @@ export default function NotificationCenter() {
                   Notificaciones
                 </CardTitle>
                 {unreadCount > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)] rounded-full px-1.5 py-0.5 min-w-4 text-center">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error-500)] rounded-full px-1.5 py-0.5 min-w-4 text-center">
                     {unreadCount}
                   </span>
                 )}

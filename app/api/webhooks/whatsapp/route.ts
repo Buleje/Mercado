@@ -23,8 +23,34 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+  // SECURITY 2026-05-05 (audit webhooks #6): firma X-Hub-Signature-256.
+  // Antes este endpoint legacy aceptaba cualquier POST JSON respondiendo
+  // con datos del catálogo y links internos — vector de exfiltración +
+  // suplantación de Meta.
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appSecret) {
+    return NextResponse.json(
+      { error: "WHATSAPP_APP_SECRET no configurado" },
+      { status: 503 },
+    );
+  }
+  const rawBody = await req.text();
+  const signature = req.headers.get("x-hub-signature-256");
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+  }
+  const crypto = await import("crypto");
+  const expected =
+    "sha256=" + crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex");
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  let body: Record<string, unknown>;
+  try { body = JSON.parse(rawBody); } catch { return NextResponse.json({ error: "Bad JSON" }, { status: 400 }); }
+  const message = (body as { entry?: { changes?: { value?: { messages?: { from: string; text?: { body?: string } }[] } }[] }[] })?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
   if (!message) return NextResponse.json({ status: "no_message" });
 
   const from = message.from;

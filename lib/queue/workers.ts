@@ -249,6 +249,9 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 // Error handlers
+// OBSERVABILITY 2026-05-06 (audit CMS #11): reportar fallos a Sentry — antes
+// solo iban a logger y se perdían sin alerta. Cargado dinámicamente para no
+// hacer Sentry obligatorio en dev sin DSN.
 for (const worker of workers) {
   worker.on("failed", (job, err) => {
     logger.error(`[worker/${worker.name}] Job failed`, {
@@ -256,6 +259,19 @@ for (const worker of workers) {
       error: err.message,
       attempts: job?.attemptsMade,
     });
+    // Fire-and-forget: si hay Sentry configurado, mandar evento.
+    import("@sentry/nextjs")
+      .then((Sentry) => {
+        Sentry.captureException(err, {
+          extra: {
+            worker: worker.name,
+            jobId: job?.id,
+            attempts: job?.attemptsMade,
+            jobName: job?.name,
+          },
+        });
+      })
+      .catch(() => { /* Sentry not installed or not configured */ });
   });
 
   worker.on("completed", (job) => {

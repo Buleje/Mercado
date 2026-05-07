@@ -8,11 +8,12 @@ import { logger } from "@/lib/logger";
 // GET /api/cms/pages - List all pages
 // ═══════════════════════════════════════════════════════
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-06 (audit CMS #4): rol explícito.
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const pages = await getAllPages();
+    const pages = await getAllPages(auth.tenantId);
     return NextResponse.json(pages);
   } catch (error) {
     logger.error("[cms/pages] GET error", { err: error instanceof Error ? error.message : String(error) });

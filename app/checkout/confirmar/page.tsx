@@ -406,7 +406,7 @@ export default function CheckoutConfirmarPage() {
                 <PaicheMascot size={140} animated />
               </div>
             ) : allFail ? (
-              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--data-error-50)] text-[var(--data-error)]">
+              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--data-error-50)] text-[var(--data-error-500)]">
                 <AlertCircle className="h-10 w-10" strokeWidth={1.5} />
               </span>
             ) : (
@@ -433,7 +433,7 @@ export default function CheckoutConfirmarPage() {
                 <>
                   No pudimos enviar
                   <br />
-                  <span className="italic font-serif text-[var(--data-error)]">tu pedido.</span>
+                  <span className="italic font-serif text-[var(--data-error-500)]">tu pedido.</span>
                 </>
               ) : (
                 <>
@@ -444,7 +444,7 @@ export default function CheckoutConfirmarPage() {
               )}
             </h1>
             {errorMsg && (
-              <p className="mt-4 text-[length:var(--ts-sm)] text-[var(--data-error)]">{errorMsg}</p>
+              <p className="mt-4 text-[length:var(--ts-sm)] text-[var(--data-error-500)]">{errorMsg}</p>
             )}
           </div>
 
@@ -456,7 +456,7 @@ export default function CheckoutConfirmarPage() {
                   "rounded-2xl border px-5 py-4 flex items-start gap-3",
                   r.success
                     ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]"
-                    : "border-[var(--data-error)]/30 bg-[var(--data-error-50)]",
+                    : "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)]",
                 )}
               >
                 {r.success ? (
@@ -466,7 +466,7 @@ export default function CheckoutConfirmarPage() {
                   />
                 ) : (
                   <AlertCircle
-                    className="h-5 w-5 text-[var(--data-error)] mt-0.5 shrink-0"
+                    className="h-5 w-5 text-[var(--data-error-500)] mt-0.5 shrink-0"
                     strokeWidth={2.25}
                   />
                 )}
@@ -789,7 +789,7 @@ export default function CheckoutConfirmarPage() {
           </section>
 
           {errorMsg && (
-            <div className="rounded-2xl border border-[var(--data-error)]/30 bg-[var(--data-error-50)] px-5 py-4 text-[length:var(--ts-sm)] text-[var(--data-error)] font-semibold">
+            <div className="rounded-2xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-5 py-4 text-[length:var(--ts-sm)] text-[var(--data-error-500)] font-semibold">
               {errorMsg}
             </div>
           )}

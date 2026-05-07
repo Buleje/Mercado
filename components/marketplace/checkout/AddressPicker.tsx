@@ -130,7 +130,7 @@ export default function AddressPicker({
                       e.stopPropagation();
                       onRemove(addr.id);
                     }}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-all"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-all"
                   >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                   </button>

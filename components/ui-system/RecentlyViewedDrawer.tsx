@@ -103,7 +103,7 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
         </div>
 
         {/* Header — banner gradient con icono grande + título prominente */}
-        <div className="relative px-6 pt-6 pb-5 border-b border-[var(--rule-soft)] bg-gradient-to-br from-[var(--accent)]/8 via-[var(--accent-soft,rgba(0,180,166,0.08))] to-transparent rounded-t-3xl">
+        <div className="relative px-6 pt-6 pb-5 border-b border-[var(--rule-soft)] bg-gradient-to-br from-[var(--accent)]/8 via-[var(--accent-soft,color-mix(in oklab, var(--accent) 8%, transparent))] to-transparent rounded-t-3xl">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3.5">
               <div className="relative shrink-0">
@@ -210,7 +210,7 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                       <p className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] line-clamp-2 leading-snug">
                         {item.name}
                       </p>
-                      <p className="mt-1.5 text-[length:var(--ts-lg)] font-black text-[var(--brand-primary,#00B4A6)] tabular-nums leading-none">
+                      <p className="mt-1.5 text-[length:var(--ts-lg)] font-black text-[var(--brand-primary,var(--accent))] tabular-nums leading-none">
                         S/{Number(item.price).toFixed(2)}
                         {item.unit && (
                           <span className="ml-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">

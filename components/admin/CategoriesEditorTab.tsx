@@ -246,7 +246,7 @@ export default function CategoriesEditorTab() {
             disabled={!hasChanges || saving}
             className={cn(
               "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors min-h-[44px]",
-              saved ? "bg-[var(--data-success)]" : "bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+              saved ? "bg-[var(--data-success-500)]" : "bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
@@ -292,9 +292,9 @@ export default function CategoriesEditorTab() {
                 >
                   <span className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    seoScore === "good" && "bg-[var(--data-success)]",
-                    seoScore === "warning" && "bg-[var(--data-warning)]",
-                    seoScore === "error" && "bg-[var(--data-error)]"
+                    seoScore === "good" && "bg-[var(--data-success-500)]",
+                    seoScore === "warning" && "bg-[var(--data-warning-500)]",
+                    seoScore === "error" && "bg-[var(--data-error-500)]"
                   )} />
                   SEO
                 </button>
@@ -307,7 +307,7 @@ export default function CategoriesEditorTab() {
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-                    {cat.visible ? <Eye className="h-3.5 w-3.5 text-[var(--data-success)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
+                    {cat.visible ? <Eye className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                   </button>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export default function CategoriesEditorTab() {
                       </span>
                       <span className={cn(
                         "font-mono",
-                        (cat.seo?.metaTitle?.length || 0) > 60 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
+                        (cat.seo?.metaTitle?.length || 0) > 60 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
                       )}>
                         {cat.seo?.metaTitle?.length || 0}/60
                       </span>
@@ -361,7 +361,7 @@ export default function CategoriesEditorTab() {
                       </span>
                       <span className={cn(
                         "font-mono",
-                        (cat.seo?.metaDescription?.length || 0) > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
+                        (cat.seo?.metaDescription?.length || 0) > 160 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
                       )}>
                         {cat.seo?.metaDescription?.length || 0}/160
                       </span>
@@ -449,10 +449,10 @@ export default function CategoriesEditorTab() {
                       Vista previa en Google
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+                      <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         buleje.pe › categoria › {cat.seo?.slug || cat.id}
                       </div>
-                      <div className="text-lg text-[var(--data-success)] dark:text-[var(--data-success)] font-medium leading-snug">
+                      <div className="text-lg text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium leading-snug">
                         {cat.seo?.metaTitle || `${cat.label} - Buleje`}
                       </div>
                       <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -464,15 +464,15 @@ export default function CategoriesEditorTab() {
                   {/* SEO Score Details */}
                   <div className={cn(
                     "rounded-lg p-3 text-xs",
-                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
-                    seoScore === "warning" && "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30",
-                    seoScore === "error" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30"
+                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+                    seoScore === "warning" && "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30",
+                    seoScore === "error" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                   )}>
                     <div className={cn(
                       "font-semibold mb-1",
-                      seoScore === "good" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
-                      seoScore === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-                      seoScore === "error" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      seoScore === "good" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                      seoScore === "warning" && "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+                      seoScore === "error" && "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     )}>
                       {seoScore === "good" && "SEO óptimo"}
                       {seoScore === "warning" && "SEO mejorable"}
@@ -480,9 +480,9 @@ export default function CategoriesEditorTab() {
                     </div>
                     <div className={cn(
                       "text-[length:var(--ts-2xs)] space-y-0.5",
-                      seoScore === "good" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
-                      seoScore === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-                      seoScore === "error" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      seoScore === "good" && "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                      seoScore === "warning" && "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+                      seoScore === "error" && "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     )}>
                       {!cat.seo?.metaTitle && <div>• Falta meta title</div>}
                       {cat.seo?.metaTitle && cat.seo.metaTitle.length < 30 && <div>• Meta title demasiado corto (mín 30 caracteres)</div>}

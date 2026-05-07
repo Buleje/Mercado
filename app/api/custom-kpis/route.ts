@@ -19,7 +19,7 @@ const KpiSchema = z.object({
   target: z.number().default(0),
   unit: z.string().max(20).default("S/"),
   category: z.string().max(50).default("Ventas"),
-  color: z.string().max(50).default("bg-emerald-500"),
+  color: z.string().max(50).default("bg-[var(--data-success-500)]"),
 });
 
 const SEED_KPIS: CustomKpi[] = [
@@ -27,21 +27,21 @@ const SEED_KPIS: CustomKpi[] = [
     id: "kpi-ticket", name: "Ticket Promedio", description: "Valor promedio por venta",
     formula: "total_ventas / num_transacciones", currentValue: 54.20, target: 60,
     unit: "S/", trend: "up", changePercent: 6.3, period: "Hoy",
-    category: "Ventas", color: "bg-emerald-500",
+    category: "Ventas", color: "bg-[var(--data-success-500)]",
     history: Array.from({ length: 7 }, (_, i) => ({ date: `día ${i + 1}`, value: 48 + Math.random() * 12 })),
   },
   {
     id: "kpi-conversion", name: "Tasa de Conversión", description: "Visitantes que compran",
     formula: "ventas / visitas * 100", currentValue: 68, target: 75,
     unit: "%", trend: "up", changePercent: 4.1, period: "Esta semana",
-    category: "Ventas", color: "bg-emerald-500",
+    category: "Ventas", color: "bg-[var(--data-success-500)]",
     history: Array.from({ length: 7 }, (_, i) => ({ date: `día ${i + 1}`, value: 62 + Math.random() * 10 })),
   },
   {
     id: "kpi-rotacion", name: "Rotación de Inventario", description: "Veces que el stock se renueva al mes",
     formula: "costo_ventas / inventario_promedio", currentValue: 4.2, target: 5,
     unit: "veces", trend: "flat", changePercent: 0.5, period: "Este mes",
-    category: "Inventario", color: "bg-amber-500",
+    category: "Inventario", color: "bg-[var(--data-warning-500)]",
     history: Array.from({ length: 7 }, (_, i) => ({ date: `sem ${i + 1}`, value: 3.8 + Math.random() * 0.8 })),
   },
   {
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       target: r.target ?? 0, unit: r.unit ?? "S/",
       trend: (r.trend as CustomKpi["trend"]) ?? "flat",
       changePercent: r.changePercent ?? 0, period: r.period ?? "Hoy",
-      category: r.category ?? "Ventas", color: r.color ?? "bg-emerald-500",
+      category: r.category ?? "Ventas", color: r.color ?? "bg-[var(--data-success-500)]",
       history: (r.history as KpiTrendPoint[]) ?? [],
     }));
     return NextResponse.json({ kpis });

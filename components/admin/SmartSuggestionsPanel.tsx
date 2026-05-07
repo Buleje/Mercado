@@ -16,10 +16,10 @@ interface Suggestion {
 }
 
 const TYPE_META: Record<SuggestionType, { icon: React.ElementType; color: string; bg: string; border: string; label: string }> = {
-  alerta:      { icon: AlertTriangle, color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",     border: "border-[var(--data-error)] dark:border-[var(--data-error)]/40",   label: "Alerta" },
-  oportunidad: { icon: TrendingUp,    color: "text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",border:"border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",label:"Oportunidad"},
-  optimizacion:{ icon: Lightbulb,     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30",label: "Mejora" },
-  accion:      { icon: ShoppingCart,  color: "text-[var(--data-success)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", label: "Acción" },
+  alerta:      { icon: AlertTriangle, color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",     border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40",   label: "Alerta" },
+  oportunidad: { icon: TrendingUp,    color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",border:"border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",label:"Oportunidad"},
+  optimizacion:{ icon: Lightbulb,     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30",label: "Mejora" },
+  accion:      { icon: ShoppingCart,  color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", label: "Acción" },
 };
 
 interface Props {
@@ -53,18 +53,18 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
   if (visible.length === 0 && !loading) return null;
 
   return (
-    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card")}>
+    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card")}>
       <button
         className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <Lightbulb className="h-4 w-4 text-[var(--data-warning)]" />
+          <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" />
           <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Sugerencias inteligentes
           </span>
           {visible.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold bg-[var(--data-warning)] text-white">{visible.length}</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold bg-[var(--data-warning-500)] text-white">{visible.length}</span>
           )}
         </div>
         <ChevronRight className={cn("h-4 w-4 text-[var(--text-tertiary)] transition-transform", expanded && "rotate-90")} />

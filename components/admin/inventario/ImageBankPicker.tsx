@@ -148,7 +148,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
             )}
 
             {error && (
-              <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+              <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
                 {error}
               </div>
             )}

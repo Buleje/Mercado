@@ -47,7 +47,7 @@ export function AdminImpersonationBanner({
       <div className="h-full max-w-screen-2xl mx-auto px-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <Shield
-            className="w-3.5 h-3.5 shrink-0 text-[var(--data-warning)]"
+            className="w-3.5 h-3.5 shrink-0 text-[var(--data-warning-500)]"
             aria-hidden="true"
           />
           <span className="text-xs text-[var(--text-primary)] truncate">

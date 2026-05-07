@@ -45,7 +45,7 @@ export function BarChart({
               <div className="h-2 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
-                  style={{ width: `${pct}%`, backgroundColor: item.color ?? "#00B4A6" }}
+                  style={{ width: `${pct}%`, backgroundColor: item.color ?? "var(--accent)" }}
                 />
               </div>
             </div>
@@ -66,7 +66,7 @@ export function BarChart({
             )}
             <div
               className="w-full rounded-t transition-all duration-[var(--dur-slow)] min-h-[2px]"
-              style={{ height: `${pct}%`, backgroundColor: item.color ?? "#00B4A6" }}
+              style={{ height: `${pct}%`, backgroundColor: item.color ?? "var(--accent)" }}
             />
             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate max-w-full">{item.label}</span>
           </div>
@@ -147,7 +147,7 @@ interface GaugeChartProps {
 
 export function GaugeChart({ value, size = 120, label, color, className }: GaugeChartProps) {
   const clampedValue = Math.max(0, Math.min(100, value));
-  const autoColor = color ?? (clampedValue >= 70 ? "#00B4A6" : clampedValue >= 50 ? "#f97316" : "#dc2626");
+  const autoColor = color ?? (clampedValue >= 70 ? "var(--accent)" : clampedValue >= 50 ? "#f97316" : "#dc2626");
   const rotation = (clampedValue / 100) * 180;
 
   return (
@@ -188,7 +188,7 @@ interface SparklineProps {
   className?: string;
 }
 
-export function Sparkline({ data, width = 100, height = 30, color = "#00B4A6", className }: SparklineProps) {
+export function Sparkline({ data, width = 100, height = 30, color = "var(--accent)", className }: SparklineProps) {
   if (data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -260,7 +260,7 @@ export function WaterfallChart({ data, height = 200, className, formatValue = (v
           const top = toY(Math.max(item.prevRunning, item.currentRunning));
           const bottom = toY(Math.min(item.prevRunning, item.currentRunning));
           const barHeight = Math.max(bottom - top, 4);
-          const color = item.type === "total" ? "#2563eb" : isPositive ? "#00B4A6" : "#dc2626";
+          const color = item.type === "total" ? "#2563eb" : isPositive ? "var(--accent)" : "#dc2626";
 
           return (
             <div key={i} className="flex-1 flex flex-col items-center relative" style={{ height: "100%" }}>

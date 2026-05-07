@@ -149,7 +149,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
         className={cn(
           "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
           canRemove
-            ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)]"
+            ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 hover:text-[var(--data-error-500)]"
             : "text-gray-200 dark:text-card-border cursor-not-allowed"
         )}
         title="Quitar fila"
@@ -280,7 +280,7 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg px-3 py-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -400,7 +400,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => onDelete(template.id)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
                   >
                     Confirmar
                   </button>
@@ -414,7 +414,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Eliminar
@@ -544,7 +544,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
         <div className="space-y-3">
           {/* Feedback de "aplicada" */}
           {appliedId && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold">
               <Check className="h-4 w-4 shrink-0" />
               Plantilla cargada en el pedido
             </div>

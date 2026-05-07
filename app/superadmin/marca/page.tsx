@@ -145,7 +145,7 @@ export default function SuperadminMarcaPage() {
 
   if (!brand) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--data-error)]">
+      <div className="min-h-screen flex items-center justify-center text-[var(--data-error-500)]">
         No se pudo cargar la marca.
       </div>
     );
@@ -282,17 +282,17 @@ export default function SuperadminMarcaPage() {
             <div className="sticky bottom-4 z-10 mt-4">
               <div className={cn(
                 "flex items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-raised)] px-5 py-3.5 shadow-lg",
-                dirty ? "border-[var(--data-warning)]/40" : "border-[var(--rule-base)]",
+                dirty ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
               )}>
                 <div className="flex items-center gap-2 min-w-0">
                   {dirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning)]">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-500)]">
                       <AlertCircle className="h-4 w-4" /> Cambios sin guardar
                     </span>
                   ) : saved ? (
                     <span className={cn(
                       "inline-flex items-center gap-1.5 text-sm font-bold",
-                      saved.kind === "ok" ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
+                      saved.kind === "ok" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
                     )}>
                       {saved.kind === "ok" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                       {saved.text}
@@ -386,14 +386,14 @@ function StatPill({ label, value, accent }: { label: string; value: string | num
   return (
     <div className={cn(
       "rounded-xl border px-3.5 py-2 min-w-[88px]",
-      isWarn ? "border-[var(--data-warning)]/40 bg-[var(--data-warning)]/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+      isWarn ? "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
     )}>
       <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
         {label}
       </p>
       <p className={cn(
         "font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none",
-        isWarn ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]",
+        isWarn ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
       )}>
         {value}
       </p>
@@ -616,7 +616,7 @@ function SeoSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: Par
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 inline-flex items-center gap-1.5">
           <Globe className="h-3 w-3" /> Preview Google
         </p>
-        <p className="text-xs text-emerald-700">https://buleje.com</p>
+        <p className="text-xs text-[var(--data-success-700)]">https://buleje.com</p>
         <p className="text-lg text-blue-700 font-medium mt-0.5 hover:underline cursor-pointer">{brand.seo.metaTitle || "(sin título)"}</p>
         <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">{brand.seo.metaDescription || "(sin descripción)"}</p>
       </div>
@@ -655,15 +655,15 @@ function EventSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: P
       title="Modo evento"
       description="Override temporal de logo y colores para campañas (Black Friday, Navidad, aniversario). Cuando esté activo y dentro de la ventana de fechas, todas las páginas usarán estos overrides en lugar de la marca normal."
     >
-      <div className="rounded-xl border border-[var(--data-warning)]/30 bg-[var(--data-warning)]/5 p-4 mb-5 flex items-center gap-3">
+      <div className="rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/5 p-4 mb-5 flex items-center gap-3">
         <button
           onClick={() => onPatch({ active: !e.active })}
           aria-pressed={e.active}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition-all",
             e.active
-              ? "bg-[var(--data-warning)] text-white shadow-sm"
-              : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-warning)]",
+              ? "bg-[var(--data-warning-500)] text-white shadow-sm"
+              : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-warning-500)]",
           )}
         >
           {e.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}

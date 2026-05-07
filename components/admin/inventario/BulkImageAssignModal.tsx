@@ -221,7 +221,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
       <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-white dark:bg-card flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success)] text-white flex items-center justify-center shrink-0">
+          <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
@@ -231,7 +231,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)] text-sm font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] text-sm font-bold">
               <Check className="h-4 w-4" /> {totalAssigned} asignadas
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm font-bold">
@@ -306,7 +306,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                 </div>
               )}
               {bankError && (
-                <div className="rounded-xl border border-[var(--data-error)]/40 bg-[var(--data-error)]/5 p-3 text-sm text-[var(--data-error)]">
+                <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
                   {bankError}
                 </div>
               )}
@@ -368,7 +368,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-                  <Package className="h-4 w-4 text-[var(--data-warning)]" />
+                  <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
                   Productos sin imagen
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalPending})</span>
                 </h3>
@@ -404,7 +404,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                         activeProductCat === c.name
                           ? "border-primary bg-primary text-white"
                           : c.pending === 0
-                          ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/10 text-[var(--data-success)]"
+                          ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                           : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
                       )}
                       title={`${c.name}: ${c.pending} pendientes / ${c.total} totales`}
@@ -420,7 +420,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {productsWithoutImage.length === 0 && (
                 <div className="text-center py-10">
-                  <Check className="h-12 w-12 text-[var(--data-success)] mx-auto mb-3" />
+                  <Check className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-3" />
                   <p className="text-base font-extrabold text-[var(--text-primary)]">
                     {productSearch || activeProductCat ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
                   </p>
@@ -442,7 +442,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
                       assigned
-                        ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/5"
+                        ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
                         : isDragOver
                         ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-[1.01]"
                         : "border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary/50",
@@ -451,7 +451,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     <div
                       className={cn(
                         "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-                        assigned ? "bg-white dark:bg-card border border-[var(--data-success)]/30" : "bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)]",
+                        assigned ? "bg-white dark:bg-card border border-[var(--data-success-500)]/30" : "bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)]",
                       )}
                     >
                       {assigned ? (
@@ -474,7 +474,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                       {saving ? (
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       ) : assigned ? (
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success)]/15 text-[var(--data-success)] text-xs font-extrabold">
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] text-xs font-extrabold">
                           <Check className="h-3.5 w-3.5" /> Asignada
                         </div>
                       ) : isDragOver ? (
@@ -493,7 +493,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
         {/* Footer */}
         <footer className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--rule-soft)] bg-white dark:bg-card flex items-center justify-between gap-3">
           <div className="flex sm:hidden items-center gap-2 text-xs">
-            <span className="px-2 py-1 rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)] font-bold">
+            <span className="px-2 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] font-bold">
               {totalAssigned} ✓
             </span>
             <span className="px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-bold">

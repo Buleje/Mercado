@@ -26,18 +26,18 @@ const STORAGE_KEY = "task_kanban_v2";
 const PRIORITY_CONFIG: Record<Priority, { label: string; dot: string; badge: string }> = {
   urgente: {
     label: "Urgente",
-    dot: "bg-[var(--data-error)]",
-    badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+    dot: "bg-[var(--data-error-500)]",
+    badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   },
   normal: {
     label: "Normal",
-    dot: "bg-[var(--data-warning)]",
-    badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    dot: "bg-[var(--data-warning-500)]",
+    badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   },
   baja: {
     label: "Baja",
     dot: "bg-[var(--accent-soft)]",
-    badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
 };
 
@@ -49,12 +49,12 @@ const COL_CONFIG: Record<Column, { label: string; color: string; bg: string }> =
   },
   doing: {
     label: "En proceso",
-    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   done: {
     label: "Listo",
-    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
 };
@@ -150,7 +150,7 @@ export default function TaskKanban() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowReset((s) => !s)}
-            className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Limpiar completadas
@@ -172,14 +172,14 @@ export default function TaskKanban() {
 
       {/* Confirmacion reset */}
       {showReset && (
-        <div className="rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
+        <div className="rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
             Esto eliminara todas las tareas en &ldquo;Listo&rdquo;. Continuar?
           </p>
           <div className="flex gap-2 shrink-0">
             <button
               onClick={resetDone}
-              className="px-3 py-1 rounded-lg bg-[var(--data-error)] text-white text-xs font-medium hover:bg-[var(--data-error)] transition-colors"
+              className="px-3 py-1 rounded-lg bg-[var(--data-error-500)] text-white text-xs font-medium hover:bg-[var(--data-error-500)] transition-colors"
             >
               Eliminar
             </button>
@@ -354,13 +354,13 @@ export default function TaskKanban() {
                             <div className="flex-1" />
                             <button
                               onClick={() => startEdit(task)}
-                              className="p-1 rounded hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--text-tertiary)] hover:text-[var(--data-success)] dark:hover:text-[var(--data-success)] transition-colors"
+                              className="p-1 rounded hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] dark:hover:text-[var(--data-success-500)] transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => deleteTask(task.id)}
-                              className="p-1 rounded hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
+                              className="p-1 rounded hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

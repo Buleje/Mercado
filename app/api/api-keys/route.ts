@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveTenantSlug } from "@/lib/resolve-tenant";
+import { tryAdmin } from "@/lib/require-admin";
 import { createApiKey, revokeApiKey, listApiKeys } from "@/lib/api-keys";
-import { verifySessionToken, SESSION } from "@/lib/session";
 import { getPlanLimits } from "@/lib/plans";
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
+// SECURITY 2026-05-06: derivamos tenantId del JWT (no del header x-tenant-id).
+// Antes un admin de tenant A podía listar/crear/revocar API keys de tenant B
+// inyectando el header. Ahora `tryAdmin` retorna `tenantId` validado del JWT.
 
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
-  return !!(token && (await verifySessionToken(token)));
-}
-
-async function getTenantId(req: NextRequest): Promise<string> {
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  return (await resolveTenantSlug(rawTenantId)) ?? "main";
+async function authAdmin(req: NextRequest): Promise<{ tenantId: string } | null> {
+  const session = await tryAdmin(req);
+  if (!session) return null;
+  return { tenantId: session.tenantId };
 }
 
 // ─── Plan guard ───────────────────────────────────────────────────────────────
@@ -32,11 +30,11 @@ async function requireApiAccess(tenantId: string): Promise<boolean> {
 // List active API keys for the current tenant. Requires admin session.
 
 export async function GET(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const auth = await authAdmin(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const tenantId = await getTenantId(req);
+  const { tenantId } = auth;
 
   if (!(await requireApiAccess(tenantId))) {
     return NextResponse.json(
@@ -53,11 +51,11 @@ export async function GET(req: NextRequest) {
 // Create a new API key. The raw key is returned ONCE — show it to the user immediately.
 
 export async function POST(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const auth = await authAdmin(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const tenantId = await getTenantId(req);
+  const { tenantId } = auth;
 
   if (!(await requireApiAccess(tenantId))) {
     return NextResponse.json(
@@ -93,11 +91,11 @@ export async function POST(req: NextRequest) {
 // Revoke an API key by its ID.
 
 export async function DELETE(req: NextRequest) {
-  if (!(await requireAdmin(req))) {
+  const auth = await authAdmin(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const tenantId = await getTenantId(req);
+  const { tenantId } = auth;
   const id = req.nextUrl.searchParams.get("id") ?? "";
 
   if (!id) {

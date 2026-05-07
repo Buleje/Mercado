@@ -23,10 +23,12 @@ export async function GET() {
     const registeredAgents = agentRegistry.listAll();
     const activeTasks = orchestrator.activeCount;
 
+    // SECURITY 2026-05-06 (audit AI #12): NO exponer la lista de `actions`
+    // (capacidades internas tipo `pricing_*`, `customers_segmentation`).
+    // Eso es reconnaissance gratis para atacantes. Solo domain + circuit state.
     const agents = registeredAgents.map((agent) => ({
       domain: agent.domain,
       status: "active" as const,
-      actions: agent.actions,
       circuitState: agentRegistry.getCircuitState
         ? agentRegistry.getCircuitState(agent.domain)
         : "closed",

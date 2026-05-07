@@ -40,13 +40,13 @@ function getLevel(days: number): ExpiryLevel | null {
 
 const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: string }> = {
   critical: {
-    badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-    row: "bg-[var(--data-error-50)]/50 dark:bg-red-950/10 border-[var(--data-error)] dark:border-[var(--data-error)]",
+    badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+    row: "bg-[var(--data-error-50)]/50 dark:bg-red-950/10 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
     label: "Vence pronto",
   },
   warning: {
-    badge: "bg-[var(--data-warning)]/10 text-[var(--data-warning)]",
-    row: "bg-[var(--data-warning)]/5 border-[var(--data-warning)]/20",
+    badge: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
+    row: "bg-[var(--data-warning-500)]/5 border-[var(--data-warning-500)]/20",
     label: "Esta semana",
   },
   soon: {
@@ -132,10 +132,10 @@ export default function ExpiryAlertWidget() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="p-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30">
-                <Package className="w-5 h-5 text-[var(--data-error)]" />
+                <Package className="w-5 h-5 text-[var(--data-error-500)]" />
               </div>
               {counts.critical > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--data-error)] text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--data-error-500)] text-white text-xs rounded-full flex items-center justify-center font-bold">
                   {counts.critical}
                 </span>
               )}
@@ -165,13 +165,13 @@ export default function ExpiryAlertWidget() {
         {!loading && (
           <div className="flex gap-2 mt-3 flex-wrap">
             {counts.critical > 0 && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-xs font-bold">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-xs font-bold">
                 <AlertTriangle className="w-3 h-3" />
                 {counts.critical} critico{counts.critical !== 1 ? "s" : ""}
               </span>
             )}
             {counts.warning > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[var(--data-warning)]/10 text-[var(--data-warning)] text-xs font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] text-xs font-bold">
                 {counts.warning} esta semana
               </span>
             )}
@@ -212,7 +212,7 @@ export default function ExpiryAlertWidget() {
                     ? "border-l-red-500"
                     : item.level === "warning"
                       ? "border-l-[#f97316]"
-                      : "border-l-[#00B4A6]"
+                      : "border-l-[var(--accent)]"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -247,8 +247,8 @@ export default function ExpiryAlertWidget() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "sale"
-                        ? "bg-[var(--data-warning)] text-white border-[var(--data-warning)]"
-                        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-warning)] hover:text-[var(--data-warning)]"
+                        ? "bg-[var(--data-warning-500)] text-white border-[var(--data-warning-500)]"
+                        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-500)]"
                     )}
                   >
                     <Tag className="w-3 h-3" />

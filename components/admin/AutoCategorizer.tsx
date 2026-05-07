@@ -16,22 +16,22 @@ const CATEGORIES: Category[] = [
   {
     name:     "Abarrotes",
     keywords: ["arroz", "fideos", "azucar", "azúcar", "harina", "sal", "sopa", "pasta", "lenteja", "menestra", "frijol", "garbanzo", "maiz", "maíz", "avena", "quinua", "trigo"],
-    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   },
   {
     name:     "Aceites y grasas",
     keywords: ["aceite", "mantequilla", "margarina", "manteca", "grasa", "vegetal"],
-    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   },
   {
     name:     "Limpieza",
     keywords: ["jabon", "jabón", "detergente", "lejia", "lejía", "cloro", "suavizante", "desinfectante", "limpiador", "escoba", "trapeador", "esponja", "guante", "bolsa basura"],
-    color:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    color:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   },
   {
     name:     "Bebidas",
     keywords: ["gaseosa", "agua", "jugo", "cerveza", "refresco", "néctar", "nectar", "te", "té", "café", "cafe", "cocoa", "milo", "chicha", "bebida", "soda"],
-    color:    "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",
+    color:    "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/30 dark:text-[var(--data-info-500)]",
   },
   {
     name:     "Lacteos",

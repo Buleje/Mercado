@@ -239,7 +239,7 @@ function ReviewPhotoGallery({ storeSlug }: { storeSlug: string }) {
   return (
     <section className="mt-8">
       <h3 className="mb-3 text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <svg aria-hidden="true" className="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="h-5 w-5 text-[var(--data-success-600)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         Fotos de clientes
@@ -376,7 +376,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
       </div>
 
       {submitMsg && (
-        <div className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+        <div className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-[var(--data-success-700)] dark:bg-emerald-900/20 dark:text-emerald-400">
           {submitMsg}
         </div>
       )}
@@ -441,10 +441,10 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <div className="flex items-center gap-2 mb-2">
               <label className="text-sm text-gray-600 dark:text-gray-400">Fotos (opcional, máx 3):</label>
               {uploadingPhoto && (
-                <span className="text-xs text-emerald-600 animate-pulse">Subiendo...</span>
+                <span className="text-xs text-[var(--data-success-600)] animate-pulse">Subiendo...</span>
               )}
               {formPhotos.length < 3 && !uploadingPhoto && (
-                <label className="cursor-pointer text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors">
+                <label className="cursor-pointer text-xs font-semibold text-[var(--data-success-600)] hover:text-emerald-800 transition-colors">
                   + Agregar foto
                   <input
                     type="file"
@@ -470,7 +470,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
                     <button
                       type="button"
                       onClick={() => setFormPhotos((prev) => prev.filter((_, j) => j !== i))}
-                      className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-1.5 -right-1.5 bg-[var(--data-error-500)] text-white rounded-full h-5 w-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       ×
                     </button>
@@ -481,7 +481,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
           </div>
 
           {submitError && (
-            <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
+            <p className="text-sm text-[var(--data-error-600)] dark:text-red-400">{submitError}</p>
           )}
 
           <div className="flex items-center gap-2 justify-end">
@@ -635,13 +635,13 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
             <div className="mt-1.5 flex items-center gap-1.5">
               {(store.isOpen ?? true) ? (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Abierto ahora</span>
+                  <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
+                  <span className="text-xs font-semibold text-[var(--data-success-600)] dark:text-emerald-400">Abierto ahora</span>
                 </>
               ) : (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-                  <span className="text-xs font-semibold text-red-600 dark:text-red-400">Cerrado ahora</span>
+                  <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
+                  <span className="text-xs font-semibold text-[var(--data-error-600)] dark:text-red-400">Cerrado ahora</span>
                 </>
               )}
             </div>
@@ -688,7 +688,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
                 href={`https://wa.me/51?text=${encodeURIComponent(`Hola, vi tu tienda ${store.name} en Buleje`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--data-success-700)]"
                 aria-label={`Contactar ${store.name} por WhatsApp`}
               >
                 <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -931,7 +931,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           </div>
         </div>
       ) : errorStore ? (
-        <div className="mb-8 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div className="mb-8 rounded-xl bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
           {errorStore}{" "}
           <button onClick={fetchStore} className="underline hover:no-underline">Reintentar</button>
         </div>
@@ -1013,12 +1013,12 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   </span>
                 )}
                 {(store.isOpen ?? true) ? (
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-500/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-emerald-200">
+                  <span className="flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-emerald-200">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     Abierto
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 rounded-full bg-red-500/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-red-200">
+                  <span className="flex items-center gap-1 rounded-full bg-[var(--data-error-500)]/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-red-200">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
                     Cerrado
                   </span>
@@ -1105,7 +1105,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
               <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
                 <svg
                   aria-hidden="true"
-                  className="h-5 w-5 text-amber-600 shrink-0"
+                  className="h-5 w-5 text-[var(--data-warning-600)] shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -1119,8 +1119,8 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   <path d="M8 14c0-3 4-3 4 0" strokeOpacity="0.5" />
                 </svg>
                 <div>
-                  <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Tienda en vacaciones</p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-sm font-bold text-[var(--data-warning-700)] dark:text-amber-300">Tienda en vacaciones</p>
+                  <p className="text-xs text-[var(--data-warning-600)] dark:text-amber-400">
                     {store.vacationMessage || "Esta tienda no está recibiendo pedidos en este momento."}
                   </p>
                 </div>
@@ -1133,7 +1133,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           <p className="text-gray-500 dark:text-gray-400">Tienda no encontrada</p>
           <Link
             href="/marketplace"
-            className="mt-3 inline-block text-sm text-emerald-600 underline hover:no-underline"
+            className="mt-3 inline-block text-sm text-[var(--data-success-600)] underline hover:no-underline"
           >
             Volver al marketplace
           </Link>
@@ -1237,7 +1237,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
       {/* ── GRID DE PRODUCTOS ──────────────────────────────────── */}
       {errorProducts && (
-        <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400">
           {errorProducts}{" "}
           <button onClick={fetchProducts} className="underline hover:no-underline">Reintentar</button>
         </div>

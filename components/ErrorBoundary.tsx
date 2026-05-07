@@ -140,7 +140,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               {/* Error Icon */}
               <div className="flex justify-center mb-6">
                 <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full">
-                  <AlertTriangle className="h-12 w-12 text-red-600 dark:text-red-400" />
+                  <AlertTriangle className="h-12 w-12 text-[var(--data-error-600)] dark:text-red-400" />
                 </div>
               </div>
 
@@ -169,7 +169,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
                   {this.state.showDetails && (
                     <div className="bg-gray-50 dark:bg-surface rounded-lg p-4 overflow-x-auto">
-                      <p className="text-xs font-mono text-red-600 dark:text-red-400 mb-2">
+                      <p className="text-xs font-mono text-[var(--data-error-600)] dark:text-red-400 mb-2">
                         {this.state.error.name}: {this.state.error.message}
                       </p>
                       {this.state.error.stack && (
@@ -227,7 +227,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               {/* Development Note */}
               {isDevelopment && (
                 <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  <p className="text-xs text-[var(--data-success-700)] dark:text-emerald-300">
                     <span className="font-semibold">Modo desarrollo:</span> Los detalles del error son visibles. En producción, solo se mostrará un mensaje genérico.
                   </p>
                 </div>
@@ -291,12 +291,12 @@ export function SimpleErrorFallback({
       <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">
         Error
       </h3>
-      <p className="text-sm text-red-700 dark:text-red-300 mb-4">
+      <p className="text-sm text-[var(--data-error-700)] dark:text-red-300 mb-4">
         {error.message}
       </p>
       <button
         onClick={reset}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
+        className="px-4 py-2 bg-[var(--data-error-600)] text-white rounded-lg hover:bg-[var(--data-error-700)] transition-colors text-sm font-semibold"
       >
         Reintentar
       </button>

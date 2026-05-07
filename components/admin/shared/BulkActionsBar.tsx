@@ -60,7 +60,7 @@ export default function BulkActionsBar({
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               action.variant === "danger"
-                ? "bg-[var(--data-error-100)] text-[var(--data-error)] hover:bg-[var(--data-error)]"
+                ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"
                 : "bg-white text-[var(--text-primary)] hover:bg-gray-100 border border-[var(--rule-base)]",
             )}
           >
@@ -86,7 +86,7 @@ export default function BulkActionsBar({
                     onClick={() => { action.onClick(selectedIds); setShowMore(false); }}
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors",
-                      action.variant === "danger" ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)]" : "text-[var(--text-primary)] hover:bg-gray-50",
+                      action.variant === "danger" ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "text-[var(--text-primary)] hover:bg-gray-50",
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />

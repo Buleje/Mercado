@@ -145,45 +145,79 @@ export default function QuickReorderButton() {
   const moreCount = itemCount > 2 ? itemCount - 2 : 0;
 
   return (
-    // Stack vertical de widgets flotantes: este sube a 7rem (112px) en
-    // mobile y 6.5rem (104px) en desktop, dejando espacio para el botón
-    // de WhatsApp/Chat que vive en `bottom-6`. Mismo `right` que el chat
-    // para alineación visual.
-    <div className="fixed right-4 sm:right-6 z-40 bottom-28 sm:bottom-[6.5rem]">
+    // Esquina opuesta al chat — bottom-left para no apilarse con WhatsApp/Chat
+    // que viven en bottom-right.
+    <div className="fixed left-4 sm:left-6 z-40 bottom-6">
       {/* Expanded card */}
       {expanded && (
-        <div className="mb-3 w-72 rounded-2xl border border-[var(--rule-base)] bg-white shadow-[var(--shadow-xl)] dark:border-card-border dark:bg-card animate-[fadeUp_0.2s_ease-out]">
-          <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3 dark:border-card-border">
-            <h4 className="text-sm font-bold text-foreground">
-              Repetir pedido
-            </h4>
+        <div
+          className="mb-3 w-80 sm:w-96 rounded-3xl overflow-hidden animate-[fadeUp_0.2s_ease-out]"
+          style={{
+            background: "var(--color-card)",
+            border:
+              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+            boxShadow:
+              "0 24px 48px -12px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent), 0 4px 12px rgba(0,0,0,0.08)",
+          }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-3.5"
+            style={{
+              background:
+                "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+              borderBottom:
+                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+            }}
+          >
+            <div className="inline-flex items-center gap-2">
+              <RotateCcw
+                className="h-4 w-4"
+                strokeWidth={2.25}
+                style={{ color: "var(--color-primary-dark, #009690)" }}
+              />
+              <h4
+                className="text-sm font-extrabold uppercase tracking-wider"
+                style={{ color: "var(--color-primary-dark, #009690)" }}
+              >
+                Repetir pedido
+              </h4>
+            </div>
             <button
               onClick={() => setExpanded(false)}
-              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"
+              className="rounded-lg p-1.5 text-muted hover:bg-[var(--surface-sunken)] hover:text-foreground transition-colors"
               aria-label="Cerrar"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" strokeWidth={2.25} />
             </button>
           </div>
-          <div className="px-4 py-3">
-            <p className="text-xs text-muted">
-              {preview}
-              {moreCount > 0 ? ` y ${moreCount} mas` : ""}
+          <div className="px-5 py-4">
+            <p className="text-sm text-foreground leading-snug">
+              <strong className="font-extrabold">{preview}</strong>
+              {moreCount > 0 ? ` y ${moreCount} más` : ""}
             </p>
-            <p className="mt-1 text-sm font-extrabold text-primary">
+            <p
+              className="mt-2 text-2xl font-extrabold tabular-nums"
+              style={{ color: "var(--color-primary-dark, #009690)" }}
+            >
               S/ {lastOrder.total.toFixed(2)}
             </p>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={handleReorder}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                className="flex flex-1 items-center justify-center gap-2 h-12 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.98]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  boxShadow:
+                    "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                }}
               >
-                <ShoppingCart className="h-4 w-4" />
+                <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
                 Agregar todo
               </button>
               <button
                 onClick={handleDismiss}
-                className="rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-400 transition-colors hover:text-gray-600"
+                className="h-12 px-4 rounded-2xl text-sm font-bold text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 No
               </button>
@@ -192,18 +226,33 @@ export default function QuickReorderButton() {
         </div>
       )}
 
-      {/* Floating button */}
+      {/* Floating button — brand gradient */}
       <button
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "flex items-center gap-2 rounded-full px-4 py-3 font-bold shadow-xl transition-all active:scale-95",
-          expanded
-            ? "bg-gray-100 text-gray-600 dark:bg-card dark:text-gray-300"
-            : "bg-primary text-white hover:bg-primary/90 shadow-primary/30"
+          "flex items-center gap-2 rounded-full h-14 px-5 font-extrabold transition-all active:scale-95",
         )}
+        style={
+          expanded
+            ? {
+                background: "var(--color-card)",
+                color: "var(--color-foreground)",
+                border:
+                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                boxShadow:
+                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 20%, transparent)",
+              }
+            : {
+                background:
+                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                color: "white",
+                boxShadow:
+                  "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+              }
+        }
         aria-label="Repetir último pedido"
       >
-        <RotateCcw className="h-5 w-5" />
+        <RotateCcw className="h-5 w-5" strokeWidth={2.25} />
         <span className="hidden text-sm sm:inline">Repetir pedido</span>
       </button>
     </div>

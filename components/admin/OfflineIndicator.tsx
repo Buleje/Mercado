@@ -54,7 +54,7 @@ export default function OfflineIndicator() {
           className={`
             w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold
             ${bannerState === "offline"
-              ? "bg-[var(--data-warning)] dark:bg-[var(--data-warning)] text-[var(--data-warning)] dark:text-amber-950"
+              ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-amber-950"
               : bannerState === "syncing"
               ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
               : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
@@ -70,7 +70,7 @@ export default function OfflineIndicator() {
                 Sin conexion — Las ventas se guardan localmente
               </span>
               {pendingCount > 0 && (
-                <span className="ml-auto bg-[var(--data-warning)]/20 dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-[var(--data-warning-500)]/20 dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-full">
                   {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
                 </span>
               )}

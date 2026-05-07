@@ -112,7 +112,7 @@ export default function EmptyDateRangeState({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(0,180,166,0.06) 0%, transparent 70%)",
+            "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 6%, transparent) 0%, transparent 70%)",
         }}
       />
 
@@ -120,7 +120,7 @@ export default function EmptyDateRangeState({
         {/* Ilustración */}
         <div className="mx-auto mb-6 flex items-center justify-center">
           {Icon ? (
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--accent-soft,rgba(0,180,166,0.08))] text-[var(--accent)]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--accent-soft,color-mix(in oklab, var(--accent) 8%, transparent))] text-[var(--accent)]">
               <Icon className="h-10 w-10" strokeWidth={1.75} />
             </div>
           ) : (

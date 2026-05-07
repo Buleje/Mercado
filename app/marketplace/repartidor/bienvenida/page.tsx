@@ -185,7 +185,7 @@ export default function BienvenidaRepartidorPage() {
             href="https://wa.me/51999999999?text=Hola%2C%20soy%20repartidor%20nuevo%20y%20tengo%20una%20pregunta"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--data-success)] text-base font-extrabold text-white shadow-lg shadow-[var(--data-success)]/25 hover:translate-y-[-1px] transition-transform"
+            className="mt-5 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--data-success-500)] text-base font-extrabold text-white shadow-lg shadow-[var(--data-success)]/25 hover:translate-y-[-1px] transition-transform"
           >
             <WhatsAppIcon className="h-5 w-5" />
             WhatsApp de soporte

@@ -87,7 +87,7 @@ export type DbOrderCustomer = {
   reference: string;
 };
 
-export type OrderStatus = "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
+export type OrderStatus = "pendiente" | "confirmado" | "preparando" | "en_camino" | "entregado" | "cancelado";
 
 export type DbOrder = {
   id: string;
@@ -110,6 +110,8 @@ export type DbOrder = {
   idempotencyKey?: string;
   /** Repartidor asignado al pedido */
   riderName?: string;
+  /** Origen del pedido: direct = tienda propia, marketplace = marketplace multi-vendor */
+  source?: "direct" | "marketplace" | "wholesale";
   /** Soft delete timestamp — null means the order is active */
   deletedAt?: string | null;
   createdAt: string;

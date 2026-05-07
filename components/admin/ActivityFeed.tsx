@@ -14,12 +14,12 @@ interface ActivityEntry {
 }
 
 const ICON_MAP: Record<string, { icon: typeof ShoppingCart; color: string; bg: string }> = {
-  sale:     { icon: ShoppingCart,   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  order:    { icon: ShoppingCart,   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  sale:     { icon: ShoppingCart,   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  order:    { icon: ShoppingCart,   color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   product:  { icon: Package,        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
-  payment:  { icon: DollarSign,     color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
+  payment:  { icon: DollarSign,     color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
   customer: { icon: UserPlus,       color: "text-primary",     bg: "bg-primary/10" },
-  fiado:    { icon: DollarSign,     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
+  fiado:    { icon: DollarSign,     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 };
 
 function getIcon(entry: ActivityEntry) {
@@ -72,11 +72,26 @@ export default function ActivityFeed() {
     }
   };
 
+  // BUG-FIX (audit 2026-05-05): visibility check para pausar polling
+  // cuando la pestaña está oculta — ahorra cuota DB.
   useEffect(() => {
     fetchActivity();
-    timerRef.current = setInterval(fetchActivity, 30000);
+    const start = () => {
+      if (timerRef.current) return;
+      timerRef.current = setInterval(fetchActivity, 30000);
+    };
+    const stop = () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { fetchActivity(); start(); }
+      else stop();
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 

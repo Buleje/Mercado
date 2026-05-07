@@ -98,6 +98,25 @@ export async function POST(req: Request) {
     });
   } catch { /* DB unavailable */ }
 
+  // BUG FIX 2026-05-05: si el cliente envió hint slug (x-tenant-id) y existe
+  // un usuario para ESE tenant, lo priorizamos. Antes el primer match ganaba
+  // y si qaadmin existía en "main" Y en "mi-pollo", el login desde
+  // /t/mi-pollo/admin/login devolvía JWT con tenantId="main" → admin no veía
+  // sus propios pedidos.
+  if (dbUsers.length > 1 && tenantId !== resolvedSlug) {
+    // tenantId aquí es el CUID del slug hint
+    dbUsers = [
+      ...dbUsers.filter((u) => u.tenantId === tenantId),
+      ...dbUsers.filter((u) => u.tenantId !== tenantId),
+    ];
+  } else if (dbUsers.length > 1) {
+    // tenantId === resolvedSlug (no se encontró tenant en DB) — match por slug
+    dbUsers = [
+      ...dbUsers.filter((u) => u.tenantId === resolvedSlug),
+      ...dbUsers.filter((u) => u.tenantId !== resolvedSlug),
+    ];
+  }
+
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash, u.username)) {
       // Usar el tenantId del usuario que matcheó (no el resolved del header).
@@ -122,6 +141,23 @@ export async function POST(req: Request) {
       response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       response.cookies.set("active-tenant", matchedTenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       response.cookies.set("active-tenant-slug", tenantSlug, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
+
+      // COMPLIANCE 2026-05-06 (audit Ley 29733 #4): trazar login exitoso.
+      // Art. 18: "quién accedió". Antes solo loggábamos fallos.
+      // Fire-and-forget — no bloquear la respuesta.
+      try {
+        const { logActivity } = await import("@/lib/activity-logger");
+        const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? null;
+        logActivity(
+          "login_success",
+          "admin",
+          `Login exitoso (${u.role}) desde tenant ${tenantSlug}`,
+          u.username,
+          u.username,
+        ).catch(() => {});
+        void ip;
+      } catch { /* logger not available in edge */ }
+
       return response;
     }
   }

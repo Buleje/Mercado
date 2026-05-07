@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 import {
   sendOrderConfirmation,
   sendFiadoReminder,
@@ -13,6 +15,14 @@ const Schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SECURITY/CRITICAL 2026-05-06 (audit email #1): cerrar relay anónimo.
+  // Antes cualquiera podía mandar emails desde nuestro dominio Resend → spam
+  // masivo + reputación quemada. Requiere admin + rate limit estricto.
+  const rl = applyRateLimit(req, "STRICT", "email-send");
+  if (rl) return rl;
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
   const raw = await req.json();
   const parsed = Schema.safeParse(raw);
   if (!parsed.success) {

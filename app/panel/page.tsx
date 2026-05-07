@@ -38,7 +38,7 @@ const SECTIONS: Section[] = [
   {
     title: "Plataforma SaaS",
     description: "Marketing, registro y planes",
-    color: "text-teal-600 dark:text-teal-400",
+    color: "text-[var(--accent-dark)] dark:text-teal-400",
     bgColor: "bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800/40",
     links: [
       { label: "Landing SaaS", href: "/saas", description: "Pagina de marketing del servicio", icon: <Globe className="h-4 w-4" /> },
@@ -62,7 +62,7 @@ const SECTIONS: Section[] = [
   {
     title: "Admin de Tienda",
     description: "Panel de administracion del tenant activo",
-    color: "text-emerald-600 dark:text-emerald-400",
+    color: "text-[var(--data-success-600)] dark:text-emerald-400",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40",
     links: [
       { label: "Panel Admin", href: "/admin", description: "Dashboard principal de tu tienda", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
   {
     title: "Tienda Online",
     description: "La tienda publica que ven tus clientes",
-    color: "text-emerald-600 dark:text-emerald-400",
+    color: "text-[var(--data-success-600)] dark:text-emerald-400",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40",
     links: [
       { label: "Inicio", href: "/", description: "Pagina principal de la tienda", icon: <Store className="h-4 w-4" /> },
@@ -92,7 +92,7 @@ const SECTIONS: Section[] = [
   {
     title: "Onboarding y Configuracion",
     description: "Configurar una tienda nueva paso a paso",
-    color: "text-amber-600 dark:text-amber-400",
+    color: "text-[var(--data-warning-600)] dark:text-amber-400",
     bgColor: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40",
     links: [
       { label: "Onboarding Wizard", href: "/onboarding", description: "Configurar marca, productos, clientes", icon: <Palette className="h-4 w-4" /> },
@@ -189,7 +189,7 @@ export default function PanelPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Header */}
-      <header className="bg-linear-to-r from-[#00B4A6] to-[#065f46] text-white">
+      <header className="bg-linear-to-r from-[var(--accent)] to-[#065f46] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-center gap-4 mb-4">
             <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">

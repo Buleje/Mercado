@@ -48,15 +48,15 @@ function stockLevel(p: ReorderProduct): AlertLevel {
 }
 
 const LEVEL_CONFIG: Record<AlertLevel, { label: string; color: string; bg: string; dot: string }> = {
-  critical: { label: "Crítico",   color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",    dot: "bg-[var(--data-error)]" },
-  low:      { label: "Bajo",      color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dot: "bg-[var(--data-warning)]" },
-  warning:  { label: "Alerta",    color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dot: "bg-[var(--data-warning)]" },
+  critical: { label: "Crítico",   color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",    dot: "bg-[var(--data-error-500)]" },
+  low:      { label: "Bajo",      color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dot: "bg-[var(--data-warning-500)]" },
+  warning:  { label: "Alerta",    color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dot: "bg-[var(--data-warning-500)]" },
 };
 
 const HISTORY_STATUS: Record<string, { label: string; color: string }> = {
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
-  enviada:   { label: "Enviada",   color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  recibida:  { label: "Recibida",  color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  enviada:   { label: "Enviada",   color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  recibida:  { label: "Recibida",  color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
 };
 
 function fmtDate(iso: string) {
@@ -207,10 +207,10 @@ export default function AutoReorderTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Críticos",         value: kpis.critical, color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",    icon: AlertTriangle },
-          { label: "Stock bajo",       value: kpis.low,      color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20", icon: TrendingDown },
-          { label: "En alerta",        value: kpis.warning,  color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20", icon: Package },
-          { label: "Auto-reorden ON",  value: kpis.autoOn,   color: "text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: RefreshCw },
+          { label: "Críticos",         value: kpis.critical, color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",    icon: AlertTriangle },
+          { label: "Stock bajo",       value: kpis.low,      color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20", icon: TrendingDown },
+          { label: "En alerta",        value: kpis.warning,  color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20", icon: Package },
+          { label: "Auto-reorden ON",  value: kpis.autoOn,   color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: RefreshCw },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5 shrink-0", color)} />
@@ -224,7 +224,7 @@ export default function AutoReorderTab() {
 
       {/* Success banner */}
       {created && (
-        <div className="flex flex-wrap items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-4 py-3 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
+        <div className="flex flex-wrap items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Orden de compra creada: <span className="font-mono font-bold">{created.slice(0, 8)}...</span>
           <button onClick={() => setCreated(null)} className="ml-auto text-xs underline">Cerrar</button>
@@ -236,7 +236,7 @@ export default function AutoReorderTab() {
         <>
           {products.length === 0 ? (
             <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl">
-              <CheckCircle2 className="h-12 w-12 text-[var(--data-success)] mx-auto mb-3" />
+              <CheckCircle2 className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-3" />
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Inventario en buen estado</p>
               <p className="text-sm text-[var(--text-tertiary)] mt-1">No hay productos con stock bajo en este momento</p>
             </div>

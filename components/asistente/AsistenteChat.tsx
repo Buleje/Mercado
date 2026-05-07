@@ -178,7 +178,7 @@ export default function AsistenteChat() {
               Asistente Buleje
             </p>
             <p className="text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)] flex items-center gap-1">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-success)]" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
               IA conectada al marketplace
             </p>
           </div>
@@ -220,7 +220,7 @@ export default function AsistenteChat() {
         )}
 
         {error && (
-          <div className="text-sm text-[var(--data-error)] font-semibold px-3 py-2 rounded-lg bg-[var(--data-error)]/10 border border-[var(--data-error)]/20">
+          <div className="text-sm text-[var(--data-error-500)] font-semibold px-3 py-2 rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/20">
             {error}
           </div>
         )}

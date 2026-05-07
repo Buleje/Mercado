@@ -176,7 +176,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-[var(--data-error)] font-semibold">{error}</p>
+        <p className="text-xs text-[var(--data-error-500)] font-semibold">{error}</p>
       )}
 
       {/* Vista previa del mensaje */}
@@ -200,7 +200,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
       <div className="pt-1">
         <button
           onClick={() => setShowSchedule(s => !s)}
-          className="text-xs text-primary dark:text-[var(--data-success)] font-semibold flex items-center gap-1.5 hover:underline"
+          className="text-xs text-primary dark:text-[var(--data-success-500)] font-semibold flex items-center gap-1.5 hover:underline"
         >
           <Clock className="h-3.5 w-3.5" />
           {showSchedule ? "Ocultar programación" : "Programar envío diario"}
@@ -223,7 +223,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
               )}
             />
             {scheduleHour && (
-              <p className="text-xs text-primary dark:text-[var(--data-success)] font-medium">
+              <p className="text-xs text-primary dark:text-[var(--data-success-500)] font-medium">
                 Recuerda enviar el reporte todos los dias a las {scheduleHour} hs.
                 La app no envia automaticamente — abre el modulo IA a esa hora para hacerlo.
               </p>

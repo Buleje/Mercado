@@ -56,8 +56,13 @@ export async function GET(req: NextRequest) {
     const session = await tryAdmin(req);
     const isAdmin = session !== null;
 
-    // tenantId is injected by proxy.ts from session/cookie/subdomain
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06: si hay sesión admin, forzar tenantId del JWT (no
+    // del header). Esto evita que un admin con cookies/headers cruzados vea
+    // datos de otro tenant — el JWT es la fuente de verdad. Anónimos siguen
+    // resolviendo por header (storefront público vía subdominio).
+    const tenantId = isAdmin
+      ? session!.tenantId
+      : (req.headers.get("x-tenant-id") ?? "main");
     let products = await withDbRetry(() => ProductsDB.getAll(tenantId));
 
     if (category && category !== "todos") {

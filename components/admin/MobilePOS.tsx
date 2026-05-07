@@ -91,7 +91,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
         className={cn(
           "relative flex flex-col items-center justify-center rounded-xl border border-gray-700 p-2 gap-1 transition-transform active:scale-95 select-none",
           "bg-gray-800 hover:bg-gray-700",
-          flash && "bg-[var(--accent-muted)] border-[var(--data-success)]/30",
+          flash && "bg-[var(--accent-muted)] border-[var(--data-success-500)]/30",
         )}
         style={{ height: 80, touchAction: "manipulation" }}
       >
@@ -105,7 +105,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
           </div>
         )}
         <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-100 text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
-        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success)]">S/{product.price.toFixed(2)}</span>
+        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">S/{product.price.toFixed(2)}</span>
       </button>
 
       {/* Long press modal — cantidad */}
@@ -186,7 +186,7 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-200 truncate">{item.product.name}</p>
-        <p className="text-[length:var(--ts-xs)] text-[var(--data-success)] font-bold">S/{item.product.price.toFixed(2)} c/u</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{item.product.price.toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button
@@ -204,9 +204,9 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
         </button>
         <button
           onClick={onRemove}
-          className="w-8 h-8 rounded-lg bg-[var(--data-error)]/50 flex items-center justify-center active:scale-90 ml-1"
+          className="w-8 h-8 rounded-lg bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
         >
-          <Trash2 className="h-3 w-3 text-[var(--data-error)]" />
+          <Trash2 className="h-3 w-3 text-[var(--data-error-500)]" />
         </button>
       </div>
     </div>
@@ -281,7 +281,7 @@ export default function MobilePOS() {
   const PAY_BUTTONS: { method: PayMethod; label: string; color: string }[] = [
     { method: "efectivo", label: "Efectivo", color: "bg-gray-700 hover:bg-gray-600" },
     { method: "yape",     label: "Yape",     color: "bg-[var(--accent)] hover:bg-[var(--accent)]" },
-    { method: "fiado",    label: "Fiado",    color: "bg-[var(--data-warning)] hover:bg-[var(--data-warning)]" },
+    { method: "fiado",    label: "Fiado",    color: "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" },
   ];
 
   return (
@@ -300,7 +300,7 @@ export default function MobilePOS() {
               placeholder="Buscar producto..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success)]/30"
+              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
               style={{ fontSize: 16 }}
             />
             {query && (
@@ -419,7 +419,7 @@ export default function MobilePOS() {
           <div className="text-center">
             <Check className="h-16 w-16 text-white mx-auto mb-2" strokeWidth={3} />
             <p className="text-white text-2xl font-semibold">Cobrado!</p>
-            <p className="text-[var(--data-success)] text-lg tabular-nums">S/{total.toFixed(2)}</p>
+            <p className="text-[var(--data-success-500)] text-lg tabular-nums">S/{total.toFixed(2)}</p>
           </div>
         </div>
       )}

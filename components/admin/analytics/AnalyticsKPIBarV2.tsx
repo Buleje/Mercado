@@ -112,13 +112,13 @@ export default function AnalyticsKPIBarV2() {
   // ── Error state ──
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center h-24 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
-        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mr-3">
+      <div className="flex items-center justify-center h-24 rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20">
+        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mr-3">
           No se pudieron cargar los KPIs
         </p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)]/40 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/40 transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -289,8 +289,8 @@ export default function AnalyticsKPIBarV2() {
                     className={cn(
                       "text-[length:var(--ts-2xs)] font-mono px-2 py-0.5 rounded-full font-medium inline-block mt-0.5",
                       card.cambio >= 0
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
-                        : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                     )}
                   >
                     {card.cambio >= 0 ? "+" : ""}
@@ -308,14 +308,14 @@ export default function AnalyticsKPIBarV2() {
                   <AreaChart width={60} height={28} data={card.sparkline}>
                     <defs>
                       <linearGradient id="kpi-green-gradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                        <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <Area
                       type="monotone"
                       dataKey="v"
-                      stroke="#00B4A6"
+                      stroke="var(--accent)"
                       fill="url(#kpi-green-gradient)"
                       strokeWidth={1.5}
                       dot={false}

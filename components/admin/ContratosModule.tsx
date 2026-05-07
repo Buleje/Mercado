@@ -602,9 +602,9 @@ function fillTemplate(text: string, data: Record<string, string>): string {
 }
 
 const ESTADO_STYLES: Record<ContratoEstado, string> = {
-  VIGENTE: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
-  POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
-  VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+  VIGENTE: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+  VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
   ANULADO: "bg-gray-200 dark:bg-gray-800 text-[var(--text-tertiary)]",
   BORRADOR: "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]",
 };
@@ -653,7 +653,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
     <span ref={ref} className="relative inline-flex items-center">
       <button
         onClick={() => setOpen(!open)}
-        className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors"
+        className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors"
         title="¿Qué significa esto?"
         aria-expanded={open}
         aria-haspopup="true"
@@ -662,8 +662,8 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
         <div className="absolute bottom-7 left-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs shadow-lg">
           <p className="font-bold text-[var(--text-primary)] mb-1">{term}</p>
           <p className="text-[var(--text-secondary)] mb-2">{explanation}</p>
-          <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 rounded-lg p-2">
-            <p className="text-[var(--data-warning)] dark:text-[var(--data-warning)]"><strong>Ejemplo:</strong> {example}</p>
+          <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 rounded-lg p-2">
+            <p className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"><strong>Ejemplo:</strong> {example}</p>
           </div>
         </div>
       )}
@@ -1191,8 +1191,8 @@ body { font-family: 'Times New Roman', Georgia, serif; max-width: 680px; margin:
 .header { text-align: center; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 25px; }
 h1 { font-size: 16px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 5px; }
 .número { font-size: 13px; color: #555; }
-.summary { background: #f8f8f0; border-left: 4px solid #00B4A6; padding: 12px 16px; margin: 20px 0; font-size: 12px; color: #333; }
-.summary strong { color: #00B4A6; }
+.summary { background: #f8f8f0; border-left: 4px solid var(--accent); padding: 12px 16px; margin: 20px 0; font-size: 12px; color: #333; }
+.summary strong { color: var(--accent); }
 .clause { margin: 14px 0; text-align: justify; }
 .firmas { margin-top: 80px; display: flex; justify-content: space-between; gap: 40px; }
 .firma-box { text-align: center; flex: 1; }
@@ -1218,7 +1218,7 @@ ${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.número}</title>
 <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;}h1{text-align:center;font-size:14pt;text-transform:uppercase;}p{text-align:justify;margin:8pt 0;}</style></head>
 <body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.número}</p>
-${summary ? `<p style="background:#f0f0e0;padding:10px;border-left:4px solid #00B4A6;"><b>RESUMEN:</b> ${summary}</p>` : ""}
+${summary ? `<p style="background:#f0f0e0;padding:10px;border-left:4px solid var(--accent);"><b>RESUMEN:</b> ${summary}</p>` : ""}
 ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 <br/><br/><table width="100%"><tr><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">PRIMERA PARTE</td><td width="10%"></td><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">SEGUNDA PARTE</td></tr></table>
 </body></html>`;
@@ -1315,8 +1315,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       )}
       {error && !loading && (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
-          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
           <button onClick={fetchContratos} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
         </div>
       )}
@@ -1347,12 +1347,12 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       kpi.tone === "danger" ? "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)]" :
                       "bg-[color-mix(in_oklch,var(--accent)_10%,transparent)]";
                     const iconColor =
-                      kpi.tone === "warning" ? "text-[var(--data-warning)]" :
-                      kpi.tone === "danger" ? "text-[var(--data-error)]" :
+                      kpi.tone === "warning" ? "text-[var(--data-warning-500)]" :
+                      kpi.tone === "danger" ? "text-[var(--data-error-500)]" :
                       "text-[var(--text-secondary)]";
                     const valueColor =
-                      kpi.tone === "warning" ? "text-[var(--data-warning)]" :
-                      kpi.tone === "danger" ? "text-[var(--data-error)]" :
+                      kpi.tone === "warning" ? "text-[var(--data-warning-500)]" :
+                      kpi.tone === "danger" ? "text-[var(--data-error-500)]" :
                       "text-[var(--text-primary)]";
                     return (
                       <div key={kpi.label} className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
@@ -1413,15 +1413,15 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                 {/* Contratos por vencer */}
                 {stats.porVencer > 0 && (
-                  <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/50 rounded-xl p-4">
-                    <CardTitle className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-3 flex items-center gap-2">
+                  <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 rounded-xl p-4">
+                    <CardTitle className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3 flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Contratos por vencer (30 dias)
                     </CardTitle>
                     <div className="space-y-2">
                       {contratos.filter(c => getEstado(c) === "POR_VENCER").slice(0, 5).map(c => (
                         <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">{c.clienteNombre} — {c.número} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
-                          <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] font-bold hover:bg-[var(--data-warning)] transition-colors">
+                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.número} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] font-bold hover:bg-[var(--data-warning-500)] transition-colors">
                             Ver
                           </button>
                         </div>
@@ -1540,7 +1540,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <p className="text-sm font-bold text-primary">{formatCurrency(c.montoTotal || 0)}</p>
                               <div className="flex gap-1">
                                 <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -1704,10 +1704,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             return (
                               <div key={field.key} className={(field.type === "textarea") ? "sm:col-span-2" : ""}>
                                 <label className="flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)] mb-1">
-                                  {field.label} {field.required && <span className="text-[var(--data-error)]">*</span>}
+                                  {field.label} {field.required && <span className="text-[var(--data-error-500)]">*</span>}
                                   {hasTooltip && <LegalTooltip term={field.label} explanation={hasTooltip.explanation} example={hasTooltip.example} />}
                                   {isAutoFilled && (
-                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">
+                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                                       Auto-completado
                                     </span>
                                   )}
@@ -1726,7 +1726,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       placeholder={field.placeholder}
                                       className={cn(
                                         "flex-1 px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                       )}
                                     />
                                     <button
@@ -1741,7 +1741,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   </div>
                                 )}
                                 {isCiudadField && geoResult && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-1 mt-0.5 mb-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1 mt-0.5 mb-1">
                                     <MapPin className="h-3 w-3" /> Ubicacion detectada: {geoResult}
                                   </p>
                                 )}
@@ -1844,21 +1844,21 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
                                       "w-full px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : validationError ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                     )}
                                   />
                                 )}
 
                                 {/* Validation error */}
                                 {validationError && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] mt-1 flex items-center gap-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1 flex items-center gap-1">
                                     <AlertCircle className="h-3 w-3 shrink-0" /> {validationError}
                                   </p>
                                 )}
 
                                 {/* Auto-generated letras preview */}
                                 {(field.key === "PRECIO_LETRAS" || field.key === "MONTO_LETRAS") && wizardData[field.key] && (
-                                  <p className="text-[length:var(--ts-2xs)] text-primary dark:text-[var(--data-success)] mt-1 flex items-center gap-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-primary dark:text-[var(--data-success-500)] mt-1 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" /> Auto-generado del monto numerico
                                   </p>
                                 )}
@@ -1900,9 +1900,9 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       const key = match[1];
                                       const val = wizardData[key];
                                       if (val) {
-                                        return <span key={j} className="bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-0.5 rounded font-semibold">{val}</span>;
+                                        return <span key={j} className="bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-0.5 rounded font-semibold">{val}</span>;
                                       }
-                                      return <span key={j} className="bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] px-0.5 rounded">[{key}]</span>;
+                                      return <span key={j} className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-0.5 rounded">[{key}]</span>;
                                     }
                                     return <span key={j}>{part}</span>;
                                   })}
@@ -1922,8 +1922,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                         {/* Preview legend */}
                         <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 border border-[var(--data-warning)]" /> Campos completados</span>
-                          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 border border-[var(--data-error)]" /> Campos pendientes</span>
+                          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 border border-[var(--data-warning-500)]" /> Campos completados</span>
+                          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 border border-[var(--data-error-500)]" /> Campos pendientes</span>
                         </div>
                       </div>
                     )}
@@ -1956,7 +1956,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <p className="text-sm text-[var(--text-secondary)]">{generateSummary()}</p>
                           </div>
 
-                          {createError && <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 p-3 rounded-lg">{createError}</p>}
+                          {createError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 p-3 rounded-lg">{createError}</p>}
                         </div>
                       </div>
                     )}
@@ -2157,7 +2157,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     const total = vence - inicio;
                     const progreso = total > 0 ? Math.max(0, Math.min(((hoy - inicio) / total) * 100, 100)) : 0;
                     const diasRestantes = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
-                    const barColor = progreso >= 100 ? "bg-[var(--data-error)]" : progreso > 80 ? "bg-[var(--data-warning)]" : "bg-primary";
+                    const barColor = progreso >= 100 ? "bg-[var(--data-error-500)]" : progreso > 80 ? "bg-[var(--data-warning-500)]" : "bg-primary";
                     return (
                       <div className="pt-3 border-t border-[var(--rule-base)] dark:border-white/10 space-y-1.5">
                         <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Vigencia</p>
@@ -2216,7 +2216,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                       <Printer className="h-4 w-4" /> PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors">
                       <Download className="h-4 w-4" /> Word
                     </button>
                   </div>

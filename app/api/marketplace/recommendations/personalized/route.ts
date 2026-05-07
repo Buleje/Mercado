@@ -17,7 +17,16 @@ export async function GET(req: NextRequest) {
   const requestId = req.headers.get("x-request-id") ?? traceId;
 
   try {
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // SECURITY 2026-05-06 (audit AI #17): exigir header x-tenant-id real.
+    // Antes el fallback "main" hacía que requests sin proxy (cron, test,
+    // direct-IP) leyeran el tenant "main" silenciosamente.
+    const tenantId = req.headers.get("x-tenant-id");
+    if (!tenantId || tenantId === "main") {
+      return NextResponse.json(
+        { error: "tenant header requerido" },
+        { status: 400 },
+      );
+    }
     const { searchParams } = new URL(req.url);
     const parsed = QuerySchema.safeParse(Object.fromEntries(searchParams));
 

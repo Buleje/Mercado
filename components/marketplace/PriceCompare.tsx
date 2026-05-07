@@ -87,7 +87,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
           )}
         </div>
         {savings > 0 && (
-          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-600)] dark:text-emerald-400">
             <TrendingDown className="h-3 w-3" />
             Ahorra S/ {savings.toFixed(2)}
           </span>
@@ -162,20 +162,20 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                         <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">
                           {sp.storeName}
                           {isCheapest && (
-                            <span className="ml-1.5 text-[length:var(--ts-2xs)] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="ml-1.5 text-[length:var(--ts-2xs)] bg-[var(--data-success-500)] text-white px-1.5 py-0.5 rounded-full font-bold">
                               MEJOR PRECIO
                             </span>
                           )}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {sp.storeRating && (
-                            <span className="flex items-center gap-0.5 text-xs text-amber-500">
+                            <span className="flex items-center gap-0.5 text-xs text-[var(--data-warning-500)]">
                               <Star className="h-3 w-3 fill-amber-400" />
                               {sp.storeRating.toFixed(1)}
                             </span>
                           )}
                           {!sp.inStock && (
-                            <span className="text-[length:var(--ts-2xs)] text-red-500 font-semibold">Agotado</span>
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] font-semibold">Agotado</span>
                           )}
                           {sp.deliveryAvailable && (
                             <span className="text-[length:var(--ts-2xs)] text-primary font-semibold">Delivery</span>
@@ -187,7 +187,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                       <div className="text-right shrink-0">
                         <p className={cn(
                           "text-base font-extrabold",
-                          isCheapest ? "text-emerald-600 dark:text-emerald-400" : "text-gray-800 dark:text-foreground"
+                          isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-gray-800 dark:text-foreground"
                         )}>
                           S/ {sp.price.toFixed(2)}
                         </p>

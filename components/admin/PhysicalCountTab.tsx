@@ -284,8 +284,8 @@ export default function PhysicalCountTab() {
   // ── Render helpers ────────────────────────────────────────────────────────────
 
   const diffColor = (d: number) => {
-    if (d === 0) return "text-[var(--data-success)]";
-    return d > 0 ? "text-[var(--data-success)]" : "text-red-600";
+    if (d === 0) return "text-[var(--data-success-500)]";
+    return d > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-600)]";
   };
 
   // ─── View: START ─────────────────────────────────────────────────────────────
@@ -301,7 +301,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error)] p-3 text-sm text-[var(--data-error)]">
+          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-3 text-sm text-[var(--data-error-500)]">
             {error}
           </div>
         )}
@@ -340,7 +340,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {sessions.length > 0 && sessions[0].status === "pendiente" && (
-          <div className="rounded-lg bg-[var(--data-warning-50)] border border-[var(--data-warning)] p-3 text-sm text-[var(--data-warning)] flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] p-3 text-sm text-[var(--data-warning-500)] flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             Tienes un conteo pendiente del {sessions[0].date}. Al iniciar nuevo, se retomará ese.
           </div>
@@ -388,7 +388,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -503,21 +503,21 @@ export default function PhysicalCountTab() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error)] p-3 text-sm text-[var(--data-error)]">
+          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-3 text-sm text-[var(--data-error-500)]">
             {error}
           </div>
         )}
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
         )}
 
         {withDiff.length === 0 ? (
-          <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)]/50 p-8 text-center">
-            <CheckCircle className="h-10 w-10 text-[var(--data-success)] mx-auto mb-2" />
-            <p className="font-semibold text-[var(--data-success)]">Sin diferencias</p>
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/50 p-8 text-center">
+            <CheckCircle className="h-10 w-10 text-[var(--data-success-500)] mx-auto mb-2" />
+            <p className="font-semibold text-[var(--data-success-500)]">Sin diferencias</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
               El stock físico coincide con el sistema en todos los productos contados.
             </p>
@@ -590,7 +590,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -615,8 +615,8 @@ export default function PhysicalCountTab() {
                     <span
                       className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         s.status === "aplicado"
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                          : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                       }`}
                     >
                       {s.status}
@@ -637,7 +637,7 @@ export default function PhysicalCountTab() {
                   <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3">
                     <div className="flex gap-4 text-sm text-[var(--text-secondary)]">
                       <span>Productos contados: <strong className="text-[var(--text-primary)]">{s.totalCounted}</strong></span>
-                      <span>Diferencias: <strong className={s.differences > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]"}>{s.differences}</strong></span>
+                      <span>Diferencias: <strong className={s.differences > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}>{s.differences}</strong></span>
                     </div>
 
                     {s.status === "pendiente" && (

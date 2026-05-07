@@ -145,7 +145,7 @@ export default function RolePermissionsTab() {
         </SectionTitle>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <span className="text-xs text-[var(--data-warning)] font-medium animate-pulse">Cambios sin guardar</span>
+            <span className="text-xs text-[var(--data-warning-500)] font-medium animate-pulse">Cambios sin guardar</span>
           )}
           <button
             onClick={handleSave}
@@ -169,7 +169,7 @@ export default function RolePermissionsTab() {
       </p>
 
       {saveError && (
-        <div className="flex items-center gap-2 bg-[var(--data-error)]/10 border border-[var(--data-error)]/20 rounded-xl p-3 text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/20 rounded-xl p-3 text-sm text-[var(--data-error-500)]">
           <span>{saveError}</span>
           <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
         </div>
@@ -212,8 +212,8 @@ export default function RolePermissionsTab() {
                           className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all duration-[var(--dur-fast)]",
                             checked
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30"
-                              : "bg-[var(--data-error)]/10 text-[var(--data-error)]/50 hover:bg-[var(--data-error)]/20 border border-[var(--data-error)]/10"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30"
+                              : "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]/50 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/10"
                           )}
                           title={`${role} ${checked ? "tiene acceso a" : "NO tiene acceso a"} ${tab.label}`}
                         >
@@ -241,13 +241,13 @@ export default function RolePermissionsTab() {
               <div key={role} className="flex items-center gap-1">
                 <button
                   onClick={() => { selectAll(role); setHasChanges(true); }}
-                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--accent-soft)] text-[var(--data-success)] rounded hover:bg-[var(--accent-soft)] transition"
+                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded hover:bg-[var(--accent-soft)] transition"
                 >
                   Todo ({role})
                 </button>
                 <button
                   onClick={() => handleReset(role)}
-                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--data-warning)]/10 text-[var(--data-warning)] rounded hover:bg-[var(--data-warning)]/20 transition flex items-center gap-0.5"
+                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] rounded hover:bg-[var(--data-warning-500)]/20 transition flex items-center gap-0.5"
                 >
                   <RotateCcw className="w-2.5 h-2.5" /> Reset
                 </button>

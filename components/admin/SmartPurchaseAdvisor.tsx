@@ -74,9 +74,9 @@ function getUrgencyLabel(u: AdvisedItem["urgency"]): string {
 }
 
 const URGENCY_COLORS: Record<AdvisedItem["urgency"], string> = {
-  critical: "text-[var(--data-error)] bg-[var(--data-error-50)]",
+  critical: "text-[var(--data-error-500)] bg-[var(--data-error-50)]",
   high: "text-secondary bg-secondary/10",
-  medium: "text-[var(--data-success)] bg-[var(--accent-soft)]",
+  medium: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
 };
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -283,11 +283,11 @@ export default function SmartPurchaseAdvisor() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="text-center p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
-              <p className="text-xl font-extrabold text-[var(--data-error)]">
+            <div className="text-center p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error-500)]">
+              <p className="text-xl font-extrabold text-[var(--data-error-500)]">
                 {advised.filter((i) => i.urgency === "critical").length}
               </p>
-              <p className="text-xs text-[var(--data-error)] font-semibold">Criticos</p>
+              <p className="text-xs text-[var(--data-error-500)] font-semibold">Criticos</p>
             </div>
             <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/20">
               <p className="text-xl font-extrabold text-secondary">
@@ -406,8 +406,8 @@ export default function SmartPurchaseAdvisor() {
                         </p>
                         {item.daysUntilOut < 99 && (
                           <div className="flex items-center gap-1 mt-1">
-                            <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
-                            <p className="text-xs text-[var(--data-error)] font-semibold">
+                            <AlertTriangle className="w-3 h-3 text-[var(--data-error-500)]" />
+                            <p className="text-xs text-[var(--data-error-500)] font-semibold">
                               Se agota en {item.daysUntilOut} dias
                             </p>
                           </div>

@@ -327,7 +327,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
             </p>
             <button
               onClick={() => setBatch([])}
-              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
             >
               Limpiar todo
             </button>
@@ -343,7 +343,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
                 <LabelPreview item={item} />
                 <button
                   onClick={() => removeFromBatch(item.id)}
-                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[var(--data-error)] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
+                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[var(--data-error-500)] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
                 >
                   <X className="h-3 w-3" />
                 </button>

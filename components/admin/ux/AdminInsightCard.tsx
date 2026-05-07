@@ -132,7 +132,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
               "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
               halfDelta > 0
                 ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))]"
-                : "bg-[var(--data-error-50)] text-[var(--data-error)]",
+                : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
             )}
             title={
               halfDelta > 0
@@ -172,7 +172,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
                   d.isToday
                     ? "text-[color:var(--section-primary,var(--text-primary))]"
                     : d.isMax
-                      ? "text-[var(--data-warning)]"
+                      ? "text-[var(--data-warning-500)]"
                       : "text-[var(--text-tertiary)]",
                 )}
               >
@@ -184,7 +184,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
                   d.isToday
                     ? "bg-[color:var(--section-primary,var(--text-primary))]"
                     : d.isMax
-                      ? "bg-[var(--data-warning)] opacity-80"
+                      ? "bg-[var(--data-warning-500)] opacity-80"
                       : "bg-[var(--text-tertiary)] opacity-30 group-hover:opacity-60",
                 )}
                 style={{ height: `${heightPct}%` }}
@@ -214,7 +214,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
               </span>
             )}
             {d.isMax && i !== todayIdx && (
-              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning)]">
+              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)]">
                 pico
               </span>
             )}
@@ -245,9 +245,9 @@ export const AdminInsightCard = memo(function AdminInsightCard({
   const deltaDown = heroDelta != null && heroDelta < 0;
 
   const deltaColor = deltaUp
-    ? "text-[var(--data-success)]"
+    ? "text-[var(--data-success-500)]"
     : deltaDown
-      ? "text-[var(--data-error)]"
+      ? "text-[var(--data-error-500)]"
       : "text-[var(--text-tertiary)]";
 
   // sparklineTrend eliminado — reemplazado por WeekStripChart que infiere
@@ -324,11 +324,11 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             const dDown = m.delta != null && m.delta < 0;
             const statusColor =
               m.status === "success"
-                ? "text-[var(--data-success)]"
+                ? "text-[var(--data-success-500)]"
                 : m.status === "warning"
-                  ? "text-[var(--data-warning)]"
+                  ? "text-[var(--data-warning-500)]"
                   : m.status === "danger"
-                    ? "text-[var(--data-error)]"
+                    ? "text-[var(--data-error-500)]"
                     : "text-[var(--text-primary)]";
             return (
               <div key={m.label} className="px-4 py-4 sm:px-6 sm:py-5">
@@ -346,7 +346,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                 </div>
                 {m.delta != null && (
                   <p className="mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] tabular-nums">
-                    <span className={dUp ? "text-[var(--data-success)]" : dDown ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}>
+                    <span className={dUp ? "text-[var(--data-success-500)]" : dDown ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"}>
                       {dUp && "↑"} {dDown && "↓"} {Math.abs(m.delta).toFixed(1)}%
                     </span>
                   </p>
@@ -369,7 +369,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
         >
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]">
             {insight.type === "opportunity" && <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-[var(--data-warning)]" strokeWidth={1.75} aria-hidden />}
+            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={1.75} aria-hidden />}
             {insight.type === "info" && <Lightbulb className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
           </span>
           <div className="flex-1 min-w-0">

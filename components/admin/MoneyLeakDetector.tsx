@@ -139,13 +139,13 @@ export default function MoneyLeakDetector() {
 
       {/* Resumen de alertas */}
       {!loading && leakCount > 0 && (
-        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 mt-0.5" />
+        <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
+            <p className="font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-sm">
               {leakCount} {leakCount === 1 ? "categoria con fuga detectada" : "categorias con fuga detectadas"}
             </p>
-            <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
+            <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">
               Gasto extra este mes:{" "}
               <span className="font-bold">{fmt(totalLeaks)}</span> por encima del promedio.
             </p>
@@ -154,7 +154,7 @@ export default function MoneyLeakDetector() {
       )}
 
       {!loading && leakCount === 0 && !error && (
-        <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
           <Search className="w-4 h-4" />
           Sin fugas detectadas — los gastos estan dentro del rango normal.
         </div>
@@ -162,7 +162,7 @@ export default function MoneyLeakDetector() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -194,7 +194,7 @@ export default function MoneyLeakDetector() {
                 className={cn(
                   "rounded-xl border p-4",
                   cat.isLeak
-                    ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/5"
+                    ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/5"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
                 )}
               >
@@ -205,7 +205,7 @@ export default function MoneyLeakDetector() {
                         {cat.category}
                       </span>
                       {cat.isLeak && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 px-2 py-0.5 rounded-full">
                           <TrendingUp className="w-3 h-3" />
                           +{cat.pctChange.toFixed(0)}%
                         </span>
@@ -216,13 +216,13 @@ export default function MoneyLeakDetector() {
                         </span>
                       )}
                       {cat.pctChange <= 0 && (
-                        <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
+                        <span className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                           {cat.pctChange.toFixed(0)}%
                         </span>
                       )}
                     </div>
                     {cat.isLeak && (
-                      <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
+                      <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">
                         {cat.category}: {fmt(cat.thisMonth)} (+{fmt(cat.diff)} vs promedio). Investiga.
                       </p>
                     )}
@@ -247,7 +247,7 @@ export default function MoneyLeakDetector() {
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-[var(--dur-slow)]",
-                          cat.isLeak ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]" : "bg-primary dark:bg-primary"
+                          cat.isLeak ? "bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)]" : "bg-primary dark:bg-primary"
                         )}
                         style={{ width: `${barCurrent}%` }}
                       />
