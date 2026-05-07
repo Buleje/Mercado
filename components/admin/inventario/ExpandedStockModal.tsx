@@ -80,16 +80,28 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
     }
   };
 
+  // F5: pre-indexar movimientos por productId — evita O(n*m) cuadratico
+  const movementsByProduct = useMemo(() => {
+    const m = new Map<number, DbInventoryMovement[]>();
+    for (const mv of movements) {
+      const arr = m.get(mv.productId) ?? [];
+      arr.push(mv);
+      m.set(mv.productId, arr);
+    }
+    return m;
+  }, [movements]);
+
   const enriched = useMemo(() => {
     return products
       .filter(p => p.active !== false)
       .map(p => {
+        const productMovements = movementsByProduct.get(p.id) ?? [];
         const margin = computeMargin(p);
-        const daysSinceMove = computeLastMovementDays(p.id, movements);
-        const salesWeek = computeSalesPerWeek(p.id, movements);
+        const daysSinceMove = computeLastMovementDays(p.id, productMovements);
+        const salesWeek = computeSalesPerWeek(p.id, productMovements);
         return { ...p, margin, daysSinceMove, salesWeek };
       });
-  }, [products, movements]);
+  }, [products, movementsByProduct]);
 
   const filtered = useMemo(() => {
     let result = enriched;

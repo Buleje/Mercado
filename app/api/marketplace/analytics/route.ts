@@ -6,8 +6,6 @@
  * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
  */
 import { NextRequest, NextResponse } from "next/server";
-// Datos en tiempo real — no cachear con Next 16 cacheComponents
-export const dynamic = "force-dynamic";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
 
 /**
  * @cross-tenant intentional — endpoint público del storefront marketplace.

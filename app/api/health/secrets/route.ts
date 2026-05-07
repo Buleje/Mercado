@@ -2,7 +2,6 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 
-export const dynamic = "force-dynamic";
 
 // ─── Definicion de variables ──────────────────────────────────────────────────
 

@@ -5,7 +5,6 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/customer-tier?phone=...

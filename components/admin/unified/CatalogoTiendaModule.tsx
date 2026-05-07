@@ -100,21 +100,17 @@ function ProductsDashboard() {
   // Mejora 1: Period selector
   const [period, setPeriod] = useState<"today" | "7d" | "30d" | "month">("30d");
   // Mejora 3: Auto-refresh
-  // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
-  const [kpiMockChanges] = useState<number[]>(() =>
-    Array.from({ length: 8 }, () => Math.round((Math.random() - 0.3) * 30))
-  );
   // Mejora 5: Favoritos
   const catFavs = useFavoriteCharts("catalogo");
 
   const fetchData = useCallback(() => {
-    fetch("/api/products")
+    fetch(`/api/products?period=${period}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((d) => { setProducts(Array.isArray(d) ? d : d.products || []); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
 
   const autoRefresh = useAutoRefresh({ intervalSeconds: 300, onRefresh: fetchData });
 
@@ -265,7 +261,7 @@ function ProductsDashboard() {
       {/* === SECCION 1: KPIs Premium === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpiCards.map((k, i) => (
-          <KpiCard key={i} label={k.label} value={k.value} icon={k.icon} color={k.color} change={kpiMockChanges[i] ?? 0} alert={k.alert} />
+          <KpiCard key={i} label={k.label} value={k.value} icon={k.icon} color={k.color} alert={k.alert} />
         ))}
       </div>
 

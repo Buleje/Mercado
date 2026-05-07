@@ -232,7 +232,7 @@ function InventoryAnalyticsDashboard() {
   // Mejora 3: Auto-refresh
 
   const fetchData = useCallback(() => {
-    fetch("/api/products")
+    fetch(`/api/products?period=${period}`)
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         const arr = Array.isArray(data) ? data : data.products || [];
@@ -240,9 +240,9 @@ function InventoryAnalyticsDashboard() {
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
 
   const autoRefresh = useAutoRefresh({ intervalSeconds: 300, onRefresh: fetchData });
 
@@ -352,7 +352,7 @@ function InventoryAnalyticsDashboard() {
       {/* ── 1. KPIs ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpiCards.map((k, i) => (
-          <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} color={k.color} alert={k.alert} change={Math.round(((i * 7 + 3) % 13 - 4) * 2.3)} />
+          <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} color={k.color} alert={k.alert} />
         ))}
       </div>
 

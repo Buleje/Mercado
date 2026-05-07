@@ -12,7 +12,6 @@ import { ProductQADB } from "@/lib/db/product-qa.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
 
 const QuestionBody = z.object({
   userName: z.string().min(1).max(80),

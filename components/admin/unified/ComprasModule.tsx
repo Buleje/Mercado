@@ -23,6 +23,7 @@ import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "@/lib/chart-tooltip";
+import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -119,20 +120,37 @@ function ComprasDashboard() {
 
   const fetchData = useCallback(() => {
     Promise.allSettled([
-      fetch('/api/purchases').then(r => r.ok ? r.json() : []),
+      fetch(`/api/purchases?period=${period}`).then(r => r.ok ? r.json() : []),
       fetch('/api/suppliers').then(r => r.ok ? r.json() : []),
-      fetch('/api/payables').then(r => r.ok ? r.json() : []),
+      fetch(`/api/payables?period=${period}`).then(r => r.ok ? r.json() : []),
     ]).then(([pRes, sRes, paRes]) => {
       setData({
         purchases: pRes.status === 'fulfilled' ? (Array.isArray(pRes.value) ? pRes.value : pRes.value?.purchases || pRes.value?.data || []) : [],
         suppliers: sRes.status === 'fulfilled' ? (Array.isArray(sRes.value) ? sRes.value : sRes.value?.suppliers || sRes.value?.data || []) : [],
         payables: paRes.status === 'fulfilled' ? (Array.isArray(paRes.value) ? paRes.value : paRes.value?.payables || paRes.value?.data || []) : [],
       });
-      setLoading(false);
-    });
-  }, []);
+    }).finally(() => setLoading(false));
+  }, [period]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleMarkPaid = useCallback(async (payableId: string | number | undefined) => {
+    if (!payableId) return;
+    const payable = data.payables.find((p) => p.id === payableId);
+    const amount = payable?.amount ?? payable?.balance ?? 0;
+    try {
+      const res = await fetch(`/api/payables/${payableId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "pagado", paidAmount: amount }),
+      });
+      if (!res.ok) throw new Error("Error al marcar como pagado");
+      toast.success("Pago registrado correctamente");
+      fetchData();
+    } catch {
+      toast.error("No se pudo registrar el pago. Intenta de nuevo.");
+    }
+  }, [data.payables, fetchData]);
 
   const autoRefresh = useAutoRefresh({ intervalSeconds: 300, onRefresh: fetchData });
 
@@ -488,7 +506,10 @@ function ComprasDashboard() {
                       <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                      <button
+                        onClick={() => handleMarkPaid(p.id)}
+                        className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>

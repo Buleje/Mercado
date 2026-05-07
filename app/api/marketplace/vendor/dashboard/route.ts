@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-// Datos en tiempo real — no cachear con Next 16 cacheComponents
-export const dynamic = "force-dynamic";
 import { requireAdmin } from "@/lib/require-admin";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";

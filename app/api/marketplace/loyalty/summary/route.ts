@@ -9,7 +9,6 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { tierForCount } from "@/app/api/marketplace/customer-tier/route";
 
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/loyalty/summary
