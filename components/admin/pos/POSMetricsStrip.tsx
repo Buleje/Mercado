@@ -1,16 +1,32 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Clock, TrendingUp, Receipt, DollarSign } from "@buleje/design-system/icons";
+import { Clock, TrendingUp, Receipt, DollarSign, HandCoins } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+
+interface PaymentBreakdownEntry {
+  metodo: string;
+  total: number;
+  pct: number;
+}
+
+interface TopProductoEntry {
+  nombre: string;
+  cantidad: number;
+}
 
 interface MetricsData {
   turnoActivo: boolean;
   turnoId?: string;
+  adminUserId?: string;
   turnoMinutos?: number;
   totalVentas?: number;
   cantidadVentas?: number;
   ticketPromedio?: number;
+  paymentBreakdown?: PaymentBreakdownEntry[];
+  topProductos?: TopProductoEntry[];
+  comisionEstimada?: number;
+  comisionRate?: number;
 }
 
 function formatMinutes(mins: number): string {
@@ -103,7 +119,7 @@ export default function POSMetricsStrip() {
     return null;
   }
 
-  const items = [
+  const items: Array<{ icon: typeof Clock; label: string; value: string; color: string; title?: string }> = [
     {
       icon: Clock,
       label: "Turno",
@@ -130,19 +146,56 @@ export default function POSMetricsStrip() {
     },
   ];
 
+  // Mi comision estimada (visible solo si hubo ventas)
+  if ((data.totalVentas ?? 0) > 0 && (data.comisionEstimada ?? 0) > 0) {
+    items.push({
+      icon: HandCoins,
+      label: "Mi comision",
+      value: `S/ ${(data.comisionEstimada ?? 0).toFixed(2)}`,
+      color: "text-primary",
+      title: `Estimada al ${data.comisionRate ?? 2.5}% sobre ventas`,
+    });
+  }
+
+  // Metodo dominante (top 1 paymentBreakdown) — pista visual rapida
+  const topPay = data.paymentBreakdown?.[0];
+  const topProd = data.topProductos?.[0];
+
   return (
-    <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
-      {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-1.5 shrink-0">
-          <item.icon className={cn("h-3.5 w-3.5", item.color)} />
-          <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted hidden sm:inline">
-            {item.label}:
-          </span>
-          <span className={cn("text-[length:var(--ts-xs)] font-bold", item.color)}>
-            {item.value}
-          </span>
-        </div>
-      ))}
+    <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border">
+      <div className="h-9 flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5 shrink-0" title={item.title}>
+            <item.icon className={cn("h-3.5 w-3.5", item.color)} />
+            <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted hidden sm:inline">
+              {item.label}:
+            </span>
+            <span className={cn("text-[length:var(--ts-xs)] font-bold", item.color)}>
+              {item.value}
+            </span>
+          </div>
+        ))}
+        {topPay && topPay.total > 0 && (
+          <div className="hidden md:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-card-border" title={`${topPay.pct}% de las ventas`}>
+            <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
+              Top pago:
+            </span>
+            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground capitalize">
+              {topPay.metodo} ({topPay.pct}%)
+            </span>
+          </div>
+        )}
+        {topProd && (
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-card-border" title={`${topProd.cantidad} unidades vendidas`}>
+            <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
+              Top producto:
+            </span>
+            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground truncate max-w-[200px]">
+              {topProd.nombre} ×{topProd.cantidad}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
