@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const CreateSchema = z.object({
   fromWarehouseId: z.string().min(1),
@@ -75,6 +77,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouse-transfers"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const raw = await req.json();
   const parsed = CreateSchema.safeParse(raw);
@@ -259,7 +263,9 @@ export async function PATCH(req: NextRequest) {
       await prisma.product.update({
         where: { id: updated.productId },
         data: { stock: aggregate._sum.qty ?? 0 },
-      }).catch(() => {});
+      }).catch((err) => {
+        logger.warn("[warehouse-transfers] stock recompute failed (best-effort)", { err: String(err), productId: updated.productId });
+      });
     } catch {
       // Stock adjustment is best-effort — transfer status is already saved
     }

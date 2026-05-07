@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PromotionsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -63,6 +64,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "promotions"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
   const raw = await req.json();
   const parsed = PromotionSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });

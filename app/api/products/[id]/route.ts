@@ -4,6 +4,7 @@ import { ProductsDB, PriceHistoryDB } from "@/lib/jsondb";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { getTenantIdFromRequest } from "@/lib/tenant";
@@ -52,6 +53,8 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
 async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const { id } = await ctx.params;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "purchases"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const raw = await req.json();
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
       dueDate.setDate(dueDate.getDate() + days);
       const payableId = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
-      // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via auth guard arriba.
+      // $transaction tenant-scoped via auth guard arriba.
       await prisma.$transaction(async (tx) => {
         const existingPayable = await tx.payable.findFirst({ where: { purchaseOrderId: id, tenantId: auth.tenantId } });
         if (existingPayable) {

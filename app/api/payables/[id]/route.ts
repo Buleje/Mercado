@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -43,6 +44,8 @@ export async function PATCH(
 
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const { id } = await params;
   try {

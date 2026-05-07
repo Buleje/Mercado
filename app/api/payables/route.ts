@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { withDbRetry } from "@/lib/db-retry";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "payables"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const body = await req.json();
   if (!body.supplierId || !body.amount) {

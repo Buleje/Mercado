@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
-import { applyRateLimit } from "@/lib/rate-limit";
 
 const CouponPostSchema = z.object({
   code: z.string().min(1).max(50),
@@ -34,6 +34,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const raw = await req.json();
   const parsed = CouponPostSchema.safeParse(raw);

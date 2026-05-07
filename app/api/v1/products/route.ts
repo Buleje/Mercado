@@ -11,6 +11,7 @@ import { z } from "zod";
 import { ProductsDB } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { prismaForTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
@@ -119,6 +120,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "v1-products"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const raw    = await req.json();
