@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
 import { logger } from "@/lib/logger";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 /**
  * GET /api/delivery/me/assignments/[id]
@@ -37,9 +38,36 @@ export async function GET(
     return NextResponse.json({ error: "Assignment no encontrado" }, { status: 404 });
   }
 
+  // Re-firmar proofPhotoUrl si existe — las signed URLs de Supabase expiran en
+  // 1h. Sin esto el admin/rider ve imagen rota al abrir el assignment horas
+  // después de la entrega.
+  let notesObj: Record<string, unknown> | null = null;
+  if (assignment.notes) {
+    try {
+      const parsed = JSON.parse(assignment.notes) as Record<string, unknown>;
+      if (
+        typeof parsed.proofPhotoPath === "string" &&
+        typeof parsed.proofPhotoUrl === "string"
+      ) {
+        const supabase = getSupabaseAdmin();
+        const { data, error } = await supabase.storage
+          .from("media")
+          .createSignedUrl(parsed.proofPhotoPath, 3600);
+        if (!error && data?.signedUrl) {
+          parsed.proofPhotoUrl = data.signedUrl;
+          parsed.proofPhotoUrlExpiresAt = new Date(Date.now() + 3_600_000).toISOString();
+        }
+      }
+      notesObj = parsed;
+    } catch {
+      // notes no era JSON — devolvemos el string original sin modificar
+    }
+  }
+
   return NextResponse.json({
     assignment: {
       ...assignment,
+      notes: notesObj !== null ? JSON.stringify(notesObj) : assignment.notes,
       fee: Number(assignment.fee),
       order: { ...assignment.order, total: Number(assignment.order.total) },
     },
@@ -214,6 +242,8 @@ const STATUS_MESSAGE: Record<string, { title: string; body: string }> = {
   },
 };
 
+// TODO: extraer a lib/db/delivery.db.ts en sprint próximo.
+// Las 3 calls a prisma.* están marcadas con eslint-disable individual.
 async function notifyCustomerOfStatusChange(
   orderId: string,
   status: string,

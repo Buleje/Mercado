@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { notifyDriverInternal } from "@/lib/delivery/notify-driver";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   assigned: ["picked_up"],
@@ -134,21 +135,15 @@ export async function POST(req: NextRequest) {
       auth.username
     ).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
-    // Fire-and-forget: notificar al repartidor via WhatsApp/email
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? `http://localhost:3000`;
-    fetch(`${baseUrl}/api/delivery/notify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Reenviar la cookie de sesión para que requireAdmin pueda validar
-        cookie: req.headers.get("cookie") ?? "",
-      },
-      body: JSON.stringify({
-        partnerId,
-        orderId,
-        message: `Nuevo pedido asignado!\nCliente: ${assignment.order.customerName}\nDireccion: ${assignment.order.customerLocation || "Sin direccion"}\nTotal: S/ ${assignment.order.total.toFixed(2)}\nRecoge en: Bodega`,
-      }),
-    }).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err), tenantId: auth.tenantId }));
+    // Fire-and-forget: notificar al repartidor via WhatsApp/email.
+    // SECURITY fix 2026-05-07 (SSRF + cookie leak): llamada directa a la
+    // función interna en lugar de fetch HTTP con cookie forwarding.
+    notifyDriverInternal({
+      tenantId: auth.tenantId,
+      partnerId,
+      orderId,
+      message: `Nuevo pedido asignado!\nCliente: ${assignment.order.customerName}\nDireccion: ${assignment.order.customerLocation || "Sin direccion"}\nTotal: S/ ${assignment.order.total.toFixed(2)}\nRecoge en: Bodega`,
+    }).catch((err) => logger.error("[delivery/assignments] notify-driver failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json(assignment, { status: 201 });
   } catch (err) {

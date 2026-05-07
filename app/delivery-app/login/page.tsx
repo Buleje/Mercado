@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowRight, Store, Crown, Bike } from "@buleje/design-system/icons";
+import { Loader2, ArrowRight, Store, Crown } from "@buleje/design-system/icons";
 import { HeroDeliveryIllustration, MotoIcon } from "@/components/delivery/icons";
 import { cn } from "@/lib/utils";
 
@@ -137,7 +137,7 @@ export default function DeliveryLoginPage() {
                 className="w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none transition-colors"
               />
               <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-                Primera vez: usa tu número de teléfono como contraseña.
+                Si es tu primera vez, contacta a tu admin para obtener acceso.
               </p>
             </div>
 
