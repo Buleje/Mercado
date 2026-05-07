@@ -51,12 +51,12 @@ const TableSkeleton = () => (
   <div className="space-y-3 animate-pulse">
     {[1, 2, 3, 4].map((i) => (
       <div key={i} className="flex items-center gap-4">
-        <div className="h-10 w-10 bg-gray-200 rounded-xl shrink-0" />
+        <div className="h-10 w-10 bg-[var(--rule-base)] rounded-xl shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-[var(--rule-base)] rounded w-1/2" />
+          <div className="h-3 bg-[var(--rule-base)] rounded w-1/3" />
         </div>
-        <div className="h-8 w-24 bg-gray-200 rounded-lg" />
+        <div className="h-8 w-24 bg-[var(--rule-base)] rounded-lg" />
       </div>
     ))}
   </div>
@@ -211,6 +211,15 @@ function PartnerModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // FIX 2026-05-06 (audit team): a11y modal — Esc cierra
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
@@ -230,18 +239,24 @@ function PartnerModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
+      role="presentation"
     >
       <div
-        className="bg-white rounded-xl w-full max-w-md"
+        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="partner-modal-title"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
-          <CardTitle className="font-extrabold text-[var(--text-primary)]">
+          <CardTitle id="partner-modal-title" className="font-extrabold text-[var(--text-primary)]">
             {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
           </CardTitle>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar modal"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -262,7 +277,7 @@ function PartnerModal({
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 autoFocus
               />
             </div>
@@ -274,7 +289,7 @@ function PartnerModal({
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -286,7 +301,7 @@ function PartnerModal({
                 step={0.5}
                 value={form.fee}
                 onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -296,7 +311,7 @@ function PartnerModal({
                 <select
                   value={form.zone}
                   onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
@@ -310,7 +325,7 @@ function PartnerModal({
                 <select
                   value={form.vehicleType}
                   onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -319,19 +334,25 @@ function PartnerModal({
             </div>
           </div>
 
-          {/* Activo toggle */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
-            <p className="text-sm font-bold text-[var(--text-primary)]">Activo</p>
+          {/* Activo toggle — a11y: role="switch" + aria-checked */}
+          <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
+            <label htmlFor="partner-active-toggle" className="text-sm font-bold text-[var(--text-primary)] cursor-pointer">
+              Activo
+            </label>
             <button
               type="button"
+              id="partner-active-toggle"
+              role="switch"
+              aria-checked={form.isActive}
+              aria-label={form.isActive ? "Desactivar repartidor" : "Activar repartidor"}
               onClick={() => setForm((p) => ({ ...p, isActive: !p.isActive }))}
               className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                form.isActive ? "bg-primary" : "bg-gray-300"
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                form.isActive ? "bg-primary" : "bg-[var(--rule-base)]",
               )}
             >
               <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white  transition-transform",
+                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
                 form.isActive ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
@@ -341,7 +362,7 @@ function PartnerModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
             >
               Cancelar
             </button>
@@ -665,7 +686,7 @@ function RepartidoresTab() {
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="bg-white rounded-xl w-full max-w-sm p-6"
+            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-sm p-6 border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
@@ -680,7 +701,7 @@ function RepartidoresTab() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1647,7 +1668,9 @@ interface RankingSummary {
   avgCompletionRate: number;
 }
 
-const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+// FIX 2026-05-06: emojis 🥇🥈🥉 → Trophy icon Lucide (memoria
+// feedback_no_generic_emojis: UI sin emojis genéricos).
+// Renderizamos `<Trophy />` con bg coloreado por posición en el lugar de uso.
 
 function RankingTab() {
   const [data, setData] = useState<RankingEntry[]>([]);
@@ -1851,7 +1874,7 @@ function RankingTab() {
                           "inline-flex items-center justify-center h-10 w-10 rounded-xl font-extrabold tabular-nums text-base",
                           medalBg,
                         )}>
-                          {isPodium ? RANK_MEDALS[idx] : idx + 1}
+                          {isPodium ? <Trophy className="h-5 w-5" /> : idx + 1}
                         </span>
                       </td>
                       <td className="px-6 py-4">
