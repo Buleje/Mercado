@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ShoppingCart,
   RefreshCw,
@@ -326,12 +326,18 @@ function DroppableColumn({
 // ── WhatsApp picker ───────────────────────────────────────────────────────────
 
 function WhatsAppPicker({ order, onClose }: { order: MarketplaceOrder; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl border border-[var(--rule-base)] w-full max-w-md p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+    <div role="presentation" className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title" className="bg-white rounded-2xl border border-[var(--rule-base)] w-full max-w-md p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-sm">WhatsApp a {order.customerName}</CardTitle>
+            <CardTitle id="whatsapp-modal-title" className="text-sm">WhatsApp a {order.customerName}</CardTitle>
             <p className="text-xs text-[var(--text-secondary)]">{order.customerPhone}</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
@@ -363,6 +369,7 @@ export default function OrdenesTab() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const advancingIdRef = useRef<string | null>(null);
   const [waOrder, setWaOrder]     = useState<MarketplaceOrder | null>(null);
   const [detailOrder, setDetailOrder] = useState<MarketplaceOrder | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -403,6 +410,7 @@ export default function OrdenesTab() {
               gain.gain.value = 0.05;
               osc.start();
               osc.stop(ctx.currentTime + 0.18);
+              osc.addEventListener("ended", () => ctx.close());
             }
           } catch { /* noop */ }
         }
@@ -418,7 +426,11 @@ export default function OrdenesTab() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const t = setInterval(() => { load({ silent: true }); }, 30_000);
+    // U1: pausar polling mientras hay un advance en curso para no pisar optimistic update
+    const t = setInterval(() => {
+      if (advancingIdRef.current) return;
+      load({ silent: true });
+    }, 30_000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -438,6 +450,7 @@ export default function OrdenesTab() {
     // Optimistic update
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
     setAdvancingId(orderId);
+    advancingIdRef.current = orderId;
     try {
       // FIX 2026-05-06 (audit team): endpoint correcto es /api/marketplace/orders
       // (antes /api/orders → 404 silencioso, drag rebotaba).
@@ -456,6 +469,7 @@ export default function OrdenesTab() {
       setError(e instanceof Error ? e.message : "No se pudo cambiar el estado del pedido.");
     } finally {
       setAdvancingId(null);
+      advancingIdRef.current = null;
     }
   }, [orders]);
 

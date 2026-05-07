@@ -70,7 +70,7 @@ function CommissionKpiCard({
   const palette: Record<typeof tone, { ring: string; text: string }> = {
     warning: { ring: "bg-[var(--data-warning-50)]",  text: "text-[var(--data-warning-500)]" },
     success: { ring: "bg-[var(--accent-soft)]",      text: "text-[var(--data-success-500)]" },
-    info:    { ring: "bg-blue-50",                   text: "text-blue-700" },
+    info:    { ring: "bg-primary/10",                 text: "text-[var(--data-info-500)]" },
   };
   const p = palette[tone];
   return (
@@ -89,7 +89,7 @@ function CommissionKpiCard({
         <span className={cn("px-1.5 py-0.5 rounded-full font-bold text-[length:var(--ts-2xs)]",
           delta.tone === "up" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
             : delta.tone === "down" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-            : "bg-gray-100 text-[var(--text-secondary)]"
+            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
         )} title={`vs mes anterior (${fmtMoney(monthPrev)})`}>
           {delta.label}
         </span>
@@ -223,7 +223,7 @@ export default function ComisionesTab() {
                 return (
                   <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                      <div className="h-9 w-9 rounded-lg bg-primary/10 text-[var(--data-info-500)] flex items-center justify-center shrink-0">
                         <Calendar className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">

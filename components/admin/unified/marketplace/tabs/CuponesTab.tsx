@@ -114,15 +114,17 @@ export default function CuponesTab() {
   });
 
   const fetchCoupons = useCallback(() => {
+    let cancelled = false;
     setLoading(true);
     fetch("/api/marketplace/coupons")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.data) setCoupons(d.data); })
-      .catch((err) => { console.warn("[MarketplaceModule] fetch failed", err); })
-      .finally(() => setLoading(false));
+      .then((d) => { if (!cancelled && d?.data) setCoupons(d.data); })
+      .catch((err) => { if (!cancelled) console.warn("[MarketplaceModule] fetch failed", err); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
+  useEffect(() => { return fetchCoupons(); }, [fetchCoupons]);
 
   const handleCreate = async () => {
     setSaving(true);
@@ -235,17 +237,17 @@ export default function CuponesTab() {
       {/* KPIs */}
       {coupons.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Usos totales</p>
             <p className="text-xl font-extrabold text-primary mt-1">{aggregate.uses}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{coupons.filter((c) => c.active).length} cupones activos</p>
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Descontado total</p>
             <p className="text-xl font-extrabold text-[var(--data-warning-500)] mt-1">S/ {aggregate.discounted.toFixed(2)}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">estimado por usos × valor</p>
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Ventas atribuidas</p>
             <p className="text-xl font-extrabold text-[var(--data-success-500)] mt-1">S/ {aggregate.revenue.toFixed(2)}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">aprox. ticket promedio</p>
@@ -254,7 +256,7 @@ export default function CuponesTab() {
       )}
 
       {/* Plantillas */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm">Empieza con una plantilla</CardTitle>
@@ -274,7 +276,7 @@ export default function CuponesTab() {
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Código</label>
@@ -321,7 +323,7 @@ export default function CuponesTab() {
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-gray-100 transition">
+              className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition">
               Cancelar
             </button>
             <button onClick={handleCreate} disabled={saving || !form.code || !form.discountValue}
@@ -346,7 +348,7 @@ export default function CuponesTab() {
             // eslint-disable-next-line react-hooks/purity -- expiry comparison is allowed to drift across renders
             const expired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
             return (
-              <div key={c.id} className={cn("bg-white border border-[var(--rule-base)] rounded-xl p-4", !c.active && "opacity-60")}>
+              <div key={c.id} className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4", !c.active && "opacity-60")}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -355,7 +357,7 @@ export default function CuponesTab() {
                         {c.discountType === "percent" ? `${c.discountValue}%` : `S/ ${c.discountValue.toFixed(2)}`}
                       </span>
                       <span className={cn("px-2 py-0.5 rounded-full text-xs font-semibold",
-                        c.active && !expired ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-200 text-[var(--text-secondary)]")}>
+                        c.active && !expired ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--rule-base)]text-[var(--text-secondary)]")}>
                         {expired ? "Expirado" : c.active ? "Activo" : "Inactivo"}
                       </span>
                       {c.minPurchase && (
@@ -368,7 +370,7 @@ export default function CuponesTab() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => toggleActive(c.id, c.active)} title={c.active ? "Desactivar" : "Activar"}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 transition">
+                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition">
                       {c.active ? <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" /> : <Eye className="h-4 w-4 text-[var(--data-success-500)]" />}
                     </button>
                     <button onClick={() => deleteCoupon(c.id)} title="Eliminar"

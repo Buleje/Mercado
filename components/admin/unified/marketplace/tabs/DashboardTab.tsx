@@ -540,12 +540,14 @@ export default function DashboardTab() {
   const [quickConfirmError, setQuickConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     fetch("/api/marketplace/analytics")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d) setData(d as AnalyticsData); })
-      .catch((err) => { console.warn("[MarketplaceModule] fetch failed", err); })
-      .finally(() => setLoading(false));
+      .then((d) => { if (!cancelled && d) setData(d as AnalyticsData); })
+      .catch((err) => { if (!cancelled) console.warn("[MarketplaceModule] fetch failed", err); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const handleQuickConfirm = useCallback(async (orderId: string) => {

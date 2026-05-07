@@ -372,7 +372,7 @@ export default function OrdenTab() {
             {rows.length} {rows.length === 1 ? "categoría" : "categorías"}
           </span>
           {dirty && (
-            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-[var(--ts-xs)] font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-[var(--ts-xs)] font-bold">
               Cambios sin guardar
             </span>
           )}
@@ -402,13 +402,13 @@ export default function OrdenTab() {
 
       {/* Banners */}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-success-50)] border border-[var(--data-success-500)] text-[var(--data-success)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-success-50)] border border-[var(--data-success-500)] text-[var(--data-success-500)]">
           <CheckCircle className="h-4 w-4 shrink-0" />
           <span className="text-[var(--ts-sm)] font-medium">{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="text-[var(--ts-sm)] font-medium">{error}</span>
         </div>
@@ -695,7 +695,7 @@ export default function OrdenTab() {
 
                                   {/* Inactivo badge */}
                                   {!prod.isActive && (
-                                    <span className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-md text-[var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-warning)] text-[var(--surface-canvas)]">
+                                    <span className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-md text-[var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--data-warning-500)] text-[var(--surface-canvas)]">
                                       Inactivo
                                     </span>
                                   )}

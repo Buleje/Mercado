@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Store,
   CheckCircle,
@@ -20,9 +20,11 @@ import {
   Calendar,
   XCircle,
   ChevronDown,
+  Wrench,
 } from "@buleje/design-system/icons";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
 import { Spinner, type StoreData, type DayKey, type StoreHours } from "../types";
@@ -34,25 +36,31 @@ const CATEGORIAS = [
   "Panadería", "Limpieza", "Higiene personal", "Electrónica", "Otros",
 ];
 
-const ZONAS: string[] = (() => {
-  const fromCatalog = MARKETPLACE_ZONES.map((z) => z.label);
-  const extras = ["Coronel Portillo", "Ica Yanayacu", "Todos"];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const v of [...fromCatalog, ...extras]) {
-    if (!seen.has(v)) { seen.add(v); out.push(v); }
-  }
-  return out;
-})();
+// Agrupa el catálogo de zonas por ciudad madre. Cada zona se referencia
+// por su `label` (estable) — "Otra (escribir)" se modela con un input
+// libre que el caller maneja aparte.
+const ZONES_BY_CITY: Array<{ city: string; zones: Array<{ value: string; label: string }> }> =
+  (() => {
+    const grouped = new Map<string, Array<{ value: string; label: string }>>();
+    for (const z of MARKETPLACE_ZONES) {
+      const list = grouped.get(z.city) ?? [];
+      list.push({ value: z.label, label: z.label });
+      grouped.set(z.city, list);
+    }
+    return Array.from(grouped.entries()).map(([city, zones]) => ({ city, zones }));
+  })();
 
-const DAY_LABELS: Array<{ key: DayKey; label: string }> = [
-  { key: "mon", label: "Lun" },
-  { key: "tue", label: "Mar" },
-  { key: "wed", label: "Mié" },
-  { key: "thu", label: "Jue" },
-  { key: "fri", label: "Vie" },
-  { key: "sat", label: "Sáb" },
-  { key: "sun", label: "Dom" },
+const ALL_KNOWN_ZONES = new Set(MARKETPLACE_ZONES.map((z) => z.label));
+const CUSTOM_ZONE_OPTION = "__custom__";
+
+const DAY_LABELS: Array<{ key: DayKey; label: string; full: string }> = [
+  { key: "mon", label: "Lun", full: "Lunes" },
+  { key: "tue", label: "Mar", full: "Martes" },
+  { key: "wed", label: "Mié", full: "Miércoles" },
+  { key: "thu", label: "Jue", full: "Jueves" },
+  { key: "fri", label: "Vie", full: "Viernes" },
+  { key: "sat", label: "Sáb", full: "Sábado" },
+  { key: "sun", label: "Dom", full: "Domingo" },
 ];
 
 const DEFAULT_HOURS: Record<DayKey, StoreHours> = {
@@ -94,17 +102,17 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-      <header className="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-[var(--rule-base)]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-primary shrink-0">
-          <Icon className="h-4.5 w-4.5" />
+    <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+      <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-primary shrink-0">
+          <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <CardTitle className="text-sm">{title}</CardTitle>
-          {hint && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{hint}</p>}
+          <CardTitle className="text-base font-bold">{title}</CardTitle>
+          {hint && <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">{hint}</p>}
         </div>
       </header>
-      <div className="p-5">{children}</div>
+      <div className="p-6">{children}</div>
     </section>
   );
 }
@@ -122,22 +130,30 @@ function ToggleRow({
   desc: string;
   tone?: "primary" | "warning";
 }) {
-  const onColor = tone === "warning" ? "bg-[var(--data-warning)]" : "bg-primary";
+  const onColor = tone === "warning" ? "bg-[var(--data-warning-500)]" : "bg-primary";
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center justify-between gap-4 text-left rounded-xl px-4 py-3 hover:bg-[var(--surface-sunken)] transition-colors"
+      className="w-full flex items-center justify-between gap-4 text-left rounded-2xl px-4 py-4 hover:bg-[var(--surface-sunken)] transition-colors"
     >
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{desc}</p>
+        <p className="text-base font-bold text-[var(--text-primary)]">{title}</p>
+        <p className="text-sm text-[var(--text-secondary)] mt-0.5 leading-relaxed">{desc}</p>
       </div>
       <span
-        className={cn("relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0", active ? onColor : "bg-gray-300")}
+        className={cn(
+          "relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0",
+          active ? onColor : "bg-[var(--rule-strong)]",
+        )}
         aria-pressed={active}
       >
-        <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform", active ? "translate-x-6" : "translate-x-1")} />
+        <span
+          className={cn(
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform",
+            active ? "translate-x-6" : "translate-x-1",
+          )}
+        />
       </span>
     </button>
   );
@@ -146,21 +162,21 @@ function ToggleRow({
 function StatusPill({ isActive, vacationMode }: { isActive: boolean; vacationMode?: boolean }) {
   if (vacationMode) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-semibold">
-        <Pause className="h-3.5 w-3.5" /> En vacaciones
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-sm font-bold">
+        <Pause className="h-4 w-4" /> En vacaciones
       </span>
     );
   }
   if (isActive) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-semibold">
-        <CheckCircle className="h-3.5 w-3.5" /> Publicada
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-sm font-bold">
+        <CheckCircle className="h-4 w-4" /> Publicada
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-semibold">
-      <EyeOff className="h-3.5 w-3.5" /> Borrador
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm font-bold">
+      <EyeOff className="h-4 w-4" /> Borrador
     </span>
   );
 }
@@ -168,35 +184,42 @@ function StatusPill({ isActive, vacationMode }: { isActive: boolean; vacationMod
 function StorePreviewCard({ store }: { store: StoreData }) {
   const initial = (store.name || "T").trim().charAt(0).toUpperCase();
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-white overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-24 bg-linear-to-br from-[var(--accent-soft)] via-white to-[var(--surface-sunken)] relative">
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="h-28 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-sunken)] relative">
         {store.zone && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
-            <MapPin className="h-3 w-3" /> {store.zone}
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur text-xs font-bold text-[var(--text-secondary)]">
+            <MapPin className="h-3.5 w-3.5" /> {store.zone}
           </span>
         )}
       </div>
-      <div className="px-4 pb-4 -mt-8">
-        <div className="h-16 w-16 rounded-2xl border-4 border-white bg-white shadow-md overflow-hidden flex items-center justify-center">
+      <div className="px-5 pb-5 -mt-10">
+        <div className="h-20 w-20 rounded-2xl border-4 border-[var(--surface-raised)] bg-[var(--surface-raised)] shadow-md overflow-hidden flex items-center justify-center">
           {store.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={store.logoUrl} alt={store.name} className="h-full w-full object-cover" onError={(e) => ((e.currentTarget.style.display = "none"))} />
+            <img
+              src={store.logoUrl}
+              alt={store.name}
+              className="h-full w-full object-cover"
+              onError={(e) => ((e.currentTarget.style.display = "none"))}
+            />
           ) : (
-            <span className="text-2xl font-bold text-primary">{initial}</span>
+            <span className="text-3xl font-black text-primary">{initial}</span>
           )}
         </div>
-        <h4 className="mt-2 text-base font-bold text-[var(--text-primary)] truncate">{store.name || "Tu tienda"}</h4>
-        <p className="text-xs text-[var(--text-secondary)] line-clamp-2 min-h-[2.4em]">
+        <h4 className="mt-3 text-lg font-bold text-[var(--text-primary)] truncate">
+          {store.name || "Tu tienda"}
+        </h4>
+        <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2 min-h-[2.6em] leading-relaxed">
           {store.description || "Agrega una descripción atractiva para que los clientes te conozcan."}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {store.category && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)]">
-              <Tag className="h-3 w-3" /> {store.category}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-primary)]">
+              <Tag className="h-3.5 w-3.5" /> {store.category}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)]">
-            <Percent className="h-3 w-3" /> {store.commissionRate}% comisión
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-primary)]">
+            <Percent className="h-3.5 w-3.5" /> {store.commissionRate}% comisión
           </span>
         </div>
       </div>
@@ -233,38 +256,42 @@ function SlugLiveStatus({ slug, onPick }: { slug: string; onPick: (s: string) =>
   if (check.state === "idle") return null;
   if (check.state === "checking") {
     return (
-      <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5">
-        <span className="h-3 w-3 border-2 border-[var(--text-tertiary)] border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm text-[var(--text-tertiary)] flex items-center gap-2">
+        <span className="h-4 w-4 border-2 border-[var(--text-tertiary)] border-t-transparent rounded-full animate-spin" />
         Verificando…
       </p>
     );
   }
   if (check.state === "valid") {
     return (
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-success)]">
-        <CheckCircle className="h-3.5 w-3.5" />
+      <p className="text-sm flex items-center gap-2 font-bold text-[var(--data-success-500)]">
+        <CheckCircle className="h-4 w-4" />
         {check.isOwn ? "Es tu slug actual" : "Disponible"}
       </p>
     );
   }
   if (check.state === "invalid") {
     return (
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-error)]">
-        <XCircle className="h-3.5 w-3.5" /> {check.message}
+      <p className="text-sm flex items-center gap-2 font-bold text-[var(--data-error-500)]">
+        <XCircle className="h-4 w-4" /> {check.message}
       </p>
     );
   }
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs flex items-center gap-1.5 font-semibold text-[var(--data-error)]">
-        <XCircle className="h-3.5 w-3.5" /> Ya está ocupado
+    <div className="space-y-2">
+      <p className="text-sm flex items-center gap-2 font-bold text-[var(--data-error-500)]">
+        <XCircle className="h-4 w-4" /> Ya está ocupado
       </p>
       {check.suggestions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--text-secondary)]">Prueba con:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-[var(--text-secondary)]">Prueba con:</span>
           {check.suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => onPick(s)}
-              className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition">
+            <button
+              key={s}
+              type="button"
+              onClick={() => onPick(s)}
+              className="px-3 py-1.5 rounded-full text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 transition"
+            >
               {s}
             </button>
           ))}
@@ -274,32 +301,71 @@ function SlugLiveStatus({ slug, onPick }: { slug: string; onPick: (s: string) =>
   );
 }
 
-function StoreHoursEditor({ hours, onChange }: { hours: Record<DayKey, StoreHours>; onChange: (next: Record<DayKey, StoreHours>) => void }) {
+function StoreHoursEditor({
+  hours,
+  onChange,
+}: {
+  hours: Record<DayKey, StoreHours>;
+  onChange: (next: Record<DayKey, StoreHours>) => void;
+}) {
   const setDay = (k: DayKey, patch: Partial<StoreHours>) => {
     onChange({ ...hours, [k]: { ...hours[k], ...patch } });
   };
   return (
-    <div className="space-y-2">
-      {DAY_LABELS.map(({ key, label }) => {
+    <div className="space-y-3">
+      {DAY_LABELS.map(({ key, label, full }) => {
         const h = hours[key];
+        const closed = h.closed;
         return (
-          <div key={key} className="grid grid-cols-[60px_1fr_auto] sm:grid-cols-[80px_1fr_1fr_auto] items-center gap-2">
-            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{label}</span>
-            {h.closed ? (
-              <span className="text-xs text-[var(--text-tertiary)] sm:col-span-2">Cerrado</span>
+          <div
+            key={key}
+            className={cn(
+              "grid grid-cols-[72px_1fr_auto] sm:grid-cols-[100px_1fr_1fr_auto] items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-colors",
+              closed
+                ? "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)]",
+            )}
+          >
+            <span
+              className="text-base font-bold uppercase tracking-wider text-[var(--text-primary)]"
+              title={full}
+            >
+              {label}
+            </span>
+            {closed ? (
+              <span className="text-base font-medium text-[var(--text-tertiary)] sm:col-span-2">
+                Cerrado todo el día
+              </span>
             ) : (
               <>
-                <input type="time" value={h.open} onChange={(e) => setDay(key, { open: e.target.value })}
-                  className="px-2 py-1 rounded-lg border border-[var(--rule-base)] bg-white text-xs" />
-                <input type="time" value={h.close} onChange={(e) => setDay(key, { close: e.target.value })}
-                  className="px-2 py-1 rounded-lg border border-[var(--rule-base)] bg-white text-xs" />
+                <input
+                  type="time"
+                  aria-label={`${full} — hora de apertura`}
+                  value={h.open}
+                  onChange={(e) => setDay(key, { open: e.target.value })}
+                  className="h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+                <input
+                  type="time"
+                  aria-label={`${full} — hora de cierre`}
+                  value={h.close}
+                  onChange={(e) => setDay(key, { close: e.target.value })}
+                  className="h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
               </>
             )}
-            <button type="button" onClick={() => setDay(key, { closed: !h.closed })}
-              title={h.closed ? "Abrir este día" : "Cerrar este día"}
-              className={cn("ml-auto sm:ml-0 px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition",
-                h.closed ? "bg-[var(--data-error-100)] text-[var(--data-error)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200")}>
-              {h.closed ? "Cerrado" : "Cerrar"}
+            <button
+              type="button"
+              onClick={() => setDay(key, { closed: !closed })}
+              title={closed ? `Abrir el ${full.toLowerCase()}` : `Cerrar el ${full.toLowerCase()}`}
+              className={cn(
+                "ml-auto sm:ml-0 h-10 px-4 rounded-xl text-sm font-bold transition-colors",
+                closed
+                  ? "bg-[var(--accent-soft)] text-primary hover:bg-primary hover:text-white"
+                  : "bg-[var(--data-error-100)] text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] hover:text-white",
+              )}
+            >
+              {closed ? "Abrir" : "Cerrar"}
             </button>
           </div>
         );
@@ -311,35 +377,71 @@ function StoreHoursEditor({ hours, onChange }: { hours: Record<DayKey, StoreHour
 // ─────────────────────────────────────────────
 // TiendaTab principal
 // ─────────────────────────────────────────────
+interface ConstructionState {
+  enabled: boolean;
+  message: string;
+}
+
+const EMPTY_CONSTRUCTION: ConstructionState = { enabled: false, message: "" };
+
 export default function TiendaTab() {
   const [store, setStore] = useState<StoreData>({
     slug: "", name: "", description: "", logoUrl: "",
     category: "Abarrotes", zone: "Centro", commissionRate: 5, isActive: false,
     hours: DEFAULT_HOURS,
   });
+  const [construction, setConstruction] = useState<ConstructionState>(EMPTY_CONSTRUCTION);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [saved, setSaved]     = useState(false);
   const [copied, setCopied]   = useState(false);
+  const [initial, setInitial] = useState<StoreData | null>(null);
+  const [initialConstruction, setInitialConstruction] = useState<ConstructionState>(EMPTY_CONSTRUCTION);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    fetch("/api/marketplace/stores?my=true")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d && (d.slug || d.name)) setStore(d as StoreData); })
-      .catch(() => setError("Error al cargar datos de la tienda."))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/marketplace/stores?my=true").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/admin/marketplace/store-construction").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+      .then(([storeData, constructionData]) => {
+        if (cancelled) return;
+        if (storeData && (storeData.slug || storeData.name)) {
+          const next = { ...storeData, hours: storeData.hours ?? DEFAULT_HOURS } as StoreData;
+          setStore(next);
+          setInitial(next);
+        }
+        if (constructionData) {
+          const c: ConstructionState = {
+            enabled: !!constructionData.enabled,
+            message: typeof constructionData.message === "string" ? constructionData.message : "",
+          };
+          setConstruction(c);
+          setInitialConstruction(c);
+        }
+      })
+      .catch(() => { if (!cancelled) setError("Error al cargar datos de la tienda."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
+
+  const isDirty = useMemo(() => {
+    if (!initial) return true;
+    if (JSON.stringify(initial) !== JSON.stringify(store)) return true;
+    return JSON.stringify(initialConstruction) !== JSON.stringify(construction);
+  }, [initial, store, initialConstruction, construction]);
 
   const handleSave = async () => {
     if (!store.name?.trim()) { setError("El nombre de la tienda es obligatorio."); return; }
     setSaving(true);
     setError(null);
     try {
+      // 1. Guardar datos de tienda (POST/PUT al stores endpoint)
       const res = await fetch("/api/marketplace/stores", {
         method: store.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(store),
       });
       if (!res.ok) {
@@ -347,7 +449,28 @@ export default function TiendaTab() {
         throw new Error(errData.error || "Error al guardar");
       }
       const data = await res.json();
-      setStore(data);
+      const next = { ...data, hours: data.hours ?? store.hours ?? DEFAULT_HOURS } as StoreData;
+      setStore(next);
+      setInitial(next);
+
+      // 2. Guardar flag "Tienda en construcción" SI cambió.
+      //    Endpoint dedicado (storage en JSON file, no en DB).
+      if (JSON.stringify(initialConstruction) !== JSON.stringify(construction)) {
+        const cRes = await fetch("/api/admin/marketplace/store-construction", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            enabled: construction.enabled,
+            message: construction.message?.trim() || undefined,
+          }),
+        });
+        if (!cRes.ok) {
+          const cErr = await cRes.json().catch(() => ({}));
+          throw new Error(cErr.error || "Error al guardar el modo construcción");
+        }
+        setInitialConstruction(construction);
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
@@ -359,7 +482,8 @@ export default function TiendaTab() {
 
   const handleCopyUrl = async () => {
     if (!store.slug) return;
-    const url = `marketplace.com/${store.slug}`;
+    const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL ?? "");
+    const url = `${base}/marketplace/${store.slug}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -369,47 +493,61 @@ export default function TiendaTab() {
 
   if (loading) return <Spinner />;
 
-  const inputBase = "w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
+  // Input base con tipografía blindada (skill bsm-typography-rules):
+  // h-12 mín, border-2, rounded-2xl, text-base.
+  const inputBase =
+    "w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all";
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-32">
       {/* Status banner */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-r from-white via-white to-[var(--accent-soft)]/40 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="h-14 w-14 rounded-2xl border border-[var(--rule-base)] bg-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-r from-[var(--surface-raised)] via-[var(--surface-raised)] to-[var(--accent-soft)]/40 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="h-16 w-16 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm overflow-hidden flex items-center justify-center shrink-0">
           {store.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={store.logoUrl} alt={store.name} className="h-full w-full object-cover" />
           ) : (
-            <Store className="h-6 w-6 text-[var(--text-tertiary)]" />
+            <Store className="h-7 w-7 text-[var(--text-tertiary)]" />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <SectionTitle className="text-lg truncate">{store.name || "Tu tienda en el marketplace"}</SectionTitle>
+          <div className="flex items-center gap-3 flex-wrap">
+            <SectionTitle className="text-2xl font-bold truncate">{store.name || "Tu tienda en el marketplace"}</SectionTitle>
             <StatusPill isActive={store.isActive} vacationMode={store.vacationMode} />
           </div>
           {store.slug ? (
-            <button type="button" onClick={handleCopyUrl}
-              className="mt-1 inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-primary transition-colors">
-              <Globe className="h-3.5 w-3.5" />
-              <span className="font-mono">marketplace.com/{store.slug}</span>
-              {copied ? <span className="text-[var(--data-success)] font-semibold">Copiado</span> : <Copy className="h-3 w-3" />}
+            <button
+              type="button"
+              onClick={handleCopyUrl}
+              className="mt-2 inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-primary transition-colors"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="font-mono font-medium">marketplace.com/{store.slug}</span>
+              {copied ? (
+                <span className="text-[var(--data-success-500)] font-bold">¡Copiado!</span>
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
             </button>
           ) : (
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Configura el slug abajo para tener tu URL pública.</p>
+            <p className="mt-2 text-sm text-[var(--text-tertiary)]">Configura el slug abajo para tener tu URL pública.</p>
           )}
         </div>
         {store.slug && (
-          <a href={`/${store.slug}`} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0">
-            <ExternalLink className="h-3.5 w-3.5" /> Ver en marketplace
+          <a
+            href={`/marketplace/${store.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+          >
+            <ExternalLink className="h-4 w-4" /> Ver en marketplace
           </a>
         )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
-          <AlertCircle className="h-4 w-4 shrink-0" /> {error}
+        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border-2 border-[var(--data-error-500)] rounded-2xl text-base font-medium text-[var(--data-error-500)]">
+          <AlertCircle className="h-5 w-5 shrink-0" /> {error}
         </div>
       )}
 
@@ -417,128 +555,274 @@ export default function TiendaTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
           {/* Identidad */}
-          <SectionCard icon={Store} title="Identidad" hint="Cómo te encuentran y reconocen tus clientes">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5 sm:col-span-1">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
-                  <Globe className="h-3 w-3" /> URL (slug)
+          <SectionCard icon={Store} title="Identidad" hint="Cómo te encuentran y reconocen tus clientes.">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2 sm:col-span-1">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Globe className="h-4 w-4" /> URL (slug)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] pointer-events-none">/</span>
-                  <input type="text" value={store.slug}
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-bold text-[var(--text-tertiary)] pointer-events-none">
+                    /
+                  </span>
+                  <input
+                    type="text"
+                    value={store.slug}
                     onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
-                    placeholder="mi-bodega" className={cn(inputBase, "pl-6")} />
+                    placeholder="mi-bodega"
+                    className={cn(inputBase, "pl-8")}
+                  />
                 </div>
                 <SlugLiveStatus slug={store.slug} onPick={(s) => setStore((p) => ({ ...p, slug: s }))} />
-                <p className="text-xs text-[var(--text-tertiary)]">Solo minúsculas y guiones. No se puede cambiar fácilmente luego.</p>
+                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  Solo minúsculas y guiones. No se puede cambiar fácilmente luego.
+                </p>
               </div>
-              <div className="space-y-1.5 sm:col-span-1">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre visible <span className="text-[var(--data-error)]">*</span></label>
-                <input type="text" value={store.name} onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))} placeholder="Mi Bodega" className={inputBase} />
-                <p className="text-xs text-[var(--text-tertiary)]">{store.name.length}/60 caracteres</p>
+              <div className="space-y-2 sm:col-span-1">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Nombre visible <span className="text-[var(--data-error-500)]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={store.name}
+                  onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Mi Bodega"
+                  maxLength={60}
+                  className={inputBase}
+                />
+                <p className="text-sm text-[var(--text-tertiary)]">
+                  <span className="font-bold tabular-nums">{store.name.length}</span>/60 caracteres
+                </p>
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
-                <textarea rows={3} value={store.description} onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe tu bodega: horarios, especialidades, qué te hace única…" className={cn(inputBase, "resize-none")} />
-                <p className="text-xs text-[var(--text-tertiary)]">Aparece bajo el nombre en la tarjeta del marketplace ({store.description.length}/180).</p>
+              <div className="space-y-2 sm:col-span-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Descripción
+                </label>
+                <textarea
+                  rows={3}
+                  value={store.description}
+                  onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
+                  placeholder="Describe tu bodega: horarios, especialidades, qué te hace única…"
+                  maxLength={180}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none leading-relaxed",
+                  )}
+                />
+                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  Aparece bajo el nombre en la tarjeta del marketplace (
+                  <span className="font-bold tabular-nums">{store.description?.length ?? 0}</span>/180).
+                </p>
               </div>
             </div>
           </SectionCard>
 
           {/* Categorización */}
-          <SectionCard icon={Tag} title="Categorización" hint="Aparece en filtros del marketplace y define tu comisión">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría principal</label>
+          <SectionCard icon={Tag} title="Categorización" hint="Aparece en filtros del marketplace y define tu comisión.">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Categoría principal
+                </label>
                 <div className="relative">
-                  <select value={store.category} onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                    className={cn(inputBase, "appearance-none pr-9")}>
+                  <select
+                    value={store.category}
+                    onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
+                    className={cn(inputBase, "appearance-none pr-12 cursor-pointer")}
+                  >
                     {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1"><MapPin className="h-3 w-3" /> Zona de cobertura</label>
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" /> Zona de cobertura
+                </label>
                 <div className="relative">
-                  <select value={store.zone} onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                    className={cn(inputBase, "appearance-none pr-9")}>
-                    {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
+                  <select
+                    value={ALL_KNOWN_ZONES.has(store.zone ?? "") ? store.zone : CUSTOM_ZONE_OPTION}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === CUSTOM_ZONE_OPTION) {
+                        setStore((p) => ({ ...p, zone: ALL_KNOWN_ZONES.has(p.zone ?? "") ? "" : (p.zone ?? "") }));
+                      } else {
+                        setStore((p) => ({ ...p, zone: v }));
+                      }
+                    }}
+                    className={cn(inputBase, "appearance-none pr-12 cursor-pointer")}
+                  >
+                    {ZONES_BY_CITY.map(({ city, zones }) => (
+                      <optgroup key={city} label={city}>
+                        {zones.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
+                      </optgroup>
+                    ))}
+                    <option value={CUSTOM_ZONE_OPTION}>✏️ Otra zona (escribir)</option>
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
                 </div>
+                {!ALL_KNOWN_ZONES.has(store.zone ?? "") && (
+                  <input
+                    type="text"
+                    value={store.zone ?? ""}
+                    onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
+                    placeholder="Ej: Ciudad Constitución — Sector Norte"
+                    maxLength={100}
+                    className={inputBase}
+                  />
+                )}
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1"><Percent className="h-3 w-3" /> Comisión acordada</label>
-                <div className="relative">
-                  <input type="number" min={0} max={30} step={0.5} value={store.commissionRate}
-                    onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-                    className={cn(inputBase, "pr-8")} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] pointer-events-none">%</span>
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Percent className="h-4 w-4" /> Comisión Buleje
+                </label>
+                <div
+                  className="h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-between gap-2"
+                  title="La comisión la fija el equipo de Buleje. Si quieres revisarla, contáctanos por WhatsApp."
+                >
+                  <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
+                    {store.commissionRate}%
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Solo lectura
+                  </span>
                 </div>
+                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  Es lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla,
+                  contáctanos por WhatsApp.
+                </p>
               </div>
             </div>
           </SectionCard>
 
           {/* Imagen */}
-          <SectionCard icon={ImageIcon} title="Imagen de la tienda" hint="Logo cuadrado 200×200 — se muestra en la tarjeta del marketplace">
-            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-5 items-start">
-              <ImageUpload value={store.logoUrl} onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
-                onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))} folder="marketplace-logos" label="" hint="" aspectRatio="square" />
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">…o pega una URL de imagen</label>
-                <input type="url" value={store.logoUrl} onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
-                  placeholder="https://..." className={inputBase} />
+          <SectionCard icon={ImageIcon} title="Imagen de la tienda" hint="Logo cuadrado 200×200 — se muestra en la tarjeta del marketplace.">
+            <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-6 items-start">
+              <ImageUpload
+                value={store.logoUrl}
+                onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
+                onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
+                folder="marketplace-logos"
+                label=""
+                hint=""
+                aspectRatio="square"
+              />
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  …o pega una URL de imagen
+                </label>
+                <input
+                  type="url"
+                  value={store.logoUrl}
+                  onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
+                  placeholder="https://..."
+                  className={inputBase}
+                />
                 {store.logoUrl ? (
-                  <div className="flex items-center gap-1.5 text-xs text-[var(--data-success)]"><CheckCircle className="h-3.5 w-3.5" /> Logo configurado</div>
+                  <div className="flex items-center gap-2 text-sm font-bold text-[var(--data-success-500)]">
+                    <CheckCircle className="h-4 w-4" /> Logo configurado
+                  </div>
                 ) : (
-                  <div className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)]"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /> Sin logo, usaremos la inicial de tu tienda como avatar.</div>
+                  <div className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                    Sin logo, usaremos la inicial de tu tienda como avatar.
+                  </div>
                 )}
               </div>
             </div>
           </SectionCard>
 
           {/* Horario */}
-          <SectionCard icon={Calendar} title="Horario de atención" hint="Define los días y horas que tu tienda atiende pedidos">
+          <SectionCard
+            icon={Calendar}
+            title="Horario de atención"
+            hint="Define los días y horas que tu tienda atiende pedidos."
+          >
             <StoreHoursEditor hours={store.hours ?? DEFAULT_HOURS} onChange={(next) => setStore((p) => ({ ...p, hours: next }))} />
-            <div className="mt-3 pt-3 border-t border-[var(--rule-base)] flex items-center gap-2 text-xs">
+            <div className="mt-5 pt-5 border-t-2 border-[var(--rule-base)] flex items-center gap-3">
               {isOpenNow(store.hours ?? DEFAULT_HOURS) ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] font-bold">
-                  <span className="h-2 w-2 rounded-full bg-[var(--data-success)] animate-pulse" /> Abierto ahora
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-base font-bold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)] animate-pulse" /> Abierto ahora
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] font-bold">
-                  <span className="h-2 w-2 rounded-full bg-[var(--text-tertiary)]" /> Cerrado en este momento
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-base font-bold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--text-tertiary)]" /> Cerrado en este momento
                 </span>
               )}
-              <span className="text-[var(--text-tertiary)]">según tu zona horaria</span>
+              <span className="text-sm text-[var(--text-tertiary)]">según tu zona horaria</span>
             </div>
           </SectionCard>
         </div>
 
         {/* Columna derecha */}
         <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-4 self-start">
-          <SectionCard icon={ImageIcon} title="Vista previa" hint="Así verán los clientes tu tienda en el listado">
+          <SectionCard icon={ImageIcon} title="Vista previa" hint="Así verán los clientes tu tienda en el listado.">
             <StorePreviewCard store={store} />
           </SectionCard>
           <SectionCard icon={Power} title="Estado de la tienda">
             <div className="space-y-1 -mx-2">
-              <ToggleRow active={store.isActive} onToggle={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
-                title="Publicada en marketplace" desc={store.isActive ? "Visible y aceptando pedidos." : "Borrador — solo tú la ves."} tone="primary" />
-              <div className="border-t border-[var(--rule-base)] mx-2" />
-              <ToggleRow active={!!store.vacationMode} onToggle={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
-                title="Modo vacaciones" desc="Pausa pedidos sin despublicar." tone="warning" />
+              <ToggleRow
+                active={store.isActive}
+                onToggle={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
+                title="Publicada en marketplace"
+                desc={store.isActive ? "Visible y aceptando pedidos." : "Borrador — solo tú la ves."}
+                tone="primary"
+              />
+              <div className="border-t-2 border-[var(--rule-base)] mx-2" />
+              <ToggleRow
+                active={!!store.vacationMode}
+                onToggle={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
+                title="Modo vacaciones"
+                desc="Pausa pedidos sin despublicar."
+                tone="warning"
+              />
+              <div className="border-t-2 border-[var(--rule-base)] mx-2" />
+              <ToggleRow
+                active={construction.enabled}
+                onToggle={() => setConstruction((p) => ({ ...p, enabled: !p.enabled }))}
+                title="Tienda en construcción"
+                desc="Cinta amarilla sobre la portada en /tiendas y /marketplace."
+                tone="warning"
+              />
             </div>
             {store.vacationMode && (
-              <div className="mt-3 space-y-1.5 px-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje para tus clientes</label>
-                <input type="text" value={store.vacationMessage ?? ""}
+              <div className="mt-4 space-y-2 px-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Mensaje de vacaciones
+                </label>
+                <input
+                  type="text"
+                  value={store.vacationMessage ?? ""}
                   onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
                   placeholder="Ej: Volvemos el lunes 15"
-                  className={cn("w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all",
-                    "border-[var(--data-warning)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
-                    "focus:ring-2 focus:ring-[var(--data-warning)]/30")} />
+                  maxLength={500}
+                  className={cn(
+                    "w-full h-12 px-4 rounded-2xl border-2 text-base font-medium outline-none transition-all",
+                    "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
+                    "focus:ring-2 focus:ring-[var(--data-warning-500)]/30",
+                  )}
+                />
+              </div>
+            )}
+            {construction.enabled && (
+              <div className="mt-4 space-y-2 px-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Wrench className="h-4 w-4" /> Mensaje del banner
+                </label>
+                <input
+                  type="text"
+                  value={construction.message}
+                  onChange={(e) => setConstruction((p) => ({ ...p, message: e.target.value }))}
+                  placeholder="Ej: Estamos armando el catálogo, vuelve pronto"
+                  maxLength={120}
+                  className={cn(
+                    "w-full h-12 px-4 rounded-2xl border-2 text-base font-medium outline-none transition-all",
+                    "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--text-primary)]",
+                    "focus:ring-2 focus:ring-[var(--data-warning-500)]/30",
+                  )}
+                />
+                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  Aparece como cinta diagonal sobre la portada de tu tienda en el listado.
+                </p>
               </div>
             )}
           </SectionCard>
@@ -546,15 +830,24 @@ export default function TiendaTab() {
       </div>
 
       {/* Action bar inferior */}
-      <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 px-4 py-3 rounded-2xl border border-[var(--rule-base)] bg-white/95 backdrop-blur shadow-lg">
-        {saved && (
-          <span className="text-sm text-[var(--data-success)] font-semibold flex items-center gap-1">
-            <CheckCircle className="h-4 w-4" /> Guardado
+      <div className="sticky bottom-4 z-20 flex items-center justify-end gap-4 px-5 py-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur shadow-lg">
+        {saved ? (
+          <span className="text-base font-bold text-[var(--data-success-500)] flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" /> Guardado
           </span>
-        )}
-        <button onClick={handleSave} disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
-          {saving ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="h-4 w-4" />}
+        ) : isDirty ? (
+          <span className="text-sm font-medium text-[var(--text-secondary)]">Tienes cambios sin guardar</span>
+        ) : null}
+        <button
+          onClick={handleSave}
+          disabled={saving || !isDirty}
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[var(--shadow-md)]"
+        >
+          {saving ? (
+            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Save className="h-5 w-5" />
+          )}
           {saving ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>

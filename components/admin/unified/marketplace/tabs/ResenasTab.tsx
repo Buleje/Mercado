@@ -73,18 +73,22 @@ export default function ResenasTab() {
   const [saving, setSaving] = useState<string | null>(null);
 
   const loadReviews = useCallback(() => {
+    let cancelled = false;
     setLoading(true);
+    // TODO: pasar ?storeId=${storeId} cuando el endpoint acepte el param
     fetch("/api/reviews?all=1")
       .then((r) => (r.ok ? r.json() : []))
       .then((data: ReviewItem[]) => {
+        if (cancelled) return;
         const storeReviews = data.filter((r) => r.storeId);
         setReviews(storeReviews);
       })
-      .catch((err) => { console.warn("[ResenasTab] fetch failed", err); })
-      .finally(() => setLoading(false));
+      .catch((err) => { if (!cancelled) console.warn("[ResenasTab] fetch failed", err); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => { loadReviews(); }, [loadReviews]);
+  useEffect(() => { return loadReviews(); }, [loadReviews]);
 
   const handleStatusChange = async (id: string, status: string) => {
     setSaving(id);

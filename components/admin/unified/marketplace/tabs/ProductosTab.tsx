@@ -11,6 +11,7 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { TableSkeleton, type MarketplaceProduct } from "../types";
 
 // ── Tipos y constantes locales ──────────────────────────────────────────────
@@ -46,10 +47,10 @@ function CompletenessBadge({ product }: { product: MarketplaceProduct }) {
   if (product.retailPrice <= 0) issues.push("Sin precio");
 
   const tone = score >= 90
-    ? { ring: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle }
+    ? { ring: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: CheckCircle }
     : score >= 60
-    ? { ring: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", icon: AlertCircle }
-    : { ring: "bg-[var(--data-error-100)] text-[var(--data-error)]", icon: AlertCircle };
+    ? { ring: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: AlertCircle }
+    : { ring: "bg-[var(--data-error-100)] text-[var(--data-error-500)]", icon: AlertCircle };
   const Icon = tone.icon;
 
   return (
@@ -152,7 +153,10 @@ export default function ProductosTab() {
     setSyncResult(null);
     setError(null);
     try {
-      const res = await fetch("/api/marketplace/stores/my/sync", { method: "POST" });
+      const res = await fetch("/api/marketplace/stores/my/sync", {
+        method: "POST",
+        headers: csrfHeaders(),
+      });
       if (!res.ok) throw new Error("Error al sincronizar");
       const data = await res.json();
       const d = data.data;
@@ -170,7 +174,7 @@ export default function ProductosTab() {
     async (productId: string, patch: { isActive?: boolean; retailPrice?: number; wholesalePrice?: number }) => {
       const res = await fetch(`/api/marketplace/stores/my/products/${productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error("patch failed");
@@ -269,13 +273,13 @@ export default function ProductosTab() {
       </div>
 
       {syncResult && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl text-sm text-[var(--data-success)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl text-sm text-[var(--data-success-500)]">
           <CheckCircle className="h-4 w-4 shrink-0" /> {syncResult}
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
         </div>
@@ -293,8 +297,8 @@ export default function ProductosTab() {
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
                   isActive ? "bg-primary text-white"
-                    : hasIssues && count > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:brightness-95"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200"
+                    : hasIssues && count > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:brightness-95"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                 )}>
                 {f.label}
                 <span className={cn("inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold", isActive ? "bg-white/20" : "bg-white")}>
@@ -320,7 +324,7 @@ export default function ProductosTab() {
           </p>
           <div className="flex items-center gap-2">
             <button onClick={() => bulkSetActive(true)} disabled={bulking}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50">
               <Eye className="h-3.5 w-3.5" /> Publicar
             </button>
             <button onClick={() => bulkSetActive(false)} disabled={bulking}
@@ -348,10 +352,10 @@ export default function ProductosTab() {
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="w-10 px-3 py-3">
                     <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll}
@@ -365,11 +369,11 @@ export default function ProductosTab() {
                   <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Publicado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((p) => {
                   const isSelected = selected.has(p.id);
                   return (
-                    <tr key={p.id} className={cn("transition-colors", isSelected ? "bg-primary/5" : "hover:bg-gray-50")}>
+                    <tr key={p.id} className={cn("transition-colors", isSelected ? "bg-primary/5" : "hover:bg-[var(--surface-sunken)]")}>
                       <td className="px-3 py-3">
                         <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(p.id)}
                           aria-label={`Seleccionar ${p.name}`} className="h-4 w-4 rounded accent-primary cursor-pointer" />
@@ -401,9 +405,9 @@ export default function ProductosTab() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
-                          p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                            : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)]")}>
+                          p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
                           {p.stock}
                         </span>
                       </td>
@@ -411,7 +415,7 @@ export default function ProductosTab() {
                         <button onClick={() => toggleActive(p)} disabled={toggling === p.id}
                           title={p.isActive ? "Despublicar del marketplace" : "Publicar en marketplace"}
                           className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors min-w-25 justify-center",
-                            p.isActive ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
+                            p.isActive ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]")}>
                           {toggling === p.id
                             ? <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                             : p.isActive ? <><Eye className="h-3.5 w-3.5" /> Publicado</> : <><EyeOff className="h-3.5 w-3.5" /> Inactivo</>}
