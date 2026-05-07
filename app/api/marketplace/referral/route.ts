@@ -4,6 +4,7 @@ import { CustomersDB } from "@/lib/db/customers.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 // GET /api/marketplace/referral?phone=...
 // Returns referral code + stats for a customer.
@@ -22,6 +23,14 @@ export async function GET(req: NextRequest) {
     const phone = req.nextUrl.searchParams.get("phone");
     if (!phone || phone.length < 6) {
       return NextResponse.json({ error: "phone requerido" }, { status: 400 });
+    }
+
+    // SECURITY 2026-05-06 (audit team H005): exigir customer-session match.
+    // Antes era enumerable: con phone target obtenías referralCode + stats.
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
+    if (!session || session.customerId !== phone) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Ensure customer has a referral code

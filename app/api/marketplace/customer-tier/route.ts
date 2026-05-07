@@ -2,6 +2,8 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 /**
  * GET /api/marketplace/customer-tier?phone=...
@@ -40,10 +42,24 @@ export function tierForCount(count: number): Tier | null {
 }
 
 export async function GET(req: NextRequest) {
+  // SECURITY 2026-05-06 (audit team H005): rate limit + customer-session
+  // match. Antes el endpoint era enumerable: cualquiera con lista de
+  // teléfonos podía mapear phone→tier (BI leak del competidor).
+  const rl = await applyRateLimit(req, "STRICT", "customer-tier");
+  if (rl) return rl;
+
   const url = new URL(req.url);
   const phone = url.searchParams.get("phone")?.trim();
   if (!phone || phone.length < 6) {
     return NextResponse.json({ tier: null, count: 0 });
+  }
+
+  // Exigir customer-session con phone match (ADR-082 sigue cross-tenant
+  // por diseño, pero solo el dueño del phone puede consultar SU tier).
+  const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
+  if (!session || session.customerId !== phone) {
+    return NextResponse.json({ tier: null, count: 0 }, { status: 401 });
   }
 
   try {

@@ -200,6 +200,7 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/marketplace/mi-cuenta/pedidos/route.ts",
   "app/api/marketplace/orders/[id]/route.ts",
   "app/api/marketplace/orders/route.ts",
+  "app/api/marketplace/notify-vendor/route.ts",
   "app/api/marketplace/predictions/compute/route.ts",
   "app/api/marketplace/predictions/route.ts",
   "app/api/marketplace/products/[id]/badges/route.ts",

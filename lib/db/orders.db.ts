@@ -85,6 +85,7 @@ function mapOrder(o: POrder & { items: POrderItem[] }): DbOrder {
     ...(o.discountAmount != null && { discountAmount: toNumOrZero(o.discountAmount) }),
     ...((o as Record<string, unknown>).idempotencyKey != null && { idempotencyKey: (o as Record<string, unknown>).idempotencyKey as string }),
     ...((o as Record<string, unknown>).riderName != null && { riderName: (o as Record<string, unknown>).riderName as string }),
+    ...((o as Record<string, unknown>).source != null && { source: (o as Record<string, unknown>).source as "direct" | "marketplace" | "wholesale" }),
     ...((o as Record<string, unknown>).deletedAt != null && { deletedAt: toISO((o as Record<string, unknown>).deletedAt as Date) }),
     createdAt: toISO(o.createdAt),
     updatedAt: toISO(o.updatedAt),
@@ -525,7 +526,7 @@ export const OrdersDB = {
    * junto con el storeSlug derivado del tenantId.
    * Cachea 60s por teléfono para evitar queries repetidas en reorders.
    */
-  async getLastByCustomer(phone: string): Promise<{
+  async getLastByCustomer(phone: string, tenantId?: string): Promise<{
     items: Array<{
       productId: number;
       name: string;
@@ -536,7 +537,9 @@ export const OrdersDB = {
     }>;
   } | null> {
     const normalized = normalizePhone(phone);
-    const cacheKey = `orders:last-by-customer:${normalized}`;
+    // SECURITY 2026-05-06 (audit team H002): cache key incluye tenantId para
+    // evitar leak entre tenants (mismo phone podría existir en varios tenants).
+    const cacheKey = `orders:last-by-customer:${tenantId ?? "ANY"}:${normalized}`;
 
     return getOrSet(cacheKey, 60, async () => {
       const order = await prisma.order.findFirst({
@@ -544,6 +547,8 @@ export const OrdersDB = {
           customerPhone: normalized,
           source: "marketplace",
           deletedAt: null,
+          // Scope tenant si se proveyó (call sites nuevos lo requieren).
+          ...(tenantId ? { tenantId } : {}),
         },
         include: { items: true },
         orderBy: { createdAt: "desc" },

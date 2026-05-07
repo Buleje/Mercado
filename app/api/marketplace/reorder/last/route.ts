@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 const BodySchema = z.object({
   phone: z.string().min(6).max(20),
@@ -11,12 +12,11 @@ const BodySchema = z.object({
 /**
  * POST /api/marketplace/reorder/last
  *
- * Endpoint público (autenticación débil por teléfono, igual que cart/restore).
- * Devuelve los items del último pedido marketplace del cliente para pre-llenar
- * el carrito. No crea ni modifica pedidos — solo lectura.
+ * SECURITY 2026-05-06 (audit team H002): exige customer-session match
+ * + scope tenantId. Antes `OrdersDB.getLastByCustomer(phone)` no recibía
+ * tenantId — cualquiera con phone target leía último pedido cross-tenant.
  *
  * Body: { phone: string }
- * Response: { items: ReorderItem[], message?: string }
  */
 export async function POST(req: NextRequest) {
   const limited = applyRateLimit(req, "MODERATE", "marketplace-reorder-last");
@@ -37,7 +37,17 @@ export async function POST(req: NextRequest) {
 
     const { phone } = parsed.data;
 
-    const result = await OrdersDB.getLastByCustomer(phone);
+    // Auth gate: exigir customer-session cookie con phone match.
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
+    if (!session || session.customerId !== phone) {
+      return NextResponse.json(
+        { items: [], message: "No autorizado" },
+        { status: 401 },
+      );
+    }
+
+    const result = await OrdersDB.getLastByCustomer(phone, session.tenantId);
 
     if (!result || result.items.length === 0) {
       return NextResponse.json({

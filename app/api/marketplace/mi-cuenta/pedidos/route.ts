@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 const QuerySchema = z.object({
   phone: z.string().min(6).max(20),
@@ -14,8 +15,9 @@ const QuerySchema = z.object({
 /**
  * GET /api/marketplace/mi-cuenta/pedidos?phone=xxx&tenantId=main
  *
- * Endpoint público ligero (autenticacion por telefono, igual que reorder).
- * Retorna pedidos del cliente para la pagina "Mi Cuenta > Pedidos".
+ * SECURITY 2026-05-06 (audit team H001): exige customer-session cookie
+ * con phone match. Antes era endpoint público — cualquiera con phone+
+ * tenantId leía historial de pedidos del cliente (PII Ley 29733 PE).
  */
 export async function GET(req: NextRequest) {
   const limited = applyRateLimit(req, "MODERATE", "mi-cuenta-pedidos");
@@ -38,6 +40,16 @@ export async function GET(req: NextRequest) {
     }
 
     const { phone, tenantId } = parsed.data;
+
+    // Auth gate: exigir customer-session cookie y validar phone match.
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
+    if (!session || session.customerId !== phone || session.tenantId !== tenantId) {
+      return NextResponse.json(
+        { orders: [], error: "No autorizado" },
+        { status: 401 },
+      );
+    }
     const orders = await CustomerOrdersDB.listByCustomer(tenantId, phone);
 
     // MK-28: derivar storeSlug del tenant — usamos UNA sola query batched.

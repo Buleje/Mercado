@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { queue } from "@/lib/queue";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 
 const BodySchema = z.object({
   vendorPhone: z.string().min(1),
@@ -35,6 +36,26 @@ export async function POST(req: NextRequest) {
   }
 
   const { vendorPhone, type, context } = parsed.data;
+
+  // SECURITY 2026-05-06 (audit team H003): vendorPhone debe pertenecer a un
+  // tenant asociado al admin autenticado. Antes admin de A podía mandar
+  // WhatsApp arbitrario a cualquier phone usando branding Buleje (vector
+  // spam/phishing).
+  const tenantOwnsPhone = await prisma.tenant.findFirst({
+    where: { id: auth.tenantId, ownerPhone: vendorPhone },
+    select: { id: true },
+  });
+  if (!tenantOwnsPhone) {
+    logger.warn("[marketplace/notify-vendor] phone not in tenant", {
+      tenantId: auth.tenantId,
+      attemptedPhone: vendorPhone.slice(-4),
+    });
+    return NextResponse.json(
+      { error: "Vendor no asociado al tenant" },
+      { status: 403 },
+    );
+  }
+
   const message = TEMPLATES[type](context);
 
   queue
