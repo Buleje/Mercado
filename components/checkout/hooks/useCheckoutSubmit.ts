@@ -182,6 +182,10 @@ export function useCheckoutSubmit({
           const errBody = (await res!.json()) as {
             error?: string;
             productId?: number;
+            // FIX 2026-05-07: backend ahora retorna lista completa para
+            // auto-limpiar todos los items inválidos en una sola operación.
+            invalidProductIds?: number[];
+            message?: string;
             issues?: { path: (string | number)[]; message: string }[];
           };
           // JSON.stringify para evitar el lazy-render de Chrome DevTools que
@@ -200,10 +204,18 @@ export function useCheckoutSubmit({
           // intento de checkout sea exitoso sin que el usuario tenga que
           // vaciar todo el carrito manualmente.
           if (errBody?.error === "invalid_product") {
-            if (typeof errBody.productId === "number") {
-              cartActions.removeItem(errBody.productId);
-              friendlyError =
-                "Quitamos un producto que no está disponible en esta tienda. Revisá tu carrito y volvé a intentar.";
+            // FIX 2026-05-07: usar invalidProductIds (lista) en vez de
+            // productId single. Limpia TODOS los items inválidos de una vez
+            // — antes obligaba al cliente a reintentar N veces.
+            const idsToRemove = Array.isArray(errBody.invalidProductIds) && errBody.invalidProductIds.length > 0
+              ? errBody.invalidProductIds
+              : (typeof errBody.productId === "number" ? [errBody.productId] : []);
+            if (idsToRemove.length > 0) {
+              for (const id of idsToRemove) cartActions.removeItem(id);
+              friendlyError = errBody.message
+                ?? (idsToRemove.length === 1
+                  ? "Quitamos un producto que no está disponible en esta tienda. Revisá tu carrito y volvé a intentar."
+                  : `Quitamos ${idsToRemove.length} productos que no están disponibles en esta tienda. Revisá tu carrito y volvé a intentar.`);
             } else {
               friendlyError =
                 "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y volvé a agregar lo que necesites.";

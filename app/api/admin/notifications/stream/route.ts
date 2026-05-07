@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * SSE endpoint for real-time admin notifications.
@@ -8,7 +9,10 @@ import { prisma } from "@/lib/prisma";
  * Client connects via EventSource and receives order events.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager"]).catch(() => null);
+  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager"]).catch((err) => {
+    logger.warn("[notifications/stream] requireAdmin threw", { err: String(err) });
+    return null;
+  });
   if (!auth || auth instanceof Response) {
     return new Response("Unauthorized", { status: 401 });
   }
@@ -20,8 +24,25 @@ export async function GET(req: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      // FIX 2026-05-07 (Node 22 race): wrapper que verifica closed ANTES de
+      // enqueue + try/catch para que un TypeError de transformAlgorithm
+      // (cuando el stream ya cerró pero el interval aún corre) no rompa todo.
+      const safeEnqueue = (data: Uint8Array) => {
+        if (closed) return;
+        try {
+          controller.enqueue(data);
+        } catch {
+          closed = true;
+        }
+      };
+      const safeClose = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
+      };
+
       // Send initial heartbeat
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "connected" })}\n\n`));
+      safeEnqueue(encoder.encode(`data: ${JSON.stringify({ type: "connected" })}\n\n`));
 
       const interval = setInterval(async () => {
         if (closed) {
@@ -57,6 +78,9 @@ export async function GET(req: NextRequest) {
             },
           });
 
+          // Verificar otra vez después del await — pudo haber cerrado.
+          if (closed) { clearInterval(interval); return; }
+
           lastCheck = new Date();
 
           if (newOrders.length > 0 || lowStock > 0) {
@@ -71,10 +95,9 @@ export async function GET(req: NextRequest) {
               lowStockCount: lowStock,
               timestamp: lastCheck.toISOString(),
             };
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+            safeEnqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
           } else {
-            // Heartbeat to keep connection alive
-            controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+            safeEnqueue(encoder.encode(`: heartbeat\n\n`));
           }
         } catch {
           // Silently ignore DB errors during polling
@@ -83,9 +106,8 @@ export async function GET(req: NextRequest) {
 
       // Cleanup on abort
       req.signal.addEventListener("abort", () => {
-        closed = true;
         clearInterval(interval);
-        controller.close();
+        safeClose();
       });
     },
   });

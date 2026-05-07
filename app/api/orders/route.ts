@@ -328,22 +328,35 @@ export const POST = withApiHandler("orders-create", async (req) => {
         stockMap.set(p.id, p.stock ?? null);
       }
     }
-    for (const i of body.items) {
-      if (!serverPriceMap.has(i.id)) {
-        // Estructurado para diagnóstico de invalid_product cross-tenant
-        // y data-drift entre catálogo público y validación de checkout.
-        logger.warn("[orders] invalid_product reject", {
-          rejectedId: i.id,
-          rawTenantId,
-          resolvedTenantId: tenantId,
-          requestedIds: productIds,
-          foundIds: Array.from(serverPriceMap.keys()),
-        });
-        return NextResponse.json(
-          { error: "invalid_product", productId: i.id },
-          { status: 400 },
-        );
-      }
+    // FIX 2026-05-07: si HAY items inválidos (cross-tenant, borrados, fake),
+    // retornar la LISTA COMPLETA en vez del primer rechazo. Eso permite al
+    // cliente auto-limpiar el carrito en una sola operación.
+    const invalidIds = body.items
+      .map((i) => i.id)
+      .filter((id) => !serverPriceMap.has(id));
+    if (invalidIds.length > 0) {
+      logger.warn("[orders] invalid_product reject", {
+        invalidIds,
+        rawTenantId,
+        resolvedTenantId: tenantId,
+        requestedIds: productIds,
+        foundIds: Array.from(serverPriceMap.keys()),
+      });
+      return NextResponse.json(
+        {
+          error: "invalid_product",
+          // productId: legacy single-id field (cliente viejo)
+          productId: invalidIds[0],
+          // invalidProductIds: lista completa para auto-limpieza nueva
+          invalidProductIds: invalidIds,
+          // mensaje human-readable que el cliente puede mostrar al usuario
+          message:
+            invalidIds.length === 1
+              ? "Un producto del carrito no está disponible en esta tienda. Lo quitamos del carrito."
+              : `${invalidIds.length} productos del carrito no están disponibles en esta tienda. Los quitamos del carrito.`,
+        },
+        { status: 400 },
+      );
     }
 
     // ── Modifiers: re-validar server-side y mapear priceDelta ──────────────
