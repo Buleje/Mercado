@@ -287,6 +287,7 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/store-page/public/[slug]/route.ts",
   "app/api/store-page/visits/route.ts",
   "app/api/store-permissions/route.ts",
+  "app/api/store-permissions/**/*.ts",
   "app/api/stripe-connect/onboard/route.ts",
   "app/api/stripe-connect/status/route.ts",
   "app/api/sunat/config/route.ts",
