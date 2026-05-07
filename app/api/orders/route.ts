@@ -754,8 +754,11 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // 1 sola query — antes habia un lookup separado por cada flag (notifOrderUpdates
     // y alertasWhatsapp) que costaba ~1 RTT extra por orden.
     if (saved.customer.phone) {
-      const custFlags = await prismaForTenant(tenantId).customer.findUnique({
-        where: { phone: saved.customer.phone },
+      // SECURITY 2026-05-07 (B2): findUnique({where:{phone}}) es @unique global
+      // y puede traer flags de un Customer de otro tenant. findFirst con tenantId
+      // garantiza aislamiento multi-tenant correcto.
+      const custFlags = await prismaForTenant(tenantId).customer.findFirst({
+        where: { phone: saved.customer.phone, tenantId },
         select: { notifOrderUpdates: true, alertasWhatsapp: true },
       }).catch((err) => {
         logger.warn("[orders] customer flags lookup failed", { error: String(err), tenantId });

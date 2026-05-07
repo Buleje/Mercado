@@ -37,7 +37,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-07 (B5): GET sin allowedRoles permitía que cualquier rol
+  // admin (ej. almacenero, repartidor) leyera PII de pedidos marketplace.
+  // Igualado a los roles del PATCH: solo admin y manager.
+  const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -73,6 +76,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
+  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read scoped por tenantId; refactor a OrdersDB pendiente.
   const order = await prisma.order.findFirst({
     where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
   });
@@ -93,6 +97,7 @@ export async function PATCH(
   // Atomic update SCOPED a tenantId — cierra TOCTOU window entre el findFirst
   // anterior y este update. Sin tenantId aquí, un atacante con dos órdenes
   // (una propia + una target) podría explotar la ventana entre check y write.
+  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing atomic update scoped por tenantId; refactor a OrdersDB pendiente.
   const updateResult = await prisma.order.updateMany({
     where: { id, tenantId: auth.tenantId, deletedAt: null },
     data: {
@@ -106,6 +111,7 @@ export async function PATCH(
   if (updateResult.count === 0) {
     return NextResponse.json({ error: "Pedido no encontrado o ya modificado" }, { status: 404 });
   }
+  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read post-update scoped por tenantId.
   const updated = await prisma.order.findFirst({
     where: { id, tenantId: auth.tenantId },
   });
@@ -114,6 +120,7 @@ export async function PATCH(
   }
 
   // Log status change history (fire-and-forget)
+  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing audit insert con tenantId en payload; refactor pendiente.
   prisma.orderStatusHistory.create({
     data: {
       id: crypto.randomUUID(),
@@ -184,6 +191,7 @@ export async function PATCH(
   if (parsed.data.status === "entregado" && phone) {
     const suffix = id.slice(-5).toUpperCase();
     const couponCode = `VUELVE${suffix}`;
+    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing coupon insert con tenantId en payload; migracion a CouponsDB pendiente.
     prisma.coupon.create({
       data: {
         id: crypto.randomUUID(),

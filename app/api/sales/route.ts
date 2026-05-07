@@ -146,8 +146,11 @@ export async function POST(req: NextRequest) {
   // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)
   let resolvedCustomerPhone: string | undefined = undefined;
   if (data.customerPhone) {
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { phone: data.customerPhone },
+    // SECURITY 2026-05-07 (B1): findUnique({where:{phone}}) es @unique global
+    // y puede traer un Customer de otro tenant. findFirst con tenantId garantiza
+    // aislamiento multi-tenant.
+    const existingCustomer = await prisma.customer.findFirst({
+      where: { phone: data.customerPhone, tenantId: auth.tenantId },
       select: { phone: true },
     });
     resolvedCustomerPhone = existingCustomer?.phone ?? undefined;
@@ -324,7 +327,7 @@ export async function POST(req: NextRequest) {
       logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) });
       import("@sentry/nextjs")
         .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "sale-kardex-loss" } }))
-        .catch(() => {});
+        .catch((sentryErr) => logger.warn("[sales] sentry capture failed", { err: String(sentryErr) }));
     });
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
@@ -338,7 +341,7 @@ export async function POST(req: NextRequest) {
         logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) });
         import("@sentry/nextjs")
           .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "fefo-deduct-loss" } }))
-          .catch(() => {});
+          .catch((sentryErr) => logger.warn("[sales] sentry capture failed (fefo)", { err: String(sentryErr) }));
       });
   }
 

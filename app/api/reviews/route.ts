@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+
+// SECURITY 2026-05-07 (B4): schema Zod para validar body del POST en lugar
+// de cast manual. Previene inyección de campos no esperados y asegura tipos.
+const ReviewPostSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().max(100).optional(),
+  location: z.string().max(200).optional(),
+  text: z.string().min(1).max(2000),
+  rating: z.number().int().min(1).max(5),
+  phone: z.string().max(20).optional(),
+  productId: z.number().int().positive().optional(),
+  date: z.string().min(1).max(50),
+});
 
 export async function GET(req: NextRequest) {
   const limited = applyRateLimit(req, "MODERATE", "reviews");
@@ -40,33 +54,37 @@ export async function POST(req: NextRequest) {
 
   const tenantId = getTenantIdFromRequest(req);
 
+  let raw: unknown;
   try {
-    const body = await req.json() as {
-      id: string;
-      name?: string;
-      location?: string;
-      text: string;
-      rating: number;
-      phone?: string;
-      productId?: number;
-      date: string;
-    };
-    if (!body.text?.trim() || !body.rating) {
-      return NextResponse.json({ error: "text and rating are required" }, { status: 400 });
-    }
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  const parsed = ReviewPostSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const data = parsed.data;
     const review = await ReviewsDB.add({
-      id: body.id,
-      name: body.name ?? "",
-      location: body.location ?? "",
-      text: body.text,
-      rating: body.rating,
-      phone: body.phone ?? null,
-      productId: body.productId ?? null,
+      id: data.id,
+      name: data.name ?? "",
+      location: data.location ?? "",
+      text: data.text,
+      rating: data.rating,
+      phone: data.phone ?? null,
+      productId: data.productId ?? null,
       status: "pending",
-      date: body.date,
+      date: data.date,
     }, tenantId);
     return NextResponse.json(review);
-  } catch {
-    return NextResponse.json({ error: "invalid request" }, { status: 400 });
+  } catch (e) {
+    logger.error("[reviews] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
