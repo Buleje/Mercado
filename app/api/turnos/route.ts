@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateTurnoSchema = z.object({
@@ -16,7 +16,9 @@ const CreateTurnoSchema = z.object({
 
 // GET /api/turnos — list turnos for tenant
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  // T9 (audit ventas-caja 2026-05-07): roles explicitos. Antes cualquier rol
+  // con sesion admin (proveedor, repartidor) podia listar/abrir turnos.
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -38,7 +40,9 @@ export async function GET(req: NextRequest) {
 // POST /api/turnos — open new turno
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "turnos"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // T9 (audit ventas-caja 2026-05-07): roles explicitos. Antes cualquier rol
+  // con sesion admin (proveedor, repartidor) podia listar/abrir turnos.
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -51,24 +55,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve AdminUser.id — use provided adminUserId if given, else resolve from session
+    // T4: lookup centralizado en AdminUsersDB (regla #1).
     let resolvedAdminUserId = parsed.data.adminUserId;
     if (!resolvedAdminUserId) {
-      const adminUser = await prisma.adminUser.findFirst({
-        where: { tenantId: auth.tenantId, username: auth.username },
-        select: { id: true },
-      });
-      if (!adminUser) {
+      const id = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
+      if (!id) {
         return NextResponse.json({ error: "Usuario admin no encontrado" }, { status: 404 });
       }
-      resolvedAdminUserId = adminUser.id;
+      resolvedAdminUserId = id;
     } else {
-      // Verify the provided adminUserId belongs to this tenant
-      const targetUser = await prisma.adminUser.findFirst({
-        where: { id: resolvedAdminUserId, tenantId: auth.tenantId, active: true },
-        select: { id: true },
-      });
-      if (!targetUser) {
+      const valid = await AdminUsersDB.verifyActiveInTenant(auth.tenantId, resolvedAdminUserId);
+      if (!valid) {
         return NextResponse.json({ error: "Cajero seleccionado no encontrado o inactivo" }, { status: 404 });
       }
     }

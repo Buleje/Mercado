@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { TurnosDB } from "@/lib/db/turnos.db";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -58,19 +59,16 @@ export async function POST(req: NextRequest) {
     // close del turno activo aqui mismo. Si falla, logear pero no romper.
     let turnoCerrado: { id: string; ventasTotal: number } | null = null;
     try {
-      // eslint-disable-next-line no-restricted-properties -- lookup centralizado por username del session payload; refactor a lib/db/admin-users.db.ts pendiente.
-      const adminUser = await prisma.adminUser.findFirst({
-        where: { tenantId: auth.tenantId, username: auth.username },
-        select: { id: true },
-      });
-      if (adminUser) {
-        const activo = await TurnosDB.getActivo(auth.tenantId, adminUser.id);
+      // T4: lookup centralizado en AdminUsersDB (regla #1).
+      const adminUserId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
+      if (adminUserId) {
+        const activo = await TurnosDB.getActivo(auth.tenantId, adminUserId);
         if (activo) {
           // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
           const ventasAgg = await prisma.sale.aggregate({
             where: {
               tenantId: auth.tenantId,
-              cashierId: adminUser.id,
+              cashierId: adminUserId,
               createdAt: { gte: new Date(activo.abrioEn) },
             },
             _sum: { total: true },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 
 // GET /api/turnos/activo — get currently open turno for authenticated admin
 export async function GET(req: NextRequest) {
@@ -17,11 +18,8 @@ export async function GET(req: NextRequest) {
     //   - admin/owner/manager pueden ver el turno activo del tenant entero
     //     (necesitan supervisar) — mantenemos el comportamiento original.
     //   - cajero solo ve SU propio turno activo.
-    // eslint-disable-next-line no-restricted-properties -- lookup centralizado por username del session payload; refactor a lib/db/admin-users.db.ts pendiente.
-    const adminUser = await prisma.adminUser.findFirst({
-      where: { tenantId: auth.tenantId, username: auth.username },
-      select: { id: true },
-    });
+    // T4: lookup centralizado en AdminUsersDB (regla #1).
+    const adminUserId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
 
     const isManagement = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
     // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB.getActivoForUser pendiente.
@@ -29,7 +27,7 @@ export async function GET(req: NextRequest) {
       where: {
         tenantId: auth.tenantId,
         status: "ABIERTO",
-        ...(isManagement ? {} : { adminUserId: adminUser?.id ?? "__none__" }),
+        ...(isManagement ? {} : { adminUserId: adminUserId ?? "__none__" }),
       },
       orderBy: { abrioEn: "desc" },
     });
