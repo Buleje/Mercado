@@ -58,12 +58,20 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(assignments);
   } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
     logger.error("[delivery/assignments] GET failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: detail,
       stack: err instanceof Error ? err.stack : undefined,
       tenantId: auth.tenantId,
     });
-    return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
+    // En dev exponemos el error real en el body para diagnosticar desde el browser.
+    return NextResponse.json(
+      {
+        error: "Error del servidor",
+        ...(process.env.NODE_ENV !== "production" ? { detail } : {}),
+      },
+      { status: 503 },
+    );
   }
 }
 

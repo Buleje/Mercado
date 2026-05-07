@@ -693,7 +693,7 @@ function AsignacionesTab() {
         .then(async (r) => {
           if (!r.ok) {
             const body = await r.json().catch(() => ({}));
-            throw new Error(`assignments ${r.status}: ${body.error ?? "unknown"}`);
+            throw new Error(`assignments ${r.status}: ${body.detail ?? body.error ?? "unknown"}`);
           }
           return r.json();
         }),
@@ -701,7 +701,7 @@ function AsignacionesTab() {
         .then(async (r) => {
           if (!r.ok) {
             const body = await r.json().catch(() => ({}));
-            throw new Error(`partners ${r.status}: ${body.error ?? "unknown"}`);
+            throw new Error(`partners ${r.status}: ${body.detail ?? body.error ?? "unknown"}`);
           }
           return r.json();
         }),
@@ -710,10 +710,10 @@ function AsignacionesTab() {
     if (aRes.status === "fulfilled") {
       setAssignments(Array.isArray(aRes.value) ? aRes.value : []);
     } else {
-      // Si el server respondió 503, asumimos lista vacía (no rompemos UI).
-      // El log del server tendrá el detalle real.
       setAssignments([]);
-      setError("No se pudieron cargar las asignaciones (servidor caído). Intentá refrescar.");
+      // Mostramos el detail real para diagnosticar (el endpoint lo expone solo en dev).
+      const reason = aRes.reason instanceof Error ? aRes.reason.message : String(aRes.reason);
+      setError(`No se pudieron cargar las asignaciones — ${reason}`);
     }
 
     if (pRes.status === "fulfilled" && Array.isArray(pRes.value)) {
