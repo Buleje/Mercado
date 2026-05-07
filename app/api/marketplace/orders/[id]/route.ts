@@ -196,6 +196,24 @@ export async function PATCH(
     auth.username,
   ).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err) }));
 
+  // SECURITY 2026-05-07 (audit M2): liquidar commissionLedger de pending → cleared
+  // al entregar. Antes las comisiones quedaban eternamente pending y la conciliación
+  // contable nunca cuadraba (vendors no recibían payout).
+  if (parsed.data.status === "entregado") {
+    // eslint-disable-next-line no-restricted-properties -- updateMany scoped por tenantId+orderId+status. CommissionLedger no tiene DB class wrapper aun (TODO: lib/db/commissions.db.ts).
+    prisma.commissionLedger
+      .updateMany({
+        where: { orderId: id, tenantId: auth.tenantId, status: "pending" },
+        data: { status: "cleared", settledAt: new Date() },
+      })
+      .catch((err) =>
+        logger.warn("[marketplace/orders/[id]] commission clear failed (best-effort)", {
+          error: String(err),
+          orderId: id,
+        }),
+      );
+  }
+
   // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
   if (parsed.data.status === "entregado" && phone) {
     const suffix = id.slice(-5).toUpperCase();
