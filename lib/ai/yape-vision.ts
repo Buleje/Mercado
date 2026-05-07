@@ -178,7 +178,7 @@ export async function extractYapePayment(
   imageUrl: YapeVisionInput,
 ): Promise<YapeVisionResult> {
   // Cost-control: presupuesto global del pipeline Yape
-  if (!aiCostGuard.canSpend(COST_BUCKET, COST_PER_CALL_USD, "business")) {
+  if (!await aiCostGuard.canSpend(COST_BUCKET, COST_PER_CALL_USD, "business")) {
     logger.warn("[yape-vision] presupuesto agotado, rechazando llamada");
     return lowConfidenceResult("ai-budget-exhausted", null);
   }

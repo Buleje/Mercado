@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
   if (rl) return rl;
   const { aiCostGuard } = await import("@/lib/ai/cost-control");
   const ESTIMATED_COST_USD = 0.003;
-  if (!aiCostGuard.canSpend("__chef_ia__", ESTIMATED_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend("__chef_ia__", ESTIMATED_COST_USD, "free")) {
     return NextResponse.json(
       { error: "Chef IA quota exceeded. Try again later." },
       { status: 429 },

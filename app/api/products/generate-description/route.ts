@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     // F4: Cap mensual por plan de tenant — estimado ~0.001 USD por descripción (Haiku)
     const estimatedCost = 0.001;
     // auth.plan no existe en el JWT payload — fallback "free" (cap conservador).
-    if (!aiCostGuard.canSpend(auth.tenantId, estimatedCost, "free")) {
+    if (!await aiCostGuard.canSpend(auth.tenantId, estimatedCost, "free")) {
       const nextMonth = new Date();
       nextMonth.setMonth(nextMonth.getMonth() + 1);
       nextMonth.setDate(1);

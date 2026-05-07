@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { getOrSet } from "@/lib/cache";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -30,6 +31,8 @@ export async function GET(req: NextRequest) {
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  // F3: cache 30s — evita 22 queries (~2.5s) en cada request
+  const cached = getOrSet("superadmin:dashboard:widgets", 30, async () => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const last30Start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
@@ -202,8 +205,12 @@ export async function GET(req: NextRequest) {
     };
   });
 
+  return { topStores, funnel, latestActive, revenueSeries, ordersSeries, arpuSeries };
+  }); // fin getOrSet
+
+  const payload = await cached;
   return NextResponse.json(
-    { topStores, funnel, latestActive, revenueSeries, ordersSeries, arpuSeries },
-    { headers: { "Cache-Control": "private, max-age=60" } },
+    payload,
+    { headers: { "Cache-Control": "private, max-age=30" } },
   );
 }

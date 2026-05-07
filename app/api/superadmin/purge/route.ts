@@ -5,6 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateAll } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const PurgeSchema = z.object({
+  confirm: z
+    .string()
+    .regex(/^PURGE-PLATFORM$/, "Para confirmar, envía 'PURGE-PLATFORM' como `confirm`"),
+  reason: z.string().min(10).max(500),
+});
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -67,6 +75,27 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // F1: Double-step confirmation — operacion nuclear requiere confirmacion explicita
+  const body = await req.json().catch((err) => { logger.warn("[purge] op failed", { err: String(err) }); return null; });
+  const parsed = PurgeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Confirmacion requerida",
+        details: parsed.error.flatten(),
+        hint: "Envia { confirm: 'PURGE-PLATFORM', reason: '<motivo minimo 10 chars>' }",
+      },
+      { status: 400 },
+    );
+  }
+  if (parsed.data.confirm !== "PURGE-PLATFORM") {
+    return NextResponse.json(
+      { error: "Para confirmar, envia 'PURGE-PLATFORM' como `confirm`" },
+      { status: 400 },
+    );
+  }
+  const purgeReason = parsed.data.reason;
+
   try {
     // ── Contar registros ANTES del truncate para reportar ──────────────
     const beforeCounts: Record<string, number> = {};
@@ -117,18 +146,19 @@ export async function DELETE(req: NextRequest) {
       username: session.username,
       deletedRows: totalBefore,
       details: beforeCounts,
+      reason: purgeReason,
     });
 
-    // COMPLIANCE 2026-05-06 (Ley 29733 Art. 18 + 11): audit trail OBLIGATORIO
-    // de la operación más destructiva del sistema. Antes solo iba a logger.
+    // COMPLIANCE (Ley 29733 Art. 18 + 11): audit trail con reason obligatorio
     try {
       const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
       logSuperadminAction(
         "nuclear_reset",
-        `Purga total ejecutada por ${session.username} — ${totalBefore} registros borrados de ${Object.keys(beforeCounts).length} tablas`,
+        `Purga total ejecutada por ${session.username} — ${totalBefore} registros borrados de ${Object.keys(beforeCounts).length} tablas. Razon: ${purgeReason}`,
         {
           deletedRows: totalBefore,
           tables: Object.keys(beforeCounts),
+          reason: purgeReason,
           ip: req.headers.get("x-forwarded-for") ?? null,
           userAgent: req.headers.get("user-agent") ?? null,
           timestamp: new Date().toISOString(),

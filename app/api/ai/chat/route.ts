@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   // ~$0.0008 por request (Haiku 4.5: 200 input + 1000 output tokens). Si el
   // tenant ya quemó su budget mensual, devolver 429.
   const ESTIMATED_COST_USD = 0.0008;
-  if (!aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD, "free")) {
     return Response.json(
       { error: "AI quota exceeded for this tenant. Upgrade your plan or try again next month." },
       { status: 429 },

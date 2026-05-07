@@ -56,7 +56,7 @@ const VALID_IMAGE_URL = "https://cdn.example.com/yape-screenshot.jpg";
 describe("extractYapePayment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCanSpend.mockReturnValue(true);
+    mockCanSpend.mockResolvedValue(true);
   });
 
   // ── Happy path ──────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ describe("extractYapePayment", () => {
 
   it("cost guard: si canSpend() retorna false → no llama al modelo y retorna low", async () => {
     // Arrange
-    mockCanSpend.mockReturnValue(false);
+    mockCanSpend.mockResolvedValue(false);
 
     // Act
     const result = await extractYapePayment(VALID_IMAGE_URL);
@@ -222,7 +222,7 @@ describe("extractYapePayment", () => {
 
   it("cost guard: si canSpend() retorna true → llama al modelo y registra gasto", async () => {
     // Arrange
-    mockCanSpend.mockReturnValue(true);
+    mockCanSpend.mockResolvedValue(true);
     const yapeJson = JSON.stringify({ monto: 5.0, codigoOperacion: "100200", confianza: "medium" });
     mockGenerateText.mockResolvedValue(makeGenerateTextResponse(yapeJson));
 
@@ -283,7 +283,7 @@ describe("extractYapePayment", () => {
 describe("helpers de parseo (via extractYapePayment)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCanSpend.mockReturnValue(true);
+    mockCanSpend.mockResolvedValue(true);
   });
 
   it("toNumber: monto como string con símbolo 'S/ 12.50' → 12.5", async () => {

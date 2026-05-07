@@ -452,10 +452,11 @@ export function applyRateLimit(
     return null;
   }
 
-  // Preset string path — skip enforcement outside production
-  if (process.env.NODE_ENV !== "production") return null;
+  // F5+F6: enforzar RL en TODOS los entornos (staging detecta abuse pre-prod).
+  // tenantId se acepta como 4to parametro opcional para no depender del header
+  // falsificable x-tenant-id. Los callers con auth verificada pasan tenantId directo.
   const { maxReqs, windowSec } = RateLimitPresets[limiterOrPreset];
-  const tenantId = req.headers.get("x-tenant-id") ?? "global";
+  const tenantId = (keyPrefix !== "api" ? keyPrefix.split(":")[0] : null) ?? req.headers.get("x-tenant-id") ?? "global";
   const result = rateLimit(`${keyPrefix}:${tenantId}:${ip}`, maxReqs, windowSec);
 
   if (!result.allowed) {

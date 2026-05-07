@@ -63,9 +63,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (rl) return rl as unknown as NextResponse;
 
   // Validar firma HMAC interna: solo el webhook whatsapp propio puede llamar
-  // este endpoint. Header X-Internal-Signature = HMAC-SHA256(body, CRON_SECRET).
+  // este endpoint. Header X-Internal-Signature = HMAC-SHA256(body, INTERNAL_WEBHOOK_SECRET).
+  // F7: usar INTERNAL_WEBHOOK_SECRET separado; fallback a CRON_SECRET con warning.
   const rawBody = await req.text();
-  const internalSecret = process.env.CRON_SECRET;
+  const internalSecret =
+    process.env.INTERNAL_WEBHOOK_SECRET ||
+    (() => {
+      if (process.env.CRON_SECRET) {
+        logger.warn(
+          "[whatsapp/voice] INTERNAL_WEBHOOK_SECRET no definido — usando CRON_SECRET como fallback. " +
+          "Configura INTERNAL_WEBHOOK_SECRET para separar secrets por responsabilidad.",
+        );
+      }
+      return process.env.CRON_SECRET;
+    })();
   if (internalSecret) {
     const signature = req.headers.get("x-internal-signature") ?? "";
     const expected = createHmac("sha256", internalSecret)
@@ -108,7 +119,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 1. Transcripción ─────────────────────────────────────────────────────────
   // F1 AI-COST: Whisper ~$0.006/min → cap por tenant antes de llamar
   const VOICE_COST_USD = 0.01;
-  if (!aiCostGuard.canSpend(tenantId, VOICE_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(tenantId, VOICE_COST_USD, "free")) {
     return NextResponse.json(
       { error: "Cuota mensual de transcripción de audio agotada" },
       { status: 429 },
@@ -149,7 +160,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 2. Extracción de intent + items ──────────────────────────────────────────
   // F1 AI-COST: LLM extracción ~$0.005 → guard antes de llamar
   const LLM_COST_USD = 0.005;
-  if (!aiCostGuard.canSpend(tenantId, LLM_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(tenantId, LLM_COST_USD, "free")) {
     return NextResponse.json(
       { error: "Cuota mensual de análisis de pedido agotada" },
       { status: 429 },

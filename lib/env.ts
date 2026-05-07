@@ -113,6 +113,11 @@ const REQUIRED: EnvSpec[] = [
 //                             while keeping the email path intact (Roadmap #5
 //                             gradual rollout).
 //
+// Webhooks internos:
+//   INTERNAL_WEBHOOK_SECRET — HMAC-SHA256 secret para webhooks internos (whatsapp/voice, etc.)
+//                             Si no se define, fallback a CRON_SECRET con WARNING en log.
+//                             Genera con: openssl rand -hex 32
+//
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
 //

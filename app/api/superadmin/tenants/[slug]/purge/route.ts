@@ -5,6 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateAll } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const PurgeSchema = z.object({
+  confirm: z
+    .string()
+    .regex(/^PURGE-[a-z0-9-]+$/, "Formato confirm inválido. Usa 'PURGE-<slug>'"),
+  reason: z.string().min(10).max(500),
+});
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -70,6 +78,29 @@ export async function DELETE(
   }
 
   const { slug } = await params;
+
+  // F1: Double-step confirmation — evita borrado accidental de tienda
+  const body = await req.json().catch((err) => { logger.warn("[purge] op failed", { err: String(err) }); return null; });
+  const parsed = PurgeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Confirmacion requerida",
+        details: parsed.error.flatten(),
+        hint: `Envia { confirm: 'PURGE-${slug}', reason: '<motivo minimo 10 chars>' }`,
+      },
+      { status: 400 },
+    );
+  }
+  if (parsed.data.confirm !== `PURGE-${slug}`) {
+    return NextResponse.json(
+      {
+        error: `Para confirmar, envia 'PURGE-${slug}' como \`confirm\``,
+      },
+      { status: 400 },
+    );
+  }
+  const purgeReason = parsed.data.reason;
 
   try {
     const tenant = await prisma.tenant.findUnique({
@@ -153,7 +184,26 @@ export async function DELETE(
       username: session.username,
       tenant: slug,
       deletedRows: deletedCount,
+      reason: purgeReason,
     });
+
+    // Audit Ley 29733 — loguear reason en audit trail
+    try {
+      const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
+      logSuperadminAction(
+        "tenant_purge",
+        `Purga de tienda '${slug}' por ${session.username} — ${deletedCount} registros borrados. Razon: ${purgeReason}`,
+        {
+          tenant: slug,
+          deletedRows: deletedCount,
+          reason: purgeReason,
+          ip: req.headers.get("x-forwarded-for") ?? null,
+          userAgent: req.headers.get("user-agent") ?? null,
+          timestamp: new Date().toISOString(),
+        },
+        session.username,
+      ).catch((err) => logger.warn("[superadmin] tenant purge audit failed", { err: String(err) }));
+    } catch { /* audit logger no disponible */ }
 
     return NextResponse.json({
       deletedRows: deletedCount,
