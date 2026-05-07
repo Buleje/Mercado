@@ -16,6 +16,22 @@ const CreateFiadoSchema = z.object({
   fechaVence: z.string().datetime().optional(),
 });
 
+// FIX 2026-05-07 (P0 #3): el frontend pasaba `status=pagado` lowercase y
+// Prisma rechazaba con "Expected FiadoStatus" → endpoint loggeaba 2 errores
+// y devolvía `[]` aparentando OK. Normalizamos a uppercase y validamos
+// contra el enum real para fallar rápido con 400 si llega algo inesperado.
+const FiadoStatusSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.toUpperCase())
+  .pipe(z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]));
+
+const ListFiadosSchema = z.object({
+  status: FiadoStatusSchema.optional(),
+  customerId: z.string().min(1).max(100).optional(),
+  search: z.string().max(200).optional(),
+});
+
 /** Resolve a customer by phone (exact) or name (partial match). Returns phone (PK). */
 async function resolveCustomerId(tenantId: string, input: string): Promise<string | null> {
   // SECURITY 2026-05-07 (X4): Customer.phone es @unique global → siempre con
@@ -41,9 +57,18 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status") ?? undefined;
-    const customerId = searchParams.get("customerId") ?? undefined;
-    const search = searchParams.get("search") ?? undefined;
+    const parsed = ListFiadosSchema.safeParse({
+      status: searchParams.get("status") ?? undefined,
+      customerId: searchParams.get("customerId") ?? undefined,
+      search: searchParams.get("search") ?? undefined,
+    });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Parámetros inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 },
+      );
+    }
+    const { status, customerId, search } = parsed.data;
 
     let fiados: any[] = [];
     try {
