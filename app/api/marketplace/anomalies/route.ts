@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   // ADR-019 (2026-04-09).
   await connection();
   try {
-    const auth = await requireAdmin(req, ["admin", "almacenero", "tienda_owner"]);
+    const auth = await requireAdmin(req, ["admin", "owner", "tienda_owner", "manager"]);
     if (auth instanceof NextResponse) return auth;
     const url = new URL(req.url);
     const queryParams = {

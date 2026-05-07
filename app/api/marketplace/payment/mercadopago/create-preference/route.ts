@@ -52,6 +52,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     }
 
+    // F7: verificar que el customerPhone del payload coincida con el de la orden
+    // Previene hijack: atacante con orderId ajeno + su propio phone no puede pagar.
+    // `order.customer.phone` puede incluir prefijo "51" — normalizar solo últimos 9 dígitos.
+    const orderPhone = (order.customer.phone ?? "").replace(/\D/g, "").slice(-9);
+    const payloadPhone = customerPhone.replace(/\D/g, "").slice(-9);
+    if (!orderPhone || orderPhone !== payloadPhone) {
+      logger.warn("[mp-preference] customerPhone mismatch", {
+        orderId,
+        providedPhone: `***${customerPhone.slice(-4)}`,
+      });
+      return NextResponse.json({ error: "Datos de orden no coinciden" }, { status: 403 });
+    }
+
     // Use DB-verified items and total (never client-sent values)
     const dbItems = order.items.map((item, idx) => ({
       id: `item-${idx}`,

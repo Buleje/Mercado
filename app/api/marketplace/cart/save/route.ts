@@ -26,6 +26,7 @@ const SaveCartSchema = z.object({
  * Called when user fills checkout form with name + phone.
  */
 export async function POST(req: NextRequest) {
+  // F3: rate limit por IP (MODERATE) como primera capa
   const limited = applyRateLimit(req, "MODERATE", "marketplace-cart-save");
   if (limited) return limited;
 
@@ -39,6 +40,12 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    // F3: rate limit adicional por sufijo de phone para bloquear saturación
+    // de abandoned carts ajenos desde una misma IP con phones distintos.
+    const phoneSuffix = parsed.data.customerPhone.slice(-4);
+    const phoneLimited = applyRateLimit(req, "STRICT", `cart-save-${phoneSuffix}`);
+    if (phoneLimited) return phoneLimited;
 
     await MarketplaceAbandonedCartsDB.save(parsed.data);
 

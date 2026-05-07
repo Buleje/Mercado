@@ -8,6 +8,7 @@ import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { isAllowedImageUrl } from "@/lib/url-allowlist";
 
 /**
  * @prisma-direct excepción documentada — el endpoint POST hace `review.create`
@@ -22,8 +23,14 @@ const createReviewSchema = z.object({
   reviewerName: z.string().min(1).max(100),
   rating: z.number().int().min(1).max(5),
   comment: z.string().min(1).max(1000),
-  customerPhone: z.string().max(20).optional(),
-  imageUrls: z.array(z.string().url()).max(3).optional(),
+  customerPhone: z.string().min(6).max(20),
+  orderId: z.string().min(1),
+  imageUrls: z
+    .array(
+      z.string().url().refine(isAllowedImageUrl, "URL de imagen no permitida (allowlist)"),
+    )
+    .max(3)
+    .default([]),
 });
 
 // ── GET /api/marketplace/stores/[slug]/reviews — listar reseñas (público) ───
@@ -109,20 +116,35 @@ export async function POST(
       );
     }
 
-    const { reviewerName, rating, comment, customerPhone, imageUrls = [] } = parsed.data;
+    const { reviewerName, rating, comment, customerPhone, orderId, imageUrls } = parsed.data;
 
-    // Una reseña por teléfono por tienda (si se proporciona phone)
-    if (customerPhone) {
-      const existing = await prisma.review.findFirst({
-        where: { storeId: store.id, phone: customerPhone, deletedAt: null },
-        select: { id: true },
-      });
-      if (existing) {
-        return NextResponse.json(
-          { error: "Ya has dejado una reseña para esta tienda" },
-          { status: 409 },
-        );
-      }
+    // F1-a: verificar que la orden exista, pertenezca al cliente y esté entregada
+    const verifiedOrder = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        customerPhone,
+        status: { in: ["entregado", "confirmado"] },
+        tenantId: store.tenantId,
+      },
+      select: { id: true },
+    });
+    if (!verifiedOrder) {
+      return NextResponse.json(
+        { error: "Solo clientes con compra entregada pueden reseñar" },
+        { status: 403 },
+      );
+    }
+
+    // F1-b: evitar múltiples reviews por la misma compra
+    const existingByOrder = await prisma.review.findFirst({
+      where: { orderId, phone: customerPhone, tenantId: store.tenantId, deletedAt: null },
+      select: { id: true },
+    });
+    if (existingByOrder) {
+      return NextResponse.json(
+        { error: "Ya reseñaste esta compra" },
+        { status: 409 },
+      );
     }
 
     // Crear la reseña
@@ -132,7 +154,8 @@ export async function POST(
         name: reviewerName,
         text: comment,
         rating,
-        phone: customerPhone ?? null,
+        phone: customerPhone,
+        orderId,
         storeId: store.id,
         tenantId: store.tenantId,
         status: "approved",

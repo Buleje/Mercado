@@ -7,9 +7,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { ProductQADB } from "@/lib/db/product-qa.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+
+export const dynamic = "force-dynamic";
 
 const QuestionBody = z.object({
   userName: z.string().min(1).max(80),
@@ -75,7 +78,7 @@ export async function POST(
     const question = await ProductQADB.createQuestion({
       tenantId: "global",
       productId,
-      userId: `u_${Date.now()}`,
+      userId: `u_${randomUUID()}`,
       userName: parsed.data.userName,
       question: parsed.data.question,
     });
