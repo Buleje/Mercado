@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
     }
     const validated = parsed.data;
 
-    const page = await createPage(validated);
+    // F1: pasar auth.tenantId para aislamiento multi-tenant
+    const page = await createPage(validated, auth.tenantId);
 
     return NextResponse.json(page, { status: 201 });
   } catch (error) {

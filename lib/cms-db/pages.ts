@@ -44,10 +44,13 @@ export async function getPageById(id: string, tenantId: string, includeBlocks = 
   });
 }
 
-export async function createPage(data: PageInput) {
+// SECURITY 2026-05-07 (audit CMS F1): tenantId obligatorio en createPage.
+// Antes el campo no se inyectaba → cualquier admin podía crear páginas
+// sin aislamiento (o la query fallaba por constraint NOT NULL).
+export async function createPage(data: PageInput, tenantId: string) {
   return await prisma.page.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: data as any,
+    data: { ...(data as any), tenantId },
   });
 }
 
@@ -146,18 +149,34 @@ export async function createBlock(pageId: string, data: BlockInput) {
   });
 }
 
-export async function updateBlock(id: string, data: Partial<BlockInput>) {
-  return await prisma.pageBlock.update({
-    where: { id },
+// SECURITY 2026-05-07 (audit CMS F2): IDOR fix en updateBlock / deleteBlock.
+// Antes sólo filtraban por blockId → admin de tenant A podía mutar/borrar
+// un block de tenant B si conocía el UUID. Ahora se exige pageId + tenantId.
+export async function updateBlock(
+  pageId: string,
+  blockId: string,
+  data: Partial<BlockInput>,
+  tenantId: string
+) {
+  const result = await prisma.pageBlock.updateMany({
+    where: { id: blockId, pageId, page: { tenantId } },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: data as any,
   });
+  if (result.count === 0) return null;
+  return await prisma.pageBlock.findUnique({ where: { id: blockId } });
 }
 
-export async function deleteBlock(id: string) {
-  return await prisma.pageBlock.delete({
-    where: { id },
+export async function deleteBlock(
+  pageId: string,
+  blockId: string,
+  tenantId: string
+) {
+  const result = await prisma.pageBlock.deleteMany({
+    where: { id: blockId, pageId, page: { tenantId } },
   });
+  if (result.count === 0) return null;
+  return { deleted: true };
 }
 
 export async function reorderBlocks(pageId: string, blockOrders: { id: string; order: number }[]) {
@@ -216,13 +235,16 @@ export async function getPageVersions(pageId: string) {
   });
 }
 
-export async function restorePageVersion(versionId: string) {
-  const version = await prisma.pageVersion.findUnique({
-    where: { id: versionId },
+// SECURITY 2026-05-07 (audit CMS F3): tenantId obligatorio en restore.
+// Antes un admin podía restaurar versiones de páginas de otro tenant
+// si conocía el versionId (IDOR cross-tenant).
+export async function restorePageVersion(versionId: string, tenantId: string) {
+  const version = await prisma.pageVersion.findFirst({
+    where: { id: versionId, page: { tenantId } },
   });
 
   if (!version) {
-    throw new Error("Version not found");
+    throw new Error("Version no encontrada");
   }
 
   // Delete current blocks

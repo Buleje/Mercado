@@ -6,15 +6,17 @@
 
 import { z } from "zod";
 import { ArrowRight, Phone } from "@buleje/design-system/icons";
+import { isAllowedLink } from "@/lib/cms/url-validators";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const CTABlockSchema = z.object({
   layout: z.enum(["centered", "split", "gradient"]).default("centered"),
   title: z.string().default("¿Listo para hacer tu pedido?"),
   subtitle: z.string().default("Delivery rápido en tu zona. Paga con Yape o efectivo."),
+  // SECURITY 2026-05-07 (audit CMS F4): links validados contra allowlist.
   primaryCTA: z.object({
     text: z.string(),
-    link: z.string(),
+    link: z.string().refine(isAllowedLink, "Link inválido"),
     icon: z.enum(["arrow", "phone", "none"]).default("arrow"),
   }).default({
     text: "Ver Productos",
@@ -23,7 +25,7 @@ export const CTABlockSchema = z.object({
   }),
   secondaryCTA: z.object({
     text: z.string(),
-    link: z.string(),
+    link: z.string().refine(isAllowedLink, "Link inválido"),
     show: z.boolean(),
   }).default({
     text: "Contactar por WhatsApp",

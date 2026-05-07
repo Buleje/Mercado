@@ -89,11 +89,14 @@ export async function POST(
 // PUT /api/cms/pages/:id/blocks/:blockId - Update block
 // ═══════════════════════════════════════════════════════
 export async function PUT(
-  req: NextRequest
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+
+  const { id: pageId } = await params;
 
   try {
     const { searchParams } = new URL(req.url);
@@ -115,7 +118,11 @@ export async function PUT(
       );
     }
     const validated = parsed.data;
-    const block = await updateBlock(blockId, validated);
+    // F2: pasar pageId + tenantId para prevenir IDOR cross-tenant
+    const block = await updateBlock(pageId, blockId, validated, auth.tenantId);
+    if (!block) {
+      return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
+    }
 
     return NextResponse.json(block);
   } catch (error) {
@@ -131,11 +138,14 @@ export async function PUT(
 // DELETE /api/cms/pages/:id/blocks/:blockId - Delete block
 // ═══════════════════════════════════════════════════════
 export async function DELETE(
-  req: NextRequest
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+
+  const { id: pageId } = await params;
 
   try {
     const { searchParams } = new URL(req.url);
@@ -148,7 +158,11 @@ export async function DELETE(
       );
     }
 
-    await deleteBlock(blockId);
+    // F2: pasar pageId + tenantId para prevenir IDOR cross-tenant
+    const result = await deleteBlock(pageId, blockId, auth.tenantId);
+    if (!result) {
+      return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error("[cms/blocks] DELETE error", { err: error instanceof Error ? error.message : String(error) });

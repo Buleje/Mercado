@@ -7,6 +7,7 @@
 import { z } from "zod";
 import Link from "next/link";
 import { ShoppingCart, ArrowRight, Truck, Star } from "@buleje/design-system/icons";
+import { isAllowedImageUrl, isAllowedLink } from "@/lib/cms/url-validators";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const HeroBlockSchema = z.object({
@@ -14,16 +15,17 @@ export const HeroBlockSchema = z.object({
   subtitle: z.string().default("Productos frescos, precios justos"),
   description: z.string().optional(),
   ctaText: z.string().default("Ver productos"),
-  ctaLink: z.string().default("/productos"),
+  ctaLink: z.string().refine(isAllowedLink, "Link inválido").default("/productos"),
   secondaryCTAText: z.string().optional().default("Hacer pedido"),
-  secondaryCTALink: z.string().optional(),
+  secondaryCTALink: z.string().refine(isAllowedLink, "Link inválido").optional(),
   showBadge: z.boolean().default(true),
   badgeText: z.string().default("🚚 Envío gratis desde S/ 50"),
   showStats: z.boolean().default(true),
   backgroundColor: z.string().default("#312e81"),
   textColor: z.string().default("#ffffff"),
   accentColor: z.string().default("#3b82f6"),
-  backgroundImage: z.string().url().optional(),
+  // SECURITY 2026-05-07 (audit CMS F4): allowlist SSRF — solo HTTPS + hostnames aprobados.
+  backgroundImage: z.string().url().refine(isAllowedImageUrl, "URL de imagen no permitida").optional(),
   showAnimations: z.boolean().default(true),
 });
 

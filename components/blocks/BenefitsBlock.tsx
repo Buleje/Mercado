@@ -7,6 +7,7 @@
 import { z } from "zod";
 import Link from "next/link";
 import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "@buleje/design-system/icons";
+import { isAllowedLink } from "@/lib/cms/url-validators";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const BenefitsBlockSchema = z.object({
@@ -46,7 +47,8 @@ export const BenefitsBlockSchema = z.object({
   ]),
   showCTA: z.boolean().default(true),
   ctaText: z.string().default("Empieza a comprar ahora"),
-  ctaLink: z.string().default("/tienda"),
+  // SECURITY 2026-05-07 (audit CMS F4): link validado contra allowlist XSS.
+  ctaLink: z.string().refine(isAllowedLink, "Link inválido").default("/tienda"),
 });
 
 export type BenefitsBlockProps = z.infer<typeof BenefitsBlockSchema>;
