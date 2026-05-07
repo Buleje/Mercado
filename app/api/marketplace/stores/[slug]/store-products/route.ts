@@ -7,13 +7,15 @@ import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import type { SessionPayload } from "@/lib/session";
 
-// Verifica que el usuario sea admin o dueño de la tienda específica.
-// Retorna NextResponse 403 si no tiene permiso, null si está autorizado.
+// Verifica que el usuario sea dueño de la tienda específica.
+// SECURITY 2026-05-07 (audit M4): SIEMPRE comparar tenantId. Antes el bypass
+// `auth.role === "admin"` permitía a un admin de tenant A mutar productos de
+// tienda de tenant B (cross-tenant write masivo).
 function assertStoreOwner(
   auth: Pick<SessionPayload, "role" | "tenantId">,
   store: { tenantId: string },
 ): NextResponse | null {
-  if (auth.role !== "admin" && store.tenantId !== auth.tenantId) {
+  if (store.tenantId !== auth.tenantId) {
     return NextResponse.json(
       { error: "No tienes permiso para modificar esta tienda" },
       { status: 403 },

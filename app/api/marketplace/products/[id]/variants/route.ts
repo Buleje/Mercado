@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductVariantsDB } from "@/lib/db/product-variants.db";
+import { ProductsDB } from "@/lib/db/products.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
@@ -69,6 +70,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const parsed = PostSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    // SECURITY 2026-05-07 (audit M3): verificar que productId pertenezca al tenant del admin.
+    // Antes admin de tenant A podía crear variantes en producto de tenant B.
+    const product = await ProductsDB.getById(auth.tenantId, productId);
+    if (!product) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
     const variant = await ProductVariantsDB.create(auth.tenantId, {

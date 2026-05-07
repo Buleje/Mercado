@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -40,6 +42,15 @@ export async function POST(
   if (!tenant.ownerEmail) {
     return NextResponse.json({ error: "Este tenant no tiene email de dueño registrado" }, { status: 400 });
   }
+
+  // SECURITY 2026-05-07 (audit Ley 29733 Art. 16): registrar reset de credenciales
+  // del tenant para trazabilidad legal de operaciones sensibles.
+  logSuperadminAction(
+    "reset_password",
+    `Reset de password solicitado para tenant ${slug} (${tenant.name})`,
+    { tenantSlug: slug, tenantName: tenant.name, ownerEmail: tenant.ownerEmail },
+    session.username,
+  ).catch((err) => logger.warn("[SuperAdmin] reset-password audit log failed", { error: String(err) }));
 
   // Las contraseñas están hasheadas con bcrypt — no se pueden revertir.
   // El flujo estándar es enviar correo de reset al ownerEmail.

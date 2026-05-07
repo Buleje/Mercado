@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -154,6 +155,15 @@ export async function DELETE(
       slug,
       tenantName: tenant.name,
     });
+
+    // SECURITY 2026-05-07 (audit Ley 29733 Art. 16): registrar en ActivityLog
+    // toda eliminación de tenant para trazabilidad legal.
+    logSuperadminAction(
+      "tenant_delete",
+      `Tenant ${slug} (${tenant.name}) eliminado permanentemente`,
+      { tenantSlug: slug, tenantName: tenant.name, deletedRows: deletedCount },
+      session.username,
+    ).catch((err) => logger.warn("[SuperAdmin] audit log failed", { error: String(err) }));
 
     return NextResponse.json({
       deleted: slug,
