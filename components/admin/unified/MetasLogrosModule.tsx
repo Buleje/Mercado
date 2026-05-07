@@ -62,6 +62,10 @@ interface AchCtx {
   collectedFiados: number;
   goalsAchievedThisMonth: number;
   earlyOpens: number;
+  // FIX 2026-05-07: nuevos campos calculados desde APIs reales para que los
+  // achievements de "caja perfecta" y "cliente feliz" dejen de estar en 0.
+  perfectClosures: number;     // arqueos con difference=0 (consecutivos top-3)
+  fiveStarReviews: number;     // reviews con rating=5
 }
 
 // ─── Constantes de logros ─────────────────────────────────────────────────────
@@ -92,11 +96,11 @@ const ACHIEVEMENTS_DEF: AchievementDef[] = [
   { id: "vendedor-estrella", Icon: Star,        name: "Vendedor Estrella", desc: "Cumplir meta diaria 5 veces seguidas",  category: "rachas",   threshold: 5,    unit: "días",
     computeProgress: (c) => ({ current: Math.min(c.streak, 5), target: 5 }) },
   { id: "caja-perfecta",     Icon: Landmark,    name: "Caja Perfecta",     desc: "Arqueo sin diferencias 3x seguidas",    category: "operacion",threshold: 3,    unit: "veces",
-    computeProgress: () => ({ current: 0, target: 3 }) },
+    computeProgress: (c) => ({ current: c.perfectClosures, target: 3 }) },
   { id: "madrugador",        Icon: Sunrise,     name: "Madrugador",        desc: "Abrir caja antes de las 7 AM",          category: "operacion",threshold: 1,    unit: "veces",
     computeProgress: (c) => ({ current: c.earlyOpens, target: 1 }) },
   { id: "cliente-feliz",     Icon: Smile,       name: "Cliente Feliz",     desc: "Recibir 5 reseñas de 5 estrellas",      category: "clientes", threshold: 5,    unit: "reseñas",
-    computeProgress: () => ({ current: 0, target: 5 }) },
+    computeProgress: (c) => ({ current: c.fiveStarReviews, target: 5 }) },
   { id: "meta-cumplida",     Icon: Trophy,      name: "Meta Cumplida",     desc: "Alcanzar tu meta mensual",              category: "operacion",threshold: 1,    unit: "veces",
     computeProgress: (c) => ({ current: c.goalsAchievedThisMonth, target: 1 }) },
 ];
@@ -128,6 +132,18 @@ function isValidSale(s: unknown): s is SaleRecord & { total: number; createdAt: 
   return typeof o.total === "number"
     && Number.isFinite(o.total)
     && typeof o.createdAt === "string";
+}
+
+// FIX 2026-05-07 (Logros): tenant-scoped keys para evitar mezcla cross-tenant.
+function getAchievementsKey(): string {
+  if (typeof window === "undefined") return "achievements:main";
+  const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+  return `achievements:${m ? decodeURIComponent(m[1]) : "main"}`;
+}
+function getStreakKey(): string {
+  if (typeof window === "undefined") return "daily-streak:main";
+  const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+  return `daily-streak:${m ? decodeURIComponent(m[1]) : "main"}`;
 }
 
 // ─── Confetti ─────────────────────────────────────────────────────────────────
@@ -586,78 +602,164 @@ function LogrosTab() {
   const [ctx, setCtx]               = useState<AchCtx>({
     totalOrders: 0, totalCustomers: 0, todayTotal: 0, streak: 0,
     collectedFiados: 0, goalsAchievedThisMonth: 0, earlyOpens: 0,
+    perfectClosures: 0, fiveStarReviews: 0,
   });
+  const [error, setError]   = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [filter, setFilter]         = useState<AchFilter>("todos");
   const [activeCategory, setActiveCategory] = useState<AchievementCategory | "all">("all");
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
+  // FIX 2026-05-07 (Logros): leer achievements de la key tenant-scoped.
+  // Migración soft del valor viejo si existe.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(LS_ACHIEVEMENTS);
-      if (stored) setUnlocked(JSON.parse(stored) as Record<string, string>);
+      const tenantKey = getAchievementsKey();
+      const stored = localStorage.getItem(tenantKey) ?? localStorage.getItem(LS_ACHIEVEMENTS);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, string>;
+        setUnlocked(parsed);
+        if (!localStorage.getItem(tenantKey)) {
+          localStorage.setItem(tenantKey, stored);
+          localStorage.removeItem(LS_ACHIEVEMENTS);
+        }
+      }
     } catch { /* ignore */ }
   }, []);
 
-  // Cargar contexto de progreso (dashboard + goals + sales)
-  useEffect(() => {
-    void (async () => {
-      try {
-        const [dashRes, goalsRes, salesRes] = await Promise.all([
-          fetch("/api/admin/dashboard", { credentials: "include" }),
-          fetch("/api/goals", { credentials: "include" }),
-          fetch("/api/sales?limit=200", { credentials: "include" }),
-        ]);
+  // FIX 2026-05-07 (Logros): cargar contexto desde APIs reales — antes
+  // collectedFiados/perfectClosures/fiveStarReviews estaban hardcoded en 0.
+  // Ahora se calculan desde /api/fiados, /api/cash-registers, /api/reviews.
+  const fetchCtx = useCallback(async () => {
+    fetchAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    fetchAbortRef.current = ctrl;
+    try {
+      const opts: RequestInit = { credentials: "include", cache: "no-store", signal: ctrl.signal };
+      const [dashRes, goalsRes, salesRes, fiadosRes, cashRes, reviewsRes] = await Promise.all([
+        fetch("/api/admin/dashboard", opts).catch(() => null),
+        fetch("/api/goals", opts).catch(() => null),
+        fetch("/api/sales?limit=200", opts).catch(() => null),
+        fetch("/api/fiados?status=pagado", opts).catch(() => null),
+        fetch("/api/cash-registers", opts).catch(() => null),
+        fetch("/api/reviews?limit=100", opts).catch(() => null),
+      ]);
 
-        const dash = dashRes.ok ? await dashRes.json() as { totalOrders?: number; totalCustomers?: number; totalSalesToday?: number } : {};
-        const goals = goalsRes.ok ? await goalsRes.json() as Array<{ target: number; current: number; period?: string }> : [];
-        const sales = salesRes.ok ? await salesRes.json() as SaleRecord[] : [];
+      if (ctrl.signal.aborted) return;
 
-        const today = new Date().toDateString();
-        const todayTotal = (Array.isArray(sales) ? sales : [])
-          .filter((s) => s.createdAt && new Date(s.createdAt).toDateString() === today)
-          .reduce((a, s) => a + Number(s.total ?? 0), 0);
+      const dash    = dashRes?.ok    ? await dashRes.json()    as { totalOrders?: number; totalCustomers?: number } : {};
+      const goals   = goalsRes?.ok   ? await goalsRes.json()   as Array<{ target: number; current: number; period?: string }> : [];
+      const salesR  = salesRes?.ok   ? await salesRes.json()   as unknown : [];
+      const fiados  = fiadosRes?.ok  ? await fiadosRes.json()  as Array<{ amountPaid?: number; status?: string }> : [];
+      const cashR   = cashRes?.ok    ? await cashRes.json()    as Array<{ openedAt?: string; closedAt?: string; difference?: number }> : [];
+      const reviews = reviewsRes?.ok ? await reviewsRes.json() as Array<{ rating?: number; status?: string }> : [];
 
-        const goalsAchievedThisMonth = goals.filter(g => g.period === "mensual" && g.current >= g.target).length;
+      const sales = (Array.isArray(salesR) ? salesR : []).filter(isValidSale) as SaleRecord[];
 
-        const streak = Number(localStorage.getItem(LS_STREAK) ?? 0);
-        const earlyOpens = Number(localStorage.getItem("early-opens") ?? 0);
+      const today = new Date().toDateString();
+      const todayTotal = sales
+        .filter((s) => s.createdAt && new Date(s.createdAt).toDateString() === today)
+        .reduce((a, s) => a + Number(s.total ?? 0), 0);
 
-        const newCtx: AchCtx = {
-          totalOrders: dash.totalOrders ?? 0,
-          totalCustomers: dash.totalCustomers ?? 0,
-          todayTotal,
-          streak,
-          collectedFiados: 0,
-          goalsAchievedThisMonth,
-          earlyOpens,
-        };
-        setCtx(newCtx);
+      const goalsAchievedThisMonth = goals.filter(g => g.period === "mensual" && g.current >= g.target).length;
 
-        // Detectar nuevos desbloqueos
-        const current = (() => {
-          try { return JSON.parse(localStorage.getItem(LS_ACHIEVEMENTS) ?? "{}") as Record<string, string>; }
-          catch { return {}; }
-        })();
-        const now = new Date().toLocaleDateString("es-PE");
-        let changed = false;
-        const next = { ...current };
+      // FIX: collectedFiados desde /api/fiados con status=pagado.
+      const collectedFiados = (Array.isArray(fiados) ? fiados : [])
+        .reduce((a, f) => a + Number(f.amountPaid ?? 0), 0);
 
-        for (const a of ACHIEVEMENTS_DEF) {
-          const p = a.computeProgress?.(newCtx);
-          if (p && p.current >= p.target && !next[a.id]) {
-            next[a.id] = now;
-            changed = true;
-          }
+      // FIX: perfectClosures = cash registers cerradas con difference=0
+      // contadas como racha consecutiva top-3.
+      const cashList = Array.isArray(cashR) ? cashR : [];
+      const closedSorted = cashList
+        .filter((r) => r.closedAt && typeof r.difference === "number")
+        .sort((a, b) => new Date(b.closedAt!).getTime() - new Date(a.closedAt!).getTime());
+      let perfectClosures = 0;
+      for (const r of closedSorted) {
+        if (Math.abs(Number(r.difference ?? 0)) < 0.01) perfectClosures += 1;
+        else break; // racha consecutiva — primera diferencia rompe la cuenta
+        if (perfectClosures >= 3) break;
+      }
+
+      // FIX: fiveStarReviews = reviews con rating=5 (aprobadas o todas).
+      const fiveStarReviews = (Array.isArray(reviews) ? reviews : [])
+        .filter((r) => Number(r.rating) === 5).length;
+
+      // FIX: earlyOpens = cash-registers abiertas antes de las 7am del tenant.
+      const earlyOpens = cashList.filter((r) => {
+        if (!r.openedAt) return false;
+        const h = new Date(r.openedAt).getHours();
+        return h < 7;
+      }).length;
+
+      const streakRaw = Number(localStorage.getItem(getStreakKey()) ?? localStorage.getItem(LS_STREAK) ?? 0);
+      const streak = Number.isFinite(streakRaw) ? streakRaw : 0;
+
+      const newCtx: AchCtx = {
+        totalOrders: Number(dash.totalOrders) || 0,
+        totalCustomers: Number(dash.totalCustomers) || 0,
+        todayTotal,
+        streak,
+        collectedFiados,
+        goalsAchievedThisMonth,
+        earlyOpens,
+        perfectClosures,
+        fiveStarReviews,
+      };
+      setCtx(newCtx);
+      setLastUpdated(new Date());
+      setError(null);
+
+      // Detectar nuevos desbloqueos (escritos en la key tenant-scoped)
+      const tenantKey = getAchievementsKey();
+      const current = (() => {
+        try { return JSON.parse(localStorage.getItem(tenantKey) ?? "{}") as Record<string, string>; }
+        catch { return {}; }
+      })();
+      const now = new Date().toLocaleDateString("es-PE");
+      let changed = false;
+      const next = { ...current };
+
+      for (const a of ACHIEVEMENTS_DEF) {
+        const p = a.computeProgress?.(newCtx);
+        if (p && p.current >= p.target && !next[a.id]) {
+          next[a.id] = now;
+          changed = true;
         }
+      }
 
-        if (changed) {
-          localStorage.setItem(LS_ACHIEVEMENTS, JSON.stringify(next));
-          setUnlocked(next);
-          setConfetti(true);
-          setTimeout(() => setConfetti(false), 3500);
-        }
-      } catch { /* silent */ }
-    })();
+      if (changed) {
+        localStorage.setItem(tenantKey, JSON.stringify(next));
+        setUnlocked(next);
+        setConfetti(true);
+        setTimeout(() => setConfetti(false), 3500);
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      setError(e instanceof Error ? e.message : "Error al cargar logros");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Polling con visibility-pause (mismo patrón que daily/semana-mes)
+  useEffect(() => {
+    void fetchCtx();
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!interval) interval = setInterval(() => void fetchCtx(), REFRESH_INTERVAL_MS); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    if (typeof document !== "undefined" && document.visibilityState === "visible") start();
+    const onVis = () => {
+      if (document.visibilityState === "visible") { void fetchCtx(); start(); }
+      else stop();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+      fetchAbortRef.current?.abort();
+    };
+  }, [fetchCtx]);
 
   // Próximo logro: el más cerca de desbloquearse (menor pct restante)
   const nextAchievement = useMemo(() => {
@@ -691,6 +793,26 @@ function LogrosTab() {
 
   return (
     <div className="space-y-6">
+      {/* Header de estado: error + last updated + refresh manual */}
+      <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
+        {error && <span className="text-[var(--data-error-500)] font-semibold">⚠ {error}</span>}
+        {lastUpdated && !error && (
+          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => void fetchCtx()}
+          disabled={loading}
+          aria-label="Refrescar logros"
+          className={cn(
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            loading && "opacity-50 cursor-not-allowed",
+          )}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+        </button>
+      </div>
+
       {/* Resumen + barra global */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
@@ -703,7 +825,7 @@ function LogrosTab() {
           </p>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
             <div
               className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
               style={{ width: `${(totalUnlocked / ACHIEVEMENTS_DEF.length) * 100}%` }}
