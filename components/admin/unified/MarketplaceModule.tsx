@@ -2442,32 +2442,34 @@ function CommissionKpiCard({
   };
   const p = palette[tone];
   return (
-    <div className={cn("rounded-xl p-4 border border-[var(--rule-base)]", p.ring)}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-bold text-[var(--text-secondary)]">{label}</p>
-          <p className={cn("text-2xl font-extrabold mt-1", p.text)}>{fmtMoney(total)}</p>
-        </div>
-        <span className="h-8 w-8 rounded-lg bg-white/60 flex items-center justify-center shrink-0">
-          <Icon className="h-4 w-4" />
+    <div className={cn("rounded-xl p-5 border border-[var(--rule-base)]", p.ring)}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <span className="h-11 w-11 rounded-xl bg-white/60 flex items-center justify-center shrink-0">
+          <Icon className={cn("h-5 w-5", p.text)} />
         </span>
-      </div>
-      <div className="flex items-center gap-2 mt-2 text-xs">
-        <span className="text-[var(--text-secondary)]">Mes actual: <strong>{fmtMoney(monthCurr)}</strong></span>
         <span
           className={cn(
-            "px-1.5 py-0.5 rounded-full font-bold text-[length:var(--ts-2xs)]",
+            "px-2 py-1 rounded-lg font-extrabold text-xs whitespace-nowrap",
             delta.tone === "up"
               ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
               : delta.tone === "down"
               ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-              : "bg-gray-100 text-[var(--text-secondary)]",
+              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-soft)]",
           )}
           title={`vs mes anterior (${fmtMoney(monthPrev)})`}
         >
           {delta.label}
         </span>
       </div>
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {label}
+      </p>
+      <p className={cn("text-3xl font-extrabold tabular-nums leading-tight mt-2", p.text)}>
+        {fmtMoney(total)}
+      </p>
+      <p className="text-sm text-[var(--text-tertiary)] mt-1">
+        Mes actual: <strong className="text-[var(--text-primary)] tabular-nums">{fmtMoney(monthCurr)}</strong>
+      </p>
     </div>
   );
 }
@@ -2564,123 +2566,189 @@ function ComisionesTab() {
 
   if (loading) return <TableSkeleton />;
 
+  const liquidadoCount = entries.filter((e) => e.status === "liquidado").length;
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
+        <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-error-500)]/15 shrink-0">
+            <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
+          </span>
+          <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+          <button
+            type="button"
+            onClick={load}
+            className="text-sm font-bold text-[var(--data-error-500)] underline hover:no-underline"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 
-      {/* C1: KPI cards con delta vs mes anterior */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <CommissionKpiCard
-          label="Por pagar (pendiente)"
-          total={summary.pendiente}
-          monthCurr={sumCommissionsInMonth(entries, "pendiente", 0)}
-          monthPrev={sumCommissionsInMonth(entries, "pendiente", -1)}
-          tone="warning"
-          icon={Clock}
-        />
-        <CommissionKpiCard
-          label="Liquidado (por cobrar)"
-          total={summary.liquidado}
-          monthCurr={sumCommissionsInMonth(entries, "liquidado", 0)}
-          monthPrev={sumCommissionsInMonth(entries, "liquidado", -1)}
-          tone="info"
-          icon={DollarSign}
-        />
-        <CommissionKpiCard
-          label="Pagado (cobrado)"
-          total={summary.pagado}
-          monthCurr={sumCommissionsInMonth(entries, "pagado", 0)}
-          monthPrev={sumCommissionsInMonth(entries, "pagado", -1)}
-          tone="success"
-          icon={CheckCircle}
-        />
+      {/* ── 1. Hero card con KPIs ───────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <DollarSign className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Comisiones del marketplace
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {entries.length === 0
+                  ? "Aún no hay comisiones registradas. Aparecerán cuando se generen ventas."
+                  : "Tres estados: Pendiente (calculadas) → Liquidado (listas para cobrar) → Pagado (recibido)."}
+              </p>
+            </div>
+          </div>
+          {summary.liquidado > 0 && (
+            <button
+              type="button"
+              onClick={handleBulkPay}
+              disabled={markingPaid === "bulk"}
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            >
+              <DollarSign className="h-4 w-4" />
+              {markingPaid === "bulk"
+                ? "Procesando..."
+                : `Pagar liquidado (${fmtMoney(summary.liquidado)})`}
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <CommissionKpiCard
+            label="Por pagar (pendiente)"
+            total={summary.pendiente}
+            monthCurr={sumCommissionsInMonth(entries, "pendiente", 0)}
+            monthPrev={sumCommissionsInMonth(entries, "pendiente", -1)}
+            tone="warning"
+            icon={Clock}
+          />
+          <CommissionKpiCard
+            label="Liquidado (por cobrar)"
+            total={summary.liquidado}
+            monthCurr={sumCommissionsInMonth(entries, "liquidado", 0)}
+            monthPrev={sumCommissionsInMonth(entries, "liquidado", -1)}
+            tone="info"
+            icon={DollarSign}
+          />
+          <CommissionKpiCard
+            label="Pagado (cobrado)"
+            total={summary.pagado}
+            monthCurr={sumCommissionsInMonth(entries, "pagado", 0)}
+            monthPrev={sumCommissionsInMonth(entries, "pagado", -1)}
+            tone="success"
+            icon={CheckCircle}
+          />
+        </div>
       </div>
 
-      {/* C2: calendario de próximos pagos (lotes liquidados) */}
-      {entries.filter((e) => e.status === "liquidado").length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm">Próximos pagos</CardTitle>
-            <span className="text-xs text-[var(--text-secondary)]">
-              · estimado +7 días tras liquidación
+      {/* ── 2. Próximos pagos ──────────────────────────────────────── */}
+      {liquidadoCount > 0 && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start gap-3 mb-5">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Calendar className="h-5 w-5" />
             </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Próximos pagos
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                Estimado +7 días tras liquidación. Lotes ordenados por fecha de cobro.
+              </p>
+            </div>
           </div>
-          <ul className="divide-y divide-[var(--rule-base)]">
+          <ul className="divide-y divide-[var(--rule-soft)]">
             {entries
               .filter((e) => e.status === "liquidado")
               .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
               .slice(0, 5)
               .map((e) => {
                 const payDate = estimatePayoutDate(e.createdAt);
-                const daysLeft = Math.ceil((payDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.ceil(
+                  (payDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+                );
                 return (
-                  <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                        <Calendar className="h-4 w-4" />
+                  <li
+                    key={e.id}
+                    className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                        <Calendar className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-primary)]">
+                        <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                           {payDate.toLocaleDateString("es-PE", { day: "2-digit", month: "long" })}
                         </p>
-                        <p className="text-xs text-[var(--text-secondary)]">
+                        <p className="text-sm text-[var(--text-secondary)] mt-1">
                           {daysLeft <= 0
-                            ? "ya disponible para cobrar"
+                            ? "Ya disponible para cobrar"
                             : daysLeft === 1
-                            ? "en 1 día"
-                            : `en ${daysLeft} días`}
-                          {" · "}orden #{e.orderId.slice(-8).toUpperCase()}
+                              ? "En 1 día"
+                              : `En ${daysLeft} días`}
+                          {" · "}
+                          <span className="font-mono">#{e.orderId.slice(-8).toUpperCase()}</span>
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-extrabold text-[var(--data-success-500)] whitespace-nowrap">
+                    <span className="text-xl font-extrabold tabular-nums text-[var(--data-success-500)] whitespace-nowrap">
                       {fmtMoney(Number(e.amount))}
                     </span>
                   </li>
                 );
               })}
           </ul>
-          {entries.filter((e) => e.status === "liquidado").length > 5 && (
-            <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
-              +{entries.filter((e) => e.status === "liquidado").length - 5} lote(s) más adelante
+          {liquidadoCount > 5 && (
+            <p className="text-sm text-[var(--text-tertiary)] mt-4 text-center font-bold">
+              +{liquidadoCount - 5} lote{liquidadoCount - 5 === 1 ? "" : "s"} más adelante
             </p>
           )}
         </div>
       )}
 
-      {/* C6: toast de nuevos pagos */}
+      {/* ── 3. Toast de nuevos pagos ───────────────────────────────── */}
       {newlyPaid.length > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border border-[var(--data-success-500)]/40 bg-[var(--accent-soft)]">
-          <CheckCircle className="h-5 w-5 text-[var(--data-success-500)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-4 px-5 py-4 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--data-success-500)]/15 shrink-0">
+            <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+          </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-[var(--text-primary)]">
-              {newlyPaid.length === 1 ? "1 lote pagado nuevo" : `${newlyPaid.length} lotes pagados nuevos`}
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+              {newlyPaid.length === 1
+                ? "1 lote pagado nuevo"
+                : `${newlyPaid.length} lotes pagados nuevos`}
             </p>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Recibiste {fmtMoney(newlyPaid.reduce((s, e) => s + Number(e.amount), 0))} desde tu última visita.
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
+              Recibiste{" "}
+              <strong className="text-[var(--text-primary)] tabular-nums">
+                {fmtMoney(newlyPaid.reduce((s, e) => s + Number(e.amount), 0))}
+              </strong>{" "}
+              desde tu última visita.
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setNewlyPaid([])}
             aria-label="Ocultar aviso"
-            className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] shrink-0"
+            className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[var(--surface-raised)]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Filters + Bulk actions */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-secondary)]">Filtrar:</span>
+      {/* ── 4. Filtros ─────────────────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
+            Filtrar
+          </span>
           {[
             { value: "all", label: "Todos" },
             { value: "pendiente", label: "Pendiente" },
@@ -2689,85 +2757,92 @@ function ComisionesTab() {
           ].map((f) => (
             <button
               key={f.value}
+              type="button"
               onClick={() => setFilterStatus(f.value)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                "inline-flex items-center px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
                 filterStatus === f.value
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               {f.label}
             </button>
           ))}
         </div>
-        {summary.liquidado > 0 && (
-          <button
-            onClick={handleBulkPay}
-            disabled={markingPaid === "bulk"}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
-          >
-            <DollarSign className="h-3.5 w-3.5" />
-            {markingPaid === "bulk" ? "Procesando..." : `Pagar todo liquidado (S/${summary.liquidado.toFixed(2)})`}
-          </button>
-        )}
       </div>
 
+      {/* ── 5. Tabla / Empty state ─────────────────────────────────── */}
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)]">
-          <DollarSign className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <DollarSign className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            Las comisiones aparecen cuando se generan ventas en el marketplace.
+          </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+            <table className="w-full">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Total orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Comisión</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Fecha</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Acción</th>
+                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Orden</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total orden</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisión</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Fecha</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((e) => {
                   const sc = COMMISSION_STATUS_CONFIG[e.status] ?? COMMISSION_STATUS_CONFIG.pendiente;
                   const StatusIcon = sc.icon;
                   return (
-                    <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-mono text-xs font-bold text-[var(--text-primary)]">
+                    <tr key={e.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
+                      <td className="px-4 py-4">
+                        <p className="font-mono text-sm font-extrabold text-[var(--text-primary)]">
                           #{e.orderId.slice(-8).toUpperCase()}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">S/{e.orderTotal.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{e.amount.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
-                          <StatusIcon className="h-3 w-3" />
+                      <td className="px-4 py-4 text-right text-sm text-[var(--text-secondary)] tabular-nums">
+                        S/{e.orderTotal.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
+                        S/{e.amount.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold", sc.className)}>
+                          <StatusIcon className="h-3.5 w-3.5" />
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)]">
+                      <td className="px-4 py-4 text-right text-sm text-[var(--text-secondary)]">
                         {new Date(e.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-4 text-center">
                         {e.status === "liquidado" && (
                           <button
+                            type="button"
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--accent-soft)] text-[var(--data-success-500)] text-sm font-bold border border-[var(--data-success-500)]/30 hover:brightness-95 transition-colors disabled:opacity-50 min-w-28 justify-center"
                             title="Marcar como pagado"
                           >
-                            <CheckCircle className="h-3 w-3" />
+                            <CheckCircle className="h-4 w-4" />
                             {markingPaid === e.id ? "..." : "Pagar"}
                           </button>
                         )}
                         {e.status === "pagado" && (
-                          <span className="text-xs text-[var(--text-tertiary)]">Pagado</span>
+                          <span className="text-sm text-[var(--text-tertiary)] font-bold">Pagado</span>
+                        )}
+                        {e.status === "pendiente" && (
+                          <span className="text-sm text-[var(--text-tertiary)] font-bold">—</span>
                         )}
                       </td>
                     </tr>
