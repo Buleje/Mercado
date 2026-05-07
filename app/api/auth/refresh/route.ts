@@ -10,6 +10,7 @@ import {
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 
 /**
  * POST /api/auth/refresh
@@ -59,6 +60,29 @@ export async function POST(req: NextRequest) {
     // Marcar como consumido por TTL = remaining lifetime del refresh actual
     // (7 días max — Redis lo ignora cuando expire).
     cacheStore.set(blacklistKey, true, 7 * 24 * 60 * 60);
+  }
+
+  // F4 — SECURITY 2026-05-07: verificar usuario activo antes de rotar.
+  // Previene que cuentas desactivadas sigan renovando tokens indefinidamente.
+  // Usa AdminUsersDB (wrapper con tenantId + cache + audit) — no prisma directo.
+  try {
+    const activeUser = await AdminUsersDB.getByUsername(payload.tenantId, payload.username);
+    if (!activeUser || !activeUser.active) {
+      logger.warn("[auth/refresh] Refresh rejected — user inactive or deleted", {
+        username: payload.username,
+        tenantId: payload.tenantId,
+      });
+      const res = NextResponse.json({ error: "Usuario no activo" }, { status: 401 });
+      res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      return res;
+    }
+  } catch (dbErr) {
+    // Si la DB no está disponible, no bloquear — aceptar el token existente.
+    // El riesgo es aceptable: el jti blacklist ya protege contra replay.
+    logger.warn("[auth/refresh] DB check failed — proceeding with token rotation", {
+      error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+    });
   }
 
   // Issue new token pair (rotation — old refresh is now replaced)

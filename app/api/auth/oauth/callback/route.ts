@@ -32,6 +32,22 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 // Destino por defecto si no se envió `next` o si la ruta no es segura.
 const DEFAULT_NEXT = "/marketplace/explorar";
 
+// F3 — SECURITY 2026-05-07: mapear errores OAuth a códigos enum para evitar
+// XSS reflejado vía error_description/message raw de Supabase.
+const OAUTH_ERROR_MAP: Record<string, string> = {
+  access_denied: "oauth_denied",
+  invalid_request: "oauth_invalid",
+  server_error: "oauth_failed",
+  temporarily_unavailable: "oauth_failed",
+};
+
+function safeOAuthErrorCode(raw: string | null | undefined): string {
+  if (!raw) return "oauth_failed";
+  // Buscar por valor exacto (error param de OAuth) o por substring normalizado
+  const normalized = raw.toLowerCase().replace(/\s+/g, "_");
+  return OAUTH_ERROR_MAP[normalized] ?? OAUTH_ERROR_MAP[raw] ?? "oauth_failed";
+}
+
 /**
  * Valida que la ruta `next` sea estrictamente interna.
  *
@@ -76,15 +92,17 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
   const errorParam = searchParams.get("error");
-  const errorDescription = searchParams.get("error_description");
+  // F3: error_description NO se usa — se descarta intencionalmente para evitar XSS reflejado.
+  // searchParams.get("error_description") se ignora a propósito.
 
   const safeNext = isSafeInternalPath(nextParam) ? nextParam : DEFAULT_NEXT;
 
   // Provider retornó un error — user canceló o rechazó permisos.
   if (errorParam) {
-    const reason = encodeURIComponent(errorDescription ?? errorParam);
+    // F3: usar código enum seguro, nunca reflejar errorDescription raw (XSS)
+    const safeCode = safeOAuthErrorCode(errorParam);
     return NextResponse.redirect(
-      `${origin}/login?error=oauth_denied&reason=${reason}`,
+      `${origin}/login?error=${safeCode}`,
     );
   }
 
@@ -98,9 +116,10 @@ export async function GET(req: NextRequest) {
     const supabase = await getSupabaseServer();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      const reason = encodeURIComponent(error.message);
+      // F3: código enum seguro, nunca reflejar error.message raw de Supabase
+      const safeCode = safeOAuthErrorCode(error.message);
       return NextResponse.redirect(
-        `${origin}/login?error=oauth_exchange_failed&reason=${reason}`,
+        `${origin}/login?error=${safeCode}`,
       );
     }
 
@@ -137,11 +156,10 @@ export async function GET(req: NextRequest) {
       // si falla la lectura del user, seguimos con el redirect normal
     }
     return NextResponse.redirect(`${origin}${safeNext}`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const reason = encodeURIComponent(msg);
+  } catch {
+    // F3: nunca reflejar mensajes de error internos al cliente (info leak + XSS)
     return NextResponse.redirect(
-      `${origin}/login?error=oauth_failed&reason=${reason}`,
+      `${origin}/login?error=oauth_failed`,
     );
   }
 }
