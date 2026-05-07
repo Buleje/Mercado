@@ -4176,45 +4176,150 @@ function ResenasTab() {
 
   if (loading) return <TableSkeleton />;
 
+  const approvedCount = reviews.filter((r) => r.status === "approved").length;
+  const rejectedCount = reviews.filter((r) => r.status === "rejected").length;
+
   return (
-    <div className="space-y-5">
-      {/* Summary strip — RE1 KPI */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
+    <div className="space-y-6">
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start gap-3 mb-6">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Star className="h-5 w-5" />
+          </span>
+          <div>
+            <CardTitle className="font-display text-xl leading-tight">
+              Reseñas de tu tienda
+            </CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+              {reviews.length === 0
+                ? "Aún no hay reseñas. Aparecerán cuando los clientes opinen sobre tus productos."
+                : `${reviews.length} ${reviews.length === 1 ? "reseña recibida" : "reseñas recibidas"}. Modera y respondé para mejorar tu rating.`}
+            </p>
+          </div>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] flex items-center justify-center gap-1">
-            <Star className="h-5 w-5 fill-[var(--data-warning-500)]" />
-            {avgRating > 0 ? avgRating.toFixed(1) : "—"}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Rating promedio</p>
-        </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{unrepliedCount}</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Sin responder</p>
-        </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{pendingCount}</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Por moderar</p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Total
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
+              {reviews.length}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Reseñas recibidas
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-50)]">
+                <Star className="h-5 w-5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Rating promedio
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
+              {avgRating > 0 ? avgRating.toFixed(1) : "—"}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              de 5 estrellas
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilter("unreplied")}
+            disabled={unrepliedCount === 0}
+            className={cn(
+              "text-left rounded-xl border p-5 transition-colors",
+              unrepliedCount > 0
+                ? "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] hover:brightness-95"
+                : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
+            )}
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-error-100)]">
+                <MessageSquare className="h-5 w-5 text-[var(--data-error-500)]" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Sin responder
+            </p>
+            <p className={cn(
+              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              unrepliedCount > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
+            )}>
+              {unrepliedCount}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Necesitan tu respuesta
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("pending")}
+            disabled={pendingCount === 0}
+            className={cn(
+              "text-left rounded-xl border p-5 transition-colors",
+              pendingCount > 0
+                ? "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] hover:brightness-95"
+                : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
+            )}
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
+                <AlertCircle className="h-5 w-5 text-[var(--data-warning-500)]" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Por moderar
+            </p>
+            <p className={cn(
+              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              pendingCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
+            )}>
+              {pendingCount}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Pendientes de revisar
+            </p>
+          </button>
         </div>
       </div>
 
-      {/* RE1: distribución por estrellas */}
+      {/* ── 2. Distribución por rating ─────────────────────────────── */}
       {reviews.length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
-          <p className="text-xs font-bold text-[var(--text-secondary)] mb-2">Distribución por rating</p>
-          <div className="space-y-1">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start gap-3 mb-5">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <BarChart3 className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Distribución por rating
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Cómo se distribuyen tus {reviews.length} reseñas por estrellas
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
             {[5, 4, 3, 2, 1].map((star) => {
               const count = ratingCount(star);
               const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
               return (
-                <div key={star} className="flex items-center gap-2 text-xs">
-                  <span className="flex items-center gap-0.5 w-12 text-[var(--text-secondary)] font-semibold">
-                    {star} <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+                <div key={star} className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5 w-16 text-sm font-extrabold text-[var(--text-primary)]">
+                    {star}
+                    <Star className="h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                   </span>
-                  <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                  <div className="flex-1 h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
@@ -4225,8 +4330,12 @@ function ResenasTab() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="w-10 text-right text-[var(--text-secondary)] font-semibold">
+                  <span className="w-20 text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
                     {count}
+                    <span className="text-[var(--text-tertiary)] font-bold">
+                      {" "}
+                      ({pct.toFixed(0)}%)
+                    </span>
                   </span>
                 </div>
               );
@@ -4235,203 +4344,294 @@ function ResenasTab() {
         </div>
       )}
 
-      {/* RE1: chips de filtro — fila 1 estados, fila 2 ratings */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-1.5">
+      {/* ── 3. Filtros ─────────────────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
+            Estado
+          </span>
           {(["all", "unreplied", "pending", "approved", "rejected"] as const).map((f) => {
             const labels: Record<typeof f, string> = {
-              all:       `Todas (${reviews.length})`,
-              unreplied: `Sin responder (${unrepliedCount})`,
-              pending:   `Pendientes (${pendingCount})`,
-              approved:  `Aprobadas (${reviews.filter((r) => r.status === "approved").length})`,
-              rejected:  `Rechazadas (${reviews.filter((r) => r.status === "rejected").length})`,
+              all: "Todas",
+              unreplied: "Sin responder",
+              pending: "Pendientes",
+              approved: "Aprobadas",
+              rejected: "Rechazadas",
+            };
+            const counts: Record<typeof f, number> = {
+              all: reviews.length,
+              unreplied: unrepliedCount,
+              pending: pendingCount,
+              approved: approvedCount,
+              rejected: rejectedCount,
             };
             const isWarning = f === "unreplied" && unrepliedCount > 0;
             return (
               <button
                 key={f}
+                type="button"
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                  "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
                   filter === f
-                    ? "bg-primary text-white"
+                    ? "bg-primary text-white border-primary"
                     : isWarning
-                    ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:brightness-95"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
+                      ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)]/30 hover:brightness-95"
+                      : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
                 )}
               >
                 {labels[f]}
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
+                    filter === f ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+                  )}
+                >
+                  {counts[f]}
+                </span>
               </button>
             );
           })}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <span className="text-xs text-[var(--text-secondary)] self-center mr-1">Por rating:</span>
+        <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-[var(--rule-soft)]">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
+            Por rating
+          </span>
           {([5, 4, 3, 2, 1] as const).map((star) => (
             <button
               key={star}
+              type="button"
               onClick={() => setFilter(String(star) as ReviewFilter)}
               className={cn(
-                "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                "inline-flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
                 filter === String(star)
-                  ? "bg-primary text-white"
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               {star}
-              <Star className={cn("h-3 w-3", filter === String(star) ? "fill-white" : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]")} />
-              <span className="ml-0.5 opacity-70">({ratingCount(star)})</span>
+              <Star className={cn(
+                "h-4 w-4",
+                filter === String(star)
+                  ? "fill-white text-white"
+                  : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]",
+              )} />
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
+                  filter === String(star) ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+                )}
+              >
+                {ratingCount(star)}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Empty state */}
-      {filtered.length === 0 && (
-        <div className="text-center py-8 text-[var(--text-tertiary)]">
-          <Star className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No hay reseñas {filter !== "all" ? "con este filtro" : "todavía"}</p>
+      {/* ── 4. Lista / Empty state ─────────────────────────────────── */}
+      {filtered.length === 0 ? (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Star className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            No hay reseñas {filter !== "all" ? "con este filtro" : "todavía"}
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            {filter !== "all"
+              ? "Probá cambiando el filtro para ver otras reseñas."
+              : "Las reseñas aparecerán cuando los clientes opinen sobre tus productos."}
+          </p>
         </div>
-      )}
-
-      {/* Review list */}
-      <div className="space-y-3">
-        {filtered.map((review) => {
-          const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
-          return (
-            <div key={review.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-              {/* Header: name, stars, status badge */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm text-[var(--text-primary)] truncate">{review.name || "Anónimo"}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.className)}>
-                      {cfg.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-gray-200")}
-                      />
-                    ))}
-                    <span className="text-xs text-[var(--text-tertiary)] ml-1">
-                      {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                  </div>
-                </div>
-                {/* Action buttons */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {review.status !== "approved" && (
-                    <button
-                      onClick={() => handleStatusChange(review.id, "approved")}
-                      disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
-                      title="Aprobar"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                    </button>
-                  )}
-                  {review.status !== "rejected" && (
-                    <button
-                      onClick={() => handleStatusChange(review.id, "rejected")}
-                      disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] transition-colors"
-                      title="Rechazar"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setReplyingTo(replyingTo === review.id ? null : review.id); setReplyText(review.adminReply ?? ""); }}
-                    className={cn(
-                      "p-1.5 rounded-lg transition-colors",
-                      replyingTo === review.id ? "bg-primary/20 text-primary" : "bg-gray-50 text-[var(--text-tertiary)] hover:bg-gray-100"
-                    )}
-                    title="Responder"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Review text */}
-              <p className="text-sm text-[var(--text-primary)] leading-relaxed">{review.text}</p>
-
-              {/* Existing admin reply */}
-              {review.adminReply && replyingTo !== review.id && (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <p className="text-xs font-bold text-primary mb-1">Tu respuesta:</p>
-                  <p className="text-xs text-[var(--text-primary)]">{review.adminReply}</p>
-                </div>
-              )}
-
-              {/* Reply form con RE2 plantillas contextuales */}
-              {replyingTo === review.id && (
-                <div className="space-y-2">
-                  {/* RE2: chips de plantilla según rating */}
-                  {(() => {
-                    const applicable = REPLY_TEMPLATES.filter((t) =>
-                      t.ratingScope.includes(review.rating),
-                    );
-                    if (applicable.length === 0) return null;
-                    return (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-xs text-[var(--text-secondary)] font-semibold">
-                          Plantilla:
-                        </span>
-                        {applicable.map((t) => (
-                          <button
-                            key={t.id}
-                            onClick={() => setReplyText(t.build(review))}
-                            className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition"
-                          >
-                            {t.label}
-                          </button>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((review) => {
+            const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
+            const isReplying = replyingTo === review.id;
+            return (
+              <div
+                key={review.id}
+                className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm space-y-4"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <span className="font-extrabold text-base text-[var(--text-primary)] truncate">
+                        {review.name || "Anónimo"}
+                      </span>
+                      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold", cfg.className)}>
+                        {cfg.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={cn(
+                              "h-4 w-4",
+                              s <= review.rating
+                                ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
+                                : "text-[var(--rule-base)]",
+                            )}
+                          />
                         ))}
-                        <button
-                          onClick={() => setReplyText("")}
-                          className="px-2 py-1 rounded-full text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition"
-                        >
-                          limpiar
-                        </button>
                       </div>
-                    );
-                  })()}
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Escribe tu respuesta al cliente..."
-                    rows={3}
-                    className="w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-                  />
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-[var(--text-tertiary)]">
-                      {replyText.length} caracteres
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                        className="px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--text-secondary)] text-xs font-bold hover:bg-gray-200 transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={() => handleReply(review.id)}
-                        disabled={saving === review.id || !replyText.trim()}
-                        className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                      >
-                        {saving === review.id ? "Guardando..." : "Enviar respuesta"}
-                      </button>
+                      <span className="text-sm text-[var(--text-tertiary)] font-bold">
+                        ·{" "}
+                        {new Date(review.date).toLocaleDateString("es-PE", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {review.status !== "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(review.id, "approved")}
+                        disabled={saving === review.id}
+                        className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--accent-soft)] text-[var(--data-success-500)] text-sm font-bold border border-[var(--data-success-500)]/30 hover:brightness-95 transition disabled:opacity-50"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Aprobar
+                      </button>
+                    )}
+                    {review.status !== "rejected" && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(review.id, "rejected")}
+                        disabled={saving === review.id}
+                        className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--data-error-50)] text-[var(--data-error-500)] text-sm font-bold border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] transition disabled:opacity-50"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Rechazar
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyingTo(isReplying ? null : review.id);
+                        setReplyText(review.adminReply ?? "");
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold border transition",
+                        isReplying
+                          ? "bg-primary text-white border-primary"
+                          : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
+                      )}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {isReplying ? "Cerrar" : review.adminReply ? "Editar" : "Responder"}
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+
+                {/* Texto reseña */}
+                <p className="text-base text-[var(--text-primary)] leading-relaxed">
+                  {review.text}
+                </p>
+
+                {/* Respuesta existente (solo lectura) */}
+                {review.adminReply && !isReplying && (
+                  <div
+                    className="rounded-xl border border-primary/20 bg-primary/5 p-4"
+                  >
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary mb-2">
+                      Tu respuesta
+                    </p>
+                    <p className="text-base text-[var(--text-primary)] leading-relaxed">
+                      {review.adminReply}
+                    </p>
+                  </div>
+                )}
+
+                {/* Form de respuesta */}
+                {isReplying && (
+                  <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 space-y-4">
+                    {(() => {
+                      const applicable = REPLY_TEMPLATES.filter((t) =>
+                        t.ratingScope.includes(review.rating),
+                      );
+                      if (applicable.length === 0) return null;
+                      return (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary mr-1">
+                            Plantilla
+                          </span>
+                          {applicable.map((t) => (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => setReplyText(t.build(review))}
+                              className="inline-flex items-center px-3 h-9 rounded-xl text-sm font-bold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition"
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setReplyText("")}
+                            className="inline-flex items-center px-3 h-9 rounded-xl text-sm font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition"
+                          >
+                            Limpiar
+                          </button>
+                        </div>
+                      );
+                    })()}
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Escribí tu respuesta al cliente..."
+                      rows={4}
+                      className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base font-medium leading-relaxed focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none outline-none"
+                    />
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-[var(--text-tertiary)] font-bold tabular-nums">
+                        {replyText.length} caracteres
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyText("");
+                          }}
+                          className="inline-flex items-center px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReply(review.id)}
+                          disabled={saving === review.id || !replyText.trim()}
+                          className="inline-flex items-center gap-2 px-5 h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition disabled:opacity-50"
+                        >
+                          {saving === review.id ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Guardando...
+                            </>
+                          ) : (
+                            <>
+                              <MessageSquare className="h-4 w-4" />
+                              Enviar respuesta
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
