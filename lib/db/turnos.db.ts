@@ -8,6 +8,7 @@ export type DbTurno = {
   id: string;
   tenantId: string;
   adminUserId: string;
+  cashRegisterId?: string;
   inicioEfectivo: number;
   cierreEfectivo?: number;
   ventasTotal: number;
@@ -34,6 +35,7 @@ function mapTurno(t: any): DbTurno {
     id: t.id,
     tenantId: t.tenantId,
     adminUserId: t.adminUserId,
+    ...(t.cashRegisterId != null && { cashRegisterId: t.cashRegisterId }),
     inicioEfectivo: toNum(t.inicioEfectivo),
     ...(t.cierreEfectivo != null && { cierreEfectivo: toNum(t.cierreEfectivo) }),
     ventasTotal: toNum(t.ventasTotal),
@@ -48,12 +50,23 @@ function mapTurno(t: any): DbTurno {
 // ── Turnos DB ─────────────────────────────────────────────────────────────────
 
 export const TurnosDB = {
+  /**
+   * Devuelve el turno activo del cajero. Opcionalmente filtra tambien por
+   * cashRegisterId para multi-caja (T5): un cajero puede tener turno en
+   * register A y otro en register B sin colision.
+   */
   async getActivo(
     tenantId: string,
-    adminUserId: string
+    adminUserId: string,
+    cashRegisterId?: string,
   ): Promise<DbTurno | null> {
     const row = await prisma.turno.findFirst({
-      where: { tenantId, adminUserId, status: "ABIERTO" },
+      where: {
+        tenantId,
+        adminUserId,
+        status: "ABIERTO",
+        ...(cashRegisterId !== undefined && { cashRegisterId }),
+      },
       orderBy: { abrioEn: "desc" },
     });
     return row ? mapTurno(row) : null;
@@ -62,6 +75,7 @@ export const TurnosDB = {
   async abrir(data: {
     tenantId: string;
     adminUserId: string;
+    cashRegisterId?: string;
     inicioEfectivo: number;
     notas?: string;
   }): Promise<DbTurno> {
@@ -69,6 +83,7 @@ export const TurnosDB = {
       data: {
         tenantId: data.tenantId,
         adminUserId: data.adminUserId,
+        cashRegisterId: data.cashRegisterId ?? null,
         inicioEfectivo: data.inicioEfectivo,
         notas: data.notas,
       },
@@ -76,13 +91,29 @@ export const TurnosDB = {
     return mapTurno(row);
   },
 
+  /**
+   * Cierra un turno con optimistic lock — si dos requests llegan en paralelo,
+   * solo el primero gana (count === 1). El segundo recibe count === 0 y la
+   * funcion devuelve `null` para que el caller responda 409/422.
+   *
+   * Nota: el aggregate de ventas para `ventasTotal` lo calcula el caller
+   * antes de invocar este metodo (necesita scope por cashierId del turno).
+   * Si el caller falla a mitad, no hay cambios en el turno (atomic).
+   */
   async cerrar(
     turnoId: string,
+    tenantId: string,
     data: { cierreEfectivo: number; ventasTotal: number; notas?: string }
   ): Promise<DbTurno | null> {
-    const row = await prisma.turno
-      .update({
-        where: { id: turnoId },
+    // Optimistic lock: solo cierra si sigue ABIERTO. Si esta CERRADO o
+    // alguien ya lo cerro, count === 0 y devolvemos null.
+    return prisma.$transaction(async (tx) => {
+      const result = await tx.turno.updateMany({
+        where: {
+          id: turnoId,
+          tenantId,
+          status: "ABIERTO",
+        },
         data: {
           cierreEfectivo: data.cierreEfectivo,
           ventasTotal: data.ventasTotal,
@@ -90,9 +121,13 @@ export const TurnosDB = {
           cerroEn: new Date(),
           ...(data.notas !== undefined && { notas: data.notas }),
         },
-      })
-      .catch(() => null);
-    return row ? mapTurno(row) : null;
+      });
+
+      if (result.count === 0) return null;
+
+      const row = await tx.turno.findUnique({ where: { id: turnoId } });
+      return row ? mapTurno(row) : null;
+    });
   },
 
   async list(

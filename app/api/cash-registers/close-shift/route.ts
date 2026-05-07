@@ -3,6 +3,8 @@ import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { TurnosDB } from "@/lib/db/turnos.db";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/cash-registers/close-shift
@@ -49,8 +51,49 @@ export async function POST(req: NextRequest) {
       "Cierre automático desde Cerrar Turno"
     );
 
+    // T8 (audit ventas-caja 2026-05-07): tambien cerrar el turno activo del
+    // cajero para evitar estado partido (caja cerrada + turno abierto).
+    // Antes el frontend tenia que llamar /api/turnos/[id]/cerrar separado;
+    // si fallaba uno, quedaba inconsistencia. Ahora hacemos best-effort
+    // close del turno activo aqui mismo. Si falla, logear pero no romper.
+    let turnoCerrado: { id: string; ventasTotal: number } | null = null;
+    try {
+      // eslint-disable-next-line no-restricted-properties -- lookup centralizado por username del session payload; refactor a lib/db/admin-users.db.ts pendiente.
+      const adminUser = await prisma.adminUser.findFirst({
+        where: { tenantId: auth.tenantId, username: auth.username },
+        select: { id: true },
+      });
+      if (adminUser) {
+        const activo = await TurnosDB.getActivo(auth.tenantId, adminUser.id);
+        if (activo) {
+          // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
+          const ventasAgg = await prisma.sale.aggregate({
+            where: {
+              tenantId: auth.tenantId,
+              cashierId: adminUser.id,
+              createdAt: { gte: new Date(activo.abrioEn) },
+            },
+            _sum: { total: true },
+          });
+          const ventasTotal = ventasAgg._sum.total ? Number(ventasAgg._sum.total) : 0;
+          const updated = await TurnosDB.cerrar(activo.id, auth.tenantId, {
+            cierreEfectivo: closingAmount,
+            ventasTotal,
+            notas: "Cerrado automaticamente con close-shift",
+          });
+          if (updated) {
+            turnoCerrado = { id: updated.id, ventasTotal };
+          }
+        }
+      }
+    } catch (turnoErr) {
+      logger.warn("[close-shift] turno close failed (non-blocking)", {
+        err: turnoErr instanceof Error ? turnoErr.message : String(turnoErr),
+      });
+    }
+
     return NextResponse.json(
-      { success: true, cashRegister: closed },
+      { success: true, cashRegister: closed, turno: turnoCerrado },
       { status: 200 }
     );
   } catch (e) {

@@ -59,13 +59,20 @@ export async function POST(
     // TD-018: _sum.total y existing.inicioEfectivo son Decimal
     const totalVentas = toNumOrZero(ventasTotal._sum.total);
 
-    const updated = await TurnosDB.cerrar(id, {
+    // T3: cerrar con optimistic lock — si dos requests llegan en paralelo,
+    // el segundo recibe null (count === 0) y respondemos 409 (conflict).
+    const updated = await TurnosDB.cerrar(id, auth.tenantId, {
       cierreEfectivo: parsed.data.cierreEfectivo,
       ventasTotal: totalVentas,
       notas: parsed.data.notas,
     });
 
-    if (!updated) return NextResponse.json({ error: "Error al cerrar turno" }, { status: 500 });
+    if (!updated) {
+      return NextResponse.json(
+        { error: "El turno ya fue cerrado por otro request o no existe" },
+        { status: 409 },
+      );
+    }
 
     const diferencia = parsed.data.cierreEfectivo - (toNumOrZero(existing.inicioEfectivo) + totalVentas);
 
