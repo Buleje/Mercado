@@ -51,7 +51,7 @@ function KPITile({
 }) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-[var(--text-secondary)] text-xs font-medium">
+      <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm font-medium">
         <Icon className="h-4 w-4 text-[var(--text-primary)]" />
         {label}
       </div>
@@ -86,7 +86,7 @@ export function VendorKPICards({ kpis }: Props) {
       </KPITile>
 
       <KPITile icon={TrendingUp} label="Ayer" value={formatSoles(kpis.salesYesterday)}>
-        <span className="text-xs text-[var(--text-tertiary)]">ventas del día anterior</span>
+        <span className="text-sm text-[var(--text-tertiary)]">ventas del día anterior</span>
       </KPITile>
     </div>
   );

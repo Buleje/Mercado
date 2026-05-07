@@ -7,7 +7,6 @@ import {
   Treemap, ResponsiveContainer, Tooltip,
   PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  ScatterChart, Scatter, ZAxis, ReferenceLine,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
 import { exportToExcel } from "@/lib/export-excel";
@@ -293,25 +292,12 @@ function InventoryAnalyticsDashboard() {
   }, [products]);
 
   // ── Scatter / Rotation data ──
-  const scatterData = useMemo(() => {
-    return products
-      .filter(p => (p.stock ?? 0) > 0)
-      .map(p => {
-        const stock = p.stock ?? 0;
-        const dailySales = Math.max(stock * 0.05, 0.5);
-        const daysLeft = Math.min(stock / dailySales, 90);
-        const estimatedSales = dailySales * 30;
-        const value = stock * (p.costPrice ?? p.price ?? 0);
-        return { name: p.name, x: +daysLeft.toFixed(1), y: +estimatedSales.toFixed(1), z: value };
-      });
-  }, [products]);
-
-  const avgSales = useMemo(() => {
-    if (scatterData.length === 0) return 0;
-    return +(scatterData.reduce((s, d) => s + d.y, 0) / scatterData.length).toFixed(1);
-  }, [scatterData]);
+  // dailySales ficticios eliminados (A2 Bundle-A). Se necesitan ventas reales del backend
+  // para calcular rotación. Los charts de dispersión se ocultan hasta tener data real.
 
   // ── Depletion forecast ──
+  // dailySales estimados eliminados (A2 Bundle-A). Sin historial de ventas real,
+  // "días restantes" es un dato inventado. Se muestra solo stock actual.
   const depletionData = useMemo(() => {
     return products
       .filter(p => (p.stock ?? 0) > 0)
@@ -319,12 +305,11 @@ function InventoryAnalyticsDashboard() {
         const stock = p.stock ?? 0;
         const minStock = (p as TreemapProduct & { stockMin?: number }).stockMin ?? 0;
         const maxStock = (p as TreemapProduct & { maxStock?: number }).maxStock ?? Math.max(stock * 2, 50);
-        const dailySales = Math.max(stock * 0.05, 0.5);
-        const daysLeft = +(stock / dailySales).toFixed(0);
         const pct = Math.min((stock / Math.max(maxStock, 1)) * 100, 100);
-        return { name: p.name, stock, daysLeft, pct, minStock };
+        // daysLeft = null — no hay datos reales de velocidad de venta
+        return { name: p.name, stock, daysLeft: null as null, pct, minStock };
       })
-      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .sort((a, b) => b.stock - a.stock)
       .slice(0, 10);
   }, [products]);
 
@@ -507,62 +492,30 @@ function InventoryAnalyticsDashboard() {
         </div>
       </div>
 
-      {/* ── 4. Análisis de Rotacion (Scatter) ── */}
+      {/* ── 4. Análisis de Rotacion ── */}
       <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Análisis de Rotacion</h4>
           <FavStar id="rotacion" favs={invFavs} />
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] mb-3">Dias de stock vs ventas estimadas mensuales</p>
-        <div className="relative">
-          <ResponsiveContainer minWidth={0} width="100%" height={320}>
-            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="x" name="Dias stock" type="number" domain={[0, 90]} tick={{ fontSize: 11, fill: "#6b7280" }} label={{ value: "Dias de stock", position: "insideBottom", offset: -5, fontSize: 11, fill: "#9ca3af" }} />
-              <YAxis dataKey="y" name="Ventas/mes" type="number" tick={{ fontSize: 11, fill: "#6b7280" }} label={{ value: "Ventas est./mes", angle: -90, position: "insideLeft", fontSize: 11, fill: "#9ca3af" }} />
-              <ZAxis dataKey="z" range={[40, 400]} name="Valor" />
-              <ReferenceLine x={15} stroke="#f97316" strokeDasharray="5 5" strokeWidth={1.5} />
-              <ReferenceLine y={avgSales} stroke="#f97316" strokeDasharray="5 5" strokeWidth={1.5} />
-              <Tooltip
-                content={({ payload }) => {
-                  if (!payload || payload.length === 0) return null;
-                  const d = payload[0]?.payload as { name: string; x: number; y: number; z: number } | undefined;
-                  if (!d) return null;
-                  return (
-                    <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
-                      <p className="font-bold text-[var(--text-primary)]">{d.name}</p>
-                      <p className="text-[var(--text-secondary)]">{d.x} dias de stock</p>
-                      <p className="text-[var(--text-secondary)]">{d.y} ventas est./mes</p>
-                      <p className="text-primary font-bold">Valor: {formatCurrency(d.z, { decimals: 0 })}</p>
-                    </div>
-                  );
-                }}
-              />
-              <Scatter data={scatterData} fill="var(--color-primary)" fillOpacity={0.7} />
-            </ScatterChart>
-          </ResponsiveContainer>
-          {/* Quadrant labels */}
-          <div className="absolute top-6 left-8 text-xs font-bold text-[var(--data-warning-500)]/60 pointer-events-none">Impulsar ventas</div>
-          <div className="absolute top-6 right-8 text-xs font-bold text-[var(--data-success-500)]/60 pointer-events-none">Mantener stock</div>
-          <div className="absolute bottom-10 left-8 text-xs font-bold text-[var(--data-error-500)]/60 pointer-events-none">Liquidar</div>
-          <div className="absolute bottom-10 right-8 text-xs font-bold text-[var(--text-tertiary)]/60 pointer-events-none">Reducir pedidos</div>
-        </div>
+        <p className="text-sm text-[var(--text-muted)] py-6 text-center">
+          Sin datos suficientes — se necesita historial de ventas para calcular rotación
+        </p>
       </div>
 
-      {/* ── 5. Productos mas rentables (Mejora 5) ── */}
+      {/* ── 5. Productos mas rentables (por margen real) ── */}
       {(() => {
+        // ventasEst ficticio eliminado (A2 Bundle-A). Se ordena por margen % real.
         const rentables = products
           .filter(p => (p.stock ?? 0) > 0 && p.costPrice != null && p.price != null && p.price > (p.costPrice ?? 0))
           .map(p => {
             const margen = p.price && p.costPrice ? ((p.price - p.costPrice) / p.price) * 100 : 0;
-            const ventasEst = Math.max((p.stock ?? 0) * 0.05, 0.5) * 30;
-            const ganancia = (p.price && p.costPrice ? (p.price - p.costPrice) : 0) * ventasEst;
             return {
               name: p.name.length > 20 ? p.name.slice(0, 18) + "..." : p.name,
               fullName: p.name,
-              ganancia: +ganancia.toFixed(2),
+              ganancia: +margen.toFixed(2),
               margen: +margen.toFixed(1),
-              ventasEst: +ventasEst.toFixed(0),
+              ventasEst: null as null,
             };
           })
           .sort((a, b) => b.ganancia - a.ganancia)
@@ -585,12 +538,12 @@ function InventoryAnalyticsDashboard() {
                 <Tooltip
                   content={({ payload }) => {
                     if (!payload || payload.length === 0) return null;
-                    const d = payload[0]?.payload as { fullName: string; margen: number; ventasEst: number; ganancia: number } | undefined;
+                    const d = payload[0]?.payload as { fullName: string; margen: number; ganancia: number } | undefined;
                     if (!d) return null;
                     return (
                       <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                         <p className="font-bold text-[var(--text-primary)]">{d.fullName}</p>
-                        <p className="text-primary font-bold">Margen: {d.margen}% x {d.ventasEst} unid/mes = {formatCurrency(d.ganancia, { decimals: 0 })} ganancia</p>
+                        <p className="text-primary font-bold">Margen: {d.margen}%</p>
                       </div>
                     );
                   }}
@@ -610,7 +563,8 @@ function InventoryAnalyticsDashboard() {
         </div>
         <div className="space-y-2">
           {depletionData.map((item, i) => {
-            const color = item.daysLeft <= 3 ? "red" : item.daysLeft <= 7 ? "amber" : "emerald";
+            // Color basado en % de stock vs máximo (sin velocidad de venta ficticia)
+            const color = item.pct <= 20 ? "red" : item.pct <= 40 ? "amber" : "emerald";
             const colorClasses = {
               red: { bg: "bg-[var(--data-error-500)]", text: "text-[var(--data-error-500)]", track: "bg-red-100" },
               amber: { bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", track: "bg-amber-100" },
@@ -621,12 +575,12 @@ function InventoryAnalyticsDashboard() {
                 <span className="text-xs text-[var(--text-primary)] w-36 sm:w-48 truncate shrink-0" title={item.name}>{item.name}</span>
                 <div className={cn("flex-1 h-3 rounded-full overflow-hidden", colorClasses.track)}>
                   <div
-                    className={cn("h-full rounded-full transition-all", colorClasses.bg, item.daysLeft <= 3 && "animate-pulse")}
+                    className={cn("h-full rounded-full transition-all", colorClasses.bg)}
                     style={{ width: `${Math.max(item.pct, 3)}%` }}
                   />
                 </div>
                 <span className={cn("text-xs font-bold shrink-0 w-14 text-right", colorClasses.text)}>
-                  {item.daysLeft}d | {item.stock}u
+                  {item.stock}u
                 </span>
               </div>
             );

@@ -193,6 +193,7 @@ export default function VendorDashboardModule() {
             disabled={loading}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
             title="Actualizar marketplace"
+            aria-label="Actualizar datos del marketplace"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
