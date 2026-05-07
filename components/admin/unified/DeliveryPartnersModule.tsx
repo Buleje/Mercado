@@ -682,39 +682,85 @@ function AsignacionesTab() {
   const [selectedPartner, setSelectedPartner] = useState("");
   const [assigning, setAssigning]     = useState(false);
 
-  const load = useCallback(() => {
+  // Cada fetch maneja su propio error para que partners siga cargando
+  // aunque assignments falle (y viceversa) — antes Promise.all rejected
+  // descartaba ambos y dejaba la UI sin partners para asignar.
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    Promise.all([
-      fetch("/api/delivery/assignments").then((r) => (r.ok ? r.json() : Promise.reject())),
-      fetch("/api/delivery/partners").then((r) => (r.ok ? r.json() : Promise.reject())),
-    ])
-      .then(([a, p]) => {
-        setAssignments(Array.isArray(a) ? a : []);
-        setPartners(Array.isArray(p) ? p.filter((x: DeliveryPartner) => x.isActive) : []);
-      })
-      .catch(() => setError("No se pudieron cargar las asignaciones."))
-      .finally(() => setLoading(false));
+    const [aRes, pRes] = await Promise.allSettled([
+      fetch("/api/delivery/assignments")
+        .then(async (r) => {
+          if (!r.ok) {
+            const body = await r.json().catch(() => ({}));
+            throw new Error(`assignments ${r.status}: ${body.error ?? "unknown"}`);
+          }
+          return r.json();
+        }),
+      fetch("/api/delivery/partners")
+        .then(async (r) => {
+          if (!r.ok) {
+            const body = await r.json().catch(() => ({}));
+            throw new Error(`partners ${r.status}: ${body.error ?? "unknown"}`);
+          }
+          return r.json();
+        }),
+    ]);
+
+    if (aRes.status === "fulfilled") {
+      setAssignments(Array.isArray(aRes.value) ? aRes.value : []);
+    } else {
+      // Si el server respondió 503, asumimos lista vacía (no rompemos UI).
+      // El log del server tendrá el detalle real.
+      setAssignments([]);
+      setError("No se pudieron cargar las asignaciones (servidor caído). Intentá refrescar.");
+    }
+
+    if (pRes.status === "fulfilled" && Array.isArray(pRes.value)) {
+      setPartners(pRes.value.filter((x: DeliveryPartner) => x.isActive));
+    } else {
+      setPartners([]);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const handleAssign = async () => {
-    if (!selectedPartner || !assignModal.orderId) return;
+    if (!selectedPartner) {
+      setError("Seleccioná un repartidor primero.");
+      return;
+    }
+    if (!assignModal.orderId) {
+      setError("Ingresá un ID de orden.");
+      return;
+    }
+    // El endpoint requiere `fee` — usamos la tarifa del partner seleccionado.
+    const partner = partners.find((p) => p.id === selectedPartner);
+    const fee = toNum(partner?.fee ?? 0);
+
     setAssigning(true);
+    setError(null);
     try {
       const res = await fetch("/api/delivery/assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: assignModal.orderId, partnerId: selectedPartner }),
+        body: JSON.stringify({
+          orderId: assignModal.orderId,
+          partnerId: selectedPartner,
+          fee,
+        }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
       const saved = await res.json();
       setAssignments((prev) => [saved, ...prev]);
       setAssignModal({ open: false });
       setSelectedPartner("");
-    } catch {
-      setError("Error al crear la asignación.");
+    } catch (err) {
+      setError(`Error al crear la asignación: ${err instanceof Error ? err.message : "desconocido"}`);
     } finally {
       setAssigning(false);
     }

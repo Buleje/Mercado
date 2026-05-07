@@ -33,7 +33,10 @@ export async function GET(req: NextRequest) {
     const partnerId = searchParams.get("partnerId");
     const date = searchParams.get("date");
 
-    const where: Record<string, unknown> = {};
+    // SECURITY 2026-05-05 (CT-06 audit): scope tenantId. Antes findMany sin
+    // tenantId leakeaba historial de assignments de TODOS los tenants a
+    // cualquier admin (cross-tenant leak de PII de delivery).
+    const where: Record<string, unknown> = { tenantId: auth.tenantId };
     if (status) where.status = status;
     if (partnerId) where.partnerId = partnerId;
     if (date) {
@@ -54,7 +57,12 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(assignments);
-  } catch {
+  } catch (err) {
+    logger.error("[delivery/assignments] GET failed", {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      tenantId: auth.tenantId,
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
 }
@@ -75,10 +83,22 @@ export async function POST(req: NextRequest) {
 
     const { orderId, partnerId, fee } = parsed.data;
 
-    // Verificar que la orden existe
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    // SECURITY 2026-05-05 (pentest delivery H010): scope tenant en
+    // order + partner. Antes admin de A asignaba orden de B a partner de A
+    // (tenantId divergente y partner ve órdenes ajenas).
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, tenantId: auth.tenantId },
+    });
     if (!order) {
       return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    }
+
+    const partnerOk = await prisma.deliveryPartner.findFirst({
+      where: { id: partnerId, tenantId: auth.tenantId, isActive: true },
+      select: { id: true },
+    });
+    if (!partnerOk) {
+      return NextResponse.json({ error: "Repartidor no encontrado" }, { status: 404 });
     }
 
     // Verificar que no tiene asignación previa
@@ -123,7 +143,12 @@ export async function POST(req: NextRequest) {
     }).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json(assignment, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("[delivery/assignments] POST failed", {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      tenantId: auth.tenantId,
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
 }
@@ -144,7 +169,10 @@ export async function PATCH(req: NextRequest) {
 
     const { id, status } = parsed.data;
 
-    const current = await prisma.deliveryAssignment.findUnique({ where: { id } });
+    // SECURITY 2026-05-05 (pentest delivery H010): scope tenant en lookup.
+    const current = await prisma.deliveryAssignment.findFirst({
+      where: { id, tenantId: auth.tenantId },
+    });
     if (!current) {
       return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
     }
@@ -193,7 +221,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (err) {
+    logger.error("[delivery/assignments] PATCH failed", {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      tenantId: auth.tenantId,
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
 }
