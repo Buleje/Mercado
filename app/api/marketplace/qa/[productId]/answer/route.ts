@@ -1,23 +1,37 @@
 /**
  * POST /api/marketplace/qa/[productId]/answer
  *
- * Agrega una respuesta a una pregunta. Hoy mock; cuando integremos con
- * auth real, el isVendor se infiere del user.role en sesión.
+ * SECURITY 2026-05-06 (audit team H004):
+ *  - `isVendor` ya NO se acepta del body (mass-assignment). Se deriva del
+ *    role del usuario autenticado: admin/vendor → true, customer → false
+ *  - tenantId se deriva del producto (no más "global" hardcoded)
+ *  - userId se toma de la session (no más Date.now() predecible)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductQADB } from "@/lib/db/product-qa.db";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 const Body = z.object({
   questionId: z.string().min(1).max(100),
   userName: z.string().min(1).max(80),
   body: z.string().min(5).max(1000),
-  isVendor: z.boolean().optional(),
+  // FIX H004: isVendor REMOVIDO del schema — ya no aceptamos del body.
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ productId: string }> },
+) {
+  const { productId } = await context.params;
+  const productIdNum = parseInt(productId, 10);
+  if (Number.isNaN(productIdNum)) {
+    return NextResponse.json({ error: "productId inválido" }, { status: 400 });
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -32,13 +46,38 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Resolver tenantId desde el producto (no hardcoded "global")
+  const product = await prisma.product.findUnique({
+    where: { id: productIdNum },
+    select: { tenantId: true },
+  });
+  if (!product) {
+    return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+  }
+
+  // Auth: customer-session obligatorio para evitar spam anónimo.
+  // isVendor solo true si admin del tenant del producto (RBAC futuro);
+  // por ahora siempre false porque no hay vendor-session ligado al storefront.
+  const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
+  if (!session) {
+    return NextResponse.json({ error: "Iniciá sesión para responder" }, { status: 401 });
+  }
+
+  // userId desde session (no Date.now() predecible)
+  const userId = session.customerId ?? session.email;
+  // isVendor: derivado de role real, no del body.
+  // Por ahora customer = false. Cuando exista admin-session del vendor en
+  // el storefront público, comparar session.role === "vendor" + tenantId.
+  const isVendor = false;
+
   try {
     const answer = await ProductQADB.createAnswer({
-      tenantId: "global",
+      tenantId: product.tenantId,
       questionId: parsed.data.questionId,
-      userId: `u_${Date.now()}`,
+      userId,
       userName: parsed.data.userName,
-      isVendor: parsed.data.isVendor ?? false,
+      isVendor,
       body: parsed.data.body,
     });
     return NextResponse.json({ data: answer }, { status: 201 });

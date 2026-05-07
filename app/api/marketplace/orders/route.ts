@@ -104,6 +104,9 @@ const CheckoutBodySchema = z.object({
   couponCode:      z.string().max(30).optional(),
   loyaltyRedeemPoints: z.number().int().min(0).max(100000).optional(),
   items:           z.array(CartItemSchema).min(1).max(50),
+  /** ISO timestamp opcional para reservar la entrega cuando la tienda
+   *  está cerrada. Validado contra hoursJson de la tienda. Max 7 días futuro. */
+  scheduledFor:    z.string().datetime().optional(),
 });
 
 // ── POST /api/marketplace/orders — checkout del carrito del marketplace ─────────
@@ -150,14 +153,15 @@ export async function POST(req: NextRequest) {
       notes,
       paymentMethod,
       items,
+      scheduledFor,
     } = parsed.data;
 
     // Block orders to stores in vacation mode
-    let targetStore: { vacationMode: boolean; vacationMessage: string | null } | null = null;
+    let targetStore: { id: string; vacationMode: boolean; vacationMessage: string | null } | null = null;
     try {
       targetStore = await prisma.store.findUnique({
         where: { slug: storeSlug },
-        select: { vacationMode: true, vacationMessage: true },
+        select: { id: true, vacationMode: true, vacationMessage: true },
       });
     } catch {
       // Store table may not exist yet — skip vacation check
@@ -169,6 +173,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Reserva: validar scheduledFor contra hoursJson de la tienda ──
+    // Si la tienda está cerrada AHORA y el cliente no envió scheduledFor,
+    // el frontend debe haberlo seteado al `nextOpening`. Si tampoco vino,
+    // dejamos pasar (el dueño verá la orden y la confirmará al abrir —
+    // comportamiento "best effort" para clientes legacy).
+    let resolvedScheduledFor: Date | null = null;
+    if (scheduledFor && targetStore?.id) {
+      const when = new Date(scheduledFor);
+      if (Number.isNaN(when.getTime())) {
+        return NextResponse.json(
+          { error: "scheduledFor debe ser ISO 8601 válido" },
+          { status: 400 },
+        );
+      }
+      try {
+        const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+          SELECT "hoursJson" FROM "Store" WHERE id = ${targetStore.id} LIMIT 1
+        `;
+        const hoursJson = rows[0]?.hoursJson ?? null;
+        if (hoursJson && typeof hoursJson === "object") {
+          const { isValidReservationSlot } = await import("@/lib/marketplace-store-hours");
+          const check = isValidReservationSlot(hoursJson as never, when, new Date(), 7);
+          if (!check.ok) {
+            return NextResponse.json(
+              { error: `Reserva inválida: ${check.reason}` },
+              { status: 422 },
+            );
+          }
+        }
+      } catch (err) {
+        logger.warn("[marketplace/orders] hoursJson lookup failed for reservation", {
+          error: String(err),
+        });
+      }
+      resolvedScheduledFor = when;
+    }
+
     const order = await MarketplaceOrdersDB.createFromCart({
       storeSlug,
       customerName,
@@ -178,6 +219,20 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       items,
     });
+
+    // Persist scheduledFor via raw query (columna fuera del schema Prisma).
+    if (resolvedScheduledFor) {
+      try {
+        await prisma.$executeRaw`
+          UPDATE "Order" SET "scheduledFor" = ${resolvedScheduledFor} WHERE id = ${order.id}
+        `;
+      } catch (err) {
+        logger.warn("[marketplace/orders] failed to persist scheduledFor", {
+          error: String(err),
+          orderId: order.id,
+        });
+      }
+    }
 
     // Fire-and-forget: dispara la primera DeliveryOffer al repartidor más cercano
     // (geocoding + matchmaking). Si falla o no hay partners, el cron
@@ -263,22 +318,28 @@ export async function POST(req: NextRequest) {
 
     // Fire-and-forget: earn loyalty points (1 point per S/1 spent)
     // TODO Sprint C Wave 4: el modelo LoyaltyTransaction no existe en schema.prisma aún.
-    // Por ahora solo actualizamos loyaltyPoints en Customer.
+    // SECURITY 2026-05-06 (audit team H014): scope (phone, tenantId) para
+    // que el primer customer con ese phone NO gane los puntos del orden de
+    // OTRO tenant. Antes update where:{phone} ganaba el primer match
+    // global porque phone es @unique cross-tenant.
     (async () => {
       try {
         if (!customerPhone) return;
-        const customer = await prisma.customer.findUnique({
-          where: { phone: customerPhone },
+        const tenantIdForLoyalty = order.sellerTenantId;
+        const exists = await prisma.customer.findFirst({
+          where: { phone: customerPhone, tenantId: tenantIdForLoyalty },
           select: { phone: true },
         });
-        if (!customer) return;
+        if (!exists) return;
         const pointsToEarn = Math.floor(order.total);
         if (pointsToEarn <= 0) return;
-        await prisma.customer.update({
-          where: { phone: customerPhone },
+        await prisma.customer.updateMany({
+          where: { phone: customerPhone, tenantId: tenantIdForLoyalty },
           data: { loyaltyPoints: { increment: pointsToEarn } },
         });
-      } catch { /* silencioso */ }
+      } catch (err) {
+        logger.warn("[marketplace/orders] loyalty earn failed", { err: String(err) });
+      }
     })();
 
     // Fire-and-forget: create welcome coupon for first-time buyer on this store
