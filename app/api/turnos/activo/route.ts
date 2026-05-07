@@ -9,9 +9,28 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Buscar CUALQUIER turno abierto del tenant (no solo del usuario actual)
+    // SECURITY 2026-05-07 (T1): scopear por adminUserId del cajero autenticado.
+    // Antes devolvia turno de CUALQUIER cajero del tenant → cajero A veia
+    // inicioEfectivo y ventasTotal del cajero B (PII financiero del equipo).
+    //
+    // Excepciones de rol:
+    //   - admin/owner/manager pueden ver el turno activo del tenant entero
+    //     (necesitan supervisar) — mantenemos el comportamiento original.
+    //   - cajero solo ve SU propio turno activo.
+    // eslint-disable-next-line no-restricted-properties -- lookup centralizado por username del session payload; refactor a lib/db/admin-users.db.ts pendiente.
+    const adminUser = await prisma.adminUser.findFirst({
+      where: { tenantId: auth.tenantId, username: auth.username },
+      select: { id: true },
+    });
+
+    const isManagement = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
+    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB.getActivoForUser pendiente.
     const turno = await prisma.turno.findFirst({
-      where: { tenantId: auth.tenantId, status: "ABIERTO" },
+      where: {
+        tenantId: auth.tenantId,
+        status: "ABIERTO",
+        ...(isManagement ? {} : { adminUserId: adminUser?.id ?? "__none__" }),
+      },
       orderBy: { abrioEn: "desc" },
     });
 

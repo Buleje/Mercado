@@ -34,6 +34,7 @@ export async function POST(
     }
 
     // Verify turno exists and belongs to tenant
+    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB pendiente.
     const existing = await prisma.turno.findUnique({ where: { id } });
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
@@ -42,10 +43,15 @@ export async function POST(
       return NextResponse.json({ error: "El turno ya está cerrado" }, { status: 422 });
     }
 
-    // Calculate total sales during the turno period
+    // SECURITY 2026-05-07 (T2): aggregate scoped por cashierId del turno.
+    // Antes sumaba ventas de TODOS los cajeros del tenant durante el periodo →
+    // ventasTotal incorrecto en multi-cajero, podia ocultar/fabricar diferencias.
+    // Sale.cashierId guarda el adminUserId del cajero que cobro.
+    // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
     const ventasTotal = await prisma.sale.aggregate({
       where: {
         tenantId: auth.tenantId,
+        cashierId: existing.adminUserId,
         createdAt: { gte: existing.abrioEn },
       },
       _sum: { total: true },
@@ -67,7 +73,7 @@ export async function POST(
       "Cerrar", "turno",
       `Turno ${id.slice(-6)} cerrado — ventas: S/${totalVentas.toFixed(2)}, diferencia: S/${diferencia.toFixed(2)}`,
       id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[turnos/id/cerrar] activity log failed", { id, err: String(err) }));
 
     return NextResponse.json({ ...updated, diferencia });
   } catch (e) {
