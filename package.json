@@ -22,6 +22,7 @@
     "dev:dangers:check": "node scripts/check-zone-skills.mjs",
     "dev:health": "node scripts/dev-health.mjs",
     "dev:health:fast": "cross-env SKIP_TESTS=1 node scripts/dev-health.mjs",
+    "health:check": "node scripts/check-prod-health.mjs",
     "db:sanity": "tsx scripts/db-sanity.ts",
     "db:drift": "node -r dotenv/config scripts/check-schema-drift.mjs dotenv_config_path=.env.local",
     "dev:lucide:audit": "node scripts/audit-lucide-imports.mjs",
