@@ -116,6 +116,10 @@
       "schedule": "0 8 * * 1"
     },
     {
+      "path": "/api/cron/fiados-mark-vencido",
+      "schedule": "30 0 * * *"
+    },
+    {
       "path": "/api/cron/fiados-reminder",
       "schedule": "0 9 * * *"
     },
