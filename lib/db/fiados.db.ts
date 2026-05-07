@@ -135,30 +135,53 @@ export const FiadosDB = {
     monto: number,
     notas?: string
   ): Promise<DbFiado | null> {
-    const fiado = await prisma.fiado.findFirst({ where: { id: fiadoId, tenantId } });
-    if (!fiado) return null;
+    // Y1 FIX 2026-05-07: findFirst DENTRO de la tx para evitar race entre 2
+    // cobros simultáneos que leían el saldo fuera de tx y calculaban en JS.
+    // Ahora usamos `decrement` atómico + re-lectura post-decrement para
+    // determinar el estado. Si el saldo baja de 0 (overpayment) se lanza error.
+    const updated = await prisma.$transaction(async (tx) => {
+      const fiado = await tx.fiado.findFirst({ where: { id: fiadoId, tenantId } });
+      if (!fiado) return null;
 
-    const nuevoSaldo = Math.max(Number(fiado.saldo) - monto, 0);
+      if (fiado.status === "CANCELADO") {
+        throw new Error("Fiado cancelado, no se puede cobrar");
+      }
 
-    const [, updated] = await prisma.$transaction([
-      prisma.fiadoCuota.create({
-        data: {
-          fiadoId,
-          monto,
-          pagadoEn: new Date(),
-          notas,
-        },
-      }),
-      prisma.fiado.update({
+      // Cuota primero — si falla, la tx se revierte completa
+      await tx.fiadoCuota.create({
+        data: { fiadoId, monto, pagadoEn: new Date(), notas },
+      });
+
+      // Decrement atómico: DB hace la resta, no JS
+      await tx.fiado.update({
+        where: { id: fiadoId, tenantId },
+        data: { saldo: { decrement: monto } },
+      });
+
+      // Re-leer post-decrement para determinar status y detectar overpayment
+      const afterDecrement = await tx.fiado.findUnique({
         where: { id: fiadoId },
-        data: {
-          saldo: nuevoSaldo,
-          status: nuevoSaldo <= 0 ? "PAGADO" : "ACTIVO",
-        },
         include: { cuotas: { orderBy: { createdAt: "asc" } } },
-      }),
-    ]);
-    return mapFiado(updated);
+      });
+      if (!afterDecrement) return null;
+
+      const saldoFinal = Number(afterDecrement.saldo);
+      if (saldoFinal < -0.01) {
+        throw new Error(`Overpayment: el pago excede el saldo en ${Math.abs(saldoFinal).toFixed(2)}`);
+      }
+
+      if (saldoFinal <= 0.01) {
+        return tx.fiado.update({
+          where: { id: fiadoId, tenantId },
+          data: { status: "PAGADO" },
+          include: { cuotas: { orderBy: { createdAt: "asc" } } },
+        });
+      }
+
+      return afterDecrement;
+    });
+
+    return updated ? mapFiado(updated) : null;
   },
 
   async updateStatus(
@@ -196,19 +219,22 @@ export const FiadosDB = {
     payments: Array<{ id: string; fiadoId: string; monto: number }>;
     remaining: number;
   }> {
-    const fiados = await prisma.fiado.findMany({
-      where: { tenantId, customerId, status: "ACTIVO" },
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (fiados.length === 0) {
-      return { totalCobrado: 0, payments: [], remaining: monto };
-    }
-
+    // Y2 FIX 2026-05-07: findMany DENTRO de la tx interactiva para que la
+    // lectura y escritura sean atómicas. Sin esto, entre el findMany externo
+    // y los updates internos otro cobro concurrente podía modificar los mismos
+    // fiados resultando en doble-cobro o saldo incorrecto.
+    // tenantId en where de cada update: defense in depth multi-tenant.
     let remaining = monto;
     const payments: Array<{ id: string; fiadoId: string; monto: number }> = [];
 
     await prisma.$transaction(async (tx) => {
+      const fiados = await tx.fiado.findMany({
+        where: { tenantId, customerId, status: "ACTIVO" },
+        orderBy: { createdAt: "asc" },
+      });
+
+      if (fiados.length === 0) return;
+
       for (const fiado of fiados) {
         if (remaining <= 0) break;
         const saldo = Number(fiado.saldo);
@@ -216,7 +242,7 @@ export const FiadosDB = {
         const newSaldo = saldo - payment;
 
         await tx.fiado.update({
-          where: { id: fiado.id },
+          where: { id: fiado.id, tenantId },
           data: {
             saldo: newSaldo,
             status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",

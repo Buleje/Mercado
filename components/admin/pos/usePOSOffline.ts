@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 const QUEUE_KEY = "pos-offline-queue";
@@ -21,6 +21,11 @@ export function usePOSOffline() {
   const [errorCount, setErrorCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncCount, setLastSyncCount] = useState(0);
+  // Y5 FIX 2026-05-07: mutex para syncQueue. useState(isSyncing) no es
+  // suficiente porque los closures de useCallback capturan el valor al momento
+  // de la creación, no el actual. useRef sí lee el valor real en tiempo de ejecución,
+  // evitando que dos llamadas a syncQueue (ej: "online" event + mount) corran en paralelo.
+  const isSyncingRef = useRef(false);
 
   const getQueue = useCallback((): OfflineSale[] => {
     try {
@@ -31,60 +36,68 @@ export function usePOSOffline() {
   }, []);
 
   const syncQueue = useCallback(async () => {
+    // Y5: mutex — evita ejecuciones paralelas (ej: evento "online" + mount simultáneos)
+    if (isSyncingRef.current) return;
+
     const queue = getQueue();
     if (queue.length === 0) return;
     // Don't run if every item is already marked as errored
     if (queue.every(s => s._hasError)) return;
 
+    isSyncingRef.current = true;
     setIsSyncing(true);
 
     const remaining: OfflineSale[] = [];
     let synced = 0;
     let newErrors = 0;
 
-    for (const sale of queue) {
-      if (sale._hasError) {
-        remaining.push(sale);
-        newErrors++;
-        continue;
-      }
-
-      try {
-        // Strip ALL internal offline metadata before posting
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { _offlineId, _synced, _hasError, _errorMessage, ...salePayload } = sale;
-        const res = await fetch("/api/sales", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(salePayload),
-        });
-
-        if (res.ok) {
-          synced++;
-        } else {
-          // Any non-ok HTTP response: mark as fatal error so it doesn't block the queue indefinitely
-          let errMsg = `Error HTTP ${res.status}`;
-          try {
-            const errData = await res.json();
-            if (errData?.error) {
-              errMsg = typeof errData.error === "string" ? errData.error : JSON.stringify(errData.error);
-            }
-          } catch { /* ignore parse error */ }
-
-          remaining.push({ ...sale, _hasError: true, _errorMessage: errMsg });
+    try {
+      for (const sale of queue) {
+        if (sale._hasError) {
+          remaining.push(sale);
           newErrors++;
+          continue;
         }
-      } catch {
-        // Network failure — keep as pending for retry
-        remaining.push(sale);
-      }
-    }
 
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
-    setPendingCount(remaining.filter(s => !s._hasError).length);
-    setErrorCount(newErrors);
-    setLastSyncCount(synced);
-    setIsSyncing(false);
+        try {
+          // Strip ALL internal offline metadata before posting
+          const { _offlineId, _synced, _hasError, _errorMessage, ...salePayload } = sale;
+          const res = await fetch("/api/sales", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(salePayload),
+          });
+
+          if (res.ok) {
+            synced++;
+          } else {
+            // Any non-ok HTTP response: mark as fatal error so it doesn't block the queue indefinitely
+            let errMsg = `Error HTTP ${res.status}`;
+            try {
+              const errData = await res.json();
+              if (errData?.error) {
+                errMsg = typeof errData.error === "string" ? errData.error : JSON.stringify(errData.error);
+              }
+            } catch { /* ignore parse error */ }
+
+            remaining.push({ ...sale, _hasError: true, _errorMessage: errMsg });
+            newErrors++;
+          }
+        } catch {
+          // Network failure — keep as pending for retry
+          remaining.push(sale);
+        }
+      }
+
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
+      setPendingCount(remaining.filter(s => !s._hasError).length);
+      setErrorCount(newErrors);
+      setLastSyncCount(synced);
+    } finally {
+      // Y5: siempre liberar el mutex, incluso ante errores inesperados
+      isSyncingRef.current = false;
+      setIsSyncing(false);
+    }
   }, [getQueue]);
 
   useEffect(() => {

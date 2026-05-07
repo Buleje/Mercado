@@ -176,28 +176,43 @@ export const CashRegistersDB = {
     return mapCashRegister(row);
   },
   async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
-    const reg = await prisma.cashRegister.findFirst({ where: { id, tenantId }, include: { movements: true } });
-    if (!reg || reg.closedAt) return null;
+    // Y4 FIX 2026-05-07: updateMany + cashMovement.create ahora en la MISMA
+    // $transaction. Antes si el proceso moría entre ambas llamadas la caja
+    // quedaba cerrada sin movimiento de cierre, rompiendo el cuadre contable.
+    // El optimistic lock (closedAt: null) se mantiene para detección de doble-cierre.
+    const row = await prisma.$transaction(async (tx) => {
+      // Leer dentro de tx para calcular expectedAmount con datos consistentes
+      const reg = await tx.cashRegister.findFirst({
+        where: { id, tenantId },
+        include: { movements: true },
+      });
+      if (!reg || reg.closedAt) return null;
 
-    const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-    const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-    const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-    const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
-    const difference = closingAmount - expectedAmount;
+      const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+      const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+      const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+      const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
+      const difference = closingAmount - expectedAmount;
 
-    // Optimistic lock: only update if closedAt is still null (tenantId guard incluido)
-    const result = await prisma.cashRegister.updateMany({
-      where: { id, tenantId, closedAt: null },
-      data: { status: "cerrada", closedAt: new Date(), closingAmount, expectedAmount, difference, notes },
+      // Optimistic lock: solo actualiza si closedAt sigue siendo null
+      const result = await tx.cashRegister.updateMany({
+        where: { id, tenantId, closedAt: null },
+        data: { status: "cerrada", closedAt: new Date(), closingAmount, expectedAmount, difference, notes },
+      });
+
+      if (result.count === 0) return null; // Otro request llegó primero
+
+      // Movimiento de cierre en la MISMA tx: si falla, el update se revierte
+      await tx.cashMovement.create({
+        data: { cashRegisterId: id, type: "cierre", amount: closingAmount, method: "efectivo", description: "Cierre de caja" },
+      });
+
+      return tx.cashRegister.findUnique({
+        where: { id },
+        include: { movements: { orderBy: { createdAt: "desc" } } },
+      });
     });
 
-    if (result.count === 0) return null; // Another request arrived first
-
-    await prisma.cashMovement.create({
-      data: { cashRegisterId: id, type: "cierre", amount: closingAmount, method: "efectivo", description: "Cierre de caja" },
-    });
-
-    const row = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
   async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId?: string): Promise<DbCashMovement> {

@@ -28,7 +28,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rateLimitResult = applyRateLimit(req, "STRICT", "cash-registers-post");
+  // Y6 FIX 2026-05-07: faltaba await. Sin él applyRateLimit devolvía una
+  // Promise (siempre truthy) → el guard cortaba TODOS los POST sin importar
+  // el rate actual — ningún cajero podía abrir caja.
+  const rateLimitResult = await applyRateLimit(req, "STRICT", "cash-registers-post");
   if (rateLimitResult) return rateLimitResult;
 
   const auth = await requireAdmin(req, ["admin", "cajero"]);
