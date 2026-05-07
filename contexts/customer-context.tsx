@@ -181,6 +181,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const register = useCallback((data: Customer) => {
     setCustomer(data);
     localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    // FIX 2026-05-07: limpiar flag de session expirada al hacer login fresco.
+    // Header.tsx setea sessionStorage["customer-notifs-401:${phone}"] cuando
+    // recibe 401, para evitar spam de polling. Al re-loguearse hay cookie nueva.
+    if (data.phone) {
+      try { sessionStorage.removeItem(`customer-notifs-401:${data.phone}`); } catch { /* ignore */ }
+    }
     // Upsert en la lista de accounts (multi-account support)
     setAccounts((prev) => {
       const next = upsertAccount(prev, data);

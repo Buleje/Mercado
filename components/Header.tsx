@@ -259,30 +259,47 @@ export default function Header() {
   const [_unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications when customer exists
-  // FIX 2026-05-07: el polling spammeaba 401 cada 60s si la sesión customer
-  // expiraba (cookie httpOnly se cae pero el customer-context sigue cargado
-  // de localStorage). Ahora si responde 401/403, detenemos el polling y
-  // limpiamos las notifs locales — el usuario verá el header sin contador
-  // hasta que vuelva a loguearse.
+  // Fetch notifications when customer exists.
+  // FIX 2026-05-07 v2: ANTES (v1) había race entre el fetch async y el
+  // setInterval — si el primer fetch daba 401, el intervalo SÍ se iniciaba
+  // y seguía spammeando. Además StrictMode dev re-ejecuta efectos y
+  // hot-reload re-monta el componente.
+  // Solución: flag persistente en sessionStorage. Si la sesión expiró una
+  // vez, NINGÚN futuro mount/render dispara fetchs hasta que el cliente
+  // limpie el flag (al re-loguearse, customer-context lo limpia).
   useEffect(() => {
     if (!customer?.phone) return;
     const phone = customer.phone;
-    let cancelled = false;
+    const sessionKey = `customer-notifs-401:${phone}`;
+
+    // Si ya recibimos 401 en otro mount, no intentar de nuevo.
+    if (typeof window !== "undefined") {
+      try {
+        if (sessionStorage.getItem(sessionKey) === "1") return;
+      } catch { /* sessionStorage bloqueado — continuar */ }
+    }
+
+    let stopped = false;
     let interval: ReturnType<typeof setInterval> | null = null;
 
     const fetchNotifs = async () => {
+      if (stopped) return;
       try {
         const r = await fetch(`/api/customer-notifications?phone=${encodeURIComponent(phone)}`, {
           credentials: "include",
         });
-        if (cancelled) return;
+        if (stopped) return;
         if (r.status === 401 || r.status === 403) {
-          // Session expirada / no autorizado — detener polling y limpiar UI.
+          // Session expirada — detener polling para SIEMPRE en este browser
+          // hasta que el customer se vuelva a loguear.
+          stopped = true;
           setNotifs([]);
           setUnreadCount(0);
-          if (interval) clearInterval(interval);
-          interval = null;
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+          try { sessionStorage.setItem(sessionKey, "1"); } catch { /* ignore */ }
           return;
         }
         if (r.ok) {
@@ -290,12 +307,14 @@ export default function Header() {
           setNotifs(data.notifications ?? []);
           setUnreadCount(data.unreadCount ?? 0);
         }
-      } catch { /* silent — error red transitorio, dejar que el siguiente intento lo recupere */ }
+      } catch { /* silent — error red transitorio */ }
     };
+
     fetchNotifs();
     interval = setInterval(fetchNotifs, 60000); // poll every 60s
+
     return () => {
-      cancelled = true;
+      stopped = true;
       if (interval) clearInterval(interval);
     };
   }, [customer?.phone]);
