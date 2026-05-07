@@ -247,42 +247,50 @@ export async function POST(req: Request) {
     cacheStore.set(lockKey, currentAttempts + 1, LOGIN_LOCKOUT_TTL);
   }
 
-  // ── Fallback: legacy admin-users.json (used during migration window) ──────
-  if (dbUsers.length === 0) {
-    const legacyUsers = await getLegacyUsers();
-    const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
-    for (const u of candidates) {
-      if (await checkPassword(password, u.password, u.username)) {
+  // ── Fallback: legacy admin-users.json + Settings.adminPassword ───────────────
+  // SECURITY 2026-05-07 (pentest F3): estos fallbacks solo están activos si
+  // LEGACY_LOGIN=1 en el entorno. En producción LEGACY_LOGIN debe estar AUSENTE
+  // o vacío — los fallbacks quedan desactivados por defecto (fail-closed).
+  if (process.env.LEGACY_LOGIN === "1") {
+    logger.warn("[auth/login] LEGACY_LOGIN active — security degraded mode", { tenantId, username });
+
+    // Fallback 1: admin-users.json (ventana de migración)
+    if (dbUsers.length === 0) {
+      const legacyUsers = await getLegacyUsers();
+      const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
+      for (const u of candidates) {
+        if (await checkPassword(password, u.password, u.username)) {
+          const [token, refreshToken] = await Promise.all([
+            createSessionToken(u.role, u.username, tenantId, u.name),
+            createRefreshToken(u.role, u.username, tenantId, u.name),
+          ]);
+          const response = NextResponse.json({ ok: true, role: u.role, name: u.name });
+          response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
+          response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
+          response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
+          return response;
+        }
+      }
+    }
+
+    // Fallback 2: Settings.adminPassword
+    try {
+      const settings = await SettingsDB.get(tenantId);
+      const adminPassword = settings.adminPassword;
+      if (adminPassword && await checkPassword(password, adminPassword, "admin")) {
         const [token, refreshToken] = await Promise.all([
-          createSessionToken(u.role, u.username, tenantId, u.name),
-          createRefreshToken(u.role, u.username, tenantId, u.name),
+          createSessionToken("admin", "admin", tenantId, "Administrador"),
+          createRefreshToken("admin", "admin", tenantId, "Administrador"),
         ]);
-        const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending: true });
+        const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador" });
         response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
         response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
         response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
         return response;
       }
+    } catch {
+      // Settings DB unavailable — skip this fallback
     }
-  }
-
-  // ── Final fallback: admin password stored in Settings (no hardcoded default) ──
-  try {
-    const settings = await SettingsDB.get(tenantId);
-    const adminPassword = settings.adminPassword;
-    if (adminPassword && await checkPassword(password, adminPassword, "admin")) {
-      const [token, refreshToken] = await Promise.all([
-        createSessionToken("admin", "admin", tenantId, "Administrador"),
-        createRefreshToken("admin", "admin", tenantId, "Administrador"),
-      ]);
-      const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador", onboardingPending: true });
-      response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
-      response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
-      response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
-      return response;
-    }
-  } catch {
-    // Settings DB unavailable — skip this fallback
   }
 
   logger.warn("[auth/login] Failed authentication attempt", { username, tenantId });

@@ -93,12 +93,16 @@ export async function createSessionToken(
   tenantId = "main",
   name = ""
 ): Promise<string> {
+  // SECURITY 2026-05-07 (pentest F1): jti único por access token para
+  // permitir revocación inmediata en logout (blacklist en cacheStore).
+  const jti = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const payload = JSON.stringify({
     role,
     username,
     tenantId,
     name,
     type: "access",
+    jti,
     exp: Date.now() + ACCESS_DURATION_MS,
   });
   const encoded = b64Encode(payload);
@@ -190,6 +194,7 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
       tenantId?: string;
       name?: string;
       type?: string;
+      jti?: string;
     };
     // Reject refresh tokens — they must only be used via /api/auth/refresh
     if (payload.type === "refresh") return null;
@@ -198,6 +203,7 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
     return {
       role: payload.role,
       username: payload.username,
+      jti: payload.jti,
       tenantId: payload.tenantId ?? "main",
       name: payload.name,
     };

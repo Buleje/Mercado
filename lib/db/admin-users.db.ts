@@ -43,6 +43,22 @@ export const AdminUsersDB = {
   },
 
   /**
+   * Devuelve passwordHash de un admin activo para re-auth (flujo 2FA enroll).
+   * Solo expone el hash — el comparador bcrypt corre en el route.
+   */
+  async getPasswordHashForReauth(
+    tenantId: string,
+    username: string,
+  ): Promise<{ passwordHash: string } | null> {
+    // eslint-disable-next-line no-restricted-properties -- helper centralizado scoped por tenantId+username+active.
+    const row = await prisma.adminUser.findFirst({
+      where: { tenantId, username, active: true },
+      select: { passwordHash: true },
+    });
+    return row;
+  },
+
+  /**
    * Lookup completo (id, name, role, active) por username. Usado por
    * dashboards que necesitan el nombre/rol del cajero, no solo su id.
    */

@@ -127,16 +127,30 @@ export default function AdminLoginPage() {
       });
 
       if (res.ok) {
-        if (rememberMe) localStorage.setItem("login-remember-username", username);
-        else localStorage.removeItem("login-remember-username");
-
         const data = (await res.json()) as {
           ok: boolean;
+          requires2FA?: boolean;
           role?: string;
           onboardingPending?: boolean;
           tenantId?: string;
           tenantSlug?: string;
         };
+
+        // ── 2FA requerido: redirigir sin mostrar error ──────────────────
+        if (data.requires2FA) {
+          if (rememberMe) localStorage.setItem("login-remember-username", username);
+          else localStorage.removeItem("login-remember-username");
+          // Preservar `from` para post-2FA redirect
+          const dest = fromRef.current
+            ? `/admin/login/2fa?from=${encodeURIComponent(fromRef.current)}`
+            : "/admin/login/2fa";
+          router.push(dest);
+          return;
+        }
+
+        if (rememberMe) localStorage.setItem("login-remember-username", username);
+        else localStorage.removeItem("login-remember-username");
+
         if (data.tenantSlug) {
           localStorage.setItem("active-tenant-slug", data.tenantSlug);
           sessionStorage.setItem("active-tenant-slug", data.tenantSlug);

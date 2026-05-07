@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import type { AdminRole, SessionPayload } from "@/lib/session";
 import { logger } from "@/lib/logger";
+import { cacheStore } from "@/lib/cache";
 
 /**
  * Verify the admin session from an API request.
@@ -34,6 +35,13 @@ export async function requireAdmin(
   if (!payload) {
     logger.warn("[AUTH] Invalid/expired token", { method, path, ip });
     return NextResponse.json({ error: "session expired" }, { status: 401 });
+  }
+
+  // SECURITY 2026-05-07 (pentest F1): chequear blacklist de jti revocados en logout.
+  // Protege contra tokens en vuelo usados después de cerrar sesión.
+  if (payload.jti && cacheStore.get(`revoked-access:${payload.jti}`)) {
+    logger.warn("[AUTH] Revoked token jti", { username: payload.username, jti: payload.jti, method, path, ip });
+    return NextResponse.json({ error: "session revoked" }, { status: 401 });
   }
 
   // Management-tier bypass — roles con visibilidad total del tenant:
