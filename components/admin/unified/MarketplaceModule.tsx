@@ -1046,228 +1046,258 @@ function MarketplaceQuickActions({
   const pctStock = state.productsTotal > 0 ? Math.round((state.productsWithStock / state.productsTotal) * 100) : 0;
   const pctRev   = state.reviewsTotal > 0 ? Math.round((state.reviewsReplied / state.reviewsTotal) * 100) : 0;
 
-  // Pipeline de venta — fila minimalista alineada con el resto de cards
-  // del admin (bg surface-raised + border rule-base, sin gradients).
+  // Pipeline de venta — cards grandes, claros, alineados con tokens del DS.
   const pipelineSteps = [
-    { key: "pendiente",  label: "Pendiente",  count: state.flowPendiente,    Icon: Clock,       fg: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-500)]/10" },
-    { key: "confirmado", label: "Preparando", count: state.flowConfirmado,   Icon: CheckCircle, fg: "text-[var(--accent)]",            bg: "bg-[var(--accent-soft)]" },
-    { key: "en_camino",  label: "En camino",  count: state.flowEnCamino,     Icon: Truck,       fg: "text-primary",                    bg: "bg-primary/10" },
-    { key: "entregado",  label: "Entregado",  count: state.flowEntregadoHoy, Icon: PackageCheck, fg: "text-[var(--text-primary)]",     bg: "bg-[var(--surface-sunken)]", emphasis: true },
+    { key: "pendiente",  label: "Pendiente",  hint: "Recién recibido",       count: state.flowPendiente,    Icon: Clock,        fg: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-500)]/10", emphasis: false },
+    { key: "confirmado", label: "Preparando", hint: "Confirmaste el pedido", count: state.flowConfirmado,   Icon: CheckCircle,  fg: "text-[var(--accent)]",            bg: "bg-[var(--accent-soft)]",          emphasis: false },
+    { key: "en_camino",  label: "En camino",  hint: "Motorizado salió",      count: state.flowEnCamino,     Icon: Truck,        fg: "text-primary",                    bg: "bg-primary/10",                    emphasis: false },
+    { key: "entregado",  label: "Entregado",  hint: "Venta concretada",      count: state.flowEntregadoHoy, Icon: PackageCheck, fg: "text-[var(--text-primary)]",      bg: "bg-[var(--surface-sunken)]",       emphasis: true  },
   ] as const;
   const fmtSoles = (n: number) => `S/ ${n.toFixed(2)}`;
+  const totalActivos = state.flowPendiente + state.flowConfirmado + state.flowEnCamino;
 
   return (
-    <div className="space-y-4 mb-5">
-      {/* ── Pipeline del flujo de venta ───────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Receipt className="h-4 w-4" />
+    <div className="space-y-6 mb-6">
+      {/* ── 1. Pipeline del flujo de venta ────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        {/* Header con título grande + 2 KPIs prominentes */}
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Receipt className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-sm leading-tight">
+              <CardTitle className="font-display text-xl leading-tight">
                 Pipeline de venta
               </CardTitle>
-              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
-                Solo entregado cuenta como venta concretada
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {state.loading
+                  ? "Cargando estado de tus pedidos..."
+                  : totalActivos > 0
+                    ? `Tienes ${totalActivos} ${totalActivos === 1 ? "pedido" : "pedidos"} en proceso. La venta solo cuenta cuando se entrega.`
+                    : "Sin pedidos activos. La venta solo cuenta cuando se entrega."}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-semibold tabular-nums">
-            <span className="text-[var(--text-tertiary)]">
-              Pipeline: <span className="text-[var(--text-primary)] font-bold">{state.loading ? "—" : fmtSoles(state.flowRevenuePipeline)}</span>
-            </span>
-            <span className="text-[var(--text-tertiary)]">
-              Hoy: <span className="text-[var(--text-primary)] font-bold">{state.loading ? "—" : fmtSoles(state.flowRevenueHoy)}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => onNavigate("ordenes")}
-              className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
-            >
-              Ver pedidos
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("ordenes")}
+            className="inline-flex items-center gap-2 px-4 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shrink-0"
+          >
+            Ver todos los pedidos
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* KPIs grandes */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Pipeline (aún por concretar)
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+              {state.loading ? "—" : fmtSoles(state.flowRevenuePipeline)}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Suma de pendientes + preparando + en camino
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Concretado hoy
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+              {state.loading ? "—" : fmtSoles(state.flowRevenueHoy)}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              {state.flowEntregadoHoy} {state.flowEntregadoHoy === 1 ? "entrega cerrada" : "entregas cerradas"}
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {pipelineSteps.map((step, i) => {
+        {/* 4 cards de estado — grandes y claros */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {pipelineSteps.map((step) => {
             const Icon = step.Icon;
-            const isLast = i === pipelineSteps.length - 1;
             return (
               <button
                 key={step.key}
                 type="button"
                 onClick={() => onNavigate("ordenes")}
                 className={cn(
-                  "relative text-left rounded-xl p-3 transition-colors flex items-center gap-3",
-                  isLast
-                    ? "bg-[var(--surface-sunken)] border border-[var(--rule-base)] hover:bg-[var(--surface-base)]"
-                    : "border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+                  "text-left rounded-xl p-5 transition-colors border",
+                  step.emphasis
+                    ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] hover:bg-[var(--surface-base)]"
+                    : "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
                 )}
               >
-                <div className={cn("inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0", step.bg)}>
-                  <Icon className={cn("h-4 w-4", step.fg)} />
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className={cn("inline-flex h-11 w-11 items-center justify-center rounded-xl", step.bg)}>
+                    <Icon className={cn("h-5 w-5", step.fg)} />
+                  </div>
+                  {step.emphasis && (
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Hoy
+                    </span>
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    {step.label}
-                  </p>
-                  <p className={cn("text-base font-extrabold tabular-nums leading-tight mt-0.5", step.fg)}>
-                    {state.loading ? "—" : step.count}
-                  </p>
-                </div>
-                {isLast && !state.loading && step.count === 0 && (
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-semibold">hoy</span>
-                )}
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  {step.label}
+                </p>
+                <p className={cn("text-3xl font-extrabold tabular-nums leading-tight mt-1", step.fg)}>
+                  {state.loading ? "—" : step.count}
+                </p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1.5">
+                  {step.hint}
+                </p>
               </button>
             );
           })}
         </div>
       </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* ── Salud de la tienda ──────────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Target className="h-4 w-4" />
-            </span>
-            <div>
-              <CardTitle className="font-display text-sm leading-tight">
-                Salud de mi tienda
-              </CardTitle>
-              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
-                puesto en el marketplace
-              </p>
+      {/* ── 2. Salud + Acciones (grid 1+2) ─────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Salud de la tienda ──────────────────────────────────── */}
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <Target className="h-5 w-5" />
+              </span>
+              <div>
+                <CardTitle className="font-display text-xl leading-tight">
+                  Salud de mi tienda
+                </CardTitle>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                  Puesto en el marketplace
+                </p>
+              </div>
             </div>
+            {!state.loading && (
+              <span
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider shrink-0",
+                  healthScore >= 80
+                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                    : healthScore >= 50
+                      ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
+                      : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
+                )}
+              >
+                {healthScore >= 80 ? "Excelente" : healthScore >= 50 ? "Mejorable" : "Urgente"}
+              </span>
+            )}
           </div>
-          {!state.loading && (
-            <span
-              className={cn(
-                "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-                healthScore >= 80
-                  ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                  : healthScore >= 50
-                  ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
-                  : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
-              )}
-            >
-              {healthScore >= 80 ? "Excelente" : healthScore >= 50 ? "Mejorable" : "Urgente"}
-            </span>
-          )}
-        </div>
 
-        <div className="flex flex-col items-center gap-3">
-          {state.loading ? (
-            <div className="h-[140px] w-[140px] bg-[var(--surface-sunken)] rounded-full animate-pulse" />
-          ) : (
-            <HealthGauge score={healthScore} />
-          )}
-          <p className="text-xs text-center text-[var(--text-secondary)] max-w-[220px] leading-relaxed">
-            {healthScore >= 80
-              ? "Tu puesto está en gran forma. Mantenlo así actualizando productos y respondiendo reseñas."
-              : healthScore >= 50
-              ? "Hay margen para mejorar. Cierra los huecos del breakdown para subir tu visibilidad."
-              : "Hay tareas urgentes. Cumple los criterios mínimos para no perder ranking."}
-          </p>
-        </div>
-
-        <div className="space-y-2.5 mt-5 pt-4 border-t border-[var(--rule-base)]">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
-            Desglose por factor
-          </p>
-          <HealthBreakdownBar label="Productos con foto"        pct={pctImg}   count={state.productsWithImage}  total={state.productsTotal} />
-          <HealthBreakdownBar label="Productos con descripción" pct={pctDesc}  count={state.productsWithDesc}   total={state.productsTotal} />
-          <HealthBreakdownBar label="Productos con stock"       pct={pctStock} count={state.productsWithStock}  total={state.productsTotal} />
-          <HealthBreakdownBar label="Reseñas respondidas"       pct={pctRev}   count={state.reviewsReplied}     total={state.reviewsTotal} />
-        </div>
-      </div>
-
-      {/* ── Qué hacer ahora ─────────────────────────────────────────── */}
-      <div className="lg:col-span-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Zap className="h-4 w-4" />
-            </span>
-            <div>
-              <CardTitle className="font-display text-sm leading-tight">
-                Qué hacer ahora
-              </CardTitle>
-              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
-                acciones priorizadas para tu puesto
-              </p>
-            </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--surface-sunken)] text-[var(--text-tertiary)] tabular-nums">
-            {state.loading ? "Cargando…" : `${actions.length} pendiente${actions.length !== 1 ? "s" : ""}`}
-          </span>
-        </div>
-
-        {state.loading ? (
-          <div className="space-y-2.5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : actions.length === 0 ? (
-          <div className="text-center py-10">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] mb-3">
-              <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
-            </span>
-            <p className="font-display text-base font-bold text-[var(--text-primary)]">Todo en orden</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
-              Tu puesto en el marketplace no tiene tareas urgentes. Mantén la cadencia.
+          <div className="flex flex-col items-center gap-4">
+            {state.loading ? (
+              <div className="h-[160px] w-[160px] bg-[var(--surface-sunken)] rounded-full animate-pulse" />
+            ) : (
+              <HealthGauge score={healthScore} />
+            )}
+            <p className="text-base text-center text-[var(--text-secondary)] max-w-[280px] leading-relaxed">
+              {healthScore >= 80
+                ? "Tu puesto está en gran forma. Mantenlo así actualizando productos y respondiendo reseñas."
+                : healthScore >= 50
+                  ? "Hay margen para mejorar. Cierra los huecos del desglose para subir tu visibilidad."
+                  : "Hay tareas urgentes. Cumple los criterios mínimos para no perder ranking."}
             </p>
           </div>
-        ) : (
-          <ul className="space-y-2.5">
-            {sortedActions.map((a) => {
-              const Icon = a.icon;
-              const t = toneStyles[a.tone];
-              return (
-                <li
-                  key={a.id}
-                  className={cn(
-                    "relative flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl border transition-all",
-                    "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full",
-                    t.bar,
-                    t.bg,
-                  )}
-                >
-                  <span className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", t.iconBg, t.iconFg)}>
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate">
-                      {a.label}
-                    </p>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-medium uppercase tracking-wide">
-                      {a.tone === "danger" ? "Urgente" : a.tone === "warning" ? "Importante" : a.tone === "info" ? "Por revisar" : "Listo"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => onNavigate(a.goTo)}
+
+          <div className="space-y-3 mt-6 pt-5 border-t border-[var(--rule-base)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+              Desglose por factor
+            </p>
+            <HealthBreakdownBar label="Productos con foto"        pct={pctImg}   count={state.productsWithImage}  total={state.productsTotal} />
+            <HealthBreakdownBar label="Productos con descripción" pct={pctDesc}  count={state.productsWithDesc}   total={state.productsTotal} />
+            <HealthBreakdownBar label="Productos con stock"       pct={pctStock} count={state.productsWithStock}  total={state.productsTotal} />
+            <HealthBreakdownBar label="Reseñas respondidas"       pct={pctRev}   count={state.reviewsReplied}     total={state.reviewsTotal} />
+          </div>
+        </div>
+
+        {/* ── Qué hacer ahora ────────────────────────────────────── */}
+        <div className="lg:col-span-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <Zap className="h-5 w-5" />
+              </span>
+              <div>
+                <CardTitle className="font-display text-xl leading-tight">
+                  Qué hacer ahora
+                </CardTitle>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                  Acciones priorizadas para tu puesto
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider bg-[var(--surface-sunken)] text-[var(--text-tertiary)] tabular-nums shrink-0">
+              {state.loading ? "Cargando…" : `${actions.length} ${actions.length === 1 ? "pendiente" : "pendientes"}`}
+            </span>
+          </div>
+
+          {state.loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : actions.length === 0 ? (
+            <div className="text-center py-12">
+              <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)] mb-4">
+                <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
+              </span>
+              <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">Todo en orden</p>
+              <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+                Tu puesto en el marketplace no tiene tareas urgentes. Mantén la cadencia actualizando productos y atendiendo pedidos.
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {sortedActions.map((a) => {
+                const Icon = a.icon;
+                const t = toneStyles[a.tone];
+                return (
+                  <li
+                    key={a.id}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-xs font-bold transition-all shrink-0",
-                      "hover:bg-primary hover:text-white hover:border-primary hover:shadow-sm",
-                      "inline-flex items-center gap-1.5 text-[var(--text-primary)]",
+                      "relative flex items-center gap-4 pl-5 pr-4 py-4 rounded-xl border transition-all",
+                      "before:absolute before:left-0 before:top-3 before:bottom-3 before:w-1 before:rounded-full",
+                      t.bar,
+                      t.bg,
                     )}
                   >
-                    {a.cta}
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                    <span className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", t.iconBg, t.iconFg)}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                        {a.label}
+                      </p>
+                      <p className="text-sm text-[var(--text-tertiary)] mt-1 font-bold uppercase tracking-wide">
+                        {a.tone === "danger" ? "Urgente" : a.tone === "warning" ? "Importante" : a.tone === "info" ? "Por revisar" : "Listo"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(a.goTo)}
+                      className={cn(
+                        "px-4 h-11 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-bold transition-all shrink-0",
+                        "hover:bg-primary hover:text-white hover:border-primary hover:shadow-sm",
+                        "inline-flex items-center gap-2 text-[var(--text-primary)]",
+                      )}
+                    >
+                      {a.cta}
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 }
