@@ -260,23 +260,44 @@ export default function Header() {
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications when customer exists
+  // FIX 2026-05-07: el polling spammeaba 401 cada 60s si la sesión customer
+  // expiraba (cookie httpOnly se cae pero el customer-context sigue cargado
+  // de localStorage). Ahora si responde 401/403, detenemos el polling y
+  // limpiamos las notifs locales — el usuario verá el header sin contador
+  // hasta que vuelva a loguearse.
   useEffect(() => {
     if (!customer?.phone) return;
     const phone = customer.phone;
     let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
+
     const fetchNotifs = async () => {
       try {
-        const r = await fetch(`/api/customer-notifications?phone=${encodeURIComponent(phone)}`);
-        if (r.ok && !cancelled) {
+        const r = await fetch(`/api/customer-notifications?phone=${encodeURIComponent(phone)}`, {
+          credentials: "include",
+        });
+        if (cancelled) return;
+        if (r.status === 401 || r.status === 403) {
+          // Session expirada / no autorizado — detener polling y limpiar UI.
+          setNotifs([]);
+          setUnreadCount(0);
+          if (interval) clearInterval(interval);
+          interval = null;
+          return;
+        }
+        if (r.ok) {
           const data = await r.json();
           setNotifs(data.notifications ?? []);
           setUnreadCount(data.unreadCount ?? 0);
         }
-      } catch { /* silent */ }
+      } catch { /* silent — error red transitorio, dejar que el siguiente intento lo recupere */ }
     };
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 60000); // poll every 60s
-    return () => { cancelled = true; clearInterval(interval); };
+    interval = setInterval(fetchNotifs, 60000); // poll every 60s
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
   }, [customer?.phone]);
 
   // Close notif dropdown on outside click
