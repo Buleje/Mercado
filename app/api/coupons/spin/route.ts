@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { cacheStore } from "@/lib/cache";
 
 // SECURITY (F1 2026-05-07): el cliente ya NO envía el prize.
 // El schema solo acepta datos opcionales de contexto (e.g. phone para
@@ -41,8 +42,6 @@ export async function POST(req: NextRequest) {
   const limited = applyRateLimit(req, "STRICT", "coupons-spin");
   if (limited) return limited;
 
-  // TODO(P2): tabla SpinAttempt para 1 giro/día por IP+phone
-
   try {
     // Body opcional — si no viene JSON válido, se trata como objeto vacío.
     let raw: unknown = {};
@@ -57,6 +56,19 @@ export async function POST(req: NextRequest) {
     const prizeConfig = rollPrize();
 
     const tenantId = getTenantIdFromRequest(req);
+
+    // F2 2026-05-07: limitar 1 giro/día por phone+tenant.
+    // Defense-in-depth: in-memory cache (no compartida entre réplicas Vercel)
+    // pero combinado con rate-limit STRICT por IP cubre la mayoría del farm.
+    // TTL 25h para sobrevivir cambio de día UTC.
+    if (parsed.data.phone) {
+      const dayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+      const spinKey = `spin:${tenantId}:${parsed.data.phone}:${dayKey}`;
+      const attempted = cacheStore.get<string>(spinKey);
+      if (attempted === "1") {
+        return NextResponse.json({ error: "Solo 1 giro por día" }, { status: 429 });
+      }
+    }
 
     // Generate unique code (retry up to 5 times on collision)
     let code = "";
@@ -78,6 +90,13 @@ export async function POST(req: NextRequest) {
       active: true,
       expiresAt,
     }, tenantId);
+
+    // F2 2026-05-07: marcar giro consumido en cache DESPUÉS del create exitoso.
+    if (parsed.data.phone) {
+      const dayKey = new Date().toISOString().slice(0, 10);
+      const spinKey = `spin:${tenantId}:${parsed.data.phone}:${dayKey}`;
+      cacheStore.set<string>(spinKey, "1", 25 * 3600); // TTL 25h
+    }
 
     // Devolver el premio seleccionado para que el frontend lo muestre en la animación.
     return NextResponse.json({ code: coupon.code, prize: prizeConfig.name, expiresAt }, { status: 201 });

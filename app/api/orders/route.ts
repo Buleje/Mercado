@@ -17,6 +17,7 @@ import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prismaForTenant } from "@/lib/tenant";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
+import { CouponsDB as CouponsDBDirect } from "@/lib/db/coupons.db";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { getOrSet } from "@/lib/cache";
@@ -450,7 +451,21 @@ export const POST = withApiHandler("orders-create", async (req) => {
         (!coupon.expiresAt || new Date(coupon.expiresAt) > now) &&
         (!coupon.maxUses || coupon.usedCount < coupon.maxUses) &&
         (!coupon.minPurchase || itemsTotal >= coupon.minPurchase);
-      if (valid) {
+      // F3 2026-05-07: prevenir que un solo customer agote maxUses global.
+      // Default: máx 1 uso por cliente/cupón en 90 días (sin campo extra en schema).
+      let validForCustomer = valid;
+      if (valid && body.customer?.phone) {
+        const MAX_PER_CUSTOMER = 1; // sin maxUsesPerCustomer en schema: default 1
+        const prevUses = await CouponsDBDirect.countUsesByCustomer(
+          tenantId,
+          body.customer.phone,
+          coupon!.code,
+        ).catch(() => 0);
+        if (prevUses >= MAX_PER_CUSTOMER) {
+          validForCustomer = false;
+        }
+      }
+      if (validForCustomer && coupon) {
         if (coupon.discountType === "giftcard") {
           const balance = coupon.balance ?? coupon.discountValue;
           serverCouponDiscount = Math.min(balance, itemsTotal);

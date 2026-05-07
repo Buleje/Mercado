@@ -205,4 +205,28 @@ export const CouponsDB = {
     const result = await prisma.coupon.deleteMany({ where: { id, tenantId } });
     return result.count > 0;
   },
+
+  /**
+   * F3 2026-05-07 — Cuenta cuántas veces un customer usó un cupón específico
+   * en órdenes no canceladas de los últimos 90 días.
+   * Solo lectura — no toca state machine ni idempotency de orders.db.
+   * Previene que un único cliente agote un cupón global (maxUses=10) él solo.
+   */
+  async countUsesByCustomer(
+    tenantId: string,
+    customerPhone: string,
+    couponCode: string,
+  ): Promise<number> {
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    return prisma.order.count({
+      where: {
+        tenantId,
+        customerPhone: customerPhone.replace(/\D/g, ""),
+        appliedCouponCode: couponCode,
+        status: { notIn: ["cancelado"] },
+        createdAt: { gte: since },
+        deletedAt: null,
+      },
+    });
+  },
 };

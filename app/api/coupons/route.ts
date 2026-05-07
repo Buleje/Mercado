@@ -43,14 +43,18 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { code, description, discountType, discountValue, minPurchase, maxUses, active, expiresAt } = parsed.data;
+  // F1 2026-05-07: normalizar a uppercase antes de check y create para evitar
+  // duplicados case-insensitive (BIENV2026 vs bienv2026). getByCode y add también
+  // normalizan, pero hacerlo aquí garantiza consistencia si se cambia la DB layer.
+  const normalizedCode = parsed.data.code.toUpperCase().trim();
+  const { description, discountType, discountValue, minPurchase, maxUses, active, expiresAt } = parsed.data;
 
   try {
-    const existing = await CouponsDB.getByCode(auth.tenantId, code);
+    const existing = await CouponsDB.getByCode(auth.tenantId, normalizedCode);
     if (existing) return NextResponse.json({ error: "Ya existe un cupón con ese código" }, { status: 409 });
 
     const coupon = await CouponsDB.add({
-      code, description: description ?? "",
+      code: normalizedCode, description: description ?? "",
       discountType: discountType ?? "percent", discountValue,
       minPurchase, maxUses, active: active ?? true, expiresAt,
     }, auth.tenantId);
