@@ -181,6 +181,13 @@ export default function MarketplaceCheckoutModal({
     { storeName: string; storeSlug: string; success: boolean; orderId?: string; error?: string }[]
   >([]);
 
+  // SECURITY 2026-05-07 (audit M1 P0): pago multi-tienda con MP genera N
+  // preferences (1 por tienda). Antes solo se creaba 1 preference para la
+  // PRIMERA tienda y las demás N-1 nunca cobraban → vendors sin pago.
+  const [mpPendingPayments, setMpPendingPayments] = useState<
+    { storeName: string; storeSlug: string; orderId: string; total: number; initPoint: string }[]
+  >([]);
+
   // Customer data
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -450,35 +457,50 @@ export default function MarketplaceCheckoutModal({
       if (sid) clearStore(sid);
     }
 
-    // Mercado Pago flow: redirect to MP checkout
+    // SECURITY 2026-05-07 (audit M1): MP multi-vendor — generar N preferences,
+    // 1 por tienda. Si solo hay 1 tienda, redirect directo. Si hay 2+, mostrar
+    // lista de CTAs "Pagar S/X a Tienda Y" para que el cliente complete cada pago.
+    // El backend (create-preference) reconstruye items desde Order.findUnique
+    // para preservar invariante "totales en backend" — no se confía en cliente.
     if (payMethod === "mercado_pago" && succeeded.length > 0) {
+      const succeededWithOrderId = succeeded.filter((s): s is typeof s & { orderId: string } => Boolean(s.orderId));
       try {
-        // For simplicity, create one MP preference for the first succeeded order
-        const firstSuccess = succeeded[0];
-        const group = byStore[storeIds.find((id) => byStore[id]?.storeSlug === firstSuccess.storeSlug)!];
-        const mpRes = await fetch("/api/marketplace/payment/mercadopago/create-preference", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({
-            storeSlug: firstSuccess.storeSlug,
-            storeName: firstSuccess.storeName,
-            customerName: name.trim(),
-            customerPhone: phone.trim(),
-            items: group.items.map((i) => ({
-              name: i.name,
-              quantity: i.quantity,
-              unitPrice: i.price,
-            })),
-            orderId: firstSuccess.orderId || "unknown",
-            total: group.items.reduce((s, i) => s + i.price * i.quantity, 0),
-          }),
+        const preferencePromises = succeededWithOrderId.map(async (s) => {
+          const res = await fetch("/api/marketplace/payment/mercadopago/create-preference", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({
+              orderId: s.orderId,
+              storeSlug: s.storeSlug,
+              storeName: s.storeName,
+              customerName: name.trim(),
+              customerPhone: phone.trim(),
+            }),
+          });
+          if (!res.ok) return null;
+          const data = (await res.json()) as { initPoint?: string; total?: number };
+          if (!data.initPoint) return null;
+          return {
+            storeName: s.storeName,
+            storeSlug: s.storeSlug,
+            orderId: s.orderId,
+            total: data.total ?? 0,
+            initPoint: data.initPoint,
+          };
         });
-        if (mpRes.ok) {
-          const mpData = await mpRes.json();
-          if (mpData.initPoint) {
-            window.location.href = mpData.initPoint;
-            return;
-          }
+        const preferences = (await Promise.all(preferencePromises)).filter((p): p is NonNullable<typeof p> => p !== null);
+
+        if (preferences.length === 1) {
+          // 1 tienda: redirect directo (UX original mantenida)
+          window.location.href = preferences[0].initPoint;
+          return;
+        }
+        if (preferences.length > 1) {
+          // Multi-tienda: mostrar lista de pagos pendientes
+          setMpPendingPayments(preferences);
+          setOrderSuccess(true);
+          setSubmitting(false);
+          return;
         }
       } catch { /* fall through to normal success */ }
     }
@@ -503,13 +525,15 @@ export default function MarketplaceCheckoutModal({
       setOrderError(null);
       setOrderSuccess(false);
       setOrderResults([]);
+      setMpPendingPayments([]);
       onClose();
     }
   };
 
-  // Close on success after delay
+  // Close on success after delay (NO auto-close si hay pagos MP pendientes
+  // — el cliente debe hacer click en cada CTA "Pagar a Tienda Y" antes de cerrar).
   useEffect(() => {
-    if (orderSuccess && orderResults.every((r) => r.success)) {
+    if (orderSuccess && orderResults.every((r) => r.success) && mpPendingPayments.length === 0) {
       const timer = setTimeout(() => {
         if (!submitting) {
           setStep("datos");
@@ -521,7 +545,7 @@ export default function MarketplaceCheckoutModal({
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [orderSuccess, orderResults, submitting, onClose]);
+  }, [orderSuccess, orderResults, mpPendingPayments.length, submitting, onClose]);
 
   const storeIds = Object.keys(byStore);
 
@@ -626,6 +650,33 @@ export default function MarketplaceCheckoutModal({
                               </span>
                             )}
                           </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* SECURITY 2026-05-07 (audit M1): MP multi-vendor — N CTAs de pago */}
+                    {mpPendingPayments.length > 0 && (
+                      <div className="w-full max-w-xs space-y-3 mt-4">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          Pagos pendientes ({mpPendingPayments.length}):
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Tienes pedidos en {mpPendingPayments.length} tiendas. Paga cada uno por separado:
+                        </p>
+                        {mpPendingPayments.map((p) => (
+                          <a
+                            key={p.orderId}
+                            href={p.initPoint}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-2 rounded-2xl border-2 border-primary bg-primary/10 hover:bg-primary/20 px-4 py-3 transition-colors"
+                          >
+                            <span className="font-semibold text-sm text-left text-gray-900 dark:text-white truncate">
+                              {p.storeName}
+                            </span>
+                            <span className="font-bold text-sm text-primary whitespace-nowrap">
+                              Pagar S/{Number(p.total).toFixed(2)}
+                            </span>
+                          </a>
                         ))}
                       </div>
                     )}

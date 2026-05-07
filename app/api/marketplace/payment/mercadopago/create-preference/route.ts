@@ -105,10 +105,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // SECURITY 2026-05-07 (audit M1): retornar total derivado del backend
+    // (NUNCA del cliente). El frontend lo usa solo para mostrar el monto en
+    // el CTA "Pagar S/X a Tienda Y" del flujo multi-vendor.
+    const total = dbItems.reduce((sum, it) => sum + it.unit_price * it.quantity, 0);
+
     return NextResponse.json({
       preferenceId: result.id,
       initPoint: result.init_point,
       sandboxInitPoint: result.sandbox_init_point,
+      total,
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
