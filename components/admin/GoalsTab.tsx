@@ -12,7 +12,11 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
-type GoalCategory = "ventas" | "pedidos" | "clientes" | "productos" | "caja";
+// FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
+// - ticket_promedio: facturación / Nº pedidos del período
+// - retencion: clientes que compraron 2+ veces / clientes totales
+// (producto_top quedó pendiente — requiere persistir productId en la meta)
+type GoalCategory = "ventas" | "pedidos" | "clientes" | "productos" | "caja" | "ticket_promedio" | "retencion";
 type GoalStatus = "completed" | "overdue" | "urgent" | "active";
 
 interface Goal {
@@ -28,11 +32,13 @@ interface Goal {
 }
 
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType; trackable: boolean }> = {
-  ventas:    { label: "Ventas",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
-  pedidos:   { label: "Pedidos",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
-  clientes:  { label: "Clientes",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Users,      trackable: true  },
-  productos: { label: "Productos", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
-  caja:      { label: "Caja",      color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Coins,      trackable: false },
+  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
+  pedidos:          { label: "Pedidos",          color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
+  clientes:         { label: "Clientes",         color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
+  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
+  caja:             { label: "Caja",             color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Coins,      trackable: false },
+  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Coins,      trackable: true  },
+  retencion:        { label: "Retención",        color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
 };
 
 const PERIOD_LABELS: Record<GoalPeriod, string> = {
@@ -62,6 +68,9 @@ const TEMPLATES: Template[] = [
   { id: "clientes-nuevos",  label: "Clientes nuevos",        description: "Crecer la base de clientes",           icon: Users,      category: "clientes",  period: "mensual", unit: "clientes", defaultTarget: 30,    namePrefix: "Nuevos clientes " },
   { id: "productos-vendidos", label: "Productos vendidos",   description: "Volumen de productos despachados",     icon: Package,    category: "productos", period: "mensual", unit: "unidades", defaultTarget: 500,   namePrefix: "Unidades " },
   { id: "cobranza-mes",     label: "Cobranza del mes",       description: "Recuperar fiados pendientes",          icon: Coins,      category: "caja",      period: "mensual", unit: "S/",       defaultTarget: 2000,  namePrefix: "Cobranza " },
+  // FIX 2026-05-07 (C): templates de las nuevas categorías auto-trackeables.
+  { id: "ticket-mes",       label: "Subir ticket promedio",  description: "Que cada compra valga más",            icon: Coins,      category: "ticket_promedio", period: "mensual", unit: "S/",       defaultTarget: 35,    namePrefix: "Ticket promedio " },
+  { id: "retencion-mes",    label: "Clientes que vuelven",   description: "% de clientes con 2+ compras",         icon: Users,      category: "retencion",       period: "mensual", unit: "%",        defaultTarget: 40,    namePrefix: "Retención " },
 ];
 
 interface AutoStats {
@@ -74,12 +83,22 @@ interface AutoStats {
   clientesMes: number;
   clientesSemana: number;
   clientesDia: number;
+  // FIX 2026-05-07 (C): métricas derivadas auto-trackeables.
+  ticketPromedioMes: number;
+  ticketPromedioSemana: number;
+  ticketPromedioDia: number;
+  // % de clientes que compraron 2+ veces en el período (0-100).
+  retencionMes: number;
+  retencionSemana: number;
+  retencionDia: number;
 }
 
 const ZERO_STATS: AutoStats = {
   ventasMes: 0, ventasDia: 0, ventasSemana: 0,
   pedidosMes: 0, pedidosSemana: 0, pedidosDia: 0,
   clientesMes: 0, clientesSemana: 0, clientesDia: 0,
+  ticketPromedioMes: 0, ticketPromedioSemana: 0, ticketPromedioDia: 0,
+  retencionMes: 0, retencionSemana: 0, retencionDia: 0,
 };
 
 function pickAutoCurrent(category: GoalCategory, period: GoalPeriod, stats: AutoStats): number | null {
@@ -97,6 +116,16 @@ function pickAutoCurrent(category: GoalCategory, period: GoalPeriod, stats: Auto
     if (period === "diario")  return stats.clientesDia;
     if (period === "semanal") return stats.clientesSemana;
     return stats.clientesMes;
+  }
+  if (category === "ticket_promedio") {
+    if (period === "diario")  return stats.ticketPromedioDia;
+    if (period === "semanal") return stats.ticketPromedioSemana;
+    return stats.ticketPromedioMes;
+  }
+  if (category === "retencion") {
+    if (period === "diario")  return stats.retencionDia;
+    if (period === "semanal") return stats.retencionSemana;
+    return stats.retencionMes;
   }
   return null;
 }
@@ -210,6 +239,74 @@ function KPISummary({ goals }: { goals: Goal[] }) {
   );
 }
 
+// FIX 2026-05-07 (D): histórico de metas cumplidas en períodos anteriores.
+// Muestra "X metas cumplidas en abril" + tendencia vs mes anterior.
+// Usa createdAt + dueDate para clasificar por período.
+function HistoryCard({ goals }: { goals: Goal[] }) {
+  const stats = useMemo(() => {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1).toLocaleString("es-PE", {
+      month: "long",
+    });
+
+    let lastMonthCompleted = 0;
+    let lastMonthTotal = 0;
+    let twoMonthsCompleted = 0;
+    let twoMonthsTotal = 0;
+
+    for (const g of goals) {
+      const created = g.createdAt ? new Date(g.createdAt).getTime() : 0;
+      if (created >= lastMonthStart && created < thisMonthStart) {
+        lastMonthTotal++;
+        if (g.current >= g.target) lastMonthCompleted++;
+      } else if (created < lastMonthStart) {
+        twoMonthsTotal++;
+        if (g.current >= g.target) twoMonthsCompleted++;
+      }
+    }
+
+    const trend =
+      twoMonthsTotal > 0
+        ? Math.round((lastMonthCompleted / Math.max(1, lastMonthTotal)) * 100) -
+          Math.round((twoMonthsCompleted / Math.max(1, twoMonthsTotal)) * 100)
+        : 0;
+
+    return { lastMonthCompleted, lastMonthTotal, lastMonthName, trend };
+  }, [goals]);
+
+  if (stats.lastMonthTotal === 0) return null;
+
+  return (
+    <div className="bg-linear-to-br from-[var(--accent-soft)] to-white dark:from-[var(--accent-soft)]/30 dark:to-card border-2 border-[var(--accent)]/30 rounded-2xl p-4 sm:p-5 flex items-center gap-4">
+      <div className="shrink-0 h-14 w-14 rounded-2xl bg-[var(--accent)]/15 flex items-center justify-center">
+        <Sparkles className="h-7 w-7 text-[var(--accent)]" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Tu racha del mes pasado
+        </p>
+        <p className="text-base font-extrabold text-[var(--text-primary)] mt-0.5 capitalize">
+          Cumpliste {stats.lastMonthCompleted} de {stats.lastMonthTotal} metas en {stats.lastMonthName}
+        </p>
+        {stats.trend !== 0 && (
+          <p
+            className={cn(
+              "text-xs font-bold mt-1",
+              stats.trend > 0
+                ? "text-[var(--data-success-500)]"
+                : "text-[var(--data-warning-500)]",
+            )}
+          >
+            {stats.trend > 0 ? "▲" : "▼"} {Math.abs(stats.trend)}% vs el mes anterior
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface GoalFormData { name: string; category: GoalCategory; period: GoalPeriod; target: string; unit: string; dueDate: string; current: string; }
 const EMPTY_FORM: GoalFormData = { name: "", category: "ventas", period: "mensual", target: "", unit: "S/", dueDate: "", current: "0" };
 
@@ -278,15 +375,75 @@ export default function GoalsTab() {
         if (t >= todayStart) clientesDia += 1;
       }
 
+      // FIX 2026-05-07 (C): ticket promedio = facturación / pedidos.
+      // Si no hubo pedidos en el período, queda en 0 (no NaN).
+      const ticketPromedioMes    = pedidosMes    > 0 ? Math.round(ventasMes    / pedidosMes    * 100) / 100 : 0;
+      const ticketPromedioSemana = pedidosSemana > 0 ? Math.round(ventasSemana / pedidosSemana * 100) / 100 : 0;
+      const ticketPromedioDia    = pedidosDia    > 0 ? Math.round(ventasDia    / pedidosDia    * 100) / 100 : 0;
+
+      // Retención: % de clientes que pidieron 2+ veces en el período.
+      // Necesitamos contar pedidos por cliente — usamos sales con customerPhone.
+      const phonesByPeriod = { mes: new Map<string, number>(), semana: new Map<string, number>(), dia: new Map<string, number>() };
+      for (const s of Array.isArray(sales) ? sales : []) {
+        const phone = (s as { customerPhone?: string }).customerPhone;
+        if (!phone) continue;
+        const t = s.createdAt ? new Date(s.createdAt).getTime() : 0;
+        if (t >= monthStart) phonesByPeriod.mes.set(phone, (phonesByPeriod.mes.get(phone) ?? 0) + 1);
+        if (t >= weekStart)  phonesByPeriod.semana.set(phone, (phonesByPeriod.semana.get(phone) ?? 0) + 1);
+        if (t >= todayStart) phonesByPeriod.dia.set(phone, (phonesByPeriod.dia.get(phone) ?? 0) + 1);
+      }
+      const calcRetencion = (m: Map<string, number>) => {
+        if (m.size === 0) return 0;
+        const repeat = Array.from(m.values()).filter(c => c >= 2).length;
+        return Math.round((repeat / m.size) * 100);
+      };
+      const retencionMes    = calcRetencion(phonesByPeriod.mes);
+      const retencionSemana = calcRetencion(phonesByPeriod.semana);
+      const retencionDia    = calcRetencion(phonesByPeriod.dia);
+
       setAutoStats({
         ventasMes, ventasDia, ventasSemana,
         pedidosMes, pedidosSemana, pedidosDia,
         clientesMes, clientesSemana, clientesDia,
+        ticketPromedioMes, ticketPromedioSemana, ticketPromedioDia,
+        retencionMes, retencionSemana, retencionDia,
       });
     } catch { /* silent */ }
   }, []);
 
   useEffect(() => { void load(); void loadAutoStats(); }, [load, loadAutoStats]);
+
+  // FIX 2026-05-07 (B): live update cada 30s mientras la pestaña está activa.
+  // Si el dueño minimiza el navegador o cambia de pestaña, pausamos para ahorrar
+  // requests al server. Reanuda al volver. Las metas se actualizan en tiempo
+  // real conforme entran ventas — sin recargar.
+  useEffect(() => {
+    const REFRESH_MS = 30_000;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => { void loadAutoStats(); }, REFRESH_MS);
+    };
+    const stop = () => {
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    };
+
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      start();
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [loadAutoStats]);
 
   // ─── Templates handler ────────────────────────────────────────────────────
   const applyTemplate = (t: Template) => {
@@ -442,9 +599,24 @@ export default function GoalsTab() {
     });
   };
 
+  // FIX 2026-05-07 (A): live current. Para metas trackables (ventas, pedidos,
+  // clientes) reemplazamos el `current` del DB por el valor real calculado
+  // desde autoStats. Math.max para no DECREMENTAR si el dueño puso un valor
+  // manual mayor. Las metas no-trackables (productos, caja) quedan con su
+  // current del DB intacto.
+  const liveGoals = useMemo(() => {
+    return goals.map(g => {
+      const meta = CATEGORY_META[g.category];
+      if (!meta?.trackable) return g;
+      const auto = pickAutoCurrent(g.category, g.period, autoStats);
+      if (auto == null) return g;
+      return { ...g, current: Math.max(g.current, auto) };
+    });
+  }, [goals, autoStats]);
+
   // ─── Filtered + sorted ─────────────────────────────────────────────────────
   const visible = useMemo(() => {
-    const enriched = goals.map(g => ({ goal: g, status: computeStatus(g) }));
+    const enriched = liveGoals.map(g => ({ goal: g, status: computeStatus(g) }));
     const filtered = enriched.filter(({ status }) => {
       if (filter === "todas")        return true;
       if (filter === "activas")      return status === "active" || status === "urgent";
@@ -454,18 +626,18 @@ export default function GoalsTab() {
     });
     filtered.sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
     return filtered;
-  }, [goals, filter]);
+  }, [liveGoals, filter]);
 
   const counts = useMemo(() => {
-    const c = { todas: goals.length, activas: 0, completadas: 0, vencidas: 0 };
-    for (const g of goals) {
+    const c = { todas: liveGoals.length, activas: 0, completadas: 0, vencidas: 0 };
+    for (const g of liveGoals) {
       const s = computeStatus(g);
       if (s === "active" || s === "urgent") c.activas++;
       else if (s === "completed")           c.completadas++;
       else if (s === "overdue")             c.vencidas++;
     }
     return c;
-  }, [goals]);
+  }, [liveGoals]);
 
   return (
     <div className="space-y-6">
@@ -483,8 +655,11 @@ export default function GoalsTab() {
         </button>
       </div>
 
-      {/* KPI Summary */}
-      {goals.length > 0 && <KPISummary goals={goals} />}
+      {/* KPI Summary — usa liveGoals para reflejar progreso real-time */}
+      {liveGoals.length > 0 && <KPISummary goals={liveGoals} />}
+
+      {/* Histórico — racha del mes pasado (FIX D, 2026-05-07) */}
+      <HistoryCard goals={goals} />
 
       {/* Filter pills */}
       {goals.length > 0 && (
