@@ -48,7 +48,8 @@ function toISO(d: Date): string {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
-function mapSale(s: PSale & { items: PSaleItem[] }): DbSale {
+// Tipo permisivo: acepta PSale completo o PSale sin idempotencyKey (drift).
+function mapSale(s: Omit<PSale, "idempotencyKey"> & { items: PSaleItem[]; idempotencyKey?: string | null }): DbSale {
   return {
     id: s.id,
     items: s.items.map((i: PSaleItem) => ({ productId: i.productId, name: i.name, price: toNumOrZero(i.price), ...(i.costPrice != null && { costPrice: toNumOrZero(i.costPrice) }), quantity: i.quantity, unit: i.unit })),
@@ -94,11 +95,24 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 
 export const SalesDB = {
   async getAll(tenantId: string): Promise<DbSale[]> {
-    const where: Record<string, unknown> = { tenantId };
-    return (await prisma.sale.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
+    // FIX 2026-05-07 (schema drift): omit idempotencyKey hasta que la
+    // migration 20260507000000_add_sale_idempotency_key se aplique a la DB.
+    // Prisma intenta SELECT-ear todos los campos del schema; si la columna
+    // no existe en Postgres, falla con 503 "column not available".
+    // Quitar el omit cuando se haga `prisma migrate deploy` con DIRECT_URL.
+    return (await prisma.sale.findMany({
+      where: { tenantId },
+      omit: { idempotencyKey: true },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    })).map(mapSale);
   },
   async getById(tenantId: string, id: string): Promise<DbSale | null> {
-    const row = await prisma.sale.findFirst({ where: { id, tenantId }, include: { items: true } });
+    const row = await prisma.sale.findFirst({
+      where: { id, tenantId },
+      omit: { idempotencyKey: true },
+      include: { items: true },
+    });
     return row ? mapSale(row) : null;
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {
