@@ -31,6 +31,9 @@ const SaleSchema = z.object({
   // Mejora 4: Descuento global
   descuentoMonto: z.number().nonnegative().optional(),
   descuentoPorcentaje: z.number().nonnegative().optional(),
+  // SECURITY 2026-05-07 (X2): idempotencyKey generada por el POS offline.
+  // El server la usa para deduplicar; NUNCA toma el `id` del cliente.
+  idempotencyKey: z.string().max(100).optional(),
 }).strip(); // Strip unknown fields (e.g. _offlineId from offline queue)
 
 export async function GET(req: NextRequest) {
@@ -156,8 +159,32 @@ export async function POST(req: NextRequest) {
     resolvedCustomerPhone = existingCustomer?.phone ?? undefined;
   }
 
-  const id = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  // SECURITY 2026-05-07 (X2): id siempre generado server-side.
+  // NUNCA usar el id que venga del cliente (evita colisiones/tampering).
+  const id = crypto.randomUUID();
   const cashierId = auth.username;
+
+  // Deduplicación por idempotencyKey: si el POS offline reintenta un POST
+  // que ya llegó, devolver la Sale existente en vez de crear un duplicado.
+  if (data.idempotencyKey) {
+    const existing = await prisma.sale.findFirst({
+      where: { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey },
+      include: { items: true },
+    });
+    if (existing) {
+      logger.info("[sales] POST deduplicated by idempotencyKey", { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey, saleId: existing.id });
+      return NextResponse.json({
+        id: existing.id,
+        items: existing.items.map(i => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
+        total: existing.total,
+        payment: existing.payment,
+        amountPaid: existing.amountPaid,
+        change: existing.change,
+        createdAt: existing.createdAt.toISOString(),
+        _deduplicated: true,
+      }, { status: 200 });
+    }
+  }
 
   // ── Transacción ACID: venta + decremento de stock atómicos ──────────────────
   // Si el stock falla, la venta también se revierte. Ninguno queda a medias.
@@ -199,6 +226,7 @@ export async function POST(req: NextRequest) {
           descuentoMonto: data.descuentoMonto ?? null,
           descuentoPorcentaje: data.descuentoPorcentaje ?? null,
           paymentDetails: data.paymentDetails ?? null,
+          idempotencyKey: data.idempotencyKey ?? null,
           items: validItems.length > 0
             ? { create: validItems.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
             : undefined,
@@ -380,6 +408,11 @@ export async function POST(req: NextRequest) {
 
 function fmtCurrent(n: number) { return `S/${n.toFixed(2)}`; }
 
+// Y3 FIX 2026-05-07: race condition entre 2 boletas/facturas simultáneas.
+// Estrategia A — collision detection + retry en P2002 (unique constraint).
+// Elegida sobre SELECT FOR UPDATE porque no requiere raw SQL ni tx larga que
+// serializa la tabla entera. Con @@unique([tenantId,comprobanteTipo,comprobanteNumero])
+// en schema, la colisión se convierte en P2002 detectable → reintento con MAX+1.
 async function generarNumeroComprobante(tenantId: string, tipo: string): Promise<string> {
   const prefijos: Record<string, string> = {
     boleta: "B001",
@@ -389,18 +422,38 @@ async function generarNumeroComprobante(tenantId: string, tipo: string): Promise
   };
   const prefijo = prefijos[tipo] || "DOC";
 
-  // Buscar último número de ese tipo
-  const last = await prisma.sale.findFirst({
-    where: { tenantId, comprobanteTipo: tipo, comprobanteNumero: { not: null } },
-    orderBy: { createdAt: "desc" },
-    select: { comprobanteNumero: true },
-  });
+  const MAX_RETRIES = 5;
 
-  let numero = 1;
-  if (last?.comprobanteNumero) {
-    const match = last.comprobanteNumero.match(/(\d+)$/);
-    if (match) numero = parseInt(match[1]) + 1;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // Re-leer el MAX en cada intento: otro proceso pudo haber ganado la carrera
+    const last = await prisma.sale.findFirst({
+      where: { tenantId, comprobanteTipo: tipo, comprobanteNumero: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { comprobanteNumero: true },
+    });
+
+    let numero = 1;
+    if (last?.comprobanteNumero) {
+      const match = last.comprobanteNumero.match(/(\d+)$/);
+      if (match) numero = parseInt(match[1]) + 1;
+    }
+
+    const candidate = `${prefijo}-${String(numero).padStart(8, "0")}`;
+
+    try {
+      // Si el unique constraint detecta colisión, Prisma lanza P2002 → retry
+      await prisma.sale.updateMany({
+        where: { tenantId, comprobanteTipo: tipo, comprobanteNumero: null },
+        data: { comprobanteNumero: candidate },
+      });
+      return candidate;
+    } catch (err) {
+      const isUnique = err instanceof Error && err.message.includes("P2002");
+      if (!isUnique || attempt === MAX_RETRIES - 1) throw err;
+      // Pausa escalonada antes del siguiente intento (evita thundering herd)
+      await new Promise((r) => setTimeout(r, 10 * (attempt + 1)));
+    }
   }
 
-  return `${prefijo}-${String(numero).padStart(8, "0")}`;
+  throw new Error("generarNumeroComprobante: max retries exceeded");
 }

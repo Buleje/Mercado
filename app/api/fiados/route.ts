@@ -17,15 +17,20 @@ const CreateFiadoSchema = z.object({
 });
 
 /** Resolve a customer by phone (exact) or name (partial match). Returns phone (PK). */
-async function resolveCustomerId(_tenantId: string, input: string): Promise<string | null> {
-  // Customer model does NOT have tenantId — search globally by phone or name
-  // Try exact phone match first
-  const byPhone = await prisma.customer.findUnique({ where: { phone: input } });
+async function resolveCustomerId(tenantId: string, input: string): Promise<string | null> {
+  // SECURITY 2026-05-07 (X4): Customer SÍ tiene tenantId. El comentario anterior
+  // era incorrecto. findUnique({phone}) es @unique global y puede retornar un
+  // Customer de otro tenant. Usar findFirst con tenantId en ambas queries.
+  const byPhone = await prisma.customer.findFirst({
+    where: { phone: input, tenantId },
+    select: { phone: true },
+  });
   if (byPhone) return byPhone.phone;
 
-  // Try name search (case-insensitive)
+  // Try name search (case-insensitive) — scoped a tenant
   const byName = await prisma.customer.findFirst({
-    where: { name: { contains: input, mode: "insensitive" } },
+    where: { name: { contains: input, mode: "insensitive" }, tenantId },
+    select: { phone: true },
   });
   if (byName) return byName.phone;
 

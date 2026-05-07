@@ -798,6 +798,11 @@ model Sale {
   // Pago mixto / fiado
   paymentDetails String?
 
+  // SECURITY 2026-05-07 (X2): idempotencyKey para deduplicar ventas POS offline.
+  // El POS genera uuid al meter en queue; el server deduplica antes del create.
+  // @unique garantiza constraint a nivel DB (segunda línea de defensa tras check app).
+  idempotencyKey String? @unique
+
   items    SaleItem[]
   customer Customer?  @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
 

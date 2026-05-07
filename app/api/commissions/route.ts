@@ -14,12 +14,18 @@ export async function GET(req: NextRequest) {
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
 
+  // SECURITY 2026-05-07 (X3): tenantId en ambas queries para aislamiento multi-tenant.
+  // Sin tenantId, el endpoint devolvía ventas y usuarios de TODOS los tenants.
+  // eslint-disable-next-line no-restricted-properties
+  // NOTE: aggregation legacy — refactor a CommissionsDB pendiente (ADR-TODO).
   const where: Record<string, unknown> = {
+    tenantId: auth.tenantId,
     cashierId: { not: null },
   };
   if (from) where.createdAt = { ...(where.createdAt as object ?? {}), gte: new Date(from) };
   if (to) where.createdAt = { ...(where.createdAt as object ?? {}), lte: new Date(to + "T23:59:59Z") };
 
+  // eslint-disable-next-line no-restricted-properties
   const sales = await prisma.sale.findMany({
     where,
     select: { id: true, cashierId: true, total: true, totalCogs: true, payment: true, createdAt: true },
@@ -40,10 +46,11 @@ export async function GET(req: NextRequest) {
     map.set(cid, entry);
   }
 
-  // Fetch admin user names
+  // Fetch admin user names — scoped a tenant para no exponer usuarios de otros tenants
   const usernames = Array.from(map.keys());
+  // eslint-disable-next-line no-restricted-properties
   const users = await prisma.adminUser.findMany({
-    where: { username: { in: usernames } },
+    where: { username: { in: usernames }, tenantId: auth.tenantId },
     select: { username: true, name: true, role: true },
   });
   const nameMap = new Map(users.map(u => [u.username, { name: u.name || u.username, role: u.role }]));

@@ -82,6 +82,17 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
 
     if (cashRegisterId) {
+      // SECURITY 2026-05-07 (X1): validar ownership antes de exponer movimientos.
+      // Sin este check, cualquier admin autenticado podía leer movimientos de
+      // una caja de OTRO tenant pasando su cashRegisterId en el query param.
+      // HTTP 404 (no 403) para evitar oracle de existencia cross-tenant.
+      const ownedRegister = await withDbRetry(() => prisma.cashRegister.findFirst({
+        where: { id: cashRegisterId, tenantId: auth.tenantId },
+        select: { id: true },
+      }));
+      if (!ownedRegister) {
+        return NextResponse.json({ error: "Caja no encontrada" }, { status: 404 });
+      }
       where.cashRegisterId = cashRegisterId;
     } else {
       // Find current open register
