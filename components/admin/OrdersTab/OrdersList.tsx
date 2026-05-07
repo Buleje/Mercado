@@ -15,7 +15,7 @@
  * Sin `bg-gray-100 dark:bg-card` legacy — solo tokens Buleje.
  */
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Check, X, MapPin, Trash2, Bike, ShoppingBasket, Clock, Package, AlertTriangle, Store, Boxes } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -76,8 +76,11 @@ export function OrdersList({
     safeOrdPage * ORD_PER_PAGE,
   );
 
-  // eslint-disable-next-line react-hooks/purity -- Date.now() es intencional para urgencia
-  const nowMs = useMemo(() => Date.now(), []);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   if (loading) {
     return (

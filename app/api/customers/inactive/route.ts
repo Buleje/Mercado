@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getOrSet } from "@/lib/cache";
 
 /**
  * GET /api/customers/inactive
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest) {
 
   const tenantId = auth.tenantId;
 
-  const data = await withDbRetry(async () => {
+  const cacheKey = `customers:inactive:${tenantId}:${days}`;
+  const data = await getOrSet(cacheKey, 300, () => withDbRetry(async () => {
     // Get all customers with their latest order/sale dates
     const customers = await prisma.customer.findMany({
       where: { tenantId },
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.daysSinceLast - a.daysSinceLast);
 
     return inactive;
-  });
+  }));
 
   return NextResponse.json({
     ok: true,
@@ -88,6 +90,9 @@ export async function GET(request: NextRequest) {
     total: data.length,
     customers: data,
   }, {
-    headers: { "X-Total-Count": String(data.length) },
+    headers: {
+      "X-Total-Count": String(data.length),
+      "Cache-Control": "private, max-age=300",
+    },
   });
 }

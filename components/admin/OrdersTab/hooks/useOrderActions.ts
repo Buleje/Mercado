@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 
@@ -26,7 +27,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: "Error al actualizar" }));
-      alert(err.error ?? "No se pudo cambiar el estado");
+      toast.error(err.error ?? "No se pudo cambiar el estado");
       return;
     }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
@@ -37,13 +38,31 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
   };
 
   const patchOrder = async (id: string, patch: Partial<DbOrder>) => {
-    await tenantFetch(`/api/orders/${id}`, {
+    // Snapshot previo para poder revertir si el server falla
+    let prevOrders: DbOrder[] = [];
+    let prevDetail: DbOrder | null = null;
+    setOrders(prev => {
+      prevOrders = prev;
+      return prev.map(o => o.id === id ? { ...o, ...patch } : o);
+    });
+    setDetailOrder(prev => {
+      prevDetail = prev;
+      return prev?.id === id ? { ...prev, ...patch } : prev;
+    });
+
+    const res = await tenantFetch(`/api/orders/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o));
-    setDetailOrder(prev => prev?.id === id ? { ...prev, ...patch } : prev);
+
+    if (!res.ok) {
+      // Revertir optimistic update
+      setOrders(prevOrders);
+      setDetailOrder(prevDetail);
+      const err = await res.json().catch(() => ({ error: "Error al actualizar pedido" }));
+      toast.error(err.error ?? "Error al actualizar pedido");
+    }
   };
 
   const verifyYape = (id: string) => patchOrder(id, { status: "confirmado" });

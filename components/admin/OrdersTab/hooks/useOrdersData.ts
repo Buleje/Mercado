@@ -38,8 +38,9 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
       setOrders(fetched);
     } catch {
       setLoadError("Error al cargar pedidos. Verifica tu conexión.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);

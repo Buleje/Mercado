@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
 
 /**
  * GET /api/customers/rfm — Returns RFM segmentation for all customers.
@@ -52,16 +53,16 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   try {
     const now = new Date();
+    const cacheKey = `customers:rfm:${auth.tenantId}`;
 
-    // Fetch all orders with phone and total — scoped por tenantId del session.
-    // FIXME: pre-existente NO scopeaba por tenantId, leak cross-tenant. Hotfix
-    // agregado al where below.
     // eslint-disable-next-line no-restricted-properties -- analytics RFM tenant-scoped.
-    const orders = await prisma.order.findMany({
-      where: { customerPhone: { not: null }, tenantId: auth.tenantId },
-      select: { customerPhone: true, customerName: true, total: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const orders = await getOrSet(cacheKey, 300, () =>
+      prisma.order.findMany({
+        where: { customerPhone: { not: null }, tenantId: auth.tenantId },
+        select: { customerPhone: true, customerName: true, total: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      })
+    );
 
     // Aggregate per customer
     const map = new Map<string, { name: string; lastOrder: Date; count: number; spent: number }>();
@@ -120,7 +121,9 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { "Cache-Control": "private, max-age=300" },
+    });
   } catch (e) {
     logger.error("[rfm] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "RFM calculation failed" }, { status: 500 });

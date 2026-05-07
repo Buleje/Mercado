@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import {
   X, Loader2, MapPin, Star, CheckCircle2, AlertTriangle, Bike,
 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Partner {
   id: string;
@@ -35,10 +36,6 @@ interface Props {
   orderLocation?: string | null;
   onClose: () => void;
   onAssigned?: (assignmentId: string) => void;
-}
-
-function csrf(): string {
-  return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
 }
 
 export default function ManualAssignModal({ orderId, orderLocation, onClose, onAssigned }: Props) {
@@ -67,7 +64,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
       const res = await fetch("/api/admin/delivery/manual-assign", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ orderId, partnerId }),
       });
       const data = await res.json();

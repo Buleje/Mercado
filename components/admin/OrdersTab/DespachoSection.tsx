@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { useDeliveryPartnersLive, type DeliveryPartnerLive } from "./hooks/useDeliveryPartnersLive";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface DespachoSectionProps {
   order: DbOrder;
@@ -33,11 +34,6 @@ interface DespachoSectionProps {
   onCustomDriverChange: (value: string) => void;
   onSaveCustomDriver: (orderId: string) => void;
   onPatchOrder: (id: string, patch: Partial<DbOrder>) => void;
-}
-
-function csrf(): string {
-  if (typeof document === "undefined") return "";
-  return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
 }
 
 function partnerStatus(p: DeliveryPartnerLive): "free" | "busy" | "offline" {
@@ -83,7 +79,7 @@ export function DespachoSection({
       const res = await fetch("/api/admin/delivery/manual-assign", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ orderId: order.id, partnerId: partner.id }),
       });
       const data = await res.json().catch(() => ({}));
