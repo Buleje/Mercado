@@ -25,7 +25,27 @@ const DEFAULT_DAILY_GOAL = 3000;
 const REFRESH_INTERVAL_MS = 30 * 1000;
 const OPENING_HOUR = 6;
 const CLOSING_HOUR = 21;
-const LS_DAILY_GOAL = "daily-goal";
+const MAX_DAILY_GOAL = 1_000_000; // S/1M cap — evita inputs accidentales
+
+// FIX 2026-05-07 (B2): tenant-scoped localStorage key. Antes "daily-goal" era
+// global → si el dueño cambia entre tenants, ve la meta de otro.
+function getDailyGoalKey(): string {
+  if (typeof window === "undefined") return "daily-goal:main";
+  const pathMatch = window.location.pathname.match(/^\/t\/([^/]+)/);
+  const slug = pathMatch ? decodeURIComponent(pathMatch[1]) : "main";
+  return `daily-goal:${slug}`;
+}
+
+// FIX 2026-05-07 (S1): valida shape de cada sale. Si el backend retorna
+// total: undefined o malformed, todoTotal acumula NaN. Filtramos en origen.
+function isValidSale(s: unknown): s is Sale {
+  if (!s || typeof s !== "object") return false;
+  const o = s as Record<string, unknown>;
+  return typeof o.id === "string"
+    && typeof o.total === "number"
+    && Number.isFinite(o.total)
+    && typeof o.createdAt === "string";
+}
 
 function fmt(n: number): string {
   return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -81,13 +101,18 @@ function computeForecast(total: number, currentHour: number): number | null {
 }
 
 function getMotivationalMessage(pct: number, currentHour: number): string {
+  // FIX 2026-05-07 (B5): mensaje específico fuera de horario.
+  if (currentHour < OPENING_HOUR) return "Aún no abre — alistá el día";
+  if (currentHour > CLOSING_HOUR) {
+    return pct >= 100 ? "Día cerrado con la meta cumplida" : "Día cerrado — descansá";
+  }
   const hourFraction = (currentHour - OPENING_HOUR) / (CLOSING_HOUR - OPENING_HOUR);
   const pace = pct / 100;
   if (pct >= 100) return "Meta cumplida — seguí sumando!";
-  if (pace >= hourFraction + 0.1) return "Vas adelantado al ritmo — buen dia";
-  if (pace >= hourFraction - 0.05) return "Estas en ritmo para alcanzar la meta";
-  if (pace >= hourFraction - 0.2) return "Un empujon mas y te alcanzas";
-  return "Activa promociones — el dia esta lento";
+  if (pace >= hourFraction + 0.1) return "Vas adelantado al ritmo — buen día";
+  if (pace >= hourFraction - 0.05) return "Estás en ritmo para alcanzar la meta";
+  if (pace >= hourFraction - 0.2) return "Un empujón más y te alcanzás";
+  return "Activá promociones — el día está lento";
 }
 
 function Confetti() {
@@ -205,17 +230,22 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   const [dailyGoal, setDailyGoal] = useState<number>(initialGoal);
   const [editing, setEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
   const [allSales, setAllSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [celebrated, setCelebrated] = useState(false);
-  const prevTotalRef = useRef(0);
+  // FIX 2026-05-07 (B4): inicializar prevTotalRef como null en mount para
+  // que el primer fetch NO dispare confetti espuriamente si ya hay total>=goal
+  // (caso: dueño abre el panel a las 18h y ya superó la meta).
+  const prevTotalRef = useRef<number | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
-  // Cargar meta diaria persistida
+  // Cargar meta diaria persistida (FIX B2: key tenant-scoped)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(LS_DAILY_GOAL);
+      const stored = localStorage.getItem(getDailyGoalKey());
       const n = stored ? Number(stored) : NaN;
       if (Number.isFinite(n) && n > 0) setDailyGoal(n);
     } catch { /* ignore */ }
@@ -223,33 +253,84 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
 
   const saveGoal = () => {
     const v = Number(tempGoal);
-    if (Number.isFinite(v) && v > 0) {
-      setDailyGoal(v);
-      try { localStorage.setItem(LS_DAILY_GOAL, String(v)); } catch { /* ignore */ }
+    // FIX 2026-05-07 (F4): validación con feedback visible al dueño.
+    if (!Number.isFinite(v) || v <= 0) {
+      setEditError("Ingresá un monto mayor a 0");
+      return;
     }
+    if (v > MAX_DAILY_GOAL) {
+      setEditError(`Máximo permitido: S/${MAX_DAILY_GOAL.toLocaleString("es-PE")}`);
+      return;
+    }
+    setEditError(null);
+    setDailyGoal(v);
+    try { localStorage.setItem(getDailyGoalKey(), String(v)); } catch { /* ignore */ }
     setEditing(false);
   };
 
   const fetchSales = useCallback(async () => {
+    // FIX 2026-05-07 (S3 + B8): cancelar request en curso antes de iniciar uno
+    // nuevo. Previene race conditions y handlers de unmount.
+    fetchAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    fetchAbortRef.current = ctrl;
     try {
-      // Pedimos los últimos N para tener hoy + ayer + comparativa
-      const res = await fetch("/api/sales?limit=500", { credentials: "include" });
+      // FIX 2026-05-07 (S2): cache: 'no-store' para que el polling de 30s
+      // siempre vea datos frescos, no cache del browser.
+      const res = await fetch("/api/sales?limit=500", {
+        credentials: "include",
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
       if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data: Sale[] = await res.json();
-      setAllSales(Array.isArray(data) ? data : []);
+      const raw: unknown = await res.json();
+      const list = Array.isArray(raw) ? raw : [];
+      // FIX S1: filtrar shape inválido para no inflar NaN al sumar totals.
+      const valid = list.filter(isValidSale);
+      setAllSales(valid);
       setLastUpdated(new Date());
       setError(null);
     } catch (e) {
+      // Aborts intencionales no son errores visibles al dueño.
+      if (e instanceof DOMException && e.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "Error al cargar");
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // FIX 2026-05-07 (B1): polling pausa con visibilitychange. Antes consumía
+  // requests cada 30s aunque el dueño tuviera la pestaña minimizada.
   useEffect(() => {
     void fetchSales();
-    const interval = setInterval(() => void fetchSales(), REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(() => void fetchSales(), REFRESH_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      start();
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void fetchSales();
+        start();
+      } else {
+        stop();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      fetchAbortRef.current?.abort();
+    };
   }, [fetchSales]);
 
   // ─── Stats computados ─────────────────────────────────────────────────────
@@ -297,11 +378,25 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     };
   }, [allSales]);
 
-  // Trigger confetti cuando cruza la meta
+  // Trigger confetti SOLO cuando se cruza la meta dentro de esta sesión.
+  // FIX B4: si prevTotalRef es null (primer mount), inicializamos sin
+  // disparar — evita confetti al abrir el panel con meta ya superada.
+  // FIX D6: cleanup del setTimeout para no setear estado tras unmount.
   useEffect(() => {
-    if (stats.todayTotal >= dailyGoal && prevTotalRef.current < dailyGoal && !celebrated && stats.todayTotal > 0) {
+    if (prevTotalRef.current === null) {
+      prevTotalRef.current = stats.todayTotal;
+      return;
+    }
+    if (
+      stats.todayTotal >= dailyGoal &&
+      prevTotalRef.current < dailyGoal &&
+      !celebrated &&
+      stats.todayTotal > 0
+    ) {
       setCelebrated(true);
-      setTimeout(() => setCelebrated(false), 4000);
+      const t = setTimeout(() => setCelebrated(false), 4000);
+      prevTotalRef.current = stats.todayTotal;
+      return () => clearTimeout(t);
     }
     prevTotalRef.current = stats.todayTotal;
   }, [stats.todayTotal, dailyGoal, celebrated]);
@@ -331,6 +426,23 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
 
   const motivational = getMotivationalMessage(pct, stats.currentHour);
 
+  // FIX 2026-05-07 (F3): alerta crítica si > 70% del horario y < 50% de meta.
+  // Calcula cuánto debe vender por hora restante para alcanzarla.
+  const isUrgent = useMemo(() => {
+    if (isGoalMet) return null;
+    if (stats.currentHour < OPENING_HOUR || stats.currentHour > CLOSING_HOUR) return null;
+    const elapsedHours = Math.max(1, stats.currentHour - OPENING_HOUR + 1);
+    const hourFraction = elapsedHours / (CLOSING_HOUR - OPENING_HOUR + 1);
+    const remainingHours = Math.max(1, CLOSING_HOUR - stats.currentHour);
+    if (hourFraction > 0.7 && pct < 50) {
+      return {
+        ratePerHour: Math.round(remaining / remainingHours),
+        remainingHours,
+      };
+    }
+    return null;
+  }, [stats.currentHour, pct, isGoalMet, remaining]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -354,22 +466,36 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               Editar meta
             </button>
           ) : (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-[var(--text-secondary)]">S/</span>
-              <input
-                type="number"
-                value={tempGoal}
-                onChange={(e) => setTempGoal(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveGoal()}
-                autoFocus
-                className="w-24 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)] outline-none focus:border-primary"
-              />
-              <button onClick={saveGoal} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]">
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[var(--text-secondary)]">S/</span>
+                <input
+                  type="number"
+                  value={tempGoal}
+                  onChange={(e) => { setTempGoal(e.target.value); if (editError) setEditError(null); }}
+                  onKeyDown={(e) => e.key === "Enter" && saveGoal()}
+                  min={1}
+                  max={MAX_DAILY_GOAL}
+                  autoFocus
+                  aria-invalid={!!editError}
+                  aria-describedby={editError ? "daily-goal-error" : undefined}
+                  className={cn(
+                    "w-24 px-2 py-1 text-xs rounded-lg border bg-white text-[var(--text-primary)] outline-none",
+                    editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
+                  )}
+                />
+                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {editError && (
+                <p id="daily-goal-error" role="alert" className="text-xs font-semibold text-[var(--data-error-500)]">
+                  {editError}
+                </p>
+              )}
             </div>
           )}
           <button
@@ -401,16 +527,32 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           </div>
         ) : loading && stats.todayTotal === 0 ? (
           <div className="space-y-3 animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto" />
-            <div className="h-4 bg-gray-200 rounded w-full" />
+            <div className="h-8 bg-[var(--surface-sunken)] rounded w-1/2 mx-auto" />
+            <div className="h-4 bg-[var(--surface-sunken)] rounded w-full" />
           </div>
         ) : (
           <>
+            {/* FIX D1: jerarquía visual reforzada — monto hero text-5xl/6xl,
+                meta como subtítulo claro, status como pill. */}
             <div className="text-center mb-5">
-              <div className="text-4xl font-extrabold text-[var(--text-primary)] tracking-tight">{fmt(stats.todayTotal)}</div>
-              <div className="text-base text-[var(--text-tertiary)] mt-1">de {fmt(dailyGoal)} · meta diaria</div>
-              <div className={cn("text-sm font-semibold mt-1.5", statusColor)}>{statusLabel}</div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1.5 italic">{motivational}</p>
+              <div className="text-5xl sm:text-6xl font-black text-[var(--text-primary)] tracking-[-0.04em] leading-none tabular-nums">
+                {fmt(stats.todayTotal)}
+              </div>
+              <div className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 font-medium">
+                de <span className="font-bold tabular-nums">{fmt(dailyGoal)}</span> · meta diaria
+              </div>
+              <div className={cn(
+                "inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider",
+                pct >= 100 && "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
+                pct >= 80 && pct < 100 && "bg-primary/15 text-primary",
+                pct >= 50 && pct < 80 && "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
+                pct < 50 && "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
+              )}>
+                {statusLabel}
+              </div>
+              <p className="text-xs sm:text-sm text-[var(--text-tertiary)] mt-2.5 italic max-w-md mx-auto">
+                {motivational}
+              </p>
             </div>
 
             <div className="space-y-2 mb-5">
@@ -438,13 +580,13 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Faltan</p>
-                  <p className="font-bold text-[var(--text-primary)]">{fmt(remaining)}</p>
+                <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">Faltan</p>
+                  <p className="font-extrabold text-[var(--text-primary)] tabular-nums">{fmt(remaining)}</p>
                 </div>
-                <div className="rounded-xl bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Vendido</p>
-                  <p className="font-bold text-primary">{fmt(stats.todayTotal)}</p>
+                <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">Vendido</p>
+                  <p className="font-extrabold text-primary tabular-nums">{fmt(stats.todayTotal)}</p>
                 </div>
               </div>
             )}
@@ -452,7 +594,33 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
         )}
       </div>
 
-      {/* Forecast banner */}
+      {/* FIX F3: alerta urgente — fin del día cerca y meta lejos */}
+      {isUrgent && !loading && !error && (
+        <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4 flex items-start gap-3">
+          <TrendingDown className="h-5 w-5 shrink-0 mt-0.5 text-[var(--data-error-500)]" strokeWidth={2.5} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-extrabold text-[var(--data-error-500)]">
+              Te queda poco tiempo
+            </p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{fmt(isUrgent.ratePerHour)}</span> por hora durante las próximas {isUrgent.remainingHours}h para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Forecast banner — FIX D4: muestra placeholder si aún no hay forecast */}
+      {!loading && !error && stats.forecast == null && stats.currentHour < OPENING_HOUR && (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-start gap-3">
+          <Clock className="h-5 w-5 shrink-0 mt-0.5 text-[var(--text-tertiary)]" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--text-primary)]">Esperando que abra el día</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              El pronóstico aparece a partir de las {OPENING_HOUR}:00.
+            </p>
+          </div>
+        </div>
+      )}
       {stats.forecast != null && stats.forecast > 0 && !loading && !error && (
         <div className={cn(
           "rounded-xl border p-4 flex items-start gap-3",
