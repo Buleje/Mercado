@@ -370,6 +370,14 @@ export default function OrdersTab() {
         onRejectYape={rejectYape}
         onMarkDeudaPaid={markDeudaPaid}
         onDeleteOrder={setConfirmDeleteId}
+        onManualDelivery={(id, reason) =>
+          patchOrder(id, {
+            status: "entregado",
+            // deliveryReason no es columna de Order — el server PATCH lo
+            // extrae y persiste en OrderStatusHistory.note (audit log).
+            ...({ deliveryReason: reason } as unknown as Partial<DbOrder>),
+          })
+        }
       />
 
       {/* Print-only summary */}

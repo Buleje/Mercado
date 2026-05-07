@@ -23,6 +23,7 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
 import { STATUS_LABELS, VALID_TRANSITIONS } from "./types";
+import ManualDeliveryModal from "./ManualDeliveryModal";
 import {
   DndContext,
   DragOverlay,
@@ -51,6 +52,9 @@ interface OrdersKanbanProps {
   onRejectYape: (id: string) => void;
   onMarkDeudaPaid: (id: string) => void;
   onDeleteOrder: (id: string) => void;
+  // FIX 2026-05-07: callback opcional para entrega manual con razón.
+  // Si se provee, el card abre un modal y devuelve la razón formateada.
+  onManualDelivery?: (id: string, reason: string) => void;
 }
 
 type ColumnId = "pendiente" | "confirmado" | "preparando" | "en_camino";
@@ -122,6 +126,10 @@ interface OrderCardProps {
   onVerifyYape: () => void;
   onRejectYape: () => void;
   onMarkDeudaPaid: () => void;
+  // FIX 2026-05-07: si el padre lo provee, el botón "entregado manual" abre
+  // un modal que persiste razón en OrderStatusHistory.note. Si no lo provee,
+  // cae al patch simple de onUpdateStatus("entregado").
+  onManualDelivery?: (reason: string) => void;
 }
 
 const OrderCard = memo(function OrderCard({
@@ -137,8 +145,21 @@ const OrderCard = memo(function OrderCard({
   onVerifyYape,
   onRejectYape,
   onMarkDeudaPaid,
+  onManualDelivery,
 }: OrderCardProps) {
   const u = urgency(order, nowMs);
+  // FIX 2026-05-07: estado del modal Entrega Manual local a esta card.
+  const [manualOpen, setManualOpen] = useState(false);
+  const handleManualConfirm = (reason: string) => {
+    setManualOpen(false);
+    if (onManualDelivery) {
+      onManualDelivery(reason);
+    } else {
+      // Fallback compat: si el padre no provee onManualDelivery, hacemos
+      // el patch simple sin razón (la auditoría se pierde pero no rompe).
+      onUpdateStatus("entregado");
+    }
+  };
   const driver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
 
@@ -164,10 +185,10 @@ const OrderCard = memo(function OrderCard({
     primaryAction = { label: "Confirmar", icon: Check, onClick: () => onUpdateStatus("confirmado"), variant: "primary" };
   } else if (order.status === "confirmado") {
     primaryAction = { label: "Preparando", icon: ChefHat, onClick: () => onUpdateStatus("preparando"), variant: "primary" };
-    manualDeliverAction = { onClick: () => onUpdateStatus("entregado") };
+    manualDeliverAction = { onClick: () => setManualOpen(true) };
   } else if (order.status === "preparando") {
     primaryAction = { label: "En camino", icon: ArrowRight, onClick: () => onUpdateStatus("en_camino"), variant: "primary" };
-    manualDeliverAction = { onClick: () => onUpdateStatus("entregado") };
+    manualDeliverAction = { onClick: () => setManualOpen(true) };
   } else if (order.status === "en_camino") {
     primaryAction = { label: "Entregado", icon: Check, onClick: () => onUpdateStatus("entregado"), variant: "primary" };
   }
@@ -352,6 +373,12 @@ const OrderCard = memo(function OrderCard({
           )}
         </div>
       </div>
+      <ManualDeliveryModal
+        open={manualOpen}
+        customerName={order.customer.name}
+        onConfirm={handleManualConfirm}
+        onCancel={() => setManualOpen(false)}
+      />
     </article>
   );
 });
@@ -390,6 +417,7 @@ interface KanbanColumnProps extends ColumnConfig {
   onVerifyYape: (id: string) => void;
   onRejectYape: (id: string) => void;
   onMarkDeudaPaid: (id: string) => void;
+  onManualDelivery?: (id: string, reason: string) => void;
 }
 
 const KanbanColumn = memo(function KanbanColumn({
@@ -413,6 +441,7 @@ const KanbanColumn = memo(function KanbanColumn({
   onVerifyYape,
   onRejectYape,
   onMarkDeudaPaid,
+  onManualDelivery,
 }: KanbanColumnProps & {
   Icon: React.ElementType;
   iconColor: string;
@@ -497,6 +526,7 @@ const KanbanColumn = memo(function KanbanColumn({
               onVerifyYape={() => onVerifyYape(o.id)}
               onRejectYape={() => onRejectYape(o.id)}
               onMarkDeudaPaid={() => onMarkDeudaPaid(o.id)}
+              onManualDelivery={onManualDelivery ? (reason) => onManualDelivery(o.id, reason) : undefined}
             />
           ))
         )}
@@ -518,6 +548,7 @@ export function OrdersKanban({
   onVerifyYape,
   onRejectYape,
   onMarkDeudaPaid,
+  onManualDelivery,
 }: OrdersKanbanProps) {
   // Mobile: tab segmented control para mostrar 1 columna por vez
   const [mobileColumn, setMobileColumn] = useState<ColumnId>("pendiente");
@@ -649,6 +680,7 @@ export function OrdersKanban({
             onVerifyYape={onVerifyYape}
             onRejectYape={onRejectYape}
             onMarkDeudaPaid={onMarkDeudaPaid}
+            onManualDelivery={onManualDelivery}
           />
         ))}
       </div>

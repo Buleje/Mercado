@@ -40,6 +40,10 @@ const PatchSchema = z.object({
   riderName: z.string().max(80).optional(),
   cancelReason: z.string().max(500).optional(),
   adminNote: z.string().max(2000).optional(),
+  // FIX 2026-05-07: razón de entrega manual (cuando admin marca entregado
+  // sin pasar por en_camino). Se persiste en OrderStatusHistory.note para
+  // auditoría — útil para reportes "qué % de entregas son sin delivery".
+  deliveryReason: z.string().max(500).optional(),
 });
 
 // -- GET /api/orders/[id] -- fetch single order -------------------------------
@@ -99,13 +103,21 @@ export async function PATCH(
       }
     }
 
-    const updated = await OrdersDB.update(auth.tenantId, id, parsed.data as Partial<DbOrder>);
+    // deliveryReason NO es columna de Order — se persiste en OrderStatusHistory.note
+    // más abajo. Lo separamos del payload del update para que Prisma no falle.
+    const { deliveryReason: _deliveryReason, ...updatePayload } = parsed.data;
+    void _deliveryReason;
+    const updated = await OrdersDB.update(auth.tenantId, id, updatePayload as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
     const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
 
     // Log status change to history (fire-and-forget)
     if (statusChanged) {
+      // FIX 2026-05-07: persistir deliveryReason en el history note para
+      // entrega manual. Si no, fallback a cancelReason (cancelaciones).
+      const historyNote =
+        parsed.data.deliveryReason ?? parsed.data.cancelReason ?? null;
       // eslint-disable-next-line no-restricted-properties -- pre-existing: orderStatusHistory still has direct access; deuda técnica scheduled for migration to lib/db/orders.db.ts. tenantId guard in payload.
       prisma.orderStatusHistory.create({
         data: {
@@ -113,7 +125,7 @@ export async function PATCH(
           fromStatus: existing.status as never,
           toStatus: parsed.data.status as never,
           changedBy: "admin",
-          note: parsed.data.cancelReason ?? null,
+          note: historyNote,
           tenantId: auth.tenantId,
         },
       }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));

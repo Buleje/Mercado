@@ -33,6 +33,7 @@ import { formatDate, getOrderTimeline } from "@/lib/admin-helpers";
 import { googleMapsUrl } from "@/lib/order-utils";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { DespachoSection } from "./DespachoSection";
+import ManualDeliveryModal from "./ManualDeliveryModal";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -88,6 +89,19 @@ export function OrdersDetailPanel({
 }: OrdersDetailPanelProps) {
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
+  // FIX 2026-05-07: estado del modal "Entrega manual" — pide método y nota antes
+  // de marcar entregado. Persiste auditoria en OrderStatusHistory.note.
+  const [manualOpen, setManualOpen] = useState(false);
+  const openManual = () => setManualOpen(true);
+  const handleManualConfirm = (deliveryReason: string) => {
+    setManualOpen(false);
+    onPatchOrder(order.id, {
+      status: "entregado",
+      // deliveryReason no es columna de DbOrder; el server lo extrae y persiste
+      // en OrderStatusHistory.note. El cast preserva el tipo abierto.
+      ...({ deliveryReason } as unknown as Partial<DbOrder>),
+    });
+  };
   const phone = order.customer.phone ?? "";
   const phoneDigits = phone ? digitsOnly(phone) : "";
   const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -117,10 +131,10 @@ export function OrdersDetailPanel({
         label: "Confirmado · listo para preparar",
         sub: "Marcá cuando empieces a armar el pedido",
         primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
-        // FIX 2026-05-07: entrega manual sin pasar por delivery (cliente vino al
-        // mostrador, dueño entregó él mismo). Antes obligaba a recorrer
-        // preparando → en_camino → entregado.
-        secondary: { label: "Entregado (manual)", onClick: () => onPatchOrder(order.id, { status: "entregado" }), tone: "success" as const },
+        // FIX 2026-05-07: entrega manual sin pasar por delivery. Abre modal
+        // que pide método (mostrador / propia / encargo / otro) + nota
+        // opcional, persistido en OrderStatusHistory.note para auditoría.
+        secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
       };
     }
     if (order.status === "preparando") {
@@ -128,7 +142,7 @@ export function OrdersDetailPanel({
         label: "Preparando · armando el pedido",
         sub: "Asigná un motorizado abajo y avanzá cuando salga",
         primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
-        secondary: { label: "Entregado (manual)", onClick: () => onPatchOrder(order.id, { status: "entregado" }), tone: "success" as const },
+        secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
       };
     }
     if (order.status === "en_camino") {
@@ -609,6 +623,12 @@ export function OrdersDetailPanel({
           </button>
         </footer>
       </div>
+      <ManualDeliveryModal
+        open={manualOpen}
+        customerName={order.customer.name}
+        onConfirm={handleManualConfirm}
+        onCancel={() => setManualOpen(false)}
+      />
     </div>
   );
 }
