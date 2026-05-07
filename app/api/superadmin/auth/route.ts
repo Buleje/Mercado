@@ -145,12 +145,21 @@ export async function POST(req: NextRequest) {
   const expectedUser = process.env.SUPERADMIN_USERNAME ?? "platform";
   const expectedPass = process.env.SUPERADMIN_PASSWORD ?? "";
 
-  if (
-    !username || !password ||
-    username !== expectedUser ||
-    password !== expectedPass ||
-    !expectedPass
-  ) {
+  // SECURITY 2026-05-06 (pentest H004): timing-safe compare. Antes
+  // password !== expectedPass era timing leak — diff en string compare
+  // permitía byte-by-byte attack en N requests.
+  const userMatch = username === expectedUser;
+  let passMatch = false;
+  if (expectedPass && password) {
+    const a = Buffer.from(password);
+    const b = Buffer.from(expectedPass);
+    if (a.length === b.length) {
+      const { timingSafeEqual } = await import("crypto");
+      passMatch = timingSafeEqual(a, b);
+    }
+  }
+
+  if (!username || !password || !userMatch || !passMatch || !expectedPass) {
     const lockResult = recordFailedAttempt(ip);
     logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     await constantTimeFloor(startTs);
@@ -179,7 +188,8 @@ export async function POST(req: NextRequest) {
   return res;
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-auth-logout"); if (_rl) return _rl;
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, "", cookieOpts(0));
   logActivity("logout", "superadmin", "SuperAdmin cerró sesión", undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));

@@ -3,6 +3,7 @@ import { getSessionPayload, SESSION, createSessionToken } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   // Retornamos 200 con role:null cuando no hay sesion para evitar ruido 401
@@ -20,6 +21,7 @@ const UpdateProfileSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-me"); if (_rl) return _rl;
   const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const payload = await getSessionPayload(token);

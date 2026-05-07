@@ -34,6 +34,20 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    // SECURITY 2026-05-06 (pentest H003): rechazar re-enroll silencioso si
+    // 2FA YA está activo. Antes saveSecret reescribía secret sin chequear
+    // → atacante con sesión robada bloqueaba al admin real al rotar el QR.
+    const existing = await AdminTotpDB.getByUsername(auth.tenantId, auth.username);
+    if (existing?.totpEnabledAt) {
+      return NextResponse.json(
+        {
+          error: "2FA ya está activo. Para rotar el secret debes desactivar primero (requiere código TOTP actual).",
+          code: "TOTP_ALREADY_ENROLLED",
+        },
+        { status: 409 },
+      );
+    }
+
     // 3. Generar secret y URI
     const secret = generateTotpSecret();
     const otpauthUrl = buildOtpauthUri(secret, auth.username, "Buleje");

@@ -43,6 +43,7 @@ const PLATFORM_TENANT_ID = "main";
  * de sesion `buleje-customer-sess`.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-otp-verify"); if (_rl) return _rl;
   // SECURITY 2026-05-06 (audit auth #5): rate limit en /verify para frenar
   // brute-force del OTP de 6 dígitos. Antes solo había contador in-memory de
   // 5 intentos que se evadía cambiando de instance Vercel multi-region.

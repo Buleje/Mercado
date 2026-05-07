@@ -62,7 +62,10 @@ export async function GET(req: NextRequest) {
   // Enriquecer con datos frescos de DB si el customerId esta disponible
   if (payload.customerId) {
     try {
-      const customer = await CustomersDB.getByPhone(payload.customerId);
+      // SECURITY 2026-05-06 (pentest H001): scope tenantId. Antes getByPhone
+      // sin tenantId leakeaba name/loyaltyPoints cross-tenant si el mismo
+      // phone existía en múltiples tenants.
+      const customer = await CustomersDB.getByPhone(payload.customerId, payload.tenantId);
       if (customer) {
         const res = NextResponse.json({
           authenticated: true,

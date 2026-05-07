@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { lookupDniInReniec } from "@/lib/reniec";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const dniSchema = z.object({
   dni: z
@@ -19,6 +20,7 @@ const dniSchema = z.object({
  * Rate limited by the RENIEC client itself (10 req/min per IP).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-dni"); if (_rl) return _rl;
   const body: unknown = await req.json().catch((err) => { logger.warn("[auth/dni] invalid JSON body", { error: String(err) }); return null; });
   const parsed = dniSchema.safeParse(body);
 

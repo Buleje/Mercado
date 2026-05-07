@@ -43,14 +43,14 @@ export async function GET(req: NextRequest) {
     if (!customer) {
       return NextResponse.json({ ok: true, customer: null });
     }
-    // SECURITY 2026-05-06 (audit auth #10): NO devolver el DNI completo en
-    // un endpoint público. Si se necesita "auto-fill" en checkout, devolver
-    // solo flag boolean `hasDni`. Para mostrar el DNI real el cliente ya
-    // tiene su propia sesión con permisos.
+    // SECURITY 2026-05-06 (pentest H006): NO devolver `name` en endpoint
+    // anonymous — permitía mapear phone→name por scraping lento.
+    // El `name` real se obtiene desde /api/auth/customer/me autenticado.
+    // Mantenemos `exists` + `hasDni` para auto-fill UX en checkout.
     return NextResponse.json({
       ok: true,
       customer: {
-        name: customer.name ?? undefined,
+        exists: true,
         hasDni: customer.tipoDocumento === "DNI" && !!customer.documento,
       },
     });

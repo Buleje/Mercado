@@ -59,6 +59,7 @@ const resendLimiter = createRateLimiter({ maxRequests: 3, windowMs: 60 * 60 * 10
  * Rate limit: 3 intentos por IP por hora.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-resend-verification"); if (_rl) return _rl;
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   // 1. Rate limit

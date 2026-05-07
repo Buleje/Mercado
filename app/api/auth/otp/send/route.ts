@@ -36,6 +36,7 @@ const OTP_SEND_WINDOW_SEC = 5 * 60;
  * registra en logs de desarrollo.
  */
 export async function POST(req: Request) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-otp-send"); if (_rl) return _rl;
   // 1. Validacion
   let body: unknown;
   try {

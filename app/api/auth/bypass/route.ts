@@ -1,13 +1,15 @@
 import "server-only";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSessionToken, SESSION } from "@/lib/session";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * SECURITY: Bypass login endpoint.
  * Enabled in development, or in production only when explicitly allowed.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-bypass"); if (_rl) return _rl;
   try {
     // HARD GUARD: bypass login is DEV-ONLY. In production we always 404,
     // ignoring ALLOW_ADMIN_BYPASS_LOGIN and the Settings flag. The env var

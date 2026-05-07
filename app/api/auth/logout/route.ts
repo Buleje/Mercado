@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { SESSION, REFRESH } from "@/lib/session";
+import { applyRateLimit } from "@/lib/rate-limit";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "auth-logout"); if (_rl) return _rl;
   const response = NextResponse.json({ ok: true });
   // Clear both access and refresh tokens
   response.cookies.set(SESSION.COOKIE_NAME, "", {
