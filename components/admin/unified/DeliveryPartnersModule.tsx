@@ -77,6 +77,15 @@ function toNum(v: number | string | null | undefined): number {
   return 0;
 }
 
+function vehicleEmoji(t: string): string {
+  const v = (t ?? "").toLowerCase();
+  if (v.includes("moto")) return "🛵";
+  if (v.includes("bici")) return "🚲";
+  if (v.includes("auto") || v.includes("car")) return "🚗";
+  if (v.includes("pie")) return "🚶";
+  return "👤";
+}
+
 // ── Types ──
 interface DeliveryPartner {
   id: string;
@@ -380,92 +389,223 @@ function RepartidoresTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // Derived KPIs
+  const totalCount = partners.length;
+  const activeCount = partners.filter((p) => p.isActive).length;
+  const inactiveCount = totalCount - activeCount;
+  const avgRating =
+    totalCount > 0
+      ? partners.reduce((s, p) => s + toNum(p.rating), 0) / totalCount
+      : 0;
+
   return (
     <div className="space-y-6">
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Users className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Repartidores
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {totalCount === 0
+                  ? "Aún no tenés repartidores registrados. Agregá uno para empezar a gestionar entregas."
+                  : `${totalCount} ${totalCount === 1 ? "repartidor registrado" : "repartidores registrados"} · gestioná tarifas, zonas y disponibilidad.`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setModal({ open: true, partner: null })}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo repartidor
+          </button>
+        </div>
+
+        {totalCount > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Total
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+                {totalCount}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Registrados</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Activos
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+                {activeCount}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Disponibles</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-sunken)]">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Inactivos
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-tertiary)] leading-tight mt-2">
+                {inactiveCount}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Pausados</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-50)]">
+                  <Star className="h-5 w-5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Rating promedio
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
+                {avgRating > 0 ? avgRating.toFixed(1) : "—"}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">de 5 estrellas</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 2. Banner error ─────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
+        <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-error-500)]/15 shrink-0">
+            <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
+          </span>
+          <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-[var(--text-secondary)]">{partners.length} repartidor{partners.length !== 1 ? "es" : ""}</p>
-        <button
-          onClick={() => setModal({ open: true, partner: null })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo repartidor
-        </button>
-      </div>
-
+      {/* ── 3. Tabla / Empty state ─────────────────────────────────── */}
       {partners.length === 0 && !error ? (
-        <EmptyState icon={Truck} title="Sin repartidores registrados" description="Agrega tu primer repartidor para empezar a gestionar entregas." />
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Truck className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            Sin repartidores registrados
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            Agregá tu primer repartidor para empezar a asignar entregas y gestionar tu flota.
+          </p>
+          <button
+            type="button"
+            onClick={() => setModal({ open: true, partner: null })}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors mt-6"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar primer repartidor
+          </button>
+        </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+            <table className="w-full">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Repartidor</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] hidden sm:table-cell">Zona / Vehículo</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Rating</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Acciones</th>
+                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>
+                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Zona / Vehículo</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Rating</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {partners.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-[var(--text-primary)]">{p.name}</p>
-                      {p.phone && (
-                        <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1 mt-0.5">
-                          <Phone className="h-3 w-3" /> {p.phone}
-                        </p>
-                      )}
+                  <tr key={p.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl font-extrabold shrink-0">
+                          {(p.name || "?").trim().charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
+                          {p.phone && (
+                            <p className="text-xs text-[var(--text-tertiary)] font-mono flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3 shrink-0" />
+                              {p.phone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
-                        <MapPin className="h-3 w-3 shrink-0" /> {p.zone}
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                        {p.zone}
                       </p>
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{p.vehicleType}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                        {vehicleEmoji(p.vehicleType)} {p.vehicleType}
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
+                    <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
                       S/{toNum(p.fee).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning-500)]">
+                    <td className="px-4 py-4 text-center">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
                         <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
                         {toNum(p.rating).toFixed(1)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-4 text-center">
                       <span className={cn(
-                        "inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                         p.isActive
                           ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                          : "bg-gray-100 text-[var(--text-secondary)]"
+                          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                       )}>
+                        <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
                         {p.isActive ? "Activo" : "Inactivo"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
+                          type="button"
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-                          title="Editar"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
+                          Editar
                         </button>
                         <button
+                          type="button"
                           onClick={() => setConfirmDelete(p.id)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)] transition-colors"
                           title="Eliminar"
+                          aria-label="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1460,27 +1600,6 @@ export default function DeliveryPartnersModule() {
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
         </button>
       </AdminModuleHeader>
-
-      {/* KPI strip */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Repartidores activos", value: kpis.activePartners,     color: "text-primary" },
-          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-[var(--data-success-500)]" },
-          { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-[var(--data-warning-500)]" },
-        ].map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
-          >
-            {kpisLoading ? (
-              <div className="h-7 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
-            ) : (
-              <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
-            )}
-            <p className="text-xs sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
-          </div>
-        ))}
-      </div>
 
       <AdminTabBar
         tabs={TABS}
