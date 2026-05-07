@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const PartnerPostSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(100),
@@ -23,7 +24,10 @@ export async function GET(req: NextRequest) {
     const active = searchParams.get("active");
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = {};
+    // SECURITY 2026-05-06 (audit team): scope tenantId. Antes findMany sin
+    // tenantId leakeaba teléfonos PE de partners de TODOS los tenants
+    // (Ley 29733 PE — protección de datos personales).
+    const where: Record<string, unknown> = { tenantId: auth.tenantId };
     if (zone) where.zone = zone;
     if (active !== null) where.isActive = active === "true";
     if (search) {
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
       `Partner creado: ${partner.name} (${partner.zone})`,
       partner.id,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.error("[delivery/partners] activity log failed", { error: String(err) }));
 
     return NextResponse.json(partner, { status: 201 });
   } catch {

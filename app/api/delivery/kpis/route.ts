@@ -12,16 +12,23 @@ export async function GET(req: NextRequest) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    // SECURITY 2026-05-06 (audit team): scope tenantId. Los 3 count() sin
+    // tenantId mostraban métricas operativas globales — competidores veían
+    // volumen real del rival en mismo dashboard.
     const [activePartners, deliveriesToday, pendingDeliveries] = await Promise.all([
-      prisma.deliveryPartner.count({ where: { isActive: true } }),
+      prisma.deliveryPartner.count({
+        where: { tenantId: auth.tenantId, isActive: true },
+      }),
       prisma.deliveryAssignment.count({
         where: {
+          tenantId: auth.tenantId,
           deliveredAt: { gte: todayStart },
           status: "delivered",
         },
       }),
       prisma.deliveryAssignment.count({
         where: {
+          tenantId: auth.tenantId,
           status: { in: ["assigned", "picked_up"] },
         },
       }),

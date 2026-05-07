@@ -34,6 +34,7 @@ import {
   DollarSign,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -131,11 +132,17 @@ const ZONAS = [
   "Yarinacocha", "Callería", "Manantay", "Centro",
   "Pueblo Libre", "Ica Yanayacu", "Todos",
 ];
+// FIX 2026-05-06 (audit team): claves SINCRONIZADAS con backend.
+// Antes UI usaba "pendiente/en_camino/entregado" pero schema/route handler
+// usan los valores reales abajo → status badges nunca matcheaban y los KPIs
+// daban siempre 0. VALID_TRANSITIONS en /api/delivery/assignments enforce
+// la state machine: assigned → picked_up → in_transit → delivered.
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
-  en_camino:  { label: "En camino",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
-  entregado:  { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
-  cancelado:  { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
+  assigned:    { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  picked_up:   { label: "Recogido",   className: "bg-primary/10 text-primary" },
+  in_transit:  { label: "En camino",  className: "bg-primary/10 text-primary" },
+  delivered:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  cancelled:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 // Permisos canónicos sincronizados con /api/store-permissions
 const PERMISSION_TYPES = [
@@ -371,7 +378,7 @@ function RepartidoresTab() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/delivery/partners")
+    tenantFetch("/api/delivery/partners")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setPartners(Array.isArray(d) ? d : []))
       .catch(() => setError("No se pudieron cargar los repartidores."))
@@ -382,7 +389,7 @@ function RepartidoresTab() {
 
   const handleSave = async (data: Omit<DeliveryPartner, "id" | "createdAt">) => {
     const id = modal.partner?.id;
-    const res = await fetch(id ? `/api/delivery/partners/${id}` : "/api/delivery/partners", {
+    const res = await tenantFetch(id ? `/api/delivery/partners/${id}` : "/api/delivery/partners", {
       method: id ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -399,7 +406,7 @@ function RepartidoresTab() {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      const res = await fetch(`/api/delivery/partners/${id}`, { method: "DELETE" });
+      const res = await tenantFetch(`/api/delivery/partners/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setPartners((prev) => prev.filter((p) => p.id !== id));
     } catch {
@@ -711,7 +718,7 @@ function AsignacionesTab() {
     setLoading(true);
     setError(null);
     const [aRes, pRes] = await Promise.allSettled([
-      fetch("/api/delivery/assignments")
+      tenantFetch("/api/delivery/assignments")
         .then(async (r) => {
           if (!r.ok) {
             const body = await r.json().catch(() => ({}));
@@ -719,7 +726,7 @@ function AsignacionesTab() {
           }
           return r.json();
         }),
-      fetch("/api/delivery/partners")
+      tenantFetch("/api/delivery/partners")
         .then(async (r) => {
           if (!r.ok) {
             const body = await r.json().catch(() => ({}));
@@ -764,7 +771,7 @@ function AsignacionesTab() {
     setAssigning(true);
     setError(null);
     try {
-      const res = await fetch("/api/delivery/assignments", {
+      const res = await tenantFetch("/api/delivery/assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -790,13 +797,13 @@ function AsignacionesTab() {
 
   if (loading) return <TableSkeleton />;
 
-  // Derivados para KPIs
-  const pendientes  = assignments.filter((a) => a.status === "pendiente").length;
-  const enCamino    = assignments.filter((a) => a.status === "en_camino").length;
-  const entregadas  = assignments.filter((a) => a.status === "entregado").length;
-  const canceladas  = assignments.filter((a) => a.status === "cancelado").length;
+  // Derivados para KPIs — usa los status reales del backend (VALID_TRANSITIONS)
+  const pendientes  = assignments.filter((a) => a.status === "assigned").length;
+  const enCamino    = assignments.filter((a) => ["picked_up", "in_transit"].includes(a.status)).length;
+  const entregadas  = assignments.filter((a) => a.status === "delivered").length;
+  const canceladas  = assignments.filter((a) => a.status === "cancelled").length;
   const ingresos    = assignments
-    .filter((a) => a.status === "entregado")
+    .filter((a) => a.status === "delivered")
     .reduce((acc, a) => acc + toNum(a.fee), 0);
   const partnersActivos = partners.length;
 
@@ -1138,7 +1145,7 @@ function PermisosTab() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/store-permissions");
+      const r = await tenantFetch("/api/store-permissions");
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
         throw new Error(`${r.status}: ${body.detail ?? body.error ?? "unknown"}`);
@@ -1172,7 +1179,7 @@ function PermisosTab() {
     );
 
     try {
-      const res = await fetch(`/api/store-permissions/${permId}`, {
+      const res = await tenantFetch(`/api/store-permissions/${permId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ permissions: newPerms }),
@@ -1579,7 +1586,11 @@ function isKycComplete(kyc: DriverKycSummary | null, vehicleType: string): { ok:
   if (!kyc.consents.acceptedTerms) missing.push("Términos no aceptados");
   if (!kyc.consents.acceptedPrivacy) missing.push("Privacidad no aceptada");
   if (!kyc.consents.confirmAdult) missing.push("Edad no confirmada");
-  const isMotor = vehicleType === "moto" || vehicleType === "auto";
+  // FIX 2026-05-06: case-insensitive — VEHICLE_TYPES en UI usa "Moto"/"Auto"
+  // (capital), antes la comparación lowercase saltaba la validación de
+  // licencia/SOAT silenciosamente — riesgo legal/operacional crítico.
+  const vt = (vehicleType ?? "").toLowerCase();
+  const isMotor = vt === "moto" || vt === "auto";
   if (isMotor) {
     if (!kyc.kyc.license?.number) missing.push("Licencia");
     if (!kyc.kyc.license?.category) missing.push("Categoría licencia");
@@ -1646,7 +1657,7 @@ function RankingTab() {
 
   const fetchRanking = useCallback((p: string) => {
     setLoading(true);
-    fetch(`/api/admin/delivery/ranking?period=${p}`, { credentials: "include" })
+    tenantFetch(`/api/admin/delivery/ranking?period=${p}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : { ranking: [], summary: null }))
       .then((d) => {
         setData(d.ranking ?? []);
@@ -1919,10 +1930,11 @@ function SolicitudesTab() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
+  const [error, setError] = useState<string | null>(null);
 
   const fetchApps = useCallback(() => {
     setLoading(true);
-    fetch("/api/admin/driver-applications")
+    tenantFetch("/api/admin/driver-applications")
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((d) => setApps(d.data ?? []))
       .catch(() => setApps([]))
@@ -1933,17 +1945,24 @@ function SolicitudesTab() {
 
   const handleAction = async (id: string, action: "approve" | "reject") => {
     setProcessing(id);
+    setError(null);
     try {
-      const res = await fetch("/api/admin/driver-applications", {
+      const res = await tenantFetch("/api/admin/driver-applications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, notificationId: id }),
       });
-      if (res.ok) {
-        fetchApps();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
       }
-    } catch {
-      // silently fail
+      fetchApps();
+    } catch (err) {
+      // FIX 2026-05-06: catch silencioso → ahora muestra error al admin.
+      // Aprobar/rechazar driver sin feedback dejaba al admin creyendo que
+      // se procesó cuando no — bug operacional crítico en flujo KYC.
+      const msg = err instanceof Error ? err.message : "desconocido";
+      setError(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la solicitud: ${msg}`);
     } finally {
       setProcessing(null);
     }
@@ -1967,6 +1986,20 @@ function SolicitudesTab() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <span className="font-bold">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
@@ -2374,7 +2407,7 @@ export default function DeliveryPartnersModule() {
 
   const refreshKpis = useCallback(() => {
     setKpisLoading(true);
-    fetch("/api/delivery/kpis")
+    tenantFetch("/api/delivery/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setKpis(d as DeliveryKPIs); })
       .catch(() => {})
