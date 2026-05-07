@@ -181,8 +181,17 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                             <input
                               type="number"
                               min={0}
+                              max={item.orderedQty}
                               value={item.receivedQty}
-                              onChange={(e) => updateItem(idx, { receivedQty: Math.max(0, parseInt(e.target.value) || 0), noLlego: false })}
+                              onChange={(e) => {
+                                const val = Math.max(0, parseInt(e.target.value) || 0);
+                                if (val > item.orderedQty) {
+                                  setError(`"${item.name}": recibida (${val}) no puede exceder ordenada (${item.orderedQty})`);
+                                  return;
+                                }
+                                setError(null);
+                                updateItem(idx, { receivedQty: val, noLlego: false });
+                              }}
                               className="w-16 text-center border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />

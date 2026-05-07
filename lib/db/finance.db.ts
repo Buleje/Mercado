@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   Payable as PPayable,
   Payment as PPayment,
@@ -93,23 +94,38 @@ export const PayablesDB = {
     return mapPayable(row);
   },
   async addPayment(tenantId: string, id: string, payment: DbPayment): Promise<DbPayable | null> {
-    const existing = await prisma.payable.findFirst({ where: { id, tenantId } });
-    if (!existing) return null;
-    await prisma.payment.create({
-      data: { id: payment.id, payableId: id, amount: payment.amount, method: payment.method, date: new Date(payment.date), reference: payment.reference },
+    // F2: race lock — todo dentro de $transaction para evitar doble pago concurrente
+    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via tenantId en WHERE.
+    return await prisma.$transaction(async (tx) => {
+      const current = await tx.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
+      if (!current) return null;
+
+      const currentAmountNum = toNumOrZero(current.amount);
+      const currentPaidNum = toNumOrZero(current.paidAmount);
+      const sumPaid = currentPaidNum + payment.amount;
+
+      // TD-018: tolerancia 0.01 para diferencias de punto flotante / redondeo
+      if (sumPaid > currentAmountNum + 0.01) {
+        throw new Error("Pago excede el saldo pendiente");
+      }
+
+      await tx.payment.create({
+        data: { id: payment.id, payableId: id, amount: payment.amount, method: payment.method, date: new Date(payment.date), reference: payment.reference },
+      });
+
+      const status = sumPaid >= currentAmountNum ? "pagado" : sumPaid > 0 ? "parcial" : "pendiente";
+      await tx.payable.update({
+        where: { id },
+        data: { paidAmount: sumPaid, status },
+      });
+
+      const row = await tx.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
+      if (!row) return null;
+      return mapPayable(row);
     });
-    const allPay = await prisma.payment.findMany({ where: { payableId: id } });
-    // TD-018: p.amount y existing.amount son Decimal
-    const paidAmount = allPay.reduce((s: number, p: PPayment) => s + toNumOrZero(p.amount), 0);
-    const existingAmountNum = toNumOrZero(existing.amount);
-    const status = paidAmount >= existingAmountNum ? "pagado" : paidAmount > 0 ? "parcial" : "pendiente";
-    await prisma.payable.updateMany({ where: { id, tenantId }, data: { paidAmount, status } });
-    const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
-    if (!row) return null;
-    return mapPayable(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
-    await prisma.payable.deleteMany({ where: { id, tenantId } }).catch(() => {});
+    await prisma.payable.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] payable delete failed", { id, tenantId, err: String(err) }));
   },
 };
 
@@ -127,7 +143,7 @@ export const ExpensesDB = {
     return mapExpense(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
-    await prisma.expense.deleteMany({ where: { id, tenantId } }).catch(() => {});
+    await prisma.expense.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] expense delete failed", { id, tenantId, err: String(err) }));
   },
   async getSummary(tenantId: string): Promise<{ category: string; total: number; count: number }[]> {
     const groups = await prisma.expense.groupBy({ by: ["category"], where: { tenantId }, _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });

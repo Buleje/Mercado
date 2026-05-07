@@ -46,10 +46,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 });
     }
 
+    // F3: Validar overshipping — receivedQty no puede exceder la cantidad ordenada
+    for (const item of items) {
+      const ocItem = oc.items.find((i) => i.productId === item.productId);
+      if (ocItem && item.receivedQty > ocItem.quantity) {
+        return NextResponse.json(
+          { error: `Producto ${item.productId}: cantidad recibida (${item.receivedQty}) excede la ordenada (${ocItem.quantity})` },
+          { status: 422 },
+        );
+      }
+    }
+
+    // F4: Total server-authoritative — ignorar unitPrice del cliente, usar precio de la OC original
+    // El servidor recomputa el total desde los precios de la PO.
+    let serverTotal = 0;
+    for (const item of items) {
+      if (item.receivedQty <= 0) continue;
+      const ocItem = oc.items.find((i) => i.productId === item.productId);
+      if (ocItem) {
+        serverTotal += item.receivedQty * Number(ocItem.unitCost ?? 0);
+      }
+    }
+
     // 2. Process in transaction
     let stockUpdated = 0;
     let allComplete = true;
 
+    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via tenantId en WHERE.
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         if (item.receivedQty <= 0) {
@@ -59,7 +82,7 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // a. Update product stock
+        // a. Update product stock con weighted-avg cost (F5)
         const product = await tx.product.findFirst({
           where: { id: item.productId, tenantId },
         });
@@ -67,13 +90,23 @@ export async function POST(req: NextRequest) {
         if (!product) continue;
 
         const previousStock = product.stock ?? 0;
+        // F4: unitCost viene de la OC original, no del cliente
+        const ocItem = oc.items.find((i) => i.productId === item.productId);
+        const authorizedUnitCost = Number(ocItem?.unitCost ?? 0);
+
+        // F5: Weighted-average cost price
+        const currentCost = Number(product.costPrice ?? 0);
+        const totalCost = previousStock * currentCost + item.receivedQty * authorizedUnitCost;
+        const totalQty = previousStock + item.receivedQty;
+        const weightedAvgCost = totalQty > 0 ? totalCost / totalQty : authorizedUnitCost;
+
         const newStock = previousStock + item.receivedQty;
 
         await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: newStock,
-            costPrice: item.unitPrice > 0 ? item.unitPrice : undefined,
+            costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined,
           },
         });
 
@@ -95,8 +128,8 @@ export async function POST(req: NextRequest) {
         stockUpdated++;
 
         // c. Check if this item was fully received
-        const ocItem = oc.items.find((i) => i.productId === item.productId);
-        if (ocItem && item.receivedQty < ocItem.quantity) {
+        const ocItemCheck = oc.items.find((i) => i.productId === item.productId);
+        if (ocItemCheck && item.receivedQty < ocItemCheck.quantity) {
           allComplete = false;
         }
       }
@@ -114,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     const finalStatus = allComplete ? "completed" : "partial";
 
-    return NextResponse.json({ ok: true, stockUpdated, status: finalStatus });
+    return NextResponse.json({ ok: true, stockUpdated, status: finalStatus, serverTotal });
   } catch (e) {
     logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });

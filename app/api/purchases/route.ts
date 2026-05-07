@@ -3,7 +3,6 @@ import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
-import { PayablesDB } from "@/lib/db/finance.db";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
@@ -18,7 +17,7 @@ const PurchaseItemSchema = z.object({
 });
 
 const PurchaseSchema = z.object({
-  supplierId: z.string().default(""),
+  supplierId: z.coerce.string().default(""),
   supplierName: z.string().max(200).optional(),
   items: z.array(PurchaseItemSchema).min(1, "at least one item required"),
   notes: z.string().max(1000).optional(),
@@ -70,43 +69,41 @@ export async function POST(req: NextRequest) {
       updatedAt: now,
     }, auth.tenantId);
 
-    // Tarea 1: Crear Payable automático si el pago es a crédito
+    // F1: Crear Payable atómico si el pago es a crédito — dentro de $transaction
     if (data.paymentMethod.startsWith("credito_")) {
       const days = parseInt(data.paymentMethod.split("_")[1]) || 30;
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + days);
-      // Verificar que no exista ya un Payable para esta OC
-      const existingPayable = await prisma.payable.findFirst({ where: { purchaseOrderId: id } }).catch((err) => {
-        logger.warn("[purchases] payable lookup failed", { id, err: String(err) });
-        return null;
+      const payableId = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+      // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via auth guard arriba.
+      await prisma.$transaction(async (tx) => {
+        const existingPayable = await tx.payable.findFirst({ where: { purchaseOrderId: id, tenantId: auth.tenantId } });
+        if (existingPayable) {
+          logger.warn("[purchases] Payable ya existe para OC — omitiendo duplicado", { purchaseOrderId: id });
+          return;
+        }
+        await tx.payable.create({
+          data: {
+            id: payableId,
+            supplierId: data.supplierId,
+            supplierName: data.supplierName || "",
+            purchaseOrderId: id,
+            description: `Auto-generado desde OC ${id}`,
+            amount: total,
+            paidAmount: 0,
+            status: "pendiente",
+            dueDate,
+            tenantId: auth.tenantId,
+          },
+        });
       });
-      if (existingPayable) {
-        logger.warn("[purchases] Payable ya existe para OC — omitiendo duplicado", { purchaseOrderId: id });
-      } else {
-      PayablesDB.add(auth.tenantId, {
-        id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        supplierId: data.supplierId,
-        supplierName: data.supplierName || "",
-        purchaseOrderId: id,
-        description: `Auto-generado desde OC ${id}`,
-        amount: total,
-        paidAmount: 0,
-        status: "pendiente",
-        dueDate: dueDate.toISOString(),
-        payments: [],
-        createdAt: now,
-      }).catch((e) => logger.error("[purchases] Error creando payable", { err: e instanceof Error ? e.message : String(e) }));
+
       logAudit({ req, action: "CREATE", entity: "Purchase", entityId: id, detail: `Payable auto-generado OC ${id}, S/${total.toFixed(2)}, vence en ${days} días` });
-      } // end else (no duplicado)
     }
 
-    // Tarea 2: Actualizar costPrice de cada producto (fire-and-forget)
-    for (const item of data.items) {
-      prisma.product.update({
-        where: { id: item.productId },
-        data: { costPrice: item.unitCost },
-      }).catch((err) => logger.warn("[purchases] costPrice update failed", { productId: item.productId, err: String(err) }));
-    }
+    // F5: costPrice NO se actualiza en POST (PO emitida, no recibida aún).
+    // El weighted-avg se aplica en PATCH cuando status → "recibido".
 
     return NextResponse.json(po, { status: 201 });
   } catch (e) {
