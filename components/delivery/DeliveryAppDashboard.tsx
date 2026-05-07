@@ -141,7 +141,7 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
         <div className="flex items-center gap-2">
           <DollarSign className="h-4 w-4 text-gray-400 shrink-0" />
           <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-            S/ {assignment.Number(order.total).toFixed(2)}
+            S/ {Number(assignment.order.total).toFixed(2)}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
             · Tu ganancia: S/ {Number(assignment.fee).toFixed(2)}

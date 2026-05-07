@@ -389,7 +389,7 @@ function OfferCard({ offer }: { offer: Offer }) {
 
       <div className="flex items-center justify-between pt-3 border-t border-[var(--rule-base)]">
         <span className="text-sm font-bold text-[var(--text-secondary)]">
-          Total cliente: S/ {offer.Number(order.total).toFixed(2)}
+          Total cliente: S/ {Number(offer.order.total).toFixed(2)}
         </span>
         <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--accent)] group-hover:translate-x-1 transition-transform">
           Aceptar
