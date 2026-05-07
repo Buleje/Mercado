@@ -9,6 +9,7 @@ import {
   type PlatformConfig,
 } from "@/lib/platform-config";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requirePlatformAPI } from "@/lib/superadmin-auth";
 
 /**
  * GET /api/superadmin/platform-config
@@ -71,7 +72,10 @@ const ConfigSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-platform-config"); if (_rl) return _rl;
-  const platformUser = req.headers.get("x-platform-user") ?? "superadmin";
+  // Defense-in-depth: validar sesion superadmin independiente del middleware
+  const _auth = await requirePlatformAPI(req);
+  if (_auth instanceof NextResponse) return _auth;
+  const platformUser = _auth.username;
 
   let body: unknown;
   try { body = await req.json(); } catch { body = {}; }

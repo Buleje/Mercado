@@ -10,6 +10,7 @@ import {
   buildConfirmationMessage,
   buildFallbackMessage,
 } from "@/lib/voice/response-builder";
+import { aiCostGuard } from "@/lib/ai/cost-control";
 
 // ── Request schema ─────────────────────────────────────────────────────────────
 
@@ -105,9 +106,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   // ── 1. Transcripción ─────────────────────────────────────────────────────────
+  // F1 AI-COST: Whisper ~$0.006/min → cap por tenant antes de llamar
+  const VOICE_COST_USD = 0.01;
+  if (!aiCostGuard.canSpend(tenantId, VOICE_COST_USD, "free")) {
+    return NextResponse.json(
+      { error: "Cuota mensual de transcripción de audio agotada" },
+      { status: 429 },
+    );
+  }
+
   let transcription: string;
   try {
     transcription = await transcribeAudio(mediaId, mimeType);
+    aiCostGuard.recordSpend(tenantId, VOICE_COST_USD);
   } catch (err) {
     logger.error("[whatsapp/voice] Error en transcripción", {
       tenantId,
@@ -136,6 +147,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   // ── 2. Extracción de intent + items ──────────────────────────────────────────
+  // F1 AI-COST: LLM extracción ~$0.005 → guard antes de llamar
+  const LLM_COST_USD = 0.005;
+  if (!aiCostGuard.canSpend(tenantId, LLM_COST_USD, "free")) {
+    return NextResponse.json(
+      { error: "Cuota mensual de análisis de pedido agotada" },
+      { status: 429 },
+    );
+  }
+
   let draft;
   try {
     draft = await extractOrderFromText(
@@ -143,6 +163,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       tenantId,
       productCatalog,
     );
+    aiCostGuard.recordSpend(tenantId, LLM_COST_USD);
   } catch (err) {
     logger.error("[whatsapp/voice] Error en extracción", {
       tenantId,

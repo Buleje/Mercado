@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { chatModel } from "@/lib/ai/provider";
 import { logger } from "@/lib/logger";
+import { aiCostGuard } from "@/lib/ai/cost-control";
 
 export const WhatsappIntent = z.enum([
   "saludo",
@@ -62,12 +63,26 @@ Reglas:
  * Classify a free-text WhatsApp message into a structured intent using the LLM.
  * Falls back to { intent: "desconocido" } on any error — the caller is
  * expected to route "desconocido" to the existing keyword-based engine.
+ *
+ * @param message  Mensaje del cliente.
+ * @param tenantId Tenant para cost-guard (opcional — si no se pasa, solo se
+ *                 loggea sin bloquear; pasar siempre desde el webhook principal).
  */
 export async function classifyWhatsappIntent(
   message: string,
+  tenantId?: string,
 ): Promise<Classification> {
   const trimmed = message.trim();
   if (trimmed.length === 0 || trimmed.length > 500) return FALLBACK;
+
+  // F2 AI-COST: clasificador ~$0.001 → guard por tenant
+  const INTENT_COST_USD = 0.001;
+  if (tenantId && !aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free")) {
+    logger.warn("[whatsapp-ai-intent] presupuesto agotado, usando fallback", {
+      tenantId: tenantId.slice(-6),
+    });
+    return FALLBACK; // intent "desconocido" → keyword engine
+  }
 
   try {
     const { text } = await generateText({
@@ -90,6 +105,7 @@ export async function classifyWhatsappIntent(
       });
       return FALLBACK;
     }
+    if (tenantId) aiCostGuard.recordSpend(tenantId, INTENT_COST_USD);
     return parsed.data;
   } catch (err) {
     logger.error("[whatsapp-ai-intent] classification failed", {

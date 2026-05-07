@@ -2,6 +2,11 @@ import "server-only";
 import { generateText } from "ai";
 import { smartModel } from "@/lib/ai/provider";
 import { logger } from "@/lib/logger";
+import { aiCostGuard } from "@/lib/ai/cost-control";
+import {
+  processSafeInput,
+  detectPromptInjection,
+} from "@/lib/ai-safety/sanitize";
 import {
   searchProductsCrossTenant,
   formatCrossTenantResults,
@@ -29,11 +34,37 @@ import type {
  * Falls back to the formatted cross-tenant list if the LLM fails or no key.
  * Never throws.
  */
+const RECOMMEND_COST_USD = 0.005;
+
+const FALLBACK_BUDGET: ActionResult = {
+  reply:
+    "Por ahora no puedo recomendarte productos personalizados. Escribí *catálogo* para ver lo disponible.",
+  newState: "browsing",
+};
+
 export async function recommendHandler(
   ctx: ConversationContext,
   classification: Classification,
 ): Promise<ActionResult> {
-  const seed = (classification.productQuery ?? ctx.message).trim();
+  // F2 AI-COST: smartModel recomendación → guard antes de llamar
+  if (!aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD, "free")) {
+    logger.warn("[recommend-handler] presupuesto agotado", {
+      tenantId: ctx.tenantId.slice(-6),
+    });
+    return FALLBACK_BUDGET;
+  }
+
+  // F5 Sanitización anti-injection del mensaje del cliente
+  const rawSeed = (classification.productQuery ?? ctx.message).trim();
+  const injectionCheck = detectPromptInjection(rawSeed);
+  if (injectionCheck.severity === "high") {
+    logger.warn("[recommend-handler] prompt injection detectado", {
+      tenantId: ctx.tenantId.slice(-6),
+      snippet: rawSeed.slice(0, 60),
+    });
+    return FALLBACK_BUDGET;
+  }
+  const seed = processSafeInput(rawSeed);
 
   // ── 1. Marketplace search ────────────────────────────────────────────────
   let candidates: CrossTenantProduct[] = [];
@@ -62,10 +93,10 @@ export async function recommendHandler(
   const picks = candidates.slice(0, 3);
 
   // ── 2. Build natural reply via LLM ───────────────────────────────────────
-  const naturalReply = await buildNaturalRecommendation(
-    ctx.message,
-    picks,
-  );
+  // Sanitizar ctx.message independientemente (puede diferir de seed)
+  const safeMessage = processSafeInput(ctx.message);
+  const naturalReply = await buildNaturalRecommendation(safeMessage, picks);
+  aiCostGuard.recordSpend(ctx.tenantId, RECOMMEND_COST_USD);
 
   // ── 3. Append numbered list (so cart-add handler picks up) ───────────────
   const numbered = formatCrossTenantResults(picks, seed || "recomendados");

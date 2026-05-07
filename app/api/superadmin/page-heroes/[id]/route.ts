@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/require-admin";
+import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
@@ -17,10 +17,10 @@ const UpdateSchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
 });
 
-/** PUT — update a hero */
+/** PUT — update a hero (platform-only: requiere sesion superadmin) */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -29,20 +29,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos invalidos" }, { status: 400 });
 
-  const hero = await PageHeroesDB.update(auth.tenantId, id, parsed.data);
+  const hero = await PageHeroesDB.update("__platform__", id, parsed.data);
   if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
 
   return NextResponse.json({ data: hero });
 }
 
-/** DELETE — remove a hero */
+/** DELETE — remove a hero (platform-only: requiere sesion superadmin) */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const hero = await PageHeroesDB.remove(auth.tenantId, id);
+  const hero = await PageHeroesDB.remove("__platform__", id);
   if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
 
   return NextResponse.json({ success: true });

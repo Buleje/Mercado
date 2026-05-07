@@ -1,6 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import {
+  processSafeInput,
+  detectPromptInjection,
+} from "@/lib/ai-safety/sanitize";
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
@@ -70,6 +74,23 @@ export async function extractOrderFromText(
     throw new Error("[voice/order-extractor] GROQ_API_KEY no configurado");
   }
 
+  // F5 Sanitización anti-injection: texto transcrito puede contener cualquier cosa
+  const injectionCheck = detectPromptInjection(text);
+  if (injectionCheck.severity === "high") {
+    logger.warn("[voice/order-extractor] prompt injection en transcripción", {
+      tenantId,
+      snippet: text.slice(0, 60),
+    });
+    return {
+      tenantId,
+      intent: "unknown",
+      items: [],
+      unresolved: [],
+      rawText: text,
+    };
+  }
+  const safeText = processSafeInput(text);
+
   // ── Llamada LLM ─────────────────────────────────────────────────────────────
   let extraction: LlmExtraction = { intent: "unknown", items: [] };
 
@@ -86,7 +107,7 @@ export async function extractOrderFromText(
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content: `Texto del cliente: "${text.slice(0, 800)}"\n\nResponde con el JSON.`,
+            content: `Texto del cliente: "${safeText}"\n\nResponde con el JSON.`,
           },
         ],
         max_tokens: 400,

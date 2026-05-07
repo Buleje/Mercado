@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/require-admin";
+import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
@@ -18,19 +18,19 @@ const CreateSchema = z.object({
   gradientTo: z.string().max(50).nullish(),
 });
 
-/** GET — list all heroes for the admin's tenant */
+/** GET — list all heroes (platform-only: requiere sesion superadmin) */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
-  const data = await PageHeroesDB.listAll(auth.tenantId);
+  const data = await PageHeroesDB.listAll("__platform__");
   return NextResponse.json({ data });
 }
 
-/** POST — create a hero */
+/** POST — create a hero (platform-only: requiere sesion superadmin) */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes] parse JSON body failed", { error: String(err) }); return null; });
@@ -38,6 +38,6 @@ export async function POST(req: NextRequest) {
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues }, { status: 400 });
 
-  const hero = await PageHeroesDB.create(auth.tenantId, parsed.data);
+  const hero = await PageHeroesDB.create("__platform__", parsed.data);
   return NextResponse.json({ data: hero }, { status: 201 });
 }

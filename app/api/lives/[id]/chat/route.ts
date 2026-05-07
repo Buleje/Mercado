@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
-import { createDistributedRateLimiter , applyRateLimit } from "@/lib/rate-limit";
+import { createDistributedRateLimiter } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 /**
@@ -73,7 +73,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const _rl = await applyRateLimit(req, "STRICT", "lives-X-chat"); if (_rl) return _rl;
+  // F4: Se eliminó applyRateLimit("STRICT") — causa falsos 429 con NAT compartido.
+  // El distributed limiter (chatLimiter) por userId/anonymousId es suficiente y preciso.
   try {
     const { id } = await params;
 

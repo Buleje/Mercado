@@ -6,6 +6,7 @@ import { createSessionToken, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
@@ -69,7 +70,14 @@ export async function POST(req: NextRequest) {
   // username = "superadmin" identifica el origen en logs/audit
   // role = "admin" para acceso completo al panel
   // Use tenant.id (canonical ID) — NOT tenant.slug
-  const token = await createSessionToken("admin", "superadmin", tenant.id, "SuperAdmin");
+  // SECURITY: el token incluye impersonator + impersonatedAt para trazabilidad
+  // en audit y para que /api/superadmin/impersonate/exit valide que es sesion impersonada.
+  const token = await createSessionToken(
+    "admin",
+    `impersonated-by:${platformSession.username}`,
+    tenant.id,
+    `SuperAdmin→${tenant.slug}`,
+  );
 
   // ── Audit trail (Ley 29733 Art. 16) ────────────────────────────────────
   // OBLIGATORIO: la impersonación da acceso completo a datos personales
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     },
     platformSession.username,
-  ).catch(() => {});
+  ).catch((err) => logger.warn("[superadmin] op failed", { err: String(err) }));
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";
@@ -98,18 +106,20 @@ export async function POST(req: NextRequest) {
     tenantSlug: tenant.slug,
   });
 
+  // Sesion de impersonacion: TTL reducido a 30 min (no se puede renovar con refresh normal)
+  const IMPERSONATE_MAX_AGE = 30 * 60; // 30 min en segundos
   response.cookies.set(SESSION.COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,
     sameSite: "strict",
     path: "/",
-    maxAge: SESSION.MAX_AGE,
+    maxAge: IMPERSONATE_MAX_AGE,
   });
 
   // Set active-tenant cookie with canonical Tenant.id for proxy.ts resolution
   response.cookies.set("active-tenant", tenant.id, {
     path: "/",
-    maxAge: SESSION.MAX_AGE,
+    maxAge: IMPERSONATE_MAX_AGE,
     sameSite: "lax",
     httpOnly: false,
   });
@@ -117,7 +127,7 @@ export async function POST(req: NextRequest) {
   // Set active-tenant-slug cookie for admin UI (readable by client JS)
   response.cookies.set("active-tenant-slug", tenant.slug, {
     path: "/",
-    maxAge: SESSION.MAX_AGE,
+    maxAge: IMPERSONATE_MAX_AGE,
     sameSite: "lax",
     httpOnly: false,
   });

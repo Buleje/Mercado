@@ -31,7 +31,8 @@ const DATA_TABLES = [
   "CashMovement", "InventoryMovement", "Coupon", "Return",
   "ReturnItem", "ShoppingList", "ShoppingListItem", "PriceHistory",
   "DeliverySlot", "AdminMessage", "SupplierEvaluation", "Expense",
-  "Bundle", "BundleItem", "ActivityLog", "NotificationLog",
+  // ActivityLog y _prisma_migrations NUNCA se purgan — cumplimiento Ley 29733 Art. 16 + integridad migrations
+  "Bundle", "BundleItem", "NotificationLog",
   "CustomerNotification", "Page", "PageBlock", "Media",
   "PageVersion", "StripeWebhookQueue", "Note", "MessageTemplate",
   "Reminder", "Batch", "SavedFilter", "ChatMessage",
@@ -133,7 +134,7 @@ export async function DELETE(req: NextRequest) {
           timestamp: new Date().toISOString(),
         },
         session.username,
-      ).catch(() => {});
+      ).catch((err) => logger.warn("[superadmin] op failed", { err: String(err) }));
     } catch { /* audit logger no disponible */ }
 
     return NextResponse.json({

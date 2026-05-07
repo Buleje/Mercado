@@ -17,8 +17,17 @@ export async function GET(
       return NextResponse.json({ error: "No encontrada" }, { status: 404 });
     }
 
+    // F3: Strip tenantId del session — no exponer IDs internos en respuesta pública
+    const { session, ...restResult } = result as {
+      session: Record<string, unknown>;
+      [key: string]: unknown;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { tenantId: _tid, ...safeSession } = session;
+    const safeResult = { ...restResult, session: safeSession };
+
     return NextResponse.json(
-      { data: result },
+      { data: safeResult },
       {
         headers: {
           "Cache-Control": "public, s-maxage=5, stale-while-revalidate=30",

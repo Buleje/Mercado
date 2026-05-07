@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 /**
@@ -9,7 +10,22 @@ import { logger } from "@/lib/logger";
  *   - includeUpcoming (opcional, boolean): también retorna próximas 14 días
  *   - includePast (opcional, boolean): también retorna pasadas (últimas 20)
  */
+// Helper: elimina tenantId del objeto antes de exponerlo públicamente
+function stripTenantId<T extends Record<string, unknown>>(
+  arr: T[],
+): Omit<T, "tenantId">[] {
+  return arr.map((s) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { tenantId: _tid, ...rest } = s;
+    return rest as Omit<T, "tenantId">;
+  });
+}
+
 export async function GET(req: NextRequest) {
+  // F3: RL GENEROUS — endpoint público, bloquear abuse sin penalizar usuarios legítimos
+  const rl = applyRateLimit(req, "GENEROUS", "lives-active");
+  if (rl) return rl as unknown as NextResponse;
+
   try {
     const sp = req.nextUrl.searchParams;
     const tenantId = sp.get("tenantId");
@@ -26,12 +42,13 @@ export async function GET(req: NextRequest) {
         : Promise.resolve([]),
     ]);
 
+    // F3: Strip tenantId — dato interno, no debe exponerse en respuesta pública
     return NextResponse.json(
       {
         data: {
-          active,
-          upcoming,
-          past,
+          active: stripTenantId(active as Record<string, unknown>[]),
+          upcoming: stripTenantId(upcoming as Record<string, unknown>[]),
+          past: stripTenantId(past as Record<string, unknown>[]),
         },
       },
       {
