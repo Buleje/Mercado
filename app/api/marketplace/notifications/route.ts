@@ -7,6 +7,8 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/jsondb";
 import { logger } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/marketplace/notifications?customerId=<phone>
  *

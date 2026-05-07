@@ -430,6 +430,28 @@ export async function GET(req: NextRequest) {
       await import("@/lib/marketplace-store-hours");
     const NOW = new Date();
 
+    // F4: normaliza hoursJson legacy (array de 7 objetos {open,openMin,close,closeMin})
+    // al formato objeto {mon:{open:"HH:MM",close:"HH:MM"}} que espera storeIsOpenNow.
+    type OpenHoursObject = Record<string, { open: string; close: string; closed?: boolean } | null>;
+    function normalizeOpenHours(raw: unknown): OpenHoursObject | null {
+      if (!raw) return null;
+      if (Array.isArray(raw)) {
+        const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+        const out: Record<string, { open: string; close: string } | null> = {};
+        for (let i = 0; i < days.length && i < raw.length; i++) {
+          const d = raw[i] as { open?: number; openMin?: number; close?: number; closeMin?: number; closed?: boolean };
+          if (d?.closed || d?.open == null) { out[days[i]] = null; continue; }
+          out[days[i]] = {
+            open:  `${String(d.open).padStart(2, "0")}:${String(d.openMin ?? 0).padStart(2, "0")}`,
+            close: `${String(d.close ?? 23).padStart(2, "0")}:${String(d.closeMin ?? 59).padStart(2, "0")}`,
+          };
+        }
+        return out as OpenHoursObject;
+      }
+      if (typeof raw === "object") return raw as OpenHoursObject;
+      return null;
+    }
+
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
@@ -451,7 +473,9 @@ export async function GET(req: NextRequest) {
       const ownZone = ((s.zone as string | null | undefined) ?? "").trim();
       const finalZone = ownZone !== "" ? ownZone : (manualStoreZones[slug] ?? "");
       const construction = constructionMap[slug];
-      const hoursJson = (s as { hoursJson?: unknown }).hoursJson ?? null;
+      const rawHoursJson = (s as { hoursJson?: unknown }).hoursJson ?? null;
+      // F4: normalizar formato legacy array → objeto antes de usar storeIsOpenNow.
+      const hoursJson = normalizeOpenHours(rawHoursJson);
       // Si la tienda configuró horario propio, lo usamos como source-of-truth.
       // Si no, caemos al autoCloseTime legacy (meta.isOpenNow).
       const hasOwnHours = hoursJson && typeof hoursJson === "object";

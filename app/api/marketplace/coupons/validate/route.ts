@@ -41,8 +41,13 @@ export async function POST(req: NextRequest) {
     // tenantId obligatorio + prefiere store-specific sobre tenant-wide).
     const coupon = await CouponsDB.findByCode(store.tenantId, code, store.id);
 
-    if (!coupon || !coupon.active) {
-      return NextResponse.json({ valid: false, reason: "Cupón no encontrado o inactivo" });
+    // El cupón no existe en DB → 404 para que el cliente distinga de error de red (200/5xx).
+    if (!coupon) {
+      return NextResponse.json({ valid: false, reason: "Cupón no encontrado" }, { status: 404 });
+    }
+    // Existe pero está inactivo → 200 + valid:false (el código es real, solo no aplica).
+    if (!coupon.active) {
+      return NextResponse.json({ valid: false, reason: "Cupón inactivo" });
     }
 
     // Check expiration

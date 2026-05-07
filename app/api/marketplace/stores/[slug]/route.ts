@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 /**
  * @cross-tenant intentional — endpoint público del storefront marketplace.
  * @prisma-direct excepción documentada — este endpoint necesita columnas
@@ -19,6 +21,7 @@ export async function GET(
   try {
     const { slug } = await params;
 
+    // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por slug (sin tenantId — el slug ES el discriminador). Refactor a StoresDB.findBySlug pendiente.
     const store = await prisma.store.findUnique({
       where: { slug },
       select: {

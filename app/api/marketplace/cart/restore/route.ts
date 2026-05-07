@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 const RestoreSchema = z.object({
   phone: z.string().min(6).max(20),
 });

@@ -19,25 +19,7 @@ import CouponInput, { type AppliedCoupon } from "@/components/ui-system/CouponIn
 
 const STORAGE_KEY = "buleje-applied-coupon-v1";
 
-// Cupones mock — en produccion vienen de la API del tenant/marketplace.
-const MOCK_COUPONS: Record<string, AppliedCoupon> = {
-  BIENVENIDO10: {
-    code: "BIENVENIDO10",
-    description: "Descuento de bienvenida en tu primera compra",
-    amount: 10,
-  },
-  YAPELOVER: {
-    code: "YAPELOVER",
-    description: "5% extra pagando con Yape",
-    amount: 5,
-  },
-  ENVIOGRATIS: {
-    code: "ENVIOGRATIS",
-    description: "Envío gratis en pedidos mayores a S/30",
-    amount: 5,
-    isFixed: true,
-  },
-};
+// MOCK_COUPONS eliminado — P0 anti-fraude. Descuentos solo vía backend.
 
 interface Props {
   /** Subtotal del carrito — para mostrar cupones aplicables */
@@ -131,23 +113,11 @@ export default function CartCouponSection({ subtotal, onDiscountChange, classNam
           if (data.error) return { valid: false, error: data.error };
         }
       } catch {
-        // network error → fallback a mock
+        // Error de red — no aplicar descuento sin autorización del backend.
+        return { valid: false, error: "Servicio no disponible. Intenta más tarde." };
       }
 
-      // Fallback: MOCK_COUPONS (solo dev/preview hasta que el endpoint
-      // tenga todos los cupones del seed). En production debería retornar
-      // valid: false si el server no reconoce.
-      const coupon = MOCK_COUPONS[code];
-      if (!coupon) {
-        return { valid: false, error: "Código inválido o expirado" };
-      }
-      if (code === "ENVIOGRATIS" && subtotal < 30) {
-        return { valid: false, error: "Aplica desde S/30 de compra" };
-      }
-      setApplied(coupon);
-      writeApplied(coupon);
-      onDiscountChange(calcDiscount(coupon, subtotal));
-      return { valid: true, coupon };
+      return { valid: false, error: "Código inválido o expirado" };
     },
     [subtotal, onDiscountChange],
   );
@@ -158,17 +128,11 @@ export default function CartCouponSection({ subtotal, onDiscountChange, classNam
     onDiscountChange(0);
   }, [onDiscountChange]);
 
-  // Cupones disponibles segun subtotal
-  const available = Object.values(MOCK_COUPONS).filter((c) =>
-    c.code === "ENVIOGRATIS" ? subtotal >= 30 : true,
-  );
-
   return (
     <CouponInput
       applied={applied}
       onApply={handleApply}
       onRemove={handleRemove}
-      availableCoupons={available}
       className={className}
     />
   );
