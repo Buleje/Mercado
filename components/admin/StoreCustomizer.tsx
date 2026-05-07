@@ -44,7 +44,13 @@ export interface StoreTheme {
   heroCTA: string;
   heroLink: string;
   heroBadge: string;
+  // FIX 2026-05-07 (audit storefront-admin): badge debajo del avatar circular.
+  // Antes "Hecho en Pucallpa" era texto fijo en el código.
+  heroOriginBadge: string;
   heroImage: string;
+  // FIX 2026-05-07 (audit storefront-admin): chips de confianza configurables
+  // de la TrustBar (la barra que scrollea con beneficios). Antes 6 chips fijas.
+  trustChips: string[];
   fontFamily: string;
   borderRadius: number;
   spacing: "compact" | "normal" | "spacious";
@@ -101,7 +107,16 @@ const DEFAULT_THEME: StoreTheme = {
   heroCTA: "Ver productos",
   heroLink: "tienda",
   heroBadge: "Delivery gratis +S/50",
+  heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
+  trustChips: [
+    "Delivery gratis desde S/50",
+    "Entrega en menos de 45 min",
+    "Productos frescos garantizados",
+    "Paga con Yape o efectivo",
+    "Productos locales de Ucayali",
+    "Atención personalizada",
+  ],
   fontFamily: "sistema",
   borderRadius: 12,
   spacing: "normal",
@@ -744,6 +759,74 @@ function HeroTab({
                 Sin badge
               </button>
             </div>
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 3.5 BADGE DE ORIGEN (debajo del avatar) ───────── */}
+      <StyleSection
+        icon={<Sparkles className="h-5 w-5 text-primary" />}
+        title="Badge de origen"
+        description="Etiqueta debajo del logo circular en el hero — comunica de dónde es tu negocio."
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={theme.heroOriginBadge}
+            onChange={(e) => update("heroOriginBadge", e.target.value)}
+            placeholder="Hecho en Pucallpa"
+            className={inputClassName}
+            maxLength={40}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">Aparece en mayúsculas, color de acento, debajo del avatar circular.</p>
+            <span className="text-xs font-mono text-muted shrink-0">{(theme.heroOriginBadge || "").length}/40</span>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {["Hecho en Pucallpa", "Hecho en Lima", "Hecho en Iquitos", "100% peruano", "Tradición familiar"].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => update("heroOriginBadge", s)}
+                className={cn(
+                  "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
+                  theme.heroOriginBadge === s
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* ── 3.6 CHIPS DE CONFIANZA (TrustBar) ──────────────── */}
+      <StyleSection
+        icon={<Sparkles className="h-5 w-5 text-primary" />}
+        title="Chips de confianza"
+        description="Barra que scrollea con tus garantías y beneficios. Una chip por línea — sin íconos (los asignamos automático)."
+      >
+        <div className="space-y-3">
+          <textarea
+            value={(theme.trustChips ?? []).join("\n")}
+            onChange={(e) => {
+              const lines = e.target.value
+                .split("\n")
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0 && l.length <= 60);
+              update("trustChips", lines);
+            }}
+            placeholder={"Delivery gratis desde S/50\nEntrega en menos de 45 min\nProductos frescos garantizados\nPaga con Yape o efectivo"}
+            rows={6}
+            className={cn(inputClassName, "font-mono text-sm leading-relaxed resize-y")}
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">Mín 1, máx 60 caracteres por chip. Recomendado 4–6 chips.</p>
+            <span className="text-xs font-mono text-muted shrink-0">
+              {(theme.trustChips ?? []).length} chip{(theme.trustChips ?? []).length === 1 ? "" : "s"}
+            </span>
           </div>
         </div>
       </StyleSection>
