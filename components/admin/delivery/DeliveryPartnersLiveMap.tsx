@@ -27,6 +27,7 @@ import {
   Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 
 interface Partner {
   id: string;
@@ -92,8 +93,8 @@ const STATE_META: Record<
   },
   busy: {
     label: "Atendiendo",
-    color: "text-[var(--accent)]",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
+    color: "text-primary",
+    bg: "bg-primary/10",
     mapColor: "#3b82f6",
   },
   offline: {
@@ -148,13 +149,9 @@ export default function DeliveryPartnersLiveMap() {
 
     import("leaflet").then((L) => {
       if (destroyed || !containerRef.current) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      });
+      // FIX 2026-05-06: NO mergeOptions con unpkg.com — usamos divIcon
+      // custom abajo, los iconos default de Leaflet nunca se renderizan.
+      // Si CSP bloquea unpkg o se queda offline, el mapa se rompe innecesariamente.
       const map = L.map(containerRef.current).setView([PUCALLPA_LAT, PUCALLPA_LNG], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
@@ -176,9 +173,7 @@ export default function DeliveryPartnersLiveMap() {
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setRefreshing(true);
     try {
-      const res = await fetch("/api/admin/delivery/partners-live", {
-        credentials: "include",
-      });
+      const res = await tenantFetch("/api/admin/delivery/partners-live");
       if (!res.ok) {
         setError(`HTTP ${res.status}`);
         return;
@@ -213,7 +208,9 @@ export default function DeliveryPartnersLiveMap() {
   // Render markers cuando cambian partners
   useEffect(() => {
     if (!mapRef.current) return;
+    let cancelled = false;
     import("leaflet").then((L) => {
+      if (cancelled || !mapRef.current) return;
       const seen = new Set<string>();
       partners.forEach((p) => {
         if (p.lat == null || p.lng == null) return;
@@ -267,6 +264,7 @@ export default function DeliveryPartnersLiveMap() {
         }
       });
     });
+    return () => { cancelled = true; };
   }, [partners, selectedId]);
 
   const focusPartner = (p: Partner) => {
