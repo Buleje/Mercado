@@ -162,10 +162,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // If credit type, add to customer's credit balance
+      // If credit type, add to customer's credit balance.
+      // SECURITY 2026-05-07 (Z4): updateMany con tenantId scope. Customer.phone
+      // es @unique global → un update({phone}) sin tenantId podia acreditar
+      // creditBalance al primer Customer encontrado en cualquier tenant.
       if (refundType === "credito" && sale.customerPhone) {
-        await tx.customer.update({
-          where: { phone: sale.customerPhone },
+        await tx.customer.updateMany({
+          where: { phone: sale.customerPhone, tenantId: auth.tenantId },
           data: { creditBalance: { increment: totalRefund } },
         });
       }

@@ -57,9 +57,14 @@ export default function POSSplitPayment({
     []
   );
 
+  const sumPayments = payments.reduce((acc, p) => acc + p.amount, 0);
+  // Tolerancia 1 centavo (acumulación de decimales en reparto N personas).
+  const isPaymentsValid = payments.length > 0 && Math.abs(sumPayments - total) <= 0.01;
+
   const handleConfirm = useCallback(() => {
+    if (!isPaymentsValid) return;
     onSplitPayments(payments);
-  }, [payments, onSplitPayments]);
+  }, [payments, onSplitPayments, isPaymentsValid]);
 
   // Step 1: Choose number of people
   if (people === 0) {
@@ -174,7 +179,10 @@ export default function POSSplitPayment({
         </button>
         <button
           onClick={handleConfirm}
-          className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
+          disabled={!isPaymentsValid}
+          aria-disabled={!isPaymentsValid}
+          title={!isPaymentsValid ? `Suma de pagos (${fmt(sumPayments)}) no coincide con total (${fmt(total)})` : undefined}
+          className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
         >
           Confirmar division
         </button>

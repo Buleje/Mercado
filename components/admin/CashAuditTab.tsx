@@ -137,9 +137,19 @@ function makeKey(type: "billete" | "moneda", value: number) {
   return `${type}-${value}`;
 }
 
-function CashCounter({ expectedAmount }: { expectedAmount: number }) {
+function CashCounter({
+  expectedAmount,
+  registerId,
+  onSaved,
+}: {
+  expectedAmount: number;
+  registerId?: string | null;
+  onSaved?: () => void;
+}) {
   const [counts, setCounts] = useState<CounterState>({});
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
   const counted = useMemo(() => {
     let total = 0;
@@ -154,6 +164,41 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
   function setCount(key: string, raw: string) {
     const v = Math.max(0, parseInt(raw, 10) || 0);
     setCounts(prev => ({ ...prev, [key]: v }));
+  }
+
+  async function handleSaveArqueo() {
+    if (!registerId) {
+      setFeedback({ kind: "err", msg: "No hay caja registradora abierta para arquear." });
+      return;
+    }
+    if (!hasCount) {
+      setFeedback({ kind: "err", msg: "Contá al menos una denominación antes de guardar." });
+      return;
+    }
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const { csrfHeaders } = await import("@/lib/csrf-client");
+      const res = await fetch(`/api/cash-registers/${registerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        body: JSON.stringify({
+          action: "arqueo",
+          closingAmount: counted,
+          notes: `Conteo manual: contado S/${counted.toFixed(2)}, esperado S/${expectedAmount.toFixed(2)}, diferencia S/${difference.toFixed(2)}`,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+      setFeedback({ kind: "ok", msg: `Arqueo guardado · diferencia ${difference >= 0 ? "+" : ""}S/${difference.toFixed(2)}` });
+      onSaved?.();
+    } catch (err) {
+      setFeedback({ kind: "err", msg: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -296,13 +341,40 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setCounts({})}
-            className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
-          >
-            Limpiar conteo
-          </button>
+          {feedback && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={cn(
+                "text-sm font-semibold rounded-lg px-3 py-2",
+                feedback.kind === "ok"
+                  ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                  : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+              )}
+            >
+              {feedback.msg}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSaveArqueo}
+              disabled={saving || !hasCount || !registerId}
+              aria-disabled={saving || !hasCount || !registerId}
+              title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Contá al menos una denominación" : undefined}
+              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Guardando…" : "Guardar arqueo"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setCounts({}); setFeedback(null); }}
+              className="text-sm text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors px-3 py-2"
+            >
+              Limpiar conteo
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -406,7 +478,11 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       </div>
 
       {/* Cash Counter */}
-      <CashCounter expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0} />
+      <CashCounter
+        expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0}
+        registerId={audits.length > 0 ? audits[0].id : null}
+        onSaved={loadAudits}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
