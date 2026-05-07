@@ -148,17 +148,33 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
 
   useEffect(() => {
-    // Detectar si el tenant activo es "main" leyendo la cookie active-tenant
+    // FIX 2026-05-07: detectar el tenant activo PRIMERO desde el path
+    // `/t/[slug]/...`, luego desde la cookie active-tenant, luego "main".
+    //
+    // Antes solo leíamos la cookie. Si Brandon visitaba directo
+    // /t/mi-pollo/tienda SIN haber pasado por el admin, no había cookie,
+    // el fetch a /api/settings no enviaba `x-tenant-id`, el server
+    // resolvía a "main" → la tienda mostraba defaults aunque tenía
+    // banner/logo/colores configurados en la DB del tenant correcto.
     const tenantSlug =
-      typeof document !== "undefined"
+      typeof window !== "undefined"
         ? (() => {
-            const m = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
-            return m ? decodeURIComponent(m[1]) : "main";
+            // 1. Path /t/[slug]/... — fuente de verdad cuando el visitor
+            //    está navegando explícitamente la tienda de un tenant.
+            const pathMatch = window.location.pathname.match(/^\/t\/([^/]+)/);
+            if (pathMatch) return decodeURIComponent(pathMatch[1]);
+            // 2. Cookie active-tenant — set por el admin al loguearse.
+            const cookieMatch = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+            if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+            return "main";
           })()
         : "main";
     const isMainTenant = tenantSlug === "main";
 
-    fetch("/api/settings", { cache: "no-store" })
+    fetch("/api/settings", {
+      cache: "no-store",
+      headers: { "x-tenant-id": tenantSlug },
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Record<string, unknown> | null) => {
         if (data) {
@@ -243,9 +259,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setMode = useCallback(async (m: StoreMode) => {
+    // FIX 2026-05-07: incluir x-tenant-id derivado del path para que el PUT
+    // afecte al tenant correcto (no siempre "main"). Mismo patrón que el GET.
+    const tenantSlug =
+      typeof window !== "undefined"
+        ? (() => {
+            const pathMatch = window.location.pathname.match(/^\/t\/([^/]+)/);
+            if (pathMatch) return decodeURIComponent(pathMatch[1]);
+            const cookieMatch = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+            if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+            return "main";
+          })()
+        : "main";
     await fetch("/api/settings", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
       body: JSON.stringify({ mode: m }),
     });
     setModeState(m);
