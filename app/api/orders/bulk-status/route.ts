@@ -6,7 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const VALID_STATUSES = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"] as const;
+const VALID_STATUSES = ["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"] as const;
 
 const BulkStatusSchema = z.object({
   ids: z.array(z.string().min(1)).min(1).max(200),
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       "Bulk", "pedido",
       `Cambio masivo de estado a "${status}" — ${result.count} pedido(s)`,
       undefined, "admin", requestId,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[orders/bulk-status] activity log failed", { err: String(err) }));
 
     return NextResponse.json({ ok: true, updated: result.count });
   } catch (e) {

@@ -13,19 +13,21 @@ import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const NOTIFIABLE_STATUSES = new Set(["confirmado", "en_camino", "entregado", "cancelado"]);
+const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "entregado", "cancelado"]);
 
 // Valid order status transitions — prevents going backward (e.g. entregado → pendiente)
+// Mantener sincronizado con `components/admin/OrdersTab/types.ts:VALID_TRANSITIONS`.
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pendiente: ["confirmado", "cancelado"],
-  confirmado: ["en_camino", "cancelado"],
+  confirmado: ["preparando", "en_camino", "cancelado"],
+  preparando: ["en_camino", "cancelado"],
   en_camino: ["entregado", "cancelado"],
   entregado: [],    // Terminal state
   cancelado: [],    // Terminal state
 };
 
 const PatchSchema = z.object({
-  status: z.enum(["pendiente", "confirmado", "en_camino", "entregado", "cancelado"]).optional(),
+  status: z.enum(["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
   deuda: z.boolean().nullable().optional(),
   paymentMethod: z.enum(["yape", "efectivo"]).optional(),
@@ -249,6 +251,7 @@ export async function PATCH(
     if (statusChanged && parsed.data.status !== "entregado" && updated.customer.phone && NOTIFIABLE_STATUSES.has(parsed.data.status!) && wantsOrderNotifs) {
       const statusLabels: Record<string, string> = {
         confirmado: "✅ Pedido confirmado",
+        preparando: "👨‍🍳 Estamos preparando tu pedido",
         en_camino: "🚚 Tu pedido va en camino",
         cancelado: "❌ Pedido cancelado",
       };
@@ -310,7 +313,8 @@ export async function PATCH(
     // Log to customer notification inbox
     if (statusChanged && updated.customer.phone && NOTIFIABLE_STATUSES.has(parsed.data.status!)) {
       const statusMsgs: Record<string, { title: string; body: string }> = {
-        confirmado: { title: "✅ Pedido confirmado", body: `Tu pedido #${updated.id.slice(-6)} fue confirmado. Estamos preparándolo.` },
+        confirmado: { title: "✅ Pedido confirmado", body: `Tu pedido #${updated.id.slice(-6)} fue confirmado.` },
+        preparando: { title: "👨‍🍳 Preparando tu pedido", body: `Estamos preparando tu pedido #${updated.id.slice(-6)}. Pronto sale.` },
         en_camino: { title: "🚚 Pedido en camino", body: `Tu pedido #${updated.id.slice(-6)} va en camino. ¡Prepárate!` },
         entregado: { title: "📦 Pedido entregado", body: `Tu pedido #${updated.id.slice(-6)} fue entregado. ¿Cómo estuvo? Déjanos tu reseña.` },
         cancelado: { title: "❌ Pedido cancelado", body: `Tu pedido #${updated.id.slice(-6)} fue cancelado.` },

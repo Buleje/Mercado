@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
 import { csrfHeaders } from "@/lib/csrf-client";
+import type {
   ChatBubbleSession,
   PublicMessageView,
   PublicThreadView,
