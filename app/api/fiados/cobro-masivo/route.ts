@@ -38,12 +38,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { payments, notas } = parsed.data;
-    const results: { fiadoId: string; montoPagado: number; nuevoSaldo: number; status: string }[] = [];
+    const results: { fiadoId: string; montoPagado: number; nuevoSaldo: number; status: string; customerId: string }[] = [];
 
-    // Execute all payments in a single transaction
+    // Execute all payments in a single transaction.
+    // SECURITY 2026-05-07 (extension Y1): tenantId en update where + decrement
+    // atomic en lugar de read-then-write para cerrar races con cobros simultaneos
+    // del mismo fiado.
     await prisma.$transaction(async (tx) => {
       for (const payment of payments) {
-        // Find the fiado and verify it belongs to this tenant
         const fiado = await tx.fiado.findFirst({
           where: { id: payment.fiadoId, tenantId },
         });
@@ -58,17 +60,28 @@ export async function POST(req: NextRequest) {
 
         const currentSaldo = Number(fiado.saldo);
         const paymentAmount = Math.min(payment.monto, currentSaldo);
-        const newSaldo = currentSaldo - paymentAmount;
-        const newStatus = newSaldo <= 0.01 ? "PAGADO" : fiado.status;
 
-        // Update fiado
+        // Decrement atomico: si dos requests pasan el findFirst con el mismo
+        // currentSaldo, el segundo decrement actualiza el saldo ya reducido
+        // por el primero — sin sobrescritura.
         await tx.fiado.update({
-          where: { id: payment.fiadoId },
-          data: {
-            saldo: Math.max(0, newSaldo),
-            status: newStatus,
-          },
+          where: { id: payment.fiadoId, tenantId },
+          data: { saldo: { decrement: paymentAmount } },
         });
+
+        // Re-leer post-decrement para definir status real
+        const updated = await tx.fiado.findFirst({
+          where: { id: payment.fiadoId, tenantId },
+          select: { saldo: true, status: true },
+        });
+        const finalSaldo = updated ? Number(updated.saldo) : 0;
+        const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
+        if (newStatus !== fiado.status) {
+          await tx.fiado.update({
+            where: { id: payment.fiadoId, tenantId },
+            data: { status: newStatus },
+          });
+        }
 
         // Create cuota record
         await tx.fiadoCuota.create({
@@ -83,13 +96,24 @@ export async function POST(req: NextRequest) {
         results.push({
           fiadoId: payment.fiadoId,
           montoPagado: paymentAmount,
-          nuevoSaldo: Math.max(0, newSaldo),
+          nuevoSaldo: Math.max(0, finalSaldo),
           status: newStatus,
+          customerId: fiado.customerId,
         });
       }
     });
 
     const totalCobrado = results.reduce((s, r) => s + r.montoPagado, 0);
+
+    // Score crediticio fire-and-forget — actualiza por cada cliente cobrado.
+    // Antes solo se actualizaba via cron semanal (gap del audit).
+    // customerId en Fiado es el phone (por relation a Customer.phone).
+    const uniqueCustomerIds = Array.from(new Set(results.map((r) => r.customerId).filter(Boolean)));
+    for (const customerId of uniqueCustomerIds) {
+      import("@/lib/credit/scoring-engine")
+        .then(({ updateCreditProfile }) => updateCreditProfile(tenantId, customerId))
+        .catch((err) => logger.warn("[fiados/cobro-masivo] updateCreditProfile failed", { customerId, err: String(err) }));
+    }
 
     logActivity(
       "Cobro masivo", "fiado",

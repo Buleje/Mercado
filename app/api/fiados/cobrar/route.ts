@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Score crediticio fire-and-forget — refleja en tiempo real la mejora
+    // por pago. Antes solo se actualizaba via cron semanal (gap del audit).
+    import("@/lib/credit/scoring-engine")
+      .then(({ updateCreditProfile }) => updateCreditProfile(tenantId, customerPhone))
+      .catch((err) => logger.warn("[fiados/cobrar] updateCreditProfile failed", { customerPhone, err: String(err) }));
+
     return NextResponse.json({
       success: true,
       totalCobrado: result.totalCobrado,

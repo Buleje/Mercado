@@ -32,17 +32,38 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  // Aggregate by cashier
+  // FIX 2026-05-07 (Bundle audit P1): comisiones SÍ descuentan devoluciones.
+  // Antes, una venta devuelta seguia comisionando como si no se hubiera
+  // devuelto. Ahora restamos el total de Returns por saleId antes de agregar.
+  const saleIds = sales.map((s) => s.id);
+  // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId + saleIds del tenant.
+  const returns = saleIds.length > 0
+    ? await prisma.return.findMany({
+        where: { tenantId: auth.tenantId, saleId: { in: saleIds } },
+        select: { saleId: true, total: true },
+      })
+    : [];
+  const refundedBySale = new Map<string, number>();
+  for (const r of returns) {
+    if (!r.saleId) continue; // Return.saleId es nullable (puede ser orderId en su lugar)
+    refundedBySale.set(r.saleId, (refundedBySale.get(r.saleId) ?? 0) + toNumOrZero(r.total));
+  }
+
+  // Aggregate by cashier (revenue neto = total venta - refunds asociados)
   const map = new Map<string, { sales: number; revenue: number; cogs: number; profit: number }>();
   for (const s of sales) {
     const cid = s.cashierId!;
     const entry = map.get(cid) ?? { sales: 0, revenue: 0, cogs: 0, profit: 0 };
     const totalNum = toNumOrZero(s.total);
+    const refundedNum = refundedBySale.get(s.id) ?? 0;
+    const netRevenue = Math.max(0, totalNum - refundedNum);
+    const refundRatio = totalNum > 0 ? netRevenue / totalNum : 0;
     const cogsNum = s.totalCogs != null ? toNumOrZero(s.totalCogs) : totalNum * 0.7;
+    const netCogs = cogsNum * refundRatio;
     entry.sales += 1;
-    entry.revenue += totalNum;
-    entry.cogs += cogsNum;
-    entry.profit += totalNum - cogsNum;
+    entry.revenue += netRevenue;
+    entry.cogs += netCogs;
+    entry.profit += netRevenue - netCogs;
     map.set(cid, entry);
   }
 
