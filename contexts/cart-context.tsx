@@ -224,9 +224,40 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     stateRef.current = state;
   }, [state]);
 
+  // FIX 2026-05-07: Set de productIds válidos del tenant actual.
+  // Se popula al cambiar tenantSlug (y al hidratar). Permite rechazar adds
+  // de productos que NO pertenecen al tenant — defensa final contra el
+  // bug "carrito con productos cross-tenant" sin pasar por el checkout.
+  const validProductIdsRef = useRef<Set<number> | null>(null);
+
   // Mantener slugRef sincronizado en un effect (no se puede mutar refs en render — react-hooks/refs)
   useEffect(() => {
     slugRef.current = tenantSlug;
+  }, [tenantSlug]);
+
+  // FIX 2026-05-07: cargar Set de productIds válidos del tenant para que
+  // addItem pueda rechazar productos cross-tenant antes de añadirlos.
+  // Fire-and-forget; si falla, addItem permite todo (no romper UX).
+  useEffect(() => {
+    const s = tenantSlug;
+    if (!s || s === "main") {
+      validProductIdsRef.current = null; // sin filtro en main (cross-store legacy)
+      return;
+    }
+    let aborted = false;
+    fetch(`/api/marketplace/products/check-exists?ids=&tenantSlug=${encodeURIComponent(s)}&listAll=1`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+    // Cargar via /api/products (ya respeta tenant via Referer/proxy).
+    fetch("/api/products?active=true", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: unknown) => {
+        if (aborted || !Array.isArray(data)) return;
+        const ids = new Set<number>(data.map((p: { id?: number }) => p.id).filter((n): n is number => typeof n === "number"));
+        validProductIdsRef.current = ids;
+      })
+      .catch(() => { /* sin filtro si falla */ });
+    return () => { aborted = true; };
   }, [tenantSlug]);
 
   // Hydrate from localStorage when tenantSlug changes (and on mount).
@@ -489,6 +520,24 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const total = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
   const addItem = useCallback((p: Product) => {
+    // FIX 2026-05-07: defensa final contra cross-tenant items. Si validIds
+    // está cargado (del tenant actual via /api/products) y el productId NO
+    // está en el set, RECHAZAR el add y mostrar warning. Si validIds es null
+    // (aún cargando o tenant 'main' legacy), permitir todo. Esto evita el
+    // bug "carrito con productos fantasma" que llegaban al checkout y daban
+    // 400 invalid_product.
+    const valid = validProductIdsRef.current;
+    if (valid && typeof p.id === "number" && !valid.has(p.id)) {
+      // No añadir + log para diagnóstico. UI puede mostrar toast desde el
+      // caller si quiere (no spammeamos toasts desde acá).
+      if (typeof console !== "undefined") {
+        console.warn("[cart] rechazando add: producto no pertenece al tenant actual", {
+          productId: p.id,
+          tenantSlug: slugRef.current,
+        });
+      }
+      return;
+    }
     // ADR-096: tag con slug actual para descartar después si el usuario
     // navega a otro storefront. El reducer hace `{ ...payload, quantity: 1 }`
     // por lo que `storeSlug` se persiste tal cual en el item.
