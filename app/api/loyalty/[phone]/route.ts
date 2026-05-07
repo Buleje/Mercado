@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireCustomer } from "@/lib/auth/require-customer";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";

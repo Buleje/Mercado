@@ -310,7 +310,7 @@ export default function PedidoPage() {
                 Total cliente
               </p>
               <p className="mt-1 text-xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                S/ {assignment.Number(order.total).toFixed(2)}
+                S/ {Number(assignment.order.total).toFixed(2)}
               </p>
             </div>
             <div className="text-right">

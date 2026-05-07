@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { toNumOrZero } from "@/lib/decimal-utils";
 

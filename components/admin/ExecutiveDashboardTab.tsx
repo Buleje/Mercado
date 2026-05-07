@@ -353,7 +353,7 @@ export default function ExecutiveDashboardTab() {
                   </span>
                   <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                     {h.trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                    {h.trend > 0 ? "+" : ""}{h.trend.toFixed ? Number(h.trend).toFixed(1) : h.trend}
+                    {h.trend > 0 ? "+" : ""}{Number(h.trend).toFixed(1)}
                   </span>
                 </div>
                 {expandedModule === h.module && (

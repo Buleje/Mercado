@@ -109,7 +109,7 @@ export default function MarginDashboardTab() {
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
           <p className={cn("text-xl sm:text-2xl font-extrabold", pctColor(data.summary.overallMarginPct))}>
-            {data.Number(summary.overallMarginPct).toFixed(1)}%
+            {Number(data.summary.overallMarginPct).toFixed(1)}%
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Margen global</p>
         </div>

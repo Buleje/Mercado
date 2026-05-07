@@ -194,10 +194,10 @@ export function useCierreDiario() {
     const lines = [
       `\u{1F4CA} *Cierre Buleje \u2014 ${f}*`,
       `\u{1F4B0} Ventas: S/ ${preview.ventas.total.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`,
-      `\u{1F9FE} Ticket prom: S/ ${preview.Number(ventas.ticketPromedio).toFixed(2)}`,
+      `\u{1F9FE} Ticket prom: S/ ${Number(preview.ventas.ticketPromedio).toFixed(2)}`,
       `\u{1F4B5} Caja: S/ ${skipCaja ? "N/A" : totalContado.toFixed(2)} (dif: ${dif})`,
       `\u{1F4E6} Alertas stock: ${preview.stockAlertas.length} productos`,
-      `\u2705 Fiados cobrados: S/ ${preview.Number(fiados.cobradosHoy).toFixed(2)}`,
+      `\u2705 Fiados cobrados: S/ ${Number(preview.fiados.cobradosHoy).toFixed(2)}`,
       `Hasta ma\u00f1ana! \u{1F64F}`,
     ];
     return lines.join("\n");

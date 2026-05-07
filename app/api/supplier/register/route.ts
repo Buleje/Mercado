@@ -4,7 +4,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { logActivity } from "@/lib/activity-logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 // ─── Validation schema ───────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         `Teléfono: ${data.contactPhone}\n` +
         `Email: ${data.contactEmail}\n\n` +
         `Revisa la cola en /superadmin/marketplace/suppliers`;
-      sendWhatsAppQueued(adminPhone, message, { tenantId: "__platform__", context: "supplier-register-admin-notify" }).catch(() => {});
+      sendWhatsAppQueued(adminPhone, message, { tenantId: "__platform__", context: "supplier-register-admin-notify" }).catch((err) => logger.warn("[supplier/register] admin notify failed", { err: String(err) }));
     }
 
     return NextResponse.json(

@@ -162,7 +162,7 @@ export default function CartUpsellSection({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{combo.product.name}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{combo.Number(product.price).toFixed(2)}/{combo.product.unit}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{Number(combo.product.price).toFixed(2)}/{combo.product.unit}</p>
             </div>
             <div className="h-7 w-7 rounded-lg bg-[var(--data-warning-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-warning-600)] transition-colors">
               <Plus className="h-3.5 w-3.5" />

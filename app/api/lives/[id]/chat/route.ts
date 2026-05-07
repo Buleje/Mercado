@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
-import { createDistributedRateLimiter } from "@/lib/rate-limit";
+import { createDistributedRateLimiter , applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 /**

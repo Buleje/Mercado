@@ -194,7 +194,7 @@ export default function CompetitorPriceTracker() {
           {insights.bestOpportunity && (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3">
               <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
-                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{insights.Number(bestOpportunity.gap).toFixed(2)} y seguir competitivo
+                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{Number(insights.bestOpportunity.gap).toFixed(2)} y seguir competitivo
               </p>
             </div>
           )}

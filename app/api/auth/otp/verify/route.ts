@@ -7,7 +7,7 @@ import {
   createCustomerToken,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const VerifyOtpSchema = z.object({

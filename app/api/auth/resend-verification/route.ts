@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { resendVerificationEmail } from "@/lib/email-verification";
 import { enqueueEmail } from "@/lib/queue";
-import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 

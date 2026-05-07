@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { CouponsDB } from "@/lib/jsondb";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 

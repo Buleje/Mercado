@@ -227,10 +227,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                             p.margin.pct >= 15 ? "text-[var(--data-warning-500)]" :
                             "text-[var(--data-error-500)]"
                           )}>
-                            {p.Number(margin.pct).toFixed(0)}%
+                            {Number(p.margin.pct).toFixed(0)}%
                           </span>
                           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            S/{p.Number(margin.soles).toFixed(2)}
+                            S/{Number(p.margin.soles).toFixed(2)}
                           </span>
                         </div>
                       ) : (

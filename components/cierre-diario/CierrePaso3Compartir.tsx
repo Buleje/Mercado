@@ -101,14 +101,14 @@ export default function CierrePaso3Compartir({
         <p className="text-sm text-gray-600">Fecha: {preview.fecha}</p>
         <table className="w-full text-sm border-collapse">
           <tbody>
-            <tr className="border-b"><td className="py-2 font-semibold">Total ventas</td><td className="py-2 text-right">S/ {preview.Number(ventas.total).toFixed(2)}</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Total ventas</td><td className="py-2 text-right">S/ {Number(preview.ventas.total).toFixed(2)}</td></tr>
             <tr className="border-b"><td className="py-2 font-semibold">Cantidad de ventas</td><td className="py-2 text-right">{preview.ventas.cantidad}</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Ticket promedio</td><td className="py-2 text-right">S/ {preview.Number(ventas.ticketPromedio).toFixed(2)}</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Ticket promedio</td><td className="py-2 text-right">S/ {Number(preview.ventas.ticketPromedio).toFixed(2)}</td></tr>
             <tr className="border-b"><td className="py-2 font-semibold">Efectivo contado</td><td className="py-2 text-right">{skipCaja ? "N/A" : `S/ ${totalContado.toFixed(2)}`}</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Efectivo esperado</td><td className="py-2 text-right">S/ {preview.Number(caja.efectivoEsperado).toFixed(2)}</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Efectivo esperado</td><td className="py-2 text-right">S/ {Number(preview.caja.efectivoEsperado).toFixed(2)}</td></tr>
             <tr className="border-b"><td className="py-2 font-semibold">Diferencia</td><td className="py-2 text-right">{skipCaja ? "N/A" : `${diferencia >= 0 ? "+" : ""}S/ ${diferencia.toFixed(2)}`}</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Fiados cobrados</td><td className="py-2 text-right">S/ {preview.Number(fiados.cobradosHoy).toFixed(2)}</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Fiados nuevos</td><td className="py-2 text-right">S/ {preview.Number(fiados.nuevosHoy).toFixed(2)}</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Fiados cobrados</td><td className="py-2 text-right">S/ {Number(preview.fiados.cobradosHoy).toFixed(2)}</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Fiados nuevos</td><td className="py-2 text-right">S/ {Number(preview.fiados.nuevosHoy).toFixed(2)}</td></tr>
             <tr className="border-b"><td className="py-2 font-semibold">Fiados vencidos</td><td className="py-2 text-right">{preview.fiados.vencidos}</td></tr>
             {preview.ventas.mejorHora && <tr className="border-b"><td className="py-2 font-semibold">Mejor hora</td><td className="py-2 text-right">{preview.ventas.mejorHora}</td></tr>}
             {preview.ventas.productoTop && <tr className="border-b"><td className="py-2 font-semibold">Producto top</td><td className="py-2 text-right">{preview.ventas.productoTop}</td></tr>}

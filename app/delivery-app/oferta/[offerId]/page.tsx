@@ -256,7 +256,7 @@ export default function OfferPage() {
             <Block
               icon={<CashIcon className="h-6 w-6" />}
               title="Total del pedido"
-              big={`S/ ${offer.Number(order.total).toFixed(2)}`}
+              big={`S/ ${Number(offer.order.total).toFixed(2)}`}
               extras={[
                 offer.order.notes ? { icon: null, text: offer.order.notes } : null,
               ]}

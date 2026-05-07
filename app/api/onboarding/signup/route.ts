@@ -5,6 +5,7 @@ import {
   SlugTakenError,
 } from "@/lib/onboarding/signup-flow";
 import {
+  applyRateLimit,
   createDistributedRateLimiter,
   getClientIp,
 } from "@/lib/rate-limit";
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       `Nuevo tenant registrado via onboarding: ${parsed.data.slug}`,
       result.tenantId,
       parsed.data.email,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[onboarding/signup] activity log failed", { err: String(err) }));
 
     logger.info("[onboarding/signup] Registro exitoso", {
       tenantId: result.tenantId,

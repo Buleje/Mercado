@@ -241,14 +241,14 @@ describe("DELETE /api/activity-log (deshabilitado por compliance)", () => {
   });
 
   it("returns 410 Gone with compliance reason", async () => {
-    const res = await DELETE();
+    const res = await DELETE(new NextRequest("http://localhost/api/activity-log", { method: "DELETE" }));
     expect(res.status).toBe(410);
     const body = await res.json();
     expect(body.error).toMatch(/compliance|29733/i);
   });
 
   it("does NOT call deleteMany regardless of auth", async () => {
-    await DELETE();
+    await DELETE(new NextRequest("http://localhost/api/activity-log", { method: "DELETE" }));
     expect(mockDeleteMany).not.toHaveBeenCalled();
   });
 });

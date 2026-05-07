@@ -190,7 +190,7 @@ export default function DriverDashboardPage() {
             />
             <HeroStat
               icon={<CashIcon className="h-5 w-5" />}
-              value={`S/ ${data.Number(stats.todayEarnings).toFixed(0)}`}
+              value={`S/ ${Number(data.stats.todayEarnings).toFixed(0)}`}
               label="Ganado hoy"
             />
           </div>

@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { storeOtp } from "@/lib/auth/otp-store";
 import { logger } from "@/lib/logger";
 import { sendSms, isTwilioConfigured } from "@/lib/twilio";

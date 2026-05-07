@@ -241,7 +241,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                             {r.selected.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {r.parsed.quantity > 1 ? `${r.parsed.quantity} x ` : ""}S/ {r.Number(selected.price).toFixed(2)}
+                            {r.parsed.quantity > 1 ? `${r.parsed.quantity} x ` : ""}S/ {Number(r.selected.price).toFixed(2)}
                             {r.parsed.quantity > 1 && ` = S/ ${(r.selected.price * r.parsed.quantity).toFixed(2)}`}
                           </p>
                         </div>

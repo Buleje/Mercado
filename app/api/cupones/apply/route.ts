@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { CuponesDB } from "@/lib/db/cupones.db";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";

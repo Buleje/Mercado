@@ -331,7 +331,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               label: "Categoria que empuja",
               value: growingCategory?.top ? growingCategory.top.cat : "Sin tendencia clara",
               detail: growingCategory?.top
-                ? `${growingCategory.Number(top.pct).toFixed(0)}% esta semana frente a la anterior`
+                ? `${Number(growingCategory.top.pct).toFixed(0)}% esta semana frente a la anterior`
                 : "Aun no hay suficientes ventas para comparar",
               emphasis: growingCategory?.top ? "positive" : "default",
             },

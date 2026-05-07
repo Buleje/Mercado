@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  applyRateLimit,
   createDistributedRateLimiter,
   getClientIp,
 } from "@/lib/rate-limit";

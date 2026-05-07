@@ -188,7 +188,7 @@ export function PendingOrdersModal({
                 </span>
                 <span className="text-[var(--text-tertiary)]">·</span>
                 <span className="text-[var(--text-secondary)]">
-                  Total S/ {data.Number(stats.sumTotal).toFixed(2)}
+                  Total S/ {Number(data.stats.sumTotal).toFixed(2)}
                 </span>
                 {data.stats.oldestMinutes > 30 && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-danger,#ef4444)]">
@@ -369,10 +369,10 @@ export function PendingOrdersModal({
                                 <span className="text-[var(--text-tertiary)]"> · {o.delivery.partnerPhone}</span>
                               )}
                               {o.delivery.distanceKm !== undefined && (
-                                <span className="text-[var(--text-tertiary)]"> · {o.Number(delivery.distanceKm).toFixed(1)} km</span>
+                                <span className="text-[var(--text-tertiary)]"> · {Number(o.delivery.distanceKm).toFixed(1)} km</span>
                               )}
                               {o.delivery.fee !== undefined && (
-                                <span className="text-[var(--text-tertiary)]"> · S/ {o.Number(delivery.fee).toFixed(2)}</span>
+                                <span className="text-[var(--text-tertiary)]"> · S/ {Number(o.delivery.fee).toFixed(2)}</span>
                               )}
                             </p>
                           </div>

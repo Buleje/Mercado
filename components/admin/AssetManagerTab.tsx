@@ -143,7 +143,7 @@ export default function AssetManagerTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Registrar activo
           </button>
-          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: a.Number(dep.accumulated).toFixed(2), valor_libros: a.Number(dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: Number(a.dep.accumulated).toFixed(2), valor_libros: Number(a.dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -250,7 +250,7 @@ export default function AssetManagerTab() {
                         <div className="w-12 bg-gray-200 dark:bg-surface rounded-full h-2 overflow-hidden">
                           <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-[var(--data-error-500)]" : a.dep.pctDepreciated >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
                         </div>
-                        <span className="text-xs text-[var(--text-secondary)]">{a.Number(dep.pctDepreciated).toFixed(0)}%</span>
+                        <span className="text-xs text-[var(--text-secondary)]">{Number(a.dep.pctDepreciated).toFixed(0)}%</span>
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{a.location}</td>

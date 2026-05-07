@@ -186,7 +186,7 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-200 truncate">{item.product.name}</p>
-        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{item.Number(product.price).toFixed(2)} c/u</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{Number(item.product.price).toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button

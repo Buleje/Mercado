@@ -133,7 +133,7 @@ export default function CxPCalendar() {
               <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Vence esta semana</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
-              S/ {data.Number(resumen.venceEstaSemana).toFixed(2)}
+              S/ {Number(data.resumen.venceEstaSemana).toFixed(2)}
             </p>
           </div>
           <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
@@ -142,7 +142,7 @@ export default function CxPCalendar() {
               <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Vence este mes</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
-              S/ {data.Number(resumen.venceEsteMes).toFixed(2)}
+              S/ {Number(data.resumen.venceEsteMes).toFixed(2)}
             </p>
           </div>
           <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl p-3">
@@ -151,7 +151,7 @@ export default function CxPCalendar() {
               <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] uppercase">Vencido</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
-              S/ {data.Number(resumen.vencido).toFixed(2)}
+              S/ {Number(data.resumen.vencido).toFixed(2)}
             </p>
           </div>
         </div>

@@ -398,7 +398,7 @@ void DashboardTab;
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
           { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success-500)]" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
-          { label: "Reseñas", value: `★ ${data.Number(store.rating).toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
+          { label: "Reseñas", value: `★ ${Number(data.store.rating).toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>

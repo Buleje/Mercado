@@ -84,7 +84,7 @@ export default function CierrePaso2Resumen({
           </p>
           <div className="space-y-1 text-sm text-gray-600 dark:text-muted">
             <p>{preview.ventas.cantidad} ventas realizadas</p>
-            <p>Ticket promedio: S/ {preview.Number(ventas.ticketPromedio).toFixed(2)}</p>
+            <p>Ticket promedio: S/ {Number(preview.ventas.ticketPromedio).toFixed(2)}</p>
             {preview.ventas.mejorHora && (
               <p>Mejor hora: {preview.ventas.mejorHora}</p>
             )}
@@ -103,13 +103,13 @@ export default function CierrePaso2Resumen({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-muted">Fiados cobrados hoy</span>
               <span className="text-lg font-bold text-[var(--data-success-600)] dark:text-emerald-400">
-                S/ {preview.Number(fiados.cobradosHoy).toFixed(2)}
+                S/ {Number(preview.fiados.cobradosHoy).toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-muted">Fiados nuevos hoy</span>
               <span className="text-lg font-bold text-orange-500">
-                S/ {preview.Number(fiados.nuevosHoy).toFixed(2)}
+                S/ {Number(preview.fiados.nuevosHoy).toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between">
